@@ -8,7 +8,6 @@ import com.querydsl.core.types.PathMetadata;
 import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
 
-
 /**
  * QBkmkMenu_BkmkMenuId is a Querydsl query type for BkmkMenuId
  */

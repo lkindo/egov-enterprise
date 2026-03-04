@@ -16,18 +16,18 @@ describe('useSearchState hook', () => {
       keyword: '',
       other: 'default'
     }));
-    
+
     expect(result.current.values.keyword).toBe('existing');
     expect(result.current.values.other).toBe('default');
   });
 
   it('should update URL when setSearchValues is called', () => {
     const { result } = renderHook(() => useSearchState({ keyword: '' }));
-    
+
     act(() => {
       result.current.setSearchValues({ keyword: 'new search' });
     });
-    
+
     expect(pushMock).toHaveBeenCalledWith('/test-page?keyword=new+search');
   });
 });

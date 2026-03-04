@@ -8,7 +8,6 @@ import com.querydsl.core.types.PathMetadata;
 import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
 
-
 /**
  * QProcessMonLog is a Querydsl query type for ProcessMonLog
  */

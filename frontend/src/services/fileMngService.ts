@@ -28,7 +28,7 @@ export const fileMngService = {
     uploadFiles: async (files: File[]): Promise<string> => {
         const formData = new FormData();
         files.forEach(file => formData.append('files', file));
-        
+
         return client.post<string>(BASE_URL, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
@@ -41,7 +41,7 @@ export const fileMngService = {
 
     /** 파일 다운로드 URL 생성 */
     getDownloadUrl: (atchFileId: string, fileSn: number): string => {
-        const baseUrl = typeof window === 'undefined' 
+        const baseUrl = typeof window === 'undefined'
             ? process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'
             : '/api/v1';
         return `${baseUrl}${BASE_URL}/${atchFileId}/${fileSn}`;

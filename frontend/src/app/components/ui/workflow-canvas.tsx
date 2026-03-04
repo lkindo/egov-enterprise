@@ -74,9 +74,9 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
                     return (
                         <g key={edge.id} className="transition-all duration-700">
                             <path
-                                d={`M ${fromNode.position.x + 100} ${fromNode.position.y + 40} 
-                     C ${fromNode.position.x + 160} ${fromNode.position.y + 40}, 
-                       ${toNode.position.x - 60} ${toNode.position.y + 40}, 
+                                d={`M ${fromNode.position.x + 100} ${fromNode.position.y + 40}
+                     C ${fromNode.position.x + 160} ${fromNode.position.y + 40},
+                       ${toNode.position.x - 60} ${toNode.position.y + 40},
                        ${toNode.position.x} ${toNode.position.y + 40}`}
                                 fill="none"
                                 stroke="currentColor"

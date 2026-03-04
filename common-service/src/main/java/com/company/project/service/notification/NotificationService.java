@@ -48,10 +48,10 @@ public class NotificationService implements EgovNotificationService {
                 .receiverId(userId)
                 .linkUrl(dto.getUniqId())
                 .build();
-        
+
         notificationRepository.save(entity);
 
-        // WebSocket ?�시�??�림 ?�송
+        // WebSocket ?시??림 ?송
         NotificationDto responseDto = NotificationDto.from(entity);
         messagingTemplate.convertAndSend("/topic/public", responseDto);
         if (userId != null) {

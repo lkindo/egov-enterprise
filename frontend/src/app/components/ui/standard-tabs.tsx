@@ -33,8 +33,8 @@ export function StandardTabs({
             onClick={() => onChange(item.id)}
             className={cn(
               "flex items-center gap-2 px-8 py-4 text-sm font-black border-b-2 transition-all",
-              activeTab === item.id 
-                ? "border-primary text-primary bg-primary/5" 
+              activeTab === item.id
+                ? "border-primary text-primary bg-primary/5"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
@@ -54,8 +54,8 @@ export function StandardTabs({
           onClick={() => onChange(item.id)}
           className={cn(
             "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
-            activeTab === item.id 
-              ? "bg-primary text-white shadow-md" 
+            activeTab === item.id
+              ? "bg-primary text-white shadow-md"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >

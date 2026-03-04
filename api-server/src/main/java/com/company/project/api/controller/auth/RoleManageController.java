@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 /**
- * �?관리�? ?�한 컨트롤러 ?�래?? */
+ * ?관리? ?한 컨트롤러 ?래?? */
 @Controller
 @RequiredArgsConstructor
 public class RoleManageController {
@@ -27,7 +27,7 @@ public class RoleManageController {
     private final MessageSource messageSource;
 
     /**
-     * �?목록 ?�면?�로 ?�동?�다.
+     * ?목록 ?면?로 ?동?다.
      */
     @RequestMapping("/sec/rmt/EgovRoleListView.do")
     public String selectRoleListView() throws Exception {
@@ -35,7 +35,7 @@ public class RoleManageController {
     }
 
     /**
-     * �?목록??조회?�다.
+     * ?목록??조회?다.
      */
     @RequestMapping({ "/sec/rmt/EgovRoleList.do", "/sec/rmt/EgovRoleManage.do" })
     public String selectRoleList(@ModelAttribute("roleManageVO") ComDefaultVO searchVO, ModelMap model)
@@ -64,7 +64,7 @@ public class RoleManageController {
     }
 
     /**
-     * �??��??�보�?조회?�다.
+     * ????보?조회?다.
      */
     @RequestMapping(value = { "/api/v1/auth/roles", "/sec/rmt/EgovRole.do" })
     public String selectRole(@RequestParam("roleCode") String roleCode, ModelMap model)
@@ -74,7 +74,7 @@ public class RoleManageController {
     }
 
     /**
-     * �??�록 ?�면?�로 ?�동?�다.
+     * ??록 ?면?로 ?동?다.
      */
     @RequestMapping("/sec/rmt/EgovRoleInsertView.do")
     public String insertRoleView(Model model) throws Exception {
@@ -83,7 +83,7 @@ public class RoleManageController {
     }
 
     /**
-     * �??�보�??�록?�다.
+     * ??보??록?다.
      */
     @PostMapping("/sec/rmt/EgovRoleInsert.do")
     public String insertRole(@Valid @ModelAttribute("roleManage") RoleManageDto roleManage,
@@ -100,7 +100,7 @@ public class RoleManageController {
     }
 
     /**
-     * �??�보�???��?�다.
+     * ??보????다.
      */
     @PostMapping("/sec/rmt/EgovRoleDelete.do")
     public String deleteRole(@RequestParam("roleCode") String roleCode, ModelMap model)
@@ -113,7 +113,7 @@ public class RoleManageController {
     }
 
     /**
-     * �?목록??멀????��?�다.
+     * ?목록??멀?????다.
      */
     @PostMapping("/sec/rmt/EgovRoleListDelete.do")
     public String deleteRoleList(@RequestParam("roleCodes") String roleCodes, Model model)

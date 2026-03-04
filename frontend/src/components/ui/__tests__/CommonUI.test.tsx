@@ -8,7 +8,7 @@ describe('Common UI Components', () => {
   it('Badge renders variants correctly', () => {
     const { rerender } = render(<Badge variant="default">Default</Badge>);
     expect(screen.getByText('Default')).toBeInTheDocument();
-    
+
     rerender(<Badge variant="destructive">Error</Badge>);
     expect(screen.getByText('Error')).toHaveClass('bg-destructive');
   });

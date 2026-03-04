@@ -21,9 +21,9 @@ public interface ServerResrceLogRepository extends JpaRepository<ServerResrceLog
                    A.CPU_USE_RT,
                    A.MORY_USE_RT,
                    A.SVC_STTUS,
-                   (SELECT CD.CODE_NM 
+                   (SELECT CD.CODE_NM
                       FROM CCMMNDETAILCODE CD
-                     WHERE CD.CODE_ID = 'COM072' 
+                     WHERE CD.CODE_ID = 'COM072'
                        AND CD.CODE = A.SVC_STTUS) AS SVC_STTUS_NM,
                    A.LOG_INFO,
                    C.MNGR_EMAIL_ADRES,

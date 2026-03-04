@@ -1,6 +1,6 @@
 /**
  * Generated API Types Utility
- * 
+ *
  * openapi-typescript로 생성된 types/generated-api.d.ts를 기반으로
  * API 요청/응답 타입을 간결하게 추출하여 사용하는 헬퍼입니다.
  */

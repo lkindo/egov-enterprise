@@ -12,7 +12,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
- * API ?�출 ?�력??기록?�는 ?�영 감사 ?�터?�터
+ * API ?출 ?력??기록?는 ?영 감사 ?터?터
  */
 @Slf4j
 @Component

@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * ??�뒪????�????�퉬???�ы쁽�?
+ * ??뒪????????퉬???ы쁽?
  */
 @Service
 @RequiredArgsConstructor
@@ -42,7 +42,7 @@ public class SystemHistoryService implements EgovSystemHistoryService {
     @Override
     @Transactional
     public String createSystemHistory(String userId, SystemHistoryDto dto) {
-        // ID ??�꽦: HIST_ + timestamp
+        // ID ??꽦: HIST_ + timestamp
         String histId = "HIST_" + String.format("%013d", System.currentTimeMillis());
 
         SystemHistory history = SystemHistory.builder()

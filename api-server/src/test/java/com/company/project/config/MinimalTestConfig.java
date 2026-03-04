@@ -139,6 +139,7 @@ public class MinimalTestConfig {
     }
 
     @Bean
+    @Primary
     public org.springframework.messaging.simp.SimpMessagingTemplate simpMessagingTemplate() {
         return Mockito.mock(org.springframework.messaging.simp.SimpMessagingTemplate.class);
     }

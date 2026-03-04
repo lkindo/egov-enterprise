@@ -14,7 +14,7 @@ test.describe('Authentication', () => {
 
         // Wait for navigation to dashboard (root)
         await page.waitForURL('**/', { timeout: 10000 });
-        
+
         // Check if welcome message is visible
         await expect(page.getByText('안녕하세요')).toBeVisible();
     });

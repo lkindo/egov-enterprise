@@ -11,9 +11,9 @@ interface StandardFormProps {
   footer?: React.ReactNode;
 }
 
-export function StandardForm({ 
-  children, 
-  onSubmit, 
+export function StandardForm({
+  children,
+  onSubmit,
   action,
   className,
   title,
@@ -28,12 +28,12 @@ export function StandardForm({
           {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
         </div>
       )}
-      
+
       <form onSubmit={onSubmit} action={action} className="p-6 space-y-6">
         <div className="grid gap-6">
           {children}
         </div>
-        
+
         {footer && (
           <div className="pt-6 border-t flex justify-end gap-3">
             {footer}
@@ -47,14 +47,14 @@ export function StandardForm({
 /**
  * Helper for form fields
  */
-export function FormField({ 
-  label, 
-  error, 
+export function FormField({
+  label,
+  error,
   children,
-  required 
-}: { 
-  label: string; 
-  error?: string; 
+  required
+}: {
+  label: string;
+  error?: string;
   children: React.ReactNode;
   required?: boolean;
 }) {

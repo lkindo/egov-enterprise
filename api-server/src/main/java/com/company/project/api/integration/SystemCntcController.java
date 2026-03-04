@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * ?�스???�계 ?�보�??�한 API 컨트롤러
+ * ?스???계 ?보??한 API 컨트롤러
  */
 @RestController
 @RequestMapping("/ssi/syi/sim")
@@ -18,7 +18,7 @@ public class SystemCntcController {
     private final SystemCntcService systemCntcService;
 
     /**
-     * ?�스???�계 목록 조회
+     * ?스???계 목록 조회
      */
     @GetMapping("/getSystemCntcList")
     public ApiResponse<List<SystemCntcDto>> getSystemCntcList() {
@@ -26,7 +26,7 @@ public class SystemCntcController {
     }
 
     /**
-     * ?�스???�계 ?�세 조회
+     * ?스???계 ?세 조회
      */
     @GetMapping("/getSystemCntcDetail")
     public ApiResponse<SystemCntcDto> getSystemCntcDetail(@RequestParam("cntcId") String cntcId) {
@@ -34,7 +34,7 @@ public class SystemCntcController {
     }
 
     /**
-     * ?�스???�계 ?�록
+     * ?스???계 ?록
      */
     @PostMapping("/insertSystemCntc")
     public ApiResponse<Void> insertSystemCntc(@RequestBody SystemCntcDto systemCntcDto) {
@@ -43,7 +43,7 @@ public class SystemCntcController {
     }
 
     /**
-     * ?�스???�계 ?�인
+     * ?스???계 ?인
      */
     @PostMapping("/approveSystemCntc")
     public ApiResponse<Void> approveSystemCntc(@RequestParam("cntcId") String cntcId) {

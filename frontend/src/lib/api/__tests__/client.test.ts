@@ -12,7 +12,7 @@ vi.mock('axios', () => {
     get: vi.fn(),
     post: vi.fn(),
   };
-  
+
   return {
     default: {
       create: vi.fn().mockReturnValue(mockInstance),

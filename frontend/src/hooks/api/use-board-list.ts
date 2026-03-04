@@ -23,14 +23,14 @@ export const useBoardList = (params: BoardListParams, initialData?: any) => {
                 size: pageUnit || 10,
                 ...restParams
             };
-            
+
             const data: any = await client.get(`/boards/${bbsId}`, { params: queryParams });
-            
+
             // Spring Data Page 구조 반영
-            return { 
-                resultList: data.content || [], 
-                totalCount: data.totalElements || 0, 
-                totalPages: data.totalPages || 0 
+            return {
+                resultList: data.content || [],
+                totalCount: data.totalElements || 0,
+                totalPages: data.totalPages || 0
             };
         },
         staleTime: 60 * 1000,

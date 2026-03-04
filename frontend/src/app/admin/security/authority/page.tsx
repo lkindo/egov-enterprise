@@ -106,19 +106,19 @@ export default function AuthorityManagePage() {
                 </div>
             )
         },
-        { 
-            header: '권한명', 
-            accessor: (item: AuthorManage) => item.authorNm, 
-            className: 'font-bold' 
+        {
+            header: '권한명',
+            accessor: (item: AuthorManage) => item.authorNm,
+            className: 'font-bold'
         },
         {
-            header: '설명', 
+            header: '설명',
             accessor: (item: AuthorManage) => (
                 <span className="text-xs text-muted-foreground line-clamp-1 max-w-[250px]">{item.authorDc || '-'}</span>
             )
         },
-        { 
-            header: '등록일', 
+        {
+            header: '등록일',
             accessor: (item: AuthorManage) => (
                 <div className="flex items-center gap-1.5 text-slate-400 font-medium">
                     <Calendar size={12} className="opacity-40" />
@@ -186,8 +186,8 @@ export default function AuthorityManagePage() {
 
             <StandardSearchFilter
                 fields={filterFields}
-                onSearch={(values) => setParams(prev => ({ 
-                    ...prev, 
+                onSearch={(values) => setParams(prev => ({
+                    ...prev,
                     pageIndex: 1,
                     searchKeyword: values.searchKeyword || ''
                 }))}

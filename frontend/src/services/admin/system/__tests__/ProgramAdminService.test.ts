@@ -21,6 +21,6 @@ describe('ProgramAdminService', () => {
 
   it('getProgram should call with filename', async () => {
     await programAdminService.getProgram('test.do');
-    expect(client.get).toHaveBeenCalledWith('/admin/system/programs/test.do');
+    expect(client.get).toHaveBeenCalledWith('/admin/system/programs/test.do', undefined);
   });
 });

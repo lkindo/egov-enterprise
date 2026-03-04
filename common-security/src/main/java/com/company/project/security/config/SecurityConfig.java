@@ -48,10 +48,10 @@ public class SecurityConfig {
 
         /*
          * Commented out to avoid conflict with ApiSecurityConfig in api-server
-         * 
+         *
          * @Bean
          * public DaoAuthenticationProvider authenticationProvider(...) { ... }
-         * 
+         *
          * @Bean
          * public AuthenticationManager authenticationManager(...) { ... }
          */

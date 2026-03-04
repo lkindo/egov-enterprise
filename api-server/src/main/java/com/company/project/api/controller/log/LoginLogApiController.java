@@ -17,10 +17,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 로그??로그 관리�? ?�한 REST API 컨트롤러
+ * 로그??로그 관리? ?한 REST API 컨트롤러
  */
 @Slf4j
-@Tag(name = "LoginLog", description = "로그??로그 관�?API")
+@Tag(name = "LoginLog", description = "로그??로그 관?API")
 @RestController
 @RequestMapping("/api/v1/log/login")
 @RequiredArgsConstructor
@@ -30,9 +30,9 @@ public class LoginLogApiController {
     private final EgovPropertyService propertiesService;
 
     /**
-     * 로그??로그 목록??조회?�다.
+     * 로그??로그 목록??조회?다.
      */
-    @Operation(summary = "로그??로그 목록 조회", description = "검??조건???�른 로그??로그 목록??조회?�니??")
+    @Operation(summary = "로그??로그 목록 조회", description = "검??조건???른 로그??로그 목록??조회?니??")
     @GetMapping("/list")
     public ResponseEntity<?> selectLoginLogList(@ModelAttribute("searchVO") ComDefaultVO searchVO) throws Exception {
         searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
@@ -59,9 +59,9 @@ public class LoginLogApiController {
     }
 
     /**
-     * 로그??로그 ?�세 ?�보�?조회?�다.
+     * 로그??로그 ?세 ?보?조회?다.
      */
-    @Operation(summary = "로그??로그 ?�세 조회", description = "로그 ID�??�정 로그??로그???�세 ?�보�?조회?�니??")
+    @Operation(summary = "로그??로그 ?세 조회", description = "로그 ID??정 로그??로그???세 ?보?조회?니??")
     @GetMapping("/{logId}")
     public ResponseEntity<?> selectLoginLog(@PathVariable("logId") String logId) throws Exception {
         LoginLogDto result = loginLogManageService.selectLoginLog(logId.trim());

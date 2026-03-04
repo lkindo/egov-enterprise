@@ -11,7 +11,7 @@ export async function deleteCommentAction(commentNo: number) {
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     await client.delete(`/admin/system/comments/${commentNo}`, axiosConfig);
-    
+
     revalidatePath('/admin/system/comments');
     return { success: true, message: '댓글이 삭제되었습니다.' };
   } catch (error: any) {

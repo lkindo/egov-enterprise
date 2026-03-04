@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 const QUERY_KEY = ['admin', 'monitoring-networks'] as const;
 
 export default function NetworkMonitoringPage() {
-  
+
   const { data, isLoading, refetch } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: () => networkService.getNetworkLogs({ ntwrkId: 'all', page: 0, size: 50 }),
@@ -23,29 +23,29 @@ export default function NetworkMonitoringPage() {
   const logs: NetworkServiceStatus[] = data?.content || [];
 
   const columns = [
-    { 
-      header: '대상 시스템', 
-      accessor: (item: NetworkServiceStatus) => item.sysNm, 
-      className: 'font-black' 
+    {
+      header: '대상 시스템',
+      accessor: (item: NetworkServiceStatus) => item.sysNm,
+      className: 'font-black'
     },
-    { 
-      header: 'IP 주소', 
-      accessor: (item: NetworkServiceStatus) => item.sysIp, 
-      className: 'font-mono text-xs text-muted-foreground' 
+    {
+      header: 'IP 주소',
+      accessor: (item: NetworkServiceStatus) => item.sysIp,
+      className: 'font-mono text-xs text-muted-foreground'
     },
-    { 
-      header: '포트', 
-      accessor: (item: NetworkServiceStatus) => item.sysPort, 
-      className: 'w-20 font-mono text-xs' 
+    {
+      header: '포트',
+      accessor: (item: NetworkServiceStatus) => item.sysPort,
+      className: 'w-20 font-mono text-xs'
     },
     {
       header: '연결 상태',
       accessor: (item: NetworkServiceStatus) => <StatusBadge status={item.svcSttus === '01' ? 'Y' : 'N'} />
     },
-    { 
-      header: '최종 체크', 
-      accessor: (item: NetworkServiceStatus) => item.logDt, 
-      className: 'text-[10px] text-muted-foreground font-medium' 
+    {
+      header: '최종 체크',
+      accessor: (item: NetworkServiceStatus) => item.logDt,
+      className: 'text-[10px] text-muted-foreground font-medium'
     },
     {
       header: '액션',
@@ -60,11 +60,11 @@ export default function NetworkMonitoringPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      <PageHeader 
-        title="네트워크 및 서비스 가용성 관제" 
+      <PageHeader
+        title="네트워크 및 서비스 가용성 관제"
         breadcrumbs={[{ label: '시스템관리' }, { label: '모니터링' }, { label: '네트워크' }]}
         actions={
-          <Button 
+          <Button
             onClick={() => refetch()}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold shadow-md hover:bg-primary/90 transition-all"
           >
@@ -84,9 +84,9 @@ export default function NetworkMonitoringPage() {
             <Network size={14} /> 서비스 노드 연결 현황
           </h3>
         </div>
-        <StandardDataTable 
-          columns={columns} 
-          data={logs} 
+        <StandardDataTable
+          columns={columns}
+          data={logs}
           loading={isLoading}
           className="border-none rounded-none"
         />

@@ -63,20 +63,20 @@ public class NotificationDto {
                 .lastUpdusrPnttm(entity.getLastModifiedDate())
                 .build();
     }
-    
-    // ?꾨씫??硫붿�??�뱾 ?�붽?
+
+    // ?꾨씫??硫붿??뱾 ?붽?
     public String getNtfcTime() {
         return this.ntfcTime;
     }
-    
+
     public String getBhNtfcIntrvl() {
         return this.bhNtfcIntrvl;
     }
-    
+
     public void setNtfcTime(String ntfcTime) {
         this.ntfcTime = ntfcTime;
     }
-    
+
     public void setBhNtfcIntrvl(String bhNtfcIntrvl) {
         this.bhNtfcIntrvl = bhNtfcIntrvl;
     }

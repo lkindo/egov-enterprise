@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { 
-  Bold, Italic, List, ListOrdered, Link, 
-  Image as ImageIcon, AlignLeft, AlignCenter, AlignRight 
+import {
+  Bold, Italic, List, ListOrdered, Link,
+  Image as ImageIcon, AlignLeft, AlignCenter, AlignRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +49,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
         style={{ minHeight }}
         className="w-full p-4 resize-none outline-none bg-transparent text-sm leading-relaxed"
       />
-      
+
       {/* Word Count / Info */}
       <div className="px-4 py-2 border-t bg-muted/5 text-[10px] text-muted-foreground flex justify-end">
         {value.length} 자 입력됨

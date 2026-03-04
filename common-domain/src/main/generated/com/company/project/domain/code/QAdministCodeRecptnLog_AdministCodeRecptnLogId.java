@@ -8,7 +8,6 @@ import com.querydsl.core.types.PathMetadata;
 import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
 
-
 /**
  * QAdministCodeRecptnLog_AdministCodeRecptnLogId is a Querydsl query type for AdministCodeRecptnLogId
  */

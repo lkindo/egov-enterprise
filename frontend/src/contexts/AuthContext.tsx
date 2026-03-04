@@ -31,14 +31,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const checkAuth = useCallback(async () => {
         const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-        
+
         if (!token) {
             setUser(null);
             setLoading(false);
             return;
         }
 
-        // 토큰이 만료되었더라도 interceptor에서 reissue를 시도할 것이므로 
+        // 토큰이 만료되었더라도 interceptor에서 reissue를 시도할 것이므로
         // /auth/me를 호출하여 최종 유효성을 검증합니다.
         try {
             const userData = await authService.getCurrentUser();
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const login = useCallback(async (credentials: Record<string, string>) => {
         try {
             const data = await authService.login(credentials);
-            
+
             if (data && data.accessToken) {
                 localStorage.setItem('accessToken', data.accessToken);
                 // 서버 사이드 컴포넌트(SSR) 및 미들웨어 접근을 위해 쿠키에 저장
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (data.role) {
                     document.cookie = `userRole=${data.role}; path=/; max-age=86400; SameSite=Lax`;
                 }
-                
+
                 // 전역 상태 업데이트를 위해 내 정보 조회
                 await checkAuth();
             } else {

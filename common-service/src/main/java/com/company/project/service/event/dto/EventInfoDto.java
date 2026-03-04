@@ -75,7 +75,7 @@ public class EventInfoDto {
                 .eventConfmDe(entity.getEventConfmDe())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
-                .externalHrs(entity.getExternalHrs() != null ? 
+                .externalHrs(entity.getExternalHrs() != null ?
                         entity.getExternalHrs().stream()
                         .map(ExternalHrDto::from)
                         .collect(Collectors.toList()) : null)

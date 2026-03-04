@@ -50,4 +50,3 @@ public class ApprovalApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
-

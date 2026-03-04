@@ -26,13 +26,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
         String method = request.getMethod();
-        
+
         // 디버깅을 위한 무조건적인 로그 추가
         log.debug(">>> [JwtFilter] Processing request: {} {}", method, path);
-        
+
         try {
             String token = jwtTokenProvider.resolveToken(request);
-            
+
             if (token != null) {
                 log.debug(">>> [JwtFilter] Found token in header for path: {}", path);
                 if (jwtTokenProvider.validateToken(token)) {

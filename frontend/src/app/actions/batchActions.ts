@@ -11,7 +11,7 @@ export async function executeBatchAction(prevState: any, id: string) {
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     await client.post(`/admin/system/batches/schedules/${id}/execute`, null, axiosConfig);
-    
+
     revalidatePath('/admin/system/batch');
     return { success: true, message: '배치 실행 요청이 전송되었습니다.' };
   } catch (error: any) {

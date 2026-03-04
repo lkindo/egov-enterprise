@@ -2,7 +2,6 @@ package com.company.project.domain.user.repository;
 
 import com.company.project.domain.user.entity.*;
 
-
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;

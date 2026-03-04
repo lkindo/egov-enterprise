@@ -33,7 +33,6 @@ body {min-width: 1400px;}
 .util_menu .allmenu {background: url(../images/ico_allmenu.png) no-repeat;}
 .util_menu .allmenu.on {background: url(../images/ico_allmenu_on.png) no-repeat;}
 
-
 .container {min-height: calc(100vh - 360px);}
 .content {min-height: 700px; padding-bottom: 100px;}
 
@@ -59,7 +58,6 @@ body {min-width: 1400px;}
 
 .layout .content_wrap {display: table-cell; width: auto; padding-left: 70px;}
 
-
 /* popup */
 .popup {z-index: 10; position: fixed; left: 0; top: 0; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, .7);}
 .popup .pop_inner {position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 400px; border-radius: 19px; background: #fff;}
@@ -71,8 +69,6 @@ body {min-width: 1400px;}
 .pop_header h1 {padding: 42px 29px 0 29px; color: #222; font-size: 24px; font-weight: 700;}
 .pop_header .close {display: block; position: absolute; right: 39px; top: 40px; width: 30px; height: 30px; font-size: 0; background: url(../images/ico_pop_close.png) no-repeat;}
 
-
-
 /* location */
 .location {height: 70px; padding-top: 42px; text-align: right;}
 .location ul, .location ul li {display: inline-block; vertical-align: top;}
@@ -83,7 +79,6 @@ body {min-width: 1400px;}
 .location ul li a:hover {color: #222; text-decoration: underline;}
 .location ul li a.home {position: relative; padding-left: 19px;}
 .location ul li a.home::before {content: ""; display: block; position: absolute; left: 0; top: 3px; width: 14px; height: 13px; background: url(../images/ico_home.png) no-repeat;}
-
 
 .footer {border-top: 1px solid #d7d7d7;}
 .footer .inner {position: relative; width: 1400px; height: 179px; margin: 0 auto; padding: 0 50px;}
@@ -97,7 +92,6 @@ body {min-width: 1400px;}
 .footer .right_col {position: absolute; right: 65px; top: 72px;}
 .footer .right_col a {display: inline-block; height: 35px; vertical-align: top;}
 .footer .right_col a + a {margin-left: 56px;}
-
 
 .all_menu {display: none; position: absolute; left: 0; top: 180px; width: 100%; border-bottom: 1px solid #ddd; z-index: 99;}
 .all_menu > div {background: #fff;}
@@ -121,7 +115,6 @@ body {min-width: 1400px;}
 .all_menu .inner > div.admin ul li::before {content: ""; display: block; position: absolute; left: 0; top: 12px; width: 2px; height: 2px; background: #666;}
 .all_menu .inner > div.admin ul li + li {margin-top: 6px;}
 .all_menu .inner > div.admin ul li a {font-size: 16px;}
-
 
 .tit_1 + .txt_1 {margin-top: 42px;}
 .tit_1 + .tit_2 {margin-top: 49px;}

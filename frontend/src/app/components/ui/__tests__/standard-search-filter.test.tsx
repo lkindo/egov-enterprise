@@ -11,12 +11,12 @@ describe('StandardSearchFilter', () => {
 
   it('renders filter labels and placeholders', () => {
     render(
-      <StandardSearchFilter 
+      <StandardSearchFilter
         fields={mockFields}
-        onSearch={() => {}} 
+        onSearch={() => {}}
       />
     );
-    
+
     expect(screen.getByText('검색어')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('이름 검색')).toBeInTheDocument();
     expect(screen.getByText('상태')).toBeInTheDocument();
@@ -25,34 +25,34 @@ describe('StandardSearchFilter', () => {
   it('calls onSearch with collected values', () => {
     const onSearch = vi.fn();
     render(
-      <StandardSearchFilter 
+      <StandardSearchFilter
         fields={mockFields}
-        onSearch={onSearch} 
+        onSearch={onSearch}
       />
     );
-    
+
     const input = screen.getByPlaceholderText('이름 검색');
     fireEvent.change(input, { target: { value: '홍길동' } });
-    
+
     const submitBtn = screen.getByRole('button', { name: /검색 실행/i });
     fireEvent.click(submitBtn);
-    
+
     expect(onSearch).toHaveBeenCalledWith({ keyword: '홍길동' });
   });
 
   it('resets values when reset button is clicked', () => {
     const onReset = vi.fn();
     render(
-      <StandardSearchFilter 
+      <StandardSearchFilter
         fields={mockFields}
         onSearch={() => {}}
         onReset={onReset}
       />
     );
-    
+
     const resetBtn = screen.getByRole('button', { name: /필터 초기화/i });
     fireEvent.click(resetBtn);
-    
+
     expect(onReset).toHaveBeenCalled();
   });
 });

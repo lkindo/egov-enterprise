@@ -242,7 +242,6 @@ body {
     background: url(../images/ico_allmenu_on.png) no-repeat;
 }
 
-
 .container {
     min-height: calc(100vh - 360px);
 }
@@ -349,7 +348,6 @@ body {
     padding-left: 70px;
 }
 
-
 /* popup */
 .popup {
     z-index: 10;
@@ -410,8 +408,6 @@ body {
     font-size: 0;
     background: url(../images/ico_pop_close.png) no-repeat;
 }
-
-
 
 /* location */
 .location {
@@ -475,7 +471,6 @@ body {
     background: url(../images/ico_home.png) no-repeat;
 }
 
-
 .footer {
     border-top: 1px solid #d7d7d7;
 }
@@ -537,7 +532,6 @@ body {
 .footer .right_col a+a {
     margin-left: 56px;
 }
-
 
 .all_menu {
     display: none;
@@ -651,7 +645,6 @@ body {
 .all_menu .inner>div.admin ul li a {
     font-size: 16px;
 }
-
 
 .tit_1+.txt_1 {
     margin-top: 42px;

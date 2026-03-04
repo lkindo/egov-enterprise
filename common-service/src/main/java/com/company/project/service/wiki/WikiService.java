@@ -39,7 +39,7 @@ public class WikiService implements EgovWikiService {
     @Override
     public Page<WikiBookmarkDto> getBookmarkList(String userId, Pageable pageable) {
         Objects.requireNonNull(pageable);
-        // userId 湲곕�??꾪꽣�?濡쒖�?(Repository ?뺤옣 ?꾩슂)
+        // userId 湲곕??꾪꽣?濡쒖?(Repository ?뺤옣 ?꾩슂)
         return wikiBookmarkRepository.findAll(pageable)
                 .map(b -> WikiBookmarkDto.builder()
                         .wikiBkmkId(b.getWikiBkmkId())
@@ -50,7 +50,7 @@ public class WikiService implements EgovWikiService {
 
     @Override
     public boolean isDuplicated(String userId, String wikiBkmkNm) {
-        // 以묐??泥댄�?濡쒖�?(Repository ?뺤옣 ?꾩슂)
+        // 以묐??泥댄?濡쒖?(Repository ?뺤옣 ?꾩슂)
         return false;
     }
 }

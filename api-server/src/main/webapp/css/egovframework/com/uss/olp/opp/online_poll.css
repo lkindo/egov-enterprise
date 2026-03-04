@@ -8,7 +8,7 @@ dl.poll_chart dt { color: #444; margin-bottom: 7px; }
 dl.poll_chart dd { display: inline-block; margin-bottom: 13px; }
 dl.poll_chart dd:last-child { margin-bottom: 0; }
 dl.poll_chart ul li { position: relative; float: left; display: inline; }
-dl.poll_chart ul li:first-child { margin-right: 25px; } 
+dl.poll_chart ul li:first-child { margin-right: 25px; }
 dl.poll_chart ul li span.g_bar { display: inline-block; width: 580px; height: 8px; background: #e5e5e5; /* background: url('../images/poll_bar_gray.gif') repeat-x; */ }
 
 dl.poll_chart ul li span.g_bar2 { display: inline-block; width: 500px; height: 8px; background: #e5e5e5; text-align: left; /* background: url('../images/poll_bar_gray.gif') repeat-x; */ }

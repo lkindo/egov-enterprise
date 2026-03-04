@@ -10,7 +10,7 @@ public class NameCardUserId implements Serializable {
     private String emplyrId;
 
     public NameCardUserId() {}
-    
+
     public NameCardUserId(String ncrdId, String emplyrId) {
         this.ncrdId = ncrdId;
         this.emplyrId = emplyrId;

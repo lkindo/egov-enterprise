@@ -7,7 +7,7 @@ test.describe('Admin Common Code Management', () => {
         await page.fill('input[name="id"]', 'webmaster');
         await page.fill('input[name="password"]', '1');
         await page.click('button[type="submit"]');
-        
+
         // Wait for redirect to main/dashboard
         await page.waitForURL('/');
     });
@@ -22,7 +22,7 @@ test.describe('Admin Common Code Management', () => {
         // Check if table exists and has data (Wait for API response)
         const table = page.locator('table');
         await expect(table).toBeVisible();
-        
+
         // At least one row should be present in a standard eGov installation
         const rows = table.locator('tbody tr');
         await expect(rows.first()).toBeVisible();

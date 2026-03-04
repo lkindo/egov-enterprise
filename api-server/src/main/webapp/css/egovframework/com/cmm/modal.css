@@ -29,7 +29,7 @@
 
 /* Add Animation */
 @-webkit-keyframes animatetop {
-    from {top:-300px; opacity:0} 
+    from {top:-300px; opacity:0}
     to {top:0; opacity:1}
 }
 
@@ -63,7 +63,7 @@
 .modal-title {
     color: white;
     font-size:14px;
-  
+
 }
 
 .modal-header h2,
@@ -95,4 +95,3 @@
     float:left;font-size:11px;
 	margin: 0px 0px 0px 5px;
 }
-

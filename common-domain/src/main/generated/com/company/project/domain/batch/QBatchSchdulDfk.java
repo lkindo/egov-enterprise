@@ -9,7 +9,6 @@ import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
 import com.querydsl.core.types.dsl.PathInits;
 
-
 /**
  * QBatchSchdulDfk is a Querydsl query type for BatchSchdulDfk
  */

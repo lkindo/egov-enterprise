@@ -41,8 +41,8 @@ export function MultiStepStepper({ steps, currentStep, className }: MultiStepSte
           {/* Line */}
           {idx < steps.length - 1 && (
             <div className="flex-1 h-[2px] mx-4 bg-muted overflow-hidden">
-              <div 
-                className="h-full bg-primary transition-all duration-500 ease-out" 
+              <div
+                className="h-full bg-primary transition-all duration-500 ease-out"
                 style={{ width: currentStep > step.id ? '100%' : '0%' }}
               />
             </div>

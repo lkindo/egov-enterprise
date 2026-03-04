@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Vacation (User)", description = "???��? �??�차 관�?API (?�용?�용)")
+@Tag(name = "Vacation (User)", description = "???? ??차 관?API (?용?용)")
 @RestController
 @RequestMapping("/api/v1/vacations")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class VacationController {
 
     private final VacationService vacationService;
 
-    @Operation(summary = "?�의 ?��? ?�청 목록 조회", description = "?�용??본인???��? ?�청 목록???�이징하??조회?�니??")
+    @Operation(summary = "?의 ?? ?청 목록 조회", description = "?용??본인???? ?청 목록???이징하??조회?니??")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<VacationDto>>> getVacations(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -34,7 +34,7 @@ public class VacationController {
                 ApiResponse.success(vacationService.getVacationList(userDetails.getUsername(), searchWrd, pageable)));
     }
 
-    @Operation(summary = "?��? ?�청 ?�세 조회", description = "?�청???�일 ?��????�세 ?�보�??�인?�니??")
+    @Operation(summary = "?? ?청 ?세 조회", description = "?청???일 ?????세 ?보??인?니??")
     @GetMapping("/detail")
     public ResponseEntity<ApiResponse<VacationDto>> getVacation(
             @RequestParam String applcntId,
@@ -43,7 +43,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(vacationService.getVacation(applcntId, vcatnSe, bgnde)));
     }
 
-    @Operation(summary = "?��? ?�청", description = "?�로???��? ?�청?��? ?�록?�니??")
+    @Operation(summary = "?? ?청", description = "?로???? ?청?? ?록?니??")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> requestVacation(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -52,7 +52,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?��? ?�청 ?�정", description = "?��?중인 ?��? ?�청 ?�용???�정?�니??")
+    @Operation(summary = "?? ?청 ?정", description = "??중인 ?? ?청 ?용???정?니??")
     @PutMapping
     public ResponseEntity<ApiResponse<Void>> updateVacation(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -61,7 +61,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?��? ?�청 취소", description = "?�청???��? ?�보�???��(취소)?�니??")
+    @Operation(summary = "?? ?청 취소", description = "?청???? ?보???(취소)?니??")
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> deleteVacation(
             @RequestParam String applcntId,
@@ -71,7 +71,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "본인 ?�차 ?�황 조회", description = "로그?�한 ?�용?�의 ?�해 ?�도 ?�여 ?�차 ?�보�??�인?�니??")
+    @Operation(summary = "본인 ?차 ?황 조회", description = "로그?한 ?용?의 ?해 ?도 ?여 ?차 ?보??인?니??")
     @GetMapping("/yearly-leaves/my")
     public ResponseEntity<ApiResponse<YearlyLeaveDto>> getMyYearlyLeave(
             @AuthenticationPrincipal UserDetails userDetails,

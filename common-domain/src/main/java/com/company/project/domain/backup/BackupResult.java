@@ -51,7 +51,7 @@ public class BackupResult extends BaseEntity {
         this.executEndTime = executEndTime;
         this.setFrstRegisterId(frstRegisterId);
     }
-    
+
     // Missing method for compatibility
     public String getFrstRegistPnttm() {
         return this.getCreatedDate() != null ? this.getCreatedDate().toString() : null;

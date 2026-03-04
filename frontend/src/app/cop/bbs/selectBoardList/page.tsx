@@ -29,7 +29,7 @@ export const metadata: Metadata = {
  */
 export default async function BoardListPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
     const resolvedSearchParams = await searchParams;
-    
+
     // 파라미터 준비
     const params = {
         bbsId: (resolvedSearchParams.bbsId as string) || 'BBSMSTR_AAAAAAAAAAAA',

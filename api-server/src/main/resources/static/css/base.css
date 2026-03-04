@@ -4,18 +4,18 @@
 @font-face {font-family: 'Noto Sans KR';font-style: normal;font-weight: 300;
     src: url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Light.woff2) format('woff2'),
     url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Light.woff) format('woff'),
-    url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Light.otf) format('opentype');} 
-    
-@font-face {font-family: 'Noto Sans KR';font-style: normal;font-weight: 400;src: 
+    url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Light.otf) format('opentype');}
+
+@font-face {font-family: 'Noto Sans KR';font-style: normal;font-weight: 400;src:
     url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Regular.woff2) format('woff2'),
     url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Regular.woff) format('woff'),
-    url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Regular.otf) format('opentype');} 
-    
+    url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Regular.otf) format('opentype');}
+
 @font-face {font-family: 'Noto Sans KR';font-style: normal;font-weight: 500;
     src: url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Medium.woff2) format('woff2'),
     url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Medium.woff) format('woff'),
-    url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Medium.otf) format('opentype');} 
-    
+    url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Medium.otf) format('opentype');}
+
 @font-face {font-family: 'Noto Sans KR';font-style: normal;font-weight: 700;
     src: url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Bold.woff2) format('woff2'),
     url(https://fonts.gstatic.com/ea/notosanskr/v2/NotoSansKR-Bold.woff) format('woff'),
@@ -46,7 +46,6 @@ body {font-family: 'Noto Sans KR', sans-serif; font-size: 16px;}
 button, textarea {font-family: 'Noto Sans KR', sans-serif;}
 button {cursor: pointer;}
 
-
 /* 정렬 */
 .al_c {text-align: center !important;}
 .al_r {text-align: right !important;}
@@ -54,7 +53,6 @@ button {cursor: pointer;}
 
 .vat {vertical-align: top;}
 .vam {vertical-align: middle;}
-
 
 /* 가로길이 */
 .w_full {width: 100% !important;}
@@ -78,7 +76,6 @@ button {cursor: pointer;}
 .h_80 {height: 80px !important;}
 .h_200 {height: 200px !important;}
 .h_400 {height: 400px !important;}
-
 
 /* 여백 */
 .mt0 {margin-top: 0 !important;}

@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
  * ???벥??쇱굙??Repository
  */
 public interface MeetingReservationRepository extends JpaRepository<MeetingReservation, String> {
-    
+
     Page<MeetingReservation> findByMtgSjContaining(String mtgSj, Pageable pageable);
 
     Page<MeetingReservation> findByMtgPlaceId(String mtgPlaceId, Pageable pageable);

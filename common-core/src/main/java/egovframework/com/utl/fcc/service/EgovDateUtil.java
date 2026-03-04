@@ -15,7 +15,7 @@ import com.ibm.icu.util.ChineseCalendar;
 
 /**
  * Date ??????Util ?????
- * 
+ *
  * @author ?⑤벏???뺥돩??揶쏆뮆而?? ??곸㉦??
  * @since 2009.02.01
  * @version 1.0
@@ -320,7 +320,7 @@ public class EgovDateUtil {
 
 	/**
 	 * yyyyMMdd ?類ㅻ뻼???醫롮??얜챷???곸뱽 ?癒곕릭??筌?Ŧ???ch)嚥?筌잛눊而????젻餓Β??br/>
-	 * 
+	 *
 	 * <pre>
 	* ex) 20030405, ch(.) -> 2003.04.05
 	* ex) 200304, ch(.) -> 2003.04
@@ -384,7 +384,7 @@ public class EgovDateUtil {
 
 	/**
 	 * HH24MISS ?類ㅻ뻼????볦퍢?얜챷???곸뱽 ?癒곕릭??筌?Ŧ???ch)嚥?筌잛눊而????젻餓Β??<br>
-	 * 
+	 *
 	 * <pre>
 	 *     ex) 151241, ch(/) -> 15/12/31
 	 * </pre>
@@ -436,7 +436,7 @@ public class EgovDateUtil {
 	/**
 	 * ?袁⑹삺(??볥럢疫꿸퀣?) ?醫롮??類ｋ궖????노뮉?? <BR>
 	 * ??볥┛甕곕벡? yyyy-mm-dd <BR>
-	 * 
+	 *
 	 * @return String yyyymmdd?類κ묶???袁⑹삺 ??볥럢??볦퍢. <BR>
 	 */
 	public static String getToday() {
@@ -446,7 +446,7 @@ public class EgovDateUtil {
 	/**
 	 * ?袁⑹삺(??볥럢疫꿸퀣?) ?醫롮??類ｋ궖????노뮉?? <BR>
 	 * ??볥┛甕곕벡? yyyy-mm-dd <BR>
-	 * 
+	 *
 	 * @return String yyyymmdd?類κ묶???袁⑹삺 ??볥럢??볦퍢. <BR>
 	 */
 	public static String getCurrentDate(String dateType) {
@@ -468,7 +468,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ?醫롮??類κ묶??String???醫롮? ???롳쭕??뱽 癰궰野껋?鍮?雅뚯눖??筌롫뗄苑??
-	 * 
+	 *
 	 * @param sDate      ?醫롮?
 	 * @param sTime      ??볦퍢
 	 * @param sFormatStr ??캡 ??쎈뱜筌??얜챷???
@@ -482,14 +482,14 @@ public class EgovDateUtil {
 	 *      am/pm (1-12) Number 12 m Minute in hour Number 30 s Second in minute
 	 *      Number 55 S Millisecond Number 978 z Time zone General time zone Pacific
 	 *      Standard Time; PST; GMT-08:00 Z Time zone RFC 822 time zone -0800
-	 * 
+	 *
 	 *      Date and Time Pattern Result "yyyy.MM.dd G 'at' HH:mm:ss z" 2001.07.04
 	 *      AD at 12:08:56 PDT "EEE, MMM d, ''yy" Wed, Jul 4, '01 "h:mm a" 12:08 PM
 	 *      "hh 'o''clock' a, zzzz" 12 o'clock PM, Pacific Daylight Time "K:mm a, z"
 	 *      0:08 PM, PDT "yyyyy.MMMMM.dd GGG hh:mm aaa" 02001.July.04 AD 12:08 PM
 	 *      "EEE, d MMM yyyy HH:mm:ss Z" Wed, 4 Jul 2001 12:08:56 -0700
 	 *      "yyMMddHHmmssZ" 010704120856-0700
-	 * 
+	 *
 	 */
 	public static String convertDate(String sDate, String sTime, String sFormatStr) {
 		String dateStr = validChkDate(sDate);
@@ -511,7 +511,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ??낆젾獄쏆룇? ??깆쁽 ??????袁⑹벥????깆쁽??獄쏆꼹??
-	 * 
+	 *
 	 * @param sDate1 ??뽰삂??깆쁽
 	 * @param sDate2 ?ル굝利??깆쁽
 	 * @return ?袁⑹벥??깆쁽
@@ -559,7 +559,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ??낆젾獄쏆룇? ?臾먯젾??깆쁽??癰궰??묐릭?????젾??깆쁽嚥?獄쏆꼹??
-	 * 
+	 *
 	 * @param sDate ?臾먯젾??깆쁽
 	 * @return ???젾??깆쁽
 	 */
@@ -608,7 +608,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ??낆젾獄쏆룇? ???젾??깆쁽??癰궰??묐릭???臾먯젾??깆쁽嚥?獄쏆꼹??
-	 * 
+	 *
 	 * @param sDate      ???젾??깆쁽
 	 * @param iLeapMonth ???젾??삳뼎???(IS_LEAP_MONTH)
 	 * @return ?臾먯젾??깆쁽
@@ -645,7 +645,7 @@ public class EgovDateUtil {
 
 	/**
 	 * Converts week string to display string.
-	 * 
+	 *
 	 * @param sWeek Week string (SUN, MON, etc)
 	 * @return Display string
 	 */
@@ -673,7 +673,7 @@ public class EgovDateUtil {
 
 	/**
 	 * Validates date string.
-	 * 
+	 *
 	 * @param sDate Date string
 	 * @return true if valid
 	 */
@@ -711,7 +711,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ??낆젾??깆쁽, ?遺우뵬???醫륁뒞 ??????類ㅼ뵥
-	 * 
+	 *
 	 * @param sDate ??깆쁽
 	 * @param sWeek ?遺우뵬 (DAY_OF_WEEK)
 	 * @return ?醫륁뒞 ???
@@ -741,7 +741,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ??낆젾??볦퍢???醫륁뒞 ??????類ㅼ뵥
-	 * 
+	 *
 	 * @param sTime ??낆젾??볦퍢
 	 * @return ?醫륁뒞 ???
 	 */
@@ -775,7 +775,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ??낆젾????깆쁽???? ?? ??깆뱽 揶쎛揶쏅?釉??醫롮????遺우뵬??獄쏆꼹??
-	 * 
+	 *
 	 * @param sDate ?醫롮?
 	 * @param year  ??
 	 * @param month ??
@@ -802,7 +802,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ??낆젾????깆쁽???? ?? ?? ??볦퍢, ?브쑴??揶쎛揶쏅?釉??醫롮?, ??볦퍢????캡??쎈뱜筌??類ㅻ뻼??곗쨮 獄쏆꼹??
-	 * 
+	 *
 	 * @param sDate     ?醫롮?
 	 * @param sTime     ??볦퍢
 	 * @param year      ??
@@ -846,7 +846,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ??낆젾????깆쁽??int ?類ㅼ몵嚥?獄쏆꼹??
-	 * 
+	 *
 	 * @param sDate ??깆쁽
 	 * @return int(??깆쁽)
 	 */
@@ -856,7 +856,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ??낆젾????볦퍢??int ?類ㅼ몵嚥?獄쏆꼹??
-	 * 
+	 *
 	 * @param sTime ??볦퍢
 	 * @return int(??볦퍢)
 	 */
@@ -866,7 +866,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ??낆젾????깆쁽 ?얜챷???곸뱽 ?類ㅼ뵥??랁?8?癒?봺嚥??귐뗪쉘
-	 * 
+	 *
 	 * @param dateStr
 	 * @return
 	 */
@@ -887,7 +887,7 @@ public class EgovDateUtil {
 
 	/**
 	 * ??낆젾????깆쁽 ?얜챷???곸뱽 ?類ㅼ뵥??랁?8?癒?봺嚥??귐뗪쉘
-	 * 
+	 *
 	 * @param timeStr
 	 * @return
 	 */

@@ -12,10 +12,10 @@ interface AccessControlProps {
 /**
  * 사용자 권한에 따라 하위 요소를 숨기거나 보여주는 컴포넌트
  */
-export function AccessControl({ 
-  children, 
-  allowedRoles = [], 
-  fallback = null 
+export function AccessControl({
+  children,
+  allowedRoles = [],
+  fallback = null
 }: AccessControlProps) {
   const { user } = useAuth();
 

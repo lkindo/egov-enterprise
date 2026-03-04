@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * SMS ??�퉬???명꽣??�씠??
+ * SMS ??퉬???명꽣??씠??
  */
 public interface EgovSmsService {
 

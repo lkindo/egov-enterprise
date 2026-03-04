@@ -17,7 +17,7 @@ export async function saveBannerAction(prevState: any, { mode, data, id }: { mod
     } else {
       await client.put(`/banners/${id}`, data, axiosConfig);
     }
-    
+
     revalidatePath('/admin/system/banner');
     return { success: true, message: `배너가 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
   } catch (error: any) {
@@ -33,7 +33,7 @@ export async function deleteBannerAction(prevState: any, id: string) {
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     await client.delete(`/banners/${id}`, axiosConfig);
-    
+
     revalidatePath('/admin/system/banner');
     return { success: true, message: '배너가 삭제되었습니다.' };
   } catch (error: any) {
@@ -54,7 +54,7 @@ export async function savePopupAction(prevState: any, { mode, data, id }: { mode
     } else {
       await client.put(`/popups/${id}`, data, axiosConfig);
     }
-    
+
     revalidatePath('/admin/system/banner');
     return { success: true, message: `팝업이 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
   } catch (error: any) {
@@ -70,7 +70,7 @@ export async function deletePopupAction(prevState: any, id: string) {
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
     await client.delete(`/popups/${id}`, axiosConfig);
-    
+
     revalidatePath('/admin/system/banner');
     return { success: true, message: '팝업이 삭제되었습니다.' };
   } catch (error: any) {

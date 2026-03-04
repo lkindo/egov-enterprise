@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 배치?��?�?관리�? ?�한 컨트롤러 ?�래?? */
+ * 배치???관리? ?한 컨트롤러 ?래?? */
 @Slf4j
 @Controller
 @RequiredArgsConstructor
@@ -57,7 +57,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * 배치?��?�?목록??조회?�다.
+     * 배치???목록??조회?다.
      */
     @RequestMapping({ "/sym/bat/getBatchSchdulList.do", "/sym/bat/EgovBatchSchdulList.do" })
     public String selectBatchSchdulList(@ModelAttribute("searchVO") BatchSchdul searchVO, ModelMap model)
@@ -87,7 +87,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * 배치?��?�??�세 ?�보�?조회?�다.
+     * 배치????세 ?보?조회?다.
      */
     @RequestMapping("/sym/bat/getBatchSchdul.do")
     public String selectBatchSchdul(@ModelAttribute("searchVO") BatchSchdul batchSchdul, ModelMap model)
@@ -98,7 +98,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * 배치?��?�??�보�???��?�다.
+     * 배치????보????다.
      */
     @RequestMapping("/sym/bat/deleteBatchSchdul.do")
     public String deleteBatchSchdul(BatchSchdul batchSchdul, ModelMap model) throws Exception {
@@ -114,7 +114,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * 배치?��?�??�록 ?�면?�로 ?�동?�다.
+     * 배치????록 ?면?로 ?동?다.
      */
     @RequestMapping("/sym/bat/getBatchSchdulForRegist.do")
     public String selectBatchSchdulForRegist(@ModelAttribute("searchVO") BatchSchdul batchSchdul, ModelMap model)
@@ -125,7 +125,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * 배치?��?�??�보�??�록?�다.
+     * 배치????보??록?다.
      */
     @RequestMapping("/sym/bat/addBatchSchdul.do")
     public String insertBatchSchdul(@Valid @ModelAttribute("batchSchdul") BatchSchdul batchSchdul,
@@ -151,7 +151,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * 배치?��?�??�정 ?�면?�로 ?�동?�다.
+     * 배치????정 ?면?로 ?동?다.
      */
     @RequestMapping("/sym/bat/getBatchSchdulForUpdate.do")
     public String selectBatchSchdulForUpdate(@ModelAttribute("searchVO") BatchSchdul batchSchdul, ModelMap model)
@@ -163,7 +163,7 @@ public class EgovBatchSchdulController {
     }
 
     /**
-     * 배치?��?�??�보�??�정?�다.
+     * 배치????보??정?다.
      */
     @RequestMapping("/sym/bat/updateBatchSchdul.do")
     public String updateBatchSchdul(@Valid @ModelAttribute("batchSchdul") BatchSchdul batchSchdul,

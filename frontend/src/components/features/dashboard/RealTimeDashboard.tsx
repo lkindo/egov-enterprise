@@ -52,7 +52,7 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
   const handleNotification = useCallback((notification: RealTimeNotification) => {
     setNotifications(prev => [notification, ...prev].slice(0, 50)); // 최대 50 개 보관
     onNotification?.(notification);
-    
+
     // 브라우저 알림
     if (Notification.permission === 'granted') {
       new Notification(notification.title, {
@@ -112,7 +112,7 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
             {isConnected ? '실시간 연결됨' : '연결 끊김'}
           </span>
         </div>
-        
+
         {/* 알림 버튼 */}
         <div className="relative">
           <Button
@@ -123,8 +123,8 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
           >
             <Bell size={18} />
             {unreadCount > 0 && (
-              <Badge 
-                variant="destructive" 
+              <Badge
+                variant="destructive"
                 className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
               >
                 {unreadCount}

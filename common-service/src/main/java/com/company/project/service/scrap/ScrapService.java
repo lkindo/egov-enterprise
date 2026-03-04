@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * ??�겕????�퉬???�ы쁽�?
+ * ??겕????퉬???ы쁽?
  */
 @Service("egovScrapService")
 @RequiredArgsConstructor

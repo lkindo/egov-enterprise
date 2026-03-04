@@ -8,7 +8,6 @@ import com.querydsl.core.types.PathMetadata;
 import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
 
-
 /**
  * QRoadNameAddressZipCode_RoadNameAddressZipId is a Querydsl query type for RoadNameAddressZipId
  */

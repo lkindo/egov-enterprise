@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * �??�??DTO
+ * ????DTO
  */
 @Getter
 @Setter
@@ -15,19 +15,19 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoleManageDto {
-    /** �??�붾�?*/
+    /** ??붾?*/
     private String roleCode;
-    /** �?�?*/
+    /** ??*/
     private String roleNm;
-    /** �????�� */
+    /** ???? */
     private String rolePttrn;
-    /** �???�챸 */
+    /** ???챸 */
     private String roleDc;
-    /** �??좏삎 */
+    /** ??좏삎 */
     private String roleTy;
-    /** �??뺣젹??�꽌 */
+    /** ??뺣젹??꽌 */
     private String roleSort;
-    /** ??�꽦??�떆 */
+    /** ??꽦??떆 */
     private String creatDt;
 
     // Manual getters to bypass potential Lombok issues

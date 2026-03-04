@@ -53,10 +53,10 @@ describe('Sidebar', () => {
             if (url.startsWith('/menu/left')) {
                 return Promise.resolve({
                     list: [
-                        { 
-                            menuNo: 10, 
-                            menuNm: 'Group 1', 
-                            children: [{ menuNo: 101, menuNm: 'Sub Menu 1', chkURL: '/cop/bbs/selectBoardList' }] 
+                        {
+                            menuNo: 10,
+                            menuNm: 'Group 1',
+                            children: [{ menuNo: 101, menuNm: 'Sub Menu 1', chkURL: '/cop/bbs/selectBoardList' }]
                         }
                     ]
                 });
@@ -79,10 +79,10 @@ describe('Sidebar', () => {
             if (url === '/menu/head') return Promise.resolve({ list: [{ menuNo: 1, menuNm: 'Root' }] });
             if (url.startsWith('/menu/left')) {
                 return Promise.resolve({
-                    list: [{ 
-                        menuNo: 10, 
-                        menuNm: 'Group', 
-                        children: [{ menuNo: 101, menuNm: 'Active Menu', chkURL: '/cop/bbs/selectBoardList' }] 
+                    list: [{
+                        menuNo: 10,
+                        menuNm: 'Group',
+                        children: [{ menuNo: 101, menuNm: 'Active Menu', chkURL: '/cop/bbs/selectBoardList' }]
                     }]
                 });
             }

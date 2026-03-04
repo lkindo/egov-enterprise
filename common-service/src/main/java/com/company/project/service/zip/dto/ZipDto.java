@@ -17,20 +17,20 @@ import lombok.Setter;
 public class ZipDto {
     /** ?고렪踰덊??*/
     private String zip;
-    /** ??�젴踰덊??*/
+    /** ??젴踰덊??*/
     private Integer sn;
-    /** ??�룄�?*/
+    /** ??룄?*/
     private String ctprvnNm;
-    /** ??�뎔?�щ챸 */
+    /** ??뎔?щ챸 */
     private String signguNm;
-    /** ??�㈃??�챸 */
+    /** ??㈃??챸 */
     private String emdNm;
-    /** ?�ш굔?�쇰�?*/
+    /** ?ш굔?쇰?*/
     private String liBuldNm;
-    /** 踰덉???�샇 */
+    /** 踰덉???샇 */
     private String lnbrDongHo;
     /** 理쒖??깅줉?륤D */
     private String frstRegisterId;
-    /** 理쒖�??�젙?륤D */
+    /** 理쒖??젙?륤D */
     private String lastUpdusrId;
 }

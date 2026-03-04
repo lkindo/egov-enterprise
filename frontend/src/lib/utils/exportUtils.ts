@@ -15,7 +15,7 @@ export function exportToCsv<T>(data: T[], columns: { header: string; accessorKey
   const csvContent = [headerRow, ...dataRows].join('\n');
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
-  
+
   if (link.download !== undefined) {
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);

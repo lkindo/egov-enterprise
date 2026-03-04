@@ -17,7 +17,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 // Mock useToast with stable object
-const toastMock = { 
+const toastMock = {
   toast: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),

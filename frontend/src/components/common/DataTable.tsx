@@ -9,10 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { 
-  ChevronUp, 
-  ChevronDown, 
-  ChevronsUpDown, 
+import {
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
   Download,
   Search,
   RefreshCw
@@ -107,7 +107,7 @@ export function DataTable<T>({
           <TableHeader className="bg-muted/30">
             <TableRow>
               {columns.map((column, idx) => (
-                <TableHead 
+                <TableHead
                   key={`${String(column.accessorKey)}-${idx}`}
                   className={cn(
                     "h-11 font-bold text-xs uppercase tracking-wider",

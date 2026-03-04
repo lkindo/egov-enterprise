@@ -87,9 +87,9 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl shadow-2xl border-primary/10">
                       {field.options?.map(opt => (
-                        <SelectItem 
-                          key={opt.value || '__ALL__'} 
-                          value={opt.value === '' ? '__ALL__' : opt.value} 
+                        <SelectItem
+                          key={opt.value || '__ALL__'}
+                          value={opt.value === '' ? '__ALL__' : opt.value}
                           className="text-xs font-bold rounded-xl m-1"
                         >
                           {opt.label}

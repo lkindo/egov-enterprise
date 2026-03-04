@@ -44,9 +44,9 @@ import lombok.extern.slf4j.Slf4j;
 
  * ?     ??      ?         ?REST API Controller
 
- * 
+ *
 
- * Next.js ?         ?         ??      ???????       ?          JSON             ?REST API ??      
+ * Next.js ?         ?         ??      ???????       ?          JSON             ?REST API ??
 
  */
 
@@ -138,7 +138,7 @@ public class DeptJobController {
 
     /**
 
-     * ?     ??      ?         ??         
+     * ?     ??      ?         ??
 
      */
 
@@ -184,7 +184,7 @@ public class DeptJobController {
 
     /**
 
-     * ?     ??      ?         ???      
+     * ?     ??      ?         ???
 
      */
 

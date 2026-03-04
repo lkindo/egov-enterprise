@@ -4,7 +4,7 @@ export interface OnlinePollManageVO {
     pollBeginDe: string; // YYYY-MM-DD
     pollEndDe: string;   // YYYY-MM-DD
     pollKindCode: string; // COM039 (001: 찬반, 002: 선택)
-    pollDsuseYn: string;  // N: 사용, Y: 폐기 (Backend naming seems to be 'Y' for disuse?) -> Check controller or VO logic. Usually 'Y' means deleted/unused. 
+    pollDsuseYn: string;  // N: 사용, Y: 폐기 (Backend naming seems to be 'Y' for disuse?) -> Check controller or VO logic. Usually 'Y' means deleted/unused.
     // Controller: pollDsuseYn
     frstRegisterId?: string;
     frstRegisterNm?: string;

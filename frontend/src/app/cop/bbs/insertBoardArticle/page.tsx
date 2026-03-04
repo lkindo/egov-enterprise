@@ -10,16 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Edit3, 
-  Send, 
-  ArrowLeft, 
-  Home, 
-  ChevronRight, 
-  MessageSquare, 
-  Info, 
-  Type, 
-  FileText, 
+import {
+  Edit3,
+  Send,
+  ArrowLeft,
+  Home,
+  ChevronRight,
+  MessageSquare,
+  Info,
+  Type,
+  FileText,
   Paperclip,
   CheckCircle2,
   AlertCircle
@@ -67,7 +67,7 @@ const InsertBBSContent = () => {
                     {/* Background Accents */}
                     <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
                     <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-blue-500/10 rounded-full blur-[100px]" />
-                    
+
                     <div className="flex flex-col md:flex-row items-center justify-between gap-10 relative z-10">
                         <div className="space-y-6 text-center md:text-left">
                             <div className="flex items-center gap-3 px-5 py-2 bg-white/10 w-fit rounded-full border border-white/10 backdrop-blur-xl mx-auto md:mx-0">
@@ -147,7 +147,7 @@ const InsertBBSContent = () => {
                                 <Paperclip className="w-4 h-4" /> 03. Attachments
                             </Label>
                             <div className="p-8 rounded-[2.5rem] border-2 border-dashed border-primary/10 bg-muted/20 hover:border-primary/30 transition-all">
-                                <StandardFileUploader 
+                                <StandardFileUploader
                                     onFilesChange={setFiles}
                                     maxFiles={5}
                                     maxSizeMB={20}
@@ -164,7 +164,7 @@ const InsertBBSContent = () => {
                             <div className="space-y-3 relative z-10 text-center md:text-left">
                                 <h4 className="text-2xl font-black text-white tracking-tight uppercase italic">Final Check</h4>
                                 <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xl">
-                                    게시글을 등록하기 전에 오타나 민감한 정보가 포함되어 있는지 다시 한번 확인해주세요. 
+                                    게시글을 등록하기 전에 오타나 민감한 정보가 포함되어 있는지 다시 한번 확인해주세요.
                                     등록된 글은 모든 사원들이 열람할 수 있습니다.
                                 </p>
                             </div>
@@ -172,17 +172,17 @@ const InsertBBSContent = () => {
                     </CardContent>
 
                     <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-20 border-t border-primary/5 bg-muted/5 px-12 md:px-20 rounded-b-[3.5rem]">
-                        <Button 
-                            type="button" 
-                            variant="ghost" 
+                        <Button
+                            type="button"
+                            variant="ghost"
                             onClick={() => router.back()}
                             className="h-20 px-16 font-black uppercase tracking-[0.3em] text-xs text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition-all rounded-2xl active:scale-95 border-2 border-transparent"
                         >
                             <ArrowLeft className="w-5 h-5 mr-4" /> Cancel & Return
                         </Button>
-                         <Button 
-                            type="submit" 
-                            className="h-20 px-24 gap-4 font-black uppercase tracking-[0.3em] text-xs shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95 ring-[12px] ring-primary/5 rounded-2xl" 
+                         <Button
+                            type="submit"
+                            className="h-20 px-24 gap-4 font-black uppercase tracking-[0.3em] text-xs shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95 ring-[12px] ring-primary/5 rounded-2xl"
                             disabled={isPending}
                         >
                             {isPending ? (

@@ -12,12 +12,12 @@ interface ReorderableListProps<T> {
   className?: string;
 }
 
-export function ReorderableList<T>({ 
-  items, 
-  onReorder, 
-  renderItem, 
+export function ReorderableList<T>({
+  items,
+  onReorder,
+  renderItem,
   keyExtractor,
-  className 
+  className
 }: ReorderableListProps<T>) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -35,7 +35,7 @@ export function ReorderableList<T>({
     const draggedItem = newItems[draggedIndex];
     newItems.splice(draggedIndex, 1);
     newItems.splice(index, 0, draggedItem);
-    
+
     setDraggedIndex(index);
     onReorder(newItems);
   };

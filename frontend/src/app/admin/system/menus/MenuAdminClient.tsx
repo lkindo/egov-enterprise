@@ -32,7 +32,6 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { saveMenuAction, updateMenuOrdersAction, deleteMenuAction } from '@/app/actions/menuActions';
 
-
 // Helper to build tree from flat list
 const buildMenuTree = (flatMenus: MenuInfo[]): MenuInfo[] => {
   const map: Record<number, MenuInfo> = {};
@@ -167,7 +166,6 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     }
   };
 
-
   const [draggedMenuId, setDraggedMenuId] = useState<number | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
@@ -282,7 +280,6 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     }
     setDraggedMenuId(null);
   };
-
 
   // Simplified Recursive Drag and Drop Component
   const MenuNode = ({ item, level = 0 }: { item: MenuInfo; level: number }) => {
@@ -454,7 +451,6 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         </div>
       </div>
 
-
       <div className="space-y-8">
         {treeMenus.map(menu => (
           <MenuNode key={menu.menuNo} item={menu} level={0} />
@@ -559,4 +555,3 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     </div>
   );
 }
-

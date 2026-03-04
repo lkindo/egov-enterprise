@@ -26,7 +26,7 @@ public class ProgramService {
     private final ProgramRepository programRepository;
 
     /**
-     * ?꾨줈洹몃??紐⑸�?議고??     */
+     * ?꾨줈洹몃??紐⑸?議고??     */
     public List<ProgramDto> selectProgrmList(ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
                 Sort.by("progrmFileNm").ascending());
@@ -45,7 +45,7 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃????�???議고??     */
+     * ?꾨줈洹몃???????議고??     */
     public int selectProgrmListTotCnt(ComDefaultVO searchVO) {
         String keyword = searchVO.getSearchKeyword();
         if (keyword != null && !keyword.isEmpty()) {
@@ -87,7 +87,7 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃????�젙
+     * ?꾨줈洹몃????젙
      */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
@@ -106,7 +106,7 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃??紐⑸�?硫??????     */
+     * ?꾨줈洹몃??紐⑸?硫??????     */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void deleteProgrmManageList(String checkedProgrmFileNmForDel) {

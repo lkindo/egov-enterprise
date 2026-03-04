@@ -17,11 +17,11 @@ describe('Layout Components', () => {
   it('ScrollToTop handles route changes', async () => {
     window.scrollTo = vi.fn();
     render(<ScrollToTop />);
-    
+
     act(() => {
       vi.runAllTimers();
     });
-    
+
     expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 });

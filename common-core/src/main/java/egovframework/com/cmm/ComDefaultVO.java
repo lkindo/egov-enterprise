@@ -135,7 +135,7 @@ public class ComDefaultVO implements Serializable {
 
     /**
      * searchKeywordFrom attribute???귐뗪쉘??뺣뼄.
-     * 
+     *
      * @return String
      */
     public String getSearchKeywordFrom() {
@@ -144,7 +144,7 @@ public class ComDefaultVO implements Serializable {
 
     /**
      * searchKeywordFrom attribute 揶쏅?????쇱젟??뺣뼄.
-     * 
+     *
      * @param searchKeywordFrom String
      */
     public void setSearchKeywordFrom(String searchKeywordFrom) {
@@ -153,7 +153,7 @@ public class ComDefaultVO implements Serializable {
 
     /**
      * searchKeywordTo attribute???귐뗪쉘??뺣뼄.
-     * 
+     *
      * @return String
      */
     public String getSearchKeywordTo() {
@@ -162,7 +162,7 @@ public class ComDefaultVO implements Serializable {
 
     /**
      * searchKeywordTo attribute 揶쏅?????쇱젟??뺣뼄.
-     * 
+     *
      * @param searchKeywordTo String
      */
     public void setSearchKeywordTo(String searchKeywordTo) {

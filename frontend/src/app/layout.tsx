@@ -8,9 +8,6 @@ import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
 import { ScrollToTop } from './components/layout/scroll-to-top';
 
-
-
-
 export const metadata: Metadata = {
   title: '전자정부 프레임워크 현대화',
   description: 'KRDS 기반 모던 전사 공통 모듈',

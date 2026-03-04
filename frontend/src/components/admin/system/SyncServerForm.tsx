@@ -29,8 +29,8 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
     <StandardForm onSubmit={handleSubmit} className="border-none shadow-none rounded-none p-0">
       <div className="space-y-6">
         <FormField label="동기화 서버명" required>
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={formData.serverNm || ''}
             onChange={(e) => setFormData({...formData, serverNm: e.target.value})}
             placeholder="예: 백업용 2호기 서버"
@@ -38,11 +38,11 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
             required
           />
         </FormField>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField label="IP 주소" required>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={formData.serverIp || ''}
               onChange={(e) => setFormData({...formData, serverIp: e.target.value})}
               placeholder="10.0.0.1"
@@ -63,8 +63,8 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
         </div>
 
         <FormField label="대상 디렉토리" required>
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={formData.targetDrctry || ''}
             onChange={(e) => setFormData({...formData, targetDrctry: e.target.value})}
             placeholder="/data/sync_backup"
@@ -74,7 +74,7 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
         </FormField>
 
         <FormField label="동기화 활성화" required>
-          <select 
+          <select
             value={formData.syncAt}
             onChange={(e) => setFormData({...formData, syncAt: e.target.value as 'Y' | 'N'})}
             className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
@@ -84,7 +84,7 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
           </select>
         </FormField>
       </div>
-      
+
       <div className="flex justify-end gap-2 pt-6">
         <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg font-bold">취소</button>
         <button type="submit" className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all">

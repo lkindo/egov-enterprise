@@ -32,8 +32,7 @@
 		.view_type_top ul li a { display:block; text-align:center; width:100px; height:28px; line-height: 28px; color: #000; font-weight: bold; padding: 0 10px; background-color: #f4f4f4; border: 1px solid #e6e6e6; }
 		.view_type_top ul li a:hover { background-color: #e6e6e6; }
 		.view_type_top ul li a.on { background-color: #0c4ca4; color: #fff; border: 1px solid #0c4ca4; }
-		
-		
+
 	.month { width: 100%; table-layout: fixed; border-top: 2px solid #0c4ca4; }
 	.month caption { display: none; }
 	.month thead th { text-align: left; color: #333; padding: 11px 0 12px 8px; background-color: #f4f4f4; }
@@ -56,7 +55,7 @@
 	.month tbody td.pink_txt { color: #ea4367; }
 	.month tbody td.org_bg { background-color: #f58555; }
 	.month tbody td.org_txt { color: #f3672a; }
-	.month tbody td.green_bg { background-color: #93cc4b; }                                 
+	.month tbody td.green_bg { background-color: #93cc4b; }
 	.month tbody td.green_txt { color: #71a82b; }
 	.month tbody span.arrow { float: right; width: 4px; height: 5px; margin-top: 4px; background: url('../../../../../../images/egovframework/com/cop/smt/sdm/bullet_arrow.png') no-repeat; text-indent: -10000em; }s
 
@@ -66,7 +65,7 @@
 		.title thead th { height: 50px; text-align: center; color: #333; font-weight: normal; padding-left: 8px; background-color: #f4f4f4; }
 		.title tbody tr { border-bottom: 1px solid #fff; }
 		.title tbody td { vertical-align:middle;padding: 0px 0px 0px 2px; border-left: 1px solid #e6e6e6; text-align: center; font-size: 12px; }
-		/* 
+		/*
 		.title thead th:nth-child(2),
 		.title tbody td.holiday { color: #d90101 !important; }
 		*/

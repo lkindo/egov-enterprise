@@ -23,7 +23,7 @@ const data: MockData[] = [
 describe('DataTable', () => {
   it('renders table headers and data correctly', () => {
     render(<DataTable columns={columns} data={data} title="Test Table" />);
-    
+
     expect(screen.getByText('Test Table')).toBeInTheDocument();
     expect(screen.getByText('ID')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
@@ -38,10 +38,10 @@ describe('DataTable', () => {
   it('calls onSort when a sortable header is clicked', () => {
     const onSort = vi.fn();
     render(<DataTable columns={columns} data={data} onSort={onSort} />);
-    
+
     const idHeader = screen.getByText('ID');
     fireEvent.click(idHeader);
-    
+
     expect(onSort).toHaveBeenCalledWith('id', 'asc');
   });
 
@@ -54,10 +54,10 @@ describe('DataTable', () => {
   it('calls onExport when export button is clicked', () => {
     const onExport = vi.fn();
     render(<DataTable columns={columns} data={data} onExport={onExport} />);
-    
+
     const exportBtn = screen.getByRole('button', { name: /export/i });
     fireEvent.click(exportBtn);
-    
+
     expect(onExport).toHaveBeenCalled();
   });
 });

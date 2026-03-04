@@ -20,7 +20,7 @@ test.describe('Admin User Management', () => {
         // Check if table exists
         const table = page.locator('table');
         await expect(table).toBeVisible();
-        
+
         // At least the admin user should be present
         const rows = table.locator('tbody tr');
         await expect(rows.first()).toBeVisible();

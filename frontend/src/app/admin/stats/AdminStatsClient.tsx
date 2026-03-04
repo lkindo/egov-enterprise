@@ -6,13 +6,13 @@ import { StandardChartWrapper } from '@/app/components/ui/standard-chart-wrapper
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { SummaryStats, MenuStats } from '@/types/stats';
-import { 
-  BarChart3, 
-  Users, 
-  FileText, 
-  MousePointer2, 
-  AlertTriangle, 
-  TrendingUp, 
+import {
+  BarChart3,
+  Users,
+  FileText,
+  MousePointer2,
+  AlertTriangle,
+  TrendingUp,
   Globe,
   RefreshCcw,
   Zap,
@@ -25,13 +25,13 @@ import { NationalDistributionMap } from '@/app/components/ui/national-distributi
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
-export default function AdminStatsClient({ 
-    initialSummary, 
-    initialConnectData, 
-    initialMenuData 
-}: { 
-    initialSummary: SummaryStats | null; 
-    initialConnectData: any[]; 
+export default function AdminStatsClient({
+    initialSummary,
+    initialConnectData,
+    initialMenuData
+}: {
+    initialSummary: SummaryStats | null;
+    initialConnectData: any[];
     initialMenuData: MenuStats[];
 }) {
   const router = useRouter();
@@ -95,7 +95,7 @@ export default function AdminStatsClient({
               <option>LATEST 30 DAYS</option>
               <option>QUARTERLY ANALYSIS</option>
             </select>
-            <Button 
+            <Button
                 onClick={handleRefresh}
                 className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl active:scale-95"
             >
@@ -188,7 +188,7 @@ export default function AdminStatsClient({
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Real-time Stream</span>
                 </div>
             </div>
-            
+
             <div className="px-2">
                 <StandardDataTable
                     columns={menuColumns}
@@ -207,7 +207,7 @@ export default function AdminStatsClient({
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
           <div className="space-y-8 flex-1 text-center md:text-left">
             <h2 className="text-4xl md:text-7xl font-black tracking-tighter leading-tight uppercase italic tabular-nums">
-                Optimized <br /> 
+                Optimized <br />
                 <span className="text-primary italic">Intelligence</span> Core
             </h2>
             <p className="text-lg text-slate-400 font-bold max-w-2xl leading-relaxed">

@@ -27,13 +27,11 @@ A:visited { font-size:9pt; font-family:돋움;color:#000000; text-decoration:non
 A:active { font-size:9pt; font-family:돋움;color:red; text-decoration:none; }
 A:hover { font-size:9pt; font-family:돋움;color:red;text-decoration:none;}
 
-
 /* Gray 텍스트 Hyperlink Style */
 A.gr:link { font-size:9pt; font-family:돋움;color:#58595B; text-decoration:none; }
 A.gr:visited { font-size:9pt; font-family:돋움;color:#58595B; text-decoration:none; }
 A.gr:active { font-size:9pt; font-family:돋움;color:red; text-decoration:none; }
 A.gr:hover { font-size:9pt; font-family:돋움;color:red ;text-decoration:none;}
-
 
 /* Black 텍스트 Hyperlink Style_언더라인 */
 A.underline:link { font-size:9pt; font-family:돋움;color:#000000; text-decoration:underline; }
@@ -54,7 +52,7 @@ body {
     scrollbar-track-color: #FFFFFF;
     scrollbar-arrow-color: #bbbbbb;
     margin-left:"23px"; margin-right:"0px"; margin-top:"17px"; margin-bottom:"0px";
-    font-family:'돋움', '굴림', 'Arial', 'AppleGothic', 'sans-serif'; 
+    font-family:'돋움', '굴림', 'Arial', 'AppleGothic', 'sans-serif';
 	font-size: 12px;
 }
 

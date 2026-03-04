@@ -11,7 +11,7 @@
 .idpw_form { position: absolute; top: 90px; left: 14%; }
 .id_search { float: left; width: 281px; padding-right: 65px;  }
 .pw_search { float: left; padding-left: 65px; border-left: 1px solid #e2e1e2; }
-.id_search h2, 
+.id_search h2,
 .pw_search h2 { text-align: center; font-size: 19px; color: #222; }
 
 	.login_type { width: 100%; margin-top: 25px; }
@@ -21,7 +21,7 @@
 	.login_type ul a { display: block; height: 33px; line-height: 33px; font-size: 12px; font-weight: bold; padding: 0 33px; background: #f4f4f4; border: 1px solid #e6e6e6; }
 	.login_type ul a:hover { background-color: #e6e6e6; }
 	.login_type ul a.on { background: #0c4ca4; color: #fff; border: 1px solid #0c4ca4; }
-	
+
 	.login_input { margin-top: 10px; }
 	.login_input ul li { margin-bottom: 10px; }
 	.login_input ul li label { display: none; }

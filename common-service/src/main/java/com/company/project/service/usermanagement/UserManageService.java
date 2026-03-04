@@ -30,7 +30,7 @@ public class UserManageService {
 
     /**
      * 사용자 목록을 조회한다. (페이징)
-     * 
+     *
      * @param searchVO 검색 조건
      * @return 사용자 DTO 목록
      */
@@ -45,7 +45,7 @@ public class UserManageService {
 
     /**
      * 사용자 목록의 총 갯수를 조회한다.
-     * 
+     *
      * @param searchVO 검색 조건
      * @return 총 갯수
      */
@@ -55,7 +55,7 @@ public class UserManageService {
 
     /**
      * 특정 사용자의 상세 정보를 조회한다.
-     * 
+     *
      * @param userId 사용자 ID
      * @return 사용자 상세 정보 DTO
      */
@@ -67,7 +67,7 @@ public class UserManageService {
 
     /**
      * 사용자를 등록한다.
-     * 
+     *
      * @param dto 사용자 정보 DTO
      */
     @Transactional
@@ -105,7 +105,7 @@ public class UserManageService {
 
     /**
      * 사용자 정보를 수정한다.
-     * 
+     *
      * @param dto 사용자 정보 DTO
      */
     @Transactional
@@ -124,7 +124,7 @@ public class UserManageService {
 
     /**
      * 사용자를 삭제한다.
-     * 
+     *
      * @param userId 사용자 ID
      */
     @Transactional
@@ -134,7 +134,7 @@ public class UserManageService {
 
     /**
      * 여러 사용자를 일괄 삭제한다.
-     * 
+     *
      * @param userIds 사용자 ID 목록
      */
     @Transactional
@@ -144,7 +144,7 @@ public class UserManageService {
 
     /**
      * 아이디 중복 여부를 확인한다.
-     * 
+     *
      * @param userId 사용자 ID
      * @return 중복 갯수 (1: 중복 있음, 0: 없음)
      */
@@ -154,7 +154,7 @@ public class UserManageService {
 
     /**
      * 사용자의 비밀번호를 수정한다.
-     * 
+     *
      * @param userId      사용자 ID
      * @param newPassword 새 비밀번호
      */

@@ -26,12 +26,12 @@ describe('Select Component', () => {
 
     const trigger = screen.getByLabelText('Select option');
     expect(trigger).toBeInTheDocument();
-    
+
     // In JSDOM/Radix, we often need to click to open and find items
     fireEvent.click(trigger);
     const item = await screen.findByText('Option 1');
     fireEvent.click(item);
-    
+
     expect(onValueChange).toHaveBeenCalledWith('opt1');
   });
 });

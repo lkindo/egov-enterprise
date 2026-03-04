@@ -26,8 +26,8 @@ export function ServerForm({ initialData, onSubmit, onCancel }: ServerFormProps)
     <StandardForm onSubmit={handleSubmit} className="border-none shadow-none rounded-none p-0">
       <div className="space-y-6">
         <FormField label="서버 명칭" required>
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={formData.serverNm || ''}
             onChange={(e) => setFormData({...formData, serverNm: e.target.value})}
             placeholder="예: 프로젝트 메인 WAS-01"
@@ -35,7 +35,7 @@ export function ServerForm({ initialData, onSubmit, onCancel }: ServerFormProps)
             required
           />
         </FormField>
-        
+
         <FormField label="서버 유형" required>
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -48,8 +48,8 @@ export function ServerForm({ initialData, onSubmit, onCancel }: ServerFormProps)
                 type="button"
                 onClick={() => setFormData({...formData, serverKnd: type.value})}
                 className={`p-3 border rounded-xl text-center transition-all ${
-                  formData.serverKnd === type.value 
-                    ? `ring-2 ring-primary ring-offset-1 font-bold ${type.color}` 
+                  formData.serverKnd === type.value
+                    ? `ring-2 ring-primary ring-offset-1 font-bold ${type.color}`
                     : 'bg-card hover:bg-muted/50 text-muted-foreground'
                 }`}
               >
@@ -65,7 +65,7 @@ export function ServerForm({ initialData, onSubmit, onCancel }: ServerFormProps)
           </div>
         )}
       </div>
-      
+
       <div className="flex justify-end gap-2 pt-6">
         <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg font-bold">취소</button>
         <button type="submit" className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all">

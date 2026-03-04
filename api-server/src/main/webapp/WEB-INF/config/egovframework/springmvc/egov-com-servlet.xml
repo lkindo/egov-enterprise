@@ -15,7 +15,7 @@
 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
         <context:exclude-filter type="regex" expression="org\.egovframe\.rte\.fdl\.security\.config\.EgovSecurityConfiguration"/>
 	</context:component-scan>
-	
+
 	<!-- GlobalMenuAdvice??XML ?뚢뫂???쎈뱜?癒?즲 筌뤿굞??怨몄몵嚥??源낆쨯??뤿연 eGovFrame ?뚢뫂?껅에?살쑎?癒?퐣????덉삂??롫즲嚥???-->
 	<bean id="globalMenuAdvice" class="com.company.project.api.advice.GlobalMenuAdvice" />
 

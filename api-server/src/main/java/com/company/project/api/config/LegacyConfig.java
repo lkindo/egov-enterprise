@@ -58,7 +58,7 @@ public class LegacyConfig {
     public ConfigurationCustomizer mybatisConfigurationCustomizer() {
         return configuration -> {
             configuration.getTypeAliasRegistry().registerAlias("egovMap", EgovMap.class);
-            // FileVO, ComDefaultCodeVO ?��? common-legacy-support 모듈 ?�거�??�해 ??��??        
+            // FileVO, ComDefaultCodeVO ?? common-legacy-support 모듈 ?거??해 ????
                     };
     }
 

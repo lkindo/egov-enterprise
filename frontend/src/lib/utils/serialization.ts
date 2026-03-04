@@ -14,7 +14,7 @@ export function selectFields<T extends object, K extends keyof T>(
     });
     return result;
   }
-  
+
   export function selectFieldsList<T extends object, K extends keyof T>(
     dataList: T[],
     fields: K[]

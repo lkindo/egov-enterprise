@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
 
- * ?         ???  ?   ?         ??         ???      ?      ?      
+ * ?         ???  ?   ?         ??         ???      ?      ?
 
  */
 
@@ -82,29 +82,29 @@ public class StatisticsController {
 
      * public String selectBbsStats(
 
-     * 
+     *
 
      * @RequestParam(required = false) String pdKind,
 
-     * 
+     *
 
      * @RequestParam(required = false) String statsKind,
 
-     * 
+     *
 
      * @RequestParam(required = false) String fromDate,
 
-     * 
+     *
 
      * @RequestParam(required = false) String toDate,
 
-     * 
+     *
 
      * @RequestParam(required = false, defaultValue = "tab1") String tabKind,
 
      * Model model) {
 
-     * 
+     *
 
      * Map<String, Object> statsInfo = new HashMap<>();
 
@@ -120,7 +120,7 @@ public class StatisticsController {
 
      * statsInfo.put("maxUnit", 1);
 
-     * 
+     *
 
      * model.addAttribute("statsInfo", statsInfo);
 
@@ -132,15 +132,15 @@ public class StatisticsController {
 
      * model.addAttribute("bbsMaxNtcrList", new ArrayList<StatsVO>());
 
-     * 
+     *
 
      * model.addAttribute("fDate", fromDate);
 
      * model.addAttribute("tDate", toDate);
 
-     * 
+     *
 
-     * // ?      ?               
+     * // ?      ?
 
      * model.addAttribute("COM101", commonCodeService.getCodesByGroup("COM101")); //
 
@@ -148,9 +148,9 @@ public class StatisticsController {
 
      * model.addAttribute("COM005", commonCodeService.getCodesByGroup("COM005")); //
 
-     *          ??        ???   
+     *          ??        ???
 
-     * 
+     *
 
      * return "sts/EgovBbsStats";
 

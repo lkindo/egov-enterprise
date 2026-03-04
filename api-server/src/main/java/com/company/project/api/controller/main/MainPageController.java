@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 메인 ?�이지 조회�??�한 컨트롤러
- * ?�자?��? ?�레?�워???�환?�과 ?�합 ?�?�보??기능???�행
+ * 메인 ?이지 조회??한 컨트롤러
+ * ?자?? ?레?워???환?과 ?합 ??보??기능???행
  */
 @Controller
 public class MainPageController {
@@ -27,11 +27,11 @@ public class MainPageController {
     }
 
     /**
-     * 메인 ?�이지 (?�합 ?�?�보?? 조회
+     * 메인 ?이지 (?합 ??보?? 조회
      */
     @RequestMapping({ "/", "/cmm/main/mainPage", "/cmm/main/mainPage.do" })
     public String mainPage(Model model, HttpSession session) throws Exception {
-        // ?�무 게시??(BBSMSTR_CCCCCCCCCCCC 기�?, ?�제 ?�경??맞게 조정 ?�요)
+        // ?무 게시??(BBSMSTR_CCCCCCCCCCCC 기?, ?제 ?경??맞게 조정 ?요)
         try {
             List<com.company.project.service.board.dto.BoardDto> list = new ArrayList<>();
             try {
@@ -46,7 +46,7 @@ public class MainPageController {
             model.addAttribute("bbsList", new ArrayList<>());
         }
 
-        // 공�? ?�항 (BBSMSTR_AAAAAAAAAAAA 기�?, ?�제 ?�경??맞게 조정 ?�요)
+        // 공? ?항 (BBSMSTR_AAAAAAAAAAAA 기?, ?제 ?경??맞게 조정 ?요)
         try {
             List<com.company.project.service.board.dto.BoardDto> list = new ArrayList<>();
             try {

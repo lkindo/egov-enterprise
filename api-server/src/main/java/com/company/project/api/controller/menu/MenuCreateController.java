@@ -25,7 +25,7 @@ public class MenuCreateController {
     private final MenuService menuService;
 
     /**
-     * 메뉴 ?�성 관�?목록 조회
+     * 메뉴 ?성 관?목록 조회
      */
     @GetMapping(value = "/sym/mnu/mcm/EgovMenuCreatManageSelect.do")
     public String selectMenuCreatManagList(@ModelAttribute("searchVO") ComDefaultVO searchVO, Model model)
@@ -56,7 +56,7 @@ public class MenuCreateController {
     }
 
     /**
-     * 메뉴 ?�성 목록 조회
+     * 메뉴 ?성 목록 조회
      */
     @GetMapping(value = "/sym/mnu/mcm/EgovMenuCreatSelect.do")
     public String selectMenuCreatList(@ModelAttribute("menuCreatVO") MenuCreateDto menuCreatVO, Model model)
@@ -69,7 +69,7 @@ public class MenuCreateController {
     }
 
     /**
-     * 권한 �?메뉴 체크박스 ?�택 ??메뉴 ?�성 처리
+     * 권한 ?메뉴 체크박스 ?택 ??메뉴 ?성 처리
      */
     @PostMapping("/sym/mnu/mcm/EgovMenuCreatInsert.do")
     public String insertMenuCreatList(@RequestParam("checkedAuthorForInsert") String checkedAuthorForInsert,

@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  ChevronRight, 
-  ChevronLeft, 
-  Sparkles, 
-  Command, 
-  Layout, 
-  Bell, 
+import {
+  X,
+  ChevronRight,
+  ChevronLeft,
+  Sparkles,
+  Command,
+  Layout,
+  Bell,
   User,
   CheckCircle2
 } from 'lucide-react';
@@ -89,7 +89,7 @@ export function StandardOnboardingTour() {
   if (!mounted || !isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-slate-950/20 backdrop-blur-sm animate-in fade-in duration-500"
       role="alertdialog"
       aria-modal="true"
@@ -100,17 +100,17 @@ export function StandardOnboardingTour() {
         {/* Progress Bar */}
         <div className="absolute top-0 left-0 w-full h-1.5 flex gap-1 px-1 pt-1" aria-hidden="true">
           {steps.map((_, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className={cn(
                 "h-full rounded-full transition-all duration-500 flex-1",
                 idx <= currentStep ? "bg-primary" : "bg-muted/30"
-              )} 
+              )}
             />
           ))}
         </div>
 
-        <button 
+        <button
           onClick={handleComplete}
           className="absolute top-6 right-6 p-2 hover:bg-muted rounded-full transition-colors z-20 text-muted-foreground"
           aria-label="가이드 닫기"
@@ -133,8 +133,8 @@ export function StandardOnboardingTour() {
           </div>
 
           <div className="flex items-center justify-between pt-4">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={prevStep}
               className={cn(
                 "rounded-xl font-bold h-12 px-6 gap-2",

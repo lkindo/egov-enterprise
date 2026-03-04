@@ -13,7 +13,7 @@ export function ScrollToTop() {
     const timeoutId = setTimeout(() => {
       window.scrollTo(0, 0);
     }, 10);
-    
+
     return () => clearTimeout(timeoutId);
   }, [pathname, searchParams]);
 

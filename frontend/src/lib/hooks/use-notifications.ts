@@ -31,7 +31,7 @@ export function useNotifications() {
     const newNotif = JSON.parse(message.body);
     setNotifications(prev => [newNotif, ...prev]);
     setUnreadCount(prev => prev + 1);
-    
+
     // Show Real-time Toast
     toast(newNotif.ntfcSj || '새로운 알림이 도착했습니다.', 'success');
   }, [toast]);

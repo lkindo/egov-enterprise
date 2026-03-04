@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * �??�????�퉬??
+ * ??????퉬??
  */
 @Service("projectRoleManageService")
 @RequiredArgsConstructor
@@ -28,7 +28,7 @@ public class RoleManageService {
     private final RoleInfoRepository roleInfoRepository;
 
     /**
-     * �?紐⑸�?議고??     */
+     * ?紐⑸?議고??     */
     public List<RoleManageDto> selectRoleList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -39,13 +39,13 @@ public class RoleManageService {
     }
 
     /**
-     * �?紐⑸�???嫄댁??     */
+     * ?紐⑸???嫄댁??     */
     public int selectRoleListTotCnt(ComDefaultVO searchVO) {
         return (int) roleInfoRepository.count();
     }
 
     /**
-     * �??곸꽭 議고??     */
+     * ??곸꽭 議고??     */
     public RoleManageDto selectRole(String roleCode) {
         return roleInfoRepository.findById(Objects.requireNonNull(roleCode))
                 .map(this::toDto)
@@ -53,7 +53,7 @@ public class RoleManageService {
     }
 
     /**
-     * �??깅줉
+     * ??깅줉
      */
     @Transactional
     public void insertRole(RoleManageDto dto) {
@@ -74,7 +74,7 @@ public class RoleManageService {
     }
 
     /**
-     * �???�젙
+     * ???젙
      */
     @Transactional
     public void updateRole(RoleManageDto dto) {
@@ -84,14 +84,14 @@ public class RoleManageService {
     }
 
     /**
-     * �?????     */
+     * ?????     */
     @Transactional
     public void deleteRole(String roleCode) {
         roleInfoRepository.deleteById(Objects.requireNonNull(roleCode));
     }
 
     /**
-     * �???�쨷 ????     */
+     * ???쨷 ????     */
     @Transactional
     public void deleteRoles(String[] roleCodes) {
         roleInfoRepository

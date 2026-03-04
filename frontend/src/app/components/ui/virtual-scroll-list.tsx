@@ -14,12 +14,12 @@ interface VirtualScrollListProps<T> {
 /**
  * 대량의 데이터를 효율적으로 보여주기 위한 가상화 리스트
  */
-export function VirtualScrollList<T>({ 
-  items, 
-  itemHeight, 
-  containerHeight, 
+export function VirtualScrollList<T>({
+  items,
+  itemHeight,
+  containerHeight,
   renderItem,
-  className 
+  className
 }: VirtualScrollListProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
@@ -34,13 +34,13 @@ export function VirtualScrollList<T>({
   const visibleItems = [];
   for (let i = startIndex; i <= endIndex; i++) {
     visibleItems.push(
-      <div 
-        key={i} 
-        style={{ 
-          position: 'absolute', 
-          top: i * itemHeight, 
-          width: '100%', 
-          height: itemHeight 
+      <div
+        key={i}
+        style={{
+          position: 'absolute',
+          top: i * itemHeight,
+          width: '100%',
+          height: itemHeight
         }}
       >
         {renderItem(items[i], i)}
@@ -49,7 +49,7 @@ export function VirtualScrollList<T>({
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
       onScroll={onScroll}
       className={cn("overflow-y-auto border rounded-xl relative", className)}

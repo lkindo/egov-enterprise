@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * ?�시�??�?�보???�계 ?�비?? * 로컬 메모�?AtomicInteger)�??�용?�여 ?�시�??�이?��? 집계?�고 WebSocket?�로 브로?�캐?�트?? */
+ * ?시???보???계 ?비?? * 로컬 메모?AtomicInteger)??용?여 ?시??이?? 집계?고 WebSocket?로 브로?캐?트?? */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -22,13 +22,13 @@ public class RealTimeDashboardService {
     private final SimpMessageSendingOperations messagingTemplate;
     private final NotificationRepository notificationRepository;
 
-    // ?�시�??�계 ?�이??관�?(로컬 메모�??�용)
+    // ?시??계 ?이??관?(로컬 메모??용)
     private final AtomicInteger activeUsers = new AtomicInteger(0);
     private final AtomicInteger visitsPerMinute = new AtomicInteger(0);
     private final AtomicInteger todayNewPosts = new AtomicInteger(0);
 
     /**
-     * 게시글 ?�성 ?�벤???�들??(Point 22: ?�벤???�용)
+     * 게시글 ?성 ?벤???들??(Point 22: ?벤???용)
      */
     @EventListener
     public void handlePostCreated(PostCreatedEvent event) {
@@ -37,7 +37,7 @@ public class RealTimeDashboardService {
     }
 
     /**
-     * ?�시�??�이??브로?�캐?�트 (5�?주기)
+     * ?시??이??브로?캐?트 (5?주기)
      */
     @Scheduled(fixedRate = 5000)
     public void broadcastRealTimeStats() {
@@ -56,7 +56,7 @@ public class RealTimeDashboardService {
     }
 
     /**
-     * ?�성 ?�용??증�?
+     * ?성 ?용??증?
      */
     public void incrementActiveUsers() {
         activeUsers.incrementAndGet();
@@ -64,14 +64,14 @@ public class RealTimeDashboardService {
     }
 
     /**
-     * ?�성 ?�용??감소
+     * ?성 ?용??감소
      */
     public void decrementActiveUsers() {
         activeUsers.decrementAndGet();
     }
 
     /**
-     * 처리 ?��?중인 ?�림 ??조회 (?��? 로직)
+     * 처리 ??중인 ?림 ??조회 (?? 로직)
      */
     private int getPendingAlertsCount() {
         try {
@@ -83,7 +83,7 @@ public class RealTimeDashboardService {
     }
 
     /**
-     * 분당 방문????초기??(1�?주기)
+     * 분당 방문????초기??(1?주기)
      */
     @Scheduled(fixedRate = 60000)
     public void resetVisitsCounter() {

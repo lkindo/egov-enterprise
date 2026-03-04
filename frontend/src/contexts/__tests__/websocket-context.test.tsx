@@ -31,7 +31,7 @@ describe('WebSocketContext', () => {
     );
 
     const { result } = renderHook(() => useWebSocket(), { wrapper });
-    
+
     expect(result.current).toHaveProperty('client');
     expect(result.current).toHaveProperty('isConnected');
   });

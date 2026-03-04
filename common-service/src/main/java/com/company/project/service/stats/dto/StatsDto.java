@@ -4,12 +4,12 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * ???�?寃곌??DTO
+ * ????寃곌??DTO
  */
 @Getter
 @Builder
 public class StatsDto {
-    // 寃??議곌�?
+    // 寃??議곌?
                      String fromDate;
     private String toDate;
     private String statsKind;
@@ -22,7 +22,7 @@ public class StatsDto {
     private int maxStatsCo;
     private int minStatsCo;
 
-    // CRUD ???�?
+    // CRUD ????
                      int creatCo;
     private int inqireCo;
     private int updtCo;
@@ -30,7 +30,7 @@ public class StatsDto {
     private int outptCo;
     private int errorCo;
 
-    // 寃뚯??????�?
+    // 寃뚯???????
                      int totInqireCo;
     private float avrgInqireCo;
     private String mxmmInqireBbsId;

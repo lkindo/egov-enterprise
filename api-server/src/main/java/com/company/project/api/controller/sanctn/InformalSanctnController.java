@@ -84,4 +84,3 @@ public class InformalSanctnController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
-

@@ -19,9 +19,6 @@ fieldset { border:none;}
 legend { display:none; margin:0; padding:0;}
 form {padding: 0px 0px;}
 
-
-
-
 /* 공통선언 ▲*/
 
 /* 상단 ▼*/
@@ -32,7 +29,6 @@ form {padding: 0px 0px;}
 #gnb #use_descri li {display:inline;}
 #gnb #use_descri li img { margin:-3px 0 0px 5px;}
 /* 상단 ▲*/
-
 
 /* 상단메뉴 ▼*/
 #new_topnavi {background:url(../../../images/egovframework/com/cmm/main/navi_bg.gif) no-repeat; width:961px; height:33px; padding:14px 0 0 20px;}
@@ -73,8 +69,6 @@ form {padding: 0px 0px;}
 .mp_bn ul li {margin-bottom:5px; }
 .mp_bn ul.horizon {overflow-x:hidden; overflow-y:auto; width:970px; }
 .mp_bn ul.horizon li {float:left; margin-right:5px; }
-
-
 
 .mt10 {margin-top:10px !important; }
 .mt15 {margin-top:15px !important; }

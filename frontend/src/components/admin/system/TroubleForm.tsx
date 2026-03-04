@@ -33,8 +33,8 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
         {!isProcessMode ? (
           <>
             <FormField label="장애 명칭" required>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={formData.troblNm || ''}
                 onChange={(e) => setFormData({...formData, troblNm: e.target.value})}
                 placeholder="장애 상황 요약"
@@ -42,10 +42,10 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
                 required
               />
             </FormField>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="장애 유형" required>
-                <select 
+                <select
                   value={formData.troblKnd}
                   onChange={(e) => setFormData({...formData, troblKnd: e.target.value})}
                   className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
@@ -58,8 +58,8 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
                 </select>
               </FormField>
               <FormField label="신청자" required>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={formData.troblRqesterNm || ''}
                   onChange={(e) => setFormData({...formData, troblRqesterNm: e.target.value})}
                   placeholder="담당자 이름"
@@ -70,7 +70,7 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
             </div>
 
             <FormField label="장애 상세 내용" required>
-              <textarea 
+              <textarea
                 value={formData.troblDc || ''}
                 onChange={(e) => setFormData({...formData, troblDc: e.target.value})}
                 placeholder="장애 증상 및 원인 등을 기술하세요."
@@ -98,8 +98,8 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
                     type="button"
                     onClick={() => setFormData({...formData, processSttus: s.value})}
                     className={`p-3 border rounded-xl text-center transition-all ${
-                      formData.processSttus === s.value 
-                        ? `ring-2 ring-primary ring-offset-1 font-bold ${s.color}` 
+                      formData.processSttus === s.value
+                        ? `ring-2 ring-primary ring-offset-1 font-bold ${s.color}`
                         : 'bg-card hover:bg-muted/50 text-muted-foreground'
                     }`}
                   >
@@ -110,7 +110,7 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
             </FormField>
 
             <FormField label="처리 결과/조치 내역" required>
-              <textarea 
+              <textarea
                 value={formData.troblProcessResult || ''}
                 onChange={(e) => setFormData({...formData, troblProcessResult: e.target.value})}
                 placeholder="조치 완료된 내용을 상세히 기술하세요."
@@ -120,8 +120,8 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
             </FormField>
 
             <FormField label="처리 담당자" required>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={formData.troblOpetrNm || ''}
                 onChange={(e) => setFormData({...formData, troblOpetrNm: e.target.value})}
                 placeholder="본인 성명"
@@ -132,7 +132,7 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
           </>
         )}
       </div>
-      
+
       <div className="flex justify-end gap-2 pt-6">
         <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg font-bold">취소</button>
         <button type="submit" className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all">

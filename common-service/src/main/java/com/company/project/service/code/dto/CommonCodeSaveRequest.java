@@ -6,22 +6,22 @@ import jakarta.validation.constraints.Size;
 
 @Schema(description = "Common Code Save Request")
 public record CommonCodeSaveRequest(
-        @Schema(description = "Code Group ID") 
-        @NotBlank(message = "{validation.required}") 
+        @Schema(description = "Code Group ID")
+        @NotBlank(message = "{validation.required}")
         String codeGroupId,
 
-        @Schema(description = "Code") 
-        @NotBlank(message = "{validation.required}") 
-        @Size(min = 1, max = 20, message = "{validation.size}") 
+        @Schema(description = "Code")
+        @NotBlank(message = "{validation.required}")
+        @Size(min = 1, max = 20, message = "{validation.size}")
         String code,
 
-        @Schema(description = "Code Name") 
-        @NotBlank(message = "{validation.required}") 
+        @Schema(description = "Code Name")
+        @NotBlank(message = "{validation.required}")
         String codeNm,
 
-        @Schema(description = "Code Description") 
+        @Schema(description = "Code Description")
         String codeDc,
 
-        @Schema(description = "Use Y/N") 
+        @Schema(description = "Use Y/N")
         String useAt) {
 }

@@ -31,9 +31,9 @@ export async function getInitialBoardData(params: {
             size: 10,
             ...restParams
         };
-        
+
         const response: any = await client.get(`/boards/${bbsId}`, { ...axiosConfig, params: queryParams });
-        
+
         // Spring Data Page 객체 구조에 맞춰 데이터 추출 (content, totalElements, totalPages)
         return {
             resultList: response.content || [],

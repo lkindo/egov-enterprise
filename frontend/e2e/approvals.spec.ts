@@ -20,7 +20,7 @@ test.describe('Electronic Approval Module', () => {
         // Check tabs
         const receivedTab = page.getByRole('button', { name: '받은 결재함' });
         const sentTab = page.getByRole('button', { name: '보낸 결재함' });
-        
+
         await expect(receivedTab).toBeVisible();
         await expect(sentTab).toBeVisible();
 
@@ -38,10 +38,10 @@ test.describe('Electronic Approval Module', () => {
 
         // Wait for table rows
         const firstRow = page.locator('table tbody tr').first();
-        
+
         if (await firstRow.isVisible()) {
             await firstRow.click();
-            
+
             // Detail view should appear
             await expect(page.getByText('Detail View')).toBeVisible();
             await expect(page.getByText('Approval Workflow')).toBeVisible();
@@ -52,7 +52,7 @@ test.describe('Electronic Approval Module', () => {
         await page.goto('/approvals');
         const newBtn = page.getByRole('button', { name: '새 결재 기안' });
         await expect(newBtn).toBeVisible();
-        // Since it's a prototype/mock, we just check visibility here 
+        // Since it's a prototype/mock, we just check visibility here
         // unless we know the exact navigation target for new drafts.
     });
 });

@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 蹂닿???�넻??�??�?��??�슜?꾪솴???�?JPA ??�퉬??
+ * 蹂닿???넻???????슜?꾪솴????JPA ??퉬??
  */
 @Service
 @RequiredArgsConstructor
@@ -27,10 +27,10 @@ public class ReportStatsService {
     @jakarta.annotation.Resource(name = "reprtStatsIdGnrService")
     private org.egovframe.rte.fdl.idgnr.EgovIdGnrService reprtStatsIdGnrService;
 
-    // ========== 蹂닿??????�?==========
+    // ========== 蹂닿???????==========
 
     /**
-     * 蹂닿??????�?紐⑸�?議고??     */
+     * 蹂닿???????紐⑸?議고??     */
     public Page<ReprtStats> getReprtStatsList(String reprtTy, String fromDate, String toDate, int page, int size) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
@@ -38,7 +38,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 蹂닿??????�??꾩껜 嫄댁??     */
+     * 蹂닿????????꾩껜 嫄댁??     */
     public long getReprtStatsCount(String reprtTy, String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
@@ -46,7 +46,7 @@ public class ReportStatsService {
     }
 
     /**
-     * ?깅줉??��?蹂닿??????�?     */
+     * ?깅줉???蹂닿???????     */
     public List<Object[]> getReprtStatsByDate(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
@@ -54,7 +54,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 蹂닿????좏삎�????�?     */
+     * 蹂닿????좏삎?????     */
     public List<Object[]> getReprtStatsByType(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
@@ -62,7 +62,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 蹂닿????곹깭�????�?     */
+     * 蹂닿????곹깭?????     */
     public List<Object[]> getReprtStatsByStatus(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
@@ -70,7 +70,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 蹂닿??????�??깅줉
+     * 蹂닿????????깅줉
      */
     @Transactional
     public void insertReprtStats(ReprtStats reprtStats) throws Exception {
@@ -88,10 +88,10 @@ public class ReportStatsService {
         reprtStatsRepository.save(Objects.requireNonNull(newStats));
     }
 
-    // ========== ?�?��??�슜?꾪솴 ???�?==========
+    // ========== ????슜?꾪솴 ????==========
 
     /**
-     * ?�?��??�슜?꾪솴 ???�?紐⑸�?議고??     */
+     * ????슜?꾪솴 ????紐⑸?議고??     */
     public Page<DtaUseStats> getDtaUseStatsList(String fromDate, String toDate, int page, int size) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
@@ -99,7 +99,7 @@ public class ReportStatsService {
     }
 
     /**
-     * ?�?��??�슜?꾪솴 ???�??꾩껜 嫄댁??     */
+     * ????슜?꾪솴 ?????꾩껜 嫄댁??     */
     public long getDtaUseStatsCount(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
@@ -107,7 +107,7 @@ public class ReportStatsService {
     }
 
     /**
-     * ?깅줉??��??�?��??�슜?꾪솴 ???�?     */
+     * ?깅줉???????슜?꾪솴 ????     */
     public List<Object[]> getDtaUseStatsByDate(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
@@ -115,7 +115,7 @@ public class ReportStatsService {
     }
 
     /**
-     * 寃뚯??�?�??�?��??�슜?꾪솴 ???�?     */
+     * 寃뚯????????슜?꾪솴 ????     */
     public List<Object[]> getDtaUseStatsByBbs(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";

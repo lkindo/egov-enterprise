@@ -67,10 +67,10 @@ export default function UserManageClient({ initialData, initialParams }: { initi
     };
 
     const handleSubmit = async () => {
-        const res = editingUser 
+        const res = editingUser
             ? await updateUserAction(null, formData)
             : await createUserAction(null, formData);
-        
+
         if (res.success) {
             toast(res.message, 'success');
             setIsDialogOpen(false);

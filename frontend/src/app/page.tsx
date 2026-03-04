@@ -36,9 +36,9 @@ export default async function UnifiedDashboardPage() {
   const data = await getDashboardData();
   return (
     <Suspense fallback={<DashboardSkeleton />}>
-      <UnifiedDashboardClient 
-        initialLeave={data.initialLeave} 
-        initialNotiList={data.initialNotiList} 
+      <UnifiedDashboardClient
+        initialLeave={data.initialLeave}
+        initialNotiList={data.initialNotiList}
         initialTaskList={data.initialTaskList}
         pendingApprovalCount={data.pendingApprovalCount}
       />

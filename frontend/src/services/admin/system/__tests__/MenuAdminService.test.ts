@@ -22,12 +22,12 @@ describe('MenuAdminService', () => {
   it('createMenu should call post', async () => {
     const data = { menuNm: 'Test' };
     await menuAdminService.createMenu(data as any);
-    expect(client.post).toHaveBeenCalledWith('/admin/system/menus', data);
+    expect(client.post).toHaveBeenCalledWith('/admin/system/menus', data, undefined);
   });
 
   it('updateMenuOrder should call put', async () => {
     const data = [{ menuNo: 1, sortOrdr: 1 }];
     await menuAdminService.updateMenuOrder(data as any);
-    expect(client.put).toHaveBeenCalledWith('/admin/system/menus/batch-order', data);
+    expect(client.put).toHaveBeenCalledWith('/admin/system/menus/batch-order', data, undefined);
   });
 });

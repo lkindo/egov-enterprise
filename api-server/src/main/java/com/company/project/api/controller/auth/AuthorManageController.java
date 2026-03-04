@@ -19,7 +19,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import jakarta.validation.Valid;
 
 /**
- * 권한 관리�? ?�한 컨트롤러 ?�래?? */
+ * 권한 관리? ?한 컨트롤러 ?래?? */
 @Slf4j
 @Controller
 @RequiredArgsConstructor
@@ -30,7 +30,7 @@ public class AuthorManageController {
     private final MessageSource messageSource;
 
     /**
-     * 권한 목록??조회?�다.
+     * 권한 목록??조회?다.
      */
     @RequestMapping({ "/sec/ram/EgovAuthorList.do", "/sec/ram/EgovAuthorManage.do" })
     public String selectAuthorList(@ModelAttribute("authorManageVO") ComDefaultVO searchVO, ModelMap model)
@@ -59,7 +59,7 @@ public class AuthorManageController {
     }
 
     /**
-     * 권한 ?��??�보�?조회?�다.
+     * 권한 ???보?조회?다.
      */
     @RequestMapping(value = { "/api/v1/auth/authors", "/sec/ram/EgovAuthor.do" })
     public String selectAuthor(@RequestParam("authorCode") String authorCode, ModelMap model)
@@ -72,7 +72,7 @@ public class AuthorManageController {
             log.debug("dto is null. Creating empty dto.");
             dto = new AuthorManageDto();
             dto.setAuthorCode(authorCode);
-            model.addAttribute("message", "?�이?��? 존재?��? ?�습?�다.");
+            model.addAttribute("message", "?이?? 존재?? ?습?다.");
         } else {
             log.debug("found dto: {}", dto);
             model.addAttribute("message", messageSource.getMessage("success.common.select", null, LocaleContextHolder.getLocale()));
@@ -83,7 +83,7 @@ public class AuthorManageController {
     }
 
     /**
-     * 권한 ?�록 ?�면?�로 ?�동?�다.
+     * 권한 ?록 ?면?로 ?동?다.
      */
     @RequestMapping("/sec/ram/EgovAuthorInsertView.do")
     public String insertAuthorView(Model model) throws Exception {
@@ -92,7 +92,7 @@ public class AuthorManageController {
     }
 
     /**
-     * 권한 ?�보�??�록?�다.
+     * 권한 ?보??록?다.
      */
     @PostMapping("/sec/ram/EgovAuthorInsert.do")
     public String insertAuthor(@Valid @ModelAttribute("authorManage") AuthorManageDto authorManage,
@@ -109,7 +109,7 @@ public class AuthorManageController {
     }
 
     /**
-     * 권한 ?�보�??�정?�다.
+     * 권한 ?보??정?다.
      */
     @PostMapping("/sec/ram/EgovAuthorUpdate.do")
     public String updateAuthor(@Valid @ModelAttribute("authorManage") AuthorManageDto authorManage,
@@ -126,7 +126,7 @@ public class AuthorManageController {
     }
 
     /**
-     * 권한 ?�보�???��?�다.
+     * 권한 ?보????다.
      */
     @PostMapping("/sec/ram/EgovAuthorDelete.do")
     public String deleteAuthor(@RequestParam("authorCode") String authorCode,
@@ -139,7 +139,7 @@ public class AuthorManageController {
     }
 
     /**
-     * 권한 목록??멀????��?�다.
+     * 권한 목록??멀?????다.
      */
     @PostMapping("/sec/ram/EgovAuthorListDelete.do")
     public String deleteAuthorList(@RequestParam("authorCodes") String authorCodes,
@@ -153,7 +153,7 @@ public class AuthorManageController {
     }
 
     /**
-     * ?�근 거�? ?�면?�로 ?�동?�다.
+     * ?근 거? ?면?로 ?동?다.
      */
     @RequestMapping("/sec/ram/accessDenied.do")
     public String accessDenied() throws Exception {
