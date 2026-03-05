@@ -34,6 +34,10 @@ spring:
   main:
     allow-circular-references: true
     allow-bean-definition-overriding: true
+  test:
+    context:
+      cache:
+        maxSize: 8
 
 # 파일 업로드 경로 (테스트용)
 file:

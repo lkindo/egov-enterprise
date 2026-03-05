@@ -43,6 +43,10 @@ import java.util.Properties;
         "com.company.project.security",
         "com.company.project.api"
 }, nameGenerator = com.company.project.core.config.FullBeanNameGenerator.class, excludeFilters = {
+        @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = {
+                org.springframework.stereotype.Controller.class,
+                org.springframework.web.bind.annotation.RestController.class
+        }),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Scheduling.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\..*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Interceptor.*")

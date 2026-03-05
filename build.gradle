@@ -51,6 +51,8 @@ subprojects {
 
     test {
         useJUnitPlatform()
+        maxHeapSize = "2048m"
+        maxParallelForks = 1
         jvmArgs '-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8'
         systemProperty 'file.encoding', 'UTF-8'
         // Forward all system properties to the test JVM
