@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.util.AntPathMatcher;
 
 /**
- * eGovFrame ?⑤벏??疫꿸퀡而???쇱젟
- * - LeaveaTrace: ??됱뇚 筌ｌ꼶???곕뗄????뺥돩??
+ * eGovFrame 기본 환경 설정
+ * - LeaveaTrace: 예외 발생 시 트레이스 처리
  */
 @Configuration
 public class EgovFrameConfig {

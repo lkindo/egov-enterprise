@@ -3,7 +3,7 @@ package egovframework.com.cmm;
 import java.io.File;
 
 /**
- * ?대Ŋ媛?臾믩꺗 ??쎄쾿?깆????⑤벀爰??띯뫁鍮??獄쎻뫗?(???뵬沃섎챸苑??얜챷????대Ŋ猿?
+ * 교차접속 스크립트 공격 취약성 방지(파라미터 문자열 교체)를 위한 클래스
  */
 public class EgovWebUtil {
     public static String clearXSSMinimum(String value) {

@@ -9,11 +9,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * @Description : ComDefaultVO class
  * @Modification Information
  * @
- *   @ ??륁젟????륁젟????륁젟??곸뒠
+ *   @ 수정일 수정자 수정내용
  *   @ ------- -------- ---------------------------
- *   @ 2009.02.01 鈺곌퀣???筌ㅼ뮇????밴쉐
+ *   @ 2009.02.01 이삼섭 최초 생성
  *
- * @author ?⑤벏???뺥돩??揶쏆뮆而?? 鈺곌퀣???
+ * @author 공통서비스 개발팀 이삼섭
  * @since 2009.02.01
  * @version 1.0
  * @see
@@ -23,22 +23,22 @@ public class ComDefaultVO implements Serializable {
 
     private static final long serialVersionUID = -6062858939907510631L;
 
-    /** 野꺜??기쒎쳞?*/
+    /** 검색조건 */
     private String searchCondition = "";
 
-    /** 野꺜??톏yword */
+    /** 검색Keyword */
     private String searchKeyword = "";
 
-    /** 野꺜??깃텢??밸연?봔 */
+    /** 검색사용여부 */
     private String searchUseYn = "";
 
-    /** ?袁⑹삺??륁뵠筌왖 */
+    /** 현재페이지 */
     private int pageIndex = 1;
 
-    /** ??륁뵠筌왖揶???*/
+    /** 페이지갯수 */
     private int pageUnit = 10;
 
-    /** ??륁뵠筌왖???좑쭩?*/
+    /** 페이지사이즈 */
     private int pageSize = 10;
 
     /** firstIndex */
@@ -50,10 +50,10 @@ public class ComDefaultVO implements Serializable {
     /** recordCountPerPage */
     private int recordCountPerPage = 10;
 
-    /** 野꺜??톏ywordFrom */
+    /** 검색KeywordFrom */
     private String searchKeywordFrom = "";
 
-    /** 野꺜??톏ywordTo */
+    /** 검색KeywordTo */
     private String searchKeywordTo = "";
 
     public int getFirstIndex() {
@@ -134,7 +134,7 @@ public class ComDefaultVO implements Serializable {
     }
 
     /**
-     * searchKeywordFrom attribute???귐뗪쉘??뺣뼄.
+     * searchKeywordFrom attribute를 리턴한다.
      *
      * @return String
      */
@@ -143,7 +143,7 @@ public class ComDefaultVO implements Serializable {
     }
 
     /**
-     * searchKeywordFrom attribute 揶쏅?????쇱젟??뺣뼄.
+     * searchKeywordFrom attribute 값을 설정한다.
      *
      * @param searchKeywordFrom String
      */
@@ -152,7 +152,7 @@ public class ComDefaultVO implements Serializable {
     }
 
     /**
-     * searchKeywordTo attribute???귐뗪쉘??뺣뼄.
+     * searchKeywordTo attribute를 리턴한다.
      *
      * @return String
      */
@@ -161,7 +161,7 @@ public class ComDefaultVO implements Serializable {
     }
 
     /**
-     * searchKeywordTo attribute 揶쏅?????쇱젟??뺣뼄.
+     * searchKeywordTo attribute 값을 설정한다.
      *
      * @param searchKeywordTo String
      */

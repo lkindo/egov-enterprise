@@ -3,7 +3,7 @@ package com.company.project.core.exception;
 import lombok.Getter;
 
 /**
- * ??쑴已??됰뮞 嚥≪뮇彛???됱뇚 ?????
+ * 비즈니스 로직 예외 처리를 위한 공통 예외 클래스
  */
 @Getter
 public class BusinessException extends RuntimeException {

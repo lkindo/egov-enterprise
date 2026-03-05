@@ -31,10 +31,12 @@ import java.util.Properties;
 @Profile("test")
 @org.springframework.web.servlet.config.annotation.EnableWebMvc
 @org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+@org.springframework.data.web.config.EnableSpringDataWebSupport(pageSerializationMode = org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
 @org.springframework.context.annotation.Import({
-    EgovSymIdGnrConfig.class,
-    org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
-    org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration.class
+        EgovSymIdGnrConfig.class,
+        org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.data.web.SpringDataWebAutoConfiguration.class
 })
 @ComponentScan(basePackages = {
         "com.company.project.service",
@@ -64,7 +66,8 @@ public class MinimalTestConfig {
     @Primary
     public DataSourceProperties dataSourceProperties() {
         DataSourceProperties properties = new DataSourceProperties();
-        properties.setUrl("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE");
+        properties.setUrl(
+                "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE");
         properties.setDriverClassName("org.h2.Driver");
         properties.setUsername("sa");
         properties.setPassword("");
@@ -128,8 +131,7 @@ public class MinimalTestConfig {
     @Bean
     public static org.springframework.beans.factory.config.BeanFactoryPostProcessor mockIdGnrServicePostProcessor() {
         return beanFactory -> {
-            org.springframework.beans.factory.support.DefaultListableBeanFactory factory =
-                (org.springframework.beans.factory.support.DefaultListableBeanFactory) beanFactory;
+            org.springframework.beans.factory.support.DefaultListableBeanFactory factory = (org.springframework.beans.factory.support.DefaultListableBeanFactory) beanFactory;
 
             String[] commonIdGnrNames = {
                     "egovEventManageIdGnrService", "egovBackupOpertIdGnrService", "egovAdbkUserIdGnrService",
@@ -170,8 +172,10 @@ public class MinimalTestConfig {
     }
 
     @Bean
-    public com.company.project.api.interceptor.OperationalAuditInterceptor operationalAuditInterceptor() throws Exception {
-        com.company.project.api.interceptor.OperationalAuditInterceptor mock = Mockito.mock(com.company.project.api.interceptor.OperationalAuditInterceptor.class);
+    public com.company.project.api.interceptor.OperationalAuditInterceptor operationalAuditInterceptor()
+            throws Exception {
+        com.company.project.api.interceptor.OperationalAuditInterceptor mock = Mockito
+                .mock(com.company.project.api.interceptor.OperationalAuditInterceptor.class);
         Mockito.when(mock.preHandle(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(true);
         return mock;
     }

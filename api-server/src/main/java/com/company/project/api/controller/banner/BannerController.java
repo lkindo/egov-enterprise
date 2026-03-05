@@ -28,6 +28,7 @@ public class BannerController {
     public ResponseEntity<ApiResponse<Page<BannerDto>>> getBanners(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
+        System.out.println(">>> BannerController.getBanners ENTERED with keyword: " + keyword + " <<<");
         return ResponseEntity.ok(ApiResponse.success(bannerService.getBannerList(keyword, pageable)));
     }
 

@@ -6,10 +6,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * UserValidator 기능 및 제약 조건 테스트
+ */
 class UserValidatorTest {
 
   @Test
-  @DisplayName("사용자가입회원- null 테스트 사용자꾩룇裕뉑틦?)")
+  @DisplayName("회원가입 요청 검증 - null 요청인 경우 예외 발생")
   void validateUserSignupRequest_fail_withNullRequest() {
     assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(null))
         .isInstanceOf(IllegalArgumentException.class)
@@ -17,12 +20,12 @@ class UserValidatorTest {
   }
 
   @Test
-  @DisplayName("사용자가입회원- 사용자ID null 테스트 사용자꾩룇裕뉑틦?)")
+  @DisplayName("회원가입 요청 검증 - 사용자 ID 누락 또는 형식 위반 시 예외 발생")
   void validateUserSignupRequest_fail_withNullUserId() {
     UserSignupRequest request = new UserSignupRequest(
         null,
         "password123!",
-        "성공사용자",
+        "테스트사용자",
         com.company.project.domain.user.entity.Role.USER,
         "hint",
         "answer");
@@ -33,12 +36,12 @@ class UserValidatorTest {
   }
 
   @Test
-  @DisplayName("사용자가입회원- ??비밀번호사용자테스트 경로사용자꾩룇裕뉑틦?)")
+  @DisplayName("회원가입 요청 검증 - 비밀번호 복잡도 위반 시 예외 발생")
   void validateUserSignupRequest_fail_withInvalidPassword() {
     UserSignupRequest request = new UserSignupRequest(
         "validUserId",
         "short",
-        "성공사용자",
+        "테스트사용자",
         com.company.project.domain.user.entity.Role.USER,
         "hint",
         "answer");
@@ -49,7 +52,7 @@ class UserValidatorTest {
   }
 
   @Test
-  @DisplayName("실패??낅슣???검증?- 테스트 실패사용자꾩룇裕뉑틦?)")
+  @DisplayName("이메일 형식 검증 - 잘못된 형식의 이메일인 경우 예외 발생")
   void validateEmail_fail_withInvalidEmailFormat() {
     assertThatThrownBy(() -> UserValidator.validateEmail("invalid-email"))
         .isInstanceOf(IllegalArgumentException.class)
@@ -57,7 +60,7 @@ class UserValidatorTest {
   }
 
   @Test
-  @DisplayName("실패??낅슣???검증?- 테스트 실패?)")
+  @DisplayName("이메일 형식 검증 - 유효한 이메일 형식인 경우 통과")
   void validateEmail_success() {
     UserValidator.validateEmail("test@example.com");
   }
