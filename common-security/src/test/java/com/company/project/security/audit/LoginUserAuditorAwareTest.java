@@ -1,6 +1,6 @@
 package com.company.project.security.audit;
 
-import com.company.project.domain.user.entity.User;
+
 import com.company.project.security.service.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,13 +68,9 @@ class LoginUserAuditorAwareTest {
     @Test
     @DisplayName("CustomUserDetails일 때 사용자 ID 반환")
     void getCurrentAuditor_CustomUserDetails_ReturnsUserId() {
-        User user = User.builder()
+        CustomUserDetails userDetails = CustomUserDetails.builder()
                 .userId("testUser")
-                .esntlId("USR_001")
-                .userNm("Test Name")
-                .password("password")
                 .build();
-        CustomUserDetails userDetails = new CustomUserDetails(user);
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);

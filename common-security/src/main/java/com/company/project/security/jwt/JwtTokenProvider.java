@@ -13,11 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import com.company.project.domain.auth.RefreshToken;
-import com.company.project.domain.auth.RefreshTokenRepository;
+
 import javax.crypto.SecretKey;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Objects;
@@ -35,9 +32,6 @@ public class JwtTokenProvider {
     @org.springframework.beans.factory.annotation.Autowired
     @org.springframework.context.annotation.Lazy
     private UserDetailsService userDetailsService;
-
-    @org.springframework.beans.factory.annotation.Autowired
-    private RefreshTokenRepository refreshTokenRepository;
 
     @PostConstruct
     protected void init() {
@@ -59,29 +53,15 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    @Transactional
     public String createRefreshToken(@org.springframework.lang.NonNull String userId) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + refreshTokenValidityInMilliseconds);
-        String token = Jwts.builder()
+        return Jwts.builder()
                 .subject(userId)
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key)
                 .compact();
-
-        RefreshToken refreshToken = refreshTokenRepository.findById(userId)
-                .map(existingToken -> {
-                    existingToken.updateToken(token, validity.toInstant());
-                    return existingToken;
-                })
-                .orElse(RefreshToken.builder()
-                        .userId(userId)
-                        .token(token)
-                        .expiryDate(validity.toInstant())
-                        .build());
-        refreshTokenRepository.save(Objects.requireNonNull(refreshToken));
-        return token;
     }
 
     public Authentication getAuthentication(String token) {
@@ -147,13 +127,6 @@ public class JwtTokenProvider {
         cookie.setPath("/");
         cookie.setMaxAge(0);
         response.addCookie(cookie);
-    }
-
-    public boolean validateRefreshToken(String token) {
-        if (!validateToken(token)) return false;
-        return refreshTokenRepository.findByToken(token)
-                .map(storedToken -> storedToken.getExpiryDate().isAfter(Instant.now()))
-                .orElse(false);
     }
 
     public SecretKey getKeyForTest() {
