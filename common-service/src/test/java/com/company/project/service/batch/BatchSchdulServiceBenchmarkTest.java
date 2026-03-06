@@ -40,6 +40,9 @@ public class BatchSchdulServiceBenchmarkTest {
   @Autowired
   private BatchOpertRepository batchOpertRepository;
 
+  @Autowired
+  private com.company.project.domain.code.CommonCodeRepository commonCodeRepository;
+
   @Test
   @Transactional
   public void testGetBatchSchdulListPerformance() {
@@ -54,13 +57,21 @@ public class BatchSchdulServiceBenchmarkTest {
         .build();
     batchOpertRepository.save(java.util.Objects.requireNonNull(job));
 
+    // Create Common Code for Cycle (COM047) - "02" is Weekly
+    com.company.project.domain.code.CommonCode cycleCode = com.company.project.domain.code.CommonCode.builder()
+        .codeGroupId("COM047")
+        .code("02")
+        .codeNm("매주")
+        .build();
+    commonCodeRepository.save(java.util.Objects.requireNonNull(cycleCode));
+
     List<BatchSchdul> schduls = new ArrayList<>();
 
     for (int i = 0; i < count; i++) {
       String id = "BSCH_" + String.format("%014d", System.currentTimeMillis() + i);
       BatchSchdul schdul = BatchSchdul.builder()
           .batchSchdulId(id)
-          .batchOpertId("JOB_TEST")
+          .batchOpert(job)
           .executCycle("02") // Weekly
           .build();
 
@@ -69,6 +80,7 @@ public class BatchSchdulServiceBenchmarkTest {
         schdul.getBatchSchdulDfks().add(BatchSchdulDfk.builder()
             .batchSchdulId(id)
             .executSchdulDfkSe("0" + j)
+            .batchSchdul(schdul)
             .build());
       }
       schduls.add(schdul);

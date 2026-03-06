@@ -62,7 +62,7 @@ class CommunityServiceTest {
                 .build();
 
         // Mock save
-        when(communityRepository.save(java.util.Objects.requireNonNull(any(Community.class))))
+        when(communityRepository.save(any(Community.class)))
                 .thenAnswer(invocation -> {
                     Community c = java.util.Objects.requireNonNull(invocation.getArgument(0));
                     return c;
@@ -75,7 +75,7 @@ class CommunityServiceTest {
         assertThat(created).isNotNull();
         assertThat(created.getCmmntyNm()).isEqualTo("Test Community");
 
-        verify(communityRepository).save(java.util.Objects.requireNonNull(any(Community.class)));
+        verify(communityRepository).save(any(Community.class));
     }
 
     @Test

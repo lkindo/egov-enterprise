@@ -46,8 +46,7 @@ class CommentServiceTest {
 
     Comment savedComment = Comment.builder().id(1L).build();
 
-    when(commentRepository.findMaxId()).thenReturn(0L);
-    when(commentRepository.save(java.util.Objects.requireNonNull(any(Comment.class))))
+    when(commentRepository.save(any(Comment.class)))
         .thenReturn(java.util.Objects.requireNonNull(savedComment));
 
     // when
@@ -55,7 +54,7 @@ class CommentServiceTest {
 
     // then
     assertThat(id).isEqualTo(1L);
-    verify(commentRepository).save(java.util.Objects.requireNonNull(any(Comment.class)));
+    verify(commentRepository).save(any(Comment.class));
   }
 
   @Test

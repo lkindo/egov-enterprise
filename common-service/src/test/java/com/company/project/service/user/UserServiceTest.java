@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 
@@ -46,8 +47,16 @@ class UserServiceTest {
     @DisplayName("사용자 상세 조회 성공 테스트")
     void getUserDetailSuccessTest() {
         // Given
-        User user = User.builder().userId("user01").userNm("Name").esntlId("KEY01").build();
+        User user = User.builder().userId("user01").userNm("Name").esntlId("KEY01").password("pw").build();
         given(userRepository.findById("user01")).willReturn(Optional.of(user));
+        given(userMapper.toDtoWithAuthority(any(), any())).willAnswer(invocation -> {
+            User u = invocation.getArgument(0);
+            return UserDto.builder()
+                .userId(u.getUserId())
+                .userNm(u.getUserNm())
+                .esntlId(u.getEsntlId())
+                .build();
+        });
 
         // When
         UserDto result = userService.getUserById("user01");

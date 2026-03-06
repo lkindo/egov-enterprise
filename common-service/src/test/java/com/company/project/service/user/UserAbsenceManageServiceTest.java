@@ -53,7 +53,7 @@ class UserAbsenceManageServiceTest {
     }
     Page<User> userPage = new PageImpl<>(java.util.Objects.requireNonNull(users));
 
-    given(userRepository.findAll(java.util.Objects.requireNonNull(any(Pageable.class)))).willReturn(userPage);
+    given(userRepository.findAll(any(Pageable.class))).willReturn(userPage);
 
     // Mock findAllById
     List<UserAbsence> absences = new ArrayList<>();
@@ -62,7 +62,7 @@ class UserAbsenceManageServiceTest {
         .userId("user0")
         .userAbsnceAt("Y")
         .build());
-    given(userAbsenceRepository.findAllById(java.util.Objects.requireNonNull(any())))
+    given(userAbsenceRepository.findAllById(any()))
         .willReturn(java.util.Objects.requireNonNull(absences));
 
     // when
@@ -85,8 +85,8 @@ class UserAbsenceManageServiceTest {
     assertThat(result.get(1).getRegYn()).isEqualTo("N");
 
     // Verify findAllById called once
-    verify(userAbsenceRepository, times(1)).findAllById(java.util.Objects.requireNonNull(any()));
+    verify(userAbsenceRepository, times(1)).findAllById(any());
     // Verify findById called zero times
-    verify(userAbsenceRepository, times(0)).findById(java.util.Objects.requireNonNull(any(String.class)));
+    verify(userAbsenceRepository, times(0)).findById(any(String.class));
   }
 }

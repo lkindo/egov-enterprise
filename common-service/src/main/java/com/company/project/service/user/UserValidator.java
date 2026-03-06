@@ -8,17 +8,19 @@ import org.springframework.util.StringUtils;
 import java.util.regex.Pattern;
 
 /**
- * ?용??관???력?검??틸리티 ?래?? */
+ * 사용자 관련 입력 검증 유틸리티 클래스
+ */
 public class UserValidator {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
     private static final Pattern PASSWORD_PATTERN = Pattern
             .compile("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$");
     private static final Pattern USER_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9]{4,20}$");
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z가-??\s]{2,50}$");
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z가-힣\\s]{2,50}$");
 
     /**
-     * ?용???원가???청 검?     */
+     * 사용자 회원가입 요청 검증
+     */
     public static void validateUserSignupRequest(@NonNull UserSignupRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("User signup request cannot be null");
@@ -50,7 +52,8 @@ public class UserValidator {
     }
 
     /**
-     * ?메??주소 검?     */
+     * 이메일 주소 검증
+     */
     public static void validateEmail(String email) {
         if (!StringUtils.hasText(email) || !EMAIL_PATTERN.matcher(email).matches()) {
             throw new IllegalArgumentException("Invalid email format");
@@ -58,7 +61,8 @@ public class UserValidator {
     }
 
     /**
-     * ?용???티??검?     */
+     * 사용자 엔티티 검증
+     */
     public static void validateUser(User user) {
         if (user == null) {
             throw new IllegalArgumentException("User cannot be null");

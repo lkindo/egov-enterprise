@@ -73,6 +73,13 @@ public class MenuServiceGetMenuHierarchyPerformanceTest {
 
   @BeforeEach
   void setUp() throws Exception {
+    // Mock SecurityContextHolder to ROLE_ADMIN
+    org.springframework.security.core.context.SecurityContext context = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
+    org.springframework.security.core.Authentication auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("admin", "pw", 
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN")));
+    context.setAuthentication(auth);
+    org.springframework.security.core.context.SecurityContextHolder.setContext(context);
+
     // Populate Programs
     List<Program> programs = new ArrayList<>();
     for (int i = 0; i < 500; i++) {

@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * ?????????????퉬??
+ * 사용자 부재 정보 관리 서비스
  */
 @Service("userAbsenceManageService")
 @Transactional(readOnly = true)
@@ -36,7 +36,8 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ????????紐⑸?議고??     */
+     * 사용자 부재 목록 조회
+     */
     public List<UserAbsenceDto> selectUserAbsenceList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -73,13 +74,15 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ????????紐⑸???嫄댁??     */
+     * 사용자 부재 목록 총 건수
+     */
     public int selectUserAbsenceListTotCnt(ComDefaultVO searchVO) {
         return (int) userRepository.count();
     }
 
     /**
-     * ?????????곸꽭 議고??     */
+     * 사용자 부재 상세 조회
+     */
     public UserAbsenceDto selectUserAbsence(String userId) {
         User user = userRepository.findById(Objects.requireNonNull(userId)).orElse(null);
         if (user == null) {
@@ -102,7 +105,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ?????????깅줉
+     * 사용자 부재 등록
      */
     @Transactional
     public void insertUserAbsence(UserAbsenceDto dto) {
@@ -116,7 +119,7 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ??????????젙
+     * 사용자 부재 수정
      */
     @Transactional
     public void updateUserAbsence(UserAbsenceDto dto) {
@@ -127,14 +130,16 @@ public class UserAbsenceManageService {
     }
 
     /**
-     * ????????????     */
+     * 사용자 부재 삭제
+     */
     @Transactional
     public void deleteUserAbsence(String userId) {
         userAbsenceRepository.deleteById(Objects.requireNonNull(userId));
     }
 
     /**
-     * ??????????쨷 ????     */
+     * 사용자 부재 다중 삭제
+     */
     @Transactional
     public void deleteUserAbsences(String[] userIds) {
         userAbsenceRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(Objects.requireNonNull(userIds))));

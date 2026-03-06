@@ -1,6 +1,8 @@
 package com.company.project.service.board;
 
 import com.company.project.domain.board.Board;
+import com.company.project.domain.board.BoardMaster;
+import com.company.project.domain.board.BoardSearchResult;
 import com.company.project.domain.board.BoardDetailResult;
 import com.company.project.domain.board.BoardRepository;
 import com.company.project.service.board.dto.BoardDto;
@@ -47,14 +49,21 @@ class BoardServiceTest {
             fileService,
             eventPublisher
         );
+        
+        // Mock BoardMaster
+        BoardMaster master = BoardMaster.builder().bbsId("BBS01").bbsNm("Board").build();
+        org.mockito.Mockito.lenient().when(boardMasterRepository.findById(org.mockito.ArgumentMatchers.anyString()))
+            .thenReturn(Optional.of(master));
     }
 
     @Test
     @DisplayName("게시글 목록 조회 테스트")
     void getBoardPostsTest() {
-        Board board = Board.builder().nttId(1L).nttSj("Title").build();
-        Page<Board> page = new PageImpl<>(List.of(board));
-        given(boardRepository.findAll(any(PageRequest.class))).willReturn(page);
+        BoardSearchResult boardResult = mock(BoardSearchResult.class);
+        given(boardResult.getNttId()).willReturn(1L);
+        given(boardResult.getNttSj()).willReturn("Title");
+        Page<BoardSearchResult> page = new PageImpl<>(List.of(boardResult));
+        given(boardRepository.searchArticles(any(), any())).willReturn(page);
 
         Page<BoardDto> result = boardService.getBoardPosts("BBS01", PageRequest.of(0, 10));
 
@@ -70,7 +79,7 @@ class BoardServiceTest {
         given(mockDetail.getNttSj()).willReturn("Subject");
 
         given(boardRepository.findArticleDetail(1L)).willReturn(Optional.of(mockDetail));
-        given(boardRepository.findById(1L)).willReturn(Optional.of(Board.builder().nttId(1L).build()));
+        given(boardRepository.findById(1L)).willReturn(Optional.of(Board.builder().nttId(1L).bbsId("BBS01").build()));
 
         BoardDto result = boardService.getPostDetail("BBS01", 1L);
 

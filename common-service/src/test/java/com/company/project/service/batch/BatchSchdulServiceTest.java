@@ -61,11 +61,11 @@ class BatchSchdulServiceTest {
     when(batchSchdulRepository.searchBatchSchduls(any(), any(), eq(pageable))).thenReturn(page);
 
     // Mock common codes
-    when(commonCodeService.getCodesByGroup(java.util.Objects.requireNonNull(any(String.class))))
+    when(commonCodeService.getCodesByGroup(any(String.class)))
         .thenReturn(Collections.emptyList());
 
     // Mock job repository to return list of jobs for findAllById
-    when(batchOpertRepository.findAllById(java.util.Objects.requireNonNull(any()))).thenAnswer(invocation -> {
+    when(batchOpertRepository.findAllById(any())).thenAnswer(invocation -> {
       Iterable<String> ids = java.util.Objects.requireNonNull(invocation.getArgument(0));
       List<BatchOpert> jobs = new java.util.ArrayList<>();
       ids.forEach(id -> jobs.add(BatchOpert.builder().batchOpertId(id).batchOpertNm("Job Name " + id).build()));
@@ -80,12 +80,12 @@ class BatchSchdulServiceTest {
 
     // then
     // Verify that findAllById is called once
-    verify(batchOpertRepository, times(1)).findAllById(java.util.Objects.requireNonNull(any()));
+    verify(batchOpertRepository, times(1)).findAllById(any());
     // Verify that findAllDfksByBatchSchdulIdIn is called once
     verify(batchSchdulRepository, times(1)).findAllDfksByBatchSchdulIdIn(any());
 
     // Verify that findById is NOT called
-    verify(batchOpertRepository, never()).findById(java.util.Objects.requireNonNull(anyString()));
+    verify(batchOpertRepository, never()).findById(anyString());
 
     // Additional verification: Check if data is correctly mapped
     result.getContent().forEach(dto -> {

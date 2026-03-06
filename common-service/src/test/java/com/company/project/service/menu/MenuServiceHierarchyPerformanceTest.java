@@ -52,10 +52,12 @@ public class MenuServiceHierarchyPerformanceTest {
   void setUp() throws Exception {
     menuService = new MenuService(menuRepository, programRepository, menuAuthorityRepository);
 
-    // Inject self to avoid NPE
-    java.lang.reflect.Field selfField = MenuService.class.getDeclaredField("self");
-    selfField.setAccessible(true);
-    selfField.set(menuService, menuService);
+    // Mock SecurityContextholde to ROLE_ADMIN
+    org.springframework.security.core.context.SecurityContext context = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
+    org.springframework.security.core.Authentication auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("admin", "pw", 
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN")));
+    context.setAuthentication(auth);
+    org.springframework.security.core.context.SecurityContextHolder.setContext(context);
 
     // Populate Data
     List<Menu> menus = new ArrayList<>();

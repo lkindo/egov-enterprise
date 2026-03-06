@@ -13,15 +13,15 @@ import lombok.*;
 public class VacationDto {
     private String applcntId;
 
-    @NotBlank(message = "??구분? ?수 ?력 ???니??")
+    @NotBlank(message = "휴가구분은 필수 입력 항목입니다.")
     @Size(max = 2)
     private String vcatnSe;
 
-    @NotBlank(message = "?작?? ?수 ?력 ???니??")
+    @NotBlank(message = "시작일은 필수 입력 항목입니다.")
     @Size(max = 8)
     private String bgnde;
 
-    @NotBlank(message = "종료?? ?수 ?력 ???니??")
+    @NotBlank(message = "종료일은 필수 입력 항목입니다.")
     @Size(max = 8)
     private String endde;
 
@@ -30,7 +30,7 @@ public class VacationDto {
 
     private String reqstDe;
 
-    @NotBlank(message = "발생?도???수 ?력 ???니??")
+    @NotBlank(message = "발생연도는 필수 입력 항목입니다.")
     @Size(max = 4)
     private String occrrncYear;
 

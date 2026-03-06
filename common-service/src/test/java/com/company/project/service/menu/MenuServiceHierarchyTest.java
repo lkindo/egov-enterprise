@@ -40,6 +40,18 @@ class MenuServiceHierarchyTest {
 
         given(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).willReturn(mockMenus);
         given(programRepository.findAll()).willReturn(new ArrayList<>()); // Empty programs
+        
+        List<com.company.project.domain.auth.MenuAuthority> auths = new ArrayList<>();
+        String anonRole = "ROLE_ANONYMOUS";
+        auths.add(com.company.project.domain.auth.MenuAuthority.builder()
+            .id(com.company.project.domain.auth.MenuAuthority.MenuAuthorityId.builder().authorCode(anonRole).menuNo(1L).build()).build());
+        auths.add(com.company.project.domain.auth.MenuAuthority.builder()
+            .id(com.company.project.domain.auth.MenuAuthority.MenuAuthorityId.builder().authorCode(anonRole).menuNo(11L).build()).build());
+        auths.add(com.company.project.domain.auth.MenuAuthority.builder()
+            .id(com.company.project.domain.auth.MenuAuthority.MenuAuthorityId.builder().authorCode(anonRole).menuNo(12L).build()).build());
+        auths.add(com.company.project.domain.auth.MenuAuthority.builder()
+            .id(com.company.project.domain.auth.MenuAuthority.MenuAuthorityId.builder().authorCode(anonRole).menuNo(2L).build()).build());
+        given(menuAuthorityRepository.findAll()).willReturn(auths);
 
         // When
         List<MenuDto> hierarchy = menuService.getMenuHierarchy();

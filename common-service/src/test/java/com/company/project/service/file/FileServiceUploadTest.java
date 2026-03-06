@@ -57,7 +57,7 @@ class FileServiceUploadTest {
     given(multipartFile.getSize()).willReturn(100L);
 
     FileMaster savedMaster = FileMaster.builder().atchFileId("FILE_TEST").build();
-    given(fileMasterRepository.save(java.util.Objects.requireNonNull(any(FileMaster.class))))
+    given(fileMasterRepository.save(any(FileMaster.class)))
         .willReturn(java.util.Objects.requireNonNull(savedMaster));
     given(storageService.store(any(MultipartFile.class), anyString())).willReturn("saved_test.txt");
 
@@ -66,9 +66,9 @@ class FileServiceUploadTest {
 
     // then
     assertThat(result).startsWith("FILE_");
-    verify(fileMasterRepository).save(java.util.Objects.requireNonNull(any(FileMaster.class)));
+    verify(fileMasterRepository).save(any(FileMaster.class));
     verify(storageService).store(eq(multipartFile), anyString());
-    verify(fileDetailRepository).save(java.util.Objects.requireNonNull(any(FileDetail.class)));
+    verify(fileDetailRepository).save(any(FileDetail.class));
   }
 
   @Test
@@ -92,6 +92,6 @@ class FileServiceUploadTest {
     // then
     verify(fileMasterRepository).findById(atchFileId);
     verify(storageService).store(eq(multipartFile), anyString());
-    verify(fileDetailRepository).save(java.util.Objects.requireNonNull(any(FileDetail.class)));
+    verify(fileDetailRepository).save(any(FileDetail.class));
   }
 }

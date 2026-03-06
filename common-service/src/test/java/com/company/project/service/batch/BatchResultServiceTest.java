@@ -66,7 +66,7 @@ class BatchResultServiceTest {
         // Mock job repository to return list of jobs for findAllById
         // Note: For the optimization, we expect findAllById to be called.
         // For the un-optimized code, this mock might be unused or validation will fail.
-        lenient().when(batchOpertRepository.findAllById(java.util.Objects.requireNonNull(any())))
+        lenient().when(batchOpertRepository.findAllById(any()))
                 .thenAnswer(invocation -> {
                     Iterable<String> ids = java.util.Objects
                             .requireNonNull(invocation.getArgument(0));
@@ -79,7 +79,7 @@ class BatchResultServiceTest {
 
         // Mock findById for the un-optimized code path (so the test doesn't crash
         // before verification)
-        lenient().when(batchOpertRepository.findById(java.util.Objects.requireNonNull(anyString())))
+        lenient().when(batchOpertRepository.findById(anyString()))
                 .thenAnswer(invocation -> {
                     String id = java.util.Objects.requireNonNull(invocation.getArgument(0));
                     return java.util.Optional.of(BatchOpert.builder().batchOpertId(id)
@@ -93,7 +93,7 @@ class BatchResultServiceTest {
         // then
         // Verify that findById is called for each result (current implementation)
         // Note: This test verifies the current behavior, not the optimized behavior
-        verify(batchOpertRepository, atLeastOnce()).findById(java.util.Objects.requireNonNull(anyString()));
+        verify(batchOpertRepository, atLeastOnce()).findById(anyString());
 
         // Additional verification: Check if data is correctly mapped
         assertThat(result).isNotNull();

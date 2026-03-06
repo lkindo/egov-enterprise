@@ -33,7 +33,7 @@ class EgovWebUtilTest {
         assertThat(EgovWebUtil.filePathBlackList(null)).isEqualTo("");
         // ../../../etc/passwd -> .. removed -> ///etc/passwd
         assertThat(EgovWebUtil.filePathBlackList("../../../etc/passwd")).isEqualTo("///etc/passwd");
-        assertThat(EgovWebUtil.filePathBlackList("..\\..\\..\\windows\\system32")).isEqualTo("windows\\system32");
+        assertThat(EgovWebUtil.filePathBlackList("..\\..\\..\\windows\\system32")).isEqualTo("\\\\\\windows\\system32");
     }
 
     @Test

@@ -10,45 +10,50 @@ import org.springframework.lang.NonNull;
 import java.util.List;
 
 /**
- * ??????????퉬???명꽣??씠??
- * - ?꾩옄???꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ?⑹????꾪븳 ?명꽣??씠???꾨?? */
+ * 사용자 관리 서비스 인터페이스
+ * - 전자정부 표준프레임워크 5.0 호환성 인증 요건 충족을 위한 인터페이스 정의
+ */
 public interface EgovUserService {
 
     /**
-     * ?????紐⑸?議고??     */
+     * 사용자 목록 조회
+     */
     List<UserDto> getUserList();
 
     /**
-     * ?????紐⑸???씠?議고??     */
+     * 사용자 목록 페이지 조회
+     */
     Page<UserDto> getPagedUserList(@NonNull Pageable pageable);
 
     /**
-     * ??????곸꽭 議고??     */
+     * 사용자 상세 조회
+     */
     UserDto getUserById(@NonNull String userId);
 
     /**
-     * ??????깅줉
+     * 사용자 등록
      */
     String registerUser(@NonNull String userId, @NonNull String password, @NonNull String userNm,
             String passwordHint, String passwordCnsr,
             com.company.project.domain.user.entity.Role role);
 
     /**
-     * ????????媛??
+     * 사용자 회원가입
      */
     UserResponse signup(UserSignupRequest request);
 
     /**
-     * ???踰덊??寃?
+     * 비밀번호 검증
      */
     boolean verifyPassword(@NonNull String rawPassword, @NonNull String encodedPassword);
 
     /**
-     * ??????뺣낫 ??젙
+     * 사용자 정보 수정
      */
     void updateUser(@NonNull String userId, @NonNull UserDto userDto);
 
     /**
-     * ?????????     */
+     * 사용자 삭제
+     */
     void deleteUser(@NonNull String userId);
 }

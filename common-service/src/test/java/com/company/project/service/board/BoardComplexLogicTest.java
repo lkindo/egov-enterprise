@@ -1,6 +1,8 @@
 package com.company.project.service.board;
 
 import com.company.project.domain.board.Board;
+import com.company.project.domain.board.BoardMaster;
+import com.company.project.domain.board.BoardSearchResult;
 import com.company.project.domain.board.BoardDetailResult;
 import com.company.project.domain.board.BoardMasterRepository;
 import com.company.project.domain.board.BoardRepository;
@@ -47,6 +49,10 @@ class BoardComplexLogicTest {
             fileService,
             eventPublisher
         );
+        
+        // Default Mock for BoardMaster
+        BoardMaster master = BoardMaster.builder().bbsId("BBS01").bbsNm("Test Board").build();
+        lenient().when(boardMasterRepository.findById(anyString())).thenReturn(Optional.of(master));
     }
 
     @Test
@@ -55,10 +61,12 @@ class BoardComplexLogicTest {
         // Given
         String bbsId = "BBS01";
         PageRequest pageable = PageRequest.of(0, 10);
-        Board board = Board.builder().nttId(1L).nttSj("Test Post").build();
-        Page<Board> page = new PageImpl<>(List.of(board));
+        BoardSearchResult boardResult = mock(BoardSearchResult.class);
+        given(boardResult.getNttId()).willReturn(1L);
+        given(boardResult.getNttSj()).willReturn("Test Post");
+        Page<BoardSearchResult> page = new PageImpl<>(List.of(boardResult));
 
-        given(boardRepository.findAll(any(PageRequest.class))).willReturn(page);
+        given(boardRepository.searchArticles(any(), any())).willReturn(page);
 
         // When
         Page<BoardDto> result = boardService.getBoardPosts(bbsId, pageable);
@@ -77,8 +85,10 @@ class BoardComplexLogicTest {
                 bbsId, "New Title", "New Content", null, null, "FILE_999"
         );
 
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+
         // When
-        boardService.createPost(bbsId, request);
+        boardService.createPost("USER01", request);
 
         // Then
         // Repository에 저장되는 엔티티의 atchFileId가 request와 동일한지 확인
@@ -92,7 +102,7 @@ class BoardComplexLogicTest {
     void viewCountIncrementTest() {
         // Given
         Long nttId = 1L;
-        Board board = spy(Board.builder().nttId(nttId).inqireCo(10).build());
+        Board board = spy(Board.builder().nttId(nttId).inqireCo(10).bbsId("BBS01").build());
         BoardDetailResult mockDetail = mock(BoardDetailResult.class);
 
         given(boardRepository.findArticleDetail(nttId)).willReturn(Optional.of(mockDetail));
@@ -103,6 +113,6 @@ class BoardComplexLogicTest {
 
         // Then
         verify(board).increaseInqireCo();
-        verify(boardRepository).save(board);
+        assertThat(board.getInqireCo()).isEqualTo(11);
     }
 }

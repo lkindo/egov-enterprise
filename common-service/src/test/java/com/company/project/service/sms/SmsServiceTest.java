@@ -49,24 +49,22 @@ class SmsServiceTest {
                 .recipients(List.of(recipientDto))
                 .build();
 
-        when(smsSender.send(java.util.Objects.requireNonNull(anyString()),
-                java.util.Objects.requireNonNull(anyString()),
-                java.util.Objects.requireNonNull(anyString()))).thenReturn(true);
-        when(smsRepository.save(java.util.Objects.requireNonNull(any(Sms.class))))
+        when(smsSender.send(anyString(), anyString(), anyString())).thenReturn(true);
+        when(smsRepository.save(any(Sms.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         smsService.sendSms(userId, smsDto);
 
         // Then
         ArgumentCaptor<Sms> smsCaptor = ArgumentCaptor.forClass(Sms.class);
-        verify(smsRepository).save(java.util.Objects.requireNonNull(smsCaptor.capture()));
+        verify(smsRepository).save(smsCaptor.capture());
 
         Sms capturedSms = smsCaptor.getValue();
         assertNotNull(capturedSms);
         assertEquals("021234567", capturedSms.getTrnsmitTelno());
 
         verify(smsSender).send("021234567", "01012345678", "Test Message");
-        verify(smsRecptnRepository).save(java.util.Objects.requireNonNull(any(SmsRecptn.class)));
+        verify(smsRecptnRepository).save(any(SmsRecptn.class));
     }
 
     @Test
@@ -82,17 +80,15 @@ class SmsServiceTest {
                 .recipients(List.of(recipientDto))
                 .build();
 
-        when(smsSender.send(java.util.Objects.requireNonNull(anyString()),
-                java.util.Objects.requireNonNull(anyString()),
-                java.util.Objects.requireNonNull(anyString())))
+        when(smsSender.send(anyString(), anyString(), anyString()))
                 .thenThrow(new RuntimeException("Send error"));
-        when(smsRepository.save(java.util.Objects.requireNonNull(any(Sms.class))))
+        when(smsRepository.save(any(Sms.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         smsService.sendSms(userId, smsDto);
 
         // Then
         verify(smsSender).send("021234567", "01012345678", "Test Message");
-        verify(smsRecptnRepository).save(java.util.Objects.requireNonNull(any(SmsRecptn.class)));
+        verify(smsRecptnRepository).save(any(SmsRecptn.class));
     }
 }
