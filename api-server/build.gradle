@@ -11,8 +11,7 @@ dependencies {
     implementation project(':module-operation')
     implementation project(':module-knowledge')
 
-    // ── 공통 기반 모듈 (점진적 이관 완료 전까지 common-service 유지) ──
-    implementation project(':common-service')
+    // ── 공통 기반 모듈 ──
     implementation project(':common-core')
     implementation project(':common-security')
 
