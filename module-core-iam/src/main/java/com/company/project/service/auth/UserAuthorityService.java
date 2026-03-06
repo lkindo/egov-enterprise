@@ -1,7 +1,9 @@
 package com.company.project.service.auth;
 
+import com.company.project.domain.auth.DeptAuthorProjection;
 import com.company.project.domain.auth.UserAuthority;
 import com.company.project.domain.auth.UserAuthorityRepository;
+import com.company.project.service.auth.dto.DeptAuthorBatchDto;
 import com.company.project.service.auth.dto.UserAuthorityDto;
 import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +29,8 @@ public class UserAuthorityService {
     private final UserAuthorityRepository userAuthorityRepository;
 
     /**
-     * ?????沅뚰?紐⑸?議고??     */
+     * ?????沅뚰?紐⑸?議고??
+     */
     public List<UserAuthorityDto> selectUserAuthorityList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -38,13 +41,15 @@ public class UserAuthorityService {
     }
 
     /**
-     * ?????沅뚰?紐⑸???嫄댁??     */
+     * ?????沅뚰?紐⑸???嫄댁??
+     */
     public int selectUserAuthorityListTotCnt(ComDefaultVO searchVO) {
         return (int) userAuthorityRepository.count();
     }
 
     /**
-     * ?????沅뚰??곸꽭 議고??     */
+     * ?????沅뚰??곸꽭 議고??
+     */
     public UserAuthorityDto selectUserAuthority(@NonNull String uniqId) {
         return userAuthorityRepository.findById(Objects.requireNonNull(uniqId))
                 .map(this::toDto)
@@ -72,10 +77,51 @@ public class UserAuthorityService {
     }
 
     /**
-     * ?????沅뚰?????     */
+     * ?????沅뚰?????
+     */
     @Transactional
     public void deleteUserAuthority(@NonNull String uniqId) {
         userAuthorityRepository.deleteById(Objects.requireNonNull(uniqId));
+    }
+
+    /**
+     * 부서별 권한 목록 조회
+     */
+    public List<DeptAuthorProjection> selectDeptAuthorList(String deptCode, Pageable pageable) {
+        return userAuthorityRepository.searchDeptAuthors(deptCode, pageable).getContent();
+    }
+
+    /**
+     * 부서별 권한 일괄 등록/수정
+     */
+    @Transactional
+    public void processDeptAuthorBatch(DeptAuthorBatchDto batchDto) {
+        if (batchDto.isAllMembers()) {
+            // 부서 내 전체 사용자 대상
+            List<DeptAuthorProjection> members = userAuthorityRepository
+                    .searchDeptAuthors(batchDto.getDeptId(), Pageable.unpaged()).getContent();
+            for (DeptAuthorProjection member : members) {
+                this.updateOrInsert(member.getUniqId(), batchDto.getAuthorCode());
+            }
+        } else if (batchDto.getUserIds() != null) {
+            // 특정 사용자들 대상
+            for (String uniqId : batchDto.getUserIds()) {
+                this.updateOrInsert(uniqId, batchDto.getAuthorCode());
+            }
+        }
+    }
+
+    private void updateOrInsert(String uniqId, String authorCode) {
+        UserAuthority entity = userAuthorityRepository.findById(uniqId).orElse(null);
+        if (entity != null) {
+            entity.update(authorCode, entity.getMberTyCode());
+        } else {
+            userAuthorityRepository.save(UserAuthority.builder()
+                    .uniqId(uniqId)
+                    .authorCode(authorCode)
+                    .mberTyCode("USR03") // Default value for general user
+                    .build());
+        }
     }
 
     private UserAuthorityDto toDto(UserAuthority entity) {

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
-import { SyncServer } from '@/services/syncService';
+import { SyncServer } from '@/services/admin/system/SyncAdminService';
 
 interface SyncServerFormProps {
   initialData?: Partial<SyncServer>;
@@ -14,7 +14,7 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
   const [formData, setFormData] = useState<Partial<SyncServer>>({
     serverNm: '',
     serverIp: '',
-    serverPort: '',
+    serverPort: 22,
     targetDrctry: '',
     syncAt: 'Y',
     ...initialData
@@ -32,7 +32,7 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
           <input
             type="text"
             value={formData.serverNm || ''}
-            onChange={(e) => setFormData({...formData, serverNm: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, serverNm: e.target.value })}
             placeholder="예: 백업용 2호기 서버"
             className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
             required
@@ -44,7 +44,7 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
             <input
               type="text"
               value={formData.serverIp || ''}
-              onChange={(e) => setFormData({...formData, serverIp: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, serverIp: e.target.value })}
               placeholder="10.0.0.1"
               className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
               required
@@ -52,9 +52,9 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
           </FormField>
           <FormField label="포트 (Port)" required>
             <input
-              type="text"
+              type="number"
               value={formData.serverPort || ''}
-              onChange={(e) => setFormData({...formData, serverPort: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, serverPort: parseInt(e.target.value) || 0 })}
               placeholder="22"
               className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
               required
@@ -66,7 +66,7 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
           <input
             type="text"
             value={formData.targetDrctry || ''}
-            onChange={(e) => setFormData({...formData, targetDrctry: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, targetDrctry: e.target.value })}
             placeholder="/data/sync_backup"
             className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
             required
@@ -76,7 +76,7 @@ export function SyncServerForm({ initialData, onSubmit, onCancel }: SyncServerFo
         <FormField label="동기화 활성화" required>
           <select
             value={formData.syncAt}
-            onChange={(e) => setFormData({...formData, syncAt: e.target.value as 'Y' | 'N'})}
+            onChange={(e) => setFormData({ ...formData, syncAt: e.target.value as 'Y' | 'N' })}
             className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="Y">활성 (동기화 수행)</option>

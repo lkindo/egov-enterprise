@@ -59,6 +59,14 @@ axiosInstance.interceptors.response.use(
         }
 
         if (error.response?.status === 401 && !originalRequest._retry && !isRetrying) {
+            // 현재 페이지가 로그인 페이지이거나 요청 자체가 인증 관련(login, reissue)이면 재시도하지 않음
+            if (typeof window !== 'undefined' &&
+                (window.location.pathname.includes('/login') ||
+                    originalRequest.url?.includes('/auth/login') ||
+                    originalRequest.url?.includes('/auth/reissue'))) {
+                return Promise.reject(error);
+            }
+
             // 서버 사이드인 경우 reissue 시도하지 않고 즉시 에러 반환
             if (typeof window === 'undefined') {
                 return Promise.reject(error);
@@ -72,7 +80,11 @@ axiosInstance.interceptors.response.use(
                 const res = await axios.post<ApiResponse<{ accessToken: string }>>(
                     `${getBaseURL()}/auth/reissue`,
                     {},
-                    { withCredentials: true }
+                    { 
+                        withCredentials: true,
+                        xsrfCookieName: 'XSRF-TOKEN',
+                        xsrfHeaderName: 'X-XSRF-TOKEN',
+                    }
                 );
 
                 const accessToken = res.data?.data?.accessToken;

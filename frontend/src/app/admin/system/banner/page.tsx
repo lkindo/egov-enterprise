@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { bannerAdminService } from '@/services/admin/system/BannerAdminService';
-import { popupService } from '@/services/popupService';
+import { popupAdminService } from '@/services/admin/system/PopupAdminService';
 import BannerAdminClient from './BannerAdminClient';
 import { Loader2 } from 'lucide-react';
 
@@ -22,7 +22,7 @@ export default async function BannerAdminPage() {
   try {
     const [bannersRes, popupsRes] = await Promise.all([
       bannerAdminService.getBanners({ page: 0, size: 50 }, axiosConfig),
-      popupService.getPopups({ page: 0, size: 50 }, axiosConfig)
+      popupAdminService.getPopups({ page: 0, size: 50 }, axiosConfig)
     ]);
 
     initialBanners = (bannersRes as any)?.content || [];

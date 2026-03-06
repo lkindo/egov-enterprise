@@ -87,7 +87,7 @@ public class ApiSecurityConfig {
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf
                                                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                                                .ignoringRequestMatchers("/api/v1/auth/login", "/api/v1/users/signup"))
+                                                .ignoringRequestMatchers("/api/v1/auth/login", "/api/v1/auth/reissue", "/api/v1/users/signup"))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/api/v1/auth/login", "/api/v1/auth/me",
                                                                 "/api/v1/auth/reissue",
@@ -98,7 +98,8 @@ public class ApiSecurityConfig {
                                                                 "/api/v1/bbs/**", "/api/v1/community/**",
                                                                 "/api/v1/deptjob/**", "/api/v1/addressbook/**",
                                                                 "/api/v1/schedule/**", "/api/v1/scrap/**",
-                                                                "/api/v1/banners/**", "/api/v1/popups/**")
+                                                                "/api/v1/banners/**", "/api/v1/popups/**",
+                                                                "/api/v1/menu/**")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,9 @@ export default function LoginPage() {
     const { login } = useAuth();
     const router = useRouter();
 
+    const searchParams = useSearchParams();
+    const redirectUrl = searchParams.get('redirect') || '/';
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!id || !password) {
@@ -30,7 +33,9 @@ export default function LoginPage() {
         setIsSubmitting(true);
         try {
             await login({ id, password });
-            router.push('/');
+            // Soft routing (router.push) often caches previous unauthenticated layouts/menus in Next.js.
+            // A hard refresh ensures all components and providers fetch fresh authenticated data.
+            window.location.href = redirectUrl;
         } catch (err: any) {
             console.error(err);
             setError(err.message || '로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.');

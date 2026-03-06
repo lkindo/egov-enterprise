@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StatusBadge } from '@/app/components/ui/status-badge';
-import { networkService, NetworkServiceStatus } from '@/services/networkService';
+import { networkService, NetworkStatusDetailed } from '@/services/networkService';
 import { Network, RefreshCcw, Activity, ShieldCheck, Search, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -20,31 +20,31 @@ export default function NetworkMonitoringPage() {
     staleTime: 60 * 1000,
   });
 
-  const logs: NetworkServiceStatus[] = data?.content || [];
+  const logs: NetworkStatusDetailed[] = data?.content || [];
 
   const columns = [
     {
       header: '대상 시스템',
-      accessor: (item: NetworkServiceStatus) => item.sysNm,
+      accessor: (item: NetworkStatusDetailed) => item.sysNm,
       className: 'font-black'
     },
     {
       header: 'IP 주소',
-      accessor: (item: NetworkServiceStatus) => item.sysIp,
+      accessor: (item: NetworkStatusDetailed) => item.sysIp,
       className: 'font-mono text-xs text-muted-foreground'
     },
     {
       header: '포트',
-      accessor: (item: NetworkServiceStatus) => item.sysPort,
+      accessor: (item: NetworkStatusDetailed) => item.sysPort,
       className: 'w-20 font-mono text-xs'
     },
     {
       header: '연결 상태',
-      accessor: (item: NetworkServiceStatus) => <StatusBadge status={item.svcSttus === '01' ? 'Y' : 'N'} />
+      accessor: (item: NetworkStatusDetailed) => <StatusBadge status={item.svcSttus === '01' ? 'Y' : 'N'} />
     },
     {
       header: '최종 체크',
-      accessor: (item: NetworkServiceStatus) => item.logDt,
+      accessor: (item: NetworkStatusDetailed) => item.logDt,
       className: 'text-[10px] text-muted-foreground font-medium'
     },
     {

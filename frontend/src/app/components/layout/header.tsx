@@ -42,14 +42,14 @@ const DOMAIN_ICON_MAP: Record<number, any> = {
   60: BarChart3,     // 인사이트
 };
 
-export function Header() {
+export function Header({ initialMenus = [] }: { initialMenus?: any[] }) {
   const pathname = usePathname();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   const { notifications, unreadCount } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [menus, setMenus] = useState<any[]>([]);
+  const [menus, setMenus] = useState<any[]>(initialMenus);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -57,28 +57,35 @@ export function Header() {
   }, []);
 
   useEffect(() => {
-    menuService.getHeadMenus().then(res => setMenus(res || []));
-  }, []);
+    if (menus.length === 0) {
+      menuService.getHeadMenus().then(res => setMenus(res || []));
+    }
+  }, [menus.length]);
 
   // Sync activeMenuNo with pathname
   useEffect(() => {
     if (menus.length === 0) return;
 
     const findActive = async () => {
-      for (const m of menus) {
-        const children = await menuService.getLeftMenus(m.menuNo);
-        const hasMatch = children.some((c: any) => {
-          if (c.modernRoute && pathname.startsWith(c.modernRoute)) return true;
-          if (c.children?.some((cc: any) => cc.modernRoute && pathname.startsWith(cc.modernRoute))) return true;
-          return false;
-        });
-        if (hasMatch) {
-          setActiveMenuNo(m.menuNo);
-          break;
+      try {
+        const currentPath = pathname;
+        for (const m of menus) {
+          const children = await menuService.getLeftMenus(m.menuNo);
+          const hasMatch = children.some((c: any) => {
+            if (c.modernRoute && currentPath.startsWith(c.modernRoute)) return true;
+            if (c.children?.some((cc: any) => cc.modernRoute && currentPath.startsWith(cc.modernRoute))) return true;
+            return false;
+          });
+          if (hasMatch) {
+            setActiveMenuNo(m.menuNo);
+            break;
+          }
         }
+      } catch (e) {
+        console.error('Header: findActive error', e);
       }
     };
-    findActive();
+    if (activeMenuNo === 0) findActive();
   }, [pathname, menus, setActiveMenuNo]);
 
   return (
@@ -89,12 +96,12 @@ export function Header() {
           {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </Button>
 
-        <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
+        <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80 shrink-0">
           <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
             <span className="text-primary-foreground font-black text-lg">eG</span>
           </div>
-          <div className="flex flex-col hidden sm:flex">
-            <span className="text-sm font-black leading-tight">전자정부 5.0</span>
+          <div className="hidden sm:flex flex-col">
+            <span className="text-sm font-black leading-tight text-foreground">전자정부 5.0</span>
             <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">전자정부 포털</span>
           </div>
         </Link>

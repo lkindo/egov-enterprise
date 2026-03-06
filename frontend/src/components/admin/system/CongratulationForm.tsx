@@ -2,16 +2,16 @@
 
 import React, { useState } from 'react';
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
-import { CongratulationManage } from '@/services/admin/system/CongratulationAdminService';
+import { CongratulationInfo } from '@/services/congratulationService';
 
 interface CongratulationFormProps {
-    initialData?: Partial<CongratulationManage>;
-    onSubmit: (data: Partial<CongratulationManage>) => Promise<void>;
+    initialData?: Partial<CongratulationInfo>;
+    onSubmit: (data: Partial<CongratulationInfo>) => Promise<void>;
     onCancel: () => void;
 }
 
 export function CongratulationForm({ initialData, onSubmit, onCancel }: CongratulationFormProps) {
-    const [formData, setFormData] = useState<Partial<CongratulationManage>>({
+    const [formData, setFormData] = useState<Partial<CongratulationInfo>>({
         usid: '',
         ctsnnCode: '1',
         ctsnnNm: '',

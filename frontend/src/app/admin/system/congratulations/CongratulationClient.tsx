@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { UltimateDataGrid, ColumnDef } from '@/app/components/ui/ultimate-data-grid';
 import { SmartSearchPanel } from '@/app/components/ui/standard-search-filter';
-import { congratulationService, CongratulationManage } from '@/services/congratulationService';
+import { congratulationService, CongratulationInfo } from '@/services/congratulationService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import {
@@ -28,14 +28,14 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { CongratulationForm } from '@/components/admin/system/CongratulationForm';
 import { useRouter } from 'next/navigation';
 
-export default function CongratulationClient({ initialData, searchUsid }: { initialData: { content: CongratulationManage[] }; searchUsid: string }) {
+export default function CongratulationClient({ initialData, searchUsid }: { initialData: { content: CongratulationInfo[] }; searchUsid: string }) {
     const router = useRouter();
     const { toast } = useToast();
     const confirm = useConfirm();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [mode, setMode] = useState<'create' | 'edit'>('create');
-    const [selectedCtsnn, setSelectedCtsnn] = useState<CongratulationManage | undefined>(undefined);
+    const [selectedCtsnn, setSelectedCtsnn] = useState<CongratulationInfo | undefined>(undefined);
 
     const ctsnnList = initialData.content || [];
 
@@ -45,13 +45,13 @@ export default function CongratulationClient({ initialData, searchUsid }: { init
         setIsModalOpen(true);
     };
 
-    const handleOpenEdit = (item: CongratulationManage) => {
+    const handleOpenEdit = (item: CongratulationInfo) => {
         setMode('edit');
         setSelectedCtsnn(item);
         setIsModalOpen(true);
     };
 
-    const handleSubmit = async (formData: Partial<CongratulationManage>) => {
+    const handleSubmit = async (formData: Partial<CongratulationInfo>) => {
         try {
             if (mode === 'create') {
                 await congratulationService.createCtsnn(formData);
@@ -102,12 +102,12 @@ export default function CongratulationClient({ initialData, searchUsid }: { init
         }
     };
 
-    const columns: ColumnDef<CongratulationManage>[] = [
+    const columns: ColumnDef<CongratulationInfo>[] = [
         {
             id: 'ctsnnCode',
             header: 'Event Category',
             width: 140,
-            accessor: (item: CongratulationManage) => (
+            accessor: (item: CongratulationInfo) => (
                 <span className={cn(
                     "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase italic tracking-widest border-2 shadow-inner",
                     item.ctsnnCode === '1' ? "bg-pink-50/50 border-pink-100 text-pink-600" :
@@ -122,7 +122,7 @@ export default function CongratulationClient({ initialData, searchUsid }: { init
             id: 'ctsnnNm',
             header: 'Nomenclature',
             width: 250,
-            accessor: (item: CongratulationManage) => (
+            accessor: (item: CongratulationInfo) => (
                 <div className="flex flex-col gap-1 py-1">
                     <span className="font-black italic uppercase tracking-tighter text-slate-900 text-lg leading-tight group-hover:text-primary transition-colors">{item.ctsnnNm}</span>
                     <div className="flex items-center gap-2">
@@ -135,7 +135,7 @@ export default function CongratulationClient({ initialData, searchUsid }: { init
             id: 'target',
             header: 'Relationship Matrix',
             width: 220,
-            accessor: (item: CongratulationManage) => (
+            accessor: (item: CongratulationInfo) => (
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-300 flex items-center justify-center border border-slate-100 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-inner">
                         <User size={16} />
@@ -151,7 +151,7 @@ export default function CongratulationClient({ initialData, searchUsid }: { init
             id: 'occrrncDe',
             header: 'Temporal Point',
             width: 150,
-            accessor: (item: CongratulationManage) => (
+            accessor: (item: CongratulationInfo) => (
                 <div className="flex items-center gap-2 text-slate-500 font-mono font-black text-xs">
                     <Calendar size={14} className="opacity-30" />
                     {item.occrrncDe}
@@ -162,7 +162,7 @@ export default function CongratulationClient({ initialData, searchUsid }: { init
             id: 'confmAt',
             header: 'Authorization Logic',
             width: 180,
-            accessor: (item: CongratulationManage) => (
+            accessor: (item: CongratulationInfo) => (
                 <div className="flex items-center gap-3">
                     <div className={cn(
                         "w-2 h-2 rounded-full",
@@ -181,7 +181,7 @@ export default function CongratulationClient({ initialData, searchUsid }: { init
             id: 'actions',
             header: 'PROTOCOL CONTROL',
             className: 'text-right',
-            accessor: (item: CongratulationManage) => (
+            accessor: (item: CongratulationInfo) => (
                 <div className="flex justify-end gap-2 pr-4">
                     {item.confmAt !== 'Y' && (
                         <button

@@ -17,7 +17,7 @@ export interface UserInfo {
     userSe?: string; // 사용자 구분 추가 (USR, EMP 등)
 }
 
-const BASE_URL = '/auth';
+const BASE_URL = 'auth';
 
 export const authService = {
     /** 로그인 */

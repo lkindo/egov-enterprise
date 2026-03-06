@@ -254,9 +254,9 @@ const MobileDomainNode = ({
   );
 };
 
-export function Sidebar() {
+export function Sidebar({ initialMenus = [] }: { initialMenus?: any[] }) {
   const [menus, setMenus] = useState<MenuItem[]>([]);
-  const [topMenus, setTopMenus] = useState<any[]>([]);
+  const [topMenus, setTopMenus] = useState<any[]>(initialMenus);
   const [loading, setLoading] = useState(false);
   const { isSidebarOpen, setSidebarOpen, activeMenuNo, setActiveMenuNo } = useLayout();
 
@@ -272,12 +272,20 @@ export function Sidebar() {
 
     async function loadMenus() {
       if (!activeMenuNo) return;
+
+      // Try to find in initialMenus tree first
+      const activeTop = topMenus.find(m => m.menuNo === activeMenuNo);
+      if (activeTop?.children && activeTop.children.length > 0) {
+        setMenus(activeTop.children);
+        return;
+      }
+
       try {
         setLoading(true);
         const leftList = await menuService.getLeftMenus(activeMenuNo);
         setMenus(leftList);
       } catch (error) {
-        console.error('Failed to load sidebar menus', error);
+        console.error('Sidebar: Failed to load left menus', error);
         setMenus([]);
       } finally {
         setLoading(false);
@@ -302,7 +310,7 @@ export function Sidebar() {
       </AnimatePresence>
 
       <aside className={cn(
-        "fixed left-0 top-0 lg:top-16 z-[100] h-full lg:h-[calc(100vh-4rem)] w-72 border-r bg-white dark:bg-slate-950 overflow-y-auto no-scrollbar transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) lg:translate-x-0",
+        "fixed left-0 top-0 lg:top-16 z-[100] h-full lg:h-[calc(100vh-4rem)] w-72 border-r bg-card dark:bg-slate-950 overflow-y-auto no-scrollbar transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) lg:translate-x-0",
         isSidebarOpen ? "translate-x-0 shadow-[40px_0_80px_-20px_rgba(0,0,0,0.4)]" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full py-8 px-5">

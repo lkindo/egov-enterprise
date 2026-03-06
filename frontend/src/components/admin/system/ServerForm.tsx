@@ -2,16 +2,16 @@
 
 import React, { useState } from 'react';
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
-import { ServerInfo } from '@/services/serverService';
+import { ServerDetail } from '@/services/serverService';
 
 interface ServerFormProps {
-  initialData?: Partial<ServerInfo>;
-  onSubmit: (data: Partial<ServerInfo>) => Promise<void>;
+  initialData?: Partial<ServerDetail>;
+  onSubmit: (data: Partial<ServerDetail>) => Promise<void>;
   onCancel: () => void;
 }
 
 export function ServerForm({ initialData, onSubmit, onCancel }: ServerFormProps) {
-  const [formData, setFormData] = useState<Partial<ServerInfo>>({
+  const [formData, setFormData] = useState<Partial<ServerDetail>>({
     serverNm: '',
     serverKnd: '1',
     ...initialData
@@ -29,7 +29,7 @@ export function ServerForm({ initialData, onSubmit, onCancel }: ServerFormProps)
           <input
             type="text"
             value={formData.serverNm || ''}
-            onChange={(e) => setFormData({...formData, serverNm: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, serverNm: e.target.value })}
             placeholder="예: 프로젝트 메인 WAS-01"
             className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
             required
@@ -46,12 +46,11 @@ export function ServerForm({ initialData, onSubmit, onCancel }: ServerFormProps)
               <button
                 key={type.value}
                 type="button"
-                onClick={() => setFormData({...formData, serverKnd: type.value})}
-                className={`p-3 border rounded-xl text-center transition-all ${
-                  formData.serverKnd === type.value
+                onClick={() => setFormData({ ...formData, serverKnd: type.value })}
+                className={`p-3 border rounded-xl text-center transition-all ${formData.serverKnd === type.value
                     ? `ring-2 ring-primary ring-offset-1 font-bold ${type.color}`
                     : 'bg-card hover:bg-muted/50 text-muted-foreground'
-                }`}
+                  }`}
               >
                 <div className="text-xs">{type.label}</div>
               </button>

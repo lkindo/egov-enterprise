@@ -1,5 +1,22 @@
 import { AdminService } from '@/services/core/ApiService';
 
+export interface DeptAuthorBatchRequest {
+    deptId: string;
+    authorCode: string;
+    allMembers: boolean;
+    userIds?: string[];
+}
+
+export interface DeptAuthorProjection {
+    deptCode: string;
+    deptNm: string;
+    userId: string;
+    userNm: string;
+    authorCode: string;
+    uniqId: string;
+    regYn: string;
+}
+
 export interface Department {
     orgnztId: string;
     orgnztNm: string;
@@ -16,6 +33,20 @@ class DeptAdminService extends AdminService {
      */
     async getDepts(): Promise<Department[]> {
         return this.get<Department[]>('');
+    }
+
+    /**
+     * 특정 부서의 사용자별 권한 목록 조회
+     */
+    async getDeptAuthorities(deptId: string): Promise<DeptAuthorProjection[]> {
+        return this.client.get<DeptAuthorProjection[]>(`admin/security/dept-authorities/${deptId}`);
+    }
+
+    /**
+     * 부서 권한 일괄 설정
+     */
+    async updateDeptAuthorities(data: DeptAuthorBatchRequest): Promise<void> {
+        return this.client.post<void>(`/admin/security/dept-authorities/batch`, data);
     }
 }
 

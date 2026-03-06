@@ -4,7 +4,7 @@ import client from '@/lib/api/client';
  * 파일 관리 서비스
  * 백엔드: com.company.project.api.controller.file.FileController
  */
-export interface FileDetail {
+export interface SharedFileDetail {
     atchFileId: string;
     fileSn: number;
     fileExtsn: string;
@@ -35,8 +35,8 @@ export const fileMngService = {
     },
 
     /** 첨부파일 목록 조회 */
-    getFileList: async (atchFileId: string): Promise<FileDetail[]> => {
-        return client.get<FileDetail[]>(`${BASE_URL}/${atchFileId}`);
+    getFileList: async (atchFileId: string): Promise<SharedFileDetail[]> => {
+        return client.get<SharedFileDetail[]>(`${BASE_URL}/${atchFileId}`);
     },
 
     /** 파일 다운로드 URL 생성 */

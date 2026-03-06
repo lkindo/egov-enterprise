@@ -54,9 +54,8 @@ export default async function RootLayout({
     }
   }
 
-  if (isUnauthorized) {
-    redirect('/login?expired=true');
-  }
+  // We rely on middleware and client-side interceptors for auth redirection
+  // to avoid infinite loops and complexity in the root layout.
 
   return (
     <html lang="ko" suppressHydrationWarning>
@@ -73,10 +72,10 @@ export default async function RootLayout({
               <ScrollToTop />
             </Suspense>
             <div className="relative flex min-h-screen flex-col">
-              <Header />
+              <Header initialMenus={initialMenus} />
               <div className="flex flex-1">
-                <Sidebar />
-                <main className="flex-1 lg:pl-64 pt-4 transition-all duration-300">
+                <Sidebar initialMenus={initialMenus} />
+                <main className="flex-1 lg:pl-72 pt-4 transition-all duration-300 min-w-0">
                   <div className="container mx-auto p-4 md:p-6 min-h-[calc(100vh-10rem)]">
                     {children}
                   </div>

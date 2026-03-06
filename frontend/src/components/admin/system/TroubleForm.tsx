@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
-import { Trouble } from '@/services/troubleService';
+import { Trouble } from '@/services/admin/system/TroubleAdminService';
 
 interface TroubleFormProps {
   initialData?: Partial<Trouble>;
@@ -36,7 +36,7 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
               <input
                 type="text"
                 value={formData.troblNm || ''}
-                onChange={(e) => setFormData({...formData, troblNm: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, troblNm: e.target.value })}
                 placeholder="장애 상황 요약"
                 className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
                 required
@@ -47,7 +47,7 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
               <FormField label="장애 유형" required>
                 <select
                   value={formData.troblKnd}
-                  onChange={(e) => setFormData({...formData, troblKnd: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, troblKnd: e.target.value })}
                   className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="01">서버 장애</option>
@@ -61,7 +61,7 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
                 <input
                   type="text"
                   value={formData.troblRqesterNm || ''}
-                  onChange={(e) => setFormData({...formData, troblRqesterNm: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, troblRqesterNm: e.target.value })}
                   placeholder="담당자 이름"
                   className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
                   required
@@ -72,7 +72,7 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
             <FormField label="장애 상세 내용" required>
               <textarea
                 value={formData.troblDc || ''}
-                onChange={(e) => setFormData({...formData, troblDc: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, troblDc: e.target.value })}
                 placeholder="장애 증상 및 원인 등을 기술하세요."
                 className="w-full min-h-[120px] p-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                 required
@@ -96,12 +96,11 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
                   <button
                     key={s.value}
                     type="button"
-                    onClick={() => setFormData({...formData, processSttus: s.value})}
-                    className={`p-3 border rounded-xl text-center transition-all ${
-                      formData.processSttus === s.value
+                    onClick={() => setFormData({ ...formData, processSttus: s.value })}
+                    className={`p-3 border rounded-xl text-center transition-all ${formData.processSttus === s.value
                         ? `ring-2 ring-primary ring-offset-1 font-bold ${s.color}`
                         : 'bg-card hover:bg-muted/50 text-muted-foreground'
-                    }`}
+                      }`}
                   >
                     <div className="text-xs">{s.label}</div>
                   </button>
@@ -112,7 +111,7 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
             <FormField label="처리 결과/조치 내역" required>
               <textarea
                 value={formData.troblProcessResult || ''}
-                onChange={(e) => setFormData({...formData, troblProcessResult: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, troblProcessResult: e.target.value })}
                 placeholder="조치 완료된 내용을 상세히 기술하세요."
                 className="w-full min-h-[120px] p-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                 required
@@ -123,7 +122,7 @@ export function TroubleForm({ initialData, onSubmit, onCancel, isProcessMode }: 
               <input
                 type="text"
                 value={formData.troblOpetrNm || ''}
-                onChange={(e) => setFormData({...formData, troblOpetrNm: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, troblOpetrNm: e.target.value })}
                 placeholder="본인 성명"
                 className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
                 required

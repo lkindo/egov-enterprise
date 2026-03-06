@@ -1,6 +1,6 @@
 import { ApiService } from '@/services/core/ApiService';
 
-export interface Reward {
+export interface WelfareReward {
     rwardId: string;
     rwardNm: string;
     rwardDe: string;
@@ -29,8 +29,8 @@ class WelfareService extends ApiService {
         super('/uss/ion');
     }
 
-    async getRewards(params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResult<Reward>> {
-        return this.get<PageResult<Reward>>('/rewards', { params });
+    async getRewards(params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResult<WelfareReward>> {
+        return this.get<PageResult<WelfareReward>>('/rewards', { params });
     }
 
     async getCtsnns(params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResult<Ctsnn>> {

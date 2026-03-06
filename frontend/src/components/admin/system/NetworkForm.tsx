@@ -2,16 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
-import { Network } from '@/services/networkService';
+import { NetworkInfo } from '@/services/networkService';
 
 interface NetworkFormProps {
-  initialData?: Partial<Network>;
-  onSubmit: (data: Partial<Network>) => Promise<void>;
+  initialData?: Partial<NetworkInfo>;
+  onSubmit: (data: Partial<NetworkInfo>) => Promise<void>;
   onCancel: () => void;
 }
 
 export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProps) {
-  const [formData, setFormData] = useState<Partial<Network>>({
+  const [formData, setFormData] = useState<Partial<NetworkInfo>>({
     manageIem: '',
     ntwrkIp: '',
     subnet: '',
@@ -34,7 +34,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
           <input
             type="text"
             value={formData.manageIem || ''}
-            onChange={(e) => setFormData({...formData, manageIem: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, manageIem: e.target.value })}
             placeholder="예: 내부망 서버실"
             className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
             required
@@ -44,7 +44,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
           <input
             type="text"
             value={formData.userNm || ''}
-            onChange={(e) => setFormData({...formData, userNm: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, userNm: e.target.value })}
             placeholder="관리자 성명"
             className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
             required
@@ -54,7 +54,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
           <input
             type="text"
             value={formData.ntwrkIp || ''}
-            onChange={(e) => setFormData({...formData, ntwrkIp: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, ntwrkIp: e.target.value })}
             placeholder="192.168.0.1"
             className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
             required
@@ -64,7 +64,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
           <input
             type="text"
             value={formData.subnet || ''}
-            onChange={(e) => setFormData({...formData, subnet: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, subnet: e.target.value })}
             placeholder="255.255.255.0"
             className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
             required
@@ -74,7 +74,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
           <input
             type="text"
             value={formData.gtwy || ''}
-            onChange={(e) => setFormData({...formData, gtwy: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, gtwy: e.target.value })}
             placeholder="192.168.0.254"
             className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
             required
@@ -84,7 +84,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
           <input
             type="text"
             value={formData.domnServer || ''}
-            onChange={(e) => setFormData({...formData, domnServer: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, domnServer: e.target.value })}
             placeholder="8.8.8.8"
             className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
           />
@@ -93,7 +93,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
       <FormField label="사용 여부" required>
         <select
           value={formData.useAt}
-          onChange={(e) => setFormData({...formData, useAt: e.target.value as 'Y' | 'N'})}
+          onChange={(e) => setFormData({ ...formData, useAt: e.target.value as 'Y' | 'N' })}
           className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
         >
           <option value="Y">사용 중</option>

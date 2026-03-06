@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkAuth = useCallback(async () => {
         const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
+        // 토큰이 없으면 인증 확인을 건너뜁니다.
         if (!token) {
             setUser(null);
             setLoading(false);

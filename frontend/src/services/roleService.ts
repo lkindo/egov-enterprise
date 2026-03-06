@@ -5,7 +5,7 @@ import { SearchParams, PaginationResponse } from '@/types/system';
  * 권한(롤) 관리 서비스 (Admin)
  * 백엔드: com.company.project.api.controller.system.RoleController
  */
-export interface RoleManage {
+export interface RoleManageInfo {
     roleCode: string;
     roleNm: string;
     rolePttrn: string;
@@ -20,21 +20,21 @@ const BASE_URL = '/admin/system/roles';
 export const roleService = {
     /** 권한 목록 조회 */
     getRoles: async (params?: SearchParams) => {
-        return client.get<PaginationResponse<RoleManage>>(BASE_URL, { params });
+        return client.get<PaginationResponse<RoleManageInfo>>(BASE_URL, { params });
     },
 
     /** 권한 상세 조회 */
     getRole: async (roleCode: string) => {
-        return client.get<RoleManage>(`${BASE_URL}/${roleCode}`);
+        return client.get<RoleManageInfo>(`${BASE_URL}/${roleCode}`);
     },
 
     /** 권한 등록 */
-    createRole: async (data: Partial<RoleManage>) => {
+    createRole: async (data: Partial<RoleManageInfo>) => {
         return client.post<void>(BASE_URL, data);
     },
 
     /** 권한 수정 */
-    updateRole: async (roleCode: string, data: Partial<RoleManage>) => {
+    updateRole: async (roleCode: string, data: Partial<RoleManageInfo>) => {
         return client.put<void>(`${BASE_URL}/${roleCode}`, data);
     },
 
@@ -45,6 +45,6 @@ export const roleService = {
 
     /** 권한 목록 조회 (Alias) */
     getAuthors: async (params?: SearchParams) => {
-        return client.get<PaginationResponse<RoleManage>>(BASE_URL, { params });
+        return client.get<PaginationResponse<RoleManageInfo>>(BASE_URL, { params });
     },
 };

@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { welfareService, Reward, Ctsnn } from '@/services/user/WelfareService';
+import { welfareService, WelfareReward, Ctsnn } from '@/services/user/WelfareService';
 import { useToast } from '@/app/components/ui/toast';
 import { Trophy, Heart, Gift, Users, Search, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,7 +36,7 @@ export default function WelfarePage() {
   const rewardColumns = [
     {
       header: '포상명',
-      accessor: (item: Reward) => (
+      accessor: (item: WelfareReward) => (
         <div className="flex items-center gap-3">
           <div className="p-2 bg-yellow-50 text-yellow-600 rounded-lg"><Trophy size={16} /></div>
           <span className="font-bold text-foreground">{item.rwardNm}</span>
@@ -45,16 +45,16 @@ export default function WelfarePage() {
     },
     {
       header: '대상자',
-      accessor: (item: Reward) => item.userNm
+      accessor: (item: WelfareReward) => item.userNm
     },
     {
       header: '포상종류',
-      accessor: (item: Reward) => item.rwardKnd,
+      accessor: (item: WelfareReward) => item.rwardKnd,
       className: 'text-xs text-muted-foreground'
     },
     {
       header: '포상일',
-      accessor: (item: Reward) => item.rwardDe,
+      accessor: (item: WelfareReward) => item.rwardDe,
       className: 'text-xs font-medium'
     }
   ];
