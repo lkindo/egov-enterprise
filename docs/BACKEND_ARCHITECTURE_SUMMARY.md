@@ -1,58 +1,48 @@
-# 🏗️ 백엔드 아키텍처 분석 및 모듈화 개선 전략 가이드
+# Backend Architecture Summary (Vertical Slicing)
 
-본 문서는 `egov-enterprise` 프로젝트의 백엔드 구조 분석 결과와 효율적인 공통 기능 재사용을 위한 아키텍처 개선 방향을 정리한 요약본입니다.
+## 1. 아키텍처 개요 (Overview)
+본 프로젝트는 기존의 계층형(Layered) 아키텍처에서 비즈니스 도메인 중심의 **수직 슬라이싱(Vertical Slicing) 아키텍처**로 완전히 전환되었습니다. 각 모듈은 고유한 비즈니스 책임을 가지며, 독립적인 도메인 모델, 인터페이스, 서비스를 보유합니다.
 
----
+## 2. 모듈 구성 (Module Structure)
 
-## 1. 기존 아키텍처 분석 (계층형 멀티 모듈)
+| 모듈명 | 유형 | 책임 및 설명 |
+| :--- | :--- | :--- |
+| **api-server** | Entry | 최종 War 패키징 및 배포, 전역 설정, Spring Boot 진입점 |
+| **common-core** | Foundation | 공통 Utility, Exception 핸들러, 전역 Config (Swagger, Cache 등) |
+| **common-security** | Foundation | Spring Security 설정, JWT 인증 필터, 권한 검사 로직 |
+| **module-core-iam** | Functional | 사용자(User), 권한(Auth), 그룹(Group) 관리 및 사용자 디테일 서비스 |
+| **module-system-admin** | Functional | 공통코드, 메뉴, 프로그램, 배포 관리, 시스템 로그, 배치 스케줄러 |
+| **module-workspace** | Functional | 게시판, 일정, 메일, 커뮤니티, 배너 등 사용자 협업 도구 |
+| **module-operation** | Functional | 휴가, 자산 관리, 설문, 행정 업무 지원 |
+| **module-knowledge** | Functional | 지식 베이스(Wiki), 공식 문서 관리 |
 
-현재 프로젝트는 **계층 기반 수평적 분리(Horizontal Slicing)** 구조를 따르고 있으며, 신규 기능 개발 시 다음 순서로 작업이 진행됩니다.
+## 3. 핵심 설계 원칙 (Design Principles)
 
-### **🛠️ 개발 표준 순서**
-1.  **`common-domain`**: JPA 엔티티 정의 및 Repository(Spring Data JPA) 작성
-2.  **`common-service`**: 비즈니스 로직 구현 및 트랜잭션 처리
-3.  **`api-server`**: REST API 컨트롤러 작성 및 Endpoint 노출
+### 3.1. 모듈 간 결합도 최소화 (Loose Coupling)
+- **Direct JOIN 금지**: 타 모듈의 테이블을 직접 JOIN하는 SQL 쿼리를 지양합니다. (QueryDSL 등 포함)
+- **의존성 방향성**: 기능 모듈간 교차 참조를 방지하며, 필요한 경우 `common-core` 혹은 `module-core-iam`(사용자 정보)만 참조하도록 설계합니다.
+- **Service API 호출**: 타 모듈의 데이터가 필요한 경우 해당 모듈의 `Service` 계층을 주입받아 사용합니다.
 
-### **📦 기반 모듈의 역할**
-*   **`common-core`**: 전역 유틸리티, 공통 예외(Exception), 공통 응답 규격 등 시스템의 최하위 인프라 담당.
-*   **`common-security`**: Spring Security 설정, JWT 인증/인가, 암호화 정책 관리 등 보안 관문 담당.
-*   **`common-domain` / `common-service`**: (점진적 이관 단계) 기존 엔티티 및 핵심 비즈니스 로직. 완전한 모듈별 내재화 전까지 공유 코어 역할을 수행.
+### 3.2. 독립적 비즈니스 슬라이스
+- 각 모듈은 자신만의 `Controller`, `Service`, `Repository`, `Entity`, `DTO`를 패키지 구조 내에 독립적으로 보유합니다.
+- 모듈별로 독립적인 빌드가 가능하도록 `build.gradle` 의존성을 최소화했습니다.
 
-## 2. 현재 구조의 문제점 및 사용자 피드백
+### 3.3. 이벤트 기반 통신 (Event-Driven)
+- 모듈 간의 강한 결합을 피하기 위해 `Spring Events`를 활용합니다.
+- 예: 게시글 등록 시 알림 처리, 통계 업데이트 등은 비동기 이벤트를 통해 타 모듈로 전파됩니다.
 
-사용자님은 **"MSA 전환 계획이 없으며, 공통 어드민 기능을 여러 프로젝트에서 효율적으로 재사용"**하는 것이 주된 목적입니다. 이 관점에서 현재 구조의 비효율성은 다음과 같습니다.
+## 4. 데이터 계층 설계
 
-*   **개발 복잡도**: 단순 기능 하나를 추가할 때 3개 이상의 모듈을 동시에 수정해야 함 (Context Switching 발생).
-*   **재사용성 저하**: 특정 기능을 다른 프로젝트로 가져가려면 연관된 3개 모듈의 코드를 모두 추출해야 하므로 라이브러리화가 어려움.
-*   **빌드 오버헤드**: 모듈 간 의존성 관계가 복잡하여 수정 시 전체 빌드 효율이 떨어질 수 있음.
+### 4.1. Entity & Repository
+- 기존 `common-domain`에 산재해 있던 Entity들을 각 모듈의 `domain` 패키지로 이동시켰습니다.
+- 각 모듈은 고유한 `@EntityScan` 범위를 가지며 독립적으로 관리됩니다.
 
----
+### 4.2. DTO & Mapper
+- MapStruct를 사용하여 Entity와 DTO 간 변환을 수행하며, 모든 변환 로직은 모듈 내부에서 완결됩니다.
 
-## 3. 제안: 기능 중심 수직적 모듈화 (Vertical Slicing)
-
-MSA를 하지 않으면서 생산성을 높이기 위해 **기능 단위(Feature-based)**로 모듈을 재구성하는 전략을 제안합니다.
-
-### **🚀 추천 모듈 구성 (메뉴 분석 기반)**
-
-1.  **`module-system-admin`**: 메뉴/공통코드/프로그램/로그 관리 (시스템 뼈대).
-2.  **`module-user-auth`**: 사용자/권한/그룹 관리 (보안 및 승인 체계).
-3.  **`module-board`**: 공통 게시판(BBS) 기능.
-4.  **`module-collaboration`**: 일정/부서업무/보고 관리 (협업 도구).
-5.  **`module-enterprise-support`**: 휴가/행사/설문 관리 (운영 지원).
-
-### **✨ 기대 효과**
-*   **모듈 독립성**: 하나의 모듈(JAR)만 가져가면 해당 기능(Entity+Service+API)이 즉시 작동함.
-*   **생산성 향상**: 기능 개발 시 하나의 모듈 내 패키지만 관리하므로 개발 속도 증가.
-*   **유연한 커스터마이징**: 프로젝트별로 필요한 기능 모듈만 선택적으로 조합(`api-server`) 가능.
-
----
-
-## 4. 실행 결과 (Migration Completed)
-
-1.  **모듈별 스캐폴딩 및 컨트롤러 이관 완료**: `api-server`에 뭉쳐있던 모든 엔드포인트(Controller)들을 5개의 기능 모듈로 완전히 분산 배치 완료.
-2.  **Cross-domain 의존성 제거 확인**: 도메인 엔티티들이 서로 객체 매핑(`@ManyToOne`)이 아닌 식별자(String) 기반으로 느슨하게 결합되어 있음을 확인 및 유지 적용.
-3.  **API 호스트 서버 재구성**: `api-server`는 실질적인 컨트롤러를 가지지 않고 단지 `module-xxx` 모듈들을 포함(include)하여 띄우기만 하는 순수 실행(Host) 환경으로 변모.
+## 5. 보안 및 인증 (IAM)
+- 모든 보안 정책은 `common-security`에서 정의하며, 실제 사용자 데이터 조회는 `module-core-iam`의 `CustomUserDetailsService`를 통해 수행됩니다.
+- JWT 전역 필터가 모든 요청의 Principal을 식별합니다.
 
 ---
-*작성일: 2026-03-06*
-*작성자: Gemini CLI (Architecture Consultant)*
+*Last Updated: 2026-03-06 (Vertical Slicing Refactoring 완료 후)*

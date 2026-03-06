@@ -1,8 +1,8 @@
 # 전자정부프레임워크 5.0 공통 모듈 구축 - 상세 설계서 (LLD)
 
-> **최종 업데이트**: 2026-02-25  
-> **프로젝트 진행률**: ✅ 90% 완료  
-> **문서 버전**: 2.1
+> **최종 업데이트**: 2026-03-06  
+> **프로젝트 진행률**: ✅ 100% 완료 (Refactoring 완료)  
+> **문서 버전**: 3.0
 
 ## 1. 프로젝트 구조 및 패키지 설계
 
@@ -10,108 +10,56 @@
 
 기본 패키지 접두사: `com.company.project`
 
-#### common-core
+#### 1.1. 백엔드 (Multi-Module - Vertical Slicing)
+
+기본 패키지 접두사: `com.company.project`
+
+본 프로젝트는 수직 슬라이싱(Vertical Slicing) 원칙에 따라 기능별로 독립된 모듈 구조를 가집니다.
+
+| 모듈명 | 패키지 유형 | 역할 및 책임 | 주요 의존성 |
+| :--- | :--- | :--- | :--- |
+| **api-server** | Entry | API 진입점, 전역 Error 핸들링, 통합 배포 | common-*, module-* |
+| **common-core** | Foundation | 공통 유틸, 예외 처리, 전역 설정 (Swagger, Redis 등) | None |
+| **common-security** | Foundation | JWT 기반 인증 로직, Security Filter Chain 구성 | common-core |
+| **module-core-iam** | Functional | 사용자 계정, 권한(Auth), 그룹(Group) 관리 | common-security |
+| **module-system-admin** | Functional | 메뉴, 코드, 프로그램, 로그 관리, 배치 작업 | module-core-iam |
+| **module-workspace** | Functional | 게시판, 대시보드 성격의 협업 도구 서비스 | module-core-iam |
+| **module-operation** | Functional | 휴가, 자산, 설문 등 운영 지원 비즈니스 | module-core-iam |
+| **module-knowledge** | Functional | 위키(Wiki), 문서 아카이브 관리 | module-core-iam |
+
+---
+
+#### 1.1.1. 모듈별 상세 구성 (내부 레이어)
+
+모든 `module-*` 기능 모듈은 내부적으로 다음과 같은 **슬라이스 계층**을 지닙니다.
+
 ```
-common-core/
+module-[name]/
 └── src/main/java/com/company/project/
-    ├── core/
-    │   ├── config/         # 설정 클래스 (Locale, DateTime)
-    │   ├── exception/      # 커스텀 예외 (BusinessException, ErrorCode)
-    │   ├── response/       # 표준 응답 (ApiResponse)
-    │   └── util/           # 유틸리티 (DateUtil, StringUtils)
-    └── CoreApplication.java
+    ├── domain/            # 도메인 모델 (Entity, Repository, DTO)
+    ├── service/           # 비즈니스 로직 (ServiceInterface, Impl)
+    └── mapper/            # Entity <-> DTO 변환 (MapStruct)
 ```
 
-| 클래스 | 역할 |
-|--------|------|
-| `BusinessException` | 비즈니스 예외 기본 클래스 |
-| `ErrorCode` | 에러 코드 enum (HTTP 상태코드 매핑) |
-| `ApiResponse<T>` | 표준 응답 래퍼 |
-| `GlobalExceptionHandler` | 전역 예외 처리 (@ControllerAdvice) |
-
-#### common-domain
-```
-common-domain/
-└── src/main/java/com/company/project/
-    └── domain/
-        ├── [module]/           # 69 개 도메인 패키지
-        │   ├── entity/         # JPA 엔티티
-        │   ├── repository/     # Spring Data JPA Repository
-        │   └── dto/            # 도메인 DTO
-        ├── common/             # 공통 엔티티 (BaseTimeEntity, BaseEntity)
-        └── querydsl/           # QueryDSL Q-Type
-```
-
-**주요 도메인 목록** (69 개):
-- `auth`, `user`, `group`, `role` - 인증/인가
-- `code`, `menu`, `program` - 시스템 설정
-- `board`, `comment`, `scrap` - 게시판
-- `community`, `addressbook`, `namecard` - 커뮤니티
-- `schedule`, `deptjob`, `report` - 일정/보고
-- `survey`, `terms`, `faq`, `qna` - 설문/고객지원
-- `file`, `image`, `dam` - 파일/자산
-- `log`, `syslog`, `securitylog` - 로그
-- `monitoring`, `stats` - 모니터링/통계
-- `notification`, `note`, `alarm` - 알림/쪽지
-- `event`, `campaign`, `vacation`, `reward`, `anniversary`, `ctsnn` - 부가서비스
-- [기타 40+ 개 도메인]
-
-#### common-security
-```
-common-security/
-└── src/main/java/com/company/project/
-    └── security/
-        ├── config/         # SecurityConfig, FilterConfig
-        ├── jwt/            # JwtTokenProvider, JwtAuthenticationFilter
-        ├── service/        # UserDetailsServiceImpl
-        └── handler/        # AuthenticationEntryPoint, AccessDeniedHandler
-```
-
-| 클래스 | 역할 |
-|--------|------|
-| `JwtTokenProvider` | JWT 생성/검증/갱신 |
-| `JwtAuthenticationFilter` | JWT 인증 필터 (OncePerRequestFilter) |
-| `SecurityConfig` | Spring Security 설정 (SecurityFilterChain) |
-| `UserDetailsImpl` | Spring Security 사용자 상세 정보 |
-
-#### common-service
-```
-common-service/
-└── src/main/java/com/company/project/
-    └── service/
-        ├── [module]/           # 70 개 서비스 패키지
-        │   ├── [Module]Service.java
-        │   ├── impl/[Module]ServiceImpl.java
-        │   ├── dto/            # 요청/응답 DTO
-        │   └── mapper/         # MapStruct Mapper
-        ├── common/             # 공통 서비스 (FileService, CodeService)
-        └── config/             # 서비스 설정
-```
-
-**주요 서비스 목록** (70 개):
-- `AuthService`, `UserService`, `AuthService` - 인증/사용자
-- `BoardService`, `CommentService`, `FileService` - 게시판/파일
-- `CommunityService`, `AddressbookService` - 커뮤니티
-- `ScheduleService`, `ReportService`, `DeptJobService` - 일정/보고
-- `SurveyService`, `TermsService`, `FaqService` - 설문/고객지원
-- `StatsService`, `MonitoringService` - 통계/모니터링
-- [기타 50+ 개 서비스]
+| 서비스 | 역할 |
+| :--- | :--- |
+| `[Domain]Service` | 비즈니스 로직 정의 (인터페이스) |
+| `[Domain]ServiceImpl` | 비즈니스 로직 구현체 |
+| `[Domain]Repository` | Spring Data JPA 기반 데이터 액세스 |
+| `[Domain]Mapper` | MapStruct 기반 객체 변환 자동화 |
 
 #### api-server
 ```
 api-server/
 └── src/main/java/com/company/project/
     ├── api/
-    │   ├── controller/         # REST Controller (115+ 개)
-    │   │   ├── auth/
-    │   │   ├── user/
-    │   │   ├── board/
-    │   │   └── ...
     │   ├── config/             # API 설정 (Swagger, CORS, Web)
-    │   └── dto/                # API 전용 DTO
+    │   └── dto/                # API 전역 DTO
     ├── security/               # 보안 설정 (SecurityConfig)
     └── web/                    # WebMvc 설정
 ```
+
+*참고: 대부분의 기능별 REST Controller는 각 `module-*`의 `api/controller` 패키지에 위치합니다.*
 
 ### 1.2. 프론트엔드 (Next.js 15 App Router)
 

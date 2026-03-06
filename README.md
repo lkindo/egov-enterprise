@@ -36,21 +36,22 @@
 
 ---
 
-## � 프로젝트 구조 (Project Structure)
+## 📂 프로젝트 구조 (Project Structure - Vertical Slicing)
+
+본 프로젝트는 비즈니스 도메인을 중심으로 독립적인 배포 및 관리가 가능한 **수직 슬라이싱(Vertical Slicing) 아키텍처**를 채택하고 있습니다.
 
 ```bash
 egov-enterprise/
-├── api-server/         # Spring Boot API 서버 (Controller, Config)
-├── common-service/     # 비즈니스 로직 및 서비스 레이어
-├── common-domain/      # JPA Entity, Repository 및 도메인 모델
-├── common-core/        # 공통 유틸리티 및 예외 처리
-├── common-security/    # 인증/인가 (JWT, Security Config)
-├── frontend/           # Next.js 14 프런트엔드 애플리케이션
-│   ├── src/app/        # App Router 기반 페이지 구성
-│   ├── src/components/ # UI 및 비즈니스 컴포넌트 (Shadcn/UI 기반)
-│   ├── src/services/   # API 통신 레이어
-│   └── src/types/      # TypeScript 인터페이스 정의
-└── legacy/             # 레거시 eGovFrame 원본 소스 (참조용)
+├── api-server/             # Spring Boot 진입점 (War 배포 모듈)
+├── common-core/            # 공통 유틸리티, 예외, 로깅, 기반 Config
+├── common-security/        # 인증/인가 (JWT, Spring Security RBAC)
+├── module-core-iam/        # [기능] 계정 관리, 권한, 그룹, 인증 서비스
+├── module-system-admin/    # [기능] 시스템 관리, 코드, 메뉴, 로그, 배치 관리
+├── module-workspace/       # [기능] 협업 테넌트, 게시판, 메일, 일정, 커뮤니티
+├── module-operation/       # [기능] 운영 지원, 휴가, 자원, 설문, 행정 업무
+├── module-knowledge/       # [기능] 공식 지식 베이스, 문서 관리
+├── frontend/               # Next.js 15 프런트엔드 애플리케이션
+└── legacy/                 # 레거시 eGovFrame 원본 소스 (폐쇄형 참조용)
 ```
 
 ---
@@ -65,7 +66,9 @@ egov-enterprise/
 | **Phase 2: 협업/컨텐츠** | 게시판, 커뮤니티(동호회), 주소록, 전역 파일/댓글 관리 | ✅ 완료 (100%) |
 | **Phase 3: 운영 지원** | 일정 관리, 부서 업무, 온라인 설문, 약관 관리, 보고서 | ✅ 완료 (100%) |
 | **Phase 4: 통합/통계** | 실시간 사용자/화면 통계, 디지털 자산 관리, 모니터링 | ✅ 완료 (100%) |
-| **Phase 5: 고도화** | E2E 테스트, CI/CD, 보안 감사, 성능 최적화 | 🔄 진행중 (85%) |
+| **Phase 5: 구조 리팩토링** | 수직 슬라이싱(Vertical Slicing) 아키텍처 완성, 레거시 모듈 해체 | ✅ 완료 (100%) |
+| **Phase 6: 안정화** | 모듈 간 의존성 검증, 최종 빌드 안정화, 런타임 최적화 | ✅ 완료 (100%) |
+| **Phase 7: 고도화** | E2E 테스트 고도화, CI/CD 자동화, 성능 부하 테스트 | 🔄 진행중 (40%) |
 
 ### 핵심 모듈 상술 (Key Migrated Modules)
 - **Administrative Tools**: 공통코드, 메뉴 관리, 프로그램 관리, 로그(시스템/웹/개인정보 등) 관리.
@@ -188,7 +191,7 @@ cp frontend/.env.example frontend/.env.local
 - [제품 요구사항 정의서 (PRD)](./docs/PRD.MD)
 - [기술 요구사항 정의서 (TRD)](./docs/TRD.MD)
 - [상세 설계 문서 (LLD)](./docs/LLD.MD)
-- [메뉴 구조](./docs/MENU_STRUCTURE.md)
+- [백엔드 아키텍처 요약](./docs/BACKEND_ARCHITECTURE_SUMMARY.md)
 
 ---
 
