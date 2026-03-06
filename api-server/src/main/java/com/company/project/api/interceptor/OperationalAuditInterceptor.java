@@ -39,7 +39,7 @@ public class OperationalAuditInterceptor implements HandlerInterceptor {
             Object principal = authentication.getPrincipal();
 
             if (principal instanceof CustomUserDetails) {
-                userId = ((CustomUserDetails) principal).getUser().getUserId();
+                userId = ((CustomUserDetails) principal).getUserId();
             } else {
                 userId = authentication.getName();
             }

@@ -4,9 +4,18 @@ plugins {
 }
 
 dependencies {
+    // ── 신규 수직 모듈 (Vertical Modules) ──────────────────────────────
+    implementation project(':module-core-iam')
+    implementation project(':module-system-admin')
+    implementation project(':module-workspace')
+    implementation project(':module-operation')
+    implementation project(':module-knowledge')
+
+    // ── 공통 기반 모듈 (점진적 이관 완료 전까지 common-service 유지) ──
     implementation project(':common-service')
     implementation project(':common-core')
     implementation project(':common-security')
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

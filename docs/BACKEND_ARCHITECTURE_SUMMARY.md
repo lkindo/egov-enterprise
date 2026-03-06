@@ -15,9 +15,8 @@
 
 ### **📦 기반 모듈의 역할**
 *   **`common-core`**: 전역 유틸리티, 공통 예외(Exception), 공통 응답 규격 등 시스템의 최하위 인프라 담당.
-*   **`common-security`**: Spring Security 설정, JWT 인증/인가, 암호화, CORS 정책 관리 등 보안 관문 담당.
-
----
+*   **`common-security`**: Spring Security 설정, JWT 인증/인가, 암호화 정책 관리 등 보안 관문 담당.
+*   **`common-domain` / `common-service`**: (점진적 이관 단계) 기존 엔티티 및 핵심 비즈니스 로직. 완전한 모듈별 내재화 전까지 공유 코어 역할을 수행.
 
 ## 2. 현재 구조의 문제점 및 사용자 피드백
 
@@ -48,11 +47,11 @@ MSA를 하지 않으면서 생산성을 높이기 위해 **기능 단위(Feature
 
 ---
 
-## 4. 향후 실행 전략 (Next Steps)
+## 4. 실행 결과 (Migration Completed)
 
-1.  **모듈 통합 작업**: `common-domain`, `common-service`에 분산된 로직을 위에서 정의한 기능 모듈 단위로 통합.
-2.  **의존성 단순화**: 각 기능 모듈이 `common-core`와 `common-security`만 바라보게 하여 결합도를 낮춤.
-3.  **`api-server` 재설정**: 실제 구동 서버에서는 필요한 `module-xxx`만 선택하여 로드하도록 `build.gradle` 수정.
+1.  **모듈별 스캐폴딩 및 컨트롤러 이관 완료**: `api-server`에 뭉쳐있던 모든 엔드포인트(Controller)들을 5개의 기능 모듈로 완전히 분산 배치 완료.
+2.  **Cross-domain 의존성 제거 확인**: 도메인 엔티티들이 서로 객체 매핑(`@ManyToOne`)이 아닌 식별자(String) 기반으로 느슨하게 결합되어 있음을 확인 및 유지 적용.
+3.  **API 호스트 서버 재구성**: `api-server`는 실질적인 컨트롤러를 가지지 않고 단지 `module-xxx` 모듈들을 포함(include)하여 띄우기만 하는 순수 실행(Host) 환경으로 변모.
 
 ---
 *작성일: 2026-03-06*
