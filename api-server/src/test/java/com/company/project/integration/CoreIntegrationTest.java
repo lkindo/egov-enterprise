@@ -2,10 +2,8 @@ package com.company.project.integration;
 
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserDto;
-import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

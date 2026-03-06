@@ -88,16 +88,23 @@ egov-enterprise/
 
 ---
 
-## ⚙️ 시작하기 (How to Start)
+### 로컬 개발 통합 실행 (한 번에 실행)
+루트 디렉토리에서 아래 명령으로 백엔드와 프론트엔드를 동시에 실행할 수 있습니다.
+```bash
+npm run dev
+# 또는 (Windows PowerShell)
+.\start-dev.ps1
+```
 
-### 1. Backend (Java/Spring)
+### 개별 실행 방식
+#### 1. Backend (Java/Spring)
 ```bash
 # 루트 디렉토리에서 실행
-./gradlew bootRun
+./gradlew :api-server:bootRun
 ```
 - API Endpoint: `http://localhost:8080/api/v1`
 
-### 2. Frontend (Next.js)
+#### 2. Frontend (Next.js)
 ```bash
 cd frontend
 pnpm install

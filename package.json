@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "npx -y concurrently -n \"API,WEB\" -c \"blue,green\" \"./gradlew bootRun\" \"pnpm --prefix frontend dev\"",
-    "backend": "./gradlew bootRun",
-    "frontend": "pnpm --prefix frontend dev"
+    "dev": "npx -y concurrently -n \"API,WEB\" -c \"blue,green\" \"gradlew :api-server:bootRun\" \"pnpm -C frontend dev\"",
+    "backend": "gradlew :api-server:bootRun",
+    "frontend": "pnpm -C frontend dev",
+    "all": "npm run dev"
   }
 }
