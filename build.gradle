@@ -58,15 +58,12 @@ subprojects {
         // Forward all system properties to the test JVM
         systemProperties System.getProperties()
         
+        jacoco {
+            destinationFile = layout.buildDirectory.file("jacoco/${project.name}.exec").get().asFile
+        }
+        
         finalizedBy jacocoTestReport
         
-        doLast {
-            if (jacoco.destinationFile.exists()) {
-                println "JACOCO: SUCCESS - File exists: ${jacoco.destinationFile}"
-            } else {
-                println "JACOCO: FAILURE - File NOT found: ${jacoco.destinationFile}"
-            }
-        }
     }
 
     jacocoTestReport {
@@ -87,27 +84,13 @@ tasks.register("jacocoRootReport", JacocoReport) {
     additionalSourceDirs.from = files(subprojects.sourceSets.main.allSource.srcDirs)
     sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
     classDirectories.from = files(subprojects.sourceSets.main.output)
-    executionData.from = files(subprojects.jacocoTestReport.executionData).filter { it.exists() }
+    executionData.from = files(subprojects.tasks.jacocoTestReport.executionData)
 
-    doFirst {
-        println "JACOCO_ROOT: ExecutionData files: ${executionData.files}"
-    }
-    
+
     reports {
         xml.required = true
         csv.required = true
         html.required = true
         html.outputLocation = file("${rootDir}/coverage-report")
-    }
-}
-
-tasks.register("debugJacoco") {
-    doLast {
-        subprojects.each { p ->
-            println "Project: ${p.name}"
-            println "  SourceDirs: ${p.sourceSets.main.allSource.srcDirs}"
-            println "  ClassDirs: ${p.sourceSets.main.output.classesDirs.files}"
-            println "  ExecData: ${p.jacocoTestReport.executionData.files}"
-        }
     }
 }

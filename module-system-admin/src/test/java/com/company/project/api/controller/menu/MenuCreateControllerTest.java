@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
-@org.junit.jupiter.api.Disabled
 @WebMvcTest(MenuCreateController.class)
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
 public class MenuCreateControllerTest {
