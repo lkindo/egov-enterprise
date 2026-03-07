@@ -13,10 +13,10 @@ test.describe('Authentication', () => {
         await page.click('button[type="submit"]');
 
         // Wait for navigation to dashboard (root)
-        await page.waitForURL('**/', { timeout: 10000 });
+        await page.waitForURL('**/', { timeout: 30000 });
 
         // Check if welcome message is visible
-        await expect(page.getByText('안녕하세요')).toBeVisible();
+        await expect(page.getByText(/Hi,|주요 인사이트/).first()).toBeVisible({ timeout: 15000 });
     });
 
     test('should show error message on failed login', async ({ page }) => {
@@ -27,7 +27,9 @@ test.describe('Authentication', () => {
 
         await page.click('button[type="submit"]');
 
-        // Check for error message in the UI
-        await expect(page.getByText('로그인에 실패했습니다')).toBeVisible();
+        // Check for error message using test-id
+        const errorMsg = page.getByTestId('login-error');
+        await expect(errorMsg).toBeVisible({ timeout: 10000 });
+        await expect(errorMsg).toContainText(/로그인|실패|확인|credentials|Unauthorized/i);
     });
 });

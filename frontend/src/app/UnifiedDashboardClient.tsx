@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BannerSlider } from '@/app/components/dashboard/BannerSlider';
 import { PopupManager } from '@/app/components/dashboard/PopupManager';
 import { ActivityFeed } from '@/app/components/dashboard/ActivityFeed';
+import { RealTimeDashboard } from '@/components/features/dashboard/RealTimeDashboard';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
@@ -166,6 +167,11 @@ export default function UnifiedDashboardClient({
         <BannerSlider />
       </motion.div>
 
+      {/* Real-time Insights & Connectivity */}
+      <motion.div variants={itemVariants} className="p-8 border-2 border-primary/5 rounded-[4rem] bg-slate-50 dark:bg-slate-900/50 shadow-inner">
+        <RealTimeDashboard />
+      </motion.div>
+
       {/* Summary Cards with Industrial Aesthetic */}
       <motion.div variants={containerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <SummaryCard
@@ -181,7 +187,7 @@ export default function UnifiedDashboardClient({
           key="summary-tasks"
           title="내 업무 현황"
           value={taskList.length.toString().padStart(2, '0')}
-          description={`${taskList.filter((t:any) => t.isNew).length} new tasks assigned recently`}
+          description={`${taskList.filter((t: any) => t.isNew).length} new tasks assigned recently`}
           icon={<Zap size={24} />}
           trend={-5}
           color="orange"

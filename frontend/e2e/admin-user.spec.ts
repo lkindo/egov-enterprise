@@ -4,39 +4,44 @@ test.describe('Admin User Management', () => {
     test.beforeEach(async ({ page }) => {
         // Login as Admin
         await page.goto('/login');
-        await page.fill('input[name="id"]', 'webmaster');
-        await page.fill('input[name="password"]', '1');
+        await page.fill('#id', 'webmaster');
+        await page.fill('#password', '1');
         await page.click('button[type="submit"]');
         await page.waitForURL('/');
     });
 
     test('should display user list in admin panel', async ({ page }) => {
         // Navigate to User Management
-        await page.goto('/admin/user');
+        await page.goto('/admin/user/manage');
 
         // Verify page header
-        await expect(page.getByRole('heading', { name: '사용자 관리' })).toBeVisible();
+        await expect(page.getByText('사용자 계정 관리')).toBeVisible();
 
         // Check if table exists
         const table = page.locator('table');
         await expect(table).toBeVisible();
 
         // At least the admin user should be present
-        const rows = table.locator('tbody tr');
-        await expect(rows.first()).toBeVisible();
-        await expect(rows).toContainText('webmaster');
+        const adminRow = table.locator('tbody tr').filter({ hasText: 'webmaster' });
+        await expect(adminRow.first()).toBeVisible();
     });
 
     test('should search users by name', async ({ page }) => {
-        await page.goto('/admin/user');
+        await page.goto('/admin/user/manage');
 
-        // Fill search input (Assuming '관리자' is the name of webmaster)
-        const searchInput = page.locator('input[placeholder*="검색어"]');
+        // Fill search input
+        const searchInput = page.getByPlaceholder(/아이디 또는 이름 입력/);
+        await expect(searchInput).toBeVisible();
         await searchInput.fill('관리자');
-        await page.keyboard.press('Enter');
 
-        // Verify results
-        const rows = page.locator('table tbody tr');
-        await expect(rows.first()).toContainText('관리자');
+        // Click search and wait for navigation/reload
+        await page.click('button:has-text("검색 실행")');
+
+        // Wait for the URL to change and include the encoded or decoded keyword
+        await page.waitForURL(url => url.searchParams.get('searchKeyword') === '관리자', { timeout: 15000 });
+
+        // Verify results - looking for the text in the table
+        const table = page.locator('table');
+        await expect(table).toContainText('관리자');
     });
 });

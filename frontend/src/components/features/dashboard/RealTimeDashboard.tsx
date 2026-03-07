@@ -120,6 +120,8 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
             size="sm"
             onClick={() => setShowNotifications(!showNotifications)}
             className="relative"
+            data-testid="notif-bell"
+            aria-label="알림 열기"
           >
             <Bell size={18} />
             {unreadCount > 0 && (

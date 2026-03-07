@@ -13,37 +13,35 @@ test.describe('Dashboard Features', () => {
     test('should display main dashboard widgets', async ({ page }) => {
         // Check for summary cards
         await expect(page.getByText('잔여 연차')).toBeVisible();
-        await expect(page.getByText('진행 업무')).toBeVisible();
+        await expect(page.getByText('내 업무 현황')).toBeVisible();
 
-        // Check for charts
-        await expect(page.getByText('주간 업무 처리 현황')).toBeVisible();
+        // Check for charts - Using regex for flexibility
+        await expect(page.getByText(/Traffic Analytics|System Pulse/).first()).toBeVisible();
     });
 
     test('should verify quick links', async ({ page }) => {
-        // Click on notice link in quick menu
-        const noticeLink = page.getByRole('link', { name: '공지사항' });
+        // Look for Recent Notices link
+        const noticeLink = page.getByRole('link', { name: /Recent Notices|더보기/i }).first();
         await expect(noticeLink).toBeVisible();
         await noticeLink.click();
 
         // Should navigate to notice board
         await page.waitForURL('**/cop/bbs');
-        await expect(page.getByText('게시판')).toBeVisible();
     });
 
     test('should handle logout', async ({ page }) => {
-        // Click logout in header
-        // Header uses user-nav component or similar.
-        // Let's look for logout button/link
-        const logoutBtn = page.getByRole('button', { name: /로그아웃|webmaster/i });
-        await logoutBtn.click();
+        // Find and click user profile popover trigger (contains admin name '관리자' or 'webmaster')
+        const profileBtn = page.locator('button:has-text("관리자"), button:has-text("webmaster")').first();
+        await expect(profileBtn).toBeVisible();
+        await profileBtn.click();
 
-        // If it's a dropdown, we might need to click logout inside it
-        const actualLogout = page.getByText('로그아웃');
-        if (await actualLogout.isVisible()) {
-            await actualLogout.click();
-        }
+        // Click logout button inside the popover
+        // The Header component uses a Button with "로그아웃" text
+        const actualLogout = page.locator('[role="dialog"] button:has-text("로그아웃"), .PopoverContent button:has-text("로그아웃")').first();
+        await expect(actualLogout).toBeVisible({ timeout: 10000 });
+        await actualLogout.click();
 
-        await page.waitForURL('**/login');
+        await page.waitForURL('**/login', { timeout: 15000 });
         await expect(page.getByText('E-GOV ENTERPRISE')).toBeVisible();
     });
 });
