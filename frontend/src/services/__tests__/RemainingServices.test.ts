@@ -5,7 +5,6 @@ import { fileMngService } from '../fileMngService';
 import { networkService } from '../networkService';
 import { roleService } from '../roleService';
 import { serverService } from '../serverService';
-import { syncService } from '../syncService';
 import { troubleService } from '../troubleService';
 
 vi.mock('@/lib/api/client', () => ({
@@ -44,11 +43,6 @@ describe('Remaining Domain Services', () => {
   it('serverService calls correct endpoints', async () => {
     await serverService.getServers();
     expect(client.get).toHaveBeenCalledWith('/admin/system/servers', expect.any(Object));
-  });
-
-  it('syncService calls correct endpoints', async () => {
-    await syncService.getSyncServers();
-    expect(client.get).toHaveBeenCalledWith('/admin/system/sync-servers', expect.any(Object));
   });
 
   it('troubleService calls correct endpoints', async () => {

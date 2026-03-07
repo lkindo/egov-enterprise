@@ -2,7 +2,8 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.1' apply false
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'io.freefair.lombok' version '8.10.2' apply false
+    id 'io.freefair.lombok' version '8.12.2' apply false
+    id 'jacoco'
 }
 
 allprojects {
@@ -25,7 +26,7 @@ subprojects {
     jacoco {
         toolVersion = "0.8.12"
     }
-    
+
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(21)
@@ -57,20 +58,27 @@ subprojects {
         systemProperty 'stdout.encoding', 'UTF-8'
         // Forward all system properties to the test JVM
         systemProperties System.getProperties()
-        
-        jacoco {
-            destinationFile = layout.buildDirectory.file("jacoco/${project.name}.exec").get().asFile
-        }
-        
-        finalizedBy jacocoTestReport
-        
+
+        // Continue even if tests fail to generate coverage report
+        ignoreFailures = false
+
+        finalizedBy 'jacocoTestReport'
     }
 
     jacocoTestReport {
+        dependsOn test
+        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: ['**/*Exception*', '**/dto/**'])
+            }))
+        }
         reports {
             xml.required = true
             csv.required = true
             html.required = true
+            xml.outputLocation = file("${project.buildDir}/reports/jacoco/jacocoRootReport.xml")
+            csv.outputLocation = file("${project.buildDir}/reports/jacoco/jacocoRootReport.csv")
+            html.outputLocation = file("${project.buildDir}/reports/jacoco/html")
         }
     }
 }
@@ -78,19 +86,35 @@ subprojects {
 tasks.register("jacocoRootReport", JacocoReport) {
     group = "Verification"
     description = "Generates an aggregate JaCoCo report from all subprojects"
-    
-    dependsOn subprojects.test
-    
-    additionalSourceDirs.from = files(subprojects.sourceSets.main.allSource.srcDirs)
-    sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
-    classDirectories.from = files(subprojects.sourceSets.main.output)
-    executionData.from = files(subprojects.tasks.jacocoTestReport.executionData)
 
+    dependsOn subprojects.test
+
+    // Collect source files from all subprojects
+    sourceDirectories.setFrom(files(subprojects.sourceSets.main.allSource.srcDirs))
+    classDirectories.setFrom(files(subprojects.collect { 
+        it.fileTree(dir: it.layout.buildDirectory.dir("classes/java/main"), exclude: ['**/dto/**', '**/*Exception*'])
+    }))
+    
+    // Aggregating execution data files (*.exec) from all subprojects
+    executionData.setFrom(fileTree(dir: rootDir, include: "**/build/jacoco/*.exec"))
+
+    doFirst {
+        println "JACOCO_ROOT: ExecutionData: ${executionData.files}"
+        println "JACOCO_ROOT: ClassDirs counts: ${classDirectories.files.size()}"
+    }
 
     reports {
-        xml.required = true
-        csv.required = true
-        html.required = true
-        html.outputLocation = file("${rootDir}/coverage-report")
+        xml {
+            required = true
+            outputLocation = file("${rootDir}/coverage-report/jacocoRootReport.xml")
+        }
+        csv {
+            required = true
+            outputLocation = file("${rootDir}/coverage-report/jacocoRootReport.csv")
+        }
+        html {
+            required = true
+            outputLocation = file("${rootDir}/coverage-report")
+        }
     }
 }

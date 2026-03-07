@@ -138,7 +138,6 @@ class UserServiceBusinessLogicExceptionTest {
                 org.assertj.core.api.Assertions.assertThat(result).isFalse();
         }
 
-        @org.junit.jupiter.api.Disabled
         @Test
         @DisplayName("사용자 등록 실패 - 필수 필드(UserId) 누락")
         void registerUser_fail_withNullUserId() {
@@ -148,7 +147,6 @@ class UserServiceBusinessLogicExceptionTest {
                                 .isInstanceOf(IllegalArgumentException.class);
         }
 
-        @org.junit.jupiter.api.Disabled
         @Test
         @DisplayName("사용자 등록 실패 - 필수 필드(UserNm) 누락")
         void registerUser_fail_withNullUserNm() {

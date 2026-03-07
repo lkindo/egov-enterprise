@@ -28,9 +28,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * BoardMasterService 사용자
+ * BoardMasterService 기능 테스트
  */
-@org.junit.jupiter.api.Disabled
 @ExtendWith(MockitoExtension.class)
 class BoardMasterServiceTest {
 
@@ -94,7 +93,7 @@ class BoardMasterServiceTest {
   }
 
   @Test
-  @DisplayName("게시판嶺뚮씭?????브퀗???성공)")
+  @DisplayName("게시판 마스터 상세 조회 성공")
   void getBoardMaster_success() {
     // Given
     when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
@@ -109,7 +108,7 @@ class BoardMasterServiceTest {
   }
 
   @Test
-  @DisplayName("게시판嶺뚮씭?????브퀗????이후 - 존재하지 않는 테스트ID")
+  @DisplayName("게시판 마스터 상세 조회 실패 - 존재하지 않는 게시판")
   void getBoardMaster_fail_notFound() {
     // Given
     when(boardMasterRepository.findById("NONEXISTENT")).thenReturn(Optional.empty());

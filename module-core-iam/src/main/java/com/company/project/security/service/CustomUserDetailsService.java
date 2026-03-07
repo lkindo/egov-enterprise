@@ -15,29 +15,31 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
-    private final UserAuthorityRepository userAuthorityRepository;
+        private final UserRepository userRepository;
+        private final UserAuthorityRepository userAuthorityRepository;
 
-    @Override
-    @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String username)
-            throws UsernameNotFoundException {
-        User user = userRepository.findById(Objects.requireNonNull(username))
-                .orElseGet(() -> userRepository.findByEsntlId(Objects.requireNonNull(username))
-                        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username)));
+        @Override
+        @Transactional(readOnly = true)
+        public UserDetails loadUserByUsername(String username)
+                        throws UsernameNotFoundException {
+                User user = userRepository.findById(Objects.requireNonNull(username))
+                                .orElseGet(() -> userRepository.findByEsntlId(Objects.requireNonNull(username))
+                                                .orElseThrow(() -> new UsernameNotFoundException(
+                                                                "User not found: " + username)));
 
-        String authorCode = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))
-                .map(UserAuthority::getAuthorCode)
-                .orElse(null);
+                String authorCode = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))
+                                .map(UserAuthority::getAuthorCode)
+                                .map(code -> code.startsWith("ROLE_") ? code : "ROLE_" + code)
+                                .orElse("ROLE_USER");
 
-        return CustomUserDetails.builder()
-                .userId(user.getUserId())
-                .esntlId(user.getEsntlId())
-                .userNm(user.getUserNm())
-                .password(user.getPassword())
-                .roleName(user.getRole() != null ? user.getRole().name() : null)
-                .lockAt(user.getLockAt())
-                .authorCode(authorCode)
-                .build();
-    }
+                return CustomUserDetails.builder()
+                                .userId(user.getUserId())
+                                .esntlId(user.getEsntlId())
+                                .userNm(user.getUserNm())
+                                .password(user.getPassword())
+                                .roleName(user.getRole() != null ? user.getRole().name() : null)
+                                .lockAt(user.getLockAt())
+                                .authorCode(authorCode)
+                                .build();
+        }
 }

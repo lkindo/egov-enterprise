@@ -140,9 +140,9 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                 String encodedPassword = passwordEncoder.encode(password);
 
                 User user = User.builder()
-                                .userId(Objects.requireNonNull(userId))
-                                .password(Objects.requireNonNull(encodedPassword))
-                                .userNm(Objects.requireNonNull(userNm))
+                                .userId(assertNotBlank(userId, "User ID is required"))
+                                .password(assertNotBlank(encodedPassword, "Password is required"))
+                                .userNm(assertNotBlank(userNm, "User name is required"))
                                 .esntlId(esntlId)
                                 .passwordHint(passwordHint)
                                 .passwordCnsr(passwordCnsr)
@@ -150,6 +150,15 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                                 .build();
 
                 userRepository.save(Objects.requireNonNull(user));
+
+                // 권한 정보 저장
+                UserAuthority authority = UserAuthority.builder()
+                                .uniqId(user.getEsntlId())
+                                .authorCode("ROLE_" + user.getRole().name())
+                                .mberTyCode("USR")
+                                .build();
+                userAuthorityRepository.save(authority);
+
                 return userId;
         }
 
@@ -243,6 +252,15 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                                 .build();
 
                 userRepository.save(Objects.requireNonNull(user));
+
+                // 권한 정보 저장
+                UserAuthority authority = UserAuthority.builder()
+                                .uniqId(user.getEsntlId())
+                                .authorCode("ROLE_" + user.getRole().name())
+                                .mberTyCode("USR")
+                                .build();
+                userAuthorityRepository.save(authority);
+
                 return userMapper.toResponse(user);
         }
 
@@ -252,5 +270,12 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Override
         public boolean verifyPassword(@NonNull String rawPassword, @NonNull String encodedPassword) {
                 return passwordEncoder.matches(rawPassword, encodedPassword);
+        }
+
+        private String assertNotBlank(String value, String message) {
+                if (value == null || value.trim().isEmpty()) {
+                        throw new IllegalArgumentException(message);
+                }
+                return value;
         }
 }

@@ -28,8 +28,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * JPA 기반 게시??비즈?스 로직 구현 ?래?? * - ?자?? ?? ?레?워??5.0 명세??맞춘 기능 구현
- * - EgovAbstractServiceImpl ?속 ?BoardService ?터?이??구현
+ * JPA 기반 게시판 비즈니스 로직 구현 클래스
+ * - 전자정부 표준프레임워크 5.0 명세에 맞춘 기능 구현
+ * - EgovAbstractServiceImpl 상속 및 BoardService 인터페이스 구현
  */
 @Service("egovBoardService")
 public class BoardService extends EgovAbstractServiceImpl implements EgovBoardService {
@@ -80,7 +81,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 BoardMaster master = boardMasterRepository.findById(Objects.requireNonNull(request.bbsId()))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-                // ?비???코?이???턴 ?는 모듈??비???출 (?벤??권장)
+                // 서비스 간 호출이 필요한 경우 모듈 간 비동기 호출 (이벤트 권장)
                 UserDto author = null;
                 try {
                         author = userService.getUserById(Objects.requireNonNull(userId));
@@ -97,7 +98,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .ntceBgnde(request.ntceBgnde())
                                 .ntceEndde(request.ntceEndde())
                                 .ntcrId(userId)
-                                .ntcrNm(author != null ? author.getUserNm() : "?명")
+                                .ntcrNm(author != null ? author.getUserNm() : "익명")
                                 .atchFileId(request.atchFileId())
                                 .nttNo(1L)
                                 .sortOrdr(sortOrdr)
@@ -109,7 +110,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 Long nttId = Objects.requireNonNull(boardRepository.save(Objects.requireNonNull(board)))
                                 .getNttId();
 
-                // Point 22: ?벤??발행 (?계 ?기????목적)
+                // Point 22: 이벤트 발행 (통계 동기화 등의 목적)
                 eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), nttId, userId));
 
                 return nttId;
@@ -158,7 +159,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .ntceBgnde(request.ntceBgnde())
                                 .ntceEndde(request.ntceEndde())
                                 .ntcrId(userId)
-                                .ntcrNm(author != null ? author.getUserNm() : "?명")
+                                .ntcrNm(author != null ? author.getUserNm() : "익명")
                                 .atchFileId(request.atchFileId())
                                 .parnts(parentId)
                                 .nttNo(nttNo)
@@ -170,7 +171,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 Long nttId = Objects.requireNonNull(boardRepository.save(Objects.requireNonNull(board)))
                                 .getNttId();
 
-                // ?벤??발행
+                // 이벤트 발행
                 eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), nttId, userId));
 
                 return nttId;

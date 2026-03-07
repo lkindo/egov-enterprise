@@ -39,11 +39,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
     }
 
     @Override
-
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-
-        // ?          ?         ??CSS, JS, Images)             ?
-
+        // 정적 리소스(CSS, JS, Images) 설정
         registry.addResourceHandler("/css/**").addResourceLocations("/css/");
 
         registry.addResourceHandler("/js/**").addResourceLocations("/js/");

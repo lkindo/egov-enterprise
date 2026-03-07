@@ -22,6 +22,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
@@ -85,16 +86,17 @@ public class ApiSecurityConfig {
                 http
                                 .securityMatcher("/api/v1/**")
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                                .csrf(csrf -> csrf
-                                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                                                .ignoringRequestMatchers("/api/v1/auth/login", "/api/v1/auth/reissue", "/api/v1/users/signup"))
+                                .csrf(AbstractHttpConfigurer::disable)
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/api/v1/auth/login", "/api/v1/auth/me",
                                                                 "/api/v1/auth/reissue",
                                                                 "/api/v1/auth/logout",
                                                                 "/api/v1/users/signup",
                                                                 "/api/v1/health",
-                                                                "/api/v1/images/**", "/api/v1/dashboard",
+                                                                "/api/v1/images/**")
+                                                .permitAll()
+                                                .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SYSTEM")
+                                                .requestMatchers("/api/v1/dashboard",
                                                                 "/api/v1/bbs/**", "/api/v1/community/**",
                                                                 "/api/v1/deptjob/**", "/api/v1/addressbook/**",
                                                                 "/api/v1/schedule/**", "/api/v1/scrap/**",

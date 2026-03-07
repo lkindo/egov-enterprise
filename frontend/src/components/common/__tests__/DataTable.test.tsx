@@ -55,7 +55,7 @@ describe('DataTable', () => {
     const onExport = vi.fn();
     render(<DataTable columns={columns} data={data} onExport={onExport} />);
 
-    const exportBtn = screen.getByRole('button', { name: /export/i });
+    const exportBtn = screen.getByRole('button', { name: /엑셀 다운로드/i });
     fireEvent.click(exportBtn);
 
     expect(onExport).toHaveBeenCalled();

@@ -21,13 +21,13 @@ describe('authService', () => {
 
     const result = await authService.login(loginData);
 
-    expect(client.post).toHaveBeenCalledWith('/auth/login', loginData);
+    expect(client.post).toHaveBeenCalledWith('auth/login', loginData);
     expect(result).toEqual(mockRes);
   });
 
   it('logout should call post /auth/logout', async () => {
     await authService.logout();
-    expect(client.post).toHaveBeenCalledWith('/auth/logout');
+    expect(client.post).toHaveBeenCalledWith('auth/logout');
   });
 
   it('getCurrentUser should call get /auth/me', async () => {
@@ -36,7 +36,7 @@ describe('authService', () => {
 
     const result = await authService.getCurrentUser();
 
-    expect(client.get).toHaveBeenCalledWith('/auth/me');
+    expect(client.get).toHaveBeenCalledWith('auth/me');
     expect(result).toEqual(mockUser);
   });
 
@@ -46,7 +46,7 @@ describe('authService', () => {
 
     const result = await authService.reissue();
 
-    expect(client.post).toHaveBeenCalledWith('/auth/reissue');
+    expect(client.post).toHaveBeenCalledWith('auth/reissue');
     expect(result).toEqual(mockRes);
   });
 });

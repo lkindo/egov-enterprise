@@ -46,7 +46,7 @@ public class UserController {
 
     private final UserService userService;
 
-@Operation(summary = "Get Current User Profile")
+    @Operation(summary = "Get Current User Profile")
 
     @GetMapping("/me")
 
@@ -56,7 +56,7 @@ public class UserController {
 
     }
 
-@Operation(summary = "Update Current User Profile")
+    @Operation(summary = "Update Current User Profile")
 
     @PutMapping("/me")
 
@@ -72,7 +72,7 @@ public class UserController {
 
     }
 
-@Operation(summary = "Change Password")
+    @Operation(summary = "Change Password")
 
     @PutMapping("/me/password")
 
@@ -96,7 +96,7 @@ public class UserController {
 
     }
 
-@Operation(summary = "Signup")
+    @Operation(summary = "Signup")
 
     @PostMapping("/signup")
 
@@ -106,7 +106,7 @@ public class UserController {
 
     }
 
-@Operation(summary = "Get All Users")
+    @Operation(summary = "Get All Users")
 
     @GetMapping
 
@@ -116,7 +116,7 @@ public class UserController {
 
     }
 
-@Operation(summary = "Get Paged Users")
+    @Operation(summary = "Get Paged Users")
 
     @GetMapping("/paged")
 
@@ -138,4 +138,23 @@ public class UserController {
 
     }
 
+    @Operation(summary = "Get User by ID")
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<UserDto>> getUserById(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getUserById(id)));
+    }
+
+    @Operation(summary = "Update User")
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> updateUser(@PathVariable String id, @RequestBody UserDto userDto) {
+        userService.updateUser(id, userDto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "Delete User")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable String id) {
+        userService.deleteUser(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }

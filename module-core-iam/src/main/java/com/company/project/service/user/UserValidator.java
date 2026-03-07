@@ -16,7 +16,7 @@ public class UserValidator {
     private static final Pattern PASSWORD_PATTERN = Pattern
             .compile("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$");
     private static final Pattern USER_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9]{4,20}$");
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z가-힣\\s]{2,50}$");
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9가-힣\\s]{2,50}$");
 
     /**
      * 사용자 회원가입 요청 검증

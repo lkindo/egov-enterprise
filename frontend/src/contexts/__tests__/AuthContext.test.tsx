@@ -48,9 +48,9 @@ describe('AuthContext', () => {
       await result.current.login({ id: 'test', password: 'password' });
     });
 
-    expect(client.post).toHaveBeenCalledWith('/auth/login', { id: 'test', password: 'password' });
+    expect(client.post).toHaveBeenCalledWith('auth/login', { id: 'test', password: 'password' });
     // After login, checkAuth is called
-    await waitFor(() => expect(client.get).toHaveBeenCalledWith('/auth/me'));
+    await waitFor(() => expect(client.get).toHaveBeenCalledWith('auth/me'));
 
     // Security check: logs should not be present
     // We only care about logs during the login action

@@ -1,76 +1,56 @@
 # ==========================================
 # eGovFrame / Java / Gradle / Next.js .gitignore
+# Optimized Version
 # ==========================================
 
 # ----- OS & IDE -----
-# Windows
-Thumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-
-# macOS
-.DS_Store
-.AppleDouble
-._*
-
-# IntelliJ IDEA
-.idea/
-*.iml
-*.iws
-*.ipr
-
-# VS Code
-.vscode/
-*.code-workspace
-.history/
-
-# Eclipse
-.project
-.classpath
-.settings/
-.metadata/
-*.launch
+**/Thumbs.db
+**/Desktop.ini
+**/$RECYCLE.BIN/
+**/.DS_Store
+**/.AppleDouble
+**/._*
+**/.idea/
+**/*.iml
+**/*.iws
+**/*.ipr
+**/.vscode/
+**/*.code-workspace
+**/.history/
+**/.project
+**/.classpath
+**/.settings/
+**/.metadata/
+**/*.launch
 
 # ----- Build & Dependencies -----
-# Java / Gradle / Maven / Eclipse
-build/
-bin/
-target/
-.gradle/
-.mvn/
-vendor/
-*.class
-*.jar
-*.war
-*.ear
-*.zip
-*.tar.gz
-
-# Eclipse IDE
-.factorypath
-
-# Generated Sources (QueryDSL, Lombok, etc.)
+**/build/
+**/bin/
+**/target/
+**/.gradle/
+**/.mvn/
+**/vendor/
+**/*.class
+**/*.jar
+**/*.war
+**/*.ear
+**/*.zip
+**/*.tar.gz
+**/.factorypath
 **/generated-sources/
 **/apt-generated/
-
-# Node.js
 **/node_modules/
-.npm/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Next.js
+**/.npm/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
 **/.next/
-dist/
-export/
-
-# Package locks (choose one: pnpm-lock.yaml is preferred)
-package-lock.json
-yarn.lock
-
-# Legacy binary files
+**/dist/
+**/export/
+# package-lock.json  # DO NOT IGNORE: Committed for consistent builds
+# yarn.lock          # DO NOT IGNORE: Committed for consistent builds
+pnpm-lock.yaml
 *.xlsx
 *.xls
 *.doc
@@ -78,86 +58,72 @@ yarn.lock
 *.ppt
 *.pptx
 
-# Local configuration with sensitive data
+# ----- Local Configuration & Secrets -----
 **/egovProps/conf/
-*.local.properties
-
-# ----- Environment & Secrets -----
-.env
-.env*.local
-.env.development.local
-.env.test.local
-.env.production.local
-application-local.properties
-application-local.yml
+**/*.local.properties
+**/.env
+**/.env*.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+**/application-local.properties
+**/application-local.yml
 
 # ----- Logs & Temp Files -----
-*.log
-logs/
-*_log.txt
-*.txt
-!README.md
-!MENU_STRUCTURE.md
-!PRD.MD
-!TRD.MD
-!LLD.MD
-!COMPLIANCE_REPORT.md
-!MIGRATION_PLAN.md
-!MIGRATION_STRATEGY.md
-!tasks.md
-!task.md
-!deps.txt
-!jsp_keys.txt
-boot_error*
-server_run_*.txt
-
-# Temp files
-temp_*/
-tmp_*/
-*.tmp
-*.temp
-*.bak
-*.swp
-*~
-*.orig
+**/*.log
+**/logs/
+**/*_log.txt
+**/boot_error*
+**/server_run_*.txt
+**/temp_*/
+**/tmp_*/
+**/*.tmp
+**/*.temp
+**/*.bak
+**/*.swp
+**/*~
+**/*.orig
 
 # ----- Tools & Infrastructure -----
-# Docker
-docker-data/
+**/docker-data/
+**/apache-tomcat-*/
+**/tomcat/
+**/prisma/migrations/
+**/prisma/dev.db
+**/prisma/dev.db-journal
+**/test-output/
+**/surefire-reports/
+**/test-results/
+**/playwright-report/
+**/blob-report/
+**/playwright/.cache/
+**/jacoco/
+**/*.exec
+**/coverage/
+**/coverage-report/
+**/out/
+**/.vercel/
+**/.turbo/
+**/.server/
+**/.prisma/
 
-# Tomcat
-apache-tomcat-*/
-tomcat/
-
-# Prisma
-/prisma/migrations/
-/prisma/dev.db
-/prisma/dev.db-journal
-
-# Playwright / Testing
-test-output/
-surefire-reports/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
+# ----- Java Tools (JRebel, etc.) -----
+**/rebel.xml
+**/*.rebel.xml.bak
 
 # ----- AI Tools -----
-.jules/
-.sisyphus/
-.agent/
-.gemini/
+**/.jules/
+**/.sisyphus/
+**/.agent/
+**/.gemini/
 
 # ----- Upload/Storage -----
-upload/
-uploads/
-files/
-storage/
+**/upload/
+**/uploads/
+**/files/
+**/storage/
 
 # ----- Project Specific -----
-# Encoding conversion scripts (one-time use)
-convert-*.py
-encoding-logs/
-
-# Template duplicates (use config-templates instead)
-utf8-project-template/
+**/convert-*.py
+**/encoding-logs/
+**/utf8-project-template/
