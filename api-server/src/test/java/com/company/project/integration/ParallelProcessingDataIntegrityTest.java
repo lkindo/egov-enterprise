@@ -125,6 +125,7 @@ class ParallelProcessingDataIntegrityTest {
         .userId("consistentUser")
         .userNm("테스트사용자")
         .esntlId("USR00001")
+        .password("password123!")
         .build();
 
     when(userService.getUserById("consistentUser")).thenReturn(UserDto.from(mockUser));
@@ -181,6 +182,7 @@ class ParallelProcessingDataIntegrityTest {
         .userId(userId)
         .userNm("테스트 사용자")
         .esntlId("USR00001")
+        .password("password123!")
         .build();
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(initialUser));
@@ -297,6 +299,7 @@ class ParallelProcessingDataIntegrityTest {
             .userId("readerUser" + i)
             .userNm("읽기사용자" + i)
             .esntlId("USR0000" + i)
+            .password("password123!")
             .build())
         .collect(Collectors.toList());
 
@@ -351,6 +354,7 @@ class ParallelProcessingDataIntegrityTest {
         .userId(userId)
         .userNm("테스트 사용자")
         .esntlId("USR00001")
+        .password("password123!")
         .build();
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(initialUser));
@@ -411,6 +415,7 @@ class ParallelProcessingDataIntegrityTest {
           .userId(id)
           .userNm("삭제사용자_" + id)
           .esntlId("USR0000" + id)
+          .password("password123!")
           .build();
       when(userRepository.findById(id)).thenReturn(Optional.of(user));
     });

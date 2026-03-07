@@ -168,7 +168,7 @@ export default function UnifiedDashboardClient({
       </motion.div>
 
       {/* Real-time Insights & Connectivity */}
-      <motion.div variants={itemVariants} className="p-8 border-2 border-primary/5 rounded-[4rem] bg-slate-50 dark:bg-slate-900/50 shadow-inner">
+      <motion.div variants={itemVariants} className="p-4 md:p-8 border-2 border-primary/5 rounded-[4rem] bg-slate-50 dark:bg-slate-900/50 shadow-inner">
         <RealTimeDashboard />
       </motion.div>
 

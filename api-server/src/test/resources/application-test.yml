@@ -13,7 +13,6 @@ spring:
           "classpath:/public/",
           "classpath:/resources/",
           "classpath:/META-INF/resources/",
-          "file:api-server/src/main/webapp/",
         ]
   jpa:
     hibernate:

@@ -30,6 +30,6 @@ test.describe('Authentication', () => {
         // Check for error message using test-id
         const errorMsg = page.getByTestId('login-error');
         await expect(errorMsg).toBeVisible({ timeout: 10000 });
-        await expect(errorMsg).toContainText(/로그인|실패|확인|credentials|Unauthorized/i);
+        await expect(errorMsg).toContainText(/로그인|실패|확인|credentials|Unauthorized|failed|401/i);
     });
 });

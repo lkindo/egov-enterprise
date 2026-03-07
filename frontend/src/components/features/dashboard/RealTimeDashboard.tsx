@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useWebSocket } from '@/contexts/websocket-context';
+import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardConnection } from '@/hooks/useDashboardConnection';
 import { Bell, TrendingUp, Users, Activity, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -40,6 +41,8 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
   const [notifications, setNotifications] = useState<RealTimeNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  const { user } = useAuth();
+
   // 접속 추적 훅 사용
   useDashboardConnection();
 
@@ -66,29 +69,35 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
   useEffect(() => {
     if (!client || !isConnected) return;
 
-    // 실시간 통계 구독
+    // 실시간 통계 구독 (공용)
     const statsSubscription = client.subscribe('/topic/dashboard/stats', (message) => {
       const data = JSON.parse(message.body);
       handleStatsUpdate(data);
     });
 
-    // 실시간 알림 구독
+    // 실시간 시스템 알림 구독 (공용)
     const notificationSubscription = client.subscribe('/topic/notifications', (message) => {
       const notification = JSON.parse(message.body);
       handleNotification(notification);
     });
 
-    // 사용자별 알림 구독
-    if (client.connected) {
-      // TODO: 사용자 ID 를 활용한 개인 알림 구독
-      // const userSubscription = client.subscribe(`/user/${userId}/queue/notifications`, ...);
+    // 사용자별 개인 알림 구독 (Private)
+    let userSubscription: any = null;
+    if (user?.id) {
+      // 스프링 시큐리티의 /user 전용 큐 활용
+      userSubscription = client.subscribe('/user/queue/notifications', (message) => {
+        const notification = JSON.parse(message.body);
+        handleNotification(notification);
+      });
+      console.log(`Subscribed to private notifications for user: ${user.id}`);
     }
 
     return () => {
       statsSubscription.unsubscribe();
       notificationSubscription.unsubscribe();
+      if (userSubscription) userSubscription.unsubscribe();
     };
-  }, [client, isConnected, handleStatsUpdate, handleNotification]);
+  }, [client, isConnected, handleStatsUpdate, handleNotification, user?.id]);
 
   // 브라우저 알림 권한 요청
   useEffect(() => {

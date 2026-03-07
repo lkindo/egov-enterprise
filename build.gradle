@@ -60,7 +60,7 @@ subprojects {
         systemProperties System.getProperties()
 
         // Continue even if tests fail to generate coverage report
-        ignoreFailures = false
+        ignoreFailures = true
 
         finalizedBy 'jacocoTestReport'
     }

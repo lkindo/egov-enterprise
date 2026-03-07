@@ -22,6 +22,7 @@ public enum ErrorCode {
     DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "C008", "Duplicate Resource"),
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "C009", "Invalid Input"),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "C010", "Access Denied"),
+    UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "C011", "Unsupported Media Type"),
 
     // Auth
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized Access"),
