@@ -3,6 +3,8 @@ package com.company.project.api.auth;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.core.response.ApiResponse;
+import com.company.project.domain.auth.UserAuthorityRepository;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.security.service.CustomUserDetails;
 import com.company.project.security.jwt.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,6 +25,9 @@ import java.util.Map;
 public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+
+    private final UserRepository userRepository;
+    private final UserAuthorityRepository userAuthorityRepository;
 
     @PostMapping("/login")
     public ApiResponse<Map<String, String>> login(@RequestBody Map<String, String> loginRequest,
@@ -51,14 +56,34 @@ public class AuthController {
     }
 
     @PostMapping("/reissue")
-    public ApiResponse<Map<String, String>> reissue(@CookieValue(name = "refreshToken") String refreshToken) {
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
+    public ApiResponse<Map<String, String>> reissue(
+            @CookieValue(name = "refreshToken", required = false) String refreshToken) {
+        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+            log.warn(">>> [Reissue] Missing or invalid refresh token");
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
         String userId = jwtTokenProvider.getUserId(refreshToken);
-        String role = "ROLE_USER";
-        String finalRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+        log.info(">>> [Reissue] Request received for userId: {}", userId);
+
+        // Fetch actual user role from DB
+        String authorCode = userRepository.findById(userId)
+                .flatMap(user -> {
+                    log.debug(">>> [Reissue] Found user: {}, esntlId: {}", user.getUserId(), user.getEsntlId());
+                    return userAuthorityRepository.findById(user.getEsntlId());
+                })
+                .map(ua -> {
+                    log.debug(">>> [Reissue] Found authority: {} for user: {}", ua.getAuthorCode(), userId);
+                    return ua.getAuthorCode();
+                })
+                .orElseGet(() -> {
+                    log.warn(">>> [Reissue] Failed to find authority for user: {}, falling back to ROLE_USER", userId);
+                    return "ROLE_USER";
+                });
+
+        String finalRole = authorCode.startsWith("ROLE_") ? authorCode : "ROLE_" + authorCode;
+        log.info(">>> [Reissue] Final role for user {}: {}", userId, finalRole);
         String newAccessToken = jwtTokenProvider.createAccessToken(userId, finalRole);
+
         Map<String, String> responseData = new HashMap<>();
         responseData.put("accessToken", newAccessToken);
         responseData.put("role", finalRole);

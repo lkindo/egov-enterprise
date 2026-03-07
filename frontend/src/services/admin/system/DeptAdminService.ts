@@ -46,7 +46,7 @@ class DeptAdminService extends AdminService {
      * 부서 권한 일괄 설정
      */
     async updateDeptAuthorities(data: DeptAuthorBatchRequest): Promise<void> {
-        return this.client.post<void>(`/admin/security/dept-authorities/batch`, data);
+        return this.client.post<void>(`admin/security/dept-authorities/batch`, data);
     }
 }
 

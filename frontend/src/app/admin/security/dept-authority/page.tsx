@@ -100,8 +100,12 @@ export default function DeptAuthorityPage() {
   ];
 
   const handleSave = () => {
-    if (!selectedDept) return toast('설정할 부서를 먼저 선택해 주세요.', 'info');
-    if (!selectedAuthorCode) return toast('부여할 권한을 선택해 주세요.', 'info');
+    if (!selectedDept) {
+      return toast('설정할 부서를 먼저 선택해 주세요.', 'info');
+    }
+    if (!selectedAuthorCode) {
+      return toast('부여할 권한을 선택해 주세요.', 'info');
+    }
 
     if (confirm(`선택한 부서의 모든 구성원에게 '${selectedAuthorCode}' 권한을 일괄 부여하시겠습니까?`)) {
       saveMutation.mutate(selectedAuthorCode);
