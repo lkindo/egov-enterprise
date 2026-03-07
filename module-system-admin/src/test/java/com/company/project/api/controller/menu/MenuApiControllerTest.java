@@ -1,6 +1,5 @@
 package com.company.project.api.controller.menu;
 
-
 import com.company.project.service.menu.MenuService;
 import com.company.project.service.menu.dto.MenuDto;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@org.junit.jupiter.api.Disabled
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")

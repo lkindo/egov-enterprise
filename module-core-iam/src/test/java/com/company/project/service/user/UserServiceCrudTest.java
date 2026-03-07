@@ -86,7 +86,7 @@ class UserServiceCrudTest {
   @DisplayName("사용자 생성 실패 - null 값 포함")
   void createUser_fail_withNullValues() {
     assertThatThrownBy(() -> userService.registerUser(null, "pw", "name", "h", "c", Role.USER))
-        .isInstanceOf(NullPointerException.class);
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test

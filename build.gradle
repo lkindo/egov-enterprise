@@ -53,19 +53,61 @@ subprojects {
         useJUnitPlatform()
         maxHeapSize = "4096m"
         maxParallelForks = 1
-        jvmArgs '-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8'
         systemProperty 'file.encoding', 'UTF-8'
+        systemProperty 'stdout.encoding', 'UTF-8'
         // Forward all system properties to the test JVM
         systemProperties System.getProperties()
+        
         finalizedBy jacocoTestReport
+        
+        doLast {
+            if (jacoco.destinationFile.exists()) {
+                println "JACOCO: SUCCESS - File exists: ${jacoco.destinationFile}"
+            } else {
+                println "JACOCO: FAILURE - File NOT found: ${jacoco.destinationFile}"
+            }
+        }
     }
 
     jacocoTestReport {
-        dependsOn test
         reports {
             xml.required = true
             csv.required = true
             html.required = true
+        }
+    }
+}
+
+tasks.register("jacocoRootReport", JacocoReport) {
+    group = "Verification"
+    description = "Generates an aggregate JaCoCo report from all subprojects"
+    
+    dependsOn subprojects.test
+    
+    additionalSourceDirs.from = files(subprojects.sourceSets.main.allSource.srcDirs)
+    sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
+    classDirectories.from = files(subprojects.sourceSets.main.output)
+    executionData.from = files(subprojects.jacocoTestReport.executionData).filter { it.exists() }
+
+    doFirst {
+        println "JACOCO_ROOT: ExecutionData files: ${executionData.files}"
+    }
+    
+    reports {
+        xml.required = true
+        csv.required = true
+        html.required = true
+        html.outputLocation = file("${rootDir}/coverage-report")
+    }
+}
+
+tasks.register("debugJacoco") {
+    doLast {
+        subprojects.each { p ->
+            println "Project: ${p.name}"
+            println "  SourceDirs: ${p.sourceSets.main.allSource.srcDirs}"
+            println "  ClassDirs: ${p.sourceSets.main.output.classesDirs.files}"
+            println "  ExecData: ${p.jacocoTestReport.executionData.files}"
         }
     }
 }

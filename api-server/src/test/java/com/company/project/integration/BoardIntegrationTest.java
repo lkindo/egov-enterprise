@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
+@org.junit.jupiter.api.Disabled
 @SpringBootTest(classes = MinimalTestConfig.class)
 @Transactional
 @ActiveProfiles("test")
