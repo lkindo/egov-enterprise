@@ -1,14 +1,14 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { FileVO, FileSearchParams } from '@/types/file';
 import { PaginationResponse } from '@/types/system';
 
 /**
- * 파일 관리 서비스 (Admin 전용)
+ * ???뵬 ?온????뺥돩??(Admin ?袁⑹뒠)
  */
 const fileService = {
     /**
-     * 관리자용 파일 목록 조회
-     * @param params 검색 파라미터 (FileSearchParams)
+     * ?온?귐딆쁽?????뵬 筌뤴뫖以?鈺곌퀬??
+     * @param params 野꺜?????뵬沃섎챸苑?(FileSearchParams)
      */
     getAdminFileList: async (params: FileSearchParams) => {
         const response = await client.get<PaginationResponse<FileVO>>('/admin/cmm/fms/selectFileList.do', { params });
@@ -16,9 +16,9 @@ const fileService = {
     },
 
     /**
-     * 관리자용 파일 단건 삭제
-     * @param atchFileId 첨부파일 ID
-     * @param fileSn 파일 순번
+     * ?온?귐딆쁽?????뵬 ??ｊ탷 ????
+     * @param atchFileId 筌ｂ뫀????뵬 ID
+     * @param fileSn ???뵬 ??뺤쓰
      */
     deleteAdminFile: async (atchFileId: string, fileSn: number) => {
         const response = await client.delete('/admin/cmm/fms/deleteFile.do', {

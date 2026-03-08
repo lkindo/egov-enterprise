@@ -1,10 +1,10 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 
 export interface BatchSchedule {
     batchSchdulId: string;
     batchOpertId: string;
     batchOpertNm: string;
-    executCycle: string; // 01:매일, 02:매주...
+    executCycle: string; // 01:筌띲끉?? 02:筌띲끉竊?..
     executSchdulDe: string;
     executSchdulHour: string;
     executSchdulMnt: string;
@@ -14,8 +14,7 @@ export interface BatchSchedule {
 export interface BatchResult {
     batchResultId: string;
     batchOpertNm: string;
-    sttus: string; // 01:성공, 02:실패, 03:수행중
-    executBeginTime: string;
+    sttus: string; // 01:?源껊궗, 02:??쎈솭, 03:??묐뻬餓?    executBeginTime: string;
     executEndTime: string;
 }
 

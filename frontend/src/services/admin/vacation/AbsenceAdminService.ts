@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 
 export interface UserAbsence {
     userId: string;
@@ -15,7 +15,7 @@ interface PageResult<T> {
 
 class AbsenceAdminService extends AdminService {
     constructor() {
-        // /api/v1 (client.ts 에서 합쳐짐) + /admin/system (AdminService) + /vacations/absence
+        // /api/v1 (client.ts ?癒?퐣 ??뱁쒙쭪? + /admin/system (AdminService) + /vacations/absence
         super('/vacations/absence');
     }
 

@@ -1,1 +1,1 @@
-export * from './termsService';
+﻿export * from './termsService';

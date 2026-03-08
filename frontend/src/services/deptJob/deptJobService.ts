@@ -1,8 +1,8 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { DeptJobVO, DeptJobSearchParams } from '@/types/deptJob';
 
-const BASE_URL = '/api/v1/deptjob';
+const BASE_URL = '/deptjob';
 
 export const getDeptJobBxList = async (params: any = {}): Promise<any[]> => {
     const result = await client.get<any>(`${BASE_URL}/boxes`, { params });

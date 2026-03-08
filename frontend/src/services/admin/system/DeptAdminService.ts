@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 
 export interface DeptAuthorBatchRequest {
     deptId: string;
@@ -33,16 +33,16 @@ class DeptAdminService extends AdminService {
      */
     async getDepts(): Promise<Department[]> {
         const response = await this.get<any>('');
-        return response?.result;
+        return response?.result || response;
     }
 
     /**
      * 특정 부서의 사용자별 권한 목록 조회
      */
     async getDeptAuthorities(deptId: string): Promise<DeptAuthorProjection[]> {
-        // security 관련 API는 별도 경로이므로 basePath 무시를 위해 원시 클라이언트 사용 가능하나, 일관성을 위해 리졸브
+        // security 관련 API는 별도 경로이므로 basePath 무시
         const response = await this.client.get<any>(`admin/security/dept-authorities/${deptId}`);
-        return response?.result;
+        return response?.result || response;
     }
 
     /**
@@ -50,7 +50,7 @@ class DeptAdminService extends AdminService {
      */
     async updateDeptAuthorities(data: DeptAuthorBatchRequest): Promise<void> {
         const response = await this.client.post<any>(`admin/security/dept-authorities/batch`, data);
-        return response?.result;
+        return response?.result || response;
     }
 }
 

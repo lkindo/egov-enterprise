@@ -1,4 +1,4 @@
-import { ApiService } from '@/services/core/ApiService';
+﻿import { ApiService } from '@/services/core/ApiService';
 import { MenuInfo } from '@/types/menu';
 
 class MenuService extends ApiService {
@@ -7,20 +7,20 @@ class MenuService extends ApiService {
     }
 
     /**
-     * GNB(Head) 메뉴 목록 조회
+     * GNB(Head) 筌롫뗀??筌뤴뫖以?鈺곌퀬??
      */
     async getHeadMenus(config?: any): Promise<MenuInfo[]> {
         const response: any = await this.get('/head', config);
-        // 백엔드 데이터 구조: { result: { list: [...] } } 또는 { result: [...] }
-        return response?.result?.list || response?.result || [];
+        // Robust fallback for various data structures
+        return response?.result?.list || response?.result || response?.list || (Array.isArray(response) ? response : []);
     }
 
     /**
-     * LNB(Left) 메뉴 목록 조회 - 상위 메뉴 번호 기준
+     * LNB(Left) 筌롫뗀??筌뤴뫖以?鈺곌퀬??- ?怨몄맄 筌롫뗀??甕곕뜇??疫꿸퀣?
      */
     async getLeftMenus(menuNo: number, config?: any): Promise<MenuInfo[]> {
         const response: any = await this.get(`/left?menuNo=${menuNo}`, config);
-        return response?.result?.list || response?.result || [];
+        return response?.result?.list || response?.result || response?.list || (Array.isArray(response) ? response : []);
     }
 }
 

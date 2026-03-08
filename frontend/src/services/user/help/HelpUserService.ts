@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+﻿import { UserService } from '@/services/core/ApiService';
 
 export interface FAQ {
     faqId: string;
@@ -17,7 +17,7 @@ export interface QNA {
     writngPassword?: string;
     wrterNm: string;
     writngDe: string;
-    qnaProcessSttusCode: string; // 1:접수, 2:답변중, 3:답변완료
+    qnaProcessSttusCode: string; // 1:?臾믩땾, 2:???餓? 3:????袁⑥┷
 }
 
 class HelpUserService extends UserService {

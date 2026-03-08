@@ -1,9 +1,9 @@
-import { ApiService } from '@/services/core/ApiService';
+﻿import { ApiService } from '@/services/core/ApiService';
 
 export interface WorkReport {
     reprtId: string;
     reprtSj: string;
-    reprtSe: string; // 1:주간, 2:월간
+    reprtSe: string; // 1:雅뚯눊而? 2:?遺쎌퍢
     reprtDe: string;
     wrterId: string;
     wrterNm?: string;

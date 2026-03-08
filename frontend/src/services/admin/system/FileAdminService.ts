@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { AdminService } from '@/services/core/ApiService';
 
 export interface FileDetail {
@@ -35,16 +35,13 @@ class FileAdminService extends AdminService {
     }
 
     /**
-     * 파일 업로드
-     * @param files 업로드할 파일 리스트
-     * @returns atchFileId
+     * ???뵬 ??낆쨮??     * @param files ??낆쨮??쀫막 ???뵬 ?귐딅뮞??     * @returns atchFileId
      */
     async uploadFiles(files: File[]) {
         const formData = new FormData();
         files.forEach(file => formData.append('files', file));
 
-        // AdminBase에 정의된 basePath 외에, 루트 경로의 API를 호출하기 위한 예외처리 가능
-        // 현재는 /files로 설정되어 있으므로 직접 절대경로를 사용하는 것이 바람직합니다.
+        // AdminBase???類ㅼ벥??basePath ?紐꾨퓠, ?룐뫂??野껋럥以??API???紐꾪뀱??띾┛ ?袁る립 ??됱뇚筌ｌ꼶??揶쎛??        // ?袁⑹삺??/files嚥???쇱젟??뤿선 ??됱몵沃샕嚥?筌욊낯?????野껋럥以덄몴??????롫뮉 野껉퍔??獄쏅뗀?븝쭪怨밸???덈뼄.
         return this.post<any>('/files', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
             baseURL: process.env.NEXT_PUBLIC_API_URL // use env configured base url

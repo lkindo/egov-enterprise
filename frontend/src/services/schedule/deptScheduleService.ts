@@ -1,8 +1,8 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { DeptSchedule, ScheduleSearchParams } from '@/types/schedule';
 
-const BASE_URL = '/api/v1/schedule';
+const BASE_URL = '/schedule';
 
 export const getDeptScheduleList = async (params: any = {}): Promise<any> => {
     const response = await client.get<any>(BASE_URL, { params });

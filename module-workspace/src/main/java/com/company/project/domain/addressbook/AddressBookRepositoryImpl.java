@@ -36,7 +36,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                         }
                 }
 
-                List<AddressBook> content = queryFactory
+                var query = queryFactory
                                 .selectFrom(addressBook)
                                 .where(addressBook.useAt.eq("Y")
                                                 .and(addressBook.othbcScope.eq("PUBLIC")
@@ -45,10 +45,13 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                                                                                 .and(addressBook.trgetOrgnztId
                                                                                                 .eq(orgnztId)))),
                                                 searchPredicate)
-                                .offset(pageable.getOffset())
-                                .limit(pageable.getPageSize())
-                                .orderBy(addressBook.adbkNm.asc())
-                                .fetch();
+                                .orderBy(addressBook.adbkNm.asc());
+
+                if (pageable.isPaged()) {
+                        query.offset(pageable.getOffset()).limit(pageable.getPageSize());
+                }
+
+                List<AddressBook> content = query.fetch();
 
                 Long total = queryFactory
                                 .select(addressBook.count())

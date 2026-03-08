@@ -9,9 +9,10 @@ export function middleware(request: NextRequest) {
   }
 
   const hasToken = request.cookies.has('accessToken');
+  const accessToken = request.cookies.get('accessToken')?.value;
   const userRole = request.cookies.get('userRole')?.value;
 
-  console.log(`[Middleware] Path: ${pathname}, HasToken: ${hasToken}, RawRole: ${userRole}`);
+  console.log(`[Middleware] Path: ${pathname} | hasToken: ${hasToken} | TokenPrefix: ${accessToken?.substring(0, 10)}... | Role: ${userRole}`);
 
   // 1. 로그인 여부 확인
   if (!hasToken) {

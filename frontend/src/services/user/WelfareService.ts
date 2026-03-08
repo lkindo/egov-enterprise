@@ -1,4 +1,4 @@
-import { ApiService } from '@/services/core/ApiService';
+﻿import { ApiService } from '@/services/core/ApiService';
 
 export interface WelfareReward {
     rwardId: string;
@@ -13,7 +13,7 @@ export interface Ctsnn {
     ctsnnId: string;
     ctsnnNm: string;
     ctsnnDe: string;
-    ctsnnCode: string; // 1:결혼, 2:부고..
+    ctsnnCode: string; // 1:野껉퀬?? 2:?봔??.
     userNm: string;
     trgetNm: string;
 }

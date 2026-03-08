@@ -1,8 +1,8 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 /**
- * 통계 관리 서비스 (Admin)
- * 백엔드: com.company.project.api.controller.stats.StatisticsApiController
+ * ?????온????뺥돩??(Admin)
+ * 獄쏄퉮肉?? com.company.project.api.controller.stats.StatisticsApiController
  */
 export interface StatsDto {
     statsDate: string;
@@ -18,17 +18,17 @@ export interface StatsDto {
 const BASE_URL = '/admin/stats';
 
 export const statsAdminService = {
-    /** 접속 통계 조회 */
+    /** ?臾믩꺗 ????鈺곌퀬??*/
     getConnectStats: async (params?: { fromDate?: string; toDate?: string; statsKind?: string }) => {
         return client.get<StatsDto[]>(`${BASE_URL}/connect`, { params });
     },
 
-    /** 게시물 통계 조회 */
+    /** 野껊슣?녻눧?????鈺곌퀬??*/
     getBbsStats: async (params?: { fromDate?: string; toDate?: string; statsKind?: string }) => {
         return client.get<StatsDto[]>(`${BASE_URL}/bbs`, { params });
     },
 
-    /** 사용자 통계 조회 */
+    /** ?????????鈺곌퀬??*/
     getUserStats: async (params?: { fromDate?: string; toDate?: string; statsKind?: string }) => {
         return client.get<StatsDto[]>(`${BASE_URL}/user`, { params });
     },

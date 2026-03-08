@@ -37,7 +37,7 @@ setup('authenticate-final', async ({ request }) => {
                 ]
             },
             {
-                origin: 'http://localhost:3002',
+                origin: 'http://localhost:3001',
                 localStorage: [
                     { name: 'accessToken', value: token },
                     { name: 'egov_smart_tour_v1', value: 'true' }

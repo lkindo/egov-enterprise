@@ -1,8 +1,8 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 /**
- * 경조사 관리 서비스 (Admin)
- * 백엔드: com.company.project.api.controller.system.CongratulationManageController
+ * 野껋럩????온????뺥돩??(Admin)
+ * 獄쏄퉮肉?? com.company.project.api.controller.system.CongratulationManageController
  */
 export interface CongratulationInfo {
     ctsnnId: string;
@@ -19,32 +19,32 @@ export interface CongratulationInfo {
 const BASE_URL = '/admin/system/congratulations';
 
 export const congratulationService = {
-    /** 경조사 목록 조회 (페이징) */
+    /** 野껋럩???筌뤴뫖以?鈺곌퀬??(??륁뵠筌? */
     getCongratulations: async (params?: { searchWrd?: string; page?: number; size?: number }, ..._args: any[]) => {
         return client.get<any>(BASE_URL, { params });
     },
 
-    /** 경조사 상세 조회 */
+    /** 野껋럩????怨멸쉭 鈺곌퀬??*/
     getCongratulation: async (congratulationId: string, ..._args: any[]) => {
         return client.get<CongratulationInfo>(`${BASE_URL}/${congratulationId}`);
     },
 
-    /** 경조사 직접 등록 */
+    /** 野껋럩???筌욊낯???源낆쨯 */
     createCtsnn: async (data: Partial<CongratulationInfo>, ..._args: any[]) => {
         return client.post<string>(BASE_URL, data);
     },
 
-    /** 경조사 정보 수정 */
+    /** 野껋럩????類ｋ궖 ??륁젟 */
     updateCtsnn: async (congratulationId: string, data: Partial<CongratulationInfo>, ..._args: any[]) => {
         return client.put<void>(`${BASE_URL}/${congratulationId}`, data);
     },
 
-    /** 경조사 내역 삭제 */
+    /** 野껋럩?????곷열 ????*/
     deleteCtsnn: async (congratulationId: string, ..._args: any[]) => {
         return client.delete<void>(`${BASE_URL}/${congratulationId}`);
     },
 
-    /** 경조사 승인 처리 */
+    /** 野껋럩????諭??筌ｌ꼶??*/
     approveCtsnn: async (congratulationId: string, params?: { confmAt: "Y" | "N"; returnResn?: string }, ..._args: any[]) => {
         const p = params || { confmAt: "Y" as const };
         return client.put<void>(`${BASE_URL}/${congratulationId}/approval`, null, { params: p });

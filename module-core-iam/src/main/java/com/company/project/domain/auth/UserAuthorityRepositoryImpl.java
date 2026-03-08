@@ -26,7 +26,7 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
     public Page<AuthorGroupProjection> searchAuthorGroups(String searchCondition, String searchKeyword,
             Pageable pageable) {
         // eGovFrame legacy combines 3 tables, but we focus on NEMPLYRINFO (User entity)
-        List<AuthorGroupProjection> content = queryFactory
+        var query = queryFactory
                 .select(Projections.bean(AuthorGroupProjection.class,
                         user.userId.as("userId"),
                         user.userNm.as("userNm"),
@@ -40,10 +40,12 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
                 .from(user)
                 .leftJoin(userAuthority).on(user.esntlId.eq(userAuthority.uniqId))
                 .where(conditionEq(searchCondition, searchKeyword))
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .orderBy(user.userId.asc())
-                .fetch();
+                .orderBy(user.userId.asc());
+
+        if (pageable.isPaged()) {
+            query.offset(pageable.getOffset()).limit(pageable.getPageSize());
+        }
+        List<AuthorGroupProjection> content = query.fetch();
 
         long total = queryFactory
                 .select(user.count())
@@ -56,7 +58,7 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
 
     @Override
     public Page<DeptAuthorProjection> searchDeptAuthors(String deptCode, Pageable pageable) {
-        List<DeptAuthorProjection> content = queryFactory
+        var query = queryFactory
                 .select(Projections.bean(DeptAuthorProjection.class,
                         deptManage.orgnztId.as("deptCode"),
                         deptManage.orgnztNm.as("deptNm"),
@@ -71,10 +73,12 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
                 .join(user).on(deptManage.orgnztId.eq(user.orgnztId))
                 .leftJoin(userAuthority).on(user.esntlId.eq(userAuthority.uniqId))
                 .where(deptManage.orgnztId.eq(deptCode))
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .orderBy(user.userId.asc())
-                .fetch();
+                .orderBy(user.userId.asc());
+
+        if (pageable.isPaged()) {
+            query.offset(pageable.getOffset()).limit(pageable.getPageSize());
+        }
+        List<DeptAuthorProjection> content = query.fetch();
 
         long total = queryFactory
                 .select(user.count())

@@ -80,11 +80,15 @@ public class MenuService {
 
             log.info(">>> Authorized menu count: {}", authorizedMenuNos.size());
 
+            // 신규 메뉴 체계(menu_no <= 9999)만 GNB/LNB에 포함
+            // DB에 구형(1100, 2100, ..., 6000000 등)과 신규(10, 20, ..., 9999) 체계가 혼재하므로
+            // 신규 체계 범위만 필터링하여 의도치 않은 메뉴 노출 방지
             List<Menu> menus = allMenus.stream()
                     .filter(m -> {
+                        boolean isNewMenuScheme = m.getId() != null && m.getId() <= 9999;
                         boolean isAuthorized = authorizedMenuNos.contains(m.getId());
                         boolean isAdmin = roles.contains("ROLE_ADMIN");
-                        return isAuthorized || isAdmin;
+                        return isNewMenuScheme && (isAuthorized || isAdmin);
                     })
                     .collect(Collectors.toList());
 
@@ -143,8 +147,6 @@ public class MenuService {
                         MenuDto parent = menuMap.get(upperMenuNo);
                         if (parent != null) {
                             parent.addChild(dto);
-                        } else {
-                            rootMenus.add(dto);
                         }
                     }
                 } catch (Exception e) {

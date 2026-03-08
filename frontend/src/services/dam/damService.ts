@@ -1,7 +1,7 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { KnoManagementVO, KnoSearchParams } from '@/types/dam';
 
-const BASE_URL = '/api/v1/admin/digital-assets';
+const BASE_URL = '/admin/digital-assets';
 
 export const getKnoList = async (params: any = {}) => {
     const response = await client.get<any>(BASE_URL, { params });

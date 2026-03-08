@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+﻿import { UserService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
 import type { Vacation, YearlyLeave } from '@/types/vacation';
 
@@ -16,42 +16,42 @@ class VacationUserService extends UserService {
     }
 
     /**
-     * 나의 휴가 신청 목록 조회
+     * ??륁벥 ??? ?醫롪퍕 筌뤴뫖以?鈺곌퀬??
      */
     async getMyVacations(params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResult<Vacation>> {
         return this.get<PageResult<Vacation>>('', { params });
     }
 
     /**
-     * 휴가 상세 조회
+     * ??? ?怨멸쉭 鈺곌퀬??
      */
     async getVacationDetail(params: { applcntId: string, vcatnSe: string, bgnde: string }): Promise<Vacation> {
         return this.get<Vacation>('/detail', { params });
     }
 
     /**
-     * 나의 연차 현황 조회
+     * ??륁벥 ?怨쀪컧 ?袁れ넺 鈺곌퀬??
      */
     async getMyYearlyLeave(year: string): Promise<YearlyLeave> {
         return this.get<YearlyLeave>(`/yearly-leaves/my?occrrncYear=${year}`);
     }
 
     /**
-     * 휴가 신청
+     * ??? ?醫롪퍕
      */
     async requestVacation(data: Partial<Vacation>): Promise<void> {
         return this.post('', data);
     }
 
     /**
-     * 휴가 수정
+     * ??? ??륁젟
      */
     async updateVacation(data: Partial<Vacation>): Promise<void> {
         return this.put('', data);
     }
 
     /**
-     * 휴가 삭제
+     * ??? ????
      */
     async deleteVacation(params: { applcntId: string, vcatnSe: string, bgnde: string }): Promise<void> {
         return this.delete('', { params });

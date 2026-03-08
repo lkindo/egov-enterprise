@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+﻿import { UserService } from '@/services/core/ApiService';
 import { Popup } from '@/types/banner';
 
 class PopupUserService extends UserService {
@@ -7,15 +7,15 @@ class PopupUserService extends UserService {
     }
 
     /**
-     * 활성 팝업 목록 조회
-     * 대시보드(로그인 전/후 공용)에서 호출됩니다.
+     * ??뽮쉐 ??밸씜 筌뤴뫖以?鈺곌퀬??
+     * ????뺣궖??嚥≪뮄????????⑤벊???癒?퐣 ?紐꾪뀱??몃빍??
      */
     async getActivePopups(config?: any) {
         return this.get<any>('/active', config);
     }
 
     /**
-     * 특정 팝업 상세 조회
+     * ?諭????밸씜 ?怨멸쉭 鈺곌퀬??
      */
     async getPopup(popupId: string, config?: any) {
         return this.get<any>(`/${popupId}`, config);

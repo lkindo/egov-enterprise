@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
 import type { Vacation, YearlyLeave } from '@/types/vacation';
 
@@ -14,14 +14,14 @@ class VacationAdminService extends AdminService {
     }
 
     /**
-     * 전사 휴가 신청 목록 조회 (Admin)
+     * ?袁⑷텢 ??? ?醫롪퍕 筌뤴뫖以?鈺곌퀬??(Admin)
      */
     async getAllVacations(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResult<Vacation>> {
         return this.get<PageResult<Vacation>>('', { ...config, params });
     }
 
     /**
-     * 휴가 승인/반려 처리 (Admin)
+     * ??? ?諭??獄쏆꼶??筌ｌ꼶??(Admin)
      */
     async approveVacation(params: {
         applcntId: string;
@@ -34,7 +34,7 @@ class VacationAdminService extends AdminService {
     }
 
     /**
-     * 전사 연차 통계 조회
+     * ?袁⑷텢 ?怨쀪컧 ????鈺곌퀬??
      */
     async getYearlyLeaveStats(year: string, config?: AxiosRequestConfig): Promise<YearlyLeave[]> {
         return this.get<YearlyLeave[]>(`/annual-leaves?occrrncYear=${year}`, config);

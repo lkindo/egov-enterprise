@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+﻿import { UserService } from '@/services/core/ApiService';
 import { AddressBook, NameCard } from '@/types/addressbook';
 
 class AddressbookUserService extends UserService {
@@ -7,7 +7,7 @@ class AddressbookUserService extends UserService {
     }
 
     /**
-     * 주소록 목록 조회
+     * 雅뚯눘?쇗에?筌뤴뫖以?鈺곌퀬??
      */
     async getAddressBooks(params: { pageIndex?: number; pageUnit?: number; searchWrd?: string; searchCnd?: string }) {
         const response = await this.get<any>('', {
@@ -22,7 +22,7 @@ class AddressbookUserService extends UserService {
     }
 
     /**
-     * 주소록 상세 조회
+     * 雅뚯눘?쇗에??怨멸쉭 鈺곌퀬??
      */
     async getAddressBook(adbkId: string) {
         const response = await this.get<any>(`/${adbkId}`);
@@ -30,7 +30,7 @@ class AddressbookUserService extends UserService {
     }
 
     /**
-     * 주소록 등록
+     * 雅뚯눘?쇗에??源낆쨯
      */
     async createAddressBook(data: any) {
         const response = await this.post<any>('', data);
@@ -38,7 +38,7 @@ class AddressbookUserService extends UserService {
     }
 
     /**
-     * 주소록 수정
+     * 雅뚯눘?쇗에???륁젟
      */
     async updateAddressBook(adbkId: string, data: any) {
         const response = await this.put<any>(`/${adbkId}`, data);
@@ -46,7 +46,7 @@ class AddressbookUserService extends UserService {
     }
 
     /**
-     * 주소록 삭제
+     * 雅뚯눘?쇗에?????
      */
     async deleteAddressBook(adbkId: string) {
         const response = await this.delete<any>(`/${adbkId}`);
@@ -54,7 +54,7 @@ class AddressbookUserService extends UserService {
     }
 
     /**
-     * 전사 사용자 주소록 검색 (상세 팝업용 등)
+     * ?袁⑷텢 ?????雅뚯눘?쇗에?野꺜??(?怨멸쉭 ??밸씜????
      */
     async searchUsers(searchWrd: string) {
         const response = await this.get<any>('/search-users', {

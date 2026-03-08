@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+﻿import { UserService } from '@/services/core/ApiService';
 
 export interface Event {
     eventId: string;
@@ -8,8 +8,7 @@ export interface Event {
     eventEndDe: string;
     eventPlace: string;
     eventCn: string;
-    ctgryCode: string; // 1:행사, 2:캠페인
-}
+    ctgryCode: string; // 1:??깃텢, 2:筌?쥚???}
 
 class EventUserService extends UserService {
     constructor() {

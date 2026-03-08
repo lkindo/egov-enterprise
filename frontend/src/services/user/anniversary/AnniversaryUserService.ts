@@ -1,11 +1,11 @@
-import { UserService } from '@/services/core/ApiService';
+﻿import { UserService } from '@/services/core/ApiService';
 
 export interface Anniversary {
     annId: string;
     usid: string;
     annvrsryNm: string;
     annvrsryDe: string;
-    annvrsrySe: string; // 1:생일, 2:결혼, 3:기타
+    annvrsrySe: string; // 1:??뱀뵬, 2:野껉퀬?? 3:疫꿸퀬?
     userNm?: string;
     memo: string;
     cldrSe?: string;

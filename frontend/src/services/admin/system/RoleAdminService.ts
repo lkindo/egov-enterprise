@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 
 export interface AuthorInfo {
     authorCode: string;
@@ -12,11 +12,11 @@ class RoleAdminService extends AdminService {
     }
 
     /**
-     * 전체 권한 목록 조회
+     * 권한 목록 조회
      */
     async getAuthors() {
         const response = await this.get<any>('');
-        return response?.result;
+        return response?.result || response;
     }
 }
 

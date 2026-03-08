@@ -1,8 +1,7 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 
 /**
- * 인증 및 권한 서비스
- */
+ * ?紐꾩쵄 獄?亦낅슦釉???뺥돩?? */
 
 export interface LoginResponse {
     accessToken: string;
@@ -19,27 +18,27 @@ export interface UserInfo {
 const BASE_URL = 'auth';
 
 export const authService = {
-    /** 로그인 */
+    /** 嚥≪뮄???*/
     login: async (loginData: Record<string, string>): Promise<LoginResponse> => {
         const response = await client.post<any>(`${BASE_URL}/login`, loginData);
         return response?.result || response;
     },
 
-    /** 로그아웃 */
+    /** 嚥≪뮄??袁⑹뜍 */
     logout: async (): Promise<void> => {
         const response = await client.post<any>(`${BASE_URL}/logout`);
-        return response?.result;
+        return response?.result || response;
     },
 
-    /** 토큰 재발급 */
+    /** ?醫뤾쿃 ??而삥묾?*/
     reissue: async (): Promise<{ accessToken: string }> => {
         const response = await client.post<any>(`${BASE_URL}/reissue`);
-        return response?.result;
+        return response?.result || response;
     },
 
-    /** 현재 사용자 정보 조회 */
+    /** ?袁⑹삺 ??????類ｋ궖 鈺곌퀬??*/
     getCurrentUser: async (): Promise<UserInfo> => {
         const response = await client.get<any>(`${BASE_URL}/me`);
-        return response?.result;
+        return response?.result || response;
     },
 };

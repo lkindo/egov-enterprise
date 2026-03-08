@@ -1,8 +1,8 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { CommunityVO, CommunitySearchParams } from '@/types/community';
 
-const BASE_URL = '/api/v1/communities';
+const BASE_URL = '/communities';
 
 export const getCommunityList = async (params: any = {}): Promise<any> => {
     const response = await client.get<any>(BASE_URL, { params });
