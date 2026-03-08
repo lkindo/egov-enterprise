@@ -3,7 +3,6 @@ package com.company.project.service.batch.dto;
 import com.company.project.domain.batch.BatchSchdul;
 import lombok.Builder;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 
 /**

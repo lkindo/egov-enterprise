@@ -1,9 +1,7 @@
 package com.company.project.domain.integration;
 
 import java.util.List;
-
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
-
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;

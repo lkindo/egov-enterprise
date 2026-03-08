@@ -2,7 +2,6 @@ package com.company.project.api.controller.menu;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("MenuCreateController 단위 테스트")

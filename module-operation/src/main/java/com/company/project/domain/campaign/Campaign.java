@@ -2,7 +2,6 @@ package com.company.project.domain.campaign;
 
 import com.company.project.domain.common.BaseTimeEntity;
 import lombok.*;
-
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;

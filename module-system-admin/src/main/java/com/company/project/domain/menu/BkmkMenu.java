@@ -2,7 +2,6 @@ package com.company.project.domain.menu;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.io.Serializable;
 
 @Entity

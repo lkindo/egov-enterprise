@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Vacation (User)", description = "???? ??차 관?API (?용?용)")
+@Tag(name = "Vacation (User)", description = "휴가 신청 관리 API (사용자용)")
 @RestController
 @RequestMapping("/api/v1/vacations")
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class VacationController {
 
     private final VacationService vacationService;
 
-    @Operation(summary = "?의 ?? ?청 목록 조회", description = "?용??본인???? ?청 목록???이징하??조회?니??")
+    @Operation(summary = "나의 휴가 신청 목록 조회", description = "사용자 본인이 신청한 휴가 목록을 페이징하여 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<VacationDto>>> getVacations(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -34,7 +34,7 @@ public class VacationController {
                 ApiResponse.success(vacationService.getVacationList(userDetails.getUsername(), searchWrd, pageable)));
     }
 
-    @Operation(summary = "?? ?청 ?세 조회", description = "?청???일 ?????세 ?보??인?니??")
+    @Operation(summary = "휴가 신청 상세 조회", description = "신청한 휴가의 상세 정보를 확인합니다.")
     @GetMapping("/detail")
     public ResponseEntity<ApiResponse<VacationDto>> getVacation(
             @RequestParam String applcntId,
@@ -43,7 +43,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(vacationService.getVacation(applcntId, vcatnSe, bgnde)));
     }
 
-    @Operation(summary = "?? ?청", description = "?로???? ?청?? ?록?니??")
+    @Operation(summary = "휴가 신청", description = "새로운 휴가 신청을 등록합니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> requestVacation(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -52,7 +52,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?? ?청 ?정", description = "??중인 ?? ?청 ?용???정?니??")
+    @Operation(summary = "휴가 신청 수정", description = "신청 중인 휴가 신청 내용을 수정합니다.")
     @PutMapping
     public ResponseEntity<ApiResponse<Void>> updateVacation(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -61,7 +61,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "?? ?청 취소", description = "?청???? ?보???(취소)?니??")
+    @Operation(summary = "휴가 신청 취소", description = "신청한 휴가 정보를 삭제(취소)합니다.")
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> deleteVacation(
             @RequestParam String applcntId,
@@ -71,7 +71,7 @@ public class VacationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "본인 ?차 ?황 조회", description = "로그?한 ?용?의 ?해 ?도 ?여 ?차 ?보??인?니??")
+    @Operation(summary = "본인 연차 현황 조회", description = "로그인한 사용자의 해당 연도 잔여 연차 정보를 확인합니다.")
     @GetMapping("/yearly-leaves/my")
     public ResponseEntity<ApiResponse<YearlyLeaveDto>> getMyYearlyLeave(
             @AuthenticationPrincipal UserDetails userDetails,

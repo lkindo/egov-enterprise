@@ -6,7 +6,6 @@ import com.company.project.service.survey.dto.QustnrIemDto;
 import com.company.project.service.survey.dto.QustnrQesitmDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 import java.util.List;
 
 public interface EgovSurveyService {

@@ -1,7 +1,6 @@
 package com.company.project.domain.user.repository;
 
 import com.company.project.domain.user.entity.*;
-
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -9,10 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
-
 import java.util.List;
 import java.util.Objects;
-
 import static com.company.project.domain.user.entity.QDeptManage.deptManage;
 
 /**

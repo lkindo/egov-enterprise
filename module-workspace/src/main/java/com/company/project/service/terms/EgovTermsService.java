@@ -3,7 +3,6 @@ package com.company.project.service.terms;
 import com.company.project.service.terms.dto.TermsDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.lang.NonNull;
 
 public interface EgovTermsService {

@@ -8,10 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-
 import java.util.List;
 import java.util.Objects;
-
 import static com.company.project.domain.login.QLoginPolicy.loginPolicy;
 import static com.company.project.domain.user.entity.QUser.user;
 

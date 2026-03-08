@@ -1,13 +1,10 @@
 package com.company.project.domain.stats;
 
 import jakarta.persistence.Column;
-
 import jakarta.persistence.Id;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
 /**

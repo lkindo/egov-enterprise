@@ -9,11 +9,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationContext;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,7 +31,7 @@ class CryptoUtilTest {
     void setUp() {
         // Mock setup
         when(applicationContext.getBean("ariacryptoService")).thenReturn(cryptoService);
-        
+
         // Initialize CryptoUtil with mocks
         CryptoUtil util = new CryptoUtil();
         util.setApplicationContext(Objects.requireNonNull(applicationContext));
@@ -149,7 +147,7 @@ class CryptoUtilTest {
             String sessionId = "SESSION123";
             String expectedTarget = sessionId + "|" + data;
             byte[] encryptedBytes = "encryptedSession".getBytes(StandardCharsets.UTF_8);
-            
+
             when(cryptoService.encrypt(any(byte[].class), eq("ARIA"))).thenReturn(encryptedBytes);
 
             // When

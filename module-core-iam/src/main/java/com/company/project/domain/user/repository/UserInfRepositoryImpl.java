@@ -10,10 +10,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
-
 import java.util.List;
 import java.util.Objects;
-
 import static com.company.project.domain.user.entity.QUser.user;
 
 @Repository
@@ -49,8 +47,6 @@ public class UserInfRepositoryImpl implements UserInfRepository {
                 return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
                                 total != null ? total : 0L);
         }
-
-
 
         private BooleanExpression conditionEq(String searchCondition, String searchKeyword) {
                 if (!StringUtils.hasText(searchKeyword)) {

@@ -2,7 +2,6 @@ package com.company.project.service.log.dto;
 
 import lombok.Builder;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 
 /**

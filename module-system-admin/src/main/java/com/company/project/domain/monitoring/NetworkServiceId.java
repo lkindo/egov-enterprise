@@ -1,7 +1,6 @@
 package com.company.project.domain.monitoring;
 
 import java.io.Serializable;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;

@@ -2,7 +2,6 @@ package com.company.project.domain.comment;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;

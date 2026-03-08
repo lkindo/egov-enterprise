@@ -2,7 +2,7 @@ dependencies {
     api project(':common-core')
     api 'org.springframework.boot:spring-boot-starter-security'
     api 'org.springframework.boot:spring-boot-starter-web'
-    
+
     implementation libs.jjwt.api
     runtimeOnly libs.jjwt.impl
     runtimeOnly libs.jjwt.jackson

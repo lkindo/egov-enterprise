@@ -3,7 +3,6 @@ package com.company.project.service.survey.dto;
 import com.company.project.domain.survey.SurveyRespondent;
 import lombok.Builder;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 
 /**

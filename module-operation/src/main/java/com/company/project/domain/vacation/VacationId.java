@@ -1,7 +1,6 @@
 package com.company.project.domain.vacation;
 
 import lombok.*;
-
 import java.io.Serializable;
 
 @Getter

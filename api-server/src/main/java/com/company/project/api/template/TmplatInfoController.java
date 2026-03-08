@@ -1,15 +1,10 @@
 package com.company.project.api.template;
 
 import com.company.project.core.response.ApiResponse;
-
 import com.company.project.domain.template.TmplatInfo;
-
 import com.company.project.service.template.TmplatInfoService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 /**

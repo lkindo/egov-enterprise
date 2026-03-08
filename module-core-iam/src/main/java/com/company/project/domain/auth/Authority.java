@@ -3,7 +3,6 @@ package com.company.project.domain.auth;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.lang.NonNull;
-
 import java.time.LocalDateTime;
 import java.util.Objects;
 

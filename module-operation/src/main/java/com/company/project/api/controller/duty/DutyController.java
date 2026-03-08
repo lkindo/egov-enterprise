@@ -1,31 +1,18 @@
 package com.company.project.api.controller.duty;
 
 import com.company.project.core.response.ApiResponse;
-
 import com.company.project.service.duty.EgovDutyService;
-
 import com.company.project.service.duty.dto.DutyCheckDto;
-
 import com.company.project.service.duty.dto.DutyDiaryDto;
-
 import com.company.project.service.duty.dto.DutyDto;
-
 import io.swagger.v3.oas.annotations.Operation;
-
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
-
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.data.web.PageableDefault;
-
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @Tag(name = "Duty", description = "On-duty Management APIs")

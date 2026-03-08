@@ -2,7 +2,6 @@ package com.company.project.domain.deptjob;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 /**

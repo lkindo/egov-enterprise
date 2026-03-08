@@ -2,7 +2,6 @@ package com.company.project.service.system.monitoring.dto;
 
 import com.company.project.domain.system.monitoring.FileSysMntrngLog;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

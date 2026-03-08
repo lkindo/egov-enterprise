@@ -1,7 +1,6 @@
 package com.company.project.service.campaign.dto;
 
 import lombok.*;
-
 import java.util.List;
 
 @Getter

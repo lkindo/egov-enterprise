@@ -3,12 +3,9 @@ package com.company.project.domain.integration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-
 import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
-
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 

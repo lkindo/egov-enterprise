@@ -1,23 +1,14 @@
 package com.company.project.api.controller.system;
 
 import com.company.project.core.response.ApiResponse;
-
 import com.company.project.service.system.monitoring.ProcessMonService;
-
 import com.company.project.service.system.monitoring.dto.ProcessMonDto;
-
 import io.swagger.v3.oas.annotations.Operation;
-
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
-
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Process Monitoring", description = "Process Monitoring APIs")

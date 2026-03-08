@@ -3,7 +3,6 @@ package com.company.project.service.syshistory.dto;
 import com.company.project.domain.syshistory.SystemHistory;
 import lombok.Builder;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 
 /**

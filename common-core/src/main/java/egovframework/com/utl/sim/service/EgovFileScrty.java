@@ -9,7 +9,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.MessageDigest;
-
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +42,7 @@ public class EgovFileScrty {
 
 	public static boolean encryptFile(String source, String target) throws Exception {
 
-		
+
 		boolean result = false;
 
 		String sourceFile = source.replace('\\', FILE_SEPARATOR).replace('/', FILE_SEPARATOR);
@@ -170,9 +169,9 @@ public class EgovFileScrty {
 
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 
-		
+
 		/*
-		 * 
+		 *
 		 * SecureRandom ng = new SecureRandom();
 		 * byte[] randomBytes = new byte[16];
 		 * ng.nextBytes(randomBytes);

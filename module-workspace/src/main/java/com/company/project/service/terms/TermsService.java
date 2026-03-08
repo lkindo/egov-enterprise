@@ -5,13 +5,11 @@ import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.terms.Terms;
 import com.company.project.domain.terms.TermsRepository;
 import com.company.project.service.terms.dto.TermsDto;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Objects;
 
 @Service

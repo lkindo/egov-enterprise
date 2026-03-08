@@ -3,7 +3,6 @@ package com.company.project.service.user;
 import com.company.project.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**

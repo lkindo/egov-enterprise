@@ -1,7 +1,6 @@
 package com.company.project.service.log;
 
 import com.company.project.service.log.dto.LogDto;
-
 import java.util.List;
 
 /**

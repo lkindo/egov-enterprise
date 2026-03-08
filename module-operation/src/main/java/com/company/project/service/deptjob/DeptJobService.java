@@ -3,9 +3,11 @@ package com.company.project.service.deptjob;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.deptjob.DeptJob;
+
 // import java.util.List;
 import com.company.project.domain.deptjob.DeptJobRepository;
 import com.company.project.domain.deptjob.DeptJobBoxRepository;
+
 // import com.company.project.domain.deptjob.QDeptJob;
 import com.company.project.domain.organization.OrganizationManageRepository;
 import com.company.project.domain.user.repository.UserRepository;
@@ -18,7 +20,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;

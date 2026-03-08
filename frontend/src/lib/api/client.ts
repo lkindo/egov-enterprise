@@ -80,7 +80,7 @@ axiosInstance.interceptors.response.use(
                 const res = await axios.post<ApiResponse<{ accessToken: string }>>(
                     `${getBaseURL()}/auth/reissue`,
                     {},
-                    { 
+                    {
                         withCredentials: true,
                         xsrfCookieName: 'XSRF-TOKEN',
                         xsrfHeaderName: 'X-XSRF-TOKEN',

@@ -2,7 +2,6 @@ package com.company.project.service.board.dto;
 
 import com.company.project.domain.board.Blog;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

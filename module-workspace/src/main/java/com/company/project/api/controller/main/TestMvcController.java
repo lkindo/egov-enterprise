@@ -1,9 +1,7 @@
 package com.company.project.api.controller.main;
 
 import org.springframework.stereotype.Controller;
-
 import org.springframework.web.bind.annotation.GetMapping;
-
 import jakarta.servlet.http.HttpServletResponse;
 
 @Controller

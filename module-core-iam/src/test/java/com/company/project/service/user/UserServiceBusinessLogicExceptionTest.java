@@ -5,7 +5,6 @@ import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;
-
 import com.company.project.service.user.dto.UserSignupRequest;
 import com.company.project.service.user.mapper.UserMapper;
 import com.company.project.domain.auth.UserAuthorityRepository;
@@ -16,12 +15,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;

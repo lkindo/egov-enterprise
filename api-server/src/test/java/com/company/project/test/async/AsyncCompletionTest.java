@@ -7,31 +7,49 @@ package com.company.project.test.async;
 
 /*
  * import com.company.project.api.controller.AsyncController;
- * import com.company.project.service.async.AsyncService;
- * import org.junit.jupiter.api.BeforeEach;
- * import org.junit.jupiter.api.DisplayName;
- * import org.junit.jupiter.api.Test;
- * import org.springframework.beans.factory.annotation.Autowired;
- * import
- * org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
- * import org.springframework.boot.test.context.SpringBootTest;
- * import org.springframework.test.context.bean.override.mockito.MockitoBean;
- * import org.springframework.http.MediaType;
- * import org.springframework.test.context.ActiveProfiles;
- * import org.springframework.test.web.servlet.MockMvc;
- *
+
+* import com.company.project.service.async.AsyncService;
+
+* import org.junit.jupiter.api.BeforeEach;
+
+* import org.junit.jupiter.api.DisplayName;
+
+* import org.junit.jupiter.api.Test;
+
+* import org.springframework.beans.factory.annotation.Autowired;
+
+* import
+* org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+
+* import org.springframework.boot.test.context.SpringBootTest;
+
+* import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+* import org.springframework.http.MediaType;
+
+* import org.springframework.test.context.ActiveProfiles;
+
+* import org.springframework.test.web.servlet.MockMvc;
+
+*
  * import java.util.concurrent.CompletableFuture;
- * import java.util.concurrent.TimeUnit;
- *
+
+* import java.util.concurrent.TimeUnit;
+
+*
  * import static org.awaitility.Awaitility.await;
- * import static org.mockito.ArgumentMatchers.anyInt;
- * import static org.mockito.Mockito.*;
- * import static
+
+* import static org.mockito.ArgumentMatchers.anyInt;
+
+* import static org.mockito.Mockito.*;
+
+* import static
  * org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
  * import static
  * org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
  * import static org.assertj.core.api.Assertions.assertThat;
- *
+
+*
  * @SpringBootTest
  *
  * @AutoConfigureWebMvc

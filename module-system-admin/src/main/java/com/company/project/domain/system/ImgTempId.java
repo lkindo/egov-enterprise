@@ -3,7 +3,6 @@ package com.company.project.domain.system;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.*;
-
 import java.io.Serializable;
 
 @Getter

@@ -1,7 +1,6 @@
 package com.company.project.domain.system.monitoring;
 
 import lombok.*;
-
 import java.io.Serializable;
 
 @Getter

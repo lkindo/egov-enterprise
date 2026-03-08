@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
-
 import com.ibm.icu.util.ChineseCalendar;
 
 /**
@@ -306,7 +305,7 @@ public class EgovDateUtil {
 		cal.setTimeInMillis(rand);
 		randomDate = calformat.format(cal.getTime());
 
-		
+
 		return randomDate;
 	}
 

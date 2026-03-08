@@ -1,33 +1,19 @@
 package com.company.project.api.controller.help;
 
 import com.company.project.core.response.ApiResponse;
-
 import com.company.project.service.help.EgovHelpService;
-
 import com.company.project.service.help.dto.AdministrationWordDto;
-
 import com.company.project.service.help.dto.HpcmDto;
-
 import com.company.project.service.help.dto.OnlineManualDto;
-
 import com.company.project.service.help.dto.WordDicaryDto;
-
 import io.swagger.v3.oas.annotations.Operation;
-
 import io.swagger.v3.oas.annotations.Parameter;
-
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
-
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.data.web.PageableDefault;
-
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Help", description = "Administration Word, Help, Manual, and Dictionary APIs")

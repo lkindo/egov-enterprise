@@ -8,10 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
-
 import java.util.List;
 import java.util.Objects;
-
 import static com.company.project.domain.code.QCommonCodeCategory.commonCodeCategory;
 import static com.company.project.domain.code.QCommonCodeGroup.commonCodeGroup;
 

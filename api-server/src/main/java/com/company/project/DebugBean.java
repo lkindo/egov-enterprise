@@ -1,7 +1,6 @@
 package com.company.project;
 
 import jakarta.annotation.PostConstruct;
-
 import org.springframework.stereotype.Component;
 
 @Component

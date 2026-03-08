@@ -1,11 +1,8 @@
 package com.company.project.api.controller.log;
 
 import com.company.project.service.log.LogManageService;
-
 import com.company.project.service.log.dto.SysLogDto;
-
 import egovframework.com.cmm.ComDefaultVO;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.fdl.property.EgovPropertyService;

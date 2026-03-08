@@ -1,7 +1,6 @@
 package egovframework.com.cmm;
 
 import java.io.Serializable;
-
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**

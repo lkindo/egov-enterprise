@@ -3,7 +3,6 @@ package com.company.project.service.sec;
 import com.company.project.service.sec.dto.AuthorDto;
 import com.company.project.service.sec.dto.RoleDto;
 import org.springframework.lang.NonNull;
-
 import java.util.List;
 
 public interface AuthorManageService {

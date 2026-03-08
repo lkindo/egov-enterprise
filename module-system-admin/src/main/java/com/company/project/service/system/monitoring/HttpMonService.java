@@ -15,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
-
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.LocalDateTime;

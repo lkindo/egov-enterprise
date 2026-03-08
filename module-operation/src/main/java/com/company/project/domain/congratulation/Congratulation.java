@@ -2,7 +2,6 @@ package com.company.project.domain.congratulation;
 
 import com.company.project.domain.common.BaseTimeEntity;
 import lombok.*;
-
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 

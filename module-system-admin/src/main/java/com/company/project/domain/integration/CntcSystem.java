@@ -3,7 +3,6 @@ package com.company.project.domain.integration;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.io.Serializable;
 
 /**

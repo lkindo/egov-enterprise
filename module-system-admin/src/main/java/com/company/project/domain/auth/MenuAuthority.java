@@ -2,7 +2,6 @@ package com.company.project.domain.auth;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.io.Serializable;
 
 @Getter

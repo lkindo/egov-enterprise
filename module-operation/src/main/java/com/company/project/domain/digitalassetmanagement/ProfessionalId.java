@@ -1,7 +1,6 @@
 package com.company.project.domain.digitalassetmanagement;
 
 import lombok.*;
-
 import java.io.Serializable;
 
 /**

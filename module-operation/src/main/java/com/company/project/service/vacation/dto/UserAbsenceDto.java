@@ -2,7 +2,6 @@ package com.company.project.service.vacation.dto;
 
 import com.company.project.domain.user.entity.UserAbsence;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

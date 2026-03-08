@@ -3,7 +3,6 @@ package com.company.project.service.knowledge.dto;
 import com.company.project.domain.knowledge.Knowledge;
 import lombok.Builder;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 
 /**

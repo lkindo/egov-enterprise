@@ -13,10 +13,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
-
 import java.util.List;
 import java.util.Optional;
-
 import com.company.project.domain.comment.QComment;
 import com.company.project.domain.comment.CommentPredicate;
 import com.company.project.domain.user.entity.QUser;

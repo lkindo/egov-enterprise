@@ -2,7 +2,6 @@ package com.company.project.domain.event;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
 

@@ -2,7 +2,6 @@ package com.company.project.service.deptjob.dto;
 
 import com.company.project.domain.deptjob.DeptJob;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

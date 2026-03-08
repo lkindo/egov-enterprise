@@ -1,7 +1,6 @@
 package com.company.project.domain.auth;
 
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

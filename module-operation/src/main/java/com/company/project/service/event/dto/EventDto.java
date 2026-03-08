@@ -2,7 +2,6 @@ package com.company.project.service.event.dto;
 
 import com.company.project.domain.event.Event;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

@@ -2,7 +2,6 @@ package com.company.project.domain.code;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EmbeddedId;

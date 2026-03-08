@@ -1,7 +1,6 @@
 package com.company.project.service.mail;
 
 import java.util.Objects;
-
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.mail.SentMail;

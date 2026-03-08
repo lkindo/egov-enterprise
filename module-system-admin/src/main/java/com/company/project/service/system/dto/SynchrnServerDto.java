@@ -2,7 +2,6 @@ package com.company.project.service.system.dto;
 
 import com.company.project.domain.system.SynchrnServerSystem;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

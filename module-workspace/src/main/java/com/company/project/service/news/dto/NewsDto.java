@@ -3,7 +3,6 @@ package com.company.project.service.news.dto;
 import com.company.project.domain.news.News;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

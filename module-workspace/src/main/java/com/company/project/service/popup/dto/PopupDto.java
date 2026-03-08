@@ -3,7 +3,6 @@ package com.company.project.service.popup.dto;
 import com.company.project.domain.popup.Popup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

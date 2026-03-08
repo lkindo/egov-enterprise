@@ -2,7 +2,6 @@ package com.company.project.service.holiday.dto;
 
 import com.company.project.domain.holiday.Holiday;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

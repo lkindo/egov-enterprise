@@ -12,11 +12,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import com.company.project.domain.code.CommonCodeCategory;
 import com.company.project.domain.code.CommonCodeCategoryRepository;
 import com.company.project.domain.code.CommonCodeGroup;

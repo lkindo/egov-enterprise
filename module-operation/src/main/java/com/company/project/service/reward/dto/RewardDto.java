@@ -2,7 +2,6 @@ package com.company.project.service.reward.dto;
 
 import com.company.project.domain.reward.Reward;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

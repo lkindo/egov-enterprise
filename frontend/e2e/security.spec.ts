@@ -16,7 +16,7 @@ test.describe('Security & RBAC Enforcement', () => {
         const page = await context.newPage();
 
         // Mock a regular user login by setting a non-admin role cookie if needed
-        // but for now, we just test access with admin session redirected or blocked 
+        // but for now, we just test access with admin session redirected or blocked
         await page.goto('/admin/user/manage');
         // If not admin, middleware should redirect to /
         // await page.waitForURL('**/');
