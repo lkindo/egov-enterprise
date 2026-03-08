@@ -1,11 +1,9 @@
 package com.company.project.service.anniversary;
 
 import com.company.project.core.exception.BusinessException;
-import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.anniversary.Anniversary;
 import com.company.project.domain.anniversary.AnniversaryRepository;
 import com.company.project.service.anniversary.dto.AnniversaryDto;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -197,8 +195,7 @@ class AnniversaryServiceTest {
             anniversaryService.insertAnniversary(userId, dto);
 
             // Then
-            verify(anniversaryRepository, times(1)).save(argThat(anniversary ->
-                    "admin".equals(anniversary.getUsid())));
+            verify(anniversaryRepository, times(1)).save(argThat(anniversary -> "admin".equals(anniversary.getUsid())));
         }
     }
 

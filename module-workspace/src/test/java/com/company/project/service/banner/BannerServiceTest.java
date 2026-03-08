@@ -4,7 +4,6 @@ import com.company.project.core.exception.BusinessException;
 import com.company.project.domain.banner.Banner;
 import com.company.project.domain.banner.BannerRepository;
 import com.company.project.service.banner.dto.BannerDto;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -184,8 +183,8 @@ class BannerServiceTest {
             bannerService.insertBanner(dto);
 
             // Then
-            verify(bannerRepository, times(1)).save(argThat(banner ->
-                    banner.getBannerId() != null && banner.getBannerId().startsWith("BANNER_")));
+            verify(bannerRepository, times(1)).save(
+                    argThat(banner -> banner.getBannerId() != null && banner.getBannerId().startsWith("BANNER_")));
         }
     }
 

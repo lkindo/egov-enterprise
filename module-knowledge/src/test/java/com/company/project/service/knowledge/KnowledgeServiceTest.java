@@ -1,11 +1,9 @@
 package com.company.project.service.knowledge;
 
 import com.company.project.core.exception.BusinessException;
-import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.knowledge.Knowledge;
 import com.company.project.domain.knowledge.KnowledgeRepository;
 import com.company.project.service.knowledge.dto.KnowledgeDto;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,13 +16,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -201,8 +197,8 @@ class KnowledgeServiceTest {
             knowledgeService.createKnowledge(userId, dto);
 
             // Then
-            verify(knowledgeRepository, times(1)).save(argThat(knowledge ->
-                    "admin".equals(knowledge.getFrstRegisterId())));
+            verify(knowledgeRepository, times(1))
+                    .save(argThat(knowledge -> "admin".equals(knowledge.getFrstRegisterId())));
         }
     }
 

@@ -20,8 +20,6 @@ import javax.crypto.SecretKey;
 import java.util.Collections;
 import java.util.Date;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -296,7 +294,7 @@ class JwtTokenProviderTest {
         void resolveRefreshToken_Success() {
             // Given
             String expectedToken = "refreshTokenValue";
-            Cookie[] cookies = {new Cookie("refreshToken", expectedToken)};
+            Cookie[] cookies = { new Cookie("refreshToken", expectedToken) };
             when(request.getCookies()).thenReturn(cookies);
 
             // When
@@ -323,7 +321,7 @@ class JwtTokenProviderTest {
         @DisplayName("리프레시 토큰 쿠키가 없는 경우 null 반환")
         void resolveRefreshToken_NoRefreshTokenCookie() {
             // Given
-            Cookie[] cookies = {new Cookie("otherCookie", "value")};
+            Cookie[] cookies = { new Cookie("otherCookie", "value") };
             when(request.getCookies()).thenReturn(cookies);
 
             // When
