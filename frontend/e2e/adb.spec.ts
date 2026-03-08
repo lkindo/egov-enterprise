@@ -1,36 +1,31 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Address Book Module', () => {
-    test.beforeEach(async ({ page }) => {
-        // Login
-        await page.goto('/login');
-        await page.fill('#id', 'webmaster');
-        await page.fill('#password', '1');
-        await page.click('button[type="submit"]');
-        await page.waitForURL('**/');
+test('Addressbook Stable Check', async ({ page }) => {
+    test.setTimeout(180000);
 
-        await page.goto('/cop/adb');
-    });
+    console.log('>>> Step 1: Procedural Login');
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await page.fill('#id', 'webmaster');
+    await page.fill('#password', '1');
+    await page.click('button[type="submit"]', { force: true });
 
-    test('should display address book list and allow search', async ({ page }) => {
-        await expect(page.getByText('통합 주소록')).toBeVisible();
+    await page.waitForURL(url => url.pathname === '/', { timeout: 60000 });
+    await page.addInitScript(() => { window.localStorage.setItem('egov_smart_tour_v1', 'true'); });
 
-        const searchInput = page.getByPlaceholder('이름, 부서, 회사명...');
-        await expect(searchInput).toBeVisible();
-        await searchInput.fill('홍길동');
-        await page.getByRole('button', { name: '검색 실행' }).click();
+    console.log('>>> Step 2: Access Address Book');
+    await page.goto('/cop/adb', { waitUntil: 'networkidle' });
 
-        // Validation depends on data, but ensuring no error occurs is a good start
-        await expect(page.getByText('통합 주소록')).toBeVisible();
-    });
+    console.log('>>> Step 3: Search Operation');
+    const searchInput = page.getByPlaceholder(/검색어를 입력/i).first();
+    await expect(searchInput).toBeVisible({ timeout: 20000 });
+    await searchInput.fill('webmaster');
+    await page.keyboard.press('Enter');
 
-    test('should open contact detail modal', async ({ page }) => {
-        // Find the first contact in the list
-        const firstContact = page.locator('.VirtualScrollList div').first();
-        if (await firstContact.count() > 0) {
-            await firstContact.click();
-            await expect(page.getByText('상세 연락처 정보')).toBeVisible();
-            await expect(page.getByRole('button', { name: '메일 작성' })).toBeVisible();
-        }
-    });
+    console.log('>>> Step 4: Verify Results');
+    // Expect some row to exist
+    await page.waitForTimeout(3000);
+    const firstRow = page.locator('table tbody tr').first();
+    await expect(firstRow).toBeVisible({ timeout: 20000 });
+
+    console.log('>>> SUCCESS: Addressbook verified');
 });

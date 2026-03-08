@@ -122,7 +122,11 @@ export function SmartOnboardingHub() {
 
         {/* Right Side: Content & Actions */}
         <div className="flex-1 p-12 flex flex-col justify-between">
-          <button onClick={handleComplete} className="absolute top-8 right-8 p-3 hover:bg-white/5 rounded-full transition-colors group">
+          <button
+            onClick={handleComplete}
+            data-testid="onboarding-close"
+            className="absolute top-8 right-8 p-3 hover:bg-white/5 rounded-full transition-colors group"
+          >
             <X size={20} className="text-white/30 group-hover:text-white transition-colors" />
           </button>
 

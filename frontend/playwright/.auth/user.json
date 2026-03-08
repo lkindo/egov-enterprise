@@ -1,0 +1,40 @@
+{
+  "cookies": [
+    {
+      "name": "accessToken",
+      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3Mjk0NTYxMywiZXhwIjoxNzcyOTQ5MjEzfQ.DiUDwyXx6i_-_vsdUpGIfXYHreg8FmdROCo6_deSIMHcSdqcP2az3uc6bYVI20Kj0iFwmiiFp0iHzxrQgV3jeQ",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": -1
+    },
+    {
+      "name": "accessToken",
+      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3Mjk0NTYxMywiZXhwIjoxNzcyOTQ5MjEzfQ.DiUDwyXx6i_-_vsdUpGIfXYHreg8FmdROCo6_deSIMHcSdqcP2az3uc6bYVI20Kj0iFwmiiFp0iHzxrQgV3jeQ",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1
+    },
+    {
+      "name": "userRole",
+      "value": "ROLE_ADMIN",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": -1
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://127.0.0.1:3001",
+      "localStorage": [
+        {
+          "name": "accessToken",
+          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3Mjk0NTYxMywiZXhwIjoxNzcyOTQ5MjEzfQ.DiUDwyXx6i_-_vsdUpGIfXYHreg8FmdROCo6_deSIMHcSdqcP2az3uc6bYVI20Kj0iFwmiiFp0iHzxrQgV3jeQ"
+        },
+        {
+          "name": "egov_smart_tour_v1",
+          "value": "true"
+        }
+      ]
+    }
+  ]
+}

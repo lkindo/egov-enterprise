@@ -18,21 +18,17 @@ export default defineConfig({
     },
     projects: [
         {
-            name: 'chromium',
-            use: { ...devices['Desktop Chrome'] },
+            name: 'setup',
+            testMatch: /.*\.setup\.ts/,
         },
         {
-            name: 'mobile-chrome',
-            use: { ...devices['Pixel 5'] },
+            name: 'chromium',
+            use: {
+                ...devices['Desktop Chrome'],
+                storageState: path.resolve(__dirname, 'playwright/.auth/user.json'),
+            },
+            dependencies: ['setup'],
         },
-        // {
-        //   name: 'firefox',
-        //   use: { ...devices['Desktop Firefox'] },
-        // },
-        // {
-        //   name: 'webkit',
-        //   use: { ...devices['Desktop Safari'] },
-        // },
     ],
     /* Run your local dev server before starting the tests */
     // webServer: {

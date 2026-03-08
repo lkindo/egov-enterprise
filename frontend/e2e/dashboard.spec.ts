@@ -2,6 +2,11 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Dashboard Features', () => {
     test.beforeEach(async ({ page }) => {
+        // Bypass onboarding tour
+        await page.addInitScript(() => {
+            window.localStorage.setItem('egov_smart_tour_v1', 'true');
+        });
+
         // Login before each test
         await page.goto('/login');
         await page.fill('#id', 'webmaster');

@@ -2,6 +2,11 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Admin User Management', () => {
     test.beforeEach(async ({ page }) => {
+        // Bypass onboarding tour
+        await page.addInitScript(() => {
+            window.localStorage.setItem('egov_smart_tour_v1', 'true');
+        });
+
         // Login as Admin
         await page.goto('/login');
         await page.fill('#id', 'webmaster');

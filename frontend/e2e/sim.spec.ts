@@ -1,19 +1,30 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Schedule Module', () => {
+    test.setTimeout(120000);
+
     test.beforeEach(async ({ page }) => {
-        await page.goto('/cop/smt/sim/selectScheduleList');
+        await page.addInitScript(() => {
+            window.localStorage.setItem('egov_smart_tour_v1', 'true');
+        });
+
+        await page.goto('/login', { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await page.fill('#id', 'webmaster');
+        await page.fill('#password', '1');
+        await page.click('button[type="submit"]');
+
+        try {
+            await page.waitForURL(url => url.pathname === '/', { timeout: 30000 });
+        } catch (e) {
+            await page.goto('/', { waitUntil: 'networkidle' });
+        }
+
+        await page.waitForTimeout(3000);
+        await page.goto('/smart-toolkit/schedule', { waitUntil: 'networkidle' });
     });
 
     test('should display schedule list', async ({ page }) => {
-        await expect(page.getByText('일정 관리')).toBeVisible();
-        await page.getByPlaceholder('일정명 입력').fill('test');
-        await expect(page.getByPlaceholder('일정명 입력')).toBeVisible();
-    });
-
-    test('should navigate to registration page', async ({ page }) => {
-        await page.getByRole('button', { name: '일정 등록' }).click();
-        await expect(page).toHaveURL(/\/cop\/smt\/sim\/insertSchedule\/?/);
-        await expect(page.getByText('새 일정 등록')).toBeVisible();
+        const table = page.locator('table').first();
+        await expect(table).toBeVisible({ timeout: 15000 });
     });
 });

@@ -4,6 +4,11 @@ test.use({ ...devices['Pixel 5'] }); // Force mobile device for this spec
 
 test.describe('Mobile Viewport Verification', () => {
     test.beforeEach(async ({ page }) => {
+        // Bypass onboarding tour
+        await page.addInitScript(() => {
+            window.localStorage.setItem('egov_smart_tour_v1', 'true');
+        });
+
         // Login
         await page.goto('/login');
         await page.fill('#id', 'webmaster');

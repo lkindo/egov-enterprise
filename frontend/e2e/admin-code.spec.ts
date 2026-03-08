@@ -1,43 +1,56 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Admin Common Code Management', () => {
-    test.beforeEach(async ({ page }) => {
-        // Login as Admin
-        await page.goto('/login');
-        await page.fill('input[name="id"]', 'webmaster');
-        await page.fill('input[name="password"]', '1');
-        await page.click('button[type="submit"]');
+test.describe('Admin Common Code - Ultimate CRUD', () => {
+    test.setTimeout(180000);
 
-        // Wait for redirect to main/dashboard
-        await page.waitForURL('/');
-    });
+    test('Full Flow', async ({ page }) => {
+        // 1. Login
+        await page.goto('/login', { waitUntil: 'domcontentloaded' });
+        await page.fill('#id', 'webmaster');
+        await page.fill('#password', '1');
+        await page.click('button[type="submit"]', { force: true });
 
-    test('should display common code list in admin panel', async ({ page }) => {
-        // Navigate to Common Code Management
-        await page.goto('/admin/system/common-code');
+        await page.waitForURL(url => url.pathname === '/', { timeout: 60000 });
+        await page.addInitScript(() => { window.localStorage.setItem('egov_smart_tour_v1', 'true'); });
 
-        // Verify page header
-        await expect(page.getByRole('heading', { name: '공통코드 관리' })).toBeVisible();
+        // 2. Navigate to Common Code
+        await page.goto('/admin/system/common-code', { waitUntil: 'networkidle' });
+        console.log('>>> Arrived at Common Code page');
 
-        // Check if table exists and has data (Wait for API response)
-        const table = page.locator('table');
-        await expect(table).toBeVisible();
+        // 3. Select Taxonomy - Wait for any group button to appear
+        const groupBtn = page.locator('button').filter({ hasText: /전자정부|EFC|분류/ }).first();
+        await expect(groupBtn).toBeVisible({ timeout: 30000 });
+        await groupBtn.click({ force: true });
 
-        // At least one row should be present in a standard eGov installation
-        const rows = table.locator('tbody tr');
-        await expect(rows.first()).toBeVisible();
-    });
+        // Wait for sub-items and click the first one
+        await page.waitForTimeout(2000);
+        const subGroupBtn = page.locator('button').filter({ has: page.locator('.font-mono') }).first();
+        await subGroupBtn.click({ force: true });
+        console.log('>>> Group selected');
 
-    test('should search common codes', async ({ page }) => {
-        await page.goto('/admin/system/common-code');
+        // 4. Create
+        const createBtn = page.locator('button:has-text("코드 등록")');
+        await expect(createBtn).toBeVisible({ timeout: 30000 });
+        await createBtn.click({ force: true });
 
-        // Search by Code Name (Assuming '공통' is a common keyword)
-        const searchInput = page.locator('input[placeholder*="검색어"]');
-        await searchInput.fill('공통');
+        // 5. Fill Form
+        const codeId = `E2E${Math.floor(Math.random() * 9999)}`;
+        console.log(`>>> Creating Code ID: ${codeId}`);
+        await page.locator('input[placeholder="CODE_01"]').fill(codeId);
+        await page.locator('input[placeholder="공통코드명"]').fill('E2E Success Name');
+
+        await page.click('button:has-text("설정 저장하기")', { force: true });
+        console.log('>>> Save button clicked');
+
+        // 6. Search & Verify
+        await page.waitForTimeout(3000); // Wait for router refresh
+        const searchInput = page.locator('input[placeholder*="검색"]').first();
+        await searchInput.fill(codeId);
         await page.keyboard.press('Enter');
 
-        // Verify results
-        const rows = page.locator('table tbody tr');
-        await expect(rows.first()).toContainText('공통');
+        await page.waitForTimeout(2000);
+        await expect(page.getByText(codeId).first()).toBeVisible({ timeout: 15000 });
+
+        console.log('>>> CRUD DEEP-DIVE SUCCESSFUL');
     });
 });
