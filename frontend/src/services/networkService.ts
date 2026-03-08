@@ -2,8 +2,8 @@
 import { SearchParams, PaginationResponse } from '@/types/system';
 
 /**
- * ??쎈뱜??곌쾿 ?온??獄?筌뤴뫀??怨뺤춦 ??뺥돩??(Admin)
- * 獄쏄퉮肉?? com.company.project.api.controller.system.NtwrkController
+ * 네트워크 관리 및 모니터링 서비스 (Admin)
+ * 연결: com.company.project.api.controller.system.NtwrkController
  */
 export interface NetworkInfo {
     ntwrkId: string;
@@ -27,37 +27,37 @@ export interface NetworkStatusDetailed {
 const BASE_URL = '/admin/system/networks';
 
 export const networkService = {
-    /** ??쎈뱜??곌쾿 筌뤴뫖以?鈺곌퀬??*/
+    /** 네트워크 목록 조회 */
     getNetworks: async (params?: SearchParams) => {
         return client.get<PaginationResponse<NetworkInfo>>(BASE_URL, { params });
     },
 
-    /** ??쎈뱜??곌쾿 ?怨멸쉭 鈺곌퀬??*/
+    /** 네트워크 상세 조회 */
     getNetwork: async (ntwrkId: string) => {
         return client.get<NetworkInfo>(`${BASE_URL}/${ntwrkId}`);
     },
 
-    /** ??쎈뱜??곌쾿 ?源낆쨯 */
+    /** 네트워크 기초 정보 등록 */
     createNetwork: async (data: Partial<NetworkInfo>) => {
         return client.post<string>(BASE_URL, data);
     },
 
-    /** ??쎈뱜??곌쾿 ??륁젟 */
+    /** 네트워크 정보 수정 */
     updateNetwork: async (ntwrkId: string, data: Partial<NetworkInfo>) => {
         return client.put<void>(`${BASE_URL}/${ntwrkId}`, data);
     },
 
-    /** ??쎈뱜??곌쾿 ????*/
+    /** 네트워크 정보 삭제 */
     deleteNetwork: async (ntwrkId: string) => {
         return client.delete<void>(`${BASE_URL}/${ntwrkId}`);
     },
 
-    /** (筌뤴뫀??怨뺤춦) ??쎈뱜??곌쾿 ??뺥돩???怨밴묶 鈺곌퀬??- 癰귢쑬猷??뚢뫂?껅에?살쑎 ?袁⑹뒄??????됱몵???袁⑹삺 ?닌듼??醫? */
+    /** (모니터링) 네트워크 서비스 상태 목록 조회 */
     getStatus: async (params?: SearchParams) => {
         return client.get<PaginationResponse<NetworkStatusDetailed>>('/admin/system/ntwrksvc-monitoring', { params });
     },
 
-    /** ??쎈뱜??곌쾿 嚥≪뮄??鈺곌퀬??(Alias) */
+    /** 네트워크 로그 조회 (Alias) */
     getNetworkLogs: async (params?: SearchParams) => {
         return client.get<PaginationResponse<NetworkStatusDetailed>>('/admin/system/ntwrksvc-monitoring', { params });
     },

@@ -5,7 +5,7 @@ import { fileMngService } from '../fileMngService';
 import { networkService } from '../networkService';
 import { roleService } from '../roleService';
 import { serverService } from '../serverService';
-import { troubleService } from '../troubleService';
+import { troubleAdminService as troubleService } from '../admin/system/TroubleAdminService';
 
 vi.mock('@/lib/api/client', () => ({
   default: {
@@ -46,7 +46,7 @@ describe('Remaining Domain Services', () => {
   });
 
   it('troubleService calls correct endpoints', async () => {
-    await troubleService.getTroubles();
-    expect(client.get).toHaveBeenCalledWith('/admin/system/troubles', expect.any(Object));
+    await troubleService.getTroubles({});
+    expect(client.get).toHaveBeenCalledWith('/admin/system/troubles/', expect.any(Object));
   });
 });

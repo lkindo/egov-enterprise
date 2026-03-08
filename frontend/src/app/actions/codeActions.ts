@@ -22,7 +22,7 @@ export async function saveCodeDetail(prevState: any, data: Partial<CmmnDetailCod
     if (isNew) {
       await codeAdminService.createDetailCode(data as CmmnDetailCode, config);
     } else {
-      await codeAdminService.updateDetailCode(data as CmmnDetailCode, config);
+      await codeAdminService.updateDetailCode(data.codeId!, data.code!, data as CmmnDetailCode, config);
     }
 
     revalidatePath('/admin/system/common-code');

@@ -2,8 +2,8 @@
 import type { AxiosRequestConfig } from 'axios';
 
 /**
- * 疫꿸퀡??API ??뺥돩???????
- * ??뺥돩???袁⑥컭?紐껎?疫꿸퀡??野껋럥以?basePath)??筌╈돦??酉鍮??덈뼄.
+ * 기본 API 서비스 클래스
+ * 모든 서비스는 특정 기본 경로(basePath)를 가지고 이를 기반으로 요청을 보낸다.
  */
 export abstract class ApiService {
     protected basePath: string;
@@ -35,7 +35,7 @@ export abstract class ApiService {
 }
 
 /**
- * ????癒?뒠 ??뺥돩??甕곗쥙???????? * 疫꿸퀡??野껋럥以? /... (?袁⑹뒄???怨뺤뵬 筌왖??
+ * 사용자 전용 서비스 클래스
  */
 export abstract class UserService extends ApiService {
     constructor(domainPath: string) {
@@ -44,7 +44,7 @@ export abstract class UserService extends ApiService {
 }
 
 /**
- * ?온?귐딆쁽????뽯뮞????뺥돩??甕곗쥙???????? * 疫꿸퀡??野껋럥以? /admin/system
+ * 관리자 전용 서비스 클래스
  */
 export abstract class AdminService extends ApiService {
     constructor(domainPath: string) {

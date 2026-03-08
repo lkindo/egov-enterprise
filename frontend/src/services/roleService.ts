@@ -2,8 +2,8 @@
 import { SearchParams, PaginationResponse } from '@/types/system';
 
 /**
- * 亦낅슦釉?嚥? ?온????뺥돩??(Admin)
- * 獄쏄퉮肉?? com.company.project.api.controller.system.RoleController
+ * 권한/롤 관리 서비스 (Admin)
+ * 연결: com.company.project.api.controller.system.RoleController
  */
 export interface RoleManageInfo {
     roleCode: string;
@@ -18,32 +18,32 @@ export interface RoleManageInfo {
 const BASE_URL = '/admin/system/roles';
 
 export const roleService = {
-    /** 亦낅슦釉?筌뤴뫖以?鈺곌퀬??*/
+    /** 롤 목록 조회 */
     getRoles: async (params?: SearchParams) => {
         return client.get<PaginationResponse<RoleManageInfo>>(BASE_URL, { params });
     },
 
-    /** 亦낅슦釉??怨멸쉭 鈺곌퀬??*/
+    /** 롤 상세 조회 */
     getRole: async (roleCode: string) => {
         return client.get<RoleManageInfo>(`${BASE_URL}/${roleCode}`);
     },
 
-    /** 亦낅슦釉??源낆쨯 */
+    /** 롤 등록/생성 */
     createRole: async (data: Partial<RoleManageInfo>) => {
         return client.post<void>(BASE_URL, data);
     },
 
-    /** 亦낅슦釉???륁젟 */
+    /** 롤 정보 수정 */
     updateRole: async (roleCode: string, data: Partial<RoleManageInfo>) => {
         return client.put<void>(`${BASE_URL}/${roleCode}`, data);
     },
 
-    /** 亦낅슦釉?????*/
+    /** 롤 삭제 */
     deleteRole: async (roleCode: string) => {
         return client.delete<void>(`${BASE_URL}/${roleCode}`);
     },
 
-    /** 亦낅슦釉?筌뤴뫖以?鈺곌퀬??(Alias) */
+    /** 권한 목록 조회 (Alias) */
     getAuthors: async (params?: SearchParams) => {
         return client.get<PaginationResponse<RoleManageInfo>>(BASE_URL, { params });
     },

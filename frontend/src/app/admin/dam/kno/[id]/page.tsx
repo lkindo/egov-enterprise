@@ -5,7 +5,7 @@ import { Trash2 } from 'lucide-react';
 import { KnoManagementVO } from '@/types/dam';
 import { KnoDetailClient } from './KnoDetailClient';
 import { cookies } from 'next/headers';
-import damService from '@/services/dam/damService';
+import * as damService from '@/services/dam/damService';
 
 export default async function KnoDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;

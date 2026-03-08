@@ -8,7 +8,7 @@ describe('StandardModal', () => {
     // Basic rendering test that doesn't trigger portal issues
     render(
       <div id="modal-root">
-        <StandardModal open={true} onOpenChange={() => {}} title="Base Title">
+        <StandardModal isOpen={true} onClose={() => { }} title="Base Title">
           <div>Content</div>
         </StandardModal>
       </div>

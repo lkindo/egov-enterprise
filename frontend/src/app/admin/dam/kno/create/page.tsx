@@ -14,7 +14,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import damService from '@/services/dam/damService';
+import * as damService from '@/services/dam/damService';
 
 export default function CreateKnoPage() {
     const router = useRouter();

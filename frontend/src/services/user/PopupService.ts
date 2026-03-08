@@ -7,15 +7,15 @@ class PopupUserService extends UserService {
     }
 
     /**
-     * ??뽮쉐 ??밸씜 筌뤴뫖以?鈺곌퀬??
-     * ????뺣궖??嚥≪뮄????????⑤벊???癒?퐣 ?紐꾪뀱??몃빍??
+     * 현재 활성 팝업 목록 조회
+     * 게시 기간이 현재 포함된 공통 팝업들을 반환합니다.
      */
     async getActivePopups(config?: any) {
         return this.get<any>('/active', config);
     }
 
     /**
-     * ?諭????밸씜 ?怨멸쉭 鈺곌퀬??
+     * 특정 팝업 상세 조회
      */
     async getPopup(popupId: string, config?: any) {
         return this.get<any>(`/${popupId}`, config);

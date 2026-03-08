@@ -60,8 +60,8 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
-            if (isEdit) {
-                await codeAdminService.updateClCode({ ...values, clCode: data.clCode } as CmmnClCode); // clCode is read-only in edit
+            if (isEdit && data?.clCode) {
+                await codeAdminService.updateClCode(data.clCode, { ...values, clCode: data.clCode } as CmmnClCode); // clCode is read-only in edit
             } else {
                 await codeAdminService.createClCode(values as CmmnClCode);
             }

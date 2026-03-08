@@ -8,7 +8,8 @@ export interface Event {
     eventEndDe: string;
     eventPlace: string;
     eventCn: string;
-    ctgryCode: string; // 1:??깃텢, 2:筌?쥚???}
+    ctgryCode: string; // 1:교육/행사, 2:캠페인
+}
 
 class EventUserService extends UserService {
     constructor() {

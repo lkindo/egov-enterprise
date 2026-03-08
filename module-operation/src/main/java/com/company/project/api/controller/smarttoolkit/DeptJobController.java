@@ -23,13 +23,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
-
- * ?     ??      ?         ?REST API Controller
-
+ * @Description 부서 업무함 정보 관리를 위한 REST API Controller
  *
-
- * Next.js ?         ?         ??      ???????       ?          JSON             ?REST API ??
-
+ *              Next.js 프론트엔드와 통신하여 부서 업무함 목록 조회, 상세 조회, 등록, 수정, 삭제 기능을 제공하며,
+ *              모든 요청과 응답은 JSON 형식을 따르는 REST API 체계로 구현됨.
  */
 
 @Slf4j
@@ -45,9 +42,7 @@ public class DeptJobController {
     private final EgovDeptJobBoxService egovDeptJobBoxService;
 
     /**
-
-     * ?     ??      ?         ?            ?         ??
-
+     * @Description 부서 업무함 목록을 페이징하여 조회함
      */
 
     @GetMapping("/boxes")
@@ -93,9 +88,7 @@ public class DeptJobController {
     }
 
     /**
-
-     * ?     ??      ?         ??                   ??
-
+     * @Description 부서 업무함 정보를 상세 조회함
      */
 
     @GetMapping("/boxes/{deptJobbxId}")
@@ -119,9 +112,7 @@ public class DeptJobController {
     }
 
     /**
-
-     * ?     ??      ?         ??
-
+     * @Description 부서 업무함을 등록함
      */
 
     @PostMapping("/boxes")
@@ -132,7 +123,7 @@ public class DeptJobController {
 
         if (userId == null || userId.equals("anonymous")) {
 
-            return ResponseEntity.status(401).body(Map.of("error", "         ??          ?         ??      ??"));
+            return ResponseEntity.status(401).body(Map.of("error", "인증되지 않은 사용자입니다. 로그인 후 이용해주세요."));
 
         }
 
@@ -144,7 +135,7 @@ public class DeptJobController {
 
             response.put("success", true);
 
-            response.put("message", "?     ??      ?         ???         ??   ???     ??");
+            response.put("message", "부서 업무함이 성공적으로 등록되었습니다.");
 
             response.put("deptJobbxId", newId);
 
@@ -154,7 +145,7 @@ public class DeptJobController {
 
             response.put("success", false);
 
-            response.put("message", "?         ????      ??      ??      : " + e.getMessage());
+            response.put("message", "부서 업무함 등록 중 오류 발생: " + e.getMessage());
 
             return ResponseEntity.badRequest().body(response);
 
@@ -165,9 +156,7 @@ public class DeptJobController {
     }
 
     /**
-
-     * ?     ??      ?         ???
-
+     * @Description 부서 업무함 정보를 수정함
      */
 
     @PutMapping("/boxes/{deptJobbxId}")
@@ -182,7 +171,7 @@ public class DeptJobController {
 
         if (userId == null || userId.equals("anonymous")) {
 
-            return ResponseEntity.status(401).body(Map.of("error", "         ??          ?         ??      ??"));
+            return ResponseEntity.status(401).body(Map.of("error", "인증되지 않은 사용자입니다. 로그인 후 이용해주세요."));
 
         }
 
@@ -194,7 +183,7 @@ public class DeptJobController {
 
             response.put("success", true);
 
-            response.put("message", "?     ??      ?         ????      ??   ???     ??");
+            response.put("message", "부서 업무함 정보가 성공적으로 수정되었습니다.");
 
         } catch (Exception e) {
 
@@ -202,7 +191,7 @@ public class DeptJobController {
 
             response.put("success", false);
 
-            response.put("message", "??      ????      ??      ??      : " + e.getMessage());
+            response.put("message", "정보 수정 중 오류 발생: " + e.getMessage());
 
             return ResponseEntity.badRequest().body(response);
 
@@ -213,9 +202,7 @@ public class DeptJobController {
     }
 
     /**
-
-     * ?     ??      ?         ?????
-
+     * @Description 부서 업무함 정보를 삭제함
      */
 
     @DeleteMapping("/boxes/{deptJobbxId}")
@@ -226,7 +213,7 @@ public class DeptJobController {
 
         if (userId == null || userId.equals("anonymous")) {
 
-            return ResponseEntity.status(401).body(Map.of("error", "         ??          ?         ??      ??"));
+            return ResponseEntity.status(401).body(Map.of("error", "인증되지 않은 사용자입니다. 로그인 후 이용해주세요."));
 
         }
 
@@ -238,7 +225,7 @@ public class DeptJobController {
 
             response.put("success", true);
 
-            response.put("message", "?     ??      ?         ???????   ???     ??");
+            response.put("message", "부서 업무함이 성공적으로 삭제되었습니다.");
 
         } catch (Exception e) {
 
@@ -246,7 +233,7 @@ public class DeptJobController {
 
             response.put("success", false);
 
-            response.put("message", "???????      ??      ??      : " + e.getMessage());
+            response.put("message", "부서 업무함 삭제 중 오류 발생: " + e.getMessage());
 
             return ResponseEntity.badRequest().body(response);
 

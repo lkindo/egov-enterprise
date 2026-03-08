@@ -31,7 +31,7 @@ export async function updateMenuOrdersAction(prevState: any, menus: MenuInfo[]) 
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await menuAdminService.updateOrders(menus, axiosConfig);
+    await menuAdminService.updateMenuOrder(menus as any[], axiosConfig);
 
     revalidatePath('/admin/system/menus');
     return { success: true, message: '순서가 저장되었습니다.' };

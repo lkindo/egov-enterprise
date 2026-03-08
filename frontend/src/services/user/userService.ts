@@ -7,7 +7,7 @@ class UserService extends ApiService {
     }
 
     /**
-     * ???類ｋ궖 鈺곌퀬??
+     * 내 정보 조회
      */
     async getMe() {
         const response = await this.get<any>('');
@@ -15,7 +15,7 @@ class UserService extends ApiService {
     }
 
     /**
-     * ???類ｋ궖 ??륁젟
+     * 내 정보 수정
      */
     async updateMe(data: Partial<UserDto>) {
         const response = await this.put<any>('', data);
@@ -23,7 +23,8 @@ class UserService extends ApiService {
     }
 
     /**
-     * ??쑬?甕곕뜇??癰궰野?     */
+     * 비밀번호 변경
+     */
     async changePassword(oldPassword: string, newPassword: string) {
         const response = await this.put<any>('/password', { oldPassword, newPassword });
         return response?.result || response;

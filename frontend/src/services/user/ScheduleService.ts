@@ -7,7 +7,7 @@ class ScheduleService extends ApiService {
     }
 
     /**
-     * ?袁⑷퍥 ??깆젟 筌뤴뫖以?鈺곌퀬??(??륁뵠筌왖)
+     * 전체 일정 목록 조회 (페이징)
      */
     async getScheduleList(params: { pageIndex?: number; pageUnit?: number }) {
         const response = await this.get<any>('', { params });
@@ -15,7 +15,7 @@ class ScheduleService extends ApiService {
     }
 
     /**
-     * ?遺얩???깆젟 鈺곌퀬??
+     * 월별 일정 조회
      * @param yearMonth yyyyMM
      */
     async getMonthlySchedule(yearMonth: string) {
@@ -24,7 +24,7 @@ class ScheduleService extends ApiService {
     }
 
     /**
-     * ?醫롮? 甕곕뗄?욆퉪???깆젟 鈺곌퀬??
+     * 지정 기간별 일정 조회
      * @param startDate yyyyMMdd
      * @param endDate yyyyMMdd
      */
@@ -34,7 +34,7 @@ class ScheduleService extends ApiService {
     }
 
     /**
-     * ??깆젟 ?怨멸쉭 鈺곌퀬??
+     * 일정 상세 조회
      */
     async getSchedule(id: string) {
         const response = await this.get<any>(`/${id}`);
@@ -42,7 +42,7 @@ class ScheduleService extends ApiService {
     }
 
     /**
-     * ??깆젟 ?源낆쨯
+     * 일정 등록
      */
     async createSchedule(data: Partial<Schedule>) {
         const response = await this.post<any>('', data);
@@ -50,7 +50,7 @@ class ScheduleService extends ApiService {
     }
 
     /**
-     * ??깆젟 ??륁젟
+     * 일정 수정
      */
     async updateSchedule(id: string, data: Partial<Schedule>) {
         const response = await this.put<any>(`/${id}`, data);
@@ -58,7 +58,7 @@ class ScheduleService extends ApiService {
     }
 
     /**
-     * ??깆젟 ????
+     * 일정 삭제
      */
     async deleteSchedule(id: string) {
         const response = await this.delete<any>(`/${id}`);

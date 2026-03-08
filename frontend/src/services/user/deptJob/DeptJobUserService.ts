@@ -4,13 +4,13 @@ export interface DeptJob {
     deptJobId: string;
     deptJobNm: string;
     deptJobCn: string;
-    deptJobSe: string; // 1:??곗뺘, 2:餓λ쵐??
+    deptJobSe: string; // 1:주요업무, 2:일반업무
     deptId: string;
     deptNm?: string;
     chargerId: string;
     chargerNm?: string;
-    priort: string; // 1:?誘れ벉, 2:癰귣똾?? 3:????
-    sttus: string; // 1:筌욊쑵六얌빳? 2:?袁⑥┷
+    priort: string; // 1:긴급, 2:보통, 3:여유
+    sttus: string; // 1:진행중, 2:완료
     frstRegisterId: string;
     createdDate: string;
 }
@@ -21,21 +21,21 @@ class DeptJobUserService extends UserService {
     }
 
     /**
-     * ?봔??뽯씜??筌뤴뫖以?鈺곌퀬??
+     * 부서업무 목록 조회
      */
     async getDeptJobs(params: { page?: number; size?: number; searchWrd?: string }) {
         return this.get<any>('', { params });
     }
 
     /**
-     * ?봔??뽯씜???怨멸쉭 鈺곌퀬??
+     * 부서업무 상세 조회
      */
     async getDeptJob(id: string) {
         return this.get<any>(`/${id}`);
     }
 
     /**
-     * ?봔??뽯씜???源낆쨯/??륁젟
+     * 부서업무 등록/수정
      */
     async saveDeptJob(data: Partial<DeptJob>) {
         if (data.deptJobId) {
@@ -45,7 +45,7 @@ class DeptJobUserService extends UserService {
     }
 
     /**
-     * ?怨밴묶 癰궰野?(?袁⑥┷ 筌ｌ꼶????
+     * 상태 변경 (완료 처리 등)
      */
     async updateStatus(id: string, sttus: string) {
         return this.patch<any>(`/${id}/status`, { sttus });

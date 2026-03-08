@@ -13,7 +13,7 @@ export interface Ctsnn {
     ctsnnId: string;
     ctsnnNm: string;
     ctsnnDe: string;
-    ctsnnCode: string; // 1:野껉퀬?? 2:?봔??.
+    ctsnnCode: string; // 1:결혼, 2:부친상...
     userNm: string;
     trgetNm: string;
 }

@@ -28,7 +28,7 @@ export default function DeptJobDetailPage({ params }: { params: Promise<{ id: st
             setFormData(data);
         } catch (error) {
             console.error(error);
-            alert('?낅Т ?뺣낫瑜?遺덈윭?ㅻ뒗???ㅽ뙣?덉뒿?덈떎.');
+            alert('업무 정보를 불러오는데 실패했습니다.');
             router.back();
         }
     }, [deptJobId, router]);
@@ -39,29 +39,29 @@ export default function DeptJobDetailPage({ params }: { params: Promise<{ id: st
 
     const handleSave = async () => {
         if (!formData || !formData.deptJobNm || !formData.deptJobCn) {
-            alert('?낅Т紐낃낵 ?댁슜? ?꾩닔?낅땲??');
+            alert('업무명과 내용은 필수입니다.');
             return;
         }
 
         try {
             await updateDeptJob(formData);
-            alert('?낅Т媛 ?섏젙?섏뿀?듬땲??');
+            alert('업무가 수정되었습니다.');
             router.push('/smart-toolkit/dept-job');
         } catch (error) {
             console.error(error);
-            alert('?낅Т ?섏젙???ㅽ뙣?덉뒿?덈떎.');
+            alert('업무 수정에 실패했습니다.');
         }
     };
 
     const handleDelete = async () => {
-        if (!confirm('?뺣쭚濡????낅Т瑜???젣?섏떆寃좎뒿?덇퉴?')) return;
+        if (!confirm('정말로 이 업무를 삭제하시겠습니까?')) return;
         try {
             await deleteDeptJob(deptJobId);
-            alert('?낅Т媛 ??젣?섏뿀?듬땲??');
+            alert('업무가 삭제되었습니다.');
             router.push('/smart-toolkit/dept-job');
         } catch (error) {
             console.error(error);
-            alert('??젣 ?ㅽ뙣');
+            alert('삭제 실패');
         }
     };
 
@@ -74,8 +74,8 @@ export default function DeptJobDetailPage({ params }: { params: Promise<{ id: st
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">遺???낅Т ?곸꽭 諛??섏젙</h2>
-                    <p className="text-muted-foreground">?깅줉???낅Т ?댁슜???섏젙?섍굅????젣?⑸땲??</p>
+                    <h2 className="text-2xl font-bold tracking-tight">부서 업무 상세 및 수정</h2>
+                    <p className="text-muted-foreground">등록된 업무 내용을 수정하거나 삭제합니다.</p>
                 </div>
             </div>
 
@@ -90,18 +90,18 @@ export default function DeptJobDetailPage({ params }: { params: Promise<{ id: st
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="priort">?곗꽑?쒖쐞</Label>
+                    <Label htmlFor="priort">우선순위</Label>
                     <Select
                         value={formData.priort}
                         onValueChange={(value) => setFormData(prev => prev ? ({ ...prev, priort: value }) : null)}
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="?곗꽑?쒖쐞 ?좏깮" />
+                            <SelectValue placeholder="우선순위 선택" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="1">?믪쓬</SelectItem>
-                            <SelectItem value="2">蹂댄넻</SelectItem>
-                            <SelectItem value="3">??쓬</SelectItem>
+                            <SelectItem value="1">높음</SelectItem>
+                            <SelectItem value="2">보통</SelectItem>
+                            <SelectItem value="3">낮음</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -116,7 +116,7 @@ export default function DeptJobDetailPage({ params }: { params: Promise<{ id: st
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="deptJobCn">?낅Т ?댁슜</Label>
+                    <Label htmlFor="deptJobCn">업무 내용</Label>
                     <Textarea
                         id="deptJobCn"
                         value={formData.deptJobCn}
@@ -127,17 +127,17 @@ export default function DeptJobDetailPage({ params }: { params: Promise<{ id: st
 
                 <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground pt-4 border-t">
                     <div>
-                        <span className="font-semibold">?깅줉??</span> {formData.frstRegisterId}
+                        <span className="font-semibold">등록자</span> {formData.frstRegisterId}
                     </div>
                     <div>
-                        <span className="font-semibold">?깅줉??</span> {formData.frstRegistPnttm?.slice(0, 10)}
+                        <span className="font-semibold">등록일</span> {formData.frstRegistPnttm?.slice(0, 10)}
                     </div>
                 </div>
 
                 <div className="flex justify-between pt-4">
-                    <Button variant="destructive" onClick={handleDelete}>??젣</Button>
+                    <Button variant="destructive" onClick={handleDelete}>삭제</Button>
                     <div className="space-x-2">
-                        <Button variant="outline" onClick={() => router.back()}>痍⑥냼</Button>
+                        <Button variant="outline" onClick={() => router.back()}>취소</Button>
                         <Button onClick={handleSave}>수정 저장</Button>
                     </div>
                 </div>

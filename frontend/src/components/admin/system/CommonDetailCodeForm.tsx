@@ -64,7 +64,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             if (isEdit) {
-                await codeAdminService.updateDetailCode(values as CmmnDetailCode);
+                await codeAdminService.updateDetailCode(values.codeId, values.code, values as CmmnDetailCode);
             } else {
                 await codeAdminService.createDetailCode(values as CmmnDetailCode);
             }

@@ -4,7 +4,7 @@ export interface BatchSchedule {
     batchSchdulId: string;
     batchOpertId: string;
     batchOpertNm: string;
-    executCycle: string; // 01:筌띲끉?? 02:筌띲끉竊?..
+    executCycle: string; // 01:매일, 02:매주...
     executSchdulDe: string;
     executSchdulHour: string;
     executSchdulMnt: string;
@@ -14,7 +14,8 @@ export interface BatchSchedule {
 export interface BatchResult {
     batchResultId: string;
     batchOpertNm: string;
-    sttus: string; // 01:?源껊궗, 02:??쎈솭, 03:??묐뻬餓?    executBeginTime: string;
+    sttus: string; // 01:정상, 02:비정상, 03:수행중
+    executBeginTime: string;
     executEndTime: string;
 }
 

@@ -10,7 +10,7 @@ class CodeAdminService extends AdminService {
         super('/codes');
     }
 
-    // --- Classification Code (?브쑬履잒굜遺얜굡) ---
+    // --- Classification Code (분류코드) ---
     async getClCodes(params?: SearchParams, config?: AxiosRequestConfig) {
         const response = await this.get<any>('/cl', { ...config, params });
         return response?.result || response;
@@ -36,7 +36,7 @@ class CodeAdminService extends AdminService {
         return response?.result || response;
     }
 
-    // --- Common Code (?⑤벏?삭굜遺얜굡) ---
+    // --- Common Code (공통코드) ---
     async getGroups(params?: SearchParams, config?: AxiosRequestConfig) {
         const response = await this.get<any>('/cmmn', { ...config, params });
         return response?.result || response;
@@ -62,28 +62,28 @@ class CodeAdminService extends AdminService {
         return response?.result || response;
     }
 
-    // --- Detail Code (?怨멸쉭?꾨뗀諭? ---
+    // --- Detail Code (상세코드) ---
     async getDetails(params?: SearchParams, config?: AxiosRequestConfig) {
         const response = await this.get<any>('/detail', { ...config, params });
         return response?.result || response;
     }
 
-    async getDetail(codeId: string, code: string, config?: AxiosRequestConfig) {
+    async getDetailCode(codeId: string, code: string, config?: AxiosRequestConfig) {
         const response = await this.get<any>(`/detail/${codeId}/${code}`, config);
         return response?.result || response;
     }
 
-    async createDetail(data: CmmnDetailCode, config?: AxiosRequestConfig) {
+    async createDetailCode(data: CmmnDetailCode, config?: AxiosRequestConfig) {
         const response = await this.post<any>('/detail', data, config);
         return response?.result || response;
     }
 
-    async updateDetail(codeId: string, code: string, data: CmmnDetailCode, config?: AxiosRequestConfig) {
+    async updateDetailCode(codeId: string, code: string, data: CmmnDetailCode, config?: AxiosRequestConfig) {
         const response = await this.put<any>(`/detail/${codeId}/${code}`, data, config);
         return response?.result || response;
     }
 
-    async deleteDetail(codeId: string, code: string, config?: AxiosRequestConfig) {
+    async deleteDetailCode(codeId: string, code: string, config?: AxiosRequestConfig) {
         const response = await this.delete<any>(`/detail/${codeId}/${code}`, config);
         return response?.result || response;
     }

@@ -14,7 +14,7 @@ class ScrapService extends ApiService {
     }
 
     /**
-     * ??륁벥 ??쎄쾿??筌뤴뫖以?鈺곌퀬??
+     * 나의 스크랩 목록 조회
      */
     async getMyScraps(params: { page?: number; size?: number }) {
         const response = await this.get<any>('', { params });
@@ -22,7 +22,7 @@ class ScrapService extends ApiService {
     }
 
     /**
-     * ??쎄쾿??????
+     * 스크랩 삭제
      */
     async deleteScrap(id: string) {
         const response = await this.delete<any>(`/${id}`);

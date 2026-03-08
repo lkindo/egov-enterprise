@@ -28,6 +28,7 @@ describe('Sidebar', () => {
         activeMenuNo: 1,
         setActiveMenuNo: vi.fn(),
         isSidebarOpen: true,
+        setSidebarOpen: vi.fn(),
         toggleSidebar: vi.fn(),
     };
 

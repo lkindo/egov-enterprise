@@ -102,8 +102,8 @@ export default function DeptSchedulePage() {
 
     const handleSubmit = async () => {
         try {
-            if (editingSchedule) {
-                await updateDeptSchedule(formData as DeptSchedule);
+            if (editingSchedule && editingSchedule.schdulId) {
+                await updateDeptSchedule(editingSchedule.schdulId, formData as DeptSchedule);
             } else {
                 await createDeptSchedule(formData as DeptSchedule);
             }

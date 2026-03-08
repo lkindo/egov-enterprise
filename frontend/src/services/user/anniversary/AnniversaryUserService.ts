@@ -5,7 +5,7 @@ export interface Anniversary {
     usid: string;
     annvrsryNm: string;
     annvrsryDe: string;
-    annvrsrySe: string; // 1:??뱀뵬, 2:野껉퀬?? 3:疫꿸퀬?
+    annvrsrySe: string; // 1:생일, 2:결혼, 3:기타
     userNm?: string;
     memo: string;
     cldrSe?: string;

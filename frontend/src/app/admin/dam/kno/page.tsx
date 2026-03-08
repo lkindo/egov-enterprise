@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import damService from '@/services/dam/damService';
+import * as damService from '@/services/dam/damService';
 import { KnoListClient } from './KnoListClient';
 
 export default async function KnoListPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
@@ -12,7 +12,7 @@ export default async function KnoListPage({ searchParams }: { searchParams: Prom
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    let initialData = { list: [], pagination: { totalRecordCount: 0 } };
+    let initialData = { list: [], pagination: { totalCount: 0, totalPages: 0 } } as any;
     try {
         initialData = await damService.getKnoList({
             pageIndex: page,

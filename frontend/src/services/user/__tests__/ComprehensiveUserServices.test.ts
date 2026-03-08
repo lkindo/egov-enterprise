@@ -20,7 +20,7 @@ describe('Comprehensive User Services', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('addressbookUserService calls correct endpoints', async () => {
-    await addressbookUserService.getAddressBooks({ page: 0 });
+    await addressbookUserService.getAddressBooks({ pageIndex: 1 });
     expect(client.get).toHaveBeenCalledWith('/address-books', expect.any(Object));
   });
 

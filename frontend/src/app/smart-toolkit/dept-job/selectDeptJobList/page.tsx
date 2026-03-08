@@ -52,12 +52,12 @@ const DeptJobListPage = () => {
     }, [pageIndex]);
 
     const handleDelete = async (id: string) => {
-        if (!confirm('??젣?섏떆寃좎뒿?덇퉴?')) return;
+        if (!confirm('삭제하시겠습니까?')) return;
         try {
             (await axios.delete(`/deptjob/${id}`)) as any;
             fetchList();
         } catch (error) {
-            alert('??젣???ㅽ뙣?덉뒿?덈떎.');
+            alert('삭제에 실패했습니다.');
         }
     };
 
@@ -77,7 +77,7 @@ const DeptJobListPage = () => {
                     <Home className="w-4 h-4" /> Home
                 </Link>
                 <ChevronRight className="w-4 h-4" />
-                <span>?묒뾽</span>
+                <span>업무</span>
                 <ChevronRight className="w-4 h-4" />
                 <span className="text-foreground font-bold">부서업무 관리</span>
             </div>
@@ -86,14 +86,14 @@ const DeptJobListPage = () => {
                 <CardHeader className="flex flex-row items-center justify-between pb-8 pt-8 px-8 border-b bg-muted/20">
                     <div className="space-y-1">
                         <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
-                            <Briefcase className="w-8 h-8 text-primary" /> 遺?쒖뾽臾?紐⑸줉
+                            <Briefcase className="w-8 h-8 text-primary" /> 부서업무 목록
                         </CardTitle>
                         <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest opacity-70">Department Task Management Unit</p>
                     </div>
                     <CardAction>
                         <Link href="/smart-toolkit/dept-job/insertDeptJob">
                             <Button size="lg" className="gap-2 shadow-lg font-black bg-primary hover:bg-primary/90 transition-all active:scale-95">
-                                <Plus className="w-5 h-5" /> ?낅Т ?깅줉
+                                <Plus className="w-5 h-5" /> 업무 등록
                             </Button>
                         </Link>
                     </CardAction>

@@ -1,10 +1,11 @@
 ﻿import client from '@/lib/api/client';
 import { KnoManagementVO, KnoSearchParams } from '@/types/dam';
+import { AxiosRequestConfig } from 'axios';
 
 const BASE_URL = '/admin/digital-assets';
 
-export const getKnoList = async (params: any = {}) => {
-    const response = await client.get<any>(BASE_URL, { params });
+export const getKnoList = async (params: any = {}, config?: AxiosRequestConfig) => {
+    const response = await client.get<any>(BASE_URL, { ...config, params });
     return {
         list: response.result?.content || [],
         pagination: {
@@ -14,16 +15,16 @@ export const getKnoList = async (params: any = {}) => {
     };
 };
 
-export const getKnoDetail = async (knoId: string) => {
-    const response = await client.get<any>(`${BASE_URL}/${knoId}`);
+export const getKnoDetail = async (knoId: string, config?: AxiosRequestConfig) => {
+    const response = await client.get<any>(`${BASE_URL}/${knoId}`, config);
     return response.result;
 };
 
-export const createKno = async (data: any) =>
-    client.post(BASE_URL, data);
+export const createKno = async (data: any, config?: AxiosRequestConfig) =>
+    client.post(BASE_URL, data, config);
 
-export const updateKno = async (knoId: string, data: any) =>
-    client.put(`${BASE_URL}/${knoId}`, data);
+export const updateKno = async (knoId: string, data: any, config?: AxiosRequestConfig) =>
+    client.put(`${BASE_URL}/${knoId}`, data, config);
 
-export const deleteKno = async (knoId: string) =>
-    client.delete(`${BASE_URL}/${knoId}`);
+export const deleteKno = async (knoId: string, config?: AxiosRequestConfig) =>
+    client.delete(`${BASE_URL}/${knoId}`, config);

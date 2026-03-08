@@ -18,7 +18,7 @@ class NoteService extends ApiService {
     }
 
     /**
-     * 獄쏆룇? 筌잛럩???鈺곌퀬??
+     * 받은 쪽지 목록 조회
      */
     async getReceivedNotes(params: { page?: number; size?: number }) {
         const response = await this.get<any>('/received', { params });
@@ -26,7 +26,7 @@ class NoteService extends ApiService {
     }
 
     /**
-     * 癰귣?沅?筌잛럩???鈺곌퀬??
+     * 보낸 쪽지 목록 조회
      */
     async getSentNotes(params: { page?: number; size?: number }) {
         const response = await this.get<any>('/sent', { params });
@@ -34,14 +34,15 @@ class NoteService extends ApiService {
     }
 
     /**
-     * 筌잛럩? 癰귣?沅→묾?     */
+     * 쪽지 보내기
+     */
     async sendNote(data: { rcverId: string; noteSj: string; noteCn: string }) {
         const response = await this.post<any>('', data);
         return response?.result || response;
     }
 
     /**
-     * 筌잛럩? ?怨멸쉭 鈺곌퀬??獄???뚯벉 筌ｌ꼶??
+     * 쪽지 상세 조회 및 읽음 처리
      */
     async getNote(id: string) {
         const response = await this.get<any>(`/${id}`);
@@ -49,7 +50,7 @@ class NoteService extends ApiService {
     }
 
     /**
-     * 筌잛럩? ????
+     * 쪽지 삭제
      */
     async deleteNote(id: string) {
         const response = await this.delete<any>(`/${id}`);

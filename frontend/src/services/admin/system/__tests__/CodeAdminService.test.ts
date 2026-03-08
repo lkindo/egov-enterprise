@@ -44,9 +44,9 @@ describe('CodeAdminService', () => {
       expect(client.get).toHaveBeenCalledWith('/admin/codes/cmmn', { params: { page: 1 } });
     });
 
-    it('updateCmmnCode should use codeId from data', async () => {
+    it('updateGroup should use codeId from data', async () => {
       const data = { codeId: 'GRP01', codeIdNm: 'Group' };
-      await codeAdminService.updateCmmnCode(data as any);
+      await codeAdminService.updateGroup('GRP01', data as any);
       expect(client.put).toHaveBeenCalledWith('/admin/codes/cmmn/GRP01', data);
     });
   });
@@ -57,14 +57,13 @@ describe('CodeAdminService', () => {
       expect(client.get).toHaveBeenCalledWith('/admin/codes/detail', { params: { page: 1 } });
     });
 
-    it('getDetail should call with codeId and code', async () => {
-      await codeAdminService.getDetail('GRP01', 'DET01');
+    it('getDetailCode should call with codeId and code', async () => {
+      await codeAdminService.getDetailCode('GRP01', 'DET01');
       expect(client.get).toHaveBeenCalledWith('/admin/codes/detail/GRP01/DET01');
     });
 
-    it('deleteDetailCode should handle object argument', async () => {
-      const data = { codeId: 'GRP01', code: 'DET01' };
-      await codeAdminService.deleteDetailCode(data);
+    it('deleteDetailCode should handle arguments', async () => {
+      await codeAdminService.deleteDetailCode('GRP01', 'DET01');
       expect(client.delete).toHaveBeenCalledWith('/admin/codes/detail/GRP01/DET01');
     });
   });
