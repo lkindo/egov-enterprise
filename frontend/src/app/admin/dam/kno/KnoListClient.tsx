@@ -37,7 +37,7 @@ export function KnoListClient({
     const router = useRouter();
     const [searchKeyword, setSearchKeyword] = useState(initialKeyword);
     const knoList: KnoManagementVO[] = initialData.list || [];
-    const totalCount = initialData.pagination?.totalRecordCount || 0;
+    const totalCount = initialData.pagination?.totalCount || 0;
     const totalPages = Math.ceil(totalCount / 10);
 
     const handleSearch = () => {

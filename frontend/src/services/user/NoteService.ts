@@ -21,35 +21,40 @@ class NoteService extends ApiService {
      * 받은 쪽지함 조회
      */
     async getReceivedNotes(params: { page?: number; size?: number }) {
-        return this.get<any>('/received', { params });
+        const response = await this.get<any>('/received', { params });
+        return response?.result;
     }
 
     /**
      * 보낸 쪽지함 조회
      */
     async getSentNotes(params: { page?: number; size?: number }) {
-        return this.get<any>('/sent', { params });
+        const response = await this.get<any>('/sent', { params });
+        return response?.result;
     }
 
     /**
      * 쪽지 보내기
      */
     async sendNote(data: { rcverId: string; noteSj: string; noteCn: string }) {
-        return this.post<any>('', data);
+        const response = await this.post<any>('', data);
+        return response?.result;
     }
 
     /**
      * 쪽지 상세 조회 및 읽음 처리
      */
     async getNote(id: string) {
-        return this.get<any>(`/${id}`);
+        const response = await this.get<any>(`/${id}`);
+        return response?.result;
     }
 
     /**
      * 쪽지 삭제
      */
     async deleteNote(id: string) {
-        return this.delete<any>(`/${id}`);
+        const response = await this.delete<any>(`/${id}`);
+        return response?.result;
     }
 }
 

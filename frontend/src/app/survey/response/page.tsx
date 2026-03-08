@@ -40,7 +40,7 @@ export default function SurveyResponseListPage() {
 
     const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
         queryKey: ['survey-responses', pageIndex, searchKeyword],
-        queryFn: () => getQustnrRespondInfoList({ pageIndex, size: 10, respondNm: searchKeyword }),
+        queryFn: () => getQustnrRespondInfoList({ page: pageIndex, size: 10, keyword: searchKeyword }),
         retry: false,
     }) as any;
 
@@ -110,7 +110,7 @@ export default function SurveyResponseListPage() {
                         </div>
                     </div>
                     <CardDescription>
-                        총 {data?.paginationInfo?.totalRecordCount || 0}건의 응답이 조회되었습니다.
+                        총 {data?.totalElements || 0}건의 응답이 조회되었습니다.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -140,14 +140,14 @@ export default function SurveyResponseListPage() {
                                             연결 오류: {error instanceof Error ? error.message : '데이터를 가져올 수 없습니다.'}
                                         </TableCell>
                                     </TableRow>
-                                ) : data?.resultList?.length === 0 ? (
+                                ) : data?.content?.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={4} className="h-48 text-center text-muted-foreground">
                                             검색 결과가 없습니다.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    data?.resultList?.map((item: QustnrRespondInfo) => (
+                                    data?.content?.map((item: any) => (
                                         <TableRow key={item.qestnrQesitmId} className="transition-colors hover:bg-muted/30">
                                             <TableCell className="font-medium">{item.respondNm}</TableCell>
                                             <TableCell className="text-muted-foreground">
@@ -183,7 +183,7 @@ export default function SurveyResponseListPage() {
                     {/* Pagination */}
                     <div className="mt-4 flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">
-                            전체 {data?.paginationInfo?.totalPageCount || 1}페이지 중 {pageIndex}페이지
+                            현재 {pageIndex}페이지
                         </p>
                         <div className="flex items-center space-x-2">
                             <Button
@@ -197,7 +197,7 @@ export default function SurveyResponseListPage() {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                disabled={pageIndex >= (data?.paginationInfo?.totalPageCount || 1) || isFetching}
+                                disabled={data?.content?.length < 10 || isFetching}
                                 onClick={() => setPageIndex(p => p + 1)}
                             >
                                 다음 <ChevronRight className="h-4 w-4 ml-1" />

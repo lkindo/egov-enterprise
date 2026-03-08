@@ -7,12 +7,9 @@ test.describe('Admin User Management', () => {
             window.localStorage.setItem('egov_smart_tour_v1', 'true');
         });
 
-        // Login as Admin
-        await page.goto('/login');
-        await page.fill('#id', 'webmaster');
-        await page.fill('#password', '1');
-        await page.click('button[type="submit"]');
-        await page.waitForURL('/');
+        // Ensure we explicitly load the homepage to allow React Context (useAuth) to hydrate from cookies
+        await page.goto('/', { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1000);
     });
 
     test('should display user list in admin panel', async ({ page }) => {

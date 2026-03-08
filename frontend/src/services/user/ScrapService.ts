@@ -17,14 +17,16 @@ class ScrapService extends ApiService {
      * 나의 스크랩 목록 조회
      */
     async getMyScraps(params: { page?: number; size?: number }) {
-        return this.get<any>('', { params });
+        const response = await this.get<any>('', { params });
+        return response?.result;
     }
 
     /**
      * 스크랩 삭제
      */
     async deleteScrap(id: string) {
-        return this.delete<any>(`/${id}`);
+        const response = await this.delete<any>(`/${id}`);
+        return response?.result;
     }
 }
 

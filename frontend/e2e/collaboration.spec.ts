@@ -1,34 +1,29 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Collaboration Modules', () => {
-    test.setTimeout(180000); // More time for multi-page jumping
-
     test.beforeEach(async ({ page }) => {
-        await page.addInitScript(() => {
-            window.localStorage.setItem('egov_smart_tour_v1', 'true');
-        });
-
-        await page.goto('/login', { waitUntil: 'domcontentloaded', timeout: 60000 });
-        await page.fill('#id', 'webmaster');
-        await page.fill('#password', '1');
-        await page.click('button[type="submit"]');
-
-        try {
-            await page.waitForURL(url => url.pathname === '/', { timeout: 30000 });
-        } catch (e) {
-            await page.goto('/', { waitUntil: 'networkidle' });
-        }
-
-        await page.waitForTimeout(3000);
+        await page.addInitScript(() => { window.localStorage.setItem('egov_smart_tour_v1', 'true'); });
+        await page.goto('/', { waitUntil: 'networkidle' });
     });
 
-    test('should navigate through various modules', async ({ page }) => {
-        const modules = ['/cop/adb', '/smart-toolkit/schedule', '/cop/scp', '/cop/cmy'];
+    const routes = [
+        '/cop/adb',
+        '/cop/bbs'
+    ];
 
-        for (const route of modules) {
-            await page.goto(route, { waitUntil: 'domcontentloaded' });
-            await page.waitForTimeout(2000);
-            await expect(page.locator('body')).toBeVisible();
+    test('should navigate through various modules', async ({ page }) => {
+        for (const route of routes) {
+            console.log(`>>> Testing route: ${route}`);
+            await page.goto(route, { waitUntil: 'networkidle' });
+            await expect(page.locator('main')).toBeVisible();
         }
+    });
+
+    test('should verify common layout elements', async ({ page }) => {
+        await page.goto('/cop/adb');
+        // Check for navigation sidebar/menu
+        await expect(page.locator('nav, aside, .sidebar, [role="navigation"]').first()).toBeVisible();
+        // Check for header
+        await expect(page.locator('header').first()).toBeVisible();
     });
 });

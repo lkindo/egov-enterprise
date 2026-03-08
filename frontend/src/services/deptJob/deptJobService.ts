@@ -2,24 +2,21 @@ import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { DeptJobVO, DeptJobSearchParams } from '@/types/deptJob';
 
-const BASE_URL = '/smart-toolkit/dept-job';
+const BASE_URL = '/api/v1/deptjob';
 
-export const getDeptJobList = async (params: DeptJobSearchParams): Promise<PaginationResponse<DeptJobVO>> =>
-    client.get<PaginationResponse<DeptJobVO>>(`${BASE_URL}/selectDeptJobList.do`, { params });
-
-export const getDeptJobDetail = async (deptJobId: string): Promise<DeptJobVO> =>
-    client.get<DeptJobVO>(`${BASE_URL}/selectDeptJob.do?deptJobId=${deptJobId}`);
-
-export const createDeptJob = async (job: DeptJobVO): Promise<void> =>
-    client.post(`${BASE_URL}/insertDeptJob.do`, job);
-
-export const updateDeptJob = async (job: DeptJobVO): Promise<void> =>
-    client.post(`${BASE_URL}/updateDeptJob.do`, job);
-
-export const deleteDeptJob = async (deptJobId: string): Promise<void> =>
-    client.post(`${BASE_URL}/deleteDeptJob.do?deptJobId=${deptJobId}`);
-
-export const getDeptJobBxList = async (): Promise<unknown[]> => {
-    const result = await client.get<unknown>(`${BASE_URL}/selectDeptJobBxList.do`);
-    return (result as any)?.resultList || [];
+export const getDeptJobBxList = async (params: any = {}): Promise<any[]> => {
+    const result = await client.get<any>(`${BASE_URL}/boxes`, { params });
+    return result.resultList || [];
 };
+
+export const getDeptJobBoxDetail = async (id: string): Promise<any> =>
+    client.get(`${BASE_URL}/boxes/${id}`);
+
+export const createDeptJobBox = async (data: any): Promise<void> =>
+    client.post(`${BASE_URL}/boxes`, data);
+
+export const updateDeptJobBox = async (id: string, data: any): Promise<void> =>
+    client.put(`${BASE_URL}/boxes/${id}`, data);
+
+export const deleteDeptJobBox = async (id: string): Promise<void> =>
+    client.delete(`${BASE_URL}/boxes/${id}`);

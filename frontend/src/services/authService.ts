@@ -2,7 +2,6 @@ import client from '@/lib/api/client';
 
 /**
  * 인증 및 권한 서비스
- * 백엔드: com.company.project.api.auth.AuthController
  */
 
 export interface LoginResponse {
@@ -14,7 +13,7 @@ export interface UserInfo {
     id: string;
     name: string;
     role?: string;
-    userSe?: string; // 사용자 구분 추가 (USR, EMP 등)
+    userSe?: string;
 }
 
 const BASE_URL = 'auth';
@@ -22,21 +21,25 @@ const BASE_URL = 'auth';
 export const authService = {
     /** 로그인 */
     login: async (loginData: Record<string, string>): Promise<LoginResponse> => {
-        return client.post<LoginResponse>(`${BASE_URL}/login`, loginData);
+        const response = await client.post<any>(`${BASE_URL}/login`, loginData);
+        return response?.result || response;
     },
 
     /** 로그아웃 */
     logout: async (): Promise<void> => {
-        return client.post<void>(`${BASE_URL}/logout`);
+        const response = await client.post<any>(`${BASE_URL}/logout`);
+        return response?.result;
     },
 
-    /** 토큰 재발급 (인터셉터에서 사용) */
+    /** 토큰 재발급 */
     reissue: async (): Promise<{ accessToken: string }> => {
-        return client.post<{ accessToken: string }>(`${BASE_URL}/reissue`);
+        const response = await client.post<any>(`${BASE_URL}/reissue`);
+        return response?.result;
     },
 
     /** 현재 사용자 정보 조회 */
     getCurrentUser: async (): Promise<UserInfo> => {
-        return client.get<UserInfo>(`${BASE_URL}/me`);
+        const response = await client.get<any>(`${BASE_URL}/me`);
+        return response?.result;
     },
 };

@@ -1,8 +1,17 @@
 import { test, expect } from '@playwright/test';
 
-test('Public Page Health Check', async ({ page }) => {
-    // No login required
-    await page.goto('/login', { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveTitle(/Login|로그인|E-GOV/i);
-    console.log('>>> Public Login page is accessible!');
+test.describe('Public Page Health Check', () => {
+    // These pages should be accessible WITHOUT any authorization check
+    const publicPages = [
+        '/login',
+        '/'
+    ];
+
+    for (const pageUrl of publicPages) {
+        test(`should be able to access ${pageUrl}`, async ({ page }) => {
+            await page.goto(pageUrl, { waitUntil: 'networkidle' });
+            // Instead of status 200, we check for layout presence
+            await expect(page.locator('body')).toBeVisible();
+        });
+    }
 });

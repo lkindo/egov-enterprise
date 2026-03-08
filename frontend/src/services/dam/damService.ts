@@ -1,59 +1,29 @@
 import client from '@/lib/api/client';
 import { KnoManagementVO, KnoSearchParams } from '@/types/dam';
 
-const damService = {
-    /**
-     * 지식정보 목록 조회
-     */
-    getKnoList: async (params: KnoSearchParams, config?: any) => {
-        const response: any = await client.get('/dam/mgm/kno', { ...config, params });
-        return {
-            list: response.list || [],
-            pagination: response.pagination || {}
-        };
-    },
+const BASE_URL = '/api/v1/admin/digital-assets';
 
-    /**
-     * 지식정보 상세 조회
-     */
-    getKnoDetail: async (knoId: string, config?: any) => {
-        const response: any = await client.get(`/dam/mgm/kno/${knoId}`, config);
-        return response.board || response.data || response;
-    },
-
-    // 지식정보 등록
-    createKno: async (data: KnoManagementVO) => {
-        const formData = new FormData();
-        Object.entries(data).forEach(([key, value]) => {
-            if (value !== undefined && value !== null) {
-                formData.append(key, value as string);
-            }
-        });
-        const response = await client.post('/dam/mgm/EgovComDamManagementRegist.do', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        return response;
-    },
-
-    // 지식정보 수정
-    updateKno: async (data: KnoManagementVO) => {
-        const formData = new FormData();
-        Object.entries(data).forEach(([key, value]) => {
-            if (value !== undefined && value !== null) {
-                formData.append(key, value as string);
-            }
-        });
-        const response = await client.post('/dam/mgm/EgovComDamManagementModify.do', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        return response;
-    },
-
-    // 지식정보 삭제
-    deleteKno: async (knoId: string) => {
-        const response = await client.post(`/dam/mgm/EgovComDamManagementDelete.do?knoId=${knoId}`);
-        return response;
-    }
+export const getKnoList = async (params: any = {}) => {
+    const response = await client.get<any>(BASE_URL, { params });
+    return {
+        list: response.result?.content || [],
+        pagination: {
+            totalCount: response.result?.totalElements || 0,
+            totalPages: response.result?.totalPages || 0
+        }
+    };
 };
 
-export default damService;
+export const getKnoDetail = async (knoId: string) => {
+    const response = await client.get<any>(`${BASE_URL}/${knoId}`);
+    return response.result;
+};
+
+export const createKno = async (data: any) =>
+    client.post(BASE_URL, data);
+
+export const updateKno = async (knoId: string, data: any) =>
+    client.put(`${BASE_URL}/${knoId}`, data);
+
+export const deleteKno = async (knoId: string) =>
+    client.delete(`${BASE_URL}/${knoId}`);

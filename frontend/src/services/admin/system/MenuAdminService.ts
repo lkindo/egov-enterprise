@@ -1,50 +1,55 @@
-import client from '@/lib/api/client';
-import { MenuManage, SearchParams, PaginationResponse } from '@/types/system';
+import { AdminService } from '@/services/core/ApiService';
+import { MenuManage, SearchParams } from '@/types/system';
 
 /**
  * 메뉴 관리 서비스 (Admin)
- * 백엔드: com.company.project.api.controller.system.MenuAdminController
  */
-const BASE_URL = '/admin/system/menus';
+class MenuAdminService extends AdminService {
+    constructor() {
+        super('/menus');
+    }
 
-export const menuAdminService = {
     /** 메뉴 목록 조회 (페이징) */
-    getMenuList: async (params?: SearchParams, config?: any) => {
-        return client.get<PaginationResponse<MenuManage>>(BASE_URL, { ...config, params });
-    },
+    async getMenuList(params?: SearchParams, config?: any) {
+        const response = await this.get<any>('', { ...config, params });
+        return response?.result;
+    }
 
     /** 메뉴 전체 트리 조회용 목록 */
-    getAllMenus: async (config?: any) => {
-        return client.get<MenuManage[]>(`${BASE_URL}/all`, config);
-    },
+    async getAllMenus(config?: any) {
+        const response = await this.get<any>('/all', config);
+        return response?.result;
+    }
 
     /** 메뉴 상세 조회 */
-    getMenu: async (menuNo: number | string, config?: any) => {
-        return client.get<MenuManage>(`${BASE_URL}/${menuNo}`, config);
-    },
+    async getMenu(menuNo: number | string, config?: any) {
+        const response = await this.get<any>(`/${menuNo}`, config);
+        return response?.result;
+    }
 
     /** 메뉴 등록 */
-    createMenu: async (data: Partial<MenuManage>, config?: any) => {
-        return client.post<void>(BASE_URL, data, config);
-    },
+    async createMenu(data: Partial<MenuManage>, config?: any) {
+        const response = await this.post<any>('', data, config);
+        return response?.result;
+    }
 
     /** 메뉴 정보 수정 */
-    updateMenu: async (menuNo: number | string, data: Partial<MenuManage>, config?: any) => {
-        return client.put<void>(`${BASE_URL}/${menuNo}`, data, config);
-    },
+    async updateMenu(menuNo: number | string, data: Partial<MenuManage>, config?: any) {
+        const response = await this.put<any>(`/${menuNo}`, data, config);
+        return response?.result;
+    }
 
     /** 메뉴 삭제 */
-    deleteMenu: async (menuNo: number | string, config?: any) => {
-        return client.delete<void>(`${BASE_URL}/${menuNo}`, config);
-    },
+    async deleteMenu(menuNo: number | string, config?: any) {
+        const response = await this.delete<any>(`/${menuNo}`, config);
+        return response?.result;
+    }
 
     /** 메뉴 순서 일괄 변경 */
-    updateMenuOrder: async (menuList: Partial<MenuManage>[], config?: any) => {
-        return client.put<void>(`${BASE_URL}/batch-order`, menuList, config);
-    },
+    async updateMenuOrder(menuList: Partial<MenuManage>[], config?: any) {
+        const response = await this.put<any>('/batch-order', menuList, config);
+        return response?.result;
+    }
+}
 
-    /** 메뉴 순서 일괄 변경 (Alias) */
-    updateOrders: async (menuList: Partial<MenuManage>[], config?: any) => {
-        return client.put<void>(`${BASE_URL}/batch-order`, menuList, config);
-    },
-};
+export const menuAdminService = new MenuAdminService();

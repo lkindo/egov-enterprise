@@ -11,7 +11,8 @@ class MenuService extends ApiService {
      */
     async getHeadMenus(config?: any): Promise<MenuInfo[]> {
         const response: any = await this.get('/head', config);
-        return response.list || [];
+        // 백엔드 데이터 구조: { result: { list: [...] } } 또는 { result: [...] }
+        return response?.result?.list || response?.result || [];
     }
 
     /**
@@ -19,7 +20,7 @@ class MenuService extends ApiService {
      */
     async getLeftMenus(menuNo: number, config?: any): Promise<MenuInfo[]> {
         const response: any = await this.get(`/left?menuNo=${menuNo}`, config);
-        return response.list || [];
+        return response?.result?.list || response?.result || [];
     }
 }
 

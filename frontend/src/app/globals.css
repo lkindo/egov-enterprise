@@ -127,11 +127,27 @@
 }
 
 @layer utilities {
+  .precision-border {
+    border: 0.5px solid hsl(var(--border) / 0.7);
+  }
+  .precision-border-b {
+    border-bottom: 0.5px solid hsl(var(--border) / 0.7);
+  }
+  .precision-border-r {
+    border-right: 0.5px solid hsl(var(--border) / 0.7);
+  }
+  .precision-card {
+    @apply bg-card border-[0.5px] border-border/70 rounded-none shadow-none;
+  }
+  .text-precision {
+    @apply tracking-tighter leading-relaxed;
+    font-feature-settings: "cv02", "cv05", "cv11";
+  }
   .glass {
-    @apply bg-white dark:bg-slate-900 border border-white/20 dark:border-slate-800/20 shadow-xl;
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800/20 shadow-xl;
   }
   .glass-dark {
-    @apply bg-slate-950 border border-white/5 shadow-2xl;
+    @apply bg-slate-950/80 backdrop-blur-md border border-white/5 shadow-2xl;
   }
 }
 

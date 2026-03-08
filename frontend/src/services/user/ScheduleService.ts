@@ -10,7 +10,8 @@ class ScheduleService extends ApiService {
      * 전체 일정 목록 조회 (페이지)
      */
     async getScheduleList(params: { pageIndex?: number; pageUnit?: number }) {
-        return this.get<ScheduleResponse>('', { params });
+        const response = await this.get<any>('', { params });
+        return response?.result;
     }
 
     /**
@@ -18,7 +19,8 @@ class ScheduleService extends ApiService {
      * @param yearMonth yyyyMM
      */
     async getMonthlySchedule(yearMonth: string) {
-        return this.get<MonthlyScheduleResponse>('/monthly', { params: { yearMonth } });
+        const response = await this.get<any>('/monthly', { params: { yearMonth } });
+        return response?.result;
     }
 
     /**
@@ -27,35 +29,40 @@ class ScheduleService extends ApiService {
      * @param endDate yyyyMMdd
      */
     async getScheduleByRange(startDate: string, endDate: string) {
-        return this.get<{ schedules: Schedule[] }>('/range', { params: { startDate, endDate } });
+        const response = await this.get<any>('/range', { params: { startDate, endDate } });
+        return response?.result;
     }
 
     /**
      * 일정 상세 조회
      */
     async getSchedule(id: string) {
-        return this.get<{ schedule: Schedule }>(`/${id}`);
+        const response = await this.get<any>(`/${id}`);
+        return response?.result;
     }
 
     /**
      * 일정 등록
      */
     async createSchedule(data: Partial<Schedule>) {
-        return this.post<any>('', data);
+        const response = await this.post<any>('', data);
+        return response?.result;
     }
 
     /**
      * 일정 수정
      */
     async updateSchedule(id: string, data: Partial<Schedule>) {
-        return this.put<any>(`/${id}`, data);
+        const response = await this.put<any>(`/${id}`, data);
+        return response?.result;
     }
 
     /**
      * 일정 삭제
      */
     async deleteSchedule(id: string) {
-        return this.delete<any>(`/${id}`);
+        const response = await this.delete<any>(`/${id}`);
+        return response?.result;
     }
 }
 

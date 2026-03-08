@@ -8,6 +8,8 @@ setup('authenticate-final', async ({ request }) => {
     const url = 'http://127.0.0.1:8080/api/v1/auth/login';
     const response = await request.post(url, {
         data: { id: 'webmaster', password: '1' }
+    }).catch((err: Error) => {
+        throw new Error(`Connection failed: ${err.message}`);
     });
 
     if (!response.ok()) throw new Error(`Login failed ${response.status()}`);
@@ -23,11 +25,19 @@ setup('authenticate-final', async ({ request }) => {
         cookies: [
             { name: 'accessToken', value: token, domain: '127.0.0.1', path: '/', expires: -1 },
             { name: 'accessToken', value: token, domain: 'localhost', path: '/', expires: -1 },
-            { name: 'userRole', value: role, domain: '127.0.0.1', path: '/', expires: -1 }
+            { name: 'userRole', value: role, domain: '127.0.0.1', path: '/', expires: -1 },
+            { name: 'userRole', value: role, domain: 'localhost', path: '/', expires: -1 }
         ],
         origins: [
             {
                 origin: 'http://127.0.0.1:3001',
+                localStorage: [
+                    { name: 'accessToken', value: token },
+                    { name: 'egov_smart_tour_v1', value: 'true' }
+                ]
+            },
+            {
+                origin: 'http://localhost:3002',
                 localStorage: [
                     { name: 'accessToken', value: token },
                     { name: 'egov_smart_tour_v1', value: 'true' }

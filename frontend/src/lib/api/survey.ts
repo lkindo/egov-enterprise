@@ -1,9 +1,9 @@
 import client from './client';
-import { QustnrRespondInfo, QustnrRespondInfoVO } from '@/types/survey';
+import { Survey, QustnrRespondInfo, QustnrRespondInfoVO } from '@/types/survey';
 
-export const getQustnrRespondInfoList = async (params: Partial<QustnrRespondInfoVO>) => {
-    return client.get<{ resultList: QustnrRespondInfo[]; paginationInfo: unknown }>(
-        '/uss/olp/qri/EgovQustnrRespondInfoList.do',
+export const getQustnrRespondInfoList = async (params: { keyword?: string; page?: number; size?: number } = {}) => {
+    return client.get<{ content: Survey[]; totalElements: number }>(
+        '/api/v1/surveys',
         { params, headers: { Accept: 'application/json' } }
     );
 };

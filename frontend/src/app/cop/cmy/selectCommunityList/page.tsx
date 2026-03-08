@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import axios from '@/lib/api/client';
+import { getCommunityList } from '@/services/community/communityService';
 import {
     Table,
     TableBody,
@@ -35,10 +35,11 @@ const CommunityListPage = () => {
         setLoading(true);
         try {
             const params = { pageIndex, pageUnit: 10 };
-            const response = (await axios.get('/community', { params })) as any;
-            setList(response.data.resultList || []);
-            setTotalCount(response.data.totalCount || 0);
-            setTotalPages(response.data.totalPages || 0);
+            const data = await getCommunityList(params);
+            setList(data.resultList || []);
+            setTotalCount(data.totalCount || 0);
+            // Calculate total pages if not provided by backend
+            setTotalPages(Math.ceil((data.totalCount || 0) / 10));
         } catch (error) {
             console.error('Failed to fetch communities', error);
         } finally {

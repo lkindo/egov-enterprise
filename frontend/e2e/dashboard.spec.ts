@@ -6,13 +6,7 @@ test.describe('Dashboard Features', () => {
         await page.addInitScript(() => {
             window.localStorage.setItem('egov_smart_tour_v1', 'true');
         });
-
-        // Login before each test
-        await page.goto('/login');
-        await page.fill('#id', 'webmaster');
-        await page.fill('#password', '1');
-        await page.click('button[type="submit"]');
-        await page.waitForURL('**/');
+        await page.goto('/', { waitUntil: 'networkidle' });
     });
 
     test('should display main dashboard widgets', async ({ page }) => {

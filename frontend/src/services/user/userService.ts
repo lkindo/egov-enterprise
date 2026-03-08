@@ -10,21 +10,24 @@ class UserService extends ApiService {
      * 내 정보 조회
      */
     async getMe() {
-        return this.get<any>('');
+        const response = await this.get<any>('');
+        return response?.result;
     }
 
     /**
      * 내 정보 수정
      */
     async updateMe(data: Partial<UserDto>) {
-        return this.put<any>('', data);
+        const response = await this.put<any>('', data);
+        return response?.result;
     }
 
     /**
      * 비밀번호 변경
      */
     async changePassword(oldPassword: string, newPassword: string) {
-        return this.put<any>('/password', { oldPassword, newPassword });
+        const response = await this.put<any>('/password', { oldPassword, newPassword });
+        return response?.result;
     }
 }
 

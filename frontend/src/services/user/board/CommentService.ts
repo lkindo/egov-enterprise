@@ -1,5 +1,4 @@
-import client from '@/lib/api/client';
-import { SearchParams, PaginationResponse } from '@/types/system';
+import { UserService } from '@/services/core/ApiService';
 
 /**
  * 게시판 댓글 서비스
@@ -17,26 +16,34 @@ export interface Comment {
     frstRegisterPnttm: string;
 }
 
-const BASE_URL = '/comments';
+class CommentService extends UserService {
+    constructor() {
+        super('/comments');
+    }
 
-export const commentService = {
     /** 댓글 목록 조회 */
-    getComments: async (params: { nttId: number; bbsId: string; page?: number; size?: number }) => {
-        return client.get<PaginationResponse<Comment>>(BASE_URL, { params });
-    },
+    async getComments(params: { nttId: number; bbsId: string; page?: number; size?: number }) {
+        const response = await this.get<any>('', { params });
+        return response?.result;
+    }
 
     /** 댓글 생성 */
-    createComment: async (data: Partial<Comment>) => {
-        return client.post<number>(BASE_URL, data);
-    },
+    async createComment(data: Partial<Comment>) {
+        const response = await this.post<any>('', data);
+        return response?.result;
+    }
 
     /** 댓글 수정 */
-    updateComment: async (id: number, data: Partial<Comment>) => {
-        return client.put<void>(`${BASE_URL}/${id}`, data);
-    },
+    async updateComment(id: number, data: Partial<Comment>) {
+        const response = await this.put<any>(`/${id}`, data);
+        return response?.result;
+    }
 
     /** 댓글 삭제 */
-    deleteComment: async (id: number) => {
-        return client.delete<void>(`${BASE_URL}/${id}`);
-    },
-};
+    async deleteComment(id: number) {
+        const response = await this.delete<any>(`/${id}`);
+        return response?.result;
+    }
+}
+
+export const commentService = new CommentService();

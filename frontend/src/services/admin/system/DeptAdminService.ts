@@ -32,21 +32,25 @@ class DeptAdminService extends AdminService {
      * 전체 부서(조직) 목록 조회
      */
     async getDepts(): Promise<Department[]> {
-        return this.get<Department[]>('');
+        const response = await this.get<any>('');
+        return response?.result;
     }
 
     /**
      * 특정 부서의 사용자별 권한 목록 조회
      */
     async getDeptAuthorities(deptId: string): Promise<DeptAuthorProjection[]> {
-        return this.client.get<DeptAuthorProjection[]>(`admin/security/dept-authorities/${deptId}`);
+        // security 관련 API는 별도 경로이므로 basePath 무시를 위해 원시 클라이언트 사용 가능하나, 일관성을 위해 리졸브
+        const response = await this.client.get<any>(`admin/security/dept-authorities/${deptId}`);
+        return response?.result;
     }
 
     /**
      * 부서 권한 일괄 설정
      */
     async updateDeptAuthorities(data: DeptAuthorBatchRequest): Promise<void> {
-        return this.client.post<void>(`admin/security/dept-authorities/batch`, data);
+        const response = await this.client.post<any>(`admin/security/dept-authorities/batch`, data);
+        return response?.result;
     }
 }
 

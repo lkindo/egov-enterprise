@@ -2,20 +2,36 @@ import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { DeptSchedule, ScheduleSearchParams } from '@/types/schedule';
 
-export const getDeptScheduleList = async (params: ScheduleSearchParams): Promise<PaginationResponse<DeptSchedule>> =>
-    client.get<PaginationResponse<DeptSchedule>>('/smart-toolkit/schedule/EgovDeptSchdulManageDailyList.do', { params });
+const BASE_URL = '/api/v1/schedule';
 
-export const getDeptScheduleMonthList = async (params: ScheduleSearchParams): Promise<PaginationResponse<DeptSchedule>> =>
-    client.get<PaginationResponse<DeptSchedule>>('/smart-toolkit/schedule/EgovDeptSchdulManageMonthList.do', { params });
+export const getDeptScheduleList = async (params: any = {}): Promise<any> => {
+    const response = await client.get<any>(BASE_URL, { params });
+    return {
+        resultList: response.resultList || [],
+        totalCount: response.totalCount || 0
+    };
+};
 
-export const getDeptSchedule = async (schdulId: string): Promise<DeptSchedule> =>
-    client.get<DeptSchedule>(`/smart-toolkit/schedule/EgovDeptSchdulManageDetail.do?schdulId=${schdulId}`);
+export const getDeptScheduleMonthList = async (params: { yearMonth: string }): Promise<any[]> => {
+    const response = await client.get<any>(`${BASE_URL}/monthly`, { params });
+    return response.schedules || [];
+};
 
-export const createDeptSchedule = async (schedule: DeptSchedule): Promise<void> =>
-    client.post('/smart-toolkit/schedule/EgovDeptSchdulManageRegistActor.do', schedule);
+export const getDeptScheduleByRange = async (startDate: string, endDate: string): Promise<any[]> => {
+    const response = await client.get<any>(`${BASE_URL}/range`, { params: { startDate, endDate } });
+    return response.schedules || [];
+};
 
-export const updateDeptSchedule = async (schedule: DeptSchedule): Promise<void> =>
-    client.post('/smart-toolkit/schedule/EgovDeptSchdulManageModifyActor.do', schedule);
+export const getDeptSchedule = async (id: string): Promise<any> => {
+    const response = await client.get<any>(`${BASE_URL}/${id}`);
+    return response.schedule;
+};
 
-export const deleteDeptSchedule = async (schdulId: string): Promise<void> =>
-    client.post(`/smart-toolkit/schedule/EgovDeptSchdulManageDelete.do?schdulId=${schdulId}`);
+export const createDeptSchedule = async (schedule: any): Promise<void> =>
+    client.post(BASE_URL, schedule);
+
+export const updateDeptSchedule = async (id: string, schedule: any): Promise<void> =>
+    client.put(`${BASE_URL}/${id}`, schedule);
+
+export const deleteDeptSchedule = async (id: string): Promise<void> =>
+    client.delete(`${BASE_URL}/${id}`);

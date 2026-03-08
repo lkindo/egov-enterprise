@@ -8,14 +8,15 @@ export interface AuthorInfo {
 
 class RoleAdminService extends AdminService {
     constructor() {
-        super('/authorities'); // Will map to /admin/system/authorities
+        super('/authorities'); // Maps to /admin/system/authorities
     }
 
     /**
      * 전체 권한 목록 조회
      */
     async getAuthors() {
-        return this.get<any>('');
+        const response = await this.get<any>('');
+        return response?.result;
     }
 }
 

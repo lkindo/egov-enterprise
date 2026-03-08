@@ -12,23 +12,24 @@ export interface Approval {
     returnReason?: string;
 }
 
-interface PageResult<T> { content: T[]; totalElements: number; totalPages: number; }
-
 class ApprovalUserService extends UserService {
     constructor() {
         super('/approvals');
     }
 
-    async getPending(params: { page?: number; size?: number }): Promise<PageResult<Approval>> {
-        return this.get<PageResult<Approval>>('/pending', { params });
+    async getPending(params: { page?: number; size?: number }) {
+        const response = await this.get<any>('/pending', { params });
+        return response?.result;
     }
 
-    async getMyHistory(params: { page?: number; size?: number }): Promise<PageResult<Approval>> {
-        return this.get<PageResult<Approval>>('/my', { params });
+    async getMyHistory(params: { page?: number; size?: number }) {
+        const response = await this.get<any>('/my', { params });
+        return response?.result;
     }
 
-    async confirm(id: string, status: 'Y' | 'N', reason?: string): Promise<void> {
-        return this.put<void>(`/${id}/confirm`, { status, reason });
+    async confirm(id: string, status: 'Y' | 'N', reason?: string) {
+        const response = await this.put<any>(`/${id}/confirm`, { status, reason });
+        return response?.result;
     }
 }
 
