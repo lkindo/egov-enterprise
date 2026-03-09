@@ -29,8 +29,10 @@ import { saveCodeDetail, deleteCodeDetail } from '@/app/actions/codeActions';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMessage } from '@/hooks/useMessage';
 
 export default function CommonCodeClient({ clCodes, groups, details, selectedGroupId }: { clCodes: any[]; groups: any[]; details: CommonCodeDetail[]; selectedGroupId: string | null }) {
+  const { t } = useMessage();
   const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -55,7 +57,7 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
   const handleOpenCreate = () => {
     if (!selectedGroupId) return;
     setMode('create');
-    setFormData({ codeId: selectedGroupId, code: '', codeNm: '', codeDc: '', useAt: 'Y' });
+    setFormData({ codeId: selectedGroupId, code: '', codeNm: '', codeDc: '', useAt: 'Y' });      
     setIsOpen(true);
   };
 
@@ -69,7 +71,7 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await saveCodeDetail(null, { ...formData, isNew: mode === 'create' } as any);
+      const res = await saveCodeDetail(null, { ...formData, isNew: mode === 'create' } as any);  
       if (res.success) {
         toast(res.message, 'success');
         setIsOpen(false);
@@ -85,8 +87,8 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
   const handleDelete = async (code: string) => {
     if (!selectedGroupId) return;
     const isConfirmed = await confirm({
-      title: '상세 코드 삭제',
-      message: `[${code}] 코드를 삭제하시겠습니까?`,
+      title: t('admin.system.updateDetail'),
+      message: `[${code}] ${t('common.deleteConfirm')}`,
       variant: 'destructive'
     });
 
@@ -108,13 +110,13 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
 
   const handleExport = () => {
     const exportColumns = [
-      { header: '코드', accessorKey: 'code' },
-      { header: '코드명', accessorKey: 'codeNm' },
-      { header: '설명', accessorKey: 'codeDc' },
-      { header: '사용여부', accessorKey: 'useAt' },
+      { header: t('admin.system.codeId'), accessorKey: 'code' },
+      { header: t('admin.system.codeNm'), accessorKey: 'codeNm' },
+      { header: t('common.desc'), accessorKey: 'codeDc' },
+      { header: t('admin.system.useAt'), accessorKey: 'useAt' },
     ];
     exportToCsv(details, exportColumns as any, `CommonCodes_${selectedGroupId}`);
-    toast('데이터를 내보냈습니다.', 'success');
+    toast(t('common.success'), 'success');
   };
 
   const selectedGroup = groups.find(g => g.codeId === selectedGroupId);
@@ -122,7 +124,7 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
 
   const columns: Column<CommonCodeDetail>[] = [
     {
-      header: '코드',
+      header: t('admin.system.codeId'),
       accessorKey: 'code',
       sortable: true,
       cell: (item) => (
@@ -130,7 +132,7 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
       )
     },
     {
-      header: '코드명',
+      header: t('admin.system.codeNm'),
       accessorKey: 'codeNm',
       sortable: true,
       cell: (item) => (
@@ -138,25 +140,25 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
       )
     },
     {
-      header: '설명',
+      header: t('common.desc'),
       accessorKey: 'codeDc',
       cell: (item) => (
         <span className="text-muted-foreground line-clamp-1 max-w-[250px]">{item.codeDc || '-'}</span>
       )
     },
     {
-      header: '상태',
+      header: t('common.status'),
       accessorKey: 'useAt',
       sortable: true,
       cell: (item) => (
         <div className="flex items-center gap-2">
           <div className={cn("h-2 w-2 rounded-full", item.useAt === 'Y' ? "bg-success" : "bg-destructive")} />
-          <span className="text-xs font-medium uppercase tracking-widest">{item.useAt === 'Y' ? '사용 중' : '미사용'}</span>
+          <span className="text-xs font-medium uppercase tracking-widest">{item.useAt === 'Y' ? t('common.active') : t('common.inactive')}</span>
         </div>
       )
     },
     {
-      header: '관리',
+      header: t('common.action'),
       accessorKey: 'actions',
       className: 'text-right',
       cell: (item) => (
@@ -173,24 +175,23 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
   ];
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">   
       <PageHeader
-        title="통합 기준정보 아키텍처"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '기준정보 및 공통코드' }]}
+        title={t('admin.system.codeTitle')}
+        breadcrumbs={[{ label: 'ADMIN' }, { label: t('admin.system.codeTitle') }]}        
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
-        {/* Left: Hierarchical Taxonomy Tree */}
         <div className="lg:col-span-1 space-y-8">
           <div className="px-3">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2 italic mb-6">
-              <Layers size={12} className="text-primary animate-pulse" /> 통합 분류 체계
+              <Layers size={12} className="text-primary animate-pulse" /> {t('admin.system.clHierarchy')}
             </h3>
 
             <div className="space-y-4">
               {clCodes.length === 0 && (
                 <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase italic">분류 코드가 없습니다.</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase italic">{t('admin.system.noClCode')}</p>
                 </div>
               )}
               {clCodes.map((cl) => {
@@ -212,7 +213,7 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
                       </div>
                       <div className="flex flex-col items-start overflow-hidden">
                         <span className="text-[11px] font-black uppercase tracking-tight truncate w-full">{cl.clCodeNm}</span>
-                        <span className="text-[8px] font-mono opacity-40">{cl.clCode}</span>
+                        <span className="text-[8px] font-mono opacity-40">{cl.clCode}</span>     
                       </div>
                     </button>
 
@@ -252,29 +253,23 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
           </div>
         </div>
 
-        {/* Right: Integrated Control Center */}
         <div className="lg:col-span-3 space-y-10">
           {!selectedGroupId ? (
             <div className="h-full min-h-[700px] rounded-[4rem] bg-slate-50/50 border-4 border-dashed border-slate-200/50 flex flex-col items-center justify-center text-slate-400 p-12 text-center transition-all group">
-              <div className="w-28 h-28 rounded-full bg-white border border-slate-100 flex items-center justify-center mb-10 shadow-2xl group-hover:scale-110 transition-transform duration-700">
+              <div className="w-28 h-28 rounded-full bg-white border border-slate-100 flex items-center justify-center mb-10 shadow-2xl group-hover:scale-110 transition-transform duration-700"> 
                 <ShieldCheck size={48} className="opacity-20 italic text-primary" />
               </div>
-              <p className="font-black text-2xl italic uppercase tracking-tighter text-slate-900 mb-4">통합 정보 제어 센터</p>
-              <p className="text-sm font-bold max-w-sm leading-relaxed opacity-60">좌측 트리에서 코드 그룹을 선택하십시오.<br />전사 표준 공통 코드 프로토콜이 즉시 바인딩됩니다.</p>
-              <div className="mt-12 flex gap-4 text-[9px] font-black uppercase tracking-[0.2em] opacity-30 italic">
-                <span className="animate-pulse">분류 노드 선택 대기 중</span>
-              </div>
+              <p className="font-black text-2xl italic uppercase tracking-tighter text-slate-900 mb-4">{t('admin.system.integratedControlCenter')}</p>
+              <p className="text-sm font-bold max-w-sm leading-relaxed opacity-60">{t('admin.system.selectGroupFromTree')}</p>
             </div>
           ) : (
-            <div className="space-y-10 animate-in fade-in slide-in-from-right-12 duration-1000">
-              {/* Header section with double identification */}
+            <div className="space-y-10 animate-in fade-in slide-in-from-right-12 duration-1000"> 
               <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between px-6 gap-10">
                 <div className="flex items-center gap-6">
                   <div className="relative group/id">
                     <div className="w-20 h-20 bg-slate-900 rounded-[2rem] flex items-center justify-center shadow-2xl group-hover/id:-rotate-12 transition-all duration-700">
                       <Tag size={32} className="text-white" />
                     </div>
-                    <div className="absolute -top-2 -right-2 bg-primary text-white text-[8px] font-black px-2 py-1 rounded-lg shadow-lg uppercase tracking-tighter italic">마스터</div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
@@ -285,30 +280,26 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
                     <h3 className="text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">
                       {selectedGroup?.codeIdNm}
                     </h3>
-                    <p className="text-sm font-bold text-slate-400 line-clamp-1 opacity-70 italic mt-1 px-1">
-                      {selectedGroup?.codeIdDc || 'No structural description provided.'}
-                    </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-[2rem] border border-slate-100 shadow-inner w-full xl:w-auto">
                     <div className="hidden sm:flex flex-col items-end px-6">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">글로벌 코드 ID</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{t('admin.system.globalCodeId')}</span>
                         <span className="text-lg font-mono font-black italic text-slate-900">{selectedGroupId}</span>
                     </div>
                     <Button
                         onClick={handleOpenCreate}
                         className="h-16 px-8 bg-slate-900 text-white rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center gap-3 flex-1 xl:flex-none"
                     >
-                        <Plus size={20} /> 코드 등록
+                        <Plus size={20} /> {t('common.create')}
                     </Button>
                 </div>
               </div>
 
-              {/* Matrix view */}
               <div className="bg-white rounded-[3rem] p-10 border shadow-2xl relative overflow-hidden group/matrix ring-1 ring-slate-100">
                 <DataTable
-                  title="시스템 코드 정의 매트릭스"
+                  title={t('admin.system.matrixTitle')}
                   columns={columns}
                   data={details}
                   loading={loading}
@@ -318,19 +309,16 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
                     router.refresh();
                     setTimeout(() => setLoading(false), 500);
                   }}
-                  searchPlaceholder="상세 코드 검색..."
+                  searchPlaceholder={t('admin.system.detailList')}
                 />
-                <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full blur-[100px] -mr-32 -mt-32 opacity-50" />
               </div>
 
-              {/* Meta stats / Info bar */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="p-8 rounded-[2.5rem] bg-slate-900 text-white shadow-xl relative overflow-hidden group border border-white/10">
                     <div className="flex flex-col gap-1 relative z-10">
-                        <span className="text-[9px] font-black text-primary uppercase tracking-[0.3em] italic">전체 정의 항목</span>
+                        <span className="text-[9px] font-black text-primary uppercase tracking-[0.3em] italic">{t('admin.system.totalDefinedItems')}</span>
                         <div className="flex items-end gap-3">
                             <h4 className="text-4xl font-black italic tracking-tighter tabular-nums">{details.length}</h4>
-                            <span className="text-[10px] font-bold opacity-40 mb-2 uppercase">활성 상태</span>
                         </div>
                     </div>
                     <Code2 size={80} className="absolute right-[-10px] bottom-[-10px] opacity-[0.05] -rotate-12 group-hover:rotate-0 transition-transform duration-700" />
@@ -338,21 +326,20 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
 
                 <div className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl relative overflow-hidden group transition-all hover:border-primary/20">
                     <div className="flex flex-col gap-1 relative z-10">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] italic">최근 동기화</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] italic">{t('admin.system.lastSync')}</span>
                         <div className="flex items-center gap-3">
                             <Clock size={20} className="text-primary opacity-40" />
-                            <h4 className="text-xl font-black italic tracking-tighter uppercase tabular-nums">실시간 동기화 완료</h4>
+                            <h4 className="text-xl font-black italic tracking-tighter uppercase tabular-nums">{t('admin.system.syncCompleted')}</h4>
                         </div>
                     </div>
-                    <div className="absolute right-6 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                 </div>
 
                 <div className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl relative overflow-hidden group transition-all hover:border-primary/20">
                     <div className="flex flex-col gap-1 relative z-10">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] italic">보안 프로토콜</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] italic">{t('admin.system.securityProtocol')}</span>
                         <div className="flex items-center gap-3">
-                            <ShieldCheck size={20} className="text-emerald-500 opacity-60" />
-                            <h4 className="text-sm font-black italic uppercase tracking-tighter">인증 완료</h4>
+                            <ShieldCheck size={20} className="text-emerald-500 opacity-60" />    
+                            <h4 className="text-sm font-black italic uppercase tracking-tighter">{t('admin.system.authCompleted')}</h4>
                         </div>
                     </div>
                 </div>
@@ -362,18 +349,17 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
         </div>
       </div>
 
-      {/* Modal remains same for Code Detail Edit */}
       <StandardModal
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
-        title={mode === 'create' ? '새 상세 코드 등록' : '상세 코드 정보 수정'}
+        title={mode === 'create' ? t('admin.system.newDetail') : t('admin.system.updateDetail')}
         maxWidth="lg"
       >
-        <StandardForm onSubmit={handleSave} className="bg-transparent border-0 shadow-none">
+        <StandardForm onSubmit={handleSave} className="bg-transparent border-0 shadow-none">     
           <div className="p-10 space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">상세 코드 ID</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">{t('admin.system.detailId')}</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -387,19 +373,19 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
                 </div>
               </div>
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">상세 코드 명칭</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">{t('admin.system.detailNm')}</label>
                 <input
                   type="text"
                   value={formData.codeNm}
                   onChange={(e) => setFormData({ ...formData, codeNm: e.target.value })}
-                  placeholder="공통코드명"
+                  placeholder={t('admin.system.codeNm')}
                   className="w-full h-16 rounded-2xl border-2 bg-slate-50 font-black text-xl px-6 outline-none focus:ring-8 focus:ring-primary/5 transition-all shadow-xl italic tracking-tighter"
                 />
               </div>
             </div>
 
             <div className="space-y-4 pt-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">운영 상태 설정</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">{t('admin.system.statusSetting')}</label>
               <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
@@ -410,7 +396,7 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
                   )}
                 >
                   <div className={cn("w-3 h-3 rounded-full shadow-inner", formData.useAt === 'Y' ? "bg-emerald-400 animate-pulse" : "bg-slate-200")} />
-                  <span className="text-xs font-black uppercase tracking-widest">사용 중</span>
+                  <span className="text-xs font-black uppercase tracking-widest">{t('common.active')}</span>  
                 </button>
                 <button
                   type="button"
@@ -421,25 +407,25 @@ export default function CommonCodeClient({ clCodes, groups, details, selectedGro
                   )}
                 >
                   <div className={cn("w-3 h-3 rounded-full shadow-inner", formData.useAt === 'N' ? "bg-rose-400 animate-pulse" : "bg-slate-200")} />
-                  <span className="text-xs font-black uppercase tracking-widest">미사용</span>
+                  <span className="text-xs font-black uppercase tracking-widest">{t('common.inactive')}</span>  
                 </button>
               </div>
             </div>
 
             <div className="space-y-4 pt-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">상세 설명</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic px-2">{t('common.desc')}</label>
               <textarea
                 value={formData.codeDc || ''}
                 onChange={(e) => setFormData({ ...formData, codeDc: e.target.value })}
-                placeholder="코드에 대한 설명을 입력하세요..."
+                placeholder={t('admin.system.enterCodeDesc')}
                 className="w-full min-h-[160px] p-8 rounded-[2.5rem] border-2 bg-slate-50 font-bold text-lg outline-none focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner leading-relaxed resize-none"
               />
             </div>
 
             <div className="flex gap-6 pt-10">
-              <button type="button" onClick={() => setIsOpen(false)} className="flex-1 h-16 border-2 border-slate-100 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] opacity-40 hover:opacity-100 transition-all">취소</button>
+              <button type="button" onClick={() => setIsOpen(false)} className="flex-1 h-16 border-2 border-slate-100 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] opacity-40 hover:opacity-100 transition-all">{t('common.cancel')}</button>
               <button type="submit" className="flex-[2] h-16 bg-slate-900 text-white rounded-2xl font-black shadow-2xl shadow-slate-900/30 italic uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 hover:-translate-y-1 transition-all">
-                <Save size={20} /> 설정 저장하기
+                <Save size={20} /> {t('admin.system.saveSettings')}
               </button>
             </div>
           </div>

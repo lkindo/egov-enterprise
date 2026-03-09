@@ -8,6 +8,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,10 +16,12 @@ import java.time.LocalDateTime;
 
 /**
  * 테스트용 데이터 초기화 설정
+ * - 운영(prod) 환경을 제외한 개발/테스트 환경에서만 동작
  */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
+@Profile("!prod")
 public class EgovTestDataConfig {
 
     private final UserRepository userRepository;

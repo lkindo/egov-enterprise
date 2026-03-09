@@ -46,16 +46,6 @@ public class SecurityConfig {
                 return new EgovPasswordEncoder();
         }
 
-        /*
-         * Commented out to avoid conflict with ApiSecurityConfig in api-server
-         *
-         * @Bean
-         * public DaoAuthenticationProvider authenticationProvider(...) { ... }
-         *
-         * @Bean
-         * public AuthenticationManager authenticationManager(...) { ... }
-         */
-
         @Bean
         @org.springframework.core.annotation.Order(2)
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -67,20 +57,27 @@ public class SecurityConfig {
                                                 .requestMatchers("/css/**", "/js/**", "/images/**", "/resource/**",
                                                                 "/static/**")
                                                 .permitAll()
-                                                .requestMatchers("/uat/uia/**", "/auth/**").permitAll()
-                                                .requestMatchers("/sym/mms/**").permitAll()
-                                                .requestMatchers("/connection").permitAll()
+                                                .requestMatchers("/uat/uia/**", "/auth/**", "/api/v1/auth/**").permitAll()
+                                                .requestMatchers("/sym/mms/**").permitAll()      
+                                                .requestMatchers("/connection").permitAll()      
                                                 .requestMatchers("/WEB-INF/**", "/upload/**").permitAll()
                                                 .requestMatchers("/api/v1/public/**").permitAll()
                                                 .anyRequest().authenticated())
-                                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
-                                                UsernamePasswordAuthenticationFilter.class);
+                                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),  
+                                                UsernamePasswordAuthenticationFilter.class);     
 
                 http.headers(headers -> headers
                                 .frameOptions(frameOptions -> frameOptions.sameOrigin())
                                 .contentTypeOptions(Customizer.withDefaults())
                                 .xssProtection(xss -> xss.headerValue(
                                                 org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                                .contentSecurityPolicy(csp -> csp
+                                                .policyDirectives("default-src 'self'; " +
+                                                                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                                                                "style-src 'self' 'unsafe-inline'; " +
+                                                                "img-src 'self' data: blob:; " +
+                                                                "connect-src 'self' http://localhost:8080 http://localhost:3000 http://localhost:3001; " +
+                                                                "frame-ancestors 'self';"))
                                 .httpStrictTransportSecurity(hsts -> hsts
                                                 .maxAgeInSeconds(31536000L)
                                                 .includeSubDomains(true)
