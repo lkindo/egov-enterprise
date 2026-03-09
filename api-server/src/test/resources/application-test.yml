@@ -7,6 +7,7 @@ spring:
     password:
   web:
     resources:
+      add-mappings: false
       static-locations:
         [
           "classpath:/static/",
@@ -14,6 +15,11 @@ spring:
           "classpath:/resources/",
           "classpath:/META-INF/resources/",
         ]
+  resources:
+    add-mappings: false
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
   jpa:
     hibernate:
       ddl-auto: create-drop

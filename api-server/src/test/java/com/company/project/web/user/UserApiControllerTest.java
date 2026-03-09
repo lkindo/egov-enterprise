@@ -46,7 +46,8 @@ class UserApiControllerTest {
             org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
             org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
             org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
-            org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration.class
+            org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration.class,
+            org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration.class
     })
     static class TestConfig {
     }

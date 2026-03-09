@@ -88,12 +88,13 @@ tasks.register("jacocoRootReport", JacocoReport) {
     description = "Generates an aggregate JaCoCo report from all subprojects"
 
     dependsOn subprojects.test
+    dependsOn subprojects.jacocoTestReport
 
     // Collect source files from all subprojects
-    sourceDirectories.setFrom(files(subprojects.sourceSets.main.allSource.srcDirs))
-    classDirectories.setFrom(files(subprojects.collect {
-        it.fileTree(dir: it.layout.buildDirectory.dir("classes/java/main"), exclude: ['**/dto/**', '**/*Exception*'])
-    }))
+    subprojects.each { subproject ->
+        additionalSourceDirs.from(subproject.sourceSets.main.allSource.srcDirs)
+        additionalClassDirs.from(subproject.sourceSets.main.output)
+    }
 
     // Aggregating execution data files (*.exec) from all subprojects
     executionData.setFrom(fileTree(dir: rootDir, include: "**/build/jacoco/*.exec"))
