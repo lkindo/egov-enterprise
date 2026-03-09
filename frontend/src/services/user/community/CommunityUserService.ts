@@ -1,4 +1,4 @@
-﻿import { UserService } from '@/services/core/ApiService';
+import { UserService } from '@/services/core/ApiService';
 import { CommunityVO, CommunitySearchParams } from '@/types/community';
 
 class CommunityUserService extends UserService {

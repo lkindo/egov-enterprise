@@ -1,4 +1,4 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { PaginationResponse, SearchParams, SysLog, LoginLog, UserLog, WebLog, PrivacyLog, TransferLog } from '@/types/system';
 
 class SystemLogAdminService extends AdminService {

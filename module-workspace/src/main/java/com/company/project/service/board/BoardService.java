@@ -14,6 +14,8 @@ import com.company.project.service.board.event.PostCreatedEvent;
 import com.company.project.service.file.EgovFileService;
 import com.company.project.service.user.EgovUserService;
 import com.company.project.service.user.dto.UserDto;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.context.ApplicationEventPublisher;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
@@ -39,22 +41,25 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
         private final EgovUserService userService;
         private final EgovFileService fileService;
         private final ApplicationEventPublisher eventPublisher;
+        private final MeterRegistry meterRegistry;
 
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
                         EgovUserService userService,
                         EgovFileService fileService,
-                        ApplicationEventPublisher eventPublisher) {
+                        ApplicationEventPublisher eventPublisher,
+                        MeterRegistry meterRegistry) {
                 this.boardRepository = boardRepository;
                 this.boardMasterRepository = boardMasterRepository;
                 this.userService = userService;
                 this.fileService = fileService;
                 this.eventPublisher = eventPublisher;
+                this.meterRegistry = meterRegistry;
         }
 
         @Override
         @Transactional(readOnly = true)
-        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable) {
+        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable) { 
                 return getBoardPosts(bbsId, "", "", pageable);
         }
 
@@ -63,7 +68,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
                         @NonNull Pageable pageable) {
                 boardMasterRepository.findById(Objects.requireNonNull(bbsId))
-                                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
                 BoardSearchCondition condition = new BoardSearchCondition();
                 condition.setBbsId(bbsId);
@@ -76,43 +81,48 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         @Override
         @Transactional
-        public Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {
-                BoardMaster master = boardMasterRepository.findById(Objects.requireNonNull(request.bbsId()))
-                                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-                // 서비스 간 호출이 필요한 경우 모듈 간 비동기 호출 (이벤트 권장)
-                UserDto author = null;
+        public Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {      
+                Timer.Sample sample = Timer.start(meterRegistry);
+                
                 try {
-                        author = userService.getUserById(Objects.requireNonNull(userId));
-                } catch (Exception e) {
-                        // ignore or handle
+                        BoardMaster master = boardMasterRepository.findById(Objects.requireNonNull(request.bbsId()))
+                                        .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
+
+                        UserDto author = null;
+                        try {
+                                author = userService.getUserById(Objects.requireNonNull(userId));        
+                        } catch (Exception e) {
+                                // ignore
+                        }
+
+                        Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
+
+                        Board board = Board.builder()
+                                        .bbsId(Objects.requireNonNull(master.getBbsId()))
+                                        .nttSj(request.nttSj())
+                                        .nttCn(request.nttCn())
+                                        .ntceBgnde(request.ntceBgnde())
+                                        .ntceEndde(request.ntceEndde())
+                                        .ntcrId(userId)
+                                        .ntcrNm(author != null ? author.getUserNm() : "익명")
+                                        .atchFileId(request.atchFileId())
+                                        .nttNo(1L)
+                                        .sortOrdr(sortOrdr)
+                                        .parnts(0L)
+                                        .replyAt("N")
+                                        .replyLc(0)
+                                        .build();
+
+                        Long nttId = Objects.requireNonNull(boardRepository.save(Objects.requireNonNull(board)))
+                                        .getNttId();
+
+                        // 이벤트 발행 (통계 동기화 등)
+                        eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), nttId, userId));
+
+                        return nttId;
+                } finally {
+                        sample.stop(meterRegistry.timer("egov.board.create.post", "bbsId", request.bbsId()));
                 }
-
-                Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
-
-                Board board = Board.builder()
-                                .bbsId(Objects.requireNonNull(master.getBbsId()))
-                                .nttSj(request.nttSj())
-                                .nttCn(request.nttCn())
-                                .ntceBgnde(request.ntceBgnde())
-                                .ntceEndde(request.ntceEndde())
-                                .ntcrId(userId)
-                                .ntcrNm(author != null ? author.getUserNm() : "익명")
-                                .atchFileId(request.atchFileId())
-                                .nttNo(1L)
-                                .sortOrdr(sortOrdr)
-                                .parnts(0L)
-                                .replyAt("N")
-                                .replyLc(0)
-                                .build();
-
-                Long nttId = Objects.requireNonNull(boardRepository.save(Objects.requireNonNull(board)))
-                                .getNttId();
-
-                // Point 22: 이벤트 발행 (통계 동기화 등의 목적)
-                eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), nttId, userId));
-
-                return nttId;
         }
 
         @Override
@@ -136,11 +146,11 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
         @Transactional
         public Long replyPost(@NonNull String userId, @NonNull Long parentId, @NonNull BoardSaveRequest request) {
                 BoardMaster master = boardMasterRepository.findById(Objects.requireNonNull(request.bbsId()))
-                                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
                 Board parent = boardRepository
                                 .findById(Objects.requireNonNull(parentId))
-                                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                                .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 UserDto author = null;
                 try {
@@ -170,7 +180,6 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                 Long nttId = Objects.requireNonNull(boardRepository.save(Objects.requireNonNull(board)))
                                 .getNttId();
 
-                // 이벤트 발행
                 eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), nttId, userId));
 
                 return nttId;
@@ -197,7 +206,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
         @Transactional
         public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long nttId) {
                 BoardDetailResult detail = boardRepository.findArticleDetail(nttId)
-                                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                                .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 boardRepository.findById(Objects.requireNonNull(nttId)).ifPresent(Board::increaseInqireCo);
 
@@ -209,10 +218,10 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
         public void updatePost(@NonNull String bbsId, @NonNull Long nttId, @NonNull BoardSaveRequest request) {
                 Board board = boardRepository
                                 .findById(Objects.requireNonNull(nttId))
-                                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                                .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 board.update(request.nttSj(), request.nttCn(), board.getNtcrId(), board.getNtcrNm(),
-                                board.getPassword(), request.ntceBgnde(), request.ntceEndde(),
+                                board.getPassword(), request.ntceBgnde(), request.ntceEndde(),   
                                 request.atchFileId());
         }
 
@@ -240,10 +249,10 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         @Override
         @Transactional
-        public void deletePost(@NonNull String bbsId, @NonNull Long nttId, String authorId) {
+        public void deletePost(@NonNull String bbsId, @NonNull Long nttId, String authorId) {    
                 Board board = boardRepository
                                 .findById(Objects.requireNonNull(nttId))
-                                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                                .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 board.delete();
         }

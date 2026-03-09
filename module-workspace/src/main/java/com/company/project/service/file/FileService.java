@@ -22,7 +22,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * ???붾맂 ??? ?????퉬??(?붿???명꽣??씠??湲곕?
+ * 파일 저장 서비스 구현체
+ * - 전자정부 표준프레임워크 5.0 호환성 인증 요건 충족을 위한 서비스 구현
  */
 @Service("egovFileService")
 @Transactional(readOnly = true)
@@ -41,7 +42,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     }
 
     /**
-     * ??? ??줈??(硫?고뙆??吏??
+     * 파일 업로드 (멀티파트)
      */
     @Override
     @Transactional
@@ -64,7 +65,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
                     .fileStreCours(targetPath)
                     .streFileNm(savedFilename)
                     .orignlFileNm(file.getOriginalFilename())
-                    .fileExtsn(StringUtils.getFilenameExtension(file.getOriginalFilename()))
+                    .fileExtsn(StringUtils.getFilenameExtension(file.getOriginalFilename()))     
                     .fileMg(file.getSize())
                     .build();
 
@@ -75,34 +76,39 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
     }
 
     /**
-     * 泥⑤???? 紐⑸?議고??     */
+     * 첨부파일 목록 조회
+     */
     @Override
     public List<FileDto> getFileList(String atchFileId) {
         if (atchFileId == null)
             return List.of();
-        FileMaster master = fileMasterRepository.findById(Objects.requireNonNull(atchFileId))
+        FileMaster master = fileMasterRepository.findById(Objects.requireNonNull(atchFileId))    
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        return fileDetailRepository.findByFileMaster(Objects.requireNonNull(master)).stream()
+        return fileDetailRepository.findByFileMaster(Objects.requireNonNull(master)).stream()    
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
     /**
-     * ??? ??슫濡쒕뱶瑜??꾪븳 Resource 議고??     */
+     * 파일 다운로드를 위한 리소스 조회
+     */
     @Override
-    public Resource getFileResource(String atchFileId, Integer fileSn) throws IOException {
+    public Resource getFileResource(String atchFileId, Integer fileSn) throws IOException {      
         FileDetail detail = fileDetailRepository
                 .findById(new FileDetailId(Objects.requireNonNull(atchFileId), Objects.requireNonNull(fileSn)))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        return storageService.loadAsResource(Objects.requireNonNull(detail.getStreFileNm()),
+        return storageService.loadAsResource(Objects.requireNonNull(detail.getStreFileNm()),     
                 Objects.requireNonNull(detail.getFileStreCours()));
     }
 
+    /**
+     * 파일 삭제 (전체)
+     */
     @Override
     @Transactional
     public void deleteFiles(String atchFileId) throws IOException {
-        FileMaster master = fileMasterRepository.findById(Objects.requireNonNull(atchFileId))
+        FileMaster master = fileMasterRepository.findById(Objects.requireNonNull(atchFileId))    
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         List<FileDetail> details = fileDetailRepository.findByFileMaster(Objects.requireNonNull(master));
@@ -114,6 +120,9 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
         fileMasterRepository.delete(Objects.requireNonNull(master));
     }
 
+    /**
+     * 파일 삭제 (단건)
+     */
     @Override
     @Transactional
     public void deleteFile(String atchFileId, Integer fileSn) throws IOException {
@@ -126,6 +135,9 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
         fileDetailRepository.delete(Objects.requireNonNull(detail));
     }
 
+    /**
+     * 파일 상세 조회 (단건)
+     */
     @Override
     public FileDto getFileDetail(String atchFileId, Integer fileSn) {
         FileDetail detail = fileDetailRepository
@@ -134,10 +146,13 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
         return convertToDto(detail);
     }
 
+    /**
+     * 파일 수정 (추가 업로드)
+     */
     @Override
     @Transactional
-    public void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException {
-        FileMaster master = fileMasterRepository.findById(Objects.requireNonNull(atchFileId))
+    public void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException {   
+        FileMaster master = fileMasterRepository.findById(Objects.requireNonNull(atchFileId))    
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         Integer maxSn = fileDetailRepository.findByFileMaster(Objects.requireNonNull(master)).stream()
@@ -159,7 +174,7 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
                     .fileStreCours(targetPath)
                     .streFileNm(savedFilename)
                     .orignlFileNm(file.getOriginalFilename())
-                    .fileExtsn(StringUtils.getFilenameExtension(file.getOriginalFilename()))
+                    .fileExtsn(StringUtils.getFilenameExtension(file.getOriginalFilename()))     
                     .fileMg(file.getSize())
                     .build();
 
@@ -167,6 +182,9 @@ public class FileService extends EgovAbstractServiceImpl implements EgovFileServ
         }
     }
 
+    /**
+     * 전체 파일 목록 조회 (관리자용)
+     */
     @Override
     public org.springframework.data.domain.Page<FileDto> getAllFileList(
             org.springframework.data.domain.Pageable pageable, String searchKeyword) {

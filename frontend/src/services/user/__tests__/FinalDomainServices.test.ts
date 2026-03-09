@@ -1,4 +1,4 @@
-﻿import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import client from '@/lib/api/client';
 import { noteService } from '../NoteService';
 import { scrapService } from '../ScrapService';

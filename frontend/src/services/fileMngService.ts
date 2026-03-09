@@ -1,4 +1,4 @@
-﻿import client from '@/lib/api/client';
+import client from '@/lib/api/client';
 
 /**
  * ???뵬 ?온????뺥돩?? * 獄쏄퉮肉?? com.company.project.api.controller.file.FileController

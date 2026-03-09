@@ -1,139 +1,136 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { surveyAdminService } from '@/services/admin/survey/SurveyAdminService';
-import { Survey, SurveyQuestion } from '@/types/survey';
-import { useToast } from '@/app/components/ui/toast';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { CheckCircle2, ListChecks, HelpCircle, Send } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { getSurveyStats } from '@/lib/api/survey';
+import { useState, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Loader2, ArrowLeft, BarChart3, PieChart, Activity } from 'lucide-react';
 
-export default function SurveyDetailPage() {
-  const { id } = useParams();
-  const router = useRouter();
-  const { toast } = useToast();
-  const confirm = useConfirm();
+function StatsContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const initialQestnrId = searchParams.get('qestnrId') || '';
+    const [qestnrId, setQestnrId] = useState(initialQestnrId);
 
-  const [survey, setSurvey] = useState<Survey | null>(null);
-  const [questions, setQuestions] = useState<SurveyQuestion[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
+    const { data, isLoading, isError, error, refetch } = useQuery({
+        queryKey: ['survey-stats', initialQestnrId],
+        queryFn: () => getSurveyStats({ qestnrId: initialQestnrId, type: '1' }),
+        enabled: !!initialQestnrId,
+        retry: false,
+    }) as any;
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const [sRes, qRes] = (await Promise.all([
-          surveyAdminService.getSurvey(id as string),
-          surveyAdminService.getQuestions(id as string)
-        ])) as any[];
-        if (sRes?.success) setSurvey(sRes.data);
-        if (qRes?.success) setQuestions(qRes.data);
-      } catch (error) {
-        toast('설문 정보를 불러오지 못했습니다.', 'error');
-        router.back();
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, [id, toast, router]);
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.push(`/survey/stats?qestnrId=${qestnrId}`);
+    };
 
-  const handleSubmit = async () => {
-    if (Object.keys(answers).length < questions.length) {
-      toast('모든 질문에 응답해 주세요.', 'error');
-      return;
-    }
-
-    const isConfirmed = await confirm({
-      title: '설문 응답 제출',
-      message: '응답하신 내용을 제출하시겠습니까? 제출 후에는 수정이 불가능합니다.'
-    });
-
-    if (isConfirmed) {
-      try {
-        await surveyAdminService.submitAnswers(id as string, answers);
-        toast('설문에 참여해 주셔서 감사합니다.', 'success');
-        router.push('/survey');
-      } catch (error) {
-        toast('제출 중 오류가 발생했습니다.', 'error');
-      }
-    }
-  };
-
-  if (loading) return <div className="p-12 text-center animate-pulse">로딩 중...</div>;
-  if (!survey) return null;
-
-  return (
-    <div className="max-w-3xl mx-auto space-y-8 pb-20">
-      <PageHeader
-        title={survey.qestnrSj}
-        breadcrumbs={[{ label: '설문조사', href: '/survey' }, { label: '참여' }]}
-      />
-
-      <div className="bg-card border rounded-2xl p-8 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 text-primary font-bold">
-          <ListChecks size={20} />
-          설문 안내
-        </div>
-        <p className="text-muted-foreground leading-relaxed">
-          {survey.qestnrWritngGuidanceCn}
-        </p>
-        <div className="pt-4 border-t flex justify-between text-xs font-medium text-muted-foreground">
-          <span>참여 대상: {survey.qestnrTrget}</span>
-          <span>기간: {survey.qestnrBgnde} ~ {survey.qestnrEndde}</span>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        {questions.map((q, idx) => (
-          <div key={q.qestnrQesitmId} className="bg-card border rounded-2xl p-8 shadow-sm">
-            <div className="flex items-start gap-4">
-              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-black shrink-0">
-                {idx + 1}
-              </span>
-              <div className="flex-1 space-y-6">
-                <h3 className="text-lg font-bold text-foreground">{q.qestnCn}</h3>
-
-                {q.qestnTyCode === '1' ? (
-                  <div className="grid gap-3">
-                    {/* Mock Options - In real case, fetch from answers API */}
-                    {['매우 만족', '만족', '보통', '불만족'].map((opt) => (
-                      <label key={opt} className="flex items-center gap-3 p-4 border rounded-xl hover:bg-accent/50 cursor-pointer transition-colors group">
-                        <input
-                          type="radio"
-                          name={q.qestnrQesitmId}
-                          value={opt}
-                          onChange={(e) => setAnswers({ ...answers, [q.qestnrQesitmId]: e.target.value })}
-                          className="w-4 h-4 text-primary"
-                        />
-                        <span className="text-sm font-medium group-hover:text-primary">{opt}</span>
-                      </label>
-                    ))}
-                  </div>
-                ) : (
-                  <textarea
-                    className="w-full min-h-[120px] p-4 border rounded-xl bg-background outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                    placeholder="의견을 입력해 주세요."
-                    onChange={(e) => setAnswers({ ...answers, [q.qestnrQesitmId]: e.target.value })}
-                  />
-                )}
-              </div>
+    return (
+        <div className="container mx-auto py-8 max-w-5xl space-y-6">
+            <div className="flex items-center space-x-4">
+                <Button variant="ghost" size="icon" onClick={() => router.push('/survey/response')}>
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">설문 결과 통계</h1>
+                    <p className="text-muted-foreground mt-1">
+                        설문 조사 결과를 시각화하여 분석합니다.
+                    </p>
+                </div>
             </div>
-          </div>
-        ))}
-      </div>
 
-      <div className="flex justify-center pt-8">
-        <button
-          onClick={handleSubmit}
-          className="flex items-center gap-2 px-12 py-4 bg-primary text-white rounded-2xl font-black text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all"
-        >
-          <Send size={20} />
-          설문 응답 제출하기
-        </button>
-      </div>
-    </div>
-  );
+            <Card className="shadow-sm border-primary/20">
+                <CardHeader className="bg-primary/5">
+                    <CardTitle className="text-lg">설문지 선택</CardTitle>
+                    <CardDescription>통계를 확인하려는 설문지 ID를 입력하세요.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                    <form onSubmit={handleSearch} className="flex gap-2">
+                        <Input
+                            placeholder="설문지 ID 입력 (예: QUSTR_00000000000001)"
+                            value={qestnrId}
+                            onChange={(e) => setQestnrId(e.target.value)}
+                            className="max-w-md"
+                        />
+                        <Button type="submit">조회</Button>
+                    </form>
+                </CardContent>
+            </Card>
+
+            {!initialQestnrId && (
+                <div className="text-center py-20 border-2 border-dashed rounded-xl">
+                    <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
+                    <p className="text-muted-foreground">설문지 ID를 입력하여 통계를 확인하세요.</p>
+                </div>
+            )}
+
+            {isLoading && (
+                <div className="flex justify-center py-20">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            )}
+
+            {isError && (
+                <Card className="border-destructive/20 bg-destructive/5 text-center py-10">
+                    <p className="text-destructive font-medium">오류 발생: {error instanceof Error ? error.message : '데이터를 가져오지 못했습니다.'}</p>
+                </Card>
+            )}
+
+            {data && (
+                <div className="grid grid-cols-1 gap-6">
+                    {data.length === 0 ? (
+                        <div className="text-center py-10">응답 데이터가 없습니다.</div>
+                    ) : (
+                        data.map((stat: any, idx: number) => (
+                            <Card key={idx} className="shadow-sm overflow-hidden">
+                                <CardHeader className="bg-muted/30 border-b">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-md flex items-center">
+                                            <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs mr-3">
+                                                {idx + 1}
+                                            </span>
+                                            {stat.qestnCn}
+                                        </CardTitle>
+                                        <div className="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded uppercase">
+                                            {stat.qestnTyCode === '1' ? '객관식' : '주관식'}
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="pt-6">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="font-medium">{stat.iemCn || '주관식 답변'}</span>
+                                            <span className="text-muted-foreground">{stat.respondCnt || 0} 명 ({stat.qustnrPercent || 0}%)</span>
+                                        </div>
+                                        <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                                            <div
+                                                className="bg-primary h-2.5 rounded-full transition-all duration-500"
+                                                style={{ width: `${stat.qustnrPercent || 0}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default function SurveyStatsPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <StatsContent />
+        </Suspense>
+    );
 }

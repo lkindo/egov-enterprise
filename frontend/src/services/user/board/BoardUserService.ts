@@ -1,4 +1,4 @@
-﻿import { UserService } from '@/services/core/ApiService';
+import { UserService } from '@/services/core/ApiService';
 import { BoardPost } from '@/types/board';
 
 class BoardUserService extends UserService {

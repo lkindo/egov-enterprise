@@ -107,8 +107,8 @@ const InsertDeptJobPage = () => {
                                         type="button"
                                         onClick={() => setFormData({ ...formData, priort: p.value })}
                                         className={`p-8 rounded-[2rem] border-2 text-center transition-all active:scale-95 ${formData.priort === p.value
-                                                ? 'bg-slate-900 text-white border-slate-900 shadow-2xl ring-8 ring-slate-100'
-                                                : 'bg-slate-50 text-slate-400 border-transparent hover:border-slate-200'
+                                            ? 'bg-slate-900 text-white border-slate-900 shadow-2xl ring-8 ring-slate-100'
+                                            : 'bg-slate-50 text-slate-400 border-transparent hover:border-slate-200'
                                             }`}
                                     >
                                         <div className={`text-xs font-black uppercase tracking-[0.2em] mb-1 ${formData.priort === p.value ? 'text-primary' : ''}`}>{p.label}</div>

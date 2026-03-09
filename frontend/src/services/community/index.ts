@@ -1,1 +1,1 @@
-﻿export * from './communityService';
+export * from './communityService';

@@ -15,4 +15,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     @Query("SELECT COALESCE(MAX(c.id), 0) FROM Comment c")
     Long findMaxId();
+
+    long countByBbsIdAndNttIdAndUseAt(String bbsId, Long nttId, String useAt);
 }

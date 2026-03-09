@@ -6,7 +6,10 @@ import com.company.project.domain.comment.Comment;
 import com.company.project.domain.comment.CommentRepository;
 import com.company.project.service.comment.dto.CommentDto;
 import com.company.project.service.comment.dto.CommentSaveRequest;
+import com.company.project.service.comment.event.CommentCreatedEvent;
+import com.company.project.service.comment.event.CommentDeletedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,6 +22,7 @@ import java.util.Objects;
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public Page<CommentDto> getComments(Long nttId, String bbsId, Pageable pageable) {
@@ -37,7 +41,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public Long createComment(String userId, String userNm, CommentSaveRequest request) {
+    public Long createComment(String userId, String userNm, CommentSaveRequest request) {        
         Comment comment = Comment.builder()
                 .nttId(request.getNttId())
                 .bbsId(request.getBbsId())
@@ -47,8 +51,13 @@ public class CommentServiceImpl implements CommentService {
                 .commentCn(request.getCommentCn())
                 .build();
 
-        return Objects.requireNonNull(commentRepository.save(Objects.requireNonNull(comment)))
+        Long commentId = Objects.requireNonNull(commentRepository.save(Objects.requireNonNull(comment)))   
                 .getId();
+        
+        // 이벤트 발행
+        eventPublisher.publishEvent(new CommentCreatedEvent(this, request.getBbsId(), request.getNttId()));
+        
+        return commentId;
     }
 
     @Override
@@ -67,6 +76,9 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         comment.delete();
+        
+        // 이벤트 발행
+        eventPublisher.publishEvent(new CommentDeletedEvent(this, comment.getBbsId(), comment.getNttId()));
     }
 
     private CommentDto convertToDto(Comment entity) {

@@ -1,4 +1,4 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { CmmnClCode, CmmnCode, CmmnDetailCode, SearchParams, PaginationResponse } from '@/types/system';
 import { AxiosRequestConfig } from 'axios';
 

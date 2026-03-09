@@ -1,153 +1,159 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, use } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { ArrowLeft, Trash2 } from "lucide-react";
-import { getPollDetail, getPollItemList, createPollItem, deletePollItem, deletePoll } from '@/services/poll/pollService';
-import { OnlinePollManageVO, OnlinePollItemVO } from '@/types/poll';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { createPoll, updatePoll } from '@/services/poll/pollService';
+import { OnlinePollManageVO } from '@/types/poll';
 
-export default function PollDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id: pollId } = use(params);
+export default function CreatePollPage() {
     const router = useRouter();
-    const [poll, setPoll] = useState<OnlinePollManageVO | null>(null);
-    const [items, setItems] = useState<OnlinePollItemVO[]>([]);
-    const [newItemName, setNewItemName] = useState('');
+    const [formData, setFormData] = useState<OnlinePollManageVO>({
+        pollNm: '',
+        pollBeginDe: '',
+        pollEndDe: '',
+        pollKindCode: '001', // Default 001
+        pollDsuseYn: 'N',
+    });
 
-    const fetchData = useCallback(async () => {
+    // Date state for Calendar component (Date object)
+    const [beginDate, setBeginDate] = useState<Date | undefined>();
+    const [endDate, setEndDate] = useState<Date | undefined>();
+
+    const handleSave = async () => {
+        if (!formData.pollNm || !beginDate || !endDate) {
+            alert('필수 항목을 입력해주세요.');
+            return;
+        }
+
+        const payload = {
+            ...formData,
+            pollBeginDe: format(beginDate, 'yyyy-MM-dd'),
+            pollEndDe: format(endDate, 'yyyy-MM-dd'),
+        };
+
         try {
-            const pollData = await getPollDetail(pollId);
-            setPoll(pollData);
-            const itemsData = await getPollItemList(pollId);
-            // Items might be wrapped or array
-            setItems(Array.isArray(itemsData) ? itemsData : []);
+            await createPoll(payload);
+            alert('설문이 등록되었습니다. 상세 페이지에서 설문 항목을 추가해주세요.');
+            router.push('/admin/survey/manage'); // Or redirect to detail page if we get ID back
         } catch (error) {
             console.error(error);
-        }
-    }, [pollId]);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-    const handleAddItem = async () => {
-        if (!newItemName) return;
-        try {
-            await createPollItem({
-                pollId,
-                pollIemNm: newItemName,
-                sortOrdr: items.length + 1,
-            });
-            setNewItemName('');
-            fetchData(); // Refresh items
-        } catch (error) {
-            alert('항목 추가 실패');
+            alert('설문 등록에 실패했습니다.');
         }
     };
-
-    const handleDeleteItem = async (itemId: string) => {
-        if (!confirm('설문 항목을 삭제하시겠습니까?')) return;
-        try {
-            await deletePollItem(pollId, itemId);
-            fetchData();
-        } catch (error) {
-            alert('삭제 실패');
-        }
-    };
-
-    const handleDeletePoll = async () => {
-        if (!confirm('설문 자체를 삭제하시겠습니까?')) return;
-        try {
-            await deletePoll(pollId);
-            router.push('/admin/survey/manage');
-        } catch (error) {
-            alert('삭제 실패');
-        }
-    };
-
-    if (!poll) return <div>Loading...</div>;
 
     return (
-        <div className="space-y-8">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <h2 className="text-2xl font-bold tracking-tight">설문 상세 및 관리</h2>
-            </div>
-
-            <div className="grid gap-6 border p-6 rounded-lg bg-white">
-                <div className="space-y-1">
-                    <Label className="text-muted-foreground">설문명</Label>
-                    <div className="text-lg font-medium">{poll.pollNm}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <Label className="text-muted-foreground">기간</Label>
-                        <div>{poll.pollBeginDe} ~ {poll.pollEndDe}</div>
-                    </div>
-                    <div>
-                        <Label className="text-muted-foreground">등록자</Label>
-                        <div>{poll.frstRegisterNm}</div>
-                    </div>
-                </div>
-                <div className="flex justify-end">
-                    <Button variant="destructive" onClick={handleDeletePoll}>설문 삭제</Button>
-                </div>
+        <div className="max-w-2xl mx-auto space-y-8">
+            <div>
+                <h2 className="text-2xl font-bold tracking-tight">설문 등록</h2>
+                <p className="text-muted-foreground">새로운 온라인 설문을 등록합니다.</p>
             </div>
 
             <div className="space-y-4">
-                <h3 className="text-lg font-semibold">설문 항목 관리</h3>
-                <div className="flex gap-2">
+                <div className="space-y-2">
+                    <Label htmlFor="pollNm">설문명</Label>
                     <Input
-                        placeholder="새로운 설문 항목 입력 (예: 매우 만족)"
-                        value={newItemName}
-                        onChange={(e) => setNewItemName(e.target.value)}
+                        id="pollNm"
+                        value={formData.pollNm}
+                        onChange={(e) => setFormData(prev => ({ ...prev, pollNm: e.target.value }))}
+                        placeholder="설문 주제를 입력하세요"
                     />
-                    <Button onClick={handleAddItem}>추가</Button>
                 </div>
 
-                <div className="rounded-md border bg-white">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[60px]">순서</TableHead>
-                                <TableHead>항목명</TableHead>
-                                <TableHead className="w-[100px]">관리</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {items.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="h-24 text-center">
-                                        등록된 항목이 없습니다. 항목을 추가해주세요.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                items.map((item, index) => (
-                                    <TableRow key={item.pollIemId || index}>
-                                        <TableCell>{index + 1}</TableCell>
-                                        <TableCell>{item.pollIemNm}</TableCell>
-                                        <TableCell>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.pollIemId!)}>
-                                                <Trash2 className="h-4 w-4 text-red-500" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>시작일</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !beginDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {beginDate ? format(beginDate, "yyyy-MM-dd") : <span>날짜 선택</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={beginDate}
+                                    onSelect={(date) => {
+                                        setBeginDate(date);
+                                        // Update form data immediately or on save
+                                    }}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>종료일</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !endDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {endDate ? format(endDate, "yyyy-MM-dd") : <span>날짜 선택</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={endDate}
+                                    onSelect={setEndDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <Label>설문 유형</Label>
+                    <Select
+                        value={formData.pollKindCode}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, pollKindCode: value }))}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="유형 선택" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="001">일반 설문</SelectItem>
+                            <SelectItem value="002">투표</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
+                    <Button variant="outline" onClick={() => router.back()}>취소</Button>
+                    <Button onClick={handleSave}>저장</Button>
                 </div>
             </div>
         </div>

@@ -1,109 +1,150 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
+import { StandardEditor } from '@/app/components/ui/standard-editor';
+import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
+import { FormField } from '@/app/components/ui/standard-form';
 import { boardUserService } from '@/services/user/board/BoardUserService';
-import { BoardPost } from '@/types/board';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { Calendar, User, Eye, ArrowLeft, Trash2, Edit3, Paperclip, Loader2 } from 'lucide-react';
+import { useAutoSave } from '@/lib/hooks/use-auto-save';
+import { Send, X, AlertCircle } from 'lucide-react';
 
-function BoardDetailContent() {
-  const { id } = useParams();
-  const searchParams = useSearchParams();
-  const bbsId = searchParams.get('bbsId') || '';
+export default function BoardWritePage() {
   const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
 
-  const [post, setPost] = useState<BoardPost | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    bbsId: 'BBSMSTR_AAAAAAAAAAAA',
+    nttSj: '',
+    nttCn: '',
+    noticeAt: 'N' as 'Y' | 'N',
+    secretAt: 'N' as 'Y' | 'N'
+  });
 
-  useEffect(() => {
-    async function loadPost() {
-      try {
-        const res = (await boardUserService.getPost(bbsId, parseInt(id as string))) as any;
-        if (res?.data) setPost(res.data);
-        else if (res) setPost(res);
-      } catch (error) {
-        toast('게시글을 찾을 수 없습니다.', 'error');
-        router.back();
-      } finally {
-        setLoading(false);
-      }
+  const [files, setFiles] = useState<File[]>([]);
+
+  // 자동 저장 훅 연동
+  const { clear } = useAutoSave('bbs_write', formData, (data) => setFormData(data));
+
+  const handleSave = async () => {
+    if (!formData.nttSj.trim()) {
+      toast('제목을 입력해 주세요.', 'error');
+      return;
     }
-    if (bbsId && id) loadPost();
-  }, [id, bbsId, toast, router]);
 
-  const handleDelete = async () => {
     const isConfirmed = await confirm({
-      title: '게시글 삭제',
-      message: '정말로 이 게시글을 삭제하시겠습니까? 삭제된 데이터는 복구할 수 없습니다.',
-      variant: 'destructive'
+      title: '게시글 등록',
+      message: '작성하신 내용을 등록하시겠습니까?',
+      confirmText: '등록'
     });
 
     if (isConfirmed) {
       try {
-        await boardUserService.deletePost(bbsId, parseInt(id as string));
-        toast('성공적으로 삭제되었습니다.', 'success');
-        router.push('/cop/bbs');
+        const res = (await boardUserService.createPost(formData)) as any;
+        if (res?.success) {
+          toast('성공적으로 등록되었습니다.', 'success');
+          clear(); // 자동 저장 데이터 삭제
+          router.push('/cop/bbs');
+        }
       } catch (error) {
-        toast('삭제 중 오류가 발생했습니다.', 'error');
+        toast('등록 중 오류가 발생했습니다.', 'error');
       }
     }
   };
 
-  if (loading) return <div className="p-12 text-center animate-pulse font-medium flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> 로딩 중...</div>;
-  if (!post) return null;
-
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-20">
+    <div className="max-w-5xl mx-auto space-y-8 pb-20">
       <PageHeader
-        title="게시글 상세"
-        breadcrumbs={[{ label: '게시판', href: '/cop/bbs' }, { label: post.nttSj }]}
+        title="새 게시글 작성"
+        breadcrumbs={[{ label: '게시판', href: '/cop/bbs' }, { label: '글쓰기' }]}
         actions={
           <div className="flex gap-2">
-            <button onClick={() => router.back()} className="p-2.5 border rounded-lg hover:bg-accent transition-all"><ArrowLeft size={20} /></button>
-            <button className="p-2.5 border rounded-lg hover:bg-accent transition-all"><Edit3 size={20} /></button>
-            <button onClick={handleDelete} className="p-2.5 border rounded-lg hover:bg-destructive/10 text-destructive transition-all"><Trash2 size={20} /></button>
+            <button onClick={() => router.back()} className="px-4 py-2 border rounded-lg font-bold hover:bg-accent transition-all flex items-center gap-2">
+              <X size={18} /> 취소
+            </button>
+            <button onClick={handleSave} className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all flex items-center gap-2">
+              <Send size={18} /> 등록
+            </button>
           </div>
         }
       />
 
-      <article className="bg-card border rounded-2xl shadow-sm overflow-hidden">
-        {/* Post Info Header */}
-        <div className="p-8 border-b bg-muted/5 space-y-4">
-          <h2 className="text-3xl font-black text-foreground leading-tight">{post.nttSj}</h2>
-          <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground font-medium">
-            <div className="flex items-center gap-2"><User size={16} className="text-primary" /> {post.frstRegisterNm}</div>
-            <div className="flex items-center gap-2"><Calendar size={16} /> {post.createdDate}</div>
-            <div className="flex items-center gap-2"><Eye size={16} /> {post.inqireCo} 회</div>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Form (Left) */}
+        <div className="lg:col-span-2 space-y-6">
+          <FormField label="게시글 제목" required>
+            <input
+              type="text"
+              value={formData.nttSj}
+              onChange={(e) => setFormData({ ...formData, nttSj: e.target.value })}
+              placeholder="제목을 입력해 주세요."
+              className="w-full h-12 px-4 rounded-xl border bg-card text-lg font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+            />
+          </FormField>
+
+          <FormField label="내용 작성" required>
+            <StandardEditor
+              value={formData.nttCn}
+              onChange={(val) => setFormData({ ...formData, nttCn: val })}
+              minHeight="450px"
+            />
+          </FormField>
         </div>
 
-        {/* Content Body */}
-        <div className="p-8 prose prose-slate dark:prose-invert max-w-none min-h-[400px]">
-          <div dangerouslySetInnerHTML={{ __html: post.nttCn.replace(/\n/g, '<br/>') }} />
-        </div>
+        {/* Sidebar Options (Right) */}
+        <div className="space-y-6">
+          <div className="p-6 border rounded-2xl bg-card shadow-sm space-y-6">
+            <h3 className="font-bold flex items-center gap-2 border-b pb-4 mb-4">
+              <AlertCircle size={18} className="text-primary" />
+              게시 옵션
+            </h3>
 
-        {/* Attachments Section */}
-        {post.atchFileId && (
-          <div className="p-6 bg-muted/10 border-t mx-8 mb-8 rounded-xl flex items-center gap-4">
-            <Paperclip size={20} className="text-muted-foreground" />
-            <span className="text-sm font-bold">첨부파일이 존재합니다.</span>
-            <button className="text-xs text-primary font-bold hover:underline">파일 목록 보기</button>
+            <FormField label="게시판 대상">
+              <select
+                value={formData.bbsId}
+                onChange={(e) => setFormData({ ...formData, bbsId: e.target.value })}
+                className="w-full h-10 px-3 rounded-md border bg-background text-sm outline-none"
+              >
+                <option value="BBSMSTR_AAAAAAAAAAAA">공지사항</option>
+                <option value="BBSMSTR_BBBBBBBBBBBB">자유게시판</option>
+                <option value="BBSMSTR_CCCCCCCCCCCC">업무게시판</option>
+              </select>
+            </FormField>
+
+            <div className="flex flex-col gap-3 pt-2">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={formData.noticeAt === 'Y'}
+                  onChange={(e) => setFormData({ ...formData, noticeAt: e.target.checked ? 'Y' : 'N' })}
+                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <span className="text-sm font-medium group-hover:text-primary transition-colors">중요 공지로 등록</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={formData.secretAt === 'Y'}
+                  onChange={(e) => setFormData({ ...formData, secretAt: e.target.checked ? 'Y' : 'N' })}
+                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <span className="text-sm font-medium group-hover:text-primary transition-colors">비밀글로 설정</span>
+              </label>
+            </div>
           </div>
-        )}
-      </article>
+
+          <div className="p-6 border rounded-2xl bg-card shadow-sm">
+            <h3 className="font-bold flex items-center gap-2 border-b pb-4 mb-4 text-sm text-muted-foreground">
+              첨부파일
+            </h3>
+            <StandardFileUploader onFilesChange={setFiles} maxFiles={3} />
+          </div>
+        </div>
+      </div>
     </div>
-  );
-}
-
-export default function BoardDetailPage() {
-  return (
-    <Suspense fallback={<div className="p-12 text-center animate-pulse font-medium flex items-center justify-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> 정보 로드 중...</div>}>
-      <BoardDetailContent />
-    </Suspense>
   );
 }

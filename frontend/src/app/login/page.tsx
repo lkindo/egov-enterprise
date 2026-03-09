@@ -9,8 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import { useMessage } from '@/hooks/useMessage';
 
 export default function LoginPage() {
+    const { t } = useMessage();
     const [id, setId] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +27,7 @@ export default function LoginPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!id || !password) {
-            setError('아이디와 비밀번호를 입력해주세요.');
+            setError(t('login.errorEmpty'));
             return;
         }
 
@@ -33,12 +35,10 @@ export default function LoginPage() {
         setIsSubmitting(true);
         try {
             await login({ id, password });
-            // Soft routing (router.push) often caches previous unauthenticated layouts/menus in Next.js.
-            // A hard refresh ensures all components and providers fetch fresh authenticated data.
             window.location.href = redirectUrl;
         } catch (err: any) {
             console.error(err);
-            setError(err.message || '로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.');
+            setError(err.message || t('login.errorFailed'));
         } finally {
             setIsSubmitting(false);
         }
@@ -46,25 +46,24 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 bg-[url('/images/login-bg.png')] bg-cover bg-center">
-            {/* Overlay for better readability if background image is used */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
             <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md">
                 <CardHeader className="space-y-1 text-center">
                     <CardTitle className="text-2xl font-bold tracking-tight text-primary">E-GOV ENTERPRISE</CardTitle>
                     <CardDescription>
-                        표준프레임워크 엔터프라이즈 시스템
+                        {t('login.title')}
                     </CardDescription>
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="id">아이디</Label>
+                            <Label htmlFor="id">{t('login.idLabel')}</Label>
                             <div className="relative">
                                 <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     id="id"
-                                    placeholder="아이디를 입력하세요"
+                                    placeholder={t('login.idPlaceholder')}
                                     value={id}
                                     onChange={(e) => setId(e.target.value)}
                                     className="pl-9"
@@ -73,13 +72,13 @@ export default function LoginPage() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="password">비밀번호</Label>
+                            <Label htmlFor="password">{t('login.pwLabel')}</Label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     id="password"
                                     type={showPassword ? 'text' : 'password'}
-                                    placeholder="비밀번호를 입력하세요"
+                                    placeholder={t('login.pwPlaceholder')}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="pl-9 pr-9"
@@ -91,7 +90,7 @@ export default function LoginPage() {
                                     size="icon"
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
-                                    aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                                    aria-label={showPassword ? t('login.hidePassword') : t('login.viewPassword')}
                                 >
                                     {showPassword ? (
                                         <EyeOff className="h-4 w-4" />
@@ -105,7 +104,7 @@ export default function LoginPage() {
                         <div className="flex items-center space-x-2">
                             <Checkbox id="remember" />
                             <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
-                                아이디 저장
+                                {t('login.rememberId')}
                             </Label>
                         </div>
 
@@ -120,9 +119,9 @@ export default function LoginPage() {
                     </CardContent>
                     <CardFooter>
                         <Button className="w-full h-11 text-base" type="submit" isLoading={isSubmitting}>
-                            {isSubmitting ? "로그인 중..." : (
+                            {isSubmitting ? t('login.submitting') : (
                                 <>
-                                    <LogIn className="mr-2 h-4 w-4" /> 로그인
+                                    <LogIn className="mr-2 h-4 w-4" /> {t('login.submit')}
                                 </>
                             )}
                         </Button>

@@ -1,2 +1,2 @@
-﻿export * from './deptScheduleService';
+export * from './deptScheduleService';
 export * from './reportService';

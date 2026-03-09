@@ -1,122 +1,98 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { getQustnrRespondInfoDetail } from '@/lib/api/survey';
-import { useParams, useRouter } from 'next/navigation';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Calendar, User, FileText, Hash } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { PageHeader } from '@/app/components/layout/page-header';
+import { StandardDataTable } from '@/app/components/ui/standard-data-table';
+import { StatusBadge } from '@/app/components/ui/status-badge';
+import { reportService, WorkReport } from '@/services/user/ReportService';
+import { useToast } from '@/app/components/ui/toast';
+import { FileText, Plus, Calendar, ArrowRight, UserCheck } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-export default function SurveyResponseDetailPage() {
-    const params = useParams();
-    const router = useRouter();
-    const id = params.id as string;
+export default function WorkReportListPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [reports, setReports] = useState<WorkReport[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    const { data, isLoading, isError, error } = useQuery({
-        queryKey: ['survey-response', id],
-        queryFn: () => getQustnrRespondInfoDetail(id),
-        retry: false,
-    });
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const res = (await reportService.getReports({ page: 0, size: 20 })) as any;
+        if (res?.success) setReports(res.data.content || []);
+      } catch (error) {
+        toast('보고서 목록을 불러오지 못했습니다.', 'error');
+      } finally {
+        setLoading(false);
+      }
     }
+    loadData();
+  }, [toast]);
 
-    if (isError) {
-        return (
-            <div className="container mx-auto py-10 text-center">
-                <p className="text-destructive mb-4">에러: {error instanceof Error ? error.message : '데이터를 불러올 수 없습니다.'}</p>
-                <Button onClick={() => router.back()}>뒤로 가기</Button>
-            </div>
-        );
+  const columns = [
+    {
+      header: '유형',
+      accessor: (item: WorkReport) => (
+        <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-muted rounded">
+          {item.reprtSe === '1' ? 'WEEKLY' : 'MONTHLY'}
+        </span>
+      ),
+      className: 'w-24'
+    },
+    {
+      header: '제목',
+      accessor: (item: WorkReport) => item.reprtSj,
+      className: 'font-bold'
+    },
+    {
+      header: '보고일',
+      accessor: (item: WorkReport) => item.reprtDe,
+      className: 'text-xs text-muted-foreground'
+    },
+    {
+      header: '작성자',
+      accessor: (item: WorkReport) => item.wrterId
+    },
+    {
+      header: '상태',
+      accessor: (item: WorkReport) => <StatusBadge status={item.confmDt ? 'Y' : 'R'} />
+    },
+    {
+      header: '',
+      className: 'text-right',
+      accessor: (item: WorkReport) => (
+        <button
+          onClick={() => router.push(`/smart-toolkit/work-report/${item.reprtId}`)}
+          className="p-2 hover:bg-accent rounded-full transition-all text-primary"
+        >
+          <ArrowRight size={18} />
+        </button>
+      )
     }
+  ];
 
-    return (
-        <div className="container mx-auto py-8 max-w-4xl space-y-6">
-            <div className="flex items-center space-x-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">응답 상세 정보</h1>
-                    <p className="text-muted-foreground mt-1">
-                        설문 응답의 세부 내용을 확인합니다.
-                    </p>
-                </div>
-            </div>
+  return (
+    <div className="space-y-6 pb-12">
+      <PageHeader
+        title="업무 보고 센터"
+        breadcrumbs={[{ label: '작업지원' }, { label: '주간/월간보고' }]}
+        actions={
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">
+            <Plus size={18} /> 새 보고서 작성
+          </button>
+        }
+      />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="md:col-span-2 shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-xl flex items-center">
-                            <FileText className="mr-2 h-5 w-5 text-primary" />
-                            응답 내용
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="bg-muted/30 p-4 rounded-lg border">
-                            <p className="whitespace-pre-wrap leading-relaxed text-foreground">
-                                {data?.respondAnswerCn || '응답 내용이 없습니다.'}
-                            </p>
-                        </div>
-
-                        {data?.etcAnswerCn && (
-                            <div className="space-y-2">
-                                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">기타 의견</h3>
-                                <div className="bg-yellow-50/50 p-4 rounded-lg border border-yellow-100">
-                                    <p className="text-sm">{data.etcAnswerCn}</p>
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-xl flex items-center">
-                            <User className="mr-2 h-5 w-5 text-primary" />
-                            메타 정보
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground">응답자</p>
-                            <p className="font-medium">{data?.respondNm || '익명'}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground text-foreground">등록 일시</p>
-                            <div className="flex items-center text-sm">
-                                <Calendar className="mr-2 h-3 w-3" />
-                                <span className="font-mono">{data?.frstRegisterPnttm}</span>
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground">설문 ID</p>
-                            <div className="flex items-center text-sm">
-                                <Hash className="mr-2 h-3 w-3" />
-                                <span className="font-mono text-xs">{data?.qestnrId}</span>
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground">문항 ID</p>
-                            <div className="flex items-center text-sm">
-                                <Hash className="mr-2 h-3 w-3" />
-                                <span className="font-mono text-xs">{data?.qestnrQesitmId}</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
-    );
+      <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
+        <StandardDataTable
+          columns={columns}
+          data={reports}
+          loading={loading}
+          emptyMessage="등록된 보고서가 없습니다."
+          className="border-none rounded-none"
+        />
+      </div>
+    </div>
+  );
 }

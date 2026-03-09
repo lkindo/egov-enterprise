@@ -1,1 +1,1 @@
-﻿export * from './onlineHelpService';
+export * from './onlineHelpService';

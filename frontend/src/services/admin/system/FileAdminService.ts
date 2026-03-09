@@ -1,4 +1,4 @@
-﻿import client from '@/lib/api/client';
+import client from '@/lib/api/client';
 import { AdminService } from '@/services/core/ApiService';
 
 export interface FileDetail {

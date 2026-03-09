@@ -1,4 +1,4 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { Popup } from '@/types/banner';
 
 class PopupAdminService extends AdminService {

@@ -1,1 +1,1 @@
-﻿export * from './securityService';
+export * from './securityService';

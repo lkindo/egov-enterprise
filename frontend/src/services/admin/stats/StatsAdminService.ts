@@ -1,4 +1,4 @@
-﻿import { ApiService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { ConnectStats, MenuStats, SummaryStats, StatsVO, StatsSearchParams } from '@/types/stats';
 
 class StatsAdminService extends ApiService {

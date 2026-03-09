@@ -1,4 +1,4 @@
-﻿// System Admin Services index
+// System Admin Services index
 export * from './AuditAdminService';
 export * from './BannerAdminService';
 export * from './CodeAdminService';

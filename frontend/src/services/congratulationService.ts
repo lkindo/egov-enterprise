@@ -1,4 +1,4 @@
-﻿import client from '@/lib/api/client';
+import client from '@/lib/api/client';
 
 /**
  * 경조사 관리 서비스 (Admin)

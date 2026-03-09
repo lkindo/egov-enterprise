@@ -1,74 +1,49 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from '@/lib/api/client';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Bookmark, Globe, FileText, Calendar, ArrowLeft, Trash2, Home, ChevronRight, User, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Bookmark, Globe, FileText, ArrowLeft, Send, Home, ChevronRight, Info } from "lucide-react";
 
-interface ScrapDetail {
-    scrapId: string;
-    scrapNm: string;
-    scrapUrl: string;
-    scrapDc: string;
-    frstRegisterId: string;
-    frstRegisterPnttm: string;
-}
-
-const ScrapDetailPage = () => {
-    const params = useParams();
+const InsertScrapPage = () => {
     const router = useRouter();
-    const scrapId = params.id as string;
+    const [formData, setFormData] = useState({
+        scrapNm: '',
+        scrapUrl: '',
+        scrapDc: ''
+    });
+    const [loading, setLoading] = useState(false);
 
-    const [detail, setDetail] = useState<ScrapDetail | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(false);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-    const fetchDetail = async () => {
+        // Basic Validation
+        if (!formData.scrapNm.trim()) { alert('스크랩명을 입력해주세요.'); return; }
+        if (!formData.scrapUrl.trim()) { alert('URL을 입력해주세요.'); return; }
+        if (!formData.scrapUrl.startsWith('http')) {
+            alert('올바른 URL 형식이 아닙니다. (http:// 또는 https:// 로 시작해야 합니다)');
+            return;
+        }
+
         setLoading(true);
         try {
-            const response = (await axios.get(`/scrap/${scrapId}`)) as any;
-            setDetail(response.data.scrap);
-        } catch (error) {
-            console.error('Failed to fetch scrap detail', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (scrapId) fetchDetail();
-    }, [scrapId]);
-
-    const handleDelete = async () => {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
-        setActionLoading(true);
-        try {
-            const response = (await axios.delete(`/scrap/${scrapId}`)) as any;
+            const response = (await axios.post('/scrap', formData)) as any;
             if (response.data.success) {
                 alert(response.data.message);
                 router.push('/cop/scp/selectScrapList');
             }
         } catch (error: any) {
-            alert(error.response?.data?.message || '삭제에 실패했습니다.');
+            alert(error.response?.data?.message || '등록에 실패했습니다.');
         } finally {
-            setActionLoading(false);
+            setLoading(false);
         }
     };
-
-    if (loading) {
-        return (
-            <div className="p-6 space-y-6 max-w-4xl mx-auto w-full">
-                <Skeleton className="h-10 w-[300px]" />
-                <Card className="border-none shadow-md"><CardContent className="p-10 space-y-8"><Skeleton className="h-10 w-full" /><Skeleton className="h-24 w-full" /></CardContent></Card>
-            </div>
-        );
-    }
-
-    if (!detail) return <div className="p-10 text-center font-medium">스크랩 정보를 찾을 수 없습니다.</div>;
 
     return (
         <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
@@ -80,98 +55,108 @@ const ScrapDetailPage = () => {
                 <ChevronRight className="w-4 h-4" />
                 <Link href="/cop/scp/selectScrapList" className="hover:text-foreground transition-colors font-medium">스크랩관리</Link>
                 <ChevronRight className="w-4 h-4" />
-                <span className="text-foreground font-semibold">스크랩 상세보기</span>
+                <span className="text-foreground font-semibold">새 스크랩 등록</span>
             </div>
 
-            <Card className="shadow-2xl border-none overflow-hidden rounded-3xl">
-                <CardHeader className="border-b bg-gradient-to-br from-indigo-500/10 to-purple-500/5 pb-10 pt-10 px-10">
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-2">
-                            <CardTitle className="text-3xl font-black tracking-tighter text-indigo-900 leading-tight">
-                                {detail.scrapNm}
+            <Card className="shadow-2xl border-none overflow-hidden rounded-[2.5rem] bg-white ring-1 ring-slate-100">
+                <CardHeader className="border-b bg-gradient-to-tr from-indigo-50 via-slate-50 to-white pb-12 pt-12 px-10">
+                    <div className="flex items-center gap-5">
+                        <div className="p-4 bg-indigo-600 rounded-[1.5rem] shadow-xl shadow-indigo-200 animate-bounce-slow">
+                            <Bookmark className="w-8 h-8 text-white fill-white/20" />
+                        </div>
+                        <div className="space-y-1">
+                            <CardTitle className="text-4xl font-black tracking-tighter text-slate-900 uppercase">
+                                New Scrap Archive
                             </CardTitle>
-                            <div className="flex items-center gap-2 text-sm font-bold text-indigo-600/70">
-                                <Bookmark className="w-4 h-4 fill-indigo-600/20" /> 아카이브된 웹 스크랩
-                            </div>
-                        </div>
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={handleDelete}
-                            disabled={actionLoading}
-                            className="gap-2 shadow-lg font-bold bg-rose-500 hover:bg-rose-600 transition-all active:scale-95"
-                        >
-                            <Trash2 className="w-4 h-4" /> 삭제
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent className="pt-12 px-10 space-y-12">
-                    {/* URL Section */}
-                    <div className="space-y-4">
-                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 flex items-center gap-2">
-                            <Globe className="w-3 h-3 text-indigo-500" /> 원본 링크 (Source URL)
-                        </div>
-                        <div className="bg-indigo-50/50 p-6 rounded-3xl border-2 border-indigo-100/50 group hover:border-indigo-200 transition-all shadow-sm">
-                            <a
-                                href={detail.scrapUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-lg font-bold text-indigo-700 break-all flex items-center gap-3 hover:text-indigo-900 transition-colors"
-                            >
-                                {detail.scrapUrl}
-                                <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform">
-                                    <ExternalLink className="w-4 h-4" />
-                                </div>
-                            </a>
-                            <p className="mt-4 text-xs font-semibold text-indigo-400 italic">
-                                * 위 링크를 클릭하면 해당 웹 페이지로 새 탭에서 연결됩니다.
+                            <p className="text-sm font-bold text-slate-500 leading-relaxed uppercase tracking-widest">
+                                새로운 지식과 영감을 내 보관함에 추가하세요.
                             </p>
                         </div>
                     </div>
-
-                    {/* Description Section */}
-                    <div className="space-y-4">
-                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                            <FileText className="w-3 h-3 text-primary" /> 스크랩 설명 (Description)
+                </CardHeader>
+                <form onSubmit={handleSubmit}>
+                    <CardContent className="pt-14 px-12 space-y-12">
+                        {/* Scrap Name */}
+                        <div className="space-y-4">
+                            <Label htmlFor="scrapNm" className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> 스크랩 제목 (Required)
+                            </Label>
+                            <Input
+                                id="scrapNm"
+                                placeholder="스크랩의 제목을 직관적으로 입력하세요"
+                                className="h-16 text-2xl font-black border-2 border-slate-100 focus:border-indigo-400 focus-visible:ring-indigo-50 transition-all rounded-2xl px-6 bg-slate-50/30"
+                                value={formData.scrapNm}
+                                onChange={(e) => setFormData({ ...formData, scrapNm: e.target.value })}
+                                required
+                            />
                         </div>
-                        <div className="bg-white p-8 rounded-3xl border-2 border-slate-100 min-h-[120px] shadow-inner font-medium text-slate-700 leading-relaxed text-lg">
-                            {detail.scrapDc || '별도의 설명이 등록되지 않았습니다.'}
-                        </div>
-                    </div>
 
-                    {/* Metadata Section */}
-                    <div className="pt-10 border-t-2 border-slate-50 grid grid-cols-1 md:grid-cols-2 gap-6 pb-2">
-                        <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100/50">
-                            <div className="p-3 bg-white rounded-xl shadow-sm"><User className="w-5 h-5 text-indigo-500" /></div>
-                            <div>
-                                <div className="text-[9px] font-black text-slate-400 tracking-widest uppercase">등록자</div>
-                                <div className="text-sm font-black text-slate-900">{detail.frstRegisterId}</div>
+                        {/* Scrap URL */}
+                        <div className="space-y-4">
+                            <Label htmlFor="scrapUrl" className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> 웹 페이지 주소 (URL)
+                            </Label>
+                            <div className="relative group">
+                                <div className="absolute left-6 top-1/2 -translate-y-1/2 z-10 p-2 bg-indigo-100/50 rounded-xl text-indigo-600 group-focus-within:bg-indigo-600 group-focus-within:text-white transition-all">
+                                    <Globe className="w-5 h-5" />
+                                </div>
+                                <Input
+                                    id="scrapUrl"
+                                    placeholder="https://example.com"
+                                    className="h-16 pl-20 text-lg font-bold border-2 border-slate-100 focus:border-indigo-400 focus-visible:ring-indigo-50 transition-all rounded-2xl bg-slate-50/30"
+                                    value={formData.scrapUrl}
+                                    onChange={(e) => setFormData({ ...formData, scrapUrl: e.target.value })}
+                                    required
+                                />
                             </div>
                         </div>
-                        <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100/50">
-                            <div className="p-3 bg-white rounded-xl shadow-sm"><Calendar className="w-5 h-5 text-purple-500" /></div>
-                            <div>
-                                <div className="text-[9px] font-black text-slate-400 tracking-widest uppercase">등록일시</div>
-                                <div className="text-sm font-black text-slate-900">{detail.frstRegisterPnttm}</div>
+
+                        {/* Scrap Description */}
+                        <div className="space-y-4">
+                            <Label htmlFor="scrapDc" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-300" /> 상세 설명 (Optional)
+                            </Label>
+                            <Textarea
+                                id="scrapDc"
+                                placeholder="이 페이지에서 얻은 영감이나 기억해야 할 내용을 자유롭게 기록하세요..."
+                                className="min-h-[220px] p-8 text-lg font-medium leading-relaxed border-2 border-slate-100 focus:border-indigo-400 focus-visible:ring-indigo-50 transition-all rounded-3xl bg-slate-50/30 resize-none shadow-inner"
+                                value={formData.scrapDc}
+                                onChange={(e) => setFormData({ ...formData, scrapDc: e.target.value })}
+                            />
+                        </div>
+
+                        {/* Notice Card */}
+                        <div className="p-6 bg-indigo-600 rounded-3xl flex items-start gap-4 shadow-xl shadow-indigo-100 text-white relative overflow-hidden group">
+                            <div className="absolute right-[-20px] top-[-20px] bg-white opacity-10 w-32 h-32 rounded-full scale-150 group-hover:scale-[2] transition-transform duration-1000" />
+                            <Info className="w-6 h-6 mt-0.5 shrink-0" />
+                            <div className="space-y-1 relative z-10">
+                                <p className="font-black text-lg">URL 입력 가이드</p>
+                                <p className="text-white/80 text-sm font-medium leading-relaxed">
+                                    URL은 반드시 `http://` 또는 `https://` 로 시작해야 합니다. 올바른 주소를 입력해야 나중에 원본 페이지로 정상적으로 이동할 수 있습니다.
+                                </p>
                             </div>
                         </div>
-                    </div>
-                </CardContent>
-                <CardFooter className="flex justify-center gap-6 py-12 border-t bg-slate-50/50 px-10 rounded-b-3xl">
-                    <Link href="/cop/scp/selectScrapList">
-                        <Button variant="ghost" className="h-14 px-12 gap-3 font-black uppercase tracking-widest text-slate-500 hover:bg-white hover:shadow-lg transition-all active:scale-95 border-2 border-transparent hover:border-indigo-100">
-                            <ArrowLeft className="w-5 h-5" /> 목록으로 돌아가기
+                    </CardContent>
+                    <CardFooter className="flex justify-center gap-8 py-14 border-t bg-slate-50/50 px-12 rounded-b-[2.5rem]">
+                        <Link href="/cop/scp/selectScrapList">
+                            <Button type="button" variant="ghost" className="h-16 px-12 font-black uppercase tracking-widest text-slate-500 hover:bg-white hover:shadow-xl transition-all active:scale-95 border-2 border-transparent hover:border-slate-100 rounded-2xl">
+                                <ArrowLeft className="w-5 h-5 mr-3" /> 취소
+                            </Button>
+                        </Link>
+                        <Button type="submit" className="h-16 px-20 gap-4 font-black uppercase tracking-widest shadow-2xl bg-indigo-600 hover:bg-indigo-700 transition-all active:scale-95 ring-[12px] ring-indigo-50 rounded-2xl" disabled={loading}>
+                            {loading ? (
+                                <span className="flex items-center gap-2 animate-pulse font-black">Archiving...</span>
+                            ) : (
+                                <>
+                                    <Send className="w-5 h-5" /> 스크랩 아카이빙 완료
+                                </>
+                            )}
                         </Button>
-                    </Link>
-                    <a href={detail.scrapUrl} target="_blank" rel="noopener noreferrer">
-                        <Button className="h-14 px-16 gap-3 font-black uppercase tracking-widest shadow-2xl bg-indigo-600 hover:bg-indigo-700 transition-all active:scale-95 ring-8 ring-indigo-50">
-                            <Globe className="w-5 h-5" /> 원본 페이지 방문
-                        </Button>
-                    </a>
-                </CardFooter>
+                    </CardFooter>
+                </form>
             </Card>
         </div>
     );
 };
 
-export default ScrapDetailPage;
+export default InsertScrapPage;

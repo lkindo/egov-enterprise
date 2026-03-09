@@ -28,5 +28,5 @@ public class BoardSearchResult {
     private String sjBoldAt;
     private String noticeAt;
     private String secretAt;
-    private Long commentCo;
+    private Integer commentCo; // Integer로 변경
 }

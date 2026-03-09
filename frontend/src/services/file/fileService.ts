@@ -1,4 +1,4 @@
-﻿import client from '@/lib/api/client';
+import client from '@/lib/api/client';
 import { FileVO, FileSearchParams } from '@/types/file';
 import { PaginationResponse } from '@/types/system';
 

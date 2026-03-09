@@ -103,11 +103,18 @@ public class Board implements Serializable {
     @Column(name = "BLOG_ID", length = 20)
     private String blogId;
 
+    // 반정규화 필드 (성능 최적화용)
+    @Column(name = "COMMENT_CO")
+    private Integer commentCo;
+
+    @Column(name = "FILE_CO")
+    private Integer fileCo;
+
     @Builder
     public Board(Long nttId, String bbsId, Long nttNo, String nttSj, String nttCn, String replyAt,
             Long parnts, Integer replyLc, Long sortOrdr, Integer inqireCo, String useAt,
-            String ntceBgnde, String ntceEndde, String ntcrId, String ntcrNm, String password,
-            String atchFileId) {
+            String ntceBgnde, String ntceEndde, String ntcrId, String ntcrNm, String password,   
+            String atchFileId, Integer commentCo, Integer fileCo) {
         this.nttId = nttId;
         this.bbsId = Objects.requireNonNull(bbsId);
         this.nttNo = nttNo;
@@ -125,6 +132,8 @@ public class Board implements Serializable {
         this.ntcrNm = ntcrNm;
         this.password = password;
         this.atchFileId = atchFileId;
+        this.commentCo = commentCo == null ? 0 : commentCo;
+        this.fileCo = fileCo == null ? 0 : fileCo;
     }
 
     public void update(String nttSj, String nttCn, String ntcrId, String ntcrNm, String password, String ntceBgnde,
@@ -152,5 +161,14 @@ public class Board implements Serializable {
 
     public void updateReplyOrder(Long nttNo) {
         this.nttNo = nttNo;
+    }
+
+    // 카운트 업데이트 비즈니스 메서드
+    public void updateCommentCount(int count) {
+        this.commentCo = count;
+    }
+
+    public void updateFileCount(int count) {
+        this.fileCo = count;
     }
 }

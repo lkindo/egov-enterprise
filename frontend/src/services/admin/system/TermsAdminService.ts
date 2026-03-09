@@ -1,4 +1,4 @@
-﻿import { ApiService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 
 export interface Term {
     stplatId: string;

@@ -1,106 +1,43 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { addressbookUserService } from '@/services/user/addressbook/AddressbookUserService';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { User, Phone, Mail, MapPin, Calendar, ArrowLeft, Save, Edit, Trash2, Home, ChevronRight } from "lucide-react";
+import { User, Phone, Mail, MapPin, ArrowLeft, Send, Home, ChevronRight } from "lucide-react";
 
-interface AddressBookDetail {
-    adbkId: string;
-    adbkNm: string;
-    telNo: string;
-    email: string;
-    adres: string;
-    frstRegisterId: string;
-    frstRegisterPnttm: string;
-}
-
-const AddressBookDetailPage = () => {
-    const params = useParams();
+const InsertAddressBookPage = () => {
     const router = useRouter();
-    const adbkId = params.id as string;
-
-    const [detail, setDetail] = useState<AddressBookDetail | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         adbkNm: '',
         telNo: '',
         email: '',
         adres: ''
     });
-    const [actionLoading, setActionLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    const fetchDetail = async () => {
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formData.adbkNm.trim()) {
+            alert('이름을 입력해주세요.');
+            return;
+        }
+
         setLoading(true);
         try {
-            const response = await addressbookUserService.getAddressBook(adbkId);
-            // ApiResponse.data가 바로 dto이므로 response를 사용하거나 구조에 맞춰 조정
-            // 백엔드 AddressBookController.getAddressBook은 ApiResponse<AddressBookDto> 반환
-            // client.get은 body.data(AddressBookDto)를 반환함.
-            const data = response;
-            setDetail(data);
-            setFormData({
-                adbkNm: data.adbkNm || '',
-                telNo: data.telNo || '',
-                email: data.email || '',
-                adres: data.adres || ''
-            });
-        } catch (error) {
-            console.error('Failed to fetch address book detail', error);
+            await addressbookUserService.createAddressBook(formData);
+            alert('등록되었습니다.');
+            router.push('/cop/adb/selectAddressBookList');
+        } catch (error: any) {
+            alert(error.response?.data?.message || '등록에 실패했습니다.');
         } finally {
             setLoading(false);
         }
     };
-
-    useEffect(() => {
-        if (adbkId) fetchDetail();
-    }, [adbkId]);
-
-    const handleUpdate = async () => {
-        setActionLoading(true);
-        try {
-            await addressbookUserService.updateAddressBook(adbkId, formData);
-            alert('수정되었습니다.');
-            setIsEditing(false);
-            fetchDetail();
-        } catch (error: any) {
-            alert(error.response?.data?.message || '수정에 실패했습니다.');
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    const handleDelete = async () => {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
-        setActionLoading(true);
-        try {
-            await addressbookUserService.deleteAddressBook(adbkId);
-            alert('삭제되었습니다.');
-            router.push('/cop/adb/selectAddressBookList');
-        } catch (error: any) {
-            alert(error.response?.data?.message || '삭제에 실패했습니다.');
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="p-6 space-y-6">
-                <Skeleton className="h-10 w-[300px]" />
-                <Card><CardContent className="p-10 space-y-4"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-3/4" /></CardContent></Card>
-            </div>
-        );
-    }
-
-    if (!detail) return <div className="p-10 text-center font-medium">데이터를 찾을 수 없습니다.</div>;
 
     return (
         <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
@@ -112,129 +49,102 @@ const AddressBookDetailPage = () => {
                 <ChevronRight className="w-4 h-4" />
                 <Link href="/cop/adb/selectAddressBookList" className="hover:text-foreground transition-colors">주소록관리</Link>
                 <ChevronRight className="w-4 h-4" />
-                <span className="text-foreground font-medium">상세</span>
+                <span className="text-foreground font-medium">등록</span>
             </div>
 
-            <Card className="shadow-lg border-none">
-                <CardHeader className="border-b bg-muted/20 pb-6 rounded-t-xl">
-                    <div className="flex items-center justify-between">
-                        <CardTitle className="text-2xl font-bold flex items-center gap-3">
-                            <User className="w-6 h-6 text-primary" /> {isEditing ? '주소록 수정' : '주소록 상세'}
-                        </CardTitle>
-                        {!isEditing && (
-                            <div className="flex gap-2">
-                                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
-                                    <Edit className="w-4 h-4" /> 수정
-                                </Button>
-                                <Button variant="destructive" size="sm" onClick={handleDelete} disabled={actionLoading} className="gap-2">
-                                    <Trash2 className="w-4 h-4" /> 삭제
-                                </Button>
-                            </div>
-                        )}
-                    </div>
+            <Card className="shadow-xl border-none">
+                <CardHeader className="border-b bg-muted/10 pb-6 rounded-t-xl">
+                    <CardTitle className="text-2xl font-bold flex items-center gap-3">
+                        <User className="w-6 h-6 text-primary" /> 주소록 신규 등록
+                    </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-8 space-y-8">
-                    {/* Information Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="adbkNm" className="text-muted-foreground flex items-center gap-2">
-                                    <User className="w-4 h-4" /> 이름
-                                </Label>
-                                {isEditing ? (
+                <form onSubmit={handleSubmit}>
+                    <CardContent className="pt-10 space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="adbkNm" className="text-sm font-semibold flex items-center gap-2">
+                                        <span className="text-destructive">*</span> <User className="w-4 h-4" /> 이름
+                                    </Label>
                                     <Input
                                         id="adbkNm"
+                                        placeholder="이름을 입력하세요"
+                                        className="h-12 text-base shadow-sm focus-visible:ring-primary/20"
                                         value={formData.adbkNm}
                                         onChange={(e) => setFormData({ ...formData, adbkNm: e.target.value })}
-                                        className="h-11"
+                                        required
                                     />
-                                ) : (
-                                    <div className="text-lg font-bold py-2 border-b border-muted">{detail.adbkNm}</div>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="telNo" className="text-muted-foreground flex items-center gap-2">
-                                    <Phone className="w-4 h-4" /> 전화번호
-                                </Label>
-                                {isEditing ? (
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="telNo" className="text-sm font-semibold flex items-center gap-2">
+                                        <Phone className="w-4 h-4" /> 전화번호
+                                    </Label>
                                     <Input
                                         id="telNo"
+                                        placeholder="010-0000-0000"
+                                        className="h-12 text-base shadow-sm font-mono tracking-tight"
                                         value={formData.telNo}
                                         onChange={(e) => setFormData({ ...formData, telNo: e.target.value })}
-                                        className="h-11"
                                     />
-                                ) : (
-                                    <div className="text-lg font-mono py-2 border-b border-muted">{detail.telNo}</div>
-                                )}
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email" className="text-muted-foreground flex items-center gap-2">
-                                    <Mail className="w-4 h-4" /> 이메일
-                                </Label>
-                                {isEditing ? (
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="email" className="text-sm font-semibold flex items-center gap-2">
+                                        <Mail className="w-4 h-4" /> 이메일
+                                    </Label>
                                     <Input
                                         id="email"
                                         type="email"
+                                        placeholder="example@company.com"
+                                        className="h-12 text-base shadow-sm"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="h-11"
                                     />
-                                ) : (
-                                    <div className="text-lg py-2 border-b border-muted">{detail.email || '정보 없음'}</div>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="adres" className="text-muted-foreground flex items-center gap-2">
-                                    <MapPin className="w-4 h-4" /> 주소
-                                </Label>
-                                {isEditing ? (
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="adres" className="text-sm font-semibold flex items-center gap-2">
+                                        <MapPin className="w-4 h-4" /> 주소
+                                    </Label>
                                     <Input
                                         id="adres"
+                                        placeholder="상세 주소를 입력하세요"
+                                        className="h-12 text-base shadow-sm"
                                         value={formData.adres}
                                         onChange={(e) => setFormData({ ...formData, adres: e.target.value })}
-                                        className="h-11"
                                     />
-                                ) : (
-                                    <div className="text-lg py-2 border-b border-muted">{detail.adres || '정보 없음'}</div>
-                                )}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {!isEditing && (
-                        <div className="pt-6 border-t border-muted grid grid-cols-2 gap-4 text-sm text-muted-foreground bg-muted/10 p-4 rounded-lg">
-                            <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 opacity-70" /> 등록자: <span className="text-foreground font-medium">{detail.frstRegisterId}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4 opacity-70" /> 등록일: <span className="text-foreground font-medium">{detail.frstRegisterPnttm?.substring(0, 10)}</span>
-                            </div>
+                        <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg flex items-start gap-3">
+                            <div className="text-primary mt-0.5">💡</div>
+                            <p className="text-sm text-primary/80 leading-relaxed font-medium">
+                                주소록에 등록된 연락처는 협업 시스템 내에서 공유 및 관리됩니다. 정확한 정보를 입력해 주세요.
+                            </p>
                         </div>
-                    )}
-                </CardContent>
-                <CardFooter className="flex justify-center gap-4 py-8 border-t bg-muted/5 rounded-b-xl">
-                    <Link href="/cop/adb/selectAddressBookList">
-                        <Button variant="outline" className="h-11 px-8 gap-2 shadow-sm transition-all hover:bg-muted">
-                            <ArrowLeft className="w-4 h-4" /> 목록으로
+                    </CardContent>
+                    <CardFooter className="flex justify-center gap-4 py-10 border-t bg-muted/5 rounded-b-xl">
+                        <Link href="/cop/adb/selectAddressBookList">
+                            <Button type="button" variant="outline" className="h-12 px-10 gap-2 font-semibold shadow-sm hover:bg-muted transition-all">
+                                <ArrowLeft className="w-4 h-4" /> 취소
+                            </Button>
+                        </Link>
+                        <Button type="submit" className="h-12 px-12 gap-2 font-bold shadow-lg transition-all active:scale-95" disabled={loading}>
+                            {loading ? (
+                                <span className="flex items-center gap-2">처리중...</span>
+                            ) : (
+                                <>
+                                    <Send className="w-4 h-4" /> 등록하기
+                                </>
+                            )}
                         </Button>
-                    </Link>
-                    {isEditing && (
-                        <>
-                            <Button onClick={handleUpdate} className="h-11 px-8 gap-2 shadow-md transition-all active:scale-95" disabled={actionLoading}>
-                                <Save className="w-4 h-4" /> 저장하기
-                            </Button>
-                            <Button variant="ghost" onClick={() => setIsEditing(false)} className="h-11 px-8 transition-all">
-                                취소
-                            </Button>
-                        </>
-                    )}
-                </CardFooter>
+                    </CardFooter>
+                </form>
             </Card>
         </div>
     );
 };
 
-export default AddressBookDetailPage;
+export default InsertAddressBookPage;

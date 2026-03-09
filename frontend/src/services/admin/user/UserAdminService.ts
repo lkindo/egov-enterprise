@@ -1,4 +1,4 @@
-﻿import { ApiService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { UserManage, UserSearchParams, UserDto } from '@/types/user';
 import { PaginationResponse } from '@/types/system';
 

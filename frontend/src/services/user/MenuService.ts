@@ -1,4 +1,4 @@
-﻿import { ApiService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { MenuInfo } from '@/types/menu';
 
 class MenuService extends ApiService {

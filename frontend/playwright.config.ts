@@ -22,18 +22,22 @@ export default defineConfig({
             testMatch: /.*\.setup\.ts/,
         },
         {
-            name: 'chromium',
+            name: 'admin-tests',
+            use: {
+                ...devices['Desktop Chrome'],
+                storageState: path.resolve(__dirname, 'playwright/.auth/admin.json'),
+            },
+            dependencies: ['setup'],
+            testIgnore: /.*rbac_rigorous\.spec\.ts/,
+        },
+        {
+            name: 'rbac-check',
             use: {
                 ...devices['Desktop Chrome'],
                 storageState: path.resolve(__dirname, 'playwright/.auth/user.json'),
             },
             dependencies: ['setup'],
+            testMatch: /.*rbac_rigorous\.spec\.ts/,
         },
     ],
-    /* Run your local dev server before starting the tests */
-    // webServer: {
-    //   command: 'npm run dev',
-    //   url: 'http://127.0.0.1:3000',
-    //   reuseExistingServer: !process.env.CI,
-    // },
 });

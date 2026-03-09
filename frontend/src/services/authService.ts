@@ -1,4 +1,4 @@
-﻿import client from '@/lib/api/client';
+import client from '@/lib/api/client';
 
 /**
  * ?紐꾩쵄 獄?亦낅슦釉???뺥돩?? */

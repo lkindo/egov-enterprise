@@ -1,4 +1,4 @@
-﻿import { UserService } from '@/services/core/ApiService';
+import { UserService } from '@/services/core/ApiService';
 
 export interface FAQ {
     faqId: string;

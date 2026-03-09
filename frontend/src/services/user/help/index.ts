@@ -1,1 +1,1 @@
-﻿export * from './HelpUserService';
+export * from './HelpUserService';

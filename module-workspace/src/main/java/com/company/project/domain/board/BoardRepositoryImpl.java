@@ -1,11 +1,9 @@
 package com.company.project.domain.board;
 
-import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
-import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,8 +13,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Optional;
-import com.company.project.domain.comment.QComment;
-import com.company.project.domain.comment.CommentPredicate;
 import com.company.project.domain.user.entity.QUser;
 
 @RequiredArgsConstructor
@@ -53,13 +49,13 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.secretAt,
                                                 QBoardMaster.boardMaster.bbsTyCode,
                                                 QBoardMaster.boardMaster.replyPosblAt,
-                                                QBoardMaster.boardMaster.fileAtchPosblAt,
-                                                QBoardMaster.boardMaster.atchPosblFileNumber,
+                                                QBoardMaster.boardMaster.fileAtchPosblAt,        
+                                                QBoardMaster.boardMaster.atchPosblFileNumber,    
                                                 QBoardMaster.boardMaster.bbsNm))
                                 .from(QBoard.board)
                                 .leftJoin(QUser.user).on(QBoard.board.frstRegisterId.eq(QUser.user.esntlId))
                                 .leftJoin(QBoardMaster.boardMaster)
-                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
+                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))       
                                 .where(QBoard.board.nttId.eq(id))
                                 .fetchOne();
 
@@ -70,10 +66,6 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         public Page<BoardSearchResult> searchArticles(BoardSearchCondition condition, @NonNull Pageable pageable) {
                 BooleanBuilder builder = BoardPredicate.searchBoard(condition);
 
-                var commentCountSubquery = JPAExpressions.select(QComment.comment.count())
-                                .from(QComment.comment)
-                                .where(CommentPredicate.bbsIdAndNttIdEq(QBoard.board.bbsId, QBoard.board.nttId));
-
                 OrderSpecifier<?> orderSpecifier = QBoard.board.sortOrdr.desc();
 
                 if (StringUtils.hasText(condition.getOrderBy())) {
@@ -82,10 +74,10 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                         orderSpecifier = QBoard.board.inqireCo.desc();
                                         break;
                                 case "comments":
-                                        orderSpecifier = new OrderSpecifier<>(Order.DESC, commentCountSubquery);
+                                        orderSpecifier = QBoard.board.commentCo.desc(); // 서브쿼리에서 필드로 변경
                                         break;
                                 case "date":
-                                        orderSpecifier = QBoard.board.createdDate.desc();
+                                        orderSpecifier = QBoard.board.createdDate.desc();        
                                         break;
                         }
                 }
@@ -105,7 +97,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.nttNo,
                                                 QBoard.board.noticeAt,
                                                 QBoard.board.secretAt,
-                                                ExpressionUtils.as(commentCountSubquery, "commentCo")))
+                                                QBoard.board.commentCo)) // 필드 직접 조회
                                 .from(QBoard.board)
                                 .leftJoin(QUser.user).on(QBoard.board.frstRegisterId.eq(QUser.user.esntlId))
                                 .where(builder)
@@ -126,13 +118,13 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         }
 
         @Override
-        public Page<Board> search(BoardSearchCondition condition, @NonNull Pageable pageable) {
+        public Page<Board> search(BoardSearchCondition condition, @NonNull Pageable pageable) {  
                 BooleanBuilder builder = BoardPredicate.searchBoard(condition);
 
                 List<Board> content = queryFactory
                                 .selectFrom(QBoard.board)
                                 .where(builder)
-                                .orderBy(QBoard.board.sortOrdr.desc(), QBoard.board.nttNo.asc())
+                                .orderBy(QBoard.board.sortOrdr.desc(), QBoard.board.nttNo.asc()) 
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();

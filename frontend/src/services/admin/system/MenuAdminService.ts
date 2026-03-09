@@ -1,4 +1,4 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { MenuManage, SearchParams } from '@/types/system';
 
 /**

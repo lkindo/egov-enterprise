@@ -1,4 +1,4 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
 
 export interface InfrmlSanctn {

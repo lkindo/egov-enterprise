@@ -1,52 +1,106 @@
-import { Suspense } from 'react';
-import Link from 'next/link';
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
-import { KnoManagementVO } from '@/types/dam';
-import { KnoDetailClient } from './KnoDetailClient';
-import { cookies } from 'next/headers';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import * as damService from '@/services/dam/damService';
 
-export default async function KnoDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export default function CreateKnoPage() {
+    const router = useRouter();
+    const [knoNm, setKnoNm] = useState('');
+    const [knoCn, setKnoCn] = useState('');
+    const [knoType, setKnoType] = useState('1'); // 1: 지침, 2: 법령, 3: 매뉴얼 등 (공통코드 연동 필요)
+    const [othbcAt, setOthbcAt] = useState('Y');
 
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-    let kno: KnoManagementVO | null = null;
-    try {
-        kno = await damService.getKnoDetail(id, axiosConfig);
-    } catch (error) {
-        console.error('Server-side fetch kno detail failed:', error);
-    }
-
-    if (!kno) {
-        return (
-            <div className="p-20 text-center space-y-6">
-                <div className="p-10 bg-rose-50 rounded-full w-fit mx-auto">
-                    <Trash2 className="w-16 h-16 text-rose-300" />
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">Insight Hidden or Deleted</h3>
-                <p className="text-slate-500 font-medium">The article you are looking for might have been removed or shifted.</p>
-                <Button asChild variant="outline" className="rounded-xl border-2 font-bold px-10">
-                    <Link href="/admin/dam/kno">Return to Knowledge Base</Link>
-                </Button>
-            </div>
-        );
-    }
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await damService.createKno({
+                knoNm,
+                knoCn,
+                knoType,
+                othbcAt
+            });
+            alert('지식정보가 등록되었습니다.');
+            router.push('/admin/dam/kno');
+        } catch (error) {
+            console.error('Failed to create kno:', error);
+            alert('등록 중 오류가 발생했습니다.');
+        }
+    };
 
     return (
-        <Suspense fallback={
-            <div className="max-w-4xl mx-auto space-y-8 animate-pulse">
-                <div className="h-20 w-full bg-slate-50 rounded-2xl" />
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 h-[600px] bg-slate-50 rounded-[2.5rem]" />
-                    <div className="h-96 bg-slate-50 rounded-[2rem]" />
+        <div className="max-w-2xl mx-auto space-y-8">
+            <h2 className="text-3xl font-bold tracking-tight">지식정보 등록</h2>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                    <Label htmlFor="knoNm">지식명</Label>
+                    <Input
+                        id="knoNm"
+                        value={knoNm}
+                        onChange={(e) => setKnoNm(e.target.value)}
+                        required
+                    />
                 </div>
-            </div>
-        }>
-            <KnoDetailClient kno={kno} id={id} />
-        </Suspense>
+
+                <div className="space-y-2">
+                    <Label htmlFor="knoType">지식유형</Label>
+                    <Select value={knoType} onValueChange={setKnoType}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="유형 선택" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="1">지침</SelectItem>
+                            <SelectItem value="2">법령</SelectItem>
+                            <SelectItem value="3">매뉴얼</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label>공개여부</Label>
+                    <RadioGroup value={othbcAt} onValueChange={setOthbcAt} className="flex space-x-4">
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Y" id="public" />
+                            <Label htmlFor="public">공개</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="N" id="private" />
+                            <Label htmlFor="private">비공개</Label>
+                        </div>
+                    </RadioGroup>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="knoCn">내용</Label>
+                    <Textarea
+                        id="knoCn"
+                        value={knoCn}
+                        onChange={(e) => setKnoCn(e.target.value)}
+                        rows={5}
+                        required
+                    />
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                    <Button variant="outline" type="button" onClick={() => router.back()}>
+                        취소
+                    </Button>
+                    <Button type="submit">등록</Button>
+                </div>
+            </form>
+        </div>
     );
 }

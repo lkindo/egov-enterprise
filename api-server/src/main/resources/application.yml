@@ -45,7 +45,7 @@ spring:
       hibernate:
         format_sql: false
         use_sql_comments: false
-        generate_statistics: false
+        generate_statistics: true
         default_batch_fetch_size: 100
         jdbc:
           batch_versioned_data: true
@@ -67,6 +67,7 @@ logging:
     egovframework: info
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: debug
+    org.hibernate.stat: info
     org.springframework.security: info
     org.springframework.web: debug
     org.springframework.web.servlet.mvc.method.annotation: trace
@@ -89,3 +90,18 @@ server:
     include-stacktrace: never
     whitelabel:
       enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics,prometheus,env,beans"
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name:egov-enterprise}
+    export:
+      prometheus:
+        enabled: true
