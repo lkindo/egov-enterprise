@@ -57,10 +57,6 @@ spring:
       prefix: /WEB-INF/jsp/
       suffix: .jsp
 
-  batch:
-    jdbc:
-      initialize-schema: never
-
 jwt:
   secret: dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==
 

@@ -1,8 +1,6 @@
 ﻿// System Admin Services index
 export * from './AuditAdminService';
-export * from './BackupAdminService';
 export * from './BannerAdminService';
-export * from './BatchAdminService';
 export * from './CodeAdminService';
 export * from './CommentAdminService';
 export * from './CommunityAdminService';
@@ -12,14 +10,9 @@ export * from './EventCmpgnAdminService';
 export * from './FileAdminService';
 export * from './IsmAdminService';
 export * from './MenuAdminService';
-export * from './MonitoringAdminService';
-export * from './NetworkAdminService';
 export * from './PopupAdminService';
 export * from './ProgramAdminService';
 export * from './RewardAdminService';
 export * from './RoleAdminService';
-export * from './ServerAdminService';
-export * from './SyncAdminService';
 export * from './SystemLogAdminService';
 export * from './TermsAdminService';
-export * from './TroubleAdminService';
