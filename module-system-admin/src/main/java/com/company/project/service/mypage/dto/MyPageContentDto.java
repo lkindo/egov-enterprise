@@ -6,9 +6,6 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class MyPageContentDto {
     private String cntntsId;
@@ -18,6 +15,20 @@ public class MyPageContentDto {
     private String cntntsUseAt;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
+
+    public MyPageContentDto() {
+    }
+
+    public MyPageContentDto(String cntntsId, String cntntsNm, String cntntsLinkUrl, String cntntsDc,
+                           String cntntsUseAt, String frstRegisterId, LocalDateTime frstRegisterPnttm) {
+        this.cntntsId = cntntsId;
+        this.cntntsNm = cntntsNm;
+        this.cntntsLinkUrl = cntntsLinkUrl;
+        this.cntntsDc = cntntsDc;
+        this.cntntsUseAt = cntntsUseAt;
+        this.frstRegisterId = frstRegisterId;
+        this.frstRegisterPnttm = frstRegisterPnttm;
+    }
 
     public static MyPageContentDto from(MyPageContent entity) {
         return MyPageContentDto.builder()

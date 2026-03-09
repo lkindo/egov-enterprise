@@ -345,7 +345,7 @@ public class MenuService {
         Menu currentMenu = menuRepository.findByProgrmFileNm(Objects.requireNonNull(progrmFileNm)).orElse(null);
         if (currentMenu == null) return null;
 
-        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();        
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
         Map<Long, Long> parentMap = new HashMap<>();
         for (Menu m : allMenus) {
             parentMap.put(m.getId(), m.getUpperMenuNo());
@@ -361,5 +361,139 @@ public class MenuService {
             upperId = nextUpperId;
         }
         return currentId;
+    }
+
+    /**
+     * 하위 메뉴 목록 조회
+     */
+    public List<MenuDto> getSubMenus(Long menuNo) {
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        List<Program> programs = programRepository.findAll();
+        Map<String, Program> programMap = programs.stream()
+                .filter(p -> p.getProgrmFileNm() != null)
+                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
+
+        return allMenus.stream()
+                .filter(menu -> menu.getUpperMenuNo() != null && menu.getUpperMenuNo().equals(menuNo))
+                .map(menu -> {
+                    String url = "#";
+                    if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
+                        url = menu.getModernRoute();
+                    } else {
+                        String progrm = menu.getProgrmFileNm();
+                        if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
+                            Program program = programMap.get(progrm);
+                            if (program != null && program.getUrl() != null) {
+                                String progrmUrl = program.getUrl();
+                                url = "/".equals(progrmUrl) ? "#" : progrmUrl;
+                            } else {
+                                url = "/";
+                            }
+                        }
+                    }
+
+                    return MenuDto.builder()
+                            .id(menu.getId())
+                            .menuNo(menu.getId())
+                            .menuNm(menu.getMenuNm())
+                            .progrmFileNm(menu.getProgrmFileNm())
+                            .upperMenuNo(menu.getUpperMenuNo())
+                            .upperMenuId(menu.getUpperMenuNo())
+                            .menuOrdr(menu.getMenuOrdr())
+                            .chkURL(url)
+                            .modernRoute(menu.getModernRoute())
+                            .relateImagePath(menu.getRelateImagePath())
+                            .relateImageNm(menu.getRelateImageNm())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 메뉴 관리 목록 조회
+     */
+    public List<MenuDto> selectMenuManageList(@NonNull ComDefaultVO searchVO) {
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        List<Program> programs = programRepository.findAll();
+        Map<String, Program> programMap = programs.stream()
+                .filter(p -> p.getProgrmFileNm() != null)
+                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
+
+        return allMenus.stream().map(menu -> {
+            String url = "#";
+            if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
+                url = menu.getModernRoute();
+            } else {
+                String progrm = menu.getProgrmFileNm();
+                if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
+                    Program program = programMap.get(progrm);
+                    if (program != null && program.getUrl() != null) {
+                        String progrmUrl = program.getUrl();
+                        url = "/".equals(progrmUrl) ? "#" : progrmUrl;
+                    } else {
+                        url = "/";
+                    }
+                }
+            }
+
+            return MenuDto.builder()
+                    .id(menu.getId())
+                    .menuNo(menu.getId())
+                    .menuNm(menu.getMenuNm())
+                    .progrmFileNm(menu.getProgrmFileNm())
+                    .upperMenuNo(menu.getUpperMenuNo())
+                    .upperMenuId(menu.getUpperMenuNo())
+                    .menuOrdr(menu.getMenuOrdr())
+                    .chkURL(url)
+                    .modernRoute(menu.getModernRoute())
+                    .relateImagePath(menu.getRelateImagePath())
+                    .relateImageNm(menu.getRelateImageNm())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 메뉴 관리 목록 총 개수
+     */
+    public int selectMenuManageListTotCnt(@NonNull ComDefaultVO searchVO) {
+        return (int) menuRepository.count();
+    }
+
+    /**
+     * 메뉴 상세 조회
+     */
+    public MenuDto selectMenuManage(Long menuNo) {
+        Menu menu = menuRepository.findById(Objects.requireNonNull(menuNo))
+                .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
+
+        String url = "#";
+        if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
+            url = menu.getModernRoute();
+        } else {
+            String progrm = menu.getProgrmFileNm();
+            if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
+                Program program = programRepository.findById(progrm).orElse(null);
+                if (program != null && program.getUrl() != null) {
+                    String progrmUrl = program.getUrl();
+                    url = "/".equals(progrmUrl) ? "#" : progrmUrl;
+                } else {
+                    url = "/";
+                }
+            }
+        }
+
+        return MenuDto.builder()
+                .id(menu.getId())
+                .menuNo(menu.getId())
+                .menuNm(menu.getMenuNm())
+                .progrmFileNm(menu.getProgrmFileNm())
+                .upperMenuNo(menu.getUpperMenuNo())
+                .upperMenuId(menu.getUpperMenuNo())
+                .menuOrdr(menu.getMenuOrdr())
+                .chkURL(url)
+                .modernRoute(menu.getModernRoute())
+                .relateImagePath(menu.getRelateImagePath())
+                .relateImageNm(menu.getRelateImageNm())
+                .build();
     }
 }

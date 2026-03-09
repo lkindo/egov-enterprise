@@ -1,4 +1,4 @@
-﻿package com.company.project.service.comment.event;
+package com.company.project.service.comment.event;
 
 public class CommentCreatedEvent extends CommentEvent {
     public CommentCreatedEvent(Object source, String bbsId, Long nttId) {

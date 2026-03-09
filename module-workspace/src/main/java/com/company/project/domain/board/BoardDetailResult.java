@@ -37,6 +37,7 @@ public class BoardDetailResult {
     private String sjBoldAt;
     private String noticeAt;
     private String secretAt;
+    private Integer commentCo;
 
     // BoardMaster fields
     private String bbsTyCode;

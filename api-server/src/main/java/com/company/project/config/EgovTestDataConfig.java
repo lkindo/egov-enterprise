@@ -38,24 +38,22 @@ public class EgovTestDataConfig {
     private void createTestUser(String userId, String userNm, String role, String esntlId) {
         if (userRepository.findById(userId).isEmpty()) {
             log.info(">>> Creating test user: {} (Role: {})", userId, role);
-            
+
             User user = User.builder()
                     .userId(userId)
                     .password(passwordEncoder.encode("1"))
                     .userNm(userNm)
                     .esntlId(esntlId)
-                    .userSe("USR")
-                    .userSttus("P")
                     .sbscrbDe(LocalDateTime.now())
                     .build();
-            
+
             userRepository.save(user);
-            
+
             UserAuthority authority = UserAuthority.builder()
-                    .esntlId(esntlId)
+                    .uniqId(esntlId)
                     .authorCode(role)
                     .build();
-            
+
             userAuthorityRepository.save(authority);
             log.info(">>> Test user created successfully: {}", userId);
         }

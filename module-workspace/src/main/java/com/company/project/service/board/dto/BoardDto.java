@@ -87,7 +87,7 @@ public class BoardDto {
     private final String blogAt;
 
     @Schema(description = "Description")
-    private final Long commentCo;
+    private final Integer commentCo;
 
     @Schema(description = "Description")
     private final String bbsNm;
@@ -121,7 +121,7 @@ public class BoardDto {
                 .password(entity.getPassword())
                 .secretAt(entity.getSecretAt())
                 .blogAt(entity.getBlogId() != null ? "Y" : "N")
-                .commentCo(0L)
+                .commentCo(0)
                 .build();
     }
 
