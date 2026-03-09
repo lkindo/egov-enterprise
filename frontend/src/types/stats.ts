@@ -1,4 +1,4 @@
-export interface ConnectStats {
+﻿export interface ConnectStats {
   date: string;
   count: number;
 }
@@ -20,7 +20,7 @@ export interface SummaryStats {
   totalUsers: number;
   totalPosts: number;
   todayConnects: number;
-  pendingTroubles: number;
+  
 }
 
 export interface StatsVO {
@@ -39,3 +39,4 @@ export interface StatsSearchParams {
   pageIndex?: number;
   size?: number;
 }
+

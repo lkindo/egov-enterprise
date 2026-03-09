@@ -5,16 +5,15 @@ import lombok.Builder;
 import lombok.Getter;
 import java.time.LocalDateTime;
 
-/**
- * 留덉???씠吏 ?⑦?痢?DTO
- */
 @Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class MyPageContentDto {
     private String cntntsId;
     private String cntntsNm;
     private String cntntsLinkUrl;
-    private String cntcUrl;
     private String cntntsDc;
     private String cntntsUseAt;
     private String frstRegisterId;
@@ -25,7 +24,6 @@ public class MyPageContentDto {
                 .cntntsId(entity.getCntntsId())
                 .cntntsNm(entity.getCntntsNm())
                 .cntntsLinkUrl(entity.getCntntsLinkUrl())
-                .cntcUrl(entity.getCntcUrl())
                 .cntntsDc(entity.getCntntsDc())
                 .cntntsUseAt(entity.getCntntsUseAt())
                 .frstRegisterId(entity.getFrstRegisterId())
@@ -33,3 +31,4 @@ public class MyPageContentDto {
                 .build();
     }
 }
+

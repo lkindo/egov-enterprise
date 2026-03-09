@@ -115,11 +115,10 @@ export default function AdminStatsClient({
       />
 
       {/* Luxury Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <LuxuryStatCard title="Accumulated Nodes" value={initialSummary?.totalUsers} icon={<Users size={24} />} trend="+2.5%" color="slate" />
         <LuxuryStatCard title="Active Protocols" value={initialSummary?.todayConnects} icon={<Zap size={24} />} trend="+12%" color="primary" />
         <LuxuryStatCard title="Data Persistence" value={initialSummary?.totalPosts} icon={<FileText size={24} />} trend="+0.8%" color="indigo" />
-        <LuxuryStatCard title="System Anomalies" value={initialSummary?.pendingTroubles} icon={<AlertTriangle size={24} />} isAlert color="rose" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">

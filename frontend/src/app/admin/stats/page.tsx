@@ -1,12 +1,12 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { statsAdminService } from '@/services/admin/stats/StatsAdminService';
 import AdminStatsClient from './AdminStatsClient';
 import { Loader2 } from 'lucide-react';
 
 export const metadata = {
-  title: '인텔리전스 통계 대시보드 | 전자정부 표준프레임워크',
-  description: '시스템 전반의 활동 데이터와 도메인 지표를 실시간으로 분석합니다.',
+  title: '?명뀛由ъ쟾???듦퀎 ??쒕낫??| ?꾩옄?뺣? ?쒖??꾨젅?꾩썙??,
+  description: '?쒖뒪???꾨컲???쒕룞 ?곗씠?곗? ?꾨찓??吏?쒕? ?ㅼ떆媛꾩쑝濡?遺꾩꽍?⑸땲??',
 };
 
 export default async function AdminStatsPage() {
@@ -14,14 +14,14 @@ export default async function AdminStatsPage() {
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  // [Eliminating Waterfalls] 병렬 데이터 호출
+  // [Eliminating Waterfalls] 蹂묐젹 ?곗씠???몄텧
   let initialSummary = null;
   let initialConnectData: any[] = [];
   let initialMenuData: any[] = [];
 
   try {
     const [sumRes, connRes, menuRes] = await Promise.all([
-      statsAdminService.getSummary(axiosConfig).catch(() => ({ totalUsers: 0, totalPosts: 0, todayConnects: 0, pendingTroubles: 0 })),
+      statsAdminService.getSummary(axiosConfig).catch(() => ({ totalUsers: 0, totalPosts: 0, todayConnects: 0 })),
       statsAdminService.getConnectStats({ startDate: '20260201', endDate: '20260214' }, axiosConfig).catch(() => []),
       statsAdminService.getMenuStats(axiosConfig).catch(() => [])
     ]);
@@ -65,3 +65,4 @@ function AdminStatsLoading() {
     </div>
   );
 }
+
