@@ -39,7 +39,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @ActiveProfiles("test")
 @org.springframework.test.context.TestPropertySource(properties = "jwt.secret=test-secret-key-for-unit-testing-purposes-only-12345678901234567890")
-@org.junit.jupiter.api.Disabled("Disabled due to major refactoring of AuthController")
 class AuthApiControllerTest {
 
     @Autowired

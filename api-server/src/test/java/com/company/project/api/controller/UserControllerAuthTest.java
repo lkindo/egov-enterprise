@@ -1,6 +1,5 @@
 package com.company.project.api.controller;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -8,7 +7,6 @@ import org.junit.jupiter.api.Test;
  * UserController 인증 테스트 설정
  * Note: Security 관련 필터 등록 및 인증 절차 설정 테스트
  */
-@Disabled("Security 설정 연동 전까지 비활성화")
 class UserControllerAuthTest {
 
     @Test

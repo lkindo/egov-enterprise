@@ -142,11 +142,32 @@ public class MinimalTestConfig {
                     "egovIntrfcManageIdGnrService", "egovJrdcIDGnrService", "egovLoginLogIdGnrService",
                     "egovLoginPolicyIdGnrService", "egovLoginScrinIdGnrService", "egovManageIemIdGnrService",
                     "egovMeetingIdGnrService", "egovMeetingManageIdGnrService", "egovMemoReprtIdGnrService",
-                    "egovMemoTodoIdGnrService", "egovNcrdIdGnrService", "egovNcrdUserIdGnrService"
+                    "egovMemoTodoIdGnrService", "egovNcrdIdGnrService", "egovNcrdUserIdGnrService",
+                    "reprtStatsIdGnrService", "egovRestIdGnrService", "egovSmsIdGnrService",
+                    "egovSmsRecptnIdGnrService", "egovIndvdlYrycManageIdGnrService", "egovCtsnnManageIdGnrService",
+                    "egovPopupManageIdGnrService", "egovBannerIdGnrService", "egovFaqIdGnrService",
+                    "egovQnaIdGnrService", "egovConsltIdGnrService", "egovWordDicaryIdGnrService",
+                    "egovOnlineMnlIdGnrService", "egovHpcmDfIdGnrService", "egovNewsIdGnrService",
+                    "egovSchedulIdGnrService", "egovMemoIdGnrService", "egovTodoIdGnrService",
+                    "egovDiaryIdGnrService", "egovScrapIdGnrService", "egovWikiIdGnrService",
+                    "egovWikiMnthngReprtIdGnrService", "egovRoughmapIdGnrService",
+                    "egovMailIdGnrService", "egovImageIdGnrService", "egovFileGroupIdGnrService",
+                    "egovBlogIdGnrService", "egovBlogUserIdGnrService", "egovCmmntyUserIdGnrService",
+                    "egovBndtManageIdGnrService", "egovBndtDiaryIdGnrService",
+                    "egovBndtCeckManageIdGnrService", "egovLeaderSchdulIdGnrService", "egovLeaderSttusIdGnrService",
+                    "egovMtgManageIdGnrService", "egovMtgPlaceManageIdGnrService", "egovMtgPlaceResveIdGnrService",
+                    "egovRwardManageIdGnrService", "egovVcatnManageIdGnrService", "egovPollManageIdGnrService",
+                    "egovPollItemIdGnrService", "egovPollResultIdGnrService", "egovQestnrInfoIdGnrService",
+                    "egovQestnrQesitmIdGnrService", "egovQestnrRespondInfoIdGnrService", "egovQestnrTmplatIdGnrService",
+                    "egovRecentSrchWrdIdGnrService", "egovRecentSrchWrdManageIdGnrService", "egovRecomendSiteIdGnrService",
+                    "egovSiteInfoIdGnrService", "egovIndvdlPgeIdGnrService", "egovMyPageCntntsIdGnrService",
+                    "egovPrivacyLogIdGnrService", "egovUserLogIdGnrService", "egovWebLogIdGnrService",
+                    "egovSysLogIdGnrService", "egovStsfdgIdGnrService", "egovReprtStatsIdGnrService",
+                    "egovDtaUseStatsIdGnrService", "egovNtmplIdGnrService"
             };
 
             for (String name : commonIdGnrNames) {
-                if (!factory.containsBeanDefinition(name)) {
+                if (!factory.containsBeanDefinition(name) && !factory.containsSingleton(name)) {
                     factory.registerSingleton(name, Mockito.mock(org.egovframe.rte.fdl.idgnr.EgovIdGnrService.class));
                 }
             }
