@@ -2,7 +2,6 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import client from '@/lib/api/client';
 import { noteService } from '../NoteService';
 import { scrapService } from '../ScrapService';
-import { welfareService } from '../WelfareService';
 import { menuService } from '../MenuService';
 
 vi.mock('@/lib/api/client', () => ({
@@ -25,11 +24,6 @@ describe('Final Domain Services', () => {
   it('scrapService calls correct endpoints', async () => {
     await scrapService.getMyScraps({ page: 0 });
     expect(client.get).toHaveBeenCalledWith('/scraps', expect.any(Object));
-  });
-
-  it('welfareService calls correct endpoints', async () => {
-    await welfareService.getRewards({ page: 0 });
-    expect(client.get).toHaveBeenCalledWith('/uss/ion/rewards', expect.any(Object));
   });
 
   it('menuService calls correct endpoints', async () => {

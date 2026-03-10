@@ -4,7 +4,6 @@ import * as pollService from '../poll/pollService';
 import commentService from '../comment/commentService';
 import fileService from '../file/fileService';
 import * as securityService from '../security/securityService';
-import * as termsService from '../terms/termsService';
 
 vi.mock('@/lib/api/client', () => ({
   default: {
@@ -39,12 +38,5 @@ describe('Common Support Services', () => {
     // Correct method is getAuthorList
     await securityService.getAuthorList({});
     expect(client.get).toHaveBeenCalledWith('/admin/system/authorities', expect.any(Object));
-  });
-
-  it('termsService calls correct endpoints', async () => {
-    // Correct method is getTermsList
-    (client.get as any).mockResolvedValue({ list: [] });
-    await termsService.getTermsList({});
-    expect(client.get).toHaveBeenCalledWith('/admin/terms', expect.any(Object));
   });
 });

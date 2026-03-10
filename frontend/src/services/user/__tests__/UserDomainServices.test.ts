@@ -1,7 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import client from '@/lib/api/client';
 import { boardUserService } from '../board/BoardUserService';
-import { vacationUserService } from '../vacation/VacationUserService';
 import { approvalUserService } from '../approval/ApprovalUserService';
 
 vi.mock('@/lib/api/client', () => ({
@@ -19,14 +18,6 @@ describe('User Domain Services', () => {
   it('BoardUserService should call correct endpoints', async () => {
     await boardUserService.getPosts('BBS01', { page: 0 });
     expect(client.get).toHaveBeenCalledWith('/boards/BBS01', expect.objectContaining({
-      params: { page: 0 }
-    }));
-  });
-
-  it('VacationUserService should call correct endpoints', async () => {
-    // Correct method is getMyVacations
-    await vacationUserService.getMyVacations({ page: 0 });
-    expect(client.get).toHaveBeenCalledWith('/vacations', expect.objectContaining({
       params: { page: 0 }
     }));
   });

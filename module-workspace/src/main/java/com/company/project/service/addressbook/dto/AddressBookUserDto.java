@@ -11,7 +11,6 @@ public class AddressBookUserDto {
     private String adbkUserId;
     private String adbkId;
     private String emplyrId;
-    private String ncrdId;
     private String nm;
     private String emailAdres;
     private String homeTelno;
@@ -32,9 +31,6 @@ public class AddressBookUserDto {
         return emplyrId;
     }
 
-    public String getNcrdId() {
-        return ncrdId;
-    }
 
     public String getNm() {
         return nm;

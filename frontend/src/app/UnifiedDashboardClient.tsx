@@ -50,14 +50,12 @@ import { statsAdminService, StatsDto } from '@/services/admin/system/StatsAdminS
 import { useQuery } from '@tanstack/react-query';
 
 interface UnifiedDashboardClientProps {
-  initialLeave: any;
   initialNotiList: any[];
   initialTaskList: any[];
   pendingApprovalCount: number;
 }
 
 export default function UnifiedDashboardClient({
-  initialLeave,
   initialNotiList,
   initialTaskList,
   pendingApprovalCount
@@ -65,7 +63,6 @@ export default function UnifiedDashboardClient({
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  const [myLeave] = useState(initialLeave);
   const [notiList] = useState(initialNotiList);
   const [taskList] = useState(initialTaskList);
   const [pendingCount] = useState(pendingApprovalCount);
@@ -146,14 +143,6 @@ export default function UnifiedDashboardClient({
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => router.push('/vacation')}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 bg-slate-900 text-white dark:bg-primary dark:text-primary-foreground rounded-[2rem] font-black shadow-2xl shadow-slate-900/20 hover:bg-slate-800 dark:hover:bg-primary/90 transition-colors"
-          >
-            <Zap size={20} /> 휴가 신청
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             onClick={() => router.push('/cop/bbs')}
             className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-slate-900 dark:text-white dark:border-white/10 rounded-[2rem] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
           >
@@ -174,15 +163,6 @@ export default function UnifiedDashboardClient({
 
       {/* Summary Cards with Industrial Aesthetic */}
       <motion.div variants={containerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        <SummaryCard
-          key="summary-vacation"
-          title="잔여 연차"
-          value={`${myLeave?.remndrYrycCo || 0}d`}
-          description={`Total 15 days allotted for ${new Date().getFullYear()}`}
-          icon={<Calendar size={24} />}
-          trend={12}
-          color="blue"
-        />
         <SummaryCard
           key="summary-tasks"
           title="내 업무 현황"

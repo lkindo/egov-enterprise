@@ -4,8 +4,6 @@ import com.company.project.domain.addressbook.AddressBook;
 import com.company.project.domain.addressbook.AddressBookRepository;
 import com.company.project.domain.addressbook.AddressBookUser;
 import com.company.project.domain.addressbook.AddressBookUserRepository;
-import com.company.project.domain.namecard.NameCard;
-import com.company.project.domain.namecard.NameCardRepository;
 import com.company.project.service.addressbook.dto.AddressBookDto;
 import com.company.project.service.addressbook.dto.AddressBookUserDto;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +24,7 @@ public class AddressBookServiceImpl implements AddressBookService {
 
     private final AddressBookRepository addressBookRepository;
     private final AddressBookUserRepository addressBookUserRepository;
-    private final NameCardRepository nameCardRepository;
+
     @org.springframework.beans.factory.annotation.Qualifier("egovAdbkIdGnrService")
     private final EgovIdGnrService egovAdbkIdGnrService;
     @org.springframework.beans.factory.annotation.Qualifier("egovAdbkUserIdGnrService")
@@ -76,7 +74,6 @@ public class AddressBookServiceImpl implements AddressBookService {
                             .adbkUserId(adbkUserId)
                             .adbkId(adbkId)
                             .emplyrId(userDto.getEmplyrId())
-                            .ncrdId(userDto.getNcrdId())
                             .nm(userDto.getNm())
                             .emailAdres(userDto.getEmailAdres())
                             .homeTelno(userDto.getHomeTelno())
@@ -110,8 +107,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         // Delete users not in the new list
         for (AddressBookUser existing : existingUsers) {
             boolean remains = dto.getAdbkMan().stream()
-                    .anyMatch(u -> (u.getEmplyrId() != null && u.getEmplyrId().equals(existing.getEmplyrId())) ||
-                            (u.getNcrdId() != null && u.getNcrdId().equals(existing.getNcrdId())));
+                    .anyMatch(u -> (u.getEmplyrId() != null && u.getEmplyrId().equals(existing.getEmplyrId())));
             if (!remains) {
                 addressBookUserRepository.delete(Objects.requireNonNull(existing));
             }
@@ -120,8 +116,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         // Add new users
         for (AddressBookUserDto userDto : dto.getAdbkMan()) {
             boolean exists = existingUsers.stream()
-                    .anyMatch(u -> (u.getEmplyrId() != null && u.getEmplyrId().equals(userDto.getEmplyrId())) ||
-                            (u.getNcrdId() != null && u.getNcrdId().equals(userDto.getNcrdId())));
+                    .anyMatch(u -> (u.getEmplyrId() != null && u.getEmplyrId().equals(userDto.getEmplyrId())));
             if (!exists) {
                 try {
                     String adbkUserId = egovAdbkUserIdGnrService.getNextStringId();
@@ -129,7 +124,6 @@ public class AddressBookServiceImpl implements AddressBookService {
                             .adbkUserId(adbkUserId)
                             .adbkId(dto.getAdbkId())
                             .emplyrId(userDto.getEmplyrId())
-                            .ncrdId(userDto.getNcrdId())
                             .nm(userDto.getNm())
                             .emailAdres(userDto.getEmailAdres())
                             .homeTelno(userDto.getHomeTelno())
@@ -169,19 +163,7 @@ public class AddressBookServiceImpl implements AddressBookService {
 
     @Override
     public AddressBookUserDto getAdbkUser(String id) {
-        if (id.startsWith("NCRD")) {
-            NameCard nameCard = nameCardRepository.findById(id).orElse(null);
-            if (nameCard != null) {
-                return AddressBookUserDto.builder()
-                        .ncrdId(nameCard.getNcrdId())
-                        .nm(nameCard.getName())
-                        .emailAdres(nameCard.getEmailAddress())
-                        .homeTelno(nameCard.getTelNumber())
-                        .moblphonNo(nameCard.getMobileNumber())
-                        .build();
-            }
-        }
-        // Simplified for other user types (handled by frontend search usually)
+        // NameCard integration was removed.
         return null;
     }
 
@@ -205,7 +187,6 @@ public class AddressBookServiceImpl implements AddressBookService {
                 .adbkUserId(entity.getAdbkUserId())
                 .adbkId(entity.getAdbkId())
                 .emplyrId(entity.getEmplyrId())
-                .ncrdId(entity.getNcrdId())
                 .nm(entity.getNm())
                 .emailAdres(entity.getEmailAdres())
                 .homeTelno(entity.getHomeTelno())

@@ -26,8 +26,6 @@ public class AddressBookUser {
     @Column(name = "emplyr_id", length = 20)
     private String emplyrId;
 
-    @Column(name = "ncrd_id", length = 20)
-    private String ncrdId;
 
     @Column(name = "nm", length = 50)
     private String nm;
@@ -48,12 +46,11 @@ public class AddressBookUser {
     private String fxnum;
 
     @Builder
-    public AddressBookUser(String adbkUserId, String adbkId, String emplyrId, String ncrdId, String nm,
+    public AddressBookUser(String adbkUserId, String adbkId, String emplyrId, String nm,
             String emailAdres, String homeTelno, String moblphonNo, String offmTelno, String fxnum) {
         this.adbkUserId = adbkUserId;
         this.adbkId = adbkId;
         this.emplyrId = emplyrId;
-        this.ncrdId = ncrdId;
         this.nm = nm;
         this.emailAdres = emailAdres;
         this.homeTelno = homeTelno;

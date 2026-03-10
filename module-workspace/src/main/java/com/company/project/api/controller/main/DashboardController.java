@@ -2,25 +2,23 @@ package com.company.project.api.controller.main;
 
 import com.company.project.service.board.EgovBoardService;
 import com.company.project.service.board.dto.BoardDto;
+import com.company.project.service.informalsanction.InformalSanctionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.company.project.service.informalsanction.InformalSanctionService;
-import com.company.project.service.vacation.VacationService;
-import com.company.project.service.vacation.dto.YearlyLeaveDto;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.data.domain.Pageable;
-import java.time.LocalDate;
 
 @Tag(name = "Dashboard", description = "메인 대시보드 데이터 제공 API")
 @RestController
@@ -30,9 +28,8 @@ public class DashboardController {
 
     private final EgovBoardService boardService;
     private final InformalSanctionService approvalService;
-    private final VacationService vacationService;
 
-    @Operation(summary = "메인 대시보드 요약 데이터 조회", description = "공지사항, 할 일, 결재 대기 건수, 휴가 정보 등을 통합 조회합니다.")
+    @Operation(summary = "메인 대시보드 요약 데이터 조회", description = "공지사항, 할 일, 결재 대기 건수 등을 통합 조회합니다.")
     @GetMapping
     public ResponseEntity<?> getDashboardData(@AuthenticationPrincipal UserDetails userDetails) throws Exception {
         String userId = userDetails.getUsername();
@@ -60,15 +57,6 @@ public class DashboardController {
             result.put("pendingApprovalCount", pendingApprovalCount);
         } catch (Exception e) {
             result.put("pendingApprovalCount", 0);
-        }
-
-        // 4. 휴가 정보 (연차 현황)
-        try {
-            String currentYear = String.valueOf(LocalDate.now().getYear());
-            YearlyLeaveDto leaveInfo = vacationService.getYearlyLeave(currentYear, userId);
-            result.put("leaveInfo", leaveInfo);
-        } catch (Exception e) {
-            result.put("leaveInfo", null);
         }
 
         result.put("success", true);

@@ -1,7 +1,7 @@
 package com.company.project.api.config;
 
-import org.egovframe.rte.fdl.excel.impl.EgovExcelServiceImpl;
 import org.springframework.context.annotation.Bean;
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -49,14 +49,5 @@ public class EgovConfig {
         return message;
     }
 
-    // [context-excel.xml] Excel Service
-    @Bean
-    public EgovExcelServiceImpl excelRdnmadZipService() {
-        return new EgovExcelServiceImpl();
-    }
-
-    @Bean
-    public EgovExcelServiceImpl excelZipService() {
-        return new EgovExcelServiceImpl();
-    }
 }
+

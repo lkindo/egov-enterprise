@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import UnifiedDashboardClient from './UnifiedDashboardClient';
-import { vacationUserService } from '@/services/user/vacation/VacationUserService';
 import client from '@/lib/api/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardResponse, DashboardNoti, DashboardTask } from '@/types/dashboard';
@@ -14,7 +13,6 @@ async function getDashboardData() {
   try {
     const dashboardRes = await client.get<any>('/dashboard', axiosConfig);
 
-    let initialLeave = null;
     let initialNotiList: DashboardNoti[] = [];
     let initialTaskList: DashboardTask[] = [];
     let pendingApprovalCount = 0;
@@ -22,13 +20,12 @@ async function getDashboardData() {
     if (dashboardRes) {
       initialNotiList = (dashboardRes.notiList || []).slice(0, 6);
       initialTaskList = (dashboardRes.taskList || []).slice(0, 6);
-      initialLeave = dashboardRes.leaveInfo;
       pendingApprovalCount = dashboardRes.pendingApprovalCount || 0;
     }
 
-    return { initialLeave, initialNotiList, initialTaskList, pendingApprovalCount };
+    return { initialNotiList, initialTaskList, pendingApprovalCount };
   } catch (err) {
-    return { initialLeave: null, initialNotiList: [], initialTaskList: [], pendingApprovalCount: 0 };
+    return { initialNotiList: [], initialTaskList: [], pendingApprovalCount: 0 };
   }
 }
 
@@ -37,7 +34,6 @@ export default async function UnifiedDashboardPage() {
   return (
     <Suspense fallback={<DashboardSkeleton />}>
       <UnifiedDashboardClient
-        initialLeave={data.initialLeave}
         initialNotiList={data.initialNotiList}
         initialTaskList={data.initialTaskList}
         pendingApprovalCount={data.pendingApprovalCount}

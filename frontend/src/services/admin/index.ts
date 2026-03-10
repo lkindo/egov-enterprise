@@ -3,4 +3,3 @@ export * from './system';
 export * from './user';
 export * from './stats';
 export * from './survey';
-export * from './vacation';
