@@ -23,14 +23,21 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.util.Properties;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import com.company.project.service.user.UserService;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 @TestConfiguration
 @Profile("test")
-@org.springframework.web.servlet.config.annotation.EnableWebMvc
-@org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-@org.springframework.data.web.config.EnableSpringDataWebSupport(pageSerializationMode = org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
+@org.springframework.boot.test.mock.mockito.MockBean(classes = {
+        org.springframework.security.web.SecurityFilterChain.class,
+        org.springframework.security.authentication.AuthenticationManager.class
+})
 @org.springframework.context.annotation.Import({
         EgovSymIdGnrConfig.class,
         org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
@@ -53,29 +60,31 @@ import java.util.Properties;
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Interceptor.*")
 })
 @EnableJpaRepositories(basePackages = "com.company.project.domain")
-@EntityScan(basePackages = { "com.company.project.domain", "egovframework.com" })
+@EntityScan(basePackages = { "com.company.project.domain" })
 public class MinimalTestConfig {
+
+    @MockBean
+    private UserService userService;
+
+    @Bean
+    public MeterRegistry meterRegistry() {
+        return new SimpleMeterRegistry();
+    }
 
     @Bean
     public EgovPasswordEncoder egovPasswordEncoder() {
         return new EgovPasswordEncoder();
     }
 
-    @Bean
+    @Bean(name = "dataSource")
     @Primary
-    public DataSourceProperties dataSourceProperties() {
+    public DataSource dataSource() {
         DataSourceProperties properties = new DataSourceProperties();
         properties.setUrl(
                 "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE");
         properties.setDriverClassName("org.h2.Driver");
         properties.setUsername("sa");
         properties.setPassword("");
-        return properties;
-    }
-
-    @Bean
-    @Primary
-    public DataSource dataSource(DataSourceProperties properties) {
         return properties.initializeDataSourceBuilder().build();
     }
 
@@ -87,7 +96,8 @@ public class MinimalTestConfig {
 
     @Bean
     @Primary
-    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+    public JdbcTemplate jdbcTemplate(
+            @org.springframework.beans.factory.annotation.Qualifier("dataSource") DataSource dataSource) {
         return new JdbcTemplate(dataSource);
     }
 
@@ -146,7 +156,7 @@ public class MinimalTestConfig {
                     "reprtStatsIdGnrService", "egovSmsIdGnrService",
                     "egovSmsRecptnIdGnrService",
                     "egovPopupManageIdGnrService", "egovBannerIdGnrService", "egovFaqIdGnrService",
-                    "egovQnaIdGnrService", "egovWordDicaryIdGnrService",
+                    "egovQnaIdGnrService", "egovConsltIdGnrService", "egovWordDicaryIdGnrService",
                     "egovOnlineMnlIdGnrService", "egovHpcmDfIdGnrService",
                     "egovSchedulIdGnrService", "egovMemoIdGnrService", "egovTodoIdGnrService",
                     "egovDiaryIdGnrService", "egovScrapIdGnrService", "egovWikiIdGnrService",

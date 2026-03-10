@@ -23,18 +23,18 @@ describe('CodeAdminService', () => {
     it('createClCode should call post', async () => {
       const data = { clCode: 'CL01', clCodeNm: 'Test' };
       await codeAdminService.createClCode(data as any);
-      expect(client.post).toHaveBeenCalledWith('/admin/codes/cl', data);
+      expect(client.post).toHaveBeenCalledWith('/admin/codes/cl', data, undefined);
     });
 
     it('updateClCode should handle string clCode', async () => {
       const data = { clCode: 'CL01', clCodeNm: 'Updated' };
       await codeAdminService.updateClCode('CL01', data as any);
-      expect(client.put).toHaveBeenCalledWith('/admin/codes/cl/CL01', data);
+      expect(client.put).toHaveBeenCalledWith('/admin/codes/cl/CL01', data, undefined);
     });
 
     it('deleteClCode should call delete', async () => {
       await codeAdminService.deleteClCode('CL01');
-      expect(client.delete).toHaveBeenCalledWith('/admin/codes/cl/CL01');
+      expect(client.delete).toHaveBeenCalledWith('/admin/codes/cl/CL01', undefined);
     });
   });
 
@@ -47,7 +47,7 @@ describe('CodeAdminService', () => {
     it('updateGroup should use codeId from data', async () => {
       const data = { codeId: 'GRP01', codeIdNm: 'Group' };
       await codeAdminService.updateGroup('GRP01', data as any);
-      expect(client.put).toHaveBeenCalledWith('/admin/codes/cmmn/GRP01', data);
+      expect(client.put).toHaveBeenCalledWith('/admin/codes/cmmn/GRP01', data, undefined);
     });
   });
 
@@ -59,12 +59,12 @@ describe('CodeAdminService', () => {
 
     it('getDetailCode should call with codeId and code', async () => {
       await codeAdminService.getDetailCode('GRP01', 'DET01');
-      expect(client.get).toHaveBeenCalledWith('/admin/codes/detail/GRP01/DET01');
+      expect(client.get).toHaveBeenCalledWith('/admin/codes/detail/GRP01/DET01', undefined);
     });
 
     it('deleteDetailCode should handle arguments', async () => {
       await codeAdminService.deleteDetailCode('GRP01', 'DET01');
-      expect(client.delete).toHaveBeenCalledWith('/admin/codes/detail/GRP01/DET01');
+      expect(client.delete).toHaveBeenCalledWith('/admin/codes/detail/GRP01/DET01', undefined);
     });
   });
 });

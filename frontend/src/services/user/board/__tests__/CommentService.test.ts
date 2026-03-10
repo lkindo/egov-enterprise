@@ -24,6 +24,6 @@ describe('Board Comment Service', () => {
   it('createComment calls post with data', async () => {
     const data = { commentCn: 'Test comment', nttId: 1 };
     await commentService.createComment(data as any);
-    expect(client.post).toHaveBeenCalledWith('/comments', data);
+    expect(client.post).toHaveBeenCalledWith('/comments', data, undefined);
   });
 });

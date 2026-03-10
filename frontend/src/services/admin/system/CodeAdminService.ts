@@ -1,13 +1,13 @@
-import { AdminService } from '@/services/core/ApiService';
+import { AdminService, ApiService } from '@/services/core/ApiService';
 import { CmmnClCode, CmmnCode, CmmnDetailCode, SearchParams, PaginationResponse } from '@/types/system';
 import { AxiosRequestConfig } from 'axios';
 
 /**
  * ?⑤벏?삭굜遺얜굡 ?온????뺥돩??(Admin)
  */
-class CodeAdminService extends AdminService {
+class CodeAdminService extends ApiService {
     constructor() {
-        super('/codes');
+        super('/admin/codes');
     }
 
     // --- Classification Code (분류코드) ---

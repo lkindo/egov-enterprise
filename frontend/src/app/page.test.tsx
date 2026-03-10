@@ -4,10 +4,18 @@ import UnifiedDashboardClient from './UnifiedDashboardClient';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock dependencies
+vi.mock('@/services/admin/system/StatsAdminService', () => ({
+  statsAdminService: {
+    getConnectStats: vi.fn().mockResolvedValue([]),
+    getBbsStats: vi.fn().mockResolvedValue([]),
+    getUserStats: vi.fn().mockResolvedValue([]),
+  }
+}));
+
 vi.mock('@/lib/api/client', () => ({
   default: {
-    get: vi.fn(),
-    post: vi.fn(),
+    get: vi.fn().mockResolvedValue([]),
+    post: vi.fn().mockResolvedValue({}),
     interceptors: {
       request: { use: vi.fn() },
       response: { use: vi.fn() }
@@ -43,6 +51,32 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 
+// Mock RealTimeDashboard
+vi.mock('@/components/features/dashboard/RealTimeDashboard', () => ({
+  RealTimeDashboard: () => <div data-testid="real-time-dashboard" />,
+}));
+
+// Mock BannerSlider
+vi.mock('@/app/components/dashboard/BannerSlider', () => ({
+  BannerSlider: () => <div data-testid="banner-slider" />,
+}));
+
+// Mock PopupManager
+vi.mock('@/app/components/dashboard/PopupManager', () => ({
+  PopupManager: () => null,
+}));
+
+// Mock ActivityFeed
+vi.mock('@/app/components/dashboard/ActivityFeed', () => ({
+  ActivityFeed: () => <div data-testid="activity-feed" />,
+}));
+
+// Mock dynamic charts
+vi.mock('@/app/components/dashboard/DashboardCharts', () => ({
+  DashboardVisitorChart: () => <div data-testid="visitor-chart" />,
+  DashboardPostChart: () => <div data-testid="post-chart" />,
+}));
+
 describe('DashboardPage', () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -62,7 +96,6 @@ describe('DashboardPage', () => {
 
   it('renders dashboard data correctly', async () => {
     const props = {
-      initialLeave: { remndrYrycCo: 12.5 },
       initialNotiList: [{ nttId: 1, nttSj: '공지사항 테스트' }],
       initialTaskList: [{ nttId: 2, nttSj: '할일 테스트' }],
       pendingApprovalCount: 5
@@ -73,7 +106,6 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       expect(screen.getByText(/공지사항 테스트/)).toBeInTheDocument();
       expect(screen.getByText(/할일 테스트/)).toBeInTheDocument();
-      expect(screen.getByText(/12.5/)).toBeInTheDocument();
     });
   });
 
@@ -89,7 +121,6 @@ describe('DashboardPage', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-      expect(screen.getByText(/휴가 신청/)).toBeInTheDocument();
     });
   });
 

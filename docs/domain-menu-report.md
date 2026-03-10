@@ -44,7 +44,7 @@
 | Congratulation (삭제됨) | 직원경조사관리 (삭제됨) | - | - |
 | Meeting (삭제됨) | 회의실관리, 회의실예약관리 (삭제됨) | - | - |
 | Campaign (삭제됨) | - | - | - |
-| Counsel (삭제됨) | 상담관리, 상담답변관리 (삭제됨) | - | - |
+| Counsel (상담) | 상담관리, 상담답변관리 | ✅ 정상 | `/admin/help/qna` (Report mapping check) |
 
 ### 🛠️ Workspace 모듈 (`module-workspace`)
 협업 및 개인 업무 정보 도메인

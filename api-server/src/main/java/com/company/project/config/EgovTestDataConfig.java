@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-@Profile("!prod")
+@Profile("!prod & !test")
 public class EgovTestDataConfig {
 
     private final UserRepository userRepository;

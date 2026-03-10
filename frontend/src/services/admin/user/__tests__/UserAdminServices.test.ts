@@ -18,7 +18,7 @@ describe('Admin User & Policy Services', () => {
   it('userAdminService calls correct endpoints', async () => {
     (client.get as any).mockResolvedValue({ list: [], paginationInfo: {} });
     await userAdminService.getUsers({ pageIndex: 1 });
-    expect(client.get).toHaveBeenCalledWith('/admin/users', expect.any(Object));
+    expect(client.get).toHaveBeenCalledWith('/admin/system/users', expect.any(Object));
   });
 
   it('loginPolicyAdminService calls correct endpoints', async () => {
