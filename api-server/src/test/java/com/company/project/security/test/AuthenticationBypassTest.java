@@ -1,36 +1,15 @@
 package com.company.project.security.test;
 
-import com.company.project.service.user.UserService;
-import com.company.project.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.security.test.context.support.WithMockUser;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles({ "test", "security-test" })
-@org.springframework.context.annotation.Import(com.company.project.config.SecurityTestConfig.class)
-class AuthenticationBypassTest {
-
-  @Autowired
-  private MockMvc mockMvc;
-
-  @MockitoBean
-  private UserService userService;
-
-  @MockitoBean
-  private JwtTokenProvider jwtTokenProvider;
+class AuthenticationBypassTest extends BaseSecurityTest {
 
   @Test
   @DisplayName("인증되지 않은 사용자가 보호된 엔드포인트에 접근 시 401 Unauthorized 결과 확인")

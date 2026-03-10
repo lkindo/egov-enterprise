@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * API 규격 준수 테스트
  * OpenAPI 명세와 실제 API 응답의 일치 여부 검증
  */
-@SpringBootTest
+@SpringBootTest(properties = "spring.main.allow-bean-definition-overriding=true")
 @AutoConfigureMockMvc
 @ActiveProfiles({ "test", "security-test" })
 @org.springframework.context.annotation.Import(com.company.project.config.SecurityTestConfig.class)

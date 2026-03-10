@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * OpenAPI 문서화 테스트
  * API 문서 구조 및 스펙 확인
  */
-@SpringBootTest
+@SpringBootTest(properties = { "springdoc.api-docs.enabled=true", "springdoc.swagger-ui.enabled=true" })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class OpenApiDocumentationTest {

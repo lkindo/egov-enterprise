@@ -24,7 +24,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(classes = MinimalTestConfig.class)
+@SpringBootTest(classes = { MinimalTestConfig.class, UserController.class }, properties = "spring.main.allow-bean-definition-overriding=true")
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class UserControllerHttpStatusTest {

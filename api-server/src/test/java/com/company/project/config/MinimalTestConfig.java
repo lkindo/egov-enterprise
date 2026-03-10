@@ -27,21 +27,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.util.Properties;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.company.project.service.user.UserService;
+import com.company.project.domain.user.repository.UserRepository;
+import com.company.project.domain.user.repository.EnterpriseUserRepository;
+import com.company.project.domain.user.repository.GeneralUserRepository;
+import com.company.project.domain.auth.UserAuthorityRepository;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 @TestConfiguration
 @Profile("test")
-@org.springframework.boot.test.mock.mockito.MockBean(classes = {
-        org.springframework.security.web.SecurityFilterChain.class,
-        org.springframework.security.authentication.AuthenticationManager.class
-})
 @org.springframework.context.annotation.Import({
         EgovSymIdGnrConfig.class,
         org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
         org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration.class,
         org.springframework.boot.autoconfigure.data.web.SpringDataWebAutoConfiguration.class
 })
 @ComponentScan(basePackages = {
@@ -63,8 +65,20 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 @EntityScan(basePackages = { "com.company.project.domain" })
 public class MinimalTestConfig {
 
-    @MockBean
+    @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @MockitoBean
+    private UserAuthorityRepository userAuthorityRepository;
+
+    @MockitoBean
+    private EnterpriseUserRepository enterpriseUserRepository;
+
+    @MockitoBean
+    private GeneralUserRepository generalUserRepository;
 
     @Bean
     public MeterRegistry meterRegistry() {
@@ -81,7 +95,7 @@ public class MinimalTestConfig {
     public DataSource dataSource() {
         DataSourceProperties properties = new DataSourceProperties();
         properties.setUrl(
-                "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE");
+                "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;DATABASE_TO_LOWER=TRUE");
         properties.setDriverClassName("org.h2.Driver");
         properties.setUsername("sa");
         properties.setPassword("");
@@ -130,7 +144,7 @@ public class MinimalTestConfig {
     }
 
     @Bean
-    @Primary
+    @Profile("!security-test")
     @org.springframework.core.annotation.Order(org.springframework.core.Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(auth -> auth.anyRequest().permitAll());

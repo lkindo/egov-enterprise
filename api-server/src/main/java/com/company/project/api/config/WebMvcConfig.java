@@ -9,7 +9,6 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-@Profile("!test")
 @RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
 

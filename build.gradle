@@ -56,7 +56,7 @@ subprojects {
 
     test {
         useJUnitPlatform()
-        maxHeapSize = "4096m"
+        maxHeapSize = "6144m"
         maxParallelForks = 1
         systemProperty 'file.encoding', 'UTF-8'
         systemProperty 'stdout.encoding', 'UTF-8'

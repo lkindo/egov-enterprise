@@ -6,9 +6,13 @@
     "dev": "npx -y concurrently -n \"API,WEB\" -c \"blue,green\" \"gradlew :api-server:bootRun\" \"pnpm -C frontend dev\"",
     "backend": "gradlew :api-server:bootRun",
     "frontend": "pnpm -C frontend dev",
-    "all": "npm run dev"
+    "all": "npm run dev",
+    "test": "npx cross-env TZ=Asia/Seoul gradlew test -Dfile.encoding=UTF-8",
+    "test:ci": "npx cross-env TZ=Asia/Seoul gradlew test --continue -Dfile.encoding=UTF-8",
+    "test:coverage": "npx cross-env TZ=Asia/Seoul gradlew test jacocoRootReport --continue -Dfile.encoding=UTF-8"
   },
   "dependencies": {
+    "cross-env": "^7.0.3",
     "pg": "^8.20.0"
   }
 }

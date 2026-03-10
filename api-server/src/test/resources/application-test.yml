@@ -44,6 +44,12 @@ spring:
       cache:
         maxSize: 8
 
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 # 파일 업로드 경로 (테스트용)
 file:
   upload-dir: ./test-uploads

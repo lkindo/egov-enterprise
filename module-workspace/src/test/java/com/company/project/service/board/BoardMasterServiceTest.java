@@ -183,7 +183,7 @@ class BoardMasterServiceTest {
   @DisplayName("게시판嶺뚮씭???사용자이후 - ID 사용자 醫롫윥筌?)")
   void createBoardMaster_fail_idGeneration() throws Exception {
     // Given
-    when(idgenService.getNextStringId()).thenThrow(new Exception("ID generation failed"));
+    when(idgenService.getNextStringId()).thenThrow(new RuntimeException("ID generation failed"));
 
     // When & Then
     assertThatThrownBy(() -> boardMasterService.createBoardMaster(boardMasterDto))
@@ -217,7 +217,7 @@ class BoardMasterServiceTest {
   @DisplayName("게시판嶺뚮씭???사용자이후 - 존재하지 않는 테스트ID")
   void updateBoardMaster_fail_notFound() {
     // Given
-    when(boardMasterRepository.findById("NONEXISTENT")).thenReturn(Optional.empty());
+    when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.empty());
 
     // When & Then
     assertThatThrownBy(() -> boardMasterService.updateBoardMaster(boardMasterDto))
