@@ -94,11 +94,15 @@ tasks.register("jacocoRootReport", JacocoReport) {
     dependsOn subprojects.test
     dependsOn subprojects.jacocoTestReport
 
-    // Collect source files from all subprojects
+    def classFiles = files()
+    def sourceFiles = files()
     subprojects.each { subproject ->
-        additionalSourceDirs.from(subproject.sourceSets.main.allSource.srcDirs)
-        additionalClassDirs.from(subproject.sourceSets.main.output)
+        classFiles = classFiles.plus(subproject.sourceSets.main.output)
+        sourceFiles = sourceFiles.plus(subproject.sourceSets.main.allSource.srcDirs)
     }
+
+    classDirectories.setFrom(classFiles)
+    sourceDirectories.setFrom(sourceFiles)
 
     // Aggregating execution data files (*.exec) from all subprojects
     executionData.setFrom(fileTree(dir: rootDir, include: "**/build/jacoco/*.exec"))
@@ -109,17 +113,11 @@ tasks.register("jacocoRootReport", JacocoReport) {
     }
 
     reports {
-        xml {
-            required = true
-            outputLocation = file("${rootDir}/coverage-report/jacocoRootReport.xml")
-        }
-        csv {
-            required = true
-            outputLocation = file("${rootDir}/coverage-report/jacocoRootReport.csv")
-        }
-        html {
-            required = true
-            outputLocation = file("${rootDir}/coverage-report")
-        }
+        xml.required = true
+        xml.outputLocation = file("${rootDir}/coverage-report/jacocoRootReport.xml")
+        csv.required = true
+        csv.outputLocation = file("${rootDir}/coverage-report/jacocoRootReport.csv")
+        html.required = true
+        html.outputLocation = file("${rootDir}/coverage-report")
     }
 }
