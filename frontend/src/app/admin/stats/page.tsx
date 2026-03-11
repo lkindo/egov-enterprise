@@ -1,12 +1,12 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { statsAdminService } from '@/services/admin/stats/StatsAdminService';
+import { statsAdminService } from '@/services/admin/system/StatsAdminService';
 import AdminStatsClient from './AdminStatsClient';
-import { Loader2 } from 'lucide-react';
+import { SummaryStats, MenuStats } from '@/types/stats';
 
 export const metadata = {
-  title: '?명뀛由ъ쟾???듦퀎 ??쒕낫??| ?꾩옄?뺣? ?쒖??꾨젅?꾩썙??,
-  description: '?쒖뒪???꾨컲???쒕룞 ?곗씠?곗? ?꾨찓??吏?쒕? ?ㅼ떆媛꾩쑝濡?遺꾩꽍?⑸땲??',
+  title: '인텔리전트 통계 대시보드 | 전자정부 표준프레임워크',
+  description: '시스템 전반의 활동 데이터와 도메인 지표를 실시간으로 분석합니다.',
 };
 
 export default async function AdminStatsPage() {
@@ -14,27 +14,27 @@ export default async function AdminStatsPage() {
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  // [Eliminating Waterfalls] 蹂묐젹 ?곗씠???몄텧
-  let initialSummary = null;
+  // [Eliminating Waterfalls] 병렬 데이터 호출
+  let initialSummary: SummaryStats | null = null;
   let initialConnectData: any[] = [];
-  let initialMenuData: any[] = [];
+  let initialMenuData: MenuStats[] = [];
 
   try {
     const [sumRes, connRes, menuRes] = await Promise.all([
       statsAdminService.getSummary(axiosConfig).catch(() => ({ totalUsers: 0, totalPosts: 0, todayConnects: 0 })),
-      statsAdminService.getConnectStats({ startDate: '20260201', endDate: '20260214' }, axiosConfig).catch(() => []),
+      statsAdminService.getConnectStats({ fromDate: '20260201', toDate: '20260312' }, axiosConfig).catch(() => []),
       statsAdminService.getMenuStats(axiosConfig).catch(() => [])
     ]);
 
-    initialSummary = sumRes;
+    initialSummary = sumRes as SummaryStats;
 
     // Transform connect data for area chart
     initialConnectData = Array.isArray(connRes) ? connRes.map((item: any) => ({
-      name: item.date.substring(4, 6) + '/' + item.date.substring(6, 8),
-      count: item.count
+      name: item.statsDate ? `${item.statsDate.substring(4, 6)}/${item.statsDate.substring(6, 8)}` : 'N/A',
+      count: item.statsCo || 0
     })) : [];
 
-    initialMenuData = Array.isArray(menuRes) ? menuRes : [];
+    initialMenuData = (Array.isArray(menuRes) ? menuRes : []) as MenuStats[];
   } catch (error) {
     console.error('Server-side fetch stats failed:', error);
   }
@@ -65,4 +65,3 @@ function AdminStatsLoading() {
     </div>
   );
 }
-

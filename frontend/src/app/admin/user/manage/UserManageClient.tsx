@@ -129,12 +129,12 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                         </div>
                         {!editingUser && (
                             <div className="space-y-3">
-                                <Label htmlFor="password" classname="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{t('login.pwLabel')}</Label>    
+                                <Label htmlFor="password" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{t('login.pwLabel')}</Label>    
                                 <Input id="password" type="password" className="h-14 rounded-2xl border-2 text-lg font-black px-6 focus:ring-primary/20" value={formData.password} onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))} />
                             </div>
                         )}
                         <div className="space-y-3">
-                            <Label htmlFor="email" className="text-[10px) font-black text-slate-400 uppercase tracking-widest px-1">{t('admin.user.email')}</Label>
+                            <Label htmlFor="email" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{t('admin.user.email')}</Label>
                             <Input id="email" type="email" className="h-14 rounded-2xl border-2 text-lg font-black px-6 focus:ring-primary/20" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="connect@egov.com" />
                         </div>
                     </div>
