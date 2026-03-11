@@ -273,4 +273,92 @@ class UserServiceTest {
     // Then
     assertThat(result).isFalse();
   }
+
+  @Test
+  @DisplayName("사용자 정보 수정 테스트")
+  void updateUser_success() {
+    // Given
+    String userId = "testUser";
+    UserDto userDto = UserDto.builder()
+        .userId(userId)
+        .userNm("수정된이름")
+        .esntlId("USR_12345")
+        .emplNo("EMP001")
+        .ofcpsNm("과장")
+        .build();
+    
+    when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+
+    // When
+    userService.updateUser(userId, userDto);
+
+    // Then
+    assertThat(mockUser.getUserNm()).isEqualTo("수정된이름");
+    assertThat(mockUser.getEmplNo()).isEqualTo("EMP001");
+    assertThat(mockUser.getOfcpsNm()).isEqualTo("과장");
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 테스트")
+  void changePassword_success() {
+    // Given
+    String userId = "testUser";
+    String oldPassword = "oldPassword";
+    String newPassword = "newPassword";
+    String encodedNewPassword = "encodedNewPassword";
+
+    when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+    when(passwordEncoder.matches(oldPassword, mockUser.getPassword())).thenReturn(true);
+    when(passwordEncoder.encode(newPassword)).thenReturn(encodedNewPassword);
+
+    // When
+    userService.changePassword(userId, oldPassword, newPassword);
+
+    // Then
+    assertThat(mockUser.getPassword()).isEqualTo(encodedNewPassword);
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 실패 - 기존 비밀번호 불일치")
+  void changePassword_fail_invalidOldPassword() {
+    // Given
+    String userId = "testUser";
+    String oldPassword = "wrongPassword";
+    String newPassword = "newPassword";
+
+    when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+    when(passwordEncoder.matches(oldPassword, mockUser.getPassword())).thenReturn(false);
+
+    // When & Then
+    assertThatThrownBy(() -> userService.changePassword(userId, oldPassword, newPassword))
+        .isInstanceOf(BusinessException.class)
+        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_PASSWORD);
+  }
+
+  @Test
+  @DisplayName("사용자 삭제 테스트")
+  void deleteUser_success() {
+    // Given
+    String userId = "testUser";
+    when(userRepository.existsById(userId)).thenReturn(true);
+
+    // When
+    userService.deleteUser(userId);
+
+    // Then
+    verify(userRepository).deleteById(userId);
+  }
+
+  @Test
+  @DisplayName("사용자 삭제 실패 - 존재하지 않는 사용자")
+  void deleteUser_fail_userNotFound() {
+    // Given
+    String userId = "nonexistent";
+    when(userRepository.existsById(userId)).thenReturn(false);
+
+    // When & Then
+    assertThatThrownBy(() -> userService.deleteUser(userId))
+        .isInstanceOf(BusinessException.class)
+        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+  }
 }

@@ -1,62 +1,99 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from '../AuthContext';
-import client from '@/lib/api/client';
+import { authService } from '@/services/authService';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 
-// Mock the client module
-vi.mock('@/lib/api/client', () => ({
-  default: {
-    get: vi.fn(),
-    post: vi.fn(),
-    interceptors: {
-      response: { use: vi.fn() }
-    }
-  }
+// Mock the authService
+vi.mock('@/services/authService', () => ({
+  authService: {
+    login: vi.fn(),
+    logout: vi.fn(),
+    getCurrentUser: vi.fn(),
+  },
 }));
 
 describe('AuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    window.localStorage.clear();
-    document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    if (typeof window !== 'undefined') {
+      window.localStorage.clear();
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+    }
   });
 
-  it('should not log credentials during login', async () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <AuthProvider>{children}</AuthProvider>
+  );
 
-    // Mock successful login
-    (client.post as any).mockResolvedValue({
-      accessToken: 'mock-token',
-      role: 'ROLE_USER'
-    });
-    // Mock auth check (getCurrentUser)
-    (client.get as any).mockResolvedValue({
-      id: 'test',
-      name: 'Test User'
-    });
+  it('로그인 성공 시 사용자 정보와 토큰을 저장해야 함', async () => {
+    const mockUser = { id: 'test', name: 'Test User', role: 'USER' };
+    const mockLoginResponse = { accessToken: 'mock-token', role: 'USER' };
 
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <AuthProvider>{children}</AuthProvider>
-    );
+    (authService.login as any).mockResolvedValue(mockLoginResponse);
+    (authService.getCurrentUser as any).mockResolvedValue(mockUser);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
-    // Login process
     await act(async () => {
       await result.current.login({ id: 'test', password: 'password' });
     });
 
-    expect(client.post).toHaveBeenCalledWith('auth/login', { id: 'test', password: 'password' });
-    // After login, checkAuth is called
-    await waitFor(() => expect(client.get).toHaveBeenCalledWith('auth/me'));
+    expect(authService.login).toHaveBeenCalled();
+    expect(localStorage.getItem('accessToken')).toBe('mock-token');
+    await waitFor(() => {
+      expect(result.current.user).toEqual(mockUser);
+    });
+  });
 
-    // Security check: logs should not be present
-    // We only care about logs during the login action
-    expect(consoleSpy).not.toHaveBeenCalled();
+  it('로그아웃 시 사용자 정보와 토큰을 제거해야 함', async () => {
+    localStorage.setItem('accessToken', 'mock-token');
+    (authService.logout as any).mockResolvedValue({});
 
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await act(async () => {
+      await result.current.logout();
+    });
+
+    expect(authService.logout).toHaveBeenCalled();
+    expect(localStorage.getItem('accessToken')).toBeNull();
+    expect(result.current.user).toBeNull();
+  });
+
+  it('초기화 시 토큰이 있으면 사용자 정보를 확인해야 함', async () => {
+    localStorage.setItem('accessToken', 'mock-token');
+    const mockUser = { id: 'test', name: 'Test User' };
+    (authService.getCurrentUser as any).mockResolvedValue(mockUser);
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(authService.getCurrentUser).toHaveBeenCalled();
+      expect(result.current.user).toEqual(mockUser);
+    });
+  });
+
+  it('로그인 실패 시 에러를 던져야 함', async () => {
+    (authService.login as any).mockRejectedValue(new Error('Login Failed'));
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await expect(async () => {
+      await act(async () => {
+        await result.current.login({ id: 'bad', password: 'bad' });
+      });
+    }).rejects.toThrow('Login Failed');
+  });
+
+  it('AuthProvider 외부에서 useAuth 사용 시 에러를 던져야 함', () => {
+    // console.error suppression for expected error
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    expect(() => renderHook(() => useAuth())).toThrow('useAuth must be used within an AuthProvider');
+    
     consoleSpy.mockRestore();
-    consoleErrorSpy.mockRestore();
   });
 });

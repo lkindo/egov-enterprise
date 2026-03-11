@@ -1,22 +1,72 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import { Badge } from '../badge';
 import { Checkbox } from '../checkbox';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../table';
+import { Skeleton } from '../skeleton';
 import React from 'react';
 
-describe('Common UI Components', () => {
-  it('Badge renders variants correctly', () => {
-    const { rerender } = render(<Badge variant="default">Default</Badge>);
-    expect(screen.getByText('Default')).toBeInTheDocument();
+describe('Common UI Components Extended', () => {
+  describe('Badge', () => {
+    it('Badge renders variants correctly', () => {
+      const { rerender } = render(<Badge variant="default">Default</Badge>);
+      expect(screen.getByText('Default')).toBeInTheDocument();
 
-    rerender(<Badge variant="destructive">Error</Badge>);
-    expect(screen.getByText('Error')).toHaveClass('bg-destructive');
+      rerender(<Badge variant="destructive">Error</Badge>);
+      expect(screen.getByText('Error')).toHaveClass('bg-destructive');
+      
+      rerender(<Badge variant="outline">Outline</Badge>);
+      expect(screen.getByText('Outline')).toHaveClass('text-foreground');
+    });
   });
 
-  it('Checkbox renders and handles state (basic)', () => {
-    render(<Checkbox id="test-check" />);
-    const checkbox = screen.getByRole('checkbox');
-    expect(checkbox).toBeInTheDocument();
-    expect(checkbox).not.toBeChecked();
+  describe('Checkbox', () => {
+    it('Checkbox renders and handles state', () => {
+      const onCheckedChange = vi.fn();
+      render(<Checkbox id="test-check" onCheckedChange={onCheckedChange} />);
+      const checkbox = screen.getByRole('checkbox');
+      expect(checkbox).toBeInTheDocument();
+      
+      fireEvent.click(checkbox);
+      expect(onCheckedChange).toHaveBeenCalledWith(true);
+    });
+
+    it('Checkbox can be disabled', () => {
+      render(<Checkbox id="disabled-check" disabled />);
+      const checkbox = screen.getByRole('checkbox');
+      expect(checkbox).toBeDisabled();
+    });
+  });
+
+  describe('Table', () => {
+    it('Table components render correctly', () => {
+      render(
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Header 1</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell>Cell 1</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      );
+      
+      expect(screen.getByText('Header 1')).toBeInTheDocument();
+      expect(screen.getByText('Cell 1')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
+    });
+  });
+
+  describe('Skeleton', () => {
+    it('Skeleton renders with custom className', () => {
+      const { container } = render(<Skeleton className="w-[100px] h-[20px]" />);
+      const skeleton = container.firstChild as HTMLElement;
+      expect(skeleton).toHaveClass('animate-pulse');
+      expect(skeleton).toHaveClass('w-[100px]');
+    });
   });
 });
