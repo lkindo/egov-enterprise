@@ -127,3 +127,7 @@ pnpm-lock.yaml
 **/convert-*.py
 **/encoding-logs/
 **/utf8-project-template/
+
+# ----- Git Worktrees -----
+.worktrees/
+
