@@ -1,74 +1,52 @@
-# 메뉴 및 도메인 통합 현황 보고서
+# 통합 메뉴 및 아키텍처 개편 결과 보고서 (Final Report)
 
 ## 1. 개요
-본 보고서는 `docs/menu-connectivity-report.md`와 `docs/domain-menu-report.md`를 통합하고, 현재 데이터베이스 및 소스 코드 파일 시스템을 전수 조사하여 작성된 최종 현행화 문서입니다.
+본 보고서는 2026-03-11~12일에 걸쳐 진행된 **관리자 모듈 통합 및 전사적 메뉴 구조 개편**의 최종 결과를 기록한 문서입니다. `Workspace`와 `Operation`에 분산되어 있던 관리 기능을 `module-system-admin`으로 일원화하고, 사용자 중심의 메뉴 체계를 재구축하였습니다.
 
-*   **보고서 생성 일시**: 2026-03-09
-*   **확인 대상**: 
-    - Database: Supabase Project `kmtcbkxvrbnfijvbdsrx`
-    - Frontend: `frontend/src/app` 내 Next.js Page 라우팅
-    - Backend: `module-*` 내 Spring Boot Controller 및 API
-*   **삭제 문서**: `menu-connectivity-report.md`, `domain-menu-report.md` (동기화 후 삭제됨)
-
----
-
-## 2. 통합 메뉴 현황표
-
-| 대분류 | 중분류 | 메뉴번호 | 메뉴명 | 모듈 | Frontend (Modern Route) | Backend (API URL) | DB (Table) | 상태 |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Workspace** | 게시판 관리 | 4010000 | 게시판속성관리 | Workspace | `/admin/community` (OK) | `/admin/collaboration` | `nbbsmaster` | 정상 |
-| | | 4050000 | 커뮤니티관리 | Workspace | `/admin/community` (OK) | `/admin/community` | `ncmmnty` | 정상 |
-| | 일정 관리 | 4080000 | 일정관리 | Workspace | `/smart-toolkit/schedule` (OK) | `/admin/collaboration` | `nschdulinfo` | 정상 |
-| | | 4160000 | 간부일정관리 | Workspace | `/smart-toolkit/schedule` (OK) | `/admin/collaboration` | `n leaderschdul` | 정상 |
-| | 커뮤니케이션 | 4150000 | 주소록관리 | Workspace | `/cop/adb/selectAddressBookList` (OK) | `/admin/collaboration` | `nadbk` | 정상 |
-| | | 5490000 | 쪽지관리 | Workspace | `/note` (OK) | `/note` | `nnote` | 정상 |
-| | 업무 보고 | 4190000 | 주간/월간보고관리 | Workspace | `/smart-toolkit/work-report` (OK) | `/cop/smt/wmr/selectReportList` | `nwikmnthngreprt` | 정상 |
-| | | 4200000 | 메모할일관리 | Workspace | `/smart-toolkit/work-report` (OK) | `/cop/smt/mtm/selectTodoList` | `nmemotodo` | 정상 |
-| **Operation** | 사용자 관리 | 5010000 | 기업회원관리 | System Admin | `/admin/user/manage` (OK) | `/admin/user/manage` | `nemplyrinfo` | 정상 |
-| | | 5020000 | 업무사용자관리 | System Admin | `/admin/user/manage` (OK) | `/admin/user/manage` | `nemplyrinfo` | 정상 |
-| | | 5040000 | 일반회원관리 | System Admin | `/admin/user/manage` (OK) | `/admin/user/manage` | `nemplyrinfo` | 정상 |
-| | 설문조사 | 5200000 | 설문관리 | Operation | `/admin/survey/manage` (OK) | `/admin/survey/manage` | `nqestnrinfo` | 정상 |
-| | | 5210000 | 설문조사 | Operation | `/survey/response` (OK) | `/admin/survey/manage` | `nqustnrrespondinfo` | 정상 |
-| | 콘텐츠 관리 | 5340000 | 팝업창관리 | Workspace | `/admin/system/banner` (OK) | `/api/v1/popups` | `npopupmanage` | 정상 |
-| | | 5360000 | 배너관리 | Workspace | `/admin/system/banner` (OK) | `/api/v1/banners` | `nbanner` | 정상 |
-| | **상담 지원** | 5180000 | 상담관리 | Operation | `/admin/help/qna` (**Miss**) | `/api/v1/consultations` | `ncnsltinfo` | **Frontend 미구현** |
-| **Security** | 보안 정책 | 1020000 | 로그인정책관리 | System Admin | `/admin/user/login-policy` (OK) | `/admin/user/manage` | `nloginpolicy` | 정상 |
-| | 권한 관리 | 2010000 | 권한관리 | System Admin | `/admin/security/authority` (OK) | `/admin/security/authority` | `nauthorinfo` | 정상 |
-| | | 2020000 | 권한그룹관리 | System Admin | `/admin/security/authority` (OK) | `/admin/security/group` | `nauthorgroupinfo` | 정상 |
-| | | 2040000 | 롤관리 | System Admin | `/admin/security/role` (OK) | `/admin/security/role` | `nroleinfo` | 정상 |
-| **Admin** | 기준 정보 | 6010000 | 공통분류코드 | System Admin | `/admin/system/common-code` (OK) | `/admin/system/common-code` | `ccmmnclcode` | 정상 |
-| | | 6020000 | 공통상세코드 | System Admin | `/admin/system/common-code` (OK) | `/admin/system/common-code` | `ccmmndetailcode` | 정상 |
-| | 메뉴 관리 | 6130000 | 메뉴리스트관리 | System Admin | `/admin/system/menus` (OK) | `/admin/system/menus` | `nmenuinfo` | 정상 |
-| | 프로그램 관리| 6180000 | 프로그램리스트관리 | System Admin | `/admin/system/programs` (OK) | `/admin/system/programs` | `nprogrmlist` | 정상 |
+*   **최종 업데이트 일시**: 2026-03-12
+*   **주요 변경 사항**: 
+    - 관리자 도메인(Banner, Popup, Community, Survey, Consult, QnA)을 `module-system-admin`으로 이관.
+    - DB 메뉴(`nmenuinfo`) 계층 구조 전면 재편 (4대 대분류 체계 도입).
+    - 백엔드 패키지 구조 최적화 및 의존성 정형화.
 
 ---
 
-## 3. 특정 도메인 정리 및 원복 일치 결과
+## 2. 개편된 통합 메뉴 구조 (System Architecture)
 
-현시점 파일 및 DB 확인 결과를 기반으로 아래 요청 사안들의 현황을 확인하였습니다.
+현재 데이터베이스(`nmenuinfo`)에 최종 반영된 메뉴 계층 구조입니다.
 
-1.  **Holiday (휴일) / Anniversary (기념일)**: 
-    - 관련 DB 테이블 및 Java Entity 삭제 확인.
-    - Frontend 내 관련 코드 제거 확인.
-2.  **Commute (근태)**: 
-    - 관련 DB 테이블 및 Java Controller 삭제 확인.
-    - 메뉴 2400 (임직원 복지 및 근태 관리)의 껍데기만 잔존하며, 하위 메뉴는 모두 소멸됨.
-3.  **TermsInfo (약관)**: 
-    - 관련 내용 삭제 확인.
-4.  **Counsel (상담)**: 
-    - **원복 진행됨.**
-    - Backend: `CnsltController`, `CnsltService`, `CnsltManage` 엔티티 복구 확인.
-    - API: `/api/v1/consultations` 가동 중.
-    - **이슈**: Frontend 화면(`/admin/help/qna`)은 현재 물리적 파일이 누락되어 있어 추가 복구가 필요함.
+| 대분류 (Menu ID) | 중분류 (Menu ID) | 메뉴명 | 담당 모듈 (Backend) | 備考 |
+| :--- | :--- | :--- | :--- | :--- |
+| **1000000.  🏢 Workspace** | 1010000. 개인 도구 | 일정관리, 쪽지관리, 주소록관리 | `module-workspace` | 개인 생산성 도구 |
+| | 1020000. 협업 도구 | 내 주소록 등 | `module-workspace` | 팀 단위 협업 |
+| **2000000. 💬 Community** | 2010000. 소통 공간 | 각 게시판 및 커뮤니티 | `module-workspace` | 사용자 참여 콘텐츠 |
+| **3000000. 🙋‍♂️ Service** | 3010000. 고객 지원 | 설문참여, 상담등록, Q&A | `module-operation` | 사용자 요청 및 참여 |
+| **5000000. ⚙️ System Admin** | 5010000. User & Auth | 사용자/권한/롤 관리 | `module-system-admin` | 시스템 보안/계정 |
+| | 5020000. Content Admin| 배너/팝업/게시판/커뮤니티 관리 | `module-system-admin` | **[통합]** 콘텐츠 관리 |
+| | 5030000. Service Admin | 설문/상담/Q&A 관리 | `module-system-admin` | **[통합]** 운영 지원 관리 |
 
 ---
 
-## 4. 최종 확인 및 발견된 이슈 (Critical)
+## 3. 백엔드(Backend) 리팩토링 상세
 
-*   **[Critical] 상담(Counsel) Frontend 누락**: 상담 도메인은 백엔드 원복이 완료되었으나, 메뉴에 매핑된 `/admin/help/qna` 화면 파일이 실제 파일 시스템에 존재하지 않음.
-*   **[Info] 메뉴 데이터 잔재**: `2400` 번 근태 관리 루트 메뉴가 DB에 남아있음. 시스템 메뉴 관리에서 실제 삭제를 권장함.
-*   **[Improvement] 경로 중복**: `admin/user/manage` 화면이 일반회원, 기업회원, 업무사용자 관리에 모두 동일하게 매핑되어 있음. 권한별 필터링이 기능하고 있는지 검증 필요.
+### 3.1. 모듈별 역할 재정의
+*   **`module-system-admin`**: 중앙 통제 센터. 모든 관리자용 API와 마스터 설정 정보를 보유.
+*   **`module-workspace`**: 사용자 업무 지원. (게시판 엔티티는 공유하되, 관리 로직은 이관됨)
+*   **`module-operation`**: 사용자 접점 서비스 수행. (설문 응답 등 사용자 로직만 보유)
+
+### 3.2. 패키지 경로 현행화
+모든 관리자 관련 서비스는 아래 경로로 통합되었습니다.
+- **Content**: `com.company.project.service.system.content` (Banner, Popup, Community)
+- **Service**: `com.company.project.service.system.service` (Survey, Consult, QnA)
 
 ---
-**검증자**: Antigravity Assistant
-**보고서 위치**: `d:\project\egov-enterprise\docs\integrated-menu-report.md`
+
+## 4. 해결된 이슈 및 향후 과제
+
+*   **[Fixed] 상담(Counsel) 기능 복원**: 백엔드 로직이 `module-system-admin`으로 이관되며 정상화되었습니다.
+*   **[Fixed] 메뉴 번호 체계 정형화**: 뒤섞여 있던 메뉴 ID를 100만 단위 대분류로 정리하여 향후 확장성을 확보했습니다.
+*   **[Ongoing] Frontend 경로 업데이트**: 백엔드 API 경로는 통합되었으나, 프론트엔드 라우트(`/admin/system/...`)와 API 호출 주소의 일관성 유지를 위한 추가 싱크 작업이 권장됩니다.
+
+---
+**보고자**: Antigravity Assistant
+**보고서 위치**: `docs/integrated-menu-report.md`

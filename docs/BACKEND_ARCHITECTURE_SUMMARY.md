@@ -11,9 +11,9 @@
 | **common-core** | Foundation | 공통 Utility, Exception 핸들러, 전역 Config (Swagger, Cache 등) |
 | **common-security** | Foundation | Spring Security 설정, JWT 인증 필터, 권한 검사 로직 |
 | **module-core-iam** | Functional | 사용자(User), 권한(Auth), 그룹(Group) 관리 및 사용자 디테일 서비스 |
-| **module-system-admin** | Functional | 공통코드, 메뉴, 프로그램, 배포 관리, 시스템 로그, 배치 스케줄러 |
-| **module-workspace** | Functional | 게시판, 일정, 메일, 커뮤니티, 배너 등 사용자 협업 도구 |
-| **module-operation** | Functional | 휴가, 자산 관리, 설문, 행정 업무 지원 |
+| **module-system-admin** | Functional | 통합 관리 컨트롤러: 사용자/권한, 메뉴/코드, 콘텐츠(배너/팝업/게시판), 서비스(설문/상담) 관리 |
+| **module-workspace** | Functional | 사용자 협업 도구: 일정, 쪽지, 주소록, 게시판 콘텐츠 소비 및 커뮤니티 활동 |
+| **module-operation** | Functional | 사용자 운영 접점: 설문 참여, 상담/Q&A 등록 및 접수, 자산/행정 업무 |
 | **module-knowledge** | Functional | 지식 베이스(Wiki), 공식 문서 관리 |
 
 ## 3. 핵심 설계 원칙 (Design Principles)
@@ -45,4 +45,4 @@
 - JWT 전역 필터가 모든 요청의 Principal을 식별합니다.
 
 ---
-*Last Updated: 2026-03-06 (Vertical Slicing Refactoring 완료 후)*
+*Last Updated: 2026-03-12 (관리자 모듈 통합 및 메뉴 재편 완료)*

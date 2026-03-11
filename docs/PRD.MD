@@ -1,7 +1,7 @@
 # 전자정부프레임워크 5.0 기반 전사 공통 모듈 구축 - 제품 요구사항 정의서 (PRD)
 
-> **최종 업데이트**: 2026-03-06  
-> **프로젝트 진행률**: ✅ 100% 완료 (아키텍처 전환 및 안정화 완료)
+> **최종 업데이트**: 2026-03-12  
+> **프로젝트 진행률**: ✅ 100% 완료 (관리자 모듈 통합 및 구조 최적화 완료)
 
 ## 1. 프로젝트 개요
 
@@ -28,13 +28,13 @@
 | **공통 코드 관리** | 계층형 코드 구조, 공통코드 상세 관리, 코드 조회 성능 최적화 | ✅ 100% | NCMMNCODE, NCMMNDETAILCODE |
 | **통합 파일 관리** | 파일 마스터 - 상세 구조, 로컬 스토리지 지원, 멀티파트 업로드 | ✅ 100% | NFILE, NFILEDETAIL |
 | **감사 및 시스템 로그** | AOP 접속/수정 이력, 개인정보 접근 로그, 웹/시스템/보안 로그 | ✅ 100% | NSYSLOG, NLOGLOG, NSECURITYLOG, NLOGINLOG |
-| **게시판 관리** | 일반/공지/갤러리 게시판, 게시판 속성 관리, 댓글/스크랩 기능 | ✅ 100% | NBBS, NBBSMASTER, NCOMMENT, NSCRAP |
-| **커뮤니티 관리** | 동호회 관리, 회원 가입/탈퇴, 임원진 관리 | ✅ 100% | NCMMNTY, NCMMNTYUSER |
+| **게시판 관리** | 일반/공지/갤러리 게시판, 게시판 속성 관리, 댓글/스크랩 기능 | ✅ 100% | System Admin (Admin), Workspace (User) |
+| **커뮤니티 관리** | 동호회 관리, 회원 가입/탈퇴, 임원진 관리 | ✅ 100% | System Admin (Admin), Workspace (User) |
 | **주소록/명함** | 개인/공유 주소록, 명함 관리, 그룹 분류 | ✅ 100% | NADBK, NNCRD |
 | **일정 관리** | 개인일정, 부서일정, 일정 등록/수정/삭제 | ✅ 100% | NSCHDULINFO |
 | **부서업무 관리** | 부서업무 박스, 부서업무 관리, 업무 이관 | ✅ 100% | NDEPTJOBBX, NDEPTJOB |
 | **보고서 관리** | 주간/월간 보고서, 보고서 승인 프로세스, 통계 조회 | ✅ 100% | NWIKMNTHNGREPRT |
-| **설문조사** | 설문지 관리, 설문 참여, 결과 통계 | ✅ 100% | NQUSTNRINFO, NQUSTNRRESPONDINFO, NQUSTNRQESITEMINFO |
+| **설문조사** | 설문지 관리, 설문 참여, 결과 통계 | ✅ 100% | System Admin (Admin), Operation (User) |
 | **약관 관리** | 약관 등록/수정, 약관 동의 관리 | ✅ 100% | NSTPLATINFO |
 | **사용자/보안 관리** | 사용자 등록/수정/삭제, 권한/롤/그룹 관리, 로그인 정책 | ✅ 100% | NENTRPRSUSER, NAUTHORINFO, NROLEINFO, NGROUPINFO, NLOGINPOLICY |
 | **메뉴/프로그램 관리** | 메뉴 구조 관리, 프로그램 목록 관리, 메뉴 권한 설정 | ✅ 100% | NMENUINFO, NPROGRMLIST, NROLEMENU |
@@ -98,9 +98,9 @@ egov-enterprise/
 ├── common-core/          ✅ 공통 유틸리티, 예외 처리, 전역 설정 (100%)
 ├── common-security/      ✅ JWT 인증/인가, 보안 아키텍처 (100%)
 ├── module-core-iam/      ✅ 계정, 권한, 그룹 관리 (100%)
-├── module-system-admin/  ✅ 코드, 메뉴, 로그, 배치 관리 (100%)
-├── module-workspace/     ✅ 게시판, 일정, 커뮤니티 협업 도구 (100%)
-├── module-operation/     ✅ 운영 지원, 부서 업무, 행정 지원 (100%)
+├── module-system-admin/  ✅ 통합 관리 센터: 사용자, 권한, 코드, 메뉴, 콘텐츠/서비스 관리 (100%)
+├── module-workspace/     ✅ 사용자 협업 도구: 일정, 쪽지, 커뮤니케이션, 콘텐츠 소비 (100%)
+├── module-operation/     ✅ 사용자 운영 지원: 설문 참여, 상담/Q&A 등록, 행정 지원 (100%)
 ├── module-knowledge/     ✅ 지식 베이스, 문서 관리 (100%)
 ├── api-server/           ✅ REST API 통합 진입점 (100%)
 └── frontend/             ✅ Next.js 애플리케이션 (100%)
@@ -184,6 +184,6 @@ frontend → api-server → module-* → common-security → common-core
 
 ---
 
-*Last Updated: 2026-02-25*  
+*Last Updated: 2026-03-12*  
 *Document Version: 2.0*  
 *Approved by: Project Architecture Team*

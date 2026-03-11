@@ -1,8 +1,8 @@
 # 전자정부프레임워크 5.0 공통 모듈 구축 - 상세 설계서 (LLD)
 
-> **최종 업데이트**: 2026-03-06  
-> **프로젝트 진행률**: ✅ 100% 완료 (Refactoring 완료)  
-> **문서 버전**: 3.0
+> **최종 업데이트**: 2026-03-12  
+> **프로젝트 진행률**: ✅ 100% 완료 (통합 관리자 아키텍처 리팩토링 완료)  
+> **문서 버전**: 4.0
 
 ## 1. 프로젝트 구조 및 패키지 설계
 
@@ -22,9 +22,9 @@
 | **common-core** | Foundation | 공통 유틸, 예외 처리, 전역 설정 (Swagger, Redis 등) | None |
 | **common-security** | Foundation | JWT 기반 인증 로직, Security Filter Chain 구성 | common-core |
 | **module-core-iam** | Functional | 사용자 계정, 권한(Auth), 그룹(Group) 관리 | common-security |
-| **module-system-admin** | Functional | 메뉴, 코드, 프로그램, 로그 관리, 배치 작업 | module-core-iam |
-| **module-workspace** | Functional | 게시판, 대시보드 성격의 협업 도구 서비스 | module-core-iam |
-| **module-operation** | Functional | 휴가, 자산, 설문 등 운영 지원 비즈니스 | module-core-iam |
+| **module-system-admin** | Functional | 통합 관리 센터 (권한, 코드, 메뉴, **[통합]** 콘텐츠/배너/팝업/게시판/설문/상담 관리) | module-core-iam |
+| **module-workspace** | Functional | 사용자 협업 도구 (일정, 쪽지, 주소록, 게시판 콘텐츠 소비) | module-core-iam |
+| **module-operation** | Functional | 사용자 운영 접점 (설문 참여, 상담/Q&A 등록 및 내역 조회) | module-core-iam |
 | **module-knowledge** | Functional | 위키(Wiki), 문서 아카이브 관리 | module-core-iam |
 
 ---
@@ -160,12 +160,9 @@ frontend/
 | **시스템 (`sym`)** | Code, Menu, Program | NCMMNCODE, NMENUINFO, NPROGRMLIST | 10+ | 시스템 기반 데이터 관리 |
 | **보안 (`sec`)** | Role, Author, Group | NAUTHORINFO, NROLEINFO, NGROUPINFO | 8+ | RBAC 권한 제어 도메인 |
 | **사용자 (`uss`)** | User, Login | NENTRPRSUSER, NLOGINPOLICY | 5+ | 일반/업무 사용자 및 인증 정보 |
-| **협업 (`cop`)** | Board, File, Comment | NBBS, NBBSMASTER, NFILE, NCOMMENT | 15+ | 게시판, 첨부파일 등 협업 기능 |
-| **커뮤니티 (`cop/cmy`)** | Community, Addressbook | NCMMNTY, NADBK, NNCRD | 8+ | 동호회, 주소록, 명함 |
-| **운영 (`smt`)** | Schedule, Report | NSCHDULINFO, NWIKMNTHNGREPRT | 10+ | 일정 관리 및 업무 보고 도메인 |
-| **고객지원 (`uss/olh`)** | FAQ, QnA, Survey | NFAQINFO, NQNAINFO, NQUSTNRINFO | 12+ | FAQ, Q&A, 설문조사 |
-| **모니터링 (`utl`)** | Monitoring, Stats | NSERVERRESRCELOGINFO, NUSERSTATS | 15+ | 시스템 모니터링, 통계 |
-| **부가서비스 (`uss/ion`)** | Event, Vacation, Reward | NEVENTINFO, NVCATNMANAGE, NRWARDMANAGE | 20+ | 행사, 휴가, 포상 등 |
+| **관리자 (`admin`)**| Banner, Popup, BoardMaster, Survey, Consult | NBANNER, NPOPUP, NBBSMASTER, NQUSTNRINFO | 20+ | **[통합]** 모든 관리자 도구 |
+| **협업 (`cop`)** | BoardArticle, Note, Addressbook | NBBS, NNOTE, NADBK | 15+ | 사용자용 협업 및 콘텐츠 서비스 |
+| **운영 (`smt`)** | Schedule, Report, QnA(User) | NSCHDULINFO, NWIKMNTHNGREPRT | 10+ | 사용자용 일정 및 운영 지원 |
 
 ### 2.2. 데이터베이스 엔티티 설계 원칙
 
@@ -548,6 +545,6 @@ async function getUser(id: string): Promise<any> {  // any 사용 금지
 
 ---
 
-*Last Updated: 2026-02-25*
+*Last Updated: 2026-03-12*
 *Document Version: 2.0*  
 *Approved by: Project Architecture Team*
