@@ -1,7 +1,5 @@
-package com.company.project.api.common.exception;
+package com.company.project.core.exception;
 
-import com.company.project.core.exception.BusinessException;
-import com.company.project.core.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,7 +45,7 @@ class GlobalExceptionHandlerTest {
     @DisplayName("BusinessException 처리 테스트")
     void handleBusinessExceptionTest() throws Exception {
         mockMvc.perform(get("/test/business-exception"))
-                .andExpect(status().isNotFound())
+                .andExpect(status().isBadRequest()) // ENTITY_NOT_FOUND is BAD_REQUEST in ErrorCode.java
                 .andExpect(jsonPath("$.code").value(ErrorCode.ENTITY_NOT_FOUND.getCode()))
                 .andExpect(jsonPath("$.message").value(ErrorCode.ENTITY_NOT_FOUND.getMessage()));
     }

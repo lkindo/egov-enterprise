@@ -1,7 +1,5 @@
-package com.company.project.api.common.exception;
+package com.company.project.core.exception;
 
-import com.company.project.core.exception.BusinessException;
-import com.company.project.core.exception.ErrorCode;
 import com.company.project.core.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -27,7 +25,7 @@ public class GlobalExceptionHandler {
      * 비즈니스 로직 예외 처리
      */
     @ExceptionHandler(BusinessException.class)
-    protected ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {   
+    protected ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
         log.warn(">>> BusinessException: {} - {}", e.getErrorCode().getCode(), e.getMessage());
         ErrorCode errorCode = e.getErrorCode();
         return new ResponseEntity<>(ApiResponse.error(errorCode, e.getMessage()), errorCode.getStatus());
@@ -88,8 +86,8 @@ public class GlobalExceptionHandler {
     /**
      * 지원하지 않는 HTTP 메서드 호출 예외 처리
      */
-    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)      
-    protected ResponseEntity<ApiResponse<Void>> handleHttpRequestMethodNotSupportedException(    
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleHttpRequestMethodNotSupportedException(
             org.springframework.web.HttpRequestMethodNotSupportedException e) {
         return new ResponseEntity<>(ApiResponse.error(ErrorCode.METHOD_NOT_ALLOWED), HttpStatus.METHOD_NOT_ALLOWED);
     }
@@ -98,7 +96,7 @@ public class GlobalExceptionHandler {
      * 지원하지 않는 미디어 타입 호출 예외 처리
      */
     @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
-    protected ResponseEntity<ApiResponse<Void>> handleHttpMediaTypeNotSupportedException(        
+    protected ResponseEntity<ApiResponse<Void>> handleHttpMediaTypeNotSupportedException(
             org.springframework.web.HttpMediaTypeNotSupportedException e) {
         return new ResponseEntity<>(ApiResponse.error(ErrorCode.UNSUPPORTED_MEDIA_TYPE), HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }

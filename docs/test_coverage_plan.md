@@ -51,9 +51,19 @@
 
 ### Phase 1: 기반 인프라 및 핵심 보안 (우선순위: 매우 높음)
 - **백엔드:**
-    - `common-security` 모듈 내 JWT 발급, 검증, 권한 필터 로직 커버리지 90% 이상 확보.
-    - `common-core`의 유틸리티 클래스 및 예외 처리 핸들러 검증.
-    - `module-core-iam` (계정 관리) 핵심 가입/인증 로직 테스트.
+    - [x] **1단계: 도메인 엔티티 단위 테스트**
+        - `UserEntityTest.java`, `ProgramEntityTest.java`, `MenuEntityTest.java`
+    - [x] **2단계: API 컨트롤러 계층 테스트**
+        - `UserManageControllerTest.java`, `GroupControllerTest.java`, `UserControllerIntegrationTest.java`, `BoardApiControllerTest.java`
+    - [x] **3단계: 시큐리티 및 인증 테스트**
+        - `UserManageControllerSecurityTest.java`, `BaseSecurityTest.java`
+    - [x] **4단계: 레포지토리 및 QueryDSL 테스트**
+        - `MenuRepositoryTest.java`
+    - [x] **5단계: 서비스 계층 통합 테스트**
+        - `MenuServiceTest.java`
+    - [x] **추가: 전역 예외 처리 테스트 및 리팩토링**
+        - `GlobalExceptionHandler`를 `common-core`로 이동 및 검증 (`GlobalExceptionHandlerTest.java`)
+        - `UserManageControllerExceptionTest.java`
 - **프론트엔드:**
     - `AuthContext` 및 API 클라이언트 모듈(`axios` interceptor) 유닛 테스트.
     - 공통 UI 컴포넌트(Button, Input 등)의 렌더링 검증.

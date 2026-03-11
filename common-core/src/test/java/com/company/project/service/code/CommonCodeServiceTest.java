@@ -389,6 +389,50 @@ class CommonCodeServiceTest {
                 commonCodeService.insertCmmnCode(dto);
             });
         }
+
+        @Test
+        @DisplayName("공통코드 그룹 수정 성공")
+        void testUpdateCmmnCode() {
+            // Given
+            CmmnCodeDto dto = new CmmnCodeDto();
+            dto.setCodeId("GROUP_001");
+            dto.setCodeIdNm("수정된 그룹명");
+            dto.setLastUpdusrId("admin");
+
+            CommonCodeGroup existing = CommonCodeGroup.builder()
+                    .codeId("GROUP_001")
+                    .codeIdNm("원래 그룹명")
+                    .build();
+
+            when(commonCodeGroupRepository.findById("GROUP_001")).thenReturn(Optional.of(existing));
+
+            // When
+            commonCodeService.updateCmmnCode(dto);
+
+            // Then
+            verify(commonCodeGroupRepository, times(1)).findById("GROUP_001");
+            assertEquals("수정된 그룹명", existing.getCodeIdNm());
+        }
+
+        @Test
+        @DisplayName("공통코드 그룹 삭제 성공")
+        void testDeleteCmmnCode() {
+            // Given
+            CmmnCodeDto dto = new CmmnCodeDto();
+            dto.setCodeId("GROUP_001");
+
+            CommonCodeGroup existing = CommonCodeGroup.builder()
+                    .codeId("GROUP_001")
+                    .build();
+
+            when(commonCodeGroupRepository.findById("GROUP_001")).thenReturn(Optional.of(existing));
+
+            // When
+            commonCodeService.deleteCmmnCode(dto);
+
+            // Then
+            verify(commonCodeGroupRepository, times(1)).findById("GROUP_001");
+        }
     }
 
     @Nested
@@ -485,6 +529,29 @@ class CommonCodeServiceTest {
 
             // Then - 서비스 호출이 예외 없이 완료되는지 확인
             assertTrue(true);
+        }
+
+        @Test
+        @DisplayName("공통상세코드 목록 조회 성공")
+        void testSelectCmmnDetailCodeList() {
+            // Given
+            ComDefaultVO searchVO = new ComDefaultVO();
+            searchVO.setPageIndex(1);
+            searchVO.setPageUnit(10);
+
+            com.company.project.domain.code.CommonCodeDetailProjection projection = mock(com.company.project.domain.code.CommonCodeDetailProjection.class);
+            when(projection.getCodeId()).thenReturn("GROUP_1");
+            when(projection.getCode()).thenReturn("CODE_1");
+
+            Page<com.company.project.domain.code.CommonCodeDetailProjection> page = new PageImpl<>(List.of(projection));
+            when(commonCodeRepository.searchCommonCodeDetails(any(), any(), any())).thenReturn(page);
+
+            // When
+            List<CmmnDetailCodeDto> result = commonCodeService.selectCmmnDetailCodeList(searchVO);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
         }
     }
 }

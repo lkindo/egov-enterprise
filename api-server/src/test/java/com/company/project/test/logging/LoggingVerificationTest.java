@@ -6,6 +6,7 @@ import ch.qos.logback.core.Appender;
 import com.company.project.api.controller.UserController;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
+import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
@@ -65,7 +66,7 @@ class LoggingVerificationTest {
         controllerLogger.addAppender(mockAppender);
         
         // GlobalExceptionHandler 로거 부착 (예외 발생 시 WARN/ERROR 로그 확인용)
-        exceptionHandlerLogger = (Logger) LoggerFactory.getLogger("com.company.project.api.common.exception.GlobalExceptionHandler");
+        exceptionHandlerLogger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
         exceptionHandlerLogger.addAppender(mockAppender);
     }
 

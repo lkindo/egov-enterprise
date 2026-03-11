@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = {
     MinimalTestConfig.class,
     com.company.project.api.controller.UserController.class,
-    com.company.project.api.common.exception.GlobalExceptionHandler.class
+    com.company.project.core.exception.GlobalExceptionHandler.class
 })
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")

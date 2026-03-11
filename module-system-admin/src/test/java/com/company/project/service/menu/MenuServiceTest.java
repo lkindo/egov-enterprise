@@ -4,7 +4,10 @@ import com.company.project.domain.auth.MenuAuthorityRepository;
 import com.company.project.domain.menu.Menu;
 import com.company.project.domain.menu.MenuRepository;
 import com.company.project.domain.program.ProgramRepository;
+import com.company.project.domain.auth.MenuCreatManageProjection;
 import com.company.project.service.menu.dto.MenuDto;
+import egovframework.com.cmm.ComDefaultVO;
+import org.springframework.data.domain.Page;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +27,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -155,15 +161,62 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("메뉴 삭제 테스트")
-    void deleteMenuManageTest() {
+    @DisplayName("메뉴 삭제 목록 테스트")
+    void deleteMenuManageListTest() {
         // Given
-        MenuDto dto = MenuDto.builder().menuNo(1L).build();
+        String checkedMenuNoForDel = "1,2,3";
 
         // When
-        menuService.deleteMenuManage(dto);
+        menuService.deleteMenuManageList(checkedMenuNoForDel);
 
         // Then
-        verify(menuRepository).deleteById(1L);
+        verify(menuRepository).deleteAllById(anyList());
+    }
+
+    @Test
+    @DisplayName("캐싱된 전체 메뉴 조회 테스트")
+    void getAllMenusCachedTest() {
+        // Given
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(Collections.emptyList());
+
+        // When
+        menuService.getAllMenusCached();
+
+        // Then
+        verify(menuRepository).findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+    }
+
+    @Test
+    @DisplayName("권한별 메뉴 생성 관리 목록 조회 테스트")
+    void selectMenuCreatManagListTest() {
+        // Given
+        ComDefaultVO searchVO = new ComDefaultVO();
+        searchVO.setPageIndex(1);
+        searchVO.setRecordCountPerPage(10);
+        
+        Page<MenuCreatManageProjection> page = mock(Page.class);
+        when(menuAuthorityRepository.selectMenuCreatManagList(anyString(), any())).thenReturn(page);
+        when(page.stream()).thenReturn(java.util.stream.Stream.empty());
+
+        // When
+        menuService.selectMenuCreatManagList(searchVO);
+
+        // Then
+        verify(menuAuthorityRepository).selectMenuCreatManagList(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("메뉴 생성 목록 저장 테스트")
+    void insertMenuCreatListTest() {
+        // Given
+        String authorCode = "ROLE_USER";
+        String checkedMenuNos = "1,2";
+
+        // When
+        menuService.insertMenuCreatList(authorCode, checkedMenuNos);
+
+        // Then
+        verify(menuAuthorityRepository).deleteByIdAuthorCode(authorCode);
+        verify(menuAuthorityRepository).saveAll(anyList());
     }
 }

@@ -1,7 +1,7 @@
 package com.company.project.web.user;
 
 import com.company.project.api.controller.UserController;
-import com.company.project.api.common.exception.GlobalExceptionHandler;
+import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.domain.user.entity.Role;
 import com.company.project.security.jwt.JwtTokenProvider;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;

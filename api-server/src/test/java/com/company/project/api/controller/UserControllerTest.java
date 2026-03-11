@@ -1,6 +1,6 @@
 package com.company.project.api.controller;
 
-import com.company.project.api.common.exception.GlobalExceptionHandler;
+import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
