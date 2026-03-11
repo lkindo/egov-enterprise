@@ -1,8 +1,8 @@
 package com.company.project.api.controller.system.popup;
 
 import com.company.project.core.response.ApiResponse;
-import com.company.project.service.popup.PopupService;
-import com.company.project.service.popup.dto.PopupDto;
+import com.company.project.service.system.content.popup.PopupService;
+import com.company.project.service.system.content.popup.dto.PopupDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

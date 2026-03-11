@@ -1,9 +1,9 @@
 package com.company.project.service.banner;
 
 import com.company.project.core.exception.BusinessException;
-import com.company.project.domain.banner.Banner;
-import com.company.project.domain.banner.BannerRepository;
-import com.company.project.service.banner.dto.BannerDto;
+import com.company.project.domain.system.content.banner.Banner;
+import com.company.project.domain.system.content.banner.BannerRepository;
+import com.company.project.service.system.content.banner.dto.BannerDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
