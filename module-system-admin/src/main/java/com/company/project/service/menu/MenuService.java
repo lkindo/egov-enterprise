@@ -236,11 +236,6 @@ public class MenuService {
 
     public List<MenuDto> selectMenuCreatList(@NonNull MenuCreateDto vo) {
         List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();        
-        List<MenuAuthority> authorized = menuAuthorityRepository
-                .findByIdAuthorCode(Objects.requireNonNull(vo.getAuthorCode()));
-        Map<Long, Boolean> authMap = authorized.stream()
-                .collect(Collectors.toMap(ma -> Objects.requireNonNull(ma.getId()).getMenuNo(), ma -> true));
-
         return allMenus.stream().map(menu -> {
             MenuDto dto = MenuDto.builder()
                     .menuNo(menu.getId())

@@ -1,5 +1,7 @@
 package com.company.project.api.controller.faq;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.service.faq.FaqService;
 import com.company.project.service.faq.dto.FaqDto;
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +20,8 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -47,6 +51,22 @@ class FaqControllerTest {
     }
 
     @Test
+    @DisplayName("FAQ 목록 키워드 조회 성공")
+    void getFaqs_WithKeyword_Success() throws Exception {
+        // Given
+        Page<FaqDto> page = new PageImpl<>(List.of(FaqDto.builder().faqId("FAQ1").qestnSj("Keyword Question").build()));
+        given(faqService.getFaqList(eq("keyword"), any(Pageable.class))).willReturn(page);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/faqs")
+                .param("keyword", "keyword")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultList[0].faqId").value("FAQ1"))
+                .andExpect(jsonPath("$.resultList[0].qestnSj").value("Keyword Question"));
+    }
+
+    @Test
     @DisplayName("FAQ 상세 조회 성공")
     void getFaq_Success() throws Exception {
         // Given
@@ -57,6 +77,18 @@ class FaqControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.faqId").value("FAQ1"));
+    }
+
+    @Test
+    @DisplayName("FAQ 상세 조회 실패 - 존재하지 않는 FAQ")
+    void getFaq_NotFound() throws Exception {
+        // Given
+        given(faqService.getFaq(anyString())).willThrow(new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/faqs/NOT_FOUND")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -73,4 +105,31 @@ class FaqControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("FAQ1"));
     }
+
+    @Test
+    @DisplayName("FAQ 수정 성공")
+    void updateFaq_Success() throws Exception {
+        // Given
+        willDoNothing().given(faqService).updateFaq(anyString(), anyString(), any(FaqDto.class));
+
+        // When & Then
+        mockMvc.perform(put("/api/v1/faqs/FAQ1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"qestnSj\":\"Updated Question\",\"qestnCn\":\"Updated Content\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("FAQ 삭제 성공")
+    void deleteFaq_Success() throws Exception {
+        // Given
+        willDoNothing().given(faqService).deleteFaq(anyString(), anyString());
+
+        // When & Then
+        mockMvc.perform(delete("/api/v1/faqs/FAQ1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
 }
+

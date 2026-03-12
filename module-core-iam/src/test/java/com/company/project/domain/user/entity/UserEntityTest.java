@@ -104,4 +104,86 @@ class UserEntityTest {
         user.setAuthorCode("INVALID_ROLE");
         assertThat(user.getRole()).isEqualTo(Role.USER);
     }
+
+    @Test
+    @DisplayName("일반 사용자 정보 업데이트 테스트")
+    void generalUser_update_success() {
+        // given
+        GeneralUser user = GeneralUser.builder()
+                .esntlId("USR_0002")
+                .mberId("general01")
+                .mberNm("General User")
+                .build();
+
+        // when
+        user.update("Updated General", "Hint", "Answer", "ihid", "F", "123456", "Address", "02",
+                "ST", "Detail", "5678", "010-1234-5678", "GROUP_02", "FX-123", "gen@test.com", "1234");
+
+        // then
+        assertThat(user.getMberNm()).isEqualTo("Updated General");
+        assertThat(user.getMberEmailAdres()).isEqualTo("gen@test.com");
+    }
+
+    @Test
+    @DisplayName("일반 사용자 비밀번호 업데이트 테스트")
+    void generalUser_updatePassword_success() {
+        // given
+        GeneralUser user = GeneralUser.builder().mberId("general01").build();
+
+        // when
+        user.updatePassword("new_pass");
+
+        // then
+        assertThat(user.getPassword()).isEqualTo("new_pass");
+        assertThat(user.getChgPwdLastPnttm()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("기업 사용자 정보 업데이트 테스트")
+    void enterpriseUser_update_success() {
+        // given
+        EnterpriseUser user = EnterpriseUser.builder()
+                .esntlId("USR_0003")
+                .entrprsmberId("company01")
+                .cmpnyNm("Old Company")
+                .build();
+
+        // when
+        user.update("new_company_id", "ENT01", "123-45-67890", "123456-7890123", "New Company",
+                "Manager", "12345", "Addr", "02", "02-123-4567", "IND01", "Applicant", "ST",
+                "Hint", "Answer", "GROUP_03", "Detail", "5678", "02", "mail@corp.com");
+
+        // then
+        assertThat(user.getCmpnyNm()).isEqualTo("New Company");
+        assertThat(user.getApplcntEmailAdres()).isEqualTo("mail@corp.com");
+    }
+
+    @Test
+    @DisplayName("기업 사용자 비밀번호 업데이트 테스트")
+    void enterpriseUser_updatePassword_success() {
+        // given
+        EnterpriseUser user = EnterpriseUser.builder().entrprsmberId("company01").build();
+
+        // when
+        user.updatePassword("new_corp_pass");
+
+        // then
+        assertThat(user.getEntrprsMberPassword()).isEqualTo("new_corp_pass");
+        assertThat(user.getChgPwdLastPnttm()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("기업 사용자 잠금 해제 테스트")
+    void enterpriseUser_unlock_success() {
+        // given
+        EnterpriseUser user = EnterpriseUser.builder().lockAt("Y").build();
+
+        // when
+        user.unlock();
+
+        // then
+        assertThat(user.getLockAt()).isNull();
+    }
 }
+
+

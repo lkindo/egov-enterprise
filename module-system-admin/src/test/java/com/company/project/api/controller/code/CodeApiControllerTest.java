@@ -79,6 +79,26 @@ class CodeApiControllerTest {
     }
 
     @Test
+    @DisplayName("분류코드 수정 성공")
+    void updateClCode_Success() throws Exception {
+        // When & Then
+        mockMvc.perform(put("/api/v1/admin/codes/cl/CL1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"clCodeNm\":\"Updated Name\", \"useAt\":\"Y\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("분류코드 삭제 성공")
+    void deleteClCode_Success() throws Exception {
+        // When & Then
+        mockMvc.perform(delete("/api/v1/admin/codes/cl/CL1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("공통코드 목록 조회 성공")
     void getCmmnCodeList_Success() throws Exception {
         // Given
@@ -92,6 +112,50 @@ class CodeApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.list[0].codeId").value("CODE1"));
+    }
+
+    @Test
+    @DisplayName("공통코드 상세 조회 성공")
+    void getCmmnCode_Success() throws Exception {
+        // Given
+        given(commonCodeService.selectCmmnCodeDetail(any())).willReturn(CmmnCodeDto.builder().codeId("CODE1").build());
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/admin/codes/cmmn/CODE1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.codeId").value("CODE1"));
+    }
+
+    @Test
+    @DisplayName("공통코드 등록 성공")
+    void createCmmnCode_Success() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/v1/admin/codes/cmmn")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"codeId\":\"CODE1\", \"codeIdNm\":\"Name\", \"useAt\":\"Y\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("공통코드 수정 성공")
+    void updateCmmnCode_Success() throws Exception {
+        // When & Then
+        mockMvc.perform(put("/api/v1/admin/codes/cmmn/CODE1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"codeIdNm\":\"Updated\", \"useAt\":\"Y\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("공통코드 삭제 성공")
+    void deleteCmmnCode_Success() throws Exception {
+        // When & Then
+        mockMvc.perform(delete("/api/v1/admin/codes/cmmn/CODE1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -109,4 +173,50 @@ class CodeApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.list[0].code").value("D1"));
     }
+
+    @Test
+    @DisplayName("상세코드 상세 조회 성공")
+    void getDetailCode_Success() throws Exception {
+        // Given
+        given(commonCodeService.selectCmmnDetailCodeDetail(any())).willReturn(CmmnDetailCodeDto.builder().code("D1").build());
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/admin/codes/detail/CODE1/D1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.code").value("D1"));
+    }
+
+    @Test
+    @DisplayName("상세코드 등록 성공")
+    void createDetailCode_Success() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/v1/admin/codes/detail")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"codeId\":\"CODE1\", \"code\":\"D1\", \"codeNm\":\"Name\", \"useAt\":\"Y\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("상세코드 수정 성공")
+    void updateDetailCode_Success() throws Exception {
+        // When & Then
+        mockMvc.perform(put("/api/v1/admin/codes/detail/CODE1/D1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"codeNm\":\"Updated\", \"useAt\":\"Y\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("상세코드 삭제 성공")
+    void deleteDetailCode_Success() throws Exception {
+        // When & Then
+        mockMvc.perform(delete("/api/v1/admin/codes/detail/CODE1/D1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
 }
+
+
