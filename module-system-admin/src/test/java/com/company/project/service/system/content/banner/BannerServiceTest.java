@@ -1,4 +1,4 @@
-package com.company.project.service.banner;
+package com.company.project.service.system.content.banner;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.domain.system.content.banner.Banner;
