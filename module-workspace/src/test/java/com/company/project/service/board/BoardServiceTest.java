@@ -301,5 +301,97 @@ class BoardServiceTest {
         // Then
         verify(board).delete();
     }
+
+    @Test
+    @DisplayName("게시글 등록 테스트 - 사용자 정보 조회 실패 시 익명 처리")
+    void createPost_UserNotFound_Anonymous() {
+        // Given
+        String userId = "unknown";
+        String bbsId = "BBS_001";
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Title", "Content", null, null, null);
+        BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
+        
+        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
+        when(userService.getUserById(userId)).thenThrow(new RuntimeException("Not Found"));
+        when(boardRepository.findMaxSortOrdr(bbsId)).thenReturn(0L);
+        lenient().when(meterRegistry.timer(anyString(), any(String[].class))).thenReturn(timer);
+        when(boardRepository.save(any(Board.class))).thenReturn(Board.builder().nttId(100L).bbsId(bbsId).build());
+
+        // When
+        boardService.createPost(userId, request);
+
+        // Then
+        verify(boardRepository).save(argThat(entity -> entity.getNtcrNm().equals("익명")));
+    }
+
+    @Test
+    @DisplayName("답글 등록 테스트 - 사용자 정보 조회 실패 시 익명 처리")
+    void replyPost_UserNotFound_Anonymous() {
+        // Given
+        String userId = "unknown";
+        Long parentId = 10L;
+        String bbsId = "BBS_001";
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Reply", "Content", null, null, null);
+        BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
+        Board parent = Board.builder().nttId(parentId).bbsId(bbsId).sortOrdr(100L).replyLc(0).build();
+        
+        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
+        when(boardRepository.findById(parentId)).thenReturn(Optional.of(parent));
+        when(userService.getUserById(userId)).thenThrow(new RuntimeException("Not Found"));
+        when(boardRepository.findMaxNttNo(eq(bbsId), anyLong())).thenReturn(0L);
+        when(boardRepository.save(any(Board.class))).thenReturn(Board.builder().nttId(101L).bbsId(bbsId).build());
+
+        // When
+        boardService.replyPost(userId, parentId, request);
+
+        // Then
+        verify(boardRepository).save(argThat(entity -> entity.getNtcrNm().equals("익명")));
+    }
+
+    @Test
+    @DisplayName("파일 업로드 시 빈 파일 목록 처리 테스트")
+    void createPostWithFiles_EmptyFiles() throws IOException {
+        // Given
+        String userId = "user01";
+        String bbsId = "BBS_001";
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Title", "Content", null, null, "EXISTING_ID");
+        
+        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
+        lenient().when(meterRegistry.timer(anyString(), any(String[].class))).thenReturn(timer);
+        when(boardRepository.save(any(Board.class))).thenReturn(Board.builder().nttId(100L).bbsId(bbsId).build());
+
+        // When
+        boardService.createPostWithFiles(userId, request, Collections.emptyList());
+
+        // Then
+        verify(fileService, never()).uploadFiles(any());
+        verify(boardRepository).save(argThat(entity -> entity.getAtchFileId().equals("EXISTING_ID")));
+    }
+
+    @Test
+    @DisplayName("게시글 수정 실패 - 존재하지 않는 게시글")
+    void updatePost_NotFound_ThrowsException() {
+        // Given
+        when(boardRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> boardService.updatePost("BBS_1", 1L, mock(BoardSaveRequest.class)))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ARTICLE_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("답글 등록 실패 - 부모 게시글 미존재")
+    void replyPost_ParentNotFound_ThrowsException() {
+        // Given
+        String bbsId = "BBS_1";
+        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
+        when(boardRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> boardService.replyPost("user", 1L, new BoardSaveRequest(bbsId, "T", "C", null, null, null)))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ARTICLE_NOT_FOUND);
+    }
 }
 

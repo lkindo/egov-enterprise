@@ -14,15 +14,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("AuthorManageService (Auth) 테스트")
 class AuthorManageServiceTest {
 
     @Mock
@@ -32,97 +33,72 @@ class AuthorManageServiceTest {
     private AuthorManageService authorManageService;
 
     @Test
-    @DisplayName("권한 목록 조회 테스트")
-    void selectAuthorListTest() {
-        // Given
-        ComDefaultVO searchVO = new ComDefaultVO();
-        searchVO.setPageIndex(1);
-        searchVO.setPageUnit(10);
-        
-        Authority authority = Authority.builder()
-                .authorCode("AUTH_USER")
-                .authorNm("User Authority")
-                .build();
-        Page<Authority> page = new PageImpl<>(Collections.singletonList(authority));
-        
-        when(authorityRepository.findAll(any(Pageable.class))).thenReturn(page);
+    @DisplayName("권한 목록 조회 성공")
+    void selectAuthorList_Success() {
+        Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Admin").build();
+        Page<Authority> page = new PageImpl<>(List.of(auth));
+        given(authorityRepository.findAll(any(Pageable.class))).willReturn(page);
 
-        // When
-        List<AuthorManageDto> result = authorManageService.selectAuthorList(searchVO);
-
-        // Then
+        ComDefaultVO vo = new ComDefaultVO();
+        List<AuthorManageDto> result = authorManageService.selectAuthorList(vo);
+        
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getAuthorCode()).isEqualTo("AUTH_USER");
-        verify(authorityRepository).findAll(any(Pageable.class));
+        assertThat(result.get(0).getAuthorCode()).isEqualTo("AUTH_001");
     }
 
     @Test
-    @DisplayName("권한 상세 조회 테스트")
-    void selectAuthorTest() {
-        // Given
-        String authorCode = "AUTH_ADMIN";
-        Authority authority = Authority.builder()
-                .authorCode(authorCode)
-                .authorNm("Admin Authority")
-                .build();
-        
-        when(authorityRepository.findById(authorCode)).thenReturn(Optional.of(authority));
-
-        // When
-        AuthorManageDto result = authorManageService.selectAuthor(authorCode);
-
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getAuthorCode()).isEqualTo(authorCode);
-        verify(authorityRepository).findById(authorCode);
+    @DisplayName("권한 총 갯수 조회")
+    void selectAuthorListTotCnt_Success() {
+        given(authorityRepository.count()).willReturn(50L);
+        int result = authorManageService.selectAuthorListTotCnt(new ComDefaultVO());
+        assertThat(result).isEqualTo(50);
     }
 
     @Test
-    @DisplayName("권한 등록 테스트")
-    void insertAuthorTest() {
-        // Given
+    @DisplayName("권한 상세 조회 성공")
+    void selectAuthor_Success() {
+        Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Admin").build();
+        given(authorityRepository.findById("AUTH_001")).willReturn(Optional.of(auth));
+
+        AuthorManageDto result = authorManageService.selectAuthor("AUTH_001");
+        assertThat(result.getAuthorNm()).isEqualTo("Admin");
+    }
+
+    @Test
+    @DisplayName("권한 등록 성공")
+    void insertAuthor_Success() {
         AuthorManageDto dto = AuthorManageDto.builder()
                 .authorCode("AUTH_NEW")
-                .authorNm("New Authority")
+                .authorNm("New Auth")
                 .build();
-
-        // When
+        
         authorManageService.insertAuthor(dto);
-
-        // Then
         verify(authorityRepository).save(any(Authority.class));
     }
 
     @Test
-    @DisplayName("권한 수정 테스트")
-    void updateAuthorTest() {
-        // Given
-        String authorCode = "AUTH_TARGET";
-        AuthorManageDto dto = AuthorManageDto.builder()
-                .authorCode(authorCode)
-                .authorNm("Updated Name")
-                .build();
-        Authority authority = mock(Authority.class);
-        
-        when(authorityRepository.findById(authorCode)).thenReturn(Optional.of(authority));
+    @DisplayName("권한 수정 성공")
+    void updateAuthor_Success() {
+        Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Old").build();
+        given(authorityRepository.findById("AUTH_001")).willReturn(Optional.of(auth));
 
-        // When
+        AuthorManageDto dto = AuthorManageDto.builder().authorCode("AUTH_001").authorNm("New").build();
         authorManageService.updateAuthor(dto);
-
-        // Then
-        verify(authority).update(anyString(), any());
+        assertThat(auth.getAuthorNm()).isEqualTo("New");
     }
 
     @Test
-    @DisplayName("권한 삭제 테스트")
-    void deleteAuthorTest() {
-        // Given
-        String authorCode = "AUTH_DELETE";
+    @DisplayName("권한 삭제 성공")
+    void deleteAuthor_Success() {
+        authorManageService.deleteAuthor("AUTH_001");
+        verify(authorityRepository).deleteById("AUTH_001");
+    }
 
-        // When
-        authorManageService.deleteAuthor(authorCode);
-
-        // Then
-        verify(authorityRepository).deleteById(authorCode);
+    @Test
+    @DisplayName("권한 일괄 삭제 성공")
+    void deleteAuthors_Success() {
+        String[] codes = {"AUTH_1", "AUTH_2"};
+        authorManageService.deleteAuthors(codes);
+        verify(authorityRepository).deleteAllById(any());
     }
 }

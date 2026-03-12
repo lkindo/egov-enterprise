@@ -219,4 +219,118 @@ class MenuServiceTest {
         verify(menuAuthorityRepository).deleteByIdAuthorCode(authorCode);
         verify(menuAuthorityRepository).saveAll(anyList());
     }
+
+    @Test
+    @DisplayName("일반 사용자 메뉴 계층 구조 조회 - 권한 있는 메뉴만 노출")
+    void getMenuHierarchy_User_Success() {
+        // Given
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn("user");
+        
+        List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+        doReturn(authorities).when(authentication).getAuthorities();
+
+        Menu menu1 = Menu.builder().id(1L).menuNm("Authorized").upperMenuNo(0L).menuOrdr(1).build();
+        Menu menu2 = Menu.builder().id(2L).menuNm("Unauthorized").upperMenuNo(0L).menuOrdr(2).build();
+
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu1, menu2));
+        
+        // 1번 메뉴만 ROLE_USER 권한이 있는 것으로 설정
+        com.company.project.domain.auth.MenuAuthority ma = com.company.project.domain.auth.MenuAuthority.builder()
+                .id(com.company.project.domain.auth.MenuAuthority.MenuAuthorityId.builder()
+                        .authorCode("ROLE_USER")
+                        .menuNo(1L)
+                        .build())
+                .build();
+        when(menuAuthorityRepository.findAll()).thenReturn(List.of(ma));
+        when(programRepository.findAll()).thenReturn(Collections.emptyList());
+
+        // When
+        List<MenuDto> result = menuService.getMenuHierarchy();
+
+        // Then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("익명 사용자 메뉴 계층 구조 조회 - ROLE_ANONYMOUS 메뉴만 노출")
+    void getMenuHierarchy_Anonymous_Success() {
+        // Given
+        when(securityContext.getAuthentication()).thenReturn(null); // No authentication
+
+        Menu menu = Menu.builder().id(99L).menuNm("Guest Menu").upperMenuNo(0L).menuOrdr(1).build();
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu));
+        
+        com.company.project.domain.auth.MenuAuthority ma = com.company.project.domain.auth.MenuAuthority.builder()
+                .id(com.company.project.domain.auth.MenuAuthority.MenuAuthorityId.builder()
+                        .authorCode("ROLE_ANONYMOUS")
+                        .menuNo(99L)
+                        .build())
+                .build();
+        when(menuAuthorityRepository.findAll()).thenReturn(List.of(ma));
+        when(programRepository.findAll()).thenReturn(Collections.emptyList());
+
+        // When
+        List<MenuDto> result = menuService.getMenuHierarchy();
+
+        // Then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(99L);
+    }
+
+    @Test
+    @DisplayName("상위 메뉴 ID 조회 - 3단계 계층 구조 테스트")
+    void getRootMenuIdByProgrmFileNm_MultiLevel_Success() {
+        // Given
+        String targetProgrm = "childProgrm";
+        Menu root = Menu.builder().id(1L).upperMenuNo(0L).build();
+        Menu middle = Menu.builder().id(2L).upperMenuNo(1L).build();
+        Menu child = Menu.builder().id(3L).upperMenuNo(2L).progrmFileNm(targetProgrm).build();
+
+        when(menuRepository.findByProgrmFileNm(targetProgrm)).thenReturn(Optional.of(child));
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(root, middle, child));
+
+        // When
+        Long rootId = menuService.getRootMenuIdByProgrmFileNm(targetProgrm);
+
+        // Then
+        assertThat(rootId).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("메뉴 수정 실패 - 존재하지 않는 메뉴")
+    void updateMenuManage_NotFound_ThrowsException() {
+        // Given
+        MenuDto dto = MenuDto.builder().menuNo(999L).build();
+        when(menuRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // When & Then
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            menuService.updateMenuManage(dto);
+        });
+    }
+
+    @Test
+    @DisplayName("메뉴 삭제 목록 - 빈 값 처리")
+    void deleteMenuManageList_Empty_NoAction() {
+        // When
+        menuService.deleteMenuManageList("");
+        menuService.deleteMenuManageList(null);
+
+        // Then
+        verify(menuRepository, never()).deleteAllById(any());
+    }
+
+    @Test
+    @DisplayName("메뉴 생성 목록 저장 - 메뉴 번호가 없을 때 삭제만 수행")
+    void insertMenuCreatList_NullMenuNos_OnlyDelete() {
+        // When
+        menuService.insertMenuCreatList("ROLE_TEST", null);
+
+        // Then
+        verify(menuAuthorityRepository).deleteByIdAuthorCode("ROLE_TEST");
+        verify(menuAuthorityRepository, never()).saveAll(anyList());
+    }
 }

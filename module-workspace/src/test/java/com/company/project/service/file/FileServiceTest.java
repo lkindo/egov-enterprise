@@ -166,4 +166,87 @@ class FileServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
     }
+
+    @Test
+    @DisplayName("파일 업로드 테스트 - 빈 파일 포함")
+    void uploadFiles_WithEmptyFile_Success() throws IOException {
+        // Given
+        MultipartFile regularFile = mock(MultipartFile.class);
+        when(regularFile.isEmpty()).thenReturn(false);
+        when(regularFile.getOriginalFilename()).thenReturn("test.txt");
+        when(regularFile.getSize()).thenReturn(100L);
+        
+        MultipartFile emptyFile = mock(MultipartFile.class);
+        when(emptyFile.isEmpty()).thenReturn(true);
+
+        when(storageService.store(any(), anyString())).thenReturn("stored.txt");
+        when(fileMasterRepository.save(any())).thenReturn(mockMaster);
+
+        // When
+        fileService.uploadFiles(List.of(regularFile, emptyFile));
+
+        // Then
+        verify(storageService, times(1)).store(any(), anyString());
+        verify(fileDetailRepository, times(1)).save(any());
+    }
+
+    @Test
+    @DisplayName("첨부파일 목록 조회 테스트 - ID가 Null인 경우")
+    void getFileList_NullId_ReturnsEmpty() {
+        // When
+        List<FileDto> result = fileService.getFileList(null);
+
+        // Then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("파일 수정(추가 업로드) 테스트")
+    void updateFiles_Success() throws IOException {
+        // Given
+        MultipartFile newFile = mock(MultipartFile.class);
+        when(newFile.isEmpty()).thenReturn(false);
+        when(newFile.getOriginalFilename()).thenReturn("new.txt");
+        when(newFile.getSize()).thenReturn(200L);
+
+        when(fileMasterRepository.findById(atchFileId)).thenReturn(Optional.of(mockMaster));
+        when(fileDetailRepository.findByFileMaster(mockMaster)).thenReturn(List.of(mockDetail));
+        when(storageService.store(any(), anyString())).thenReturn("stored_new.txt");
+
+        // When
+        fileService.updateFiles(atchFileId, List.of(newFile));
+
+        // Then
+        verify(fileDetailRepository).save(argThat(detail -> detail.getFileSn() == 2));
+    }
+
+    @Test
+    @DisplayName("전체 파일 목록 조회 테스트 - 키워드 필터링")
+    void getAllFileList_WithKeyword_Success() {
+        // Given
+        org.springframework.data.domain.Pageable pageable = mock(org.springframework.data.domain.Pageable.class);
+        org.springframework.data.domain.Page<FileDetail> page = new org.springframework.data.domain.PageImpl<>(List.of(mockDetail));
+        when(fileDetailRepository.findByOrignlFileNmContaining(eq("test"), any())).thenReturn(page);
+
+        // When
+        org.springframework.data.domain.Page<FileDto> result = fileService.getAllFileList(pageable, "test");
+
+        // Then
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("전체 파일 목록 조회 테스트 - 전체 조회")
+    void getAllFileList_NoKeyword_Success() {
+        // Given
+        org.springframework.data.domain.Pageable pageable = mock(org.springframework.data.domain.Pageable.class);
+        org.springframework.data.domain.Page<FileDetail> page = new org.springframework.data.domain.PageImpl<>(List.of(mockDetail));
+        when(fileDetailRepository.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
+
+        // When
+        org.springframework.data.domain.Page<FileDto> result = fileService.getAllFileList(pageable, null);
+
+        // Then
+        assertThat(result.getContent()).hasSize(1);
+    }
 }
