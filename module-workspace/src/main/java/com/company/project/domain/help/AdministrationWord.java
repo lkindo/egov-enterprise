@@ -3,17 +3,20 @@ package com.company.project.domain.help;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 /**
- * 행정 용어 Repository
+ * 행정 용어 Entity
  */
 @Entity
 @Table(name = "NADMINISTWORD")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class AdministrationWord extends BaseEntity {
 
     @Id
@@ -43,22 +46,6 @@ public class AdministrationWord extends BaseEntity {
 
     @Column(name = "ADMINIST_WORD_DC", columnDefinition = "TEXT")
     private String administWordDc;
-
-    @Builder
-    public AdministrationWord(String administWordId, String administWordNm, String administWordEngNm,
-                              String administWordAbrv, String themaRelm, String wordDomn, String stdWord,
-                              String administWordDf, String administWordDc, String frstRegisterId) {
-        this.administWordId = administWordId;
-        this.administWordNm = administWordNm;
-        this.administWordEngNm = administWordEngNm;
-        this.administWordAbrv = administWordAbrv;
-        this.themaRelm = themaRelm;
-        this.wordDomn = wordDomn;
-        this.stdWord = stdWord;
-        this.administWordDf = administWordDf;
-        this.administWordDc = administWordDc;
-        this.createdBy = frstRegisterId;
-    }
 
     public void update(String administWordNm, String administWordEngNm, String administWordAbrv,
                        String themaRelm, String wordDomn, String stdWord, String administWordDf,

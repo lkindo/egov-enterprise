@@ -15,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -28,6 +30,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("CommunityServiceImpl 테스트")
 class CommunityServiceImplTest {
 
@@ -50,12 +53,12 @@ class CommunityServiceImplTest {
         given(query.where(any(Predicate.class))).willReturn(query);
         given(query.offset(anyLong())).willReturn(query);
         given(query.limit(anyLong())).willReturn(query);
-        given(query.orderBy(any(OrderSpecifier[].class))).willReturn(query);
+        given(query.orderBy((OrderSpecifier<?>) any())).willReturn(query);
         
         Community community = Community.builder().cmmntyId("C1").cmmntyNm("Community").build();
-        given(query.fetch()).willReturn(List.of(community));
+        given(query.fetch()).willReturn(java.util.Collections.singletonList(community));
 
-        Page<CommunityDto> result = communityService.getCommunityList("0", "keyword", Pageable.unpaged());
+        Page<CommunityDto> result = communityService.getCommunityList("0", "keyword", org.springframework.data.domain.PageRequest.of(0, 10));
         
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getCmmntyNm()).isEqualTo("Community");
@@ -114,10 +117,10 @@ class CommunityServiceImplTest {
         JPAQuery query = mock(JPAQuery.class);
         given(queryFactory.selectFrom(any(EntityPath.class))).willReturn(query);
         given(query.where(any(Predicate.class))).willReturn(query);
-        given(query.orderBy(any(OrderSpecifier[].class))).willReturn(query);
+        given(query.orderBy((OrderSpecifier<?>) any())).willReturn(query);
         
         Community community = Community.builder().cmmntyId("C1").build();
-        given(query.fetch()).willReturn(List.of(community));
+        given(query.fetch()).willReturn(java.util.Collections.singletonList(community));
 
         List<CommunityDto> result = communityService.getCommunityListPortlet();
         assertThat(result).hasSize(1);

@@ -18,4 +18,3 @@ export * from './authService';
 export * from './fileMngService';
 export * from './networkService';
 export * from './roleService';
-export * from './serverService';

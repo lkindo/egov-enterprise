@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtTokenProvider.validateToken(token)) {
                     Authentication auth = jwtTokenProvider.getAuthentication(token);
                     SecurityContextHolder.getContext().setAuthentication(auth);
-                    log.debug(">>> [JwtFilter] Successfully authenticated user: {}", auth.getName());
+                    log.debug(">>> [JwtFilter] Successfully authenticated user: {}, Authorities: {}", auth.getName(), auth.getAuthorities());
                 } else {
                     log.warn(">>> [JwtFilter] Token validation failed for path: {}", path);
                 }

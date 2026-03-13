@@ -21,7 +21,6 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
-import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -47,7 +46,7 @@ class FaqControllerTest {
         mockMvc.perform(get("/api/v1/faqs")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultList[0].faqId").value("FAQ1"));
+                .andExpect(jsonPath("$.data.content[0].faqId").value("FAQ1")); // Fixed: Added .data.content
     }
 
     @Test
@@ -62,8 +61,8 @@ class FaqControllerTest {
                 .param("keyword", "keyword")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultList[0].faqId").value("FAQ1"))
-                .andExpect(jsonPath("$.resultList[0].qestnSj").value("Keyword Question"));
+                .andExpect(jsonPath("$.data.content[0].faqId").value("FAQ1")) // Fixed
+                .andExpect(jsonPath("$.data.content[0].qestnSj").value("Keyword Question"));
     }
 
     @Test
@@ -132,4 +131,3 @@ class FaqControllerTest {
                 .andExpect(status().isOk());
     }
 }
-

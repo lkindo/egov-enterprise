@@ -1,13 +1,13 @@
 export interface PaginationInfo {
-    currentPageNo: number;
-    recordCountPerPage: number;
-    pageSize: number;
-    totalRecordCount: number;
-    totalPageCount: number;
-    firstPageNoOnPageList: number;
-    lastPageNoOnPageList: number;
-    firstRecordIndex: number;
-    lastRecordIndex: number;
+    currentPageNo?: number;
+    recordCountPerPage?: number;
+    pageSize?: number;
+    totalRecordCount?: number;
+    totalPageCount?: number;
+    firstPageNoOnPageList?: number;
+    lastPageNoOnPageList?: number;
+    firstRecordIndex?: number;
+    lastRecordIndex?: number;
 }
 
 export interface PaginationResponse<T> {
@@ -16,8 +16,8 @@ export interface PaginationResponse<T> {
     content?: T[]; // Spring Data JPA 대응 추가
     totalRecordCount?: number;
     totalElements?: number; // Spring Data JPA 대응 추가
-    resultList: T[];
-    paginationInfo: PaginationInfo;
+    resultList?: T[];
+    paginationInfo?: PaginationInfo;
 }
 
 export interface SearchParams {
@@ -29,6 +29,7 @@ export interface SearchParams {
     searchWrd?: string; // 추가
     ntwrkId?: string; // 추가
     codeId?: string; // 추가
+    pageUnit?: number; // 추가
 }
 
 // Common Code

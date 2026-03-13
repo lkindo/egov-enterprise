@@ -18,12 +18,11 @@ class UserDtoTest {
                 .userId("tester")
                 .userNm("테스터")
                 .esntlId("USR_0000000000001")
+                .password("password") // Fixed: Add required field
                 .role(Role.ADMIN)
                 .emplNo("12345")
                 .ofcpsNm("과장")
                 .build();
-        // Since User extends BaseEntity, we check createdDate
-        // (BaseEntity usually has it, let's assume it works or just check nullability)
 
         // When
         UserDto dto = UserDto.from(user);

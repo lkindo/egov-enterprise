@@ -49,6 +49,7 @@ class CommonCodeTest {
         CommonCode commonCode = CommonCode.builder()
                 .codeGroupId("COM001")
                 .code("C01")
+                .codeNm("Code Name") // Fixed: provide required field
                 .useAt("Y")
                 .build();
 

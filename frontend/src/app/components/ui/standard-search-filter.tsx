@@ -11,7 +11,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
-interface FilterField {
+export interface FilterField {
   name: string;
   label: string;
   type: 'text' | 'select' | 'date' | 'daterange';

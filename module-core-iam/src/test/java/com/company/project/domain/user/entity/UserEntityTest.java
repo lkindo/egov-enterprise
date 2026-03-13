@@ -9,15 +9,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class UserEntityTest {
 
+    private User.UserBuilder<?, ?> createBaseUser() {
+        return User.builder()
+                .userId("testuser")
+                .esntlId("USR_0001")
+                .userNm("Original Name")
+                .password("password");
+    }
+
     @Test
     @DisplayName("사용자 정보 업데이트 테스트")
     void update_success() {
         // given
-        User user = User.builder()
-                .userId("testuser")
-                .esntlId("USR_0001")
-                .userNm("Original Name")
-                .password("password")
+        User user = createBaseUser()
                 .role(Role.USER)
                 .build();
 
@@ -36,10 +40,7 @@ class UserEntityTest {
     @DisplayName("비밀번호 업데이트 및 업데이트 시간 변경 테스트")
     void updatePassword_success() {
         // given
-        User user = User.builder()
-                .userId("testuser")
-                .esntlId("USR_0001")
-                .password("old_password")
+        User user = createBaseUser()
                 .build();
 
         // when
@@ -54,8 +55,7 @@ class UserEntityTest {
     @DisplayName("계정 잠금 해제 테스트")
     void unlock_success() {
         // given
-        User user = User.builder()
-                .userId("testuser")
+        User user = createBaseUser()
                 .lockAt("Y")
                 .lockCount(5)
                 .lockLastDate(LocalDateTime.now())
@@ -74,8 +74,7 @@ class UserEntityTest {
     @DisplayName("잠금 횟수 증가 테스트")
     void incrementLockCount_success() {
         // given
-        User user = User.builder()
-                .userId("testuser")
+        User user = createBaseUser()
                 .lockCount(null)
                 .build();
 
@@ -91,7 +90,7 @@ class UserEntityTest {
     @DisplayName("권한 코드 설정 테스트")
     void setAuthorCode_success() {
         // given
-        User user = User.builder().userId("testuser").build();
+        User user = createBaseUser().build();
 
         // when
         user.setAuthorCode("ROLE_ADMIN");
@@ -113,6 +112,7 @@ class UserEntityTest {
                 .esntlId("USR_0002")
                 .mberId("general01")
                 .mberNm("General User")
+                .password("pass") // Fixed: Add password if @NonNull
                 .build();
 
         // when
@@ -128,7 +128,12 @@ class UserEntityTest {
     @DisplayName("일반 사용자 비밀번호 업데이트 테스트")
     void generalUser_updatePassword_success() {
         // given
-        GeneralUser user = GeneralUser.builder().mberId("general01").build();
+        GeneralUser user = GeneralUser.builder()
+                .esntlId("USR_0002")
+                .mberId("general01")
+                .mberNm("Name")
+                .password("old_pass")
+                .build();
 
         // when
         user.updatePassword("new_pass");
@@ -146,6 +151,7 @@ class UserEntityTest {
                 .esntlId("USR_0003")
                 .entrprsmberId("company01")
                 .cmpnyNm("Old Company")
+                .entrprsMberPassword("pass") // Fixed: Add password
                 .build();
 
         // when
@@ -162,7 +168,12 @@ class UserEntityTest {
     @DisplayName("기업 사용자 비밀번호 업데이트 테스트")
     void enterpriseUser_updatePassword_success() {
         // given
-        EnterpriseUser user = EnterpriseUser.builder().entrprsmberId("company01").build();
+        EnterpriseUser user = EnterpriseUser.builder()
+                .esntlId("USR_0003")
+                .entrprsmberId("company01")
+                .entrprsMberPassword("old_pass")
+                .cmpnyNm("Company")
+                .build();
 
         // when
         user.updatePassword("new_corp_pass");
@@ -176,7 +187,13 @@ class UserEntityTest {
     @DisplayName("기업 사용자 잠금 해제 테스트")
     void enterpriseUser_unlock_success() {
         // given
-        EnterpriseUser user = EnterpriseUser.builder().lockAt("Y").build();
+        EnterpriseUser user = EnterpriseUser.builder()
+                .esntlId("USR_0003")
+                .entrprsmberId("company01")
+                .entrprsMberPassword("pass")
+                .cmpnyNm("Company")
+                .lockAt("Y")
+                .build();
 
         // when
         user.unlock();
@@ -185,5 +202,3 @@ class UserEntityTest {
         assertThat(user.getLockAt()).isNull();
     }
 }
-
-

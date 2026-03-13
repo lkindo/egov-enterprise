@@ -6,10 +6,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ??ㅼ뵬?紐꺿꼻??곷섰 ?類ｋ궖 Entity
- * ??뉕탢?????뵠?? NONLINEMANUAL
+ * 온라인매뉴얼 정보 Entity
+ * 테이블명: NONLINEMANUAL
  */
 @Entity
 @Table(name = "NONLINEMANUAL")
@@ -17,7 +18,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class OnlineManual extends BaseEntity {
 
     @Id
@@ -35,17 +36,6 @@ public class OnlineManual extends BaseEntity {
 
     @Column(name = "ONLINE_MNL_DC", columnDefinition = "TEXT")
     private String onlineMnlDc;
-
-    @Builder
-    public OnlineManual(String onlineMnlId, String onlineMnlNm, String onlineMnlSeCode,
-                        String onlineMnlDf, String onlineMnlDc, String frstRegisterId) {
-        this.onlineMnlId = onlineMnlId;
-        this.onlineMnlNm = onlineMnlNm;
-        this.onlineMnlSeCode = onlineMnlSeCode;
-        this.onlineMnlDf = onlineMnlDf;
-        this.onlineMnlDc = onlineMnlDc;
-        this.createdBy = frstRegisterId;
-    }
 
     public void update(String onlineMnlNm, String onlineMnlSeCode, String onlineMnlDf, String onlineMnlDc, String userId) {
         this.onlineMnlNm = onlineMnlNm;

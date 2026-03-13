@@ -1,0 +1,72 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=KEY,VALUE;INIT=CREATE SCHEMA IF NOT EXISTS EBT\;CREATE SCHEMA IF NOT EXISTS COM
+    jdbc-url: ${spring.datasource.url}
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  web:
+    resources:
+      add-mappings: false
+      static-locations:
+        [
+          "classpath:/static/",
+          "classpath:/public/",
+          "classpath:/resources/",
+          "classpath:/META-INF/resources/",
+        ]
+  resources:
+    add-mappings: false
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+  h2:
+    console:
+      enabled: true
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+  # 순환 참조 허용 (테스트 환경)
+  main:
+    allow-circular-references: true
+    allow-bean-definition-overriding: true
+  test:
+    context:
+      cache:
+        maxSize: 8
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# 파일 업로드 경로 (테스트용)
+file:
+  upload-dir: ./test-uploads
+  upload:
+    path: ./test-uploads
+
+# JWT 테스트 설정
+jwt:
+  secret: test-secret-key-for-unit-testing-purposes-only-12345678901234567890
+  expiration: 3600000
+
+# 로깅 설정
+logging:
+  level:
+    root: INFO
+    org.springframework.beans.factory: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    com.company.project: DEBUG
+    org.springframework.boot.autoconfigure: DEBUG

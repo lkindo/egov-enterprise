@@ -22,24 +22,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = UserManageController.class)
-@ContextConfiguration(classes = {
-        UserManageController.class,
-        UserManageControllerExceptionTest.TestConfig.class
-})
 @Import(GlobalExceptionHandler.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class UserManageControllerExceptionTest {
-
-    @org.springframework.boot.SpringBootConfiguration
-    @org.springframework.boot.autoconfigure.EnableAutoConfiguration(exclude = {
-            org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
-            org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
-            org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
-            org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration.class
-    })
-    static class TestConfig {
-    }
 
     @Autowired
     private MockMvc mockMvc;

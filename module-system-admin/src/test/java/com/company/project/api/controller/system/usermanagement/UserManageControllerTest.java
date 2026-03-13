@@ -11,7 +11,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
@@ -24,23 +23,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = UserManageController.class)
-@ContextConfiguration(classes = {
-        UserManageController.class,
-        UserManageControllerTest.TestConfig.class
-})
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class UserManageControllerTest {
-
-    @org.springframework.boot.SpringBootConfiguration
-    @org.springframework.boot.autoconfigure.EnableAutoConfiguration(exclude = {
-            org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
-            org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
-            org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
-            org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration.class
-    })
-    static class TestConfig {
-    }
 
     @Autowired
     private MockMvc mockMvc;

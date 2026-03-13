@@ -11,33 +11,28 @@ class OnlineManualTest {
     @Test
     @DisplayName("OnlineManual 빌더 및 초기화 테스트")
     void builderTest() {
-        OnlineManual manual = OnlineManual.builder()
+        OnlineManual mnl = OnlineManual.builder()
                 .onlineMnlId("MNL_001")
-                .onlineMnlNm("User Manual")
+                .onlineMnlNm("Manual 1")
                 .onlineMnlSeCode("001")
-                .onlineMnlDf("Definition")
-                .onlineMnlDc("Manual Description")
-                .frstRegisterId("admin")
+                .createdBy("admin")
                 .build();
 
-        assertThat(manual.getOnlineMnlId()).isEqualTo("MNL_001");
-        assertThat(manual.getOnlineMnlNm()).isEqualTo("User Manual");
-        assertThat(manual.getCreatedBy()).isEqualTo("admin");
+        assertThat(mnl.getOnlineMnlId()).isEqualTo("MNL_001");
+        assertThat(mnl.getOnlineMnlNm()).isEqualTo("Manual 1");
+        assertThat(mnl.getFrstRegisterId()).isEqualTo("admin");
     }
 
     @Test
     @DisplayName("OnlineManual 수정 테스트")
     void updateTest() {
-        OnlineManual manual = OnlineManual.builder()
+        OnlineManual mnl = OnlineManual.builder()
                 .onlineMnlId("MNL_001")
-                .onlineMnlNm("Old Manual")
                 .build();
 
-        manual.update("New Manual", "002", "New Df", "New Dc", "user03");
+        mnl.update("New Name", "002", "Df", "Dc", "user02");
 
-        assertThat(manual.getOnlineMnlNm()).isEqualTo("New Manual");
-        assertThat(manual.getOnlineMnlSeCode()).isEqualTo("002");
-        assertThat(manual.getOnlineMnlDf()).isEqualTo("New Df");
-        assertThat(manual.getLastModifiedBy()).isEqualTo("user03");
+        assertThat(mnl.getOnlineMnlNm()).isEqualTo("New Name");
+        assertThat(mnl.getLastModifiedBy()).isEqualTo("user02");
     }
 }

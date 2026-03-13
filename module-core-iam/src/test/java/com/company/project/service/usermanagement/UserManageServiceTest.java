@@ -39,6 +39,14 @@ class UserManageServiceTest {
     @InjectMocks
     private UserManageService userManageService;
 
+    private User.UserBuilder<?, ?> createBaseUser(String userId) {
+        return User.builder()
+                .userId(userId)
+                .esntlId("ESNTL_" + userId)
+                .userNm("Name_" + userId)
+                .password("password");
+    }
+
     @Test
     @DisplayName("사용자 목록 조회 성공")
     void selectUserList_Success() {
@@ -47,7 +55,7 @@ class UserManageServiceTest {
         vo.setPageIndex(1);
         vo.setPageUnit(10);
         
-        User user = User.builder().userId("user1").userNm("User 1").build();
+        User user = createBaseUser("user1").userNm("User 1").build();
         Page<User> page = new PageImpl<>(List.of(user));
         given(userRepository.findAll(any(Pageable.class))).willReturn(page);
 
@@ -70,7 +78,7 @@ class UserManageServiceTest {
     @Test
     @DisplayName("사용자 상세 조회 성공")
     void selectUser_Success() {
-        User user = User.builder().userId("user1").build();
+        User user = createBaseUser("user1").build();
         given(userRepository.findById("user1")).willReturn(Optional.of(user));
 
         UserManageDto result = userManageService.selectUser("user1");
@@ -123,7 +131,7 @@ class UserManageServiceTest {
     @Test
     @DisplayName("사용자 수정 성공 - 모든 필드 포함")
     void updateUser_Full_Success() {
-        User user = User.builder().userId("user1").userNm("Old").role(Role.USER).build();
+        User user = createBaseUser("user1").userNm("Old").role(Role.USER).build();
         given(userRepository.findById("user1")).willReturn(Optional.of(user));
 
         UserManageDto dto = new UserManageDto();
@@ -174,7 +182,7 @@ class UserManageServiceTest {
     @Test
     @DisplayName("비밀번호 수정 성공")
     void updatePassword_Success() {
-        User user = User.builder().userId("user1").build();
+        User user = createBaseUser("user1").build();
         given(userRepository.findById("user1")).willReturn(Optional.of(user));
         given(passwordEncoder.encode("newpass")).willReturn("encoded");
 

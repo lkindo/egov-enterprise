@@ -16,9 +16,17 @@ export const getCnsltList = async (params: CnsltSearchParams): Promise<Paginatio
     return {
         resultList: response.content || [],
         paginationInfo: {
-            totalRecordCount: response.totalElements || 0
+            totalRecordCount: response.totalElements || 0,
+            currentPageNo: (params.pageIndex || 1),
+            recordCountPerPage: 10,
+            pageSize: 10,
+            totalPageCount: Math.ceil((response.totalElements || 0) / 10),
+            firstPageNoOnPageList: 1,
+            lastPageNoOnPageList: 1,
+            firstRecordIndex: 0,
+            lastRecordIndex: 0
         }
-    };
+    } as any;
 };
 
 export const getCnslt = async (cnsltId: string): Promise<CnsltVO> =>

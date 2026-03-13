@@ -87,6 +87,8 @@ tasks.register("jacocoRootReport", JacocoReport) {
     group = "Verification"
     description = "Generates an aggregate JaCoCo report from all subprojects"
 
+    dependsOn(subprojects.test)
+
     // 실행 시점(Lazy evaluation)에 생성된 test.exec 파일만 수집하여 존재하지 않는 파일 읽기 오류 및 범용 디렉토리 탐색(Task Overlapping) 충돌 회피
     executionData.setFrom(project.files {
         subprojects.collect { file("${it.buildDir}/jacoco/test.exec") }.findAll { it.exists() }

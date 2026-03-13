@@ -16,13 +16,13 @@ class HpcmTest {
                 .hpcmSeCode("001")
                 .hpcmDf("Help Definition")
                 .hpcmDc("Help Content")
-                .frstRegisterId("admin")
+                .createdBy("admin")
                 .build();
 
         assertThat(hpcm.getHpcmId()).isEqualTo("HPCM_001");
         assertThat(hpcm.getHpcmSeCode()).isEqualTo("001");
         assertThat(hpcm.getHpcmDf()).isEqualTo("Help Definition");
-        assertThat(hpcm.getCreatedBy()).isEqualTo("admin");
+        assertThat(hpcm.getFrstRegisterId()).isEqualTo("admin");
     }
 
     @Test

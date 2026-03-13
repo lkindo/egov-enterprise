@@ -102,7 +102,7 @@ public class ApiSecurityConfig {
                                                                 "/api/v1/schedule/**", "/api/v1/scrap/**",
                                                                 "/api/v1/banners/**", "/api/v1/popups/**",
                                                                 "/api/v1/menu/**")
-                                                .permitAll()
+                                                .authenticated()
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(

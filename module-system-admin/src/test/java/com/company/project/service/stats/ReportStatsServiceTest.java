@@ -24,6 +24,9 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import org.springframework.test.util.ReflectionTestUtils;
+import org.junit.jupiter.api.BeforeEach;
+
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReportStatsService 테스트")
 class ReportStatsServiceTest {
@@ -34,11 +37,16 @@ class ReportStatsServiceTest {
     @Mock
     private DtaUseStatsRepository dtaUseStatsRepository;
 
-    @Mock(name = "reprtStatsIdGnrService")
+    @Mock
     private EgovIdGnrService reprtStatsIdGnrService;
 
     @InjectMocks
     private ReportStatsService reportStatsService;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(reportStatsService, "reprtStatsIdGnrService", reprtStatsIdGnrService);
+    }
 
     @Test
     @DisplayName("보고서 통계 목록 조회 성공")

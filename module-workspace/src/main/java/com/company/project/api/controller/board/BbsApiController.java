@@ -6,6 +6,7 @@ import com.company.project.service.board.dto.BoardSaveRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Tag(name = "Board (BBS)", description = "게시??기능 관??REST API")
+@Slf4j
+@Tag(name = "Board (BBS)", description = "게시판 기능 관련 REST API")
 @RestController
 @RequestMapping("/api/v1/bbs")
 @RequiredArgsConstructor
@@ -33,6 +35,9 @@ public class BbsApiController {
             @RequestParam(value = "size", defaultValue = "10") int size,
             @RequestParam(value = "searchCnd", required = false) String searchCnd,
             @RequestParam(value = "searchWrd", required = false) String searchWrd) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        log.debug(">>> [BBS] Accessing board: {}, User: {}, Roles: {}", bbsId, (auth != null ? auth.getName() : "ANONYMOUS"), (auth != null ? auth.getAuthorities() : "NONE"));
+        
         Page<BoardDto> resultPage;
         if (searchWrd != null && !searchWrd.isEmpty()) {
             resultPage = boardService.getBoardPosts(bbsId, searchCnd, searchWrd, PageRequest.of(page, size));

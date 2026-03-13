@@ -12,6 +12,8 @@ import com.company.project.core.config.FullBeanNameGenerator;
  * 프로젝트 메인 애플리케이션 클래스
  */
 @SpringBootApplication(nameGenerator = FullBeanNameGenerator.class)
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.company.project")
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.company.project")
 @ComponentScan(basePackages = { "com.company.project", "egovframework",
                 "org.egovframe" }, nameGenerator = FullBeanNameGenerator.class, excludeFilters = {
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {

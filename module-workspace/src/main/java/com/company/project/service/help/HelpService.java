@@ -54,7 +54,7 @@ public class HelpService implements EgovHelpService {
                 .stdWord(dto.getStdWord())
                 .administWordDf(dto.getAdministWordDf())
                 .administWordDc(dto.getAdministWordDc())
-                .frstRegisterId(userId)
+                .createdBy(userId)
                 .build();
         administrationWordRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -100,7 +100,7 @@ public class HelpService implements EgovHelpService {
                 .hpcmSeCode(dto.getHpcmSeCode())
                 .hpcmDf(dto.getHpcmDf())
                 .hpcmDc(dto.getHpcmDc())
-                .frstRegisterId(userId)
+                .createdBy(userId)
                 .build();
         hpcmRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -145,7 +145,7 @@ public class HelpService implements EgovHelpService {
                 .onlineMnlSeCode(dto.getOnlineMnlSeCode())
                 .onlineMnlDf(dto.getOnlineMnlDf())
                 .onlineMnlDc(dto.getOnlineMnlDc())
-                .frstRegisterId(userId)
+                .createdBy(userId)
                 .build();
         onlineManualRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -191,7 +191,7 @@ public class HelpService implements EgovHelpService {
                 .engNm(dto.getEngNm())
                 .wordDc(dto.getWordDc())
                 .synonm(dto.getSynonm())
-                .frstRegisterId(userId)
+                .createdBy(userId)
                 .build();
         wordDicaryRepository.save(Objects.requireNonNull(entity));
         return id;

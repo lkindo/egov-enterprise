@@ -1,6 +1,5 @@
 package com.company.project.api.controller.comment;
 
-import com.company.project.core.response.ApiResponse;
 import com.company.project.service.comment.CommentService;
 import com.company.project.service.comment.dto.CommentDto;
 import com.company.project.service.comment.dto.CommentSaveRequest;
@@ -62,7 +61,7 @@ class CommentControllerTest {
         // When & Then
         mockMvc.perform(post("/api/v1/comments")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nttId\":1, \"commentCn\":\"Content\"}")
+                .content("{\"nttId\":1, \"bbsId\":\"BBS_001\", \"commentCn\":\"Content\"}") // Fixed: Add bbsId
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

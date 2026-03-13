@@ -4,7 +4,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import lombok.RequiredArgsConstructor;
+import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -15,10 +15,13 @@ import static com.company.project.domain.auth.QUserAuthority.userAuthority;
 import static com.company.project.domain.user.entity.QDeptManage.deptManage;
 import static com.company.project.domain.user.entity.QUser.user;
 
-@RequiredArgsConstructor
 public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+    public UserAuthorityRepositoryImpl(EntityManager em) {
+        this.queryFactory = new JPAQueryFactory(em);
+    }
 
     @Override
     public Page<AuthorGroupProjection> searchAuthorGroups(String searchCondition, String searchKeyword,
@@ -45,11 +48,12 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
         }
         List<AuthorGroupProjection> content = query.fetch();
 
-        long total = queryFactory
+        Long totalResult = queryFactory
                 .select(user.count())
                 .from(user)
                 .where(conditionEq(searchCondition, searchKeyword))
                 .fetchOne();
+        long total = totalResult != null ? totalResult : 0L;
 
         return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
     }
@@ -78,12 +82,13 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
         }
         List<DeptAuthorProjection> content = query.fetch();
 
-        long total = queryFactory
+        Long totalResult = queryFactory
                 .select(user.count())
                 .from(deptManage)
                 .join(user).on(deptManage.orgnztId.eq(user.orgnztId))
                 .where(deptManage.orgnztId.eq(deptCode))
                 .fetchOne();
+        long total = totalResult != null ? totalResult : 0L;
 
         return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
     }

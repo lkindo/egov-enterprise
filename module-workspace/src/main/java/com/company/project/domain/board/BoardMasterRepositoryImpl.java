@@ -6,7 +6,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import lombok.RequiredArgsConstructor;
+import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -20,10 +20,13 @@ import static com.company.project.domain.board.QTemplate.template;
 import static com.company.project.domain.board.QBoardUse.boardUse;
 import com.querydsl.jpa.JPAExpressions;
 
-@RequiredArgsConstructor
 public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+    public BoardMasterRepositoryImpl(EntityManager em) {
+        this.queryFactory = new JPAQueryFactory(em);
+    }
 
     @Override
     public Page<BoardMasterSearchResult> searchBoardMasters(BoardMasterSearchCondition condition,

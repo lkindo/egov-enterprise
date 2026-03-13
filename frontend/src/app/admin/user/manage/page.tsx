@@ -37,10 +37,10 @@ export default async function UserManagePage({
 
         // 직렬화 최적화: 필요한 필드만 추출하여 클라이언트로 전송
         initialData = {
-            resultList: selectFieldsList(rawData.resultList, [
+            resultList: selectFieldsList(rawData.resultList || [], [
                 'userId', 'userNm', 'email', 'userSttusCode', 'sbscrbDe'
             ] as any[]),
-            paginationInfo: rawData.paginationInfo
+            paginationInfo: rawData.paginationInfo || { totalRecordCount: 0 }
         };
     } catch (error: any) {
         console.error('Server-side fetch users failed:', error);

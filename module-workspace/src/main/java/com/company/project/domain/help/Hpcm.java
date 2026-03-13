@@ -6,10 +6,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ?袁?筌??類ｋ궖 Entity
- * ??뉕탢?????뵠?? NHPCMINFO
+ * 도움말 정보 Entity
+ * 테이블명: NHPCMINFO
  */
 @Entity
 @Table(name = "NHPCMINFO")
@@ -17,7 +18,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class Hpcm extends BaseEntity {
 
     @Id
@@ -32,15 +33,6 @@ public class Hpcm extends BaseEntity {
 
     @Column(name = "HPCM_DC", columnDefinition = "TEXT")
     private String hpcmDc;
-
-    @Builder
-    public Hpcm(String hpcmId, String hpcmSeCode, String hpcmDf, String hpcmDc, String frstRegisterId) {
-        this.hpcmId = hpcmId;
-        this.hpcmSeCode = hpcmSeCode;
-        this.hpcmDf = hpcmDf;
-        this.hpcmDc = hpcmDc;
-        this.createdBy = frstRegisterId;
-    }
 
     public void update(String hpcmSeCode, String hpcmDf, String hpcmDc, String userId) {
         this.hpcmSeCode = hpcmSeCode;

@@ -2,14 +2,16 @@ package com.company.project.service.user;
 
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
+import com.company.project.domain.auth.UserAuthorityRepository;
 import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.user.dto.UserDto;
+import com.company.project.service.user.mapper.UserMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,22 +30,45 @@ class UserServiceAdditionalTest {
     private UserRepository userRepository;
 
     @Mock
+    private UserAuthorityRepository userAuthorityRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
-    @InjectMocks
+    @Mock
+    private UserMapper userMapper;
+
     private UserService userService;
+
+    @BeforeEach
+    void setUp() {
+        userService = new UserService(userRepository, userAuthorityRepository, passwordEncoder, userMapper);
+    }
+
+    private User.UserBuilder<?, ?> createBaseUser(String userId) {
+        return User.builder()
+                .userId(userId)
+                .esntlId("ESNTL_" + userId)
+                .userNm("Name_" + userId)
+                .password("password");
+    }
+
+    private UserDto.UserDtoBuilder createBaseUserDto(String userId) {
+        return UserDto.builder()
+                .userId(userId)
+                .esntlId("ESNTL_" + userId)
+                .userNm("Name_" + userId);
+    }
 
     @Test
     @DisplayName("사용자 정보 수정 성공")
     void updateUser_success() {
         // Given
         String userId = "testUser";
-        User user = User.builder()
-                .userId(userId)
+        User user = createBaseUser(userId)
                 .userNm("Old Name")
-                .password("password")
                 .build();
-        UserDto updateDto = UserDto.builder()
+        UserDto updateDto = createBaseUserDto(userId)
                 .userNm("New Name")
                 .emplNo("EMP001")
                 .ofcpsNm("Manager")
@@ -65,7 +90,7 @@ class UserServiceAdditionalTest {
     void updateUser_fail_userNotFound() {
         // Given
         String userId = "nonexistent";
-        UserDto updateDto = UserDto.builder().userNm("Name").build();
+        UserDto updateDto = createBaseUserDto(userId).build();
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // When & Then
@@ -84,8 +109,7 @@ class UserServiceAdditionalTest {
         String encodedOldPassword = "encodedOldPassword";
         String encodedNewPassword = "encodedNewPassword";
 
-        User user = User.builder()
-                .userId(userId)
+        User user = createBaseUser(userId)
                 .password(encodedOldPassword)
                 .build();
 
@@ -110,8 +134,7 @@ class UserServiceAdditionalTest {
         String newPassword = "newPassword";
         String encodedOldPassword = "encodedOldPassword";
 
-        User user = User.builder()
-                .userId(userId)
+        User user = createBaseUser(userId)
                 .password(encodedOldPassword)
                 .build();
 

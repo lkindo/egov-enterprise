@@ -5,7 +5,7 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import lombok.RequiredArgsConstructor;
+import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -15,10 +15,13 @@ import java.util.List;
 import java.util.Optional;
 import com.company.project.domain.user.entity.QUser;
 
-@RequiredArgsConstructor
 public class BoardRepositoryImpl implements BoardRepositoryCustom {
 
         private final JPAQueryFactory queryFactory;
+
+        public BoardRepositoryImpl(EntityManager em) {
+                this.queryFactory = new JPAQueryFactory(em);
+        }
 
         @Override
         public Optional<BoardDetailResult> findArticleDetail(@NonNull Long id) {
@@ -74,7 +77,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                         orderSpecifier = QBoard.board.inqireCo.desc();
                                         break;
                                 case "comments":
-                                        orderSpecifier = QBoard.board.commentCo.desc(); // 서브쿼리에서 필드로 변경
+                                        orderSpecifier = QBoard.board.commentCo.desc(); 
                                         break;
                                 case "date":
                                         orderSpecifier = QBoard.board.createdDate.desc();        
@@ -87,7 +90,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.nttId,
                                                 QBoard.board.bbsId,
                                                 QBoard.board.nttSj,
-                                                QBoard.board.ntcrNm,
+                                                QBoard.board.ntcrNm.as("frstRegisterNm"),
                                                 QBoard.board.createdDate,
                                                 QBoard.board.inqireCo,
                                                 QBoard.board.replyAt,
@@ -97,7 +100,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.nttNo,
                                                 QBoard.board.noticeAt,
                                                 QBoard.board.secretAt,
-                                                QBoard.board.commentCo)) // 필드 직접 조회
+                                                QBoard.board.commentCo)) 
                                 .from(QBoard.board)
                                 .leftJoin(QUser.user).on(QBoard.board.frstRegisterId.eq(QUser.user.esntlId))
                                 .where(builder)

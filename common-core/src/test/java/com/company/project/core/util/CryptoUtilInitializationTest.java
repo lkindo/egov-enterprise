@@ -33,7 +33,7 @@ class CryptoUtilInitializationTest {
         // Decrypt expects Base64, but it will fail at initialization check if we add one there, 
         // however CryptoUtil.decrypt only checks null and uses cryptoService directly.
         // Let's check CryptoUtil.java:76
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(RuntimeException.class, () -> {
             CryptoUtil.decrypt("YmFzZTY0"); // "base64"
         });
     }

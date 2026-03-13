@@ -87,6 +87,43 @@ class CodeAdminService extends ApiService {
         const response = await this.delete<any>(`/detail/${codeId}/${code}`, config);
         return response?.result || response;
     }
+
+    // --- Administrative Code (행정코드) ---
+    async getAdministCodes(params?: SearchParams, config?: AxiosRequestConfig) {
+        const response = await this.get<any>('/administ', { ...config, params });
+        return response?.result || response;
+    }
+
+    async getAdministCode(code: string, config?: AxiosRequestConfig) {
+        const response = await this.get<any>(`/administ/${code}`, config);
+        return response?.result || response;
+    }
+
+    async createAdministCode(data: any, config?: AxiosRequestConfig) {
+        const response = await this.post<any>('/administ', data, config);
+        return response?.result || response;
+    }
+
+    async updateAdministCode(code: string, data: any, config?: AxiosRequestConfig) {
+        const response = await this.put<any>(`/administ/${code}`, data, config);
+        return response?.result || response;
+    }
+
+    async deleteAdministCode(code: string, config?: AxiosRequestConfig) {
+        const response = await this.delete<any>(`/administ/${code}`, config);
+        return response?.result || response;
+    }
+
+    // --- Institution Code (기관코드) ---
+    async getInstitutionCodes(params?: SearchParams, config?: AxiosRequestConfig) {
+        const response = await this.get<any>('/institution', { ...config, params });
+        return response?.result || response;
+    }
+
+    async getInstitutionCode(code: string, config?: AxiosRequestConfig) {
+        const response = await this.get<any>(`/institution/${code}`, config);
+        return response?.result || response;
+    }
 }
 
 export const codeAdminService = new CodeAdminService();

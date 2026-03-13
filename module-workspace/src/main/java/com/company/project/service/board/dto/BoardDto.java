@@ -195,7 +195,7 @@ public class BoardDto {
         return ntcrNm;
     }
 
-    public String getCommentCo() {
+    public String getCommentCoLegacy() {
         return "";
     }
 }

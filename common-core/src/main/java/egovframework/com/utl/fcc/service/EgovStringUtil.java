@@ -93,23 +93,13 @@ public class EgovStringUtil {
     }
 
     public static String replaceChar(String source, String subject, String object) {
-        StringBuffer rtnStr = new StringBuffer();
-        String preStr = "";
-        String nextStr = source;
-        String srcStr = source;
-
-        char chA;
-
-        for (int i = 0; i < subject.length(); i++) {
-            chA = subject.charAt(i);
-
-            if (srcStr.indexOf(chA) >= 0) {
-                preStr = srcStr.substring(0, srcStr.indexOf(chA));
-                nextStr = srcStr.substring(srcStr.indexOf(chA) + 1, srcStr.length());
-                srcStr = rtnStr.append(preStr).append(object).append(nextStr).toString();
-            }
+        if (source == null || subject == null || object == null) {
+            return source;
         }
-
+        String srcStr = source;
+        for (int i = 0; i < subject.length(); i++) {
+            srcStr = replace(srcStr, String.valueOf(subject.charAt(i)), object);
+        }
         return srcStr;
     }
 

@@ -12,35 +12,26 @@ class AdministrationWordTest {
     @DisplayName("AdministrationWord 빌더 및 초기화 테스트")
     void builderTest() {
         AdministrationWord word = AdministrationWord.builder()
-                .administWordId("WORD_001")
-                .administWordNm("행정용어")
-                .administWordEngNm("Admin Term")
-                .administWordAbrv("AT")
-                .themaRelm("General")
-                .wordDomn("Public")
-                .stdWord("Standard")
-                .administWordDf("Definition")
-                .administWordDc("Description")
-                .frstRegisterId("admin")
+                .administWordId("AWORD_001")
+                .administWordNm("Admin Word")
+                .createdBy("admin")
                 .build();
 
-        assertThat(word.getAdministWordId()).isEqualTo("WORD_001");
-        assertThat(word.getAdministWordNm()).isEqualTo("행정용어");
-        assertThat(word.getCreatedBy()).isEqualTo("admin");
+        assertThat(word.getAdministWordId()).isEqualTo("AWORD_001");
+        assertThat(word.getAdministWordNm()).isEqualTo("Admin Word");
+        assertThat(word.getFrstRegisterId()).isEqualTo("admin");
     }
 
     @Test
     @DisplayName("AdministrationWord 수정 테스트")
     void updateTest() {
         AdministrationWord word = AdministrationWord.builder()
-                .administWordId("WORD_001")
-                .administWordNm("Old Name")
+                .administWordId("AWORD_001")
                 .build();
 
-        word.update("New Name", "New Eng", "NA", "New Thema", "New Domn", "New Std", "New Df", "New Dc", "user01");
+        word.update("Updated Nm", "Eng", "Abrv", "Theme", "Domn", "Std", "Df", "Dc", "user02");
 
-        assertThat(word.getAdministWordNm()).isEqualTo("New Name");
-        assertThat(word.getAdministWordEngNm()).isEqualTo("New Eng");
-        assertThat(word.getLastModifiedBy()).isEqualTo("user01");
+        assertThat(word.getAdministWordNm()).isEqualTo("Updated Nm");
+        assertThat(word.getLastModifiedBy()).isEqualTo("user02");
     }
 }

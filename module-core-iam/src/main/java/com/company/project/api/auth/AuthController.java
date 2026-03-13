@@ -33,7 +33,12 @@ public class AuthController {
     public ApiResponse<Map<String, String>> login(@RequestBody Map<String, String> loginRequest,
             HttpServletResponse response) {
         String userId = loginRequest.get("id");
+        if (userId == null) {
+            userId = loginRequest.get("userId");
+        }
         String password = loginRequest.get("password");
+        
+        log.info(">>> [Login] Attempting login for userId: {}", userId);
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(userId, password));
@@ -67,16 +72,20 @@ public class AuthController {
 
         // Fetch actual user role from DB
         String authorCode = userRepository.findById(userId)
-                .flatMap(user -> {
-                    log.debug(">>> [Reissue] Found user: {}, esntlId: {}", user.getUserId(), user.getEsntlId());
-                    return userAuthorityRepository.findById(user.getEsntlId());
-                })
-                .map(ua -> {
-                    log.debug(">>> [Reissue] Found authority: {} for user: {}", ua.getAuthorCode(), userId);
-                    return ua.getAuthorCode();
+                .map(user -> {
+                    log.debug(">>> [Reissue] Found user: {}, current inherent role: {}", user.getUserId(), user.getRole());
+                    return userAuthorityRepository.findById(user.getEsntlId())
+                            .map(ua -> {
+                                log.debug(">>> [Reissue] Found explicit authority: {} for user: {}", ua.getAuthorCode(), userId);
+                                return ua.getAuthorCode();
+                            })
+                            .orElseGet(() -> {
+                                log.info(">>> [Reissue] No explicit authority found, using inherent role: {}", user.getRole());
+                                return user.getRole().name();
+                            });
                 })
                 .orElseGet(() -> {
-                    log.warn(">>> [Reissue] Failed to find authority for user: {}, falling back to ROLE_USER", userId);
+                    log.warn(">>> [Reissue] Failed to find user: {}, falling back to ROLE_USER", userId);
                     return "ROLE_USER";
                 });
 

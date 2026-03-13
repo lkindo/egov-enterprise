@@ -423,6 +423,7 @@ class CommonCodeServiceTest {
 
             CommonCodeGroup existing = CommonCodeGroup.builder()
                     .codeId("GROUP_001")
+                    .codeIdNm("Code Name")
                     .build();
 
             when(commonCodeGroupRepository.findById("GROUP_001")).thenReturn(Optional.of(existing));

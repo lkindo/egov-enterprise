@@ -6,6 +6,7 @@ import com.company.project.service.informalsanction.InformalSanctionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Tag(name = "Dashboard", description = "메인 대시보드 데이터 제공 API")
 @RestController
 @RequestMapping("/api/v1/dashboard")
@@ -32,7 +34,14 @@ public class DashboardController {
     @Operation(summary = "메인 대시보드 요약 데이터 조회", description = "공지사항, 할 일, 결재 대기 건수 등을 통합 조회합니다.")
     @GetMapping
     public ResponseEntity<?> getDashboardData(@AuthenticationPrincipal UserDetails userDetails) throws Exception {
+        if (userDetails == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "User not authenticated");
+            return ResponseEntity.status(401).body(error);
+        }
         String userId = userDetails.getUsername();
+        log.info(">>> [Dashboard] Fetching data for user: {}", userId);
         Map<String, Object> result = new HashMap<>();
 
         // 1. 할 일 목록 (공통 게시판)

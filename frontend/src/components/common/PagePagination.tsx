@@ -16,7 +16,8 @@ interface PagePaginationProps {
 }
 
 export function PagePagination({ pagination, onPageChange }: PagePaginationProps) {
-    const { totalPageCount, currentPageNo } = pagination;
+    const totalPageCount = pagination.totalPageCount || 0;
+    const currentPageNo = pagination.currentPageNo || 1;
 
     if (totalPageCount <= 1) return null;
 

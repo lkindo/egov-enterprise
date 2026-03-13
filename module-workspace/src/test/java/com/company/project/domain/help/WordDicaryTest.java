@@ -11,34 +11,27 @@ class WordDicaryTest {
     @Test
     @DisplayName("WordDicary 빌더 및 초기화 테스트")
     void builderTest() {
-        WordDicary dicary = WordDicary.builder()
+        WordDicary word = WordDicary.builder()
                 .wordId("WORD_001")
-                .wordNm("용어")
-                .engNm("Term")
-                .wordDc("Description")
-                .synonm("Alias")
-                .frstRegisterId("admin")
+                .wordNm("Word 1")
+                .createdBy("admin")
                 .build();
 
-        assertThat(dicary.getWordId()).isEqualTo("WORD_001");
-        assertThat(dicary.getWordNm()).isEqualTo("용어");
-        assertThat(dicary.getEngNm()).isEqualTo("Term");
-        assertThat(dicary.getCreatedBy()).isEqualTo("admin");
+        assertThat(word.getWordId()).isEqualTo("WORD_001");
+        assertThat(word.getWordNm()).isEqualTo("Word 1");
+        assertThat(word.getFrstRegisterId()).isEqualTo("admin");
     }
 
     @Test
     @DisplayName("WordDicary 수정 테스트")
     void updateTest() {
-        WordDicary dicary = WordDicary.builder()
+        WordDicary word = WordDicary.builder()
                 .wordId("WORD_001")
-                .wordNm("Old Word")
                 .build();
 
-        dicary.update("New Word", "New Eng", "New Dc", "New Alias", "user04");
+        word.update("New Word", "Eng", "Dc", "Syn", "user02");
 
-        assertThat(dicary.getWordNm()).isEqualTo("New Word");
-        assertThat(dicary.getEngNm()).isEqualTo("New Eng");
-        assertThat(dicary.getSynonm()).isEqualTo("New Alias");
-        assertThat(dicary.getLastModifiedBy()).isEqualTo("user04");
+        assertThat(word.getWordNm()).isEqualTo("New Word");
+        assertThat(word.getLastModifiedBy()).isEqualTo("user02");
     }
 }

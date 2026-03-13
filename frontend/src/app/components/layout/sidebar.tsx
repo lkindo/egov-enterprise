@@ -59,10 +59,13 @@ const ICON_MAP: Record<string, any> = {
   '통계': LayoutDashboard,
   '도움말': BookOpen,
   '설문조사': ClipboardList,
-  '마이페이지': UserCircle,
-  '공통코드관리': Database,
-  '로그관리': FileText,
-  '기본': CircleDot
+    '마이페이지': UserCircle,
+    '마이페이지관리': Settings,
+    '공통코드관리': Database,
+    '행정코드관리': Database,
+    '기관코드수신': Database,
+    '로그관리': FileText,
+    '기본': CircleDot
 };
 
 const DOMAIN_ICON_MAP: Record<number, any> = {

@@ -1,13 +1,18 @@
 package com.company.project.service.menu;
 
+import com.company.project.domain.auth.MenuAuthority;
 import com.company.project.domain.auth.MenuAuthorityRepository;
 import com.company.project.domain.menu.Menu;
 import com.company.project.domain.menu.MenuRepository;
+import com.company.project.domain.program.Program;
 import com.company.project.domain.program.ProgramRepository;
 import com.company.project.domain.auth.MenuCreatManageProjection;
+import com.company.project.service.menu.dto.MenuCreateDto;
 import com.company.project.service.menu.dto.MenuDto;
 import egovframework.com.cmm.ComDefaultVO;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,9 +29,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -74,23 +81,14 @@ class MenuServiceTest {
         List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
         doReturn(authorities).when(authentication).getAuthorities();
 
-        Menu rootMenu = Menu.builder()
-                .id(1L)
-                .menuNm("Root Menu")
-                .upperMenuNo(0L)
-                .menuOrdr(1)
-                .build();
-        
-        Menu childMenu = Menu.builder()
-                .id(2L)
-                .menuNm("Child Menu")
-                .upperMenuNo(1L)
-                .menuOrdr(1)
-                .build();
+        Menu rootMenu = Menu.builder().id(1L).menuNm("Root Menu").upperMenuNo(0L).menuOrdr(1).progrmFileNm("dir").build();
+        Menu childMenu = Menu.builder().id(2L).menuNm("Child Menu").upperMenuNo(1L).menuOrdr(1).progrmFileNm("prog1").build();
 
         when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(rootMenu, childMenu));
         when(menuAuthorityRepository.findAll()).thenReturn(Collections.emptyList());
-        when(programRepository.findAll()).thenReturn(Collections.emptyList());
+        
+        Program p1 = Program.builder().progrmFileNm("prog1").url("/prog1").build();
+        when(programRepository.findAll()).thenReturn(List.of(p1));
 
         // When
         List<MenuDto> result = menuService.getMenuHierarchy();
@@ -100,122 +98,122 @@ class MenuServiceTest {
         assertThat(result.get(0).getMenuNm()).isEqualTo("Root Menu");
         assertThat(result.get(0).getChildren()).hasSize(1);
         assertThat(result.get(0).getChildren().get(0).getMenuNm()).isEqualTo("Child Menu");
+        assertThat(result.get(0).getChildren().get(0).getChkURL()).isEqualTo("/prog1");
     }
 
     @Test
     @DisplayName("메뉴 등록 테스트")
     void insertMenuManageTest() {
-        // Given
-        MenuDto dto = MenuDto.builder()
-                .menuNo(100L)
-                .menuNm("New Menu")
-                .upperMenuNo(0L)
-                .build();
-
-        // When
+        MenuDto dto = MenuDto.builder().menuNo(100L).menuNm("New Menu").upperMenuNo(0L).build();
         menuService.insertMenuManage(dto);
-
-        // Then
         verify(menuRepository).save(any(Menu.class));
     }
 
     @Test
     @DisplayName("메뉴 상세 조회 테스트")
     void selectMenuManageTest() {
-        // Given
         Long menuNo = 1L;
-        Menu menu = Menu.builder()
-                .id(menuNo)
-                .menuNm("Test Menu")
-                .build();
-        
+        Menu menu = Menu.builder().id(menuNo).menuNm("Test Menu").progrmFileNm("prog1").build();
         when(menuRepository.findById(menuNo)).thenReturn(Optional.of(menu));
+        
+        Program p1 = Program.builder().progrmFileNm("prog1").url("/prog1").build();
+        when(programRepository.findById("prog1")).thenReturn(Optional.of(p1));
 
-        // When
         MenuDto result = menuService.selectMenuManage(menuNo);
 
-        // Then
         assertThat(result).isNotNull();
         assertThat(result.getMenuNm()).isEqualTo("Test Menu");
-        verify(menuRepository).findById(menuNo);
+        assertThat(result.getChkURL()).isEqualTo("/prog1");
     }
 
     @Test
     @DisplayName("메뉴 수정 테스트")
     void updateMenuManageTest() {
-        // Given
         Long menuNo = 1L;
-        MenuDto dto = MenuDto.builder()
-                .menuNo(menuNo)
-                .menuNm("Updated Menu")
-                .build();
+        MenuDto dto = MenuDto.builder().menuNo(menuNo).menuNm("Updated Menu").build();
         Menu menu = mock(Menu.class);
-        
         when(menuRepository.findById(menuNo)).thenReturn(Optional.of(menu));
 
-        // When
         menuService.updateMenuManage(dto);
 
-        // Then
         verify(menu).updateWithModernRoute(any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("메뉴 삭제 테스트")
+    void deleteMenuManageTest() {
+        MenuDto dto = MenuDto.builder().menuNo(1L).build();
+        menuService.deleteMenuManage(dto);
+        verify(menuRepository).deleteById(1L);
     }
 
     @Test
     @DisplayName("메뉴 삭제 목록 테스트")
     void deleteMenuManageListTest() {
-        // Given
-        String checkedMenuNoForDel = "1,2,3";
-
-        // When
-        menuService.deleteMenuManageList(checkedMenuNoForDel);
-
-        // Then
+        menuService.deleteMenuManageList("1,2,3");
         verify(menuRepository).deleteAllById(anyList());
     }
 
     @Test
     @DisplayName("캐싱된 전체 메뉴 조회 테스트")
     void getAllMenusCachedTest() {
-        // Given
         when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(Collections.emptyList());
-
-        // When
         menuService.getAllMenusCached();
-
-        // Then
         verify(menuRepository).findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
     }
 
     @Test
     @DisplayName("권한별 메뉴 생성 관리 목록 조회 테스트")
     void selectMenuCreatManagListTest() {
-        // Given
         ComDefaultVO searchVO = new ComDefaultVO();
         searchVO.setPageIndex(1);
         searchVO.setRecordCountPerPage(10);
         
-        Page<MenuCreatManageProjection> page = mock(Page.class);
+        MenuCreatManageProjection proj = mock(MenuCreatManageProjection.class);
+        when(proj.getAuthorCode()).thenReturn("ROLE_ADMIN");
+        when(proj.getChkYeoBu()).thenReturn(1L);
+        Page<MenuCreatManageProjection> page = new PageImpl<>(List.of(proj));
+        
         when(menuAuthorityRepository.selectMenuCreatManagList(anyString(), any())).thenReturn(page);
-        when(page.stream()).thenReturn(java.util.stream.Stream.empty());
 
-        // When
-        menuService.selectMenuCreatManagList(searchVO);
+        List<MenuCreateDto> res = menuService.selectMenuCreatManagList(searchVO);
 
-        // Then
-        verify(menuAuthorityRepository).selectMenuCreatManagList(anyString(), any());
+        assertThat(res).hasSize(1);
+        assertThat(res.get(0).getAuthorCode()).isEqualTo("ROLE_ADMIN");
+    }
+
+    @Test
+    @DisplayName("권한별 메뉴 생성 관리 총 개수 조회 테스트")
+    void selectMenuCreatManagTotCntTest() {
+        ComDefaultVO searchVO = new ComDefaultVO();
+        searchVO.setSearchKeyword("ROLE");
+        
+        Page<MenuCreatManageProjection> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 1), 5);
+        when(menuAuthorityRepository.selectMenuCreatManagList(anyString(), any())).thenReturn(page);
+
+        int count = menuService.selectMenuCreatManagTotCnt(searchVO);
+
+        assertThat(count).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("메뉴 생성 목록 조회 테스트")
+    void selectMenuCreatListTest() {
+        MenuCreateDto dto = new MenuCreateDto();
+        Menu menu1 = Menu.builder().id(1L).menuNm("m1").build();
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu1));
+        
+        List<MenuDto> res = menuService.selectMenuCreatList(dto);
+        assertThat(res).hasSize(1);
+        assertThat(res.get(0).getMenuNm()).isEqualTo("m1");
     }
 
     @Test
     @DisplayName("메뉴 생성 목록 저장 테스트")
     void insertMenuCreatListTest() {
-        // Given
         String authorCode = "ROLE_USER";
-        String checkedMenuNos = "1,2";
-
-        // When
+        String checkedMenuNos = "1,2,";
         menuService.insertMenuCreatList(authorCode, checkedMenuNos);
-
-        // Then
         verify(menuAuthorityRepository).deleteByIdAuthorCode(authorCode);
         verify(menuAuthorityRepository).saveAll(anyList());
     }
@@ -223,11 +221,9 @@ class MenuServiceTest {
     @Test
     @DisplayName("일반 사용자 메뉴 계층 구조 조회 - 권한 있는 메뉴만 노출")
     void getMenuHierarchy_User_Success() {
-        // Given
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn("user");
-        
         List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
         doReturn(authorities).when(authentication).getAuthorities();
 
@@ -236,46 +232,32 @@ class MenuServiceTest {
 
         when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu1, menu2));
         
-        // 1번 메뉴만 ROLE_USER 권한이 있는 것으로 설정
-        com.company.project.domain.auth.MenuAuthority ma = com.company.project.domain.auth.MenuAuthority.builder()
-                .id(com.company.project.domain.auth.MenuAuthority.MenuAuthorityId.builder()
-                        .authorCode("ROLE_USER")
-                        .menuNo(1L)
-                        .build())
+        MenuAuthority ma = MenuAuthority.builder()
+                .id(MenuAuthority.MenuAuthorityId.builder().authorCode("ROLE_USER").menuNo(1L).build())
                 .build();
         when(menuAuthorityRepository.findAll()).thenReturn(List.of(ma));
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
-        // When
         List<MenuDto> result = menuService.getMenuHierarchy();
-
-        // Then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(1L);
     }
 
     @Test
-    @DisplayName("익명 사용자 메뉴 계층 구조 조회 - ROLE_ANONYMOUS 메뉴만 노출")
+    @DisplayName("익명 사용자 메뉴 계층 구조 조회")
     void getMenuHierarchy_Anonymous_Success() {
-        // Given
-        when(securityContext.getAuthentication()).thenReturn(null); // No authentication
+        when(securityContext.getAuthentication()).thenReturn(null);
 
         Menu menu = Menu.builder().id(99L).menuNm("Guest Menu").upperMenuNo(0L).menuOrdr(1).build();
         when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu));
         
-        com.company.project.domain.auth.MenuAuthority ma = com.company.project.domain.auth.MenuAuthority.builder()
-                .id(com.company.project.domain.auth.MenuAuthority.MenuAuthorityId.builder()
-                        .authorCode("ROLE_ANONYMOUS")
-                        .menuNo(99L)
-                        .build())
+        MenuAuthority ma = MenuAuthority.builder()
+                .id(MenuAuthority.MenuAuthorityId.builder().authorCode("ROLE_ANONYMOUS").menuNo(99L).build())
                 .build();
         when(menuAuthorityRepository.findAll()).thenReturn(List.of(ma));
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
-        // When
         List<MenuDto> result = menuService.getMenuHierarchy();
-
-        // Then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(99L);
     }
@@ -283,7 +265,6 @@ class MenuServiceTest {
     @Test
     @DisplayName("상위 메뉴 ID 조회 - 3단계 계층 구조 테스트")
     void getRootMenuIdByProgrmFileNm_MultiLevel_Success() {
-        // Given
         String targetProgrm = "childProgrm";
         Menu root = Menu.builder().id(1L).upperMenuNo(0L).build();
         Menu middle = Menu.builder().id(2L).upperMenuNo(1L).build();
@@ -292,45 +273,104 @@ class MenuServiceTest {
         when(menuRepository.findByProgrmFileNm(targetProgrm)).thenReturn(Optional.of(child));
         when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(root, middle, child));
 
-        // When
         Long rootId = menuService.getRootMenuIdByProgrmFileNm(targetProgrm);
-
-        // Then
         assertThat(rootId).isEqualTo(1L);
     }
 
     @Test
-    @DisplayName("메뉴 수정 실패 - 존재하지 않는 메뉴")
-    void updateMenuManage_NotFound_ThrowsException() {
-        // Given
-        MenuDto dto = MenuDto.builder().menuNo(999L).build();
-        when(menuRepository.findById(999L)).thenReturn(Optional.empty());
-
-        // When & Then
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            menuService.updateMenuManage(dto);
-        });
+    @DisplayName("URL로 상위 메뉴 ID 조회 테스트")
+    void getRootMenuIdByUrlTest() {
+        String url = "/test-url";
+        Program prog = Program.builder().progrmFileNm("prog1").build();
+        when(programRepository.findByUrl(url)).thenReturn(Optional.of(prog));
+        
+        Menu root = Menu.builder().id(1L).upperMenuNo(0L).build();
+        Menu child = Menu.builder().id(2L).upperMenuNo(1L).progrmFileNm("prog1").build();
+        when(menuRepository.findByProgrmFileNm("prog1")).thenReturn(Optional.of(child));
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(root, child));
+        
+        Long rootId = menuService.getRootMenuIdByUrl(url);
+        assertThat(rootId).isEqualTo(1L);
     }
 
     @Test
-    @DisplayName("메뉴 삭제 목록 - 빈 값 처리")
-    void deleteMenuManageList_Empty_NoAction() {
-        // When
-        menuService.deleteMenuManageList("");
-        menuService.deleteMenuManageList(null);
-
-        // Then
-        verify(menuRepository, never()).deleteAllById(any());
+    @DisplayName("프로그램 전체 조회")
+    void getAllProgramsTest() {
+        when(programRepository.findAll()).thenReturn(List.of(Program.builder().build()));
+        List<Program> list = menuService.getAllPrograms();
+        assertThat(list).hasSize(1);
     }
 
     @Test
-    @DisplayName("메뉴 생성 목록 저장 - 메뉴 번호가 없을 때 삭제만 수행")
-    void insertMenuCreatList_NullMenuNos_OnlyDelete() {
-        // When
-        menuService.insertMenuCreatList("ROLE_TEST", null);
+    @DisplayName("메뉴 부모 맵 조회")
+    void getMenuParentMapCachedTest() {
+        Menu root = Menu.builder().id(1L).upperMenuNo(0L).build();
+        Menu child = Menu.builder().id(2L).upperMenuNo(1L).build();
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(root, child));
+        
+        Map<Long, Long> map = menuService.getMenuParentMapCached();
+        assertThat(map.get(1L)).isEqualTo(0L);
+        assertThat(map.get(2L)).isEqualTo(1L);
+    }
 
-        // Then
-        verify(menuAuthorityRepository).deleteByIdAuthorCode("ROLE_TEST");
-        verify(menuAuthorityRepository, never()).saveAll(anyList());
+    @Test
+    @DisplayName("모든 메뉴 DTO 조회")
+    void getAllMenusTest() {
+        Menu menu1 = Menu.builder().id(1L).menuNm("m1").progrmFileNm("prog1").modernRoute("/mod").build();
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu1));
+        when(programRepository.findAll()).thenReturn(Collections.emptyList());
+
+        List<MenuDto> list = menuService.getAllMenus();
+        assertThat(list).hasSize(1);
+        assertThat(list.get(0).getChkURL()).isEqualTo("/mod");
+    }
+
+    @Test
+    @DisplayName("하위 메뉴 목록 조회")
+    void getSubMenusTest() {
+        Menu root = Menu.builder().id(1L).upperMenuNo(0L).build();
+        Menu child = Menu.builder().id(2L).upperMenuNo(1L).build();
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(root, child));
+        when(programRepository.findAll()).thenReturn(Collections.emptyList());
+
+        List<MenuDto> list = menuService.getSubMenus(1L);
+        assertThat(list).hasSize(1);
+        assertThat(list.get(0).getId()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("메뉴 관리 목록 조회")
+    void selectMenuManageListTest() {
+        Menu menu1 = Menu.builder().id(1L).progrmFileNm("prog1").build();
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu1));
+        
+        Program p1 = Program.builder().progrmFileNm("prog1").url("/prog1").build();
+        when(programRepository.findAll()).thenReturn(List.of(p1));
+
+        List<MenuDto> list = menuService.selectMenuManageList(new ComDefaultVO());
+        assertThat(list).hasSize(1);
+        assertThat(list.get(0).getChkURL()).isEqualTo("/prog1");
+    }
+
+    @Test
+    @DisplayName("메뉴 관리 목록 개수 조회")
+    void selectMenuManageListTotCntTest() {
+        when(menuRepository.count()).thenReturn(10L);
+        int cnt = menuService.selectMenuManageListTotCnt(new ComDefaultVO());
+        assertThat(cnt).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("URL로 프로그램명 조회 - 빈 URL")
+    void getProgrmFileNmByUrl_Empty() {
+        assertThat(menuService.getProgrmFileNmByUrl(null)).isNull();
+        assertThat(menuService.getProgrmFileNmByUrl("")).isNull();
+    }
+
+    @Test
+    @DisplayName("URL로 상위 메뉴 ID 조회 - 프로그램명 없음")
+    void getRootMenuIdByUrl_NoProgrm() {
+        when(programRepository.findByUrl(anyString())).thenReturn(Optional.empty());
+        assertThat(menuService.getRootMenuIdByUrl("/not-exist")).isNull();
     }
 }

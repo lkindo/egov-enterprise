@@ -151,4 +151,9 @@ public class EgovSymIdGnrConfig {
     public EgovIdGnrService egovTroblIdGnrService() {
         return createIdGnrService("TROBL_ID", "TROBL_", 10);
     }
+
+    @Bean(name = "reprtStatsIdGnrService")
+    public EgovIdGnrService reprtStatsIdGnrService() {
+        return createIdGnrService("REPRT_STATS_ID", "REPRT_", 10);
+    }
 }

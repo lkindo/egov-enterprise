@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Calendar, Clock, MapPin, Users, Plus, Star, Sparkles } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Plus, Star, Sparkles, Zap } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 

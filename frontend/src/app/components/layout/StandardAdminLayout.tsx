@@ -6,7 +6,7 @@ import { SmartSearchPanel, FilterField } from '../ui/standard-search-filter';
 import { UltimateDataGrid, ColumnDef } from '../ui/ultimate-data-grid';
 import { useMessage } from '@/hooks/useMessage';
 
-interface StandardAdminLayoutProps<T> {
+interface StandardAdminLayoutProps<T extends { [key: string]: any }> {
     title: string;
     breadcrumbParent?: string;
     filterFields: FilterField[];
@@ -26,7 +26,7 @@ interface StandardAdminLayoutProps<T> {
  * 표준 관리자 페이지 레이아웃 컴포넌트
  * - 검색 필터, 데이터 그리드, 페이지 헤더를 통합한 표준 패턴
  */
-export function StandardAdminLayout<T>({
+export function StandardAdminLayout<T extends { [key: string]: any }>({
     title,
     breadcrumbParent = 'ADMIN',
     filterFields,
