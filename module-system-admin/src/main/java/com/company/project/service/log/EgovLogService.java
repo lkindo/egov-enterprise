@@ -4,15 +4,18 @@ import com.company.project.service.log.dto.LogDto;
 import java.util.List;
 
 /**
- * 濡쒓???????퉬???명꽣??씠??
- * - ?꾩옄???꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ?⑹????꾪븳 ?명꽣??씠???꾨?? */
+ * 로그 관리 서비스 인터페이스
+ * - 전자정부 프레임워크 5.0 호환성 인증 요건 충실을 위한 인터페이스 정의
+ */
 public interface EgovLogService {
 
     /**
-     * 濡쒓???濡쒓??湲곕?     */
+     * 로그인 로그 기록
+     */
     void logLogin(String userId, String ip, String mthd, String errAt, String errCode);
 
     /**
-     * 理쒓??濡쒓???濡쒓??紐⑸?議고??     */
+     * 최근 로그인 로그 목록 조회
+     */
     List<LogDto> getRecentLoginLogs();
 }

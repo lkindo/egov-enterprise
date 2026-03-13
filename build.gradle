@@ -66,6 +66,7 @@ subprojects {
 
     test {
         useJUnitPlatform()
+        systemProperties System.properties
         maxHeapSize = "6144m"
         ignoreFailures = true
         jacoco {

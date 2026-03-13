@@ -4,6 +4,8 @@ import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.usermanagement.dto.UserManageDto;
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import egovframework.com.cmm.ComDefaultVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -152,7 +154,8 @@ class UserManageServiceTest {
         given(userRepository.findById("none")).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> userManageService.updateUser(dto))
-                .isInstanceOf(RuntimeException.class);
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
     }
 
     @Test
@@ -188,5 +191,15 @@ class UserManageServiceTest {
 
         userManageService.updatePassword("user1", "newpass");
         assertThat(user.getPassword()).isEqualTo("encoded");
+    }
+
+    @Test
+    @DisplayName("비밀번호 수정 실패 - 사용자 없음")
+    void updatePassword_NotFound() {
+        given(userRepository.findById("none")).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userManageService.updatePassword("none", "newpass"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
     }
 }

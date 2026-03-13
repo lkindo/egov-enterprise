@@ -1,5 +1,7 @@
 package com.company.project.service.login;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.login.LoginPolicy;
 import com.company.project.domain.login.LoginPolicyRepository;
 import com.company.project.domain.user.entity.User;
@@ -17,7 +19,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 濡쒓????뺤콉 ?????퉬??
+ * 로그인 정책 관리 서비스 구현체
  */
 @Service("loginPolicyManageService")
 @RequiredArgsConstructor
@@ -28,7 +30,8 @@ public class LoginPolicyManageService {
     private final UserRepository userRepository;
 
     /**
-     * 濡쒓????뺤콉 紐⑸?議고??     */
+     * 로그인 정책 목록 조회
+     */
     public List<LoginPolicyDto> selectLoginPolicyList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -55,18 +58,18 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 濡쒓????뺤콉 紐⑸???嫄댁??     */
+     * 로그인 정책 목록 총 갯수 조회
+     */
     public int selectLoginPolicyListTotCnt(ComDefaultVO searchVO) {
         return (int) userRepository.count();
     }
 
     /**
-     * 濡쒓????뺤콉 ?곸꽭 議고??     */
+     * 로그인 정책 상세 조회
+     */
     public LoginPolicyDto selectLoginPolicy(String emplyrId) {
-        User user = userRepository.findById(Objects.requireNonNull(emplyrId)).orElse(null);
-        if (user == null) {
-            return null;
-        }
+        User user = userRepository.findById(Objects.requireNonNull(emplyrId))
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         LoginPolicyDto dto = new LoginPolicyDto();
         dto.setEmplyrId(user.getUserId());
@@ -85,7 +88,7 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 濡쒓????뺤콉 ?깅줉
+     * 로그인 정책 등록
      */
     @Transactional
     public void insertLoginPolicy(LoginPolicyDto dto) {
@@ -100,17 +103,18 @@ public class LoginPolicyManageService {
     }
 
     /**
-     * 濡쒓????뺤콉 ??젙
+     * 로그인 정책 정보 수정
      */
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {
         LoginPolicy entity = loginPolicyRepository.findById(Objects.requireNonNull(dto.getEmplyrId()))
-                .orElseThrow(() -> new RuntimeException("LoginPolicy not found: " + dto.getEmplyrId()));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
         entity.update(dto.getIpInfo(), dto.getDplctPermAt(), dto.getLmttAt(), dto.getLastUpdusrId());
     }
 
     /**
-     * 濡쒓????뺤콉 ????     */
+     * 로그인 정책 삭제
+     */
     @Transactional
     public void deleteLoginPolicy(String emplyrId) {
         loginPolicyRepository.deleteById(Objects.requireNonNull(emplyrId));

@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
 @Configuration
-@PropertySource("classpath:egovframework/egovProps/globals.properties")
+@PropertySource(value = "classpath:egovframework/egovProps/globals.properties", ignoreResourceNotFound = true)
 public class ProjectCryptoConfig {
 
     @Value("${Globals.File.algorithmKey:egovframe}")

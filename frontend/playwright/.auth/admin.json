@@ -1,0 +1,52 @@
+{
+  "cookies": [
+    {
+      "name": "accessToken",
+      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3MzQwNjU3NSwiZXhwIjoxNzczNDEwMTc1fQ.c9qPSR6vrQ8PZnc84QtzkDaWTHX-k2jrEsOisiWrnVAXM-I1FF5oI5wuK6CVFsRmU8urwuqN2HAG3exPkwug0Q",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": -1
+    },
+    {
+      "name": "accessToken",
+      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3MzQwNjU3NSwiZXhwIjoxNzczNDEwMTc1fQ.c9qPSR6vrQ8PZnc84QtzkDaWTHX-k2jrEsOisiWrnVAXM-I1FF5oI5wuK6CVFsRmU8urwuqN2HAG3exPkwug0Q",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1
+    },
+    {
+      "name": "userRole",
+      "value": "ROLE_ADMIN",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": -1
+    },
+    {
+      "name": "userRole",
+      "value": "ROLE_ADMIN",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://127.0.0.1:3001",
+      "localStorage": [
+        {
+          "name": "accessToken",
+          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3MzQwNjU3NSwiZXhwIjoxNzczNDEwMTc1fQ.c9qPSR6vrQ8PZnc84QtzkDaWTHX-k2jrEsOisiWrnVAXM-I1FF5oI5wuK6CVFsRmU8urwuqN2HAG3exPkwug0Q"
+        }
+      ]
+    },
+    {
+      "origin": "http://localhost:3001",
+      "localStorage": [
+        {
+          "name": "accessToken",
+          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3MzQwNjU3NSwiZXhwIjoxNzczNDEwMTc1fQ.c9qPSR6vrQ8PZnc84QtzkDaWTHX-k2jrEsOisiWrnVAXM-I1FF5oI5wuK6CVFsRmU8urwuqN2HAG3exPkwug0Q"
+        }
+      ]
+    }
+  ]
+}

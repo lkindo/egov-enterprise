@@ -50,10 +50,10 @@ class CommunityServiceImplTest {
     void getCommunityList_Success() {
         JPAQuery query = mock(JPAQuery.class);
         given(queryFactory.selectFrom(any(EntityPath.class))).willReturn(query);
-        given(query.where(any(Predicate.class))).willReturn(query);
+        given(query.where((com.querydsl.core.types.Predicate) any())).willReturn(query);
         given(query.offset(anyLong())).willReturn(query);
         given(query.limit(anyLong())).willReturn(query);
-        given(query.orderBy((OrderSpecifier<?>) any())).willReturn(query);
+        given(query.orderBy((com.querydsl.core.types.OrderSpecifier<?>) any())).willReturn(query);
         
         Community community = Community.builder().cmmntyId("C1").cmmntyNm("Community").build();
         given(query.fetch()).willReturn(java.util.Collections.singletonList(community));
@@ -116,8 +116,8 @@ class CommunityServiceImplTest {
     void getCommunityListPortlet_Success() {
         JPAQuery query = mock(JPAQuery.class);
         given(queryFactory.selectFrom(any(EntityPath.class))).willReturn(query);
-        given(query.where(any(Predicate.class))).willReturn(query);
-        given(query.orderBy((OrderSpecifier<?>) any())).willReturn(query);
+        given(query.where((com.querydsl.core.types.Predicate) any())).willReturn(query);
+        given(query.orderBy((com.querydsl.core.types.OrderSpecifier<?>) any())).willReturn(query);
         
         Community community = Community.builder().cmmntyId("C1").build();
         given(query.fetch()).willReturn(java.util.Collections.singletonList(community));

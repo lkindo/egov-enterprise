@@ -12,8 +12,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * JPA 湲곕?濡쒓???????퉬???ы쁽?
- * - ?꾩옄???꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ?⑹?? * - EgovAbstractServiceImpl ?곸냽 ?EgovLogService ?명꽣??씠???ы쁽
+ * JPA 기반 로그 관리 서비스 구현체
+ * - 전자정부 프레임워크 5.0 호환성 인증 요건 충실
+ * - EgovAbstractServiceImpl 상속 및 EgovLogService 인터페이스 구현
  */
 @Service("egovLogService")
 @Transactional(readOnly = true)
@@ -26,7 +27,8 @@ public class LogService extends EgovAbstractServiceImpl implements EgovLogServic
     }
 
     /**
-     * 濡쒓???濡쒓??湲곕?     */
+     * 로그인 로그 기록
+     */
     @Override
     @Transactional
     public void logLogin(String userId, String ip, String mthd, String errAt, String errCode) {
@@ -43,7 +45,8 @@ public class LogService extends EgovAbstractServiceImpl implements EgovLogServic
     }
 
     /**
-     * 理쒓??濡쒓???濡쒓??紐⑸?議고??     */
+     * 최근 로그인 로그 목록 조회
+     */
     @Override
     public List<LogDto> getRecentLoginLogs() {
         return loginLogRepository.findTop100ByOrderByCreatDtDesc().stream()

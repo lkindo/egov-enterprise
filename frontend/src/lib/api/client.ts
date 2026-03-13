@@ -164,11 +164,18 @@ axiosInstance.interceptors.response.use(
         }
 
         // 에러 메시지 추출 및 이벤트 발생은 401 재시도 대상이 아닐 때만 수행 (선택 사항)
-        const message = error.response?.data?.message || error.message || '요청 처리 중 오류가 발생했습니다.';
+        const backendMessage = error.response?.data?.message;
+        const message = backendMessage || error.message || '요청 처리 중 오류가 발생했습니다.';
+        
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('api-error', {
                 detail: { message, status: error.response?.status }
             }));
+        }
+
+        // 백엔드 메시지가 있는 경우 에러 객체의 메시지를 오버라이드하여 전달
+        if (backendMessage) {
+            error.message = backendMessage;
         }
 
         return Promise.reject(error);

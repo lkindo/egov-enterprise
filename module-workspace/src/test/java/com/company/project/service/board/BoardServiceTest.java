@@ -52,10 +52,10 @@ class BoardServiceTest {
     @Mock
     private EgovFileService fileService;
 
+    private MeterRegistry meterRegistry = new SimpleMeterRegistry();
+
     @Mock
     private ApplicationEventPublisher eventPublisher;
-
-    private MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
     private BoardService boardService;
 

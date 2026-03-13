@@ -1,7 +1,10 @@
 package com.company.project.service.stats;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.service.stats.dto.StatsDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
@@ -12,7 +15,9 @@ import java.util.Objects;
 
 /**
  * 통계 서비스 구현체
+ * - Native Query를 사용하여 일자별 요약 통계 정보 제공
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -72,6 +77,9 @@ public class StatsService implements EgovStatsService {
         return executeStatsQuery(sql, fromDate, toDate);
     }
 
+    /**
+     * 통계 쿼리 실행 및 DTO 매핑
+     */
     @SuppressWarnings("unchecked")
     private List<StatsDto> executeStatsQuery(String sql, String fromDate, String toDate) {
         List<StatsDto> result = new ArrayList<>();
@@ -90,7 +98,8 @@ public class StatsService implements EgovStatsService {
                 result.add(dto);
             }
         } catch (Exception e) {
-            // Log error if needed
+            log.error(">>> Error executing stats query: from={}, to={}, error={}", fromDate, toDate, e.getMessage());
+            throw new BusinessException("통계 정보를 조회하는 중 오류가 발생했습니다.", ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
         return result;

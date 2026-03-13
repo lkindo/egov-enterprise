@@ -5,6 +5,8 @@ import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.usermanagement.dto.UserManageDto;
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -111,7 +113,7 @@ public class UserManageService {
     @Transactional
     public void updateUser(UserManageDto dto) {
         User entity = userRepository.findById(Objects.requireNonNull(dto.getUserId()))
-                .orElseThrow(() -> new RuntimeException("User not found: " + dto.getUserId()));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         entity.update(
                 dto.getUserNm(), dto.getPasswordHint(), dto.getPasswordCnsr(),
                 dto.getEmplNo(), null, dto.getSexdstnCode(), dto.getBrthdy(),
@@ -161,7 +163,7 @@ public class UserManageService {
     @Transactional
     public void updatePassword(String userId, String newPassword) {
         User entity = userRepository.findById(Objects.requireNonNull(userId))
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         String encodedPassword = passwordEncoder.encode(newPassword);
         entity.updatePassword(encodedPassword);
     }

@@ -1,5 +1,7 @@
 package com.company.project.service.mypage;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.mypage.IndividualPage;
 import com.company.project.domain.mypage.IndividualPageRepository;
 import com.company.project.service.mypage.dto.IndividualPageDto;
@@ -8,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
+/**
+ * 마이페이지 개인설정 서비스 구현체
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -32,8 +37,9 @@ public class IndividualPageService implements EgovIndividualPageService {
     @Override
     @Transactional
     public void updateIndividualPage(IndividualPageDto dto) {
-        individualPageRepository.findById(Objects.requireNonNull(dto.getPageId()))
-                .ifPresent(p -> p.update(dto.getPageNm(), dto.getPageDc(), dto.getUserId()));
+        IndividualPage page = individualPageRepository.findById(Objects.requireNonNull(dto.getPageId()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
+        page.update(dto.getPageNm(), dto.getPageDc(), dto.getUserId());
     }
 
     @Override
@@ -51,6 +57,6 @@ public class IndividualPageService implements EgovIndividualPageService {
                         .pageDc(p.getPageDc())
                         .userId(p.getUserId())
                         .build())
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
     }
 }

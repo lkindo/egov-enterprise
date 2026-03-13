@@ -8,6 +8,8 @@ import com.company.project.domain.program.Program;
 import com.company.project.domain.program.ProgramRepository;
 import com.company.project.service.menu.dto.MenuCreateDto;
 import com.company.project.service.menu.dto.MenuDto;
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -295,7 +297,7 @@ public class MenuService {
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void updateMenuManage(@NonNull MenuDto vo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
-                .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
         menu.updateWithModernRoute(vo.getMenuNm(), vo.getProgrmFileNm(), vo.getUpperMenuNo(), vo.getMenuOrdr(),
                 vo.getMenuDc(),
                 vo.getRelateImagePath(), vo.getRelateImageNm(), vo.getModernRoute());
@@ -459,7 +461,7 @@ public class MenuService {
      */
     public MenuDto selectMenuManage(Long menuNo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(menuNo))
-                .orElseThrow(() -> new IllegalArgumentException("Menu not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
 
         String url = "#";
         if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {

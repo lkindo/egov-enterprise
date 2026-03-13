@@ -9,6 +9,8 @@ import com.company.project.domain.program.ProgramRepository;
 import com.company.project.domain.auth.MenuCreatManageProjection;
 import com.company.project.service.menu.dto.MenuCreateDto;
 import com.company.project.service.menu.dto.MenuDto;
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import egovframework.com.cmm.ComDefaultVO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -33,7 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -111,7 +113,7 @@ class MenuServiceTest {
 
     @Test
     @DisplayName("메뉴 상세 조회 테스트")
-    void selectMenuManageTest() {
+    void selectMenuManage_Success() {
         Long menuNo = 1L;
         Menu menu = Menu.builder().id(menuNo).menuNm("Test Menu").progrmFileNm("prog1").build();
         when(menuRepository.findById(menuNo)).thenReturn(Optional.of(menu));
@@ -127,8 +129,19 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("메뉴 수정 테스트")
-    void updateMenuManageTest() {
+    @DisplayName("메뉴 상세 조회 테스트 - 실패 (메뉴 없음)")
+    void selectMenuManage_NotFound() {
+        Long menuNo = 1L;
+        when(menuRepository.findById(menuNo)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> menuService.selectMenuManage(menuNo))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ENTITY_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("메뉴 수정 테스트 - 성공")
+    void updateMenuManage_Success() {
         Long menuNo = 1L;
         MenuDto dto = MenuDto.builder().menuNo(menuNo).menuNm("Updated Menu").build();
         Menu menu = mock(Menu.class);
@@ -137,6 +150,19 @@ class MenuServiceTest {
         menuService.updateMenuManage(dto);
 
         verify(menu).updateWithModernRoute(any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("메뉴 수정 테스트 - 실패 (메뉴 없음)")
+    void updateMenuManage_NotFound() {
+        Long menuNo = 1L;
+        MenuDto dto = MenuDto.builder().menuNo(menuNo).menuNm("Updated Menu").build();
+        when(menuRepository.findById(menuNo)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> menuService.updateMenuManage(dto))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ENTITY_NOT_FOUND);
+        verify(menuRepository).findById(menuNo);
     }
 
     @Test

@@ -1,5 +1,7 @@
 package com.company.project.service.program;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.program.Program;
 import com.company.project.domain.program.ProgramRepository;
 import com.company.project.service.program.dto.ProgramDto;
@@ -25,7 +27,8 @@ public class ProgramService {
     private final ProgramRepository programRepository;
 
     /**
-     * ?꾨줈洹몃??紐⑸?議고??     */
+     * 프로그램 목록 조회
+     */
     public List<ProgramDto> selectProgrmList(ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
                 Sort.by("progrmFileNm").ascending());
@@ -44,7 +47,8 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃???????議고??     */
+     * 프로그램 목록 총 갯수 조회
+     */
     public int selectProgrmListTotCnt(ComDefaultVO searchVO) {
         String keyword = searchVO.getSearchKeyword();
         if (keyword != null && !keyword.isEmpty()) {
@@ -54,23 +58,24 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃???곸꽭 議고??     */
+     * 프로그램 상세 조회
+     */
     public ProgramDto selectProgrm(ComDefaultVO searchVO) {
         if (searchVO.getSearchKeyword() == null)
-            return new ProgramDto();
-        return programRepository.findById(Objects.requireNonNull(searchVO.getSearchKeyword()))
+            throw new BusinessException(ErrorCode.ENTITY_NOT_FOUND);
+        return programRepository.findById(searchVO.getSearchKeyword())
                 .map(this::toDto)
-                .orElse(new ProgramDto());
+                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
     }
 
     public ProgramDto selectProgrmById(String progrmFileNm) {
         return programRepository.findById(Objects.requireNonNull(progrmFileNm))
                 .map(this::toDto)
-                .orElse(new ProgramDto());
+                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
     }
 
     /**
-     * ?꾨줈洹몃???깅줉
+     * 프로그램 등록
      */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
@@ -86,18 +91,19 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃????젙
+     * 프로그램 정보 수정
      */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void updateProgrm(ProgramDto dto) {
-        programRepository.findById(Objects.requireNonNull(dto.getProgrmFileNm())).ifPresent(program -> {
-            program.update(dto.getProgrmStrePath(), dto.getProgrmKoreanNm(), dto.getUrl(), dto.getProgrmDc());
-        });
+        Program program = programRepository.findById(Objects.requireNonNull(dto.getProgrmFileNm()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
+        program.update(dto.getProgrmStrePath(), dto.getProgrmKoreanNm(), dto.getUrl(), dto.getProgrmDc());
     }
 
     /**
-     * ?꾨줈洹몃??????     */
+     * 프로그램 삭제
+     */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void deleteProgrm(ProgramDto dto) {
@@ -105,7 +111,8 @@ public class ProgramService {
     }
 
     /**
-     * ?꾨줈洹몃??紐⑸?硫??????     */
+     * 프로그램 목록 멀티 삭제
+     */
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void deleteProgrmManageList(String checkedProgrmFileNmForDel) {

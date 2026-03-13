@@ -12,7 +12,7 @@ import org.springframework.core.io.ClassPathResource;
 import javax.sql.DataSource;
 
 @Configuration
-@PropertySource("classpath:/egovframework/egovProps/globals.properties")
+@PropertySource(value = "classpath:/egovframework/egovProps/globals.properties", ignoreResourceNotFound = true)
 @org.springframework.context.annotation.Profile("!test")
 public class LegacyConfig {
 

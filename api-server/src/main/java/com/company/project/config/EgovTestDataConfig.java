@@ -36,7 +36,11 @@ public class EgovTestDataConfig {
     }
 
     private void createTestUser(String userId, String userNm, String role, String esntlId) {
-        if (userRepository.findById(userId).isEmpty()) {
+        userRepository.findById(userId).ifPresentOrElse(user -> {
+            log.info(">>> Resetting password for existing test user: {}", userId);
+            user.updatePassword(passwordEncoder.encode("1"));
+            userRepository.save(user);
+        }, () -> {
             log.info(">>> Creating test user: {} (Role: {})", userId, role);
 
             User user = User.builder()
@@ -64,6 +68,6 @@ public class EgovTestDataConfig {
 
             userAuthorityRepository.save(authority);
             log.info(">>> Test user created successfully: {}", userId);
-        }
+        });
     }
 }
