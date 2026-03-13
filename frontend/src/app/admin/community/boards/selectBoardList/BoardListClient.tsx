@@ -109,7 +109,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                         <p className="text-slate-400 font-bold text-sm">총 <span className="text-white">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
                     </div>
                     <CardAction className="relative z-10">
-                        <Link href={`/cop/bbs/insertBoardArticle?bbsId=${bbsId}`}>
+                        <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
                             <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-2xl">
                                 <Plus className="w-6 h-6" /> 게시글 작성하기
                             </Button>
@@ -261,7 +261,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                                                 {totalCount - ((pageIndex - 1) * 10) - idx}
                                             </TableCell>
                                             <TableCell className="px-6 py-8">
-                                                <Link href={`/cop/bbs/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`} className="group/link flex flex-col gap-1">
+                                                <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`} className="group/link flex flex-col gap-1">
                                                     <span className="text-xl font-black text-slate-800 group-hover/link:text-primary transition-colors line-clamp-1">
                                                         {item.nttSj}
                                                     </span>

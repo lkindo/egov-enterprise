@@ -57,7 +57,7 @@ const InsertBBSContent = () => {
                     <Home className="w-4 h-4" /> 홈
                 </Link>
                 <ChevronRight className="w-4 h-4 opacity-30" />
-                <Link href={`/cop/bbs/selectBoardList?bbsId=${bbsId}`} className="hover:text-primary transition-colors font-bold">커뮤니티</Link>
+                <Link href={`/admin/community/boards?bbsId=${bbsId}`} className="hover:text-primary transition-colors font-bold">커뮤니티</Link>
                 <ChevronRight className="w-4 h-4 opacity-30" />
                 <span className="text-foreground font-black">글쓰기</span>
             </div>

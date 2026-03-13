@@ -48,7 +48,7 @@ export default function BoardWritePage() {
         if (res?.success) {
           toast('성공적으로 등록되었습니다.', 'success');
           clear(); // 자동 저장 데이터 삭제
-          router.push('/cop/bbs');
+          router.push('/admin/community/boards');
         }
       } catch (error) {
         toast('등록 중 오류가 발생했습니다.', 'error');
@@ -60,7 +60,7 @@ export default function BoardWritePage() {
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
       <PageHeader
         title="새 게시글 작성"
-        breadcrumbs={[{ label: '게시판', href: '/cop/bbs' }, { label: '글쓰기' }]}
+        breadcrumbs={[{ label: '게시판', href: '/admin/community/boards' }, { label: '글쓰기' }]}
         actions={
           <div className="flex gap-2">
             <button onClick={() => router.back()} className="px-4 py-2 border rounded-lg font-bold hover:bg-accent transition-all flex items-center gap-2">

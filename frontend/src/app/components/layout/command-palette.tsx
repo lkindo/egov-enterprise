@@ -34,8 +34,8 @@ export function CommandPalette() {
     const results: SearchResult[] = [
         { id: '1', category: 'Menu', title: '통계 대시보드', url: '/admin/stats', icon: <LayoutDashboard size={14} />, description: '시스템 통합 분석 및 현황' },
         { id: '2', category: 'Menu', title: '사용자 관리', url: '/admin/user', icon: <Users size={14} />, description: '권한 설정 및 사용자 목록' },
-        { id: '3', category: 'Menu', title: '공지사항 게시판', url: '/cop/bbs/board/notice', icon: <FileText size={14} /> },
-        { id: '4', category: 'Content', title: 'DDD 리팩토링 가이드', url: '/cop/bbs/board/notice/1', icon: <FileText size={14} />, description: '도메인 주도 설계 핵심 원칙' },
+        { id: '3', category: 'Menu', title: '공지사항 게시판', url: '/admin/community/boards', icon: <FileText size={14} /> },
+        { id: '4', category: 'Content', title: 'DDD 리팩토링 가이드', url: '/admin/community/boards/1', icon: <FileText size={14} />, description: '도메인 주도 설계 핵심 원칙' },
         { id: '5', category: 'Menu', title: '시스템 설정', url: '/admin/system', icon: <Settings size={14} /> },
     ].filter(item =>
         item.title.toLowerCase().includes(query.toLowerCase()) ||

@@ -31,7 +31,7 @@ const InsertAddressBookPage = () => {
         try {
             await addressbookUserService.createAddressBook(formData);
             alert('등록되었습니다.');
-            router.push('/cop/adb/selectAddressBookList');
+            router.push('/admin/collaboration/address-book/selectAddressBookList');
         } catch (error: any) {
             alert(error.response?.data?.message || '등록에 실패했습니다.');
         } finally {
@@ -47,7 +47,7 @@ const InsertAddressBookPage = () => {
                     <Home className="w-4 h-4" /> Home
                 </Link>
                 <ChevronRight className="w-4 h-4" />
-                <Link href="/cop/adb/selectAddressBookList" className="hover:text-foreground transition-colors">주소록관리</Link>
+                <Link href="/admin/collaboration/address-book/selectAddressBookList" className="hover:text-foreground transition-colors">주소록관리</Link>
                 <ChevronRight className="w-4 h-4" />
                 <span className="text-foreground font-medium">등록</span>
             </div>
@@ -126,7 +126,7 @@ const InsertAddressBookPage = () => {
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-center gap-4 py-10 border-t bg-muted/5 rounded-b-xl">
-                        <Link href="/cop/adb/selectAddressBookList">
+                        <Link href="/admin/collaboration/address-book/selectAddressBookList">
                             <Button type="button" variant="outline" className="h-12 px-10 gap-2 font-semibold shadow-sm hover:bg-muted transition-all">
                                 <ArrowLeft className="w-4 h-4" /> 취소
                             </Button>

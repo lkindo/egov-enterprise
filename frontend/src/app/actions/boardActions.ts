@@ -29,8 +29,8 @@ export async function createBoardArticle(prevState: any, formData: FormData) {
     }, axiosConfig);
 
     if (response.success) {
-      revalidatePath(`/cop/bbs/selectBoardList`);
-      return { success: true, message: '게시글이 성공적으로 등록되었습니다.', redirect: `/cop/bbs/selectBoardList?bbsId=${bbsId}` };
+      revalidatePath(`/admin/community/boards`);
+      return { success: true, message: '게시글이 성공적으로 등록되었습니다.', redirect: `/admin/community/boards?bbsId=${bbsId}` };
     } else {
       return { success: false, message: response.message || '등록에 실패했습니다.' };
     }
@@ -52,7 +52,7 @@ export async function deleteBoardArticle(prevState: any, formData: FormData) {
     const response: any = await client.delete(`/boards/${bbsId}/posts/${nttId}`, axiosConfig);
 
     if (response.success) {
-      revalidatePath(`/cop/bbs/selectBoardList`);
+      revalidatePath(`/admin/community/boards`);
       return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
     } else {
       return { success: false, message: response.message || '삭제에 실패했습니다.' };

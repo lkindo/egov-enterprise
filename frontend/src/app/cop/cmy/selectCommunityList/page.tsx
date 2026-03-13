@@ -115,7 +115,7 @@ const CommunityListPage = () => {
                                                 {totalCount - ((pageIndex - 1) * 10) - idx}
                                             </TableCell>
                                             <TableCell className="py-6">
-                                                <Link href={`/cop/cmy/selectCommunityDetail/${item.cmmntyId}`} className="flex items-center gap-4 group/item">
+                                                <Link href={`/admin/community/${item.cmmntyId}`} className="flex items-center gap-4 group/item">
                                                     <div className="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 font-black text-xs shadow-sm group-hover/item:scale-110 transition-transform">
                                                         CM
                                                     </div>

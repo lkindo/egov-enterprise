@@ -56,7 +56,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                     users: (userRes?.data?.resultList || []).slice(0, 10),
                     menus: [
                         { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },
-                        { name: '자유 게시판', path: '/cop/bbs/selectBoardList', category: '커뮤니티' }
+                        { name: '자유 게시판', path: '/admin/community/boards', category: '커뮤니티' }
                     ].filter(m => m.name.includes(query))
                 });
             } catch (error) {
@@ -237,7 +237,7 @@ function ResultSection({ title, count, children }: any) {
 
 function ArticleResultItem({ item, query }: any) {
     return (
-        <Link href={`/cop/bbs/selectBoardArticle/${item.nttId}?bbsId=${item.bbsId}`} className="block group">
+        <Link href={`/admin/community/boards/${item.nttId}?bbsId=${item.bbsId}`} className="block group">
             <div className="p-8 bg-card border-2 border-primary/5 rounded-[2.5rem] shadow-lg group-hover:shadow-xl group-hover:border-primary/20 transition-all group-hover:-translate-y-1">
                 <div className="flex justify-between items-start gap-4 mb-4">
                     <h4 className="text-xl font-black group-hover:text-primary transition-colors line-clamp-1">

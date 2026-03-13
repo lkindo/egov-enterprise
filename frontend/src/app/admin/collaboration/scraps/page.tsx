@@ -80,7 +80,7 @@ export default function ScrapPage() {
       accessor: (item: Scrap) => (
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => router.push(`/cop/bbs/${item.nttId}?bbsId=${item.bbsId}`)}
+            onClick={() => router.push(`/admin/community/boards/${item.nttId}?bbsId=${item.bbsId}`)}
             className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-all"
             title="본문 보기"
           >

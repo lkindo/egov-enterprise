@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
@@ -9,13 +9,16 @@ import { boardUserService } from '@/services/user/board/BoardUserService';
 import { BoardPost } from '@/types/board';
 import { useToast } from '@/app/components/ui/toast';
 import { useSearchState } from '@/lib/hooks/use-search-state';
-import { Plus, Eye, MessageSquare, Megaphone, Loader2 } from 'lucide-react';
+import { Plus, Eye, Megaphone, Loader2 } from 'lucide-react';
 
 const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 공지사항 기본값
 
-function BoardListContent() {
+function CommunityDetailContent() {
   const router = useRouter();
+  const params = useParams();
+  const communityId = params.id as string;
   const { toast } = useToast();
+  
   const { values, setSearchValues } = useSearchState({
     bbsId: DEFAULT_BBS_ID,
     searchWrd: '',
@@ -31,6 +34,8 @@ function BoardListContent() {
     async function loadPosts() {
       try {
         setLoading(true);
+        // 실제로는 communityId에 따른 bbsId를 조회해야 할 수도 있으나, 
+        // 기존 로직을 현대화된 경로로 이식합니다.
         const res = (await boardUserService.getPosts(values.bbsId, {
           page: parseInt(values.page),
           size: 10,
@@ -48,7 +53,7 @@ function BoardListContent() {
       }
     }
     loadPosts();
-  }, [values, toast]);
+  }, [values, toast, communityId]);
 
   const columns = [
     {
@@ -86,8 +91,8 @@ function BoardListContent() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="통합 게시판"
-        breadcrumbs={[{ label: '협업지원' }, { label: '게시판' }]}
+        title="커뮤니티 상세 및 게시판"
+        breadcrumbs={[{ label: '협업지원', href: '/admin/community' }, { label: '커뮤니티 상세' }]}
         actions={
           <button
             onClick={() => router.push('/admin/community/boards/write')}
@@ -142,15 +147,15 @@ function BoardListContent() {
   );
 }
 
-export default function BoardListPage() {
+export default function CommunityDetailPage() {
   return (
     <Suspense fallback={
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-muted-foreground font-medium animate-pulse">게시판 정보를 불러오고 있습니다...</p>
+        <p className="text-muted-foreground font-medium animate-pulse">커뮤니티 정보를 불러오고 있습니다...</p>
       </div>
     }>
-      <BoardListContent />
+      <CommunityDetailContent />
     </Suspense>
   );
 }

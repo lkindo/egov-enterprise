@@ -90,7 +90,7 @@ const AddressBookListPage = () => {
                 <CardHeader className="flex flex-row items-center justify-between pb-6">
                     <CardTitle className="text-2xl font-bold tracking-tight">주소록 목록</CardTitle>
                     <CardAction>
-                        <Link href="/cop/adb/insertAddressBook">
+                        <Link href="/admin/collaboration/address-book/insertAddressBook">
                             <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90 transition-all">
                                 <Plus className="w-4 h-4" /> 등록
                             </Button>
@@ -158,7 +158,7 @@ const AddressBookListPage = () => {
                                                 {totalCount - ((pageIndex - 1) * 10) - idx}
                                             </TableCell>
                                             <TableCell>
-                                                <Link href={`/cop/adb/selectAddressBookDetail/${item.adbkId}`} className="font-bold text-primary hover:underline underline-offset-4 decoration-2 decoration-primary/30 transition-all">
+                                                <Link href={`/admin/collaboration/address-book/selectAddressBookDetail/${item.adbkId}`} className="font-bold text-primary hover:underline underline-offset-4 decoration-2 decoration-primary/30 transition-all">
                                                     {item.adbkNm}
                                                 </Link>
                                             </TableCell>

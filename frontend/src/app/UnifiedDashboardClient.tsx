@@ -143,7 +143,7 @@ export default function UnifiedDashboardClient({
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => router.push('/cop/bbs')}
+            onClick={() => router.push('/admin/community/boards')}
             className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-slate-900 dark:text-white dark:border-white/10 rounded-[2rem] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
           >
             <Plus size={20} /> 새 포스트
@@ -226,7 +226,7 @@ export default function UnifiedDashboardClient({
               title="Recent Notices"
               items={notiList}
               icon={<Bell size={20} />}
-              moreHref="/cop/bbs"
+              moreHref="/admin/community/boards"
               color="blue"
             />
             <DashboardListCard
@@ -234,7 +234,7 @@ export default function UnifiedDashboardClient({
               title="Assigned Tasks"
               items={taskList}
               icon={<CheckCircle2 size={20} />}
-              moreHref="/cop/bbs"
+              moreHref="/admin/community/boards"
               color="emerald"
             />
           </div>

@@ -25,7 +25,7 @@ const IntegratedSearchPage = async ({ searchParams }: { searchParams: Promise<{ 
         users: (userRes.status === 'fulfilled' && userRes.value.data.resultList ? (userRes.value.data.resultList || []) : []).slice(0, 10),
         menus: [
           { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },
-          { name: '자유 게시판', path: '/cop/bbs/selectBoardList', category: '커뮤니티' }
+          { name: '자유 게시판', path: '/admin/community/boards', category: '커뮤니티' }
         ].filter(m => m.name.includes(q))
       };
     } catch (error) {

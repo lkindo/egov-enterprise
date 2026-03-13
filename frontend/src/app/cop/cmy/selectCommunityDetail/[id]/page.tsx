@@ -90,7 +90,7 @@ function BoardListContent() {
         breadcrumbs={[{ label: '협업지원' }, { label: '게시판' }]}
         actions={
           <button
-            onClick={() => router.push('/cop/bbs/write')}
+            onClick={() => router.push('/admin/community/boards/write')}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
           >
             <Plus size={18} /> 새 글 쓰기
@@ -129,7 +129,7 @@ function BoardListContent() {
         columns={columns}
         data={data}
         loading={loading}
-        onRowClick={(item) => router.push(`/cop/bbs/${item.nttId}?bbsId=${item.bbsId}`)}
+        onRowClick={(item) => router.push(`/admin/community/boards/${item.nttId}?bbsId=${item.bbsId}`)}
         emptyMessage="게시글이 존재하지 않습니다."
       />
 
