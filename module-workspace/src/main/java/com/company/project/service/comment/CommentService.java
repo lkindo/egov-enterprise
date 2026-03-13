@@ -8,6 +8,10 @@ import org.springframework.data.domain.Pageable;
 public interface CommentService {
     Page<CommentDto> getComments(Long nttId, String bbsId, Pageable pageable);
 
+    Page<CommentDto> getAllComments(Pageable pageable);
+
+    Page<CommentDto> searchComments(String keyword, Pageable pageable);
+
     CommentDto getComment(Long id);
 
     Long createComment(String userId, String userNm, CommentSaveRequest request);

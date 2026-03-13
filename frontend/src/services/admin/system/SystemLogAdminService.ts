@@ -1,89 +1,76 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams, SysLog, LoginLog, UserLog, WebLog, PrivacyLog, TransferLog } from '@/types/system';
+
+export interface PageResult<T> {
+    content: T[];
+    totalElements: number;
+    totalPages: number;
+    page: number;
+}
+
+export interface SysLog {
+    requstId: string;
+    occcrrncDe: string;
+    srvcNm: string;
+    methodNm: string;
+    processSeCode: string;
+    processSeCodeNm: string;
+    processTime: string;
+    rqesterIp: string;
+    rqesterId: string;
+    rqsterNm: string;
+    trgetMenuNm?: string;
+}
+
+export interface LoginLog {
+    logId: string;
+    creatDt: string;
+    loginMthd: string;
+    loginIp: string;
+    loginId: string;
+    loginNm: string;
+}
 
 class SystemLogAdminService extends AdminService {
     constructor() {
-        super('/log');
+        super('/logs');
     }
 
     /**
-     * ??뽯뮞??嚥≪뮄??筌뤴뫖以?鈺곌퀬??
+     * 시스템 로그 목록 조회
      */
-    async getSystemLogs(params: SearchParams, config?: any): Promise<PaginationResponse<SysLog>> {
-        const res: any = await this.get('/sys/list', { ...config, params });
-        return {
-            resultList: res.list || [],
-            paginationInfo: res.paginationInfo || { totalRecordCount: 0 }
-        };
+    async getSystemLogs(params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResult<SysLog>> {
+        return this.get<PageResult<SysLog>>('/system', {
+            params: {
+                pageIndex: (params.page || 0) + 1,
+                searchKeyword: params.searchWrd || '',
+            },
+        });
     }
 
     /**
-     * ??뽯뮞??嚥≪뮄???怨멸쉭 鈺곌퀬??
+     * 시스템 로그 상세 조회
      */
-    async getSystemLog(requstId: string, config?: any): Promise<SysLog> {
-        return this.get<SysLog>(`/sys/${requstId}`, config);
+    async getSystemLog(requstId: string): Promise<SysLog> {
+        return this.get<SysLog>(`/system/${requstId}`);
     }
 
     /**
-     * 嚥≪뮄???嚥≪뮄??筌뤴뫖以?鈺곌퀬??
+     * 로그인 로그 목록 조회
      */
-    async getLoginLogs(params: SearchParams, config?: any): Promise<PaginationResponse<LoginLog>> {
-        const res: any = await this.get('/login/list', { ...config, params });
-        return {
-            resultList: res.list || [],
-            paginationInfo: res.paginationInfo || { totalRecordCount: 0 }
-        };
+    async getLoginLogs(params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResult<LoginLog>> {
+        return this.get<PageResult<LoginLog>>('/login', {
+            params: {
+                pageIndex: (params.page || 0) + 1,
+                searchKeyword: params.searchWrd || '',
+            },
+        });
     }
 
     /**
-     * 嚥≪뮄???嚥≪뮄???怨멸쉭 鈺곌퀬??
+     * 로그인 로그 상세 조회
      */
-    async getLoginLog(logId: string, config?: any): Promise<LoginLog> {
-        return this.get<LoginLog>(`/login/${logId}`, config);
-    }
-
-    /**
-     * ?????嚥≪뮄??筌뤴뫖以?鈺곌퀬??
-     */
-    async getUserLogs(params: SearchParams, config?: any): Promise<PaginationResponse<UserLog>> {
-        const res: any = await this.get('/user/list', { ...config, params });
-        return {
-            resultList: res.list || [],
-            paginationInfo: res.paginationInfo || { totalRecordCount: 0 }
-        };
-    }
-
-    /**
-     * ??嚥≪뮄??筌뤴뫖以?鈺곌퀬??
-     */
-    async getWebLogs(params: SearchParams, config?: any): Promise<PaginationResponse<WebLog>> {
-        const res: any = await this.get('/web/list', { ...config, params });
-        return {
-            resultList: res.list || [],
-            paginationInfo: res.paginationInfo || { totalRecordCount: 0 }
-        };
-    }
-
-    /**
-     * 揶쏆뮇??類ｋ궖 鈺곌퀬??嚥≪뮄??筌뤴뫖以?鈺곌퀬??
-     */
-    async getPrivacyLogs(params: SearchParams, config?: any): Promise<PaginationResponse<PrivacyLog>> {
-        const res: any = await this.get('/privacy/list', { ...config, params });
-        return {
-            resultList: res.list || [],
-            paginationInfo: res.paginationInfo || { totalRecordCount: 0 }
-        };
-    }
-
-    /**
-     * ??る땾??嚥≪뮄??筌뤴뫖以?鈺곌퀬??
-     */
-    async getTransferLogs(params: SearchParams, config?: any): Promise<PaginationResponse<TransferLog>> {
-        const res: any = await this.get('/trans/list', { ...config, params });
-        return {
-            resultList: res.list || [],
-            paginationInfo: res.paginationInfo || { totalRecordCount: 0 }
-        };
+    async getLoginLog(logId: string): Promise<LoginLog> {
+        return this.get<LoginLog>(`/login/${logId}`);
     }
 }
 

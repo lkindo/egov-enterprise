@@ -12,7 +12,7 @@ export interface CommentDetail {
 
 class CommentAdminService extends AdminService {
     constructor() {
-        super('/system/comments');
+        super('/comments');
     }
 
     async getComments(params: { page?: number; size?: number; searchWrd?: string }, config?: any) {

@@ -7,18 +7,13 @@ import axios from '@/lib/api/client';
 import { useLayout } from '@/contexts/LayoutContext';
 import { usePathname } from 'next/navigation';
 
-interface MenuItem {
-    menuNo: number;
-    menuNm: string;
-    chkURL: string;
-    children?: MenuItem[];
-}
+import { MenuInfo } from '@/types/menu';
 
 const Header = () => {
     const { user, logout, loading } = useAuth();
     const { activeMenuNo, setActiveMenuNo } = useLayout();
     const pathname = usePathname();
-    const [menus, setMenus] = useState<MenuItem[]>([]);
+    const [menus, setMenus] = useState<MenuInfo[]>([]);
     const [menuError, setMenuError] = useState<string | null>(null);
 
     const fetchMenus = useCallback(async () => {
@@ -38,14 +33,14 @@ const Header = () => {
         fetchMenus();
     }, [fetchMenus]);
 
-    // Auto-detect active domain based on children's URLs
+    // Auto-detect active domain based on children's URLs (modernRoute priority)
     useEffect(() => {
-        const findActiveDomain = (menuList: MenuItem[]): number => {
+        const findActiveDomain = (menuList: MenuInfo[]): number => {
             for (const menu of menuList) {
-                // Check if current pathname starts with any child URL (excluding # and /)
-                const hasMatch = (item: MenuItem): boolean => {
-                    if (item.chkURL && item.chkURL !== '#' && item.chkURL !== '/') {
-                        if (pathname.startsWith(item.chkURL)) return true;
+                const hasMatch = (item: MenuInfo): boolean => {
+                    const url = item.modernRoute || item.chkURL;
+                    if (url && url !== '#' && url !== '/') {
+                        if (pathname.startsWith(url)) return true;
                     }
                     return item.children?.some(hasMatch) || false;
                 };

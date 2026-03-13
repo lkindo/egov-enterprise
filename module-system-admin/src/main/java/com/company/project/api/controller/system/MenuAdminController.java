@@ -1,20 +1,24 @@
 package com.company.project.api.controller.system;
 
 import com.company.project.core.response.ApiResponse;
+import com.company.project.core.response.PageResponse;
 import com.company.project.service.menu.MenuService;
+import com.company.project.service.menu.dto.MenuCreateDto;
 import com.company.project.service.menu.dto.MenuDto;
 import egovframework.com.cmm.ComDefaultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
-@Tag(name = "Menu (Admin)", description = "시스템 메뉴 관리 API (관리자용)")
+/**
+ * 메뉴 및 권한별 메뉴 관리를 위한 REST 컨트롤러 (Admin)
+ */
+@Tag(name = "MenuAdmin", description = "시스템 메뉴 관리 API (Admin)")
 @RestController("systemMenuAdminController")
 @RequestMapping("/api/v1/admin/system/menus")
 @RequiredArgsConstructor
@@ -24,7 +28,7 @@ public class MenuAdminController {
 
     @Operation(summary = "메뉴 목록 조회", description = "시스템 전체 메뉴 목록을 페이징하여 조회합니다.")
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<MenuDto>>> getMenuList(
+    public ResponseEntity<ApiResponse<PageResponse<MenuDto>>> getMenuList(
             @RequestParam(required = false) String searchWrd,
             Pageable pageable) throws Exception {
 
@@ -36,7 +40,7 @@ public class MenuAdminController {
         List<MenuDto> list = menuService.selectMenuManageList(searchVO);
         int total = menuService.selectMenuManageListTotCnt(searchVO);
 
-        return ResponseEntity.ok(ApiResponse.success(new PageImpl<>(list, pageable, total)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, pageable.getPageNumber() + 1, pageable.getPageSize(), total)));
     }
 
     @Operation(summary = "메뉴 전체 트리 조회", description = "시스템 메뉴를 트리 구조 구성을 위한 전체 목록으로 조회합니다.")
@@ -81,6 +85,42 @@ public class MenuAdminController {
     public ResponseEntity<ApiResponse<Void>> deleteMenu(@PathVariable Long menuNo) throws Exception {
         MenuDto dto = MenuDto.builder().menuNo(menuNo).build();
         menuService.deleteMenuManage(dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "메뉴 생성 관리 목록 조회", description = "권한별 메뉴 생성 관리 목록을 조회합니다.")
+    @GetMapping("/creation-manage")
+    public ResponseEntity<ApiResponse<PageResponse<MenuCreateDto>>> getMenuCreationManageList(
+            @RequestParam(required = false) String searchWrd,
+            Pageable pageable) throws Exception {
+        ComDefaultVO searchVO = new ComDefaultVO();
+        searchVO.setSearchKeyword(searchWrd);
+        searchVO.setFirstIndex((int) pageable.getOffset());
+        searchVO.setRecordCountPerPage(pageable.getPageSize());
+        
+        List<MenuCreateDto> list = menuService.selectMenuCreatManagList(searchVO);
+        int total = menuService.selectMenuCreatManagTotCnt(searchVO);
+        
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, pageable.getPageNumber() + 1, pageable.getPageSize(), total)));
+    }
+
+    @Operation(summary = "권한별 메뉴 목록 조회", description = "특정 권한에 할당된 메뉴 목록 및 상태를 조회합니다.")
+    @GetMapping("/creation/{authorCode}")
+    public ResponseEntity<ApiResponse<List<MenuCreateDto>>> getMenuCreationList(@PathVariable String authorCode) throws Exception {
+        MenuCreateDto vo = MenuCreateDto.builder().authorCode(authorCode).build();
+        List<MenuCreateDto> result = menuService.selectMenuCreatList(vo);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    @Operation(summary = "권한별 메뉴 할당 저장", description = "특정 권한에 메뉴들을 할당하거나 해제합니다.")
+    @PostMapping("/creation/{authorCode}")
+    public ResponseEntity<ApiResponse<Void>> createMenuCreation(
+            @PathVariable String authorCode,
+            @RequestBody List<Long> menuNos) throws Exception {
+        String checkedMenuNoForInsert = menuNos.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+        menuService.insertMenuCreatList(authorCode, checkedMenuNoForInsert);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

@@ -49,6 +49,14 @@ subprojects {
 
     tasks.withType(Test).configureEach {
         systemProperty 'file.encoding', 'UTF-8'
+        useJUnitPlatform()
+        systemProperties System.properties
+        maxHeapSize = "6144m"
+        ignoreFailures = true
+        jacoco {
+            destinationFile = file("${project.projectDir}/build/jacoco/test.exec").absoluteFile
+        }
+        finalizedBy 'jacocoTestReport'
     }
 
     dependencyManagement {
@@ -62,17 +70,6 @@ subprojects {
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testImplementation 'org.springframework.security:spring-security-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    }
-
-    test {
-        useJUnitPlatform()
-        systemProperties System.properties
-        maxHeapSize = "6144m"
-        ignoreFailures = true
-        jacoco {
-            destinationFile = file("$buildDir/jacoco/test.exec")
-        }
-        finalizedBy 'jacocoTestReport'
     }
 
     jacocoTestReport {
@@ -90,20 +87,17 @@ tasks.register("jacocoRootReport", JacocoReport) {
 
     dependsOn(subprojects.test)
 
-    // 실행 시점(Lazy evaluation)에 생성된 test.exec 파일만 수집하여 존재하지 않는 파일 읽기 오류 및 범용 디렉토리 탐색(Task Overlapping) 충돌 회피
+    // 실행 시점(Lazy evaluation)에 생성된 모든 .exec 파일 수집
     executionData.setFrom(project.files {
-        subprojects.collect { file("${it.buildDir}/jacoco/test.exec") }.findAll { it.exists() }
+        fileTree(dir: project.rootDir, include: "**/build/jacoco/*.exec").files
     })
 
     subprojects.each { subproject ->
         subproject.plugins.withType(JavaPlugin) {
             sourceDirectories.from(subproject.sourceSets.main.allSource.srcDirs)
-            
-            if (subproject.name == 'api-server') {
-                classDirectories.from(fileTree(dir: subproject.layout.buildDirectory.dir("classes/java/main"), exclude: "**/UserController.class"))
-            } else {
-                classDirectories.from(subproject.sourceSets.main.output.classesDirs)
-            }
+            classDirectories.from(subproject.sourceSets.main.output.classesDirs.collect {
+                fileTree(dir: it, exclude: ["**/Q*.class", "**/Q*Entity.class"])
+            })
         }
     }
 

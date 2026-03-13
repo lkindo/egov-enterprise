@@ -40,11 +40,11 @@ import org.springframework.security.core.GrantedAuthority;
  * 메뉴 관리 서비스
  * - 메뉴 계층 구조 조회, 권한별 메뉴 필터링, 메뉴 관리 기능 제공
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MenuService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MenuService.class);
 
     private final MenuRepository menuRepository;
     private final ProgramRepository programRepository;
@@ -236,18 +236,15 @@ public class MenuService {
                 .getTotalElements();
     }
 
-    public List<MenuDto> selectMenuCreatList(@NonNull MenuCreateDto vo) {
-        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();        
-        return allMenus.stream().map(menu -> {
-            MenuDto dto = MenuDto.builder()
-                    .menuNo(menu.getId())
-                    .menuNm(menu.getMenuNm())
-                    .upperMenuId(menu.getUpperMenuNo())
-                    .progrmFileNm(menu.getProgrmFileNm())
-                    .modernRoute(menu.getModernRoute())
-                    .build();
-            return dto;
-        }).collect(Collectors.toList());
+    public List<MenuCreateDto> selectMenuCreatList(@NonNull MenuCreateDto vo) {
+        return menuAuthorityRepository.selectMenuCreatList(vo.getAuthorCode()).stream()
+                .map(proj -> MenuCreateDto.builder()
+                        .menuNo(proj.getMenuNo().intValue())
+                        .authorCode(proj.getAuthorCode())
+                        .authorNm(proj.getMenuNm()) // Use menu name for display if needed
+                        .chkYeoBu("Y".equals(proj.getRegYn()) ? 1 : 0)
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Transactional

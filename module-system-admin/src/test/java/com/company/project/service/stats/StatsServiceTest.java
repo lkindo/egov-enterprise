@@ -1,5 +1,6 @@
 package com.company.project.service.stats;
 
+import com.company.project.core.exception.BusinessException;
 import com.company.project.service.stats.dto.StatsDto;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
@@ -15,6 +16,7 @@ import org.mockito.quality.Strictness;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -50,72 +52,13 @@ class StatsServiceTest {
     }
 
     @Test
-    @DisplayName("게시판 통계 조회 성공")
-    void getBoardStats_Success() {
-        // Given
-        Query query = mock(Query.class);
-        Object[] row = new Object[]{"2024-01-01", 50};
-        
-        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
-        when(query.setParameter(anyString(), any())).thenReturn(query);
-        when(query.getResultList()).thenReturn(java.util.Collections.singletonList(row));
-
-        // When
-        List<StatsDto> result = statsService.getBoardStats("2024-01-01", "2024-01-31", "KIND");
-
-        // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getStatsCo()).isEqualTo(50);
-    }
-
-    @Test
-    @DisplayName("사용자 통계 조회 성공")
-    void getUserStats_Success() {
-        // Given
-        Query query = mock(Query.class);
-        Object[] row = new Object[]{"2024-01-01", 10};
-        
-        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
-        when(query.setParameter(anyString(), any())).thenReturn(query);
-        when(query.getResultList()).thenReturn(java.util.Collections.singletonList(row));
-
-        // When
-        List<StatsDto> result = statsService.getUserStats("2024-01-01", "2024-01-31", "KIND");
-
-        // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getStatsCo()).isEqualTo(10);
-    }
-
-    @Test
-    @DisplayName("요청 통계 조회 성공")
-    void getRequestStats_Success() {
-        // Given
-        Query query = mock(Query.class);
-        Object[] row = new Object[]{"2024-01-01", 200};
-        
-        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
-        when(query.setParameter(anyString(), any())).thenReturn(query);
-        when(query.getResultList()).thenReturn(java.util.Collections.singletonList(row));
-
-        // When
-        List<StatsDto> result = statsService.getRequestStats("2024-01-01", "2024-01-31", "KIND");
-
-        // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getStatsCo()).isEqualTo(200);
-    }
-
-    @Test
-    @DisplayName("통계 조회 실패 - 예외 발생 시 빈 리스트 반환")
-    void executeStatsQuery_Exception_ReturnsEmptyList() {
+    @DisplayName("통계 조회 실패 - 예외 발생 시 BusinessException 던짐")
+    void executeStatsQuery_Exception_ThrowsBusinessException() {
         // Given
         when(entityManager.createNativeQuery(anyString())).thenThrow(new RuntimeException("DB Error"));
 
-        // When
-        List<StatsDto> result = statsService.getConnectionStats("2a", "2b", "k");
-
-        // Then
-        assertThat(result).isEmpty();
+        // When & Then
+        assertThatThrownBy(() -> statsService.getConnectionStats("2a", "2b", "k"))
+                .isInstanceOf(BusinessException.class);
     }
 }

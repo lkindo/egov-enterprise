@@ -1,33 +1,58 @@
-import { UserService } from '@/services/core/ApiService';
-import { Banner } from '@/types/banner';
+import { AdminService } from '@/services/core/ApiService';
+import { PaginationResponse, SearchParams } from '@/types/system';
+import { AxiosRequestConfig } from 'axios';
 
-class BannerAdminService extends UserService {
+export interface Banner {
+    bannerId: string;
+    bannerNm: string;
+    linkCours: string;
+    bannerImage: string;
+    bannerImageFile: string;
+    bannerDc: string;
+    reflctAt: 'Y' | 'N';
+    userId: string;
+    regDate: string;
+}
+
+/**
+ * 배너 관리 서비스 (Admin)
+ */
+class BannerAdminService extends AdminService {
     constructor() {
         super('/banners');
     }
 
-    async getBanners(params: { page?: number; size?: number; keyword?: string }, config?: any) {
-        return this.get<any>('', { ...config, params });
+    /** 배너 목록 조회 */
+    async getBannerList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<Banner>> {
+        const response = await this.get<any>('', {
+            ...config,
+            params: {
+                ...params,
+                keyword: params?.searchKeyword || params?.searchWrd || '',
+            },
+        });
+        return response?.result || response;
     }
 
-    async getReflectedBanners(config?: any) {
-        return this.get<any>('/reflected', config);
+    /** 배너 상세 조회 */
+    async getBanner(id: string, config?: AxiosRequestConfig): Promise<Banner> {
+        const response = await this.get<any>(`/${id}`, config);
+        return response?.result || response;
     }
 
-    async getBanner(bannerId: string, config?: any) {
-        return this.get<any>(`/${bannerId}`, config);
+    /** 배너 등록 */
+    async createBanner(data: Partial<Banner>, config?: AxiosRequestConfig): Promise<void> {
+        return this.post('', data, config);
     }
 
-    async createBanner(data: Banner, config?: any) {
-        return this.post<any>('', data, config);
+    /** 배너 수정 */
+    async updateBanner(id: string, data: Partial<Banner>, config?: AxiosRequestConfig): Promise<void> {
+        return this.put(`/${id}`, data, config);
     }
 
-    async updateBanner(bannerId: string, data: Banner, config?: any) {
-        return this.put<any>(`/${bannerId}`, data, config);
-    }
-
-    async deleteBanner(bannerId: string, config?: any) {
-        return this.delete<any>(`/${bannerId}`, config);
+    /** 배너 삭제 */
+    async deleteBanner(id: string, config?: AxiosRequestConfig): Promise<void> {
+        return this.delete(`/${id}`, config);
     }
 }
 

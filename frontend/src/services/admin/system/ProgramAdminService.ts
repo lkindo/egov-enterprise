@@ -1,40 +1,55 @@
-import client from '@/lib/api/client';
-import { ProgrmManage, SearchParams, PaginationResponse } from '@/types/system';
+import { AdminService } from '@/services/core/ApiService';
+import { PaginationResponse, SearchParams } from '@/types/system';
+import { AxiosRequestConfig } from 'axios';
+
+export interface Program {
+    progrmFileNm: string;
+    progrmStrePath: string;
+    progrmKoreanNm: string;
+    progrmDc: string;
+    url: string;
+}
 
 /**
- * ?袁⑥쨮域밸챶???온????뺥돩??(Admin)
- * 獄쏄퉮肉?? com.company.project.api.controller.program.ProgramApiController
+ * 프로그램 관리 서비스 (Admin)
  */
-const BASE_URL = '/admin/system/programs';
+class ProgramAdminService extends AdminService {
+    constructor() {
+        super('/programs');
+    }
 
-export const programAdminService = {
-    /** ?袁⑥쨮域밸챶??筌뤴뫖以?鈺곌퀬??(??륁뵠筌? */
-    getProgramList: async (params?: SearchParams, config?: any) => {
-        return client.get<PaginationResponse<ProgrmManage>>(BASE_URL, { ...config, params });
-    },
+    /** 프로그램 목록 조회 */
+    async getProgramList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<Program>> {
+        const response = await this.get<any>('', {
+            ...config,
+            params: {
+                ...params,
+                searchWrd: params?.searchKeyword || params?.searchWrd || '',
+            },
+        });
+        return response?.result || response;
+    }
 
-    /** ?袁⑥쨮域밸챶??筌뤴뫖以?鈺곌퀬??(Alias) */
-    getPrograms: async (params?: SearchParams, config?: any) => {
-        return client.get<PaginationResponse<ProgrmManage>>(BASE_URL, { ...config, params });
-    },
+    /** 프로그램 상세 조회 */
+    async getProgram(progrmFileNm: string, config?: AxiosRequestConfig): Promise<Program> {
+        const response = await this.get<any>(`/${progrmFileNm}`, config);
+        return response?.result || response;
+    }
 
-    /** ?袁⑥쨮域밸챶???怨멸쉭 鈺곌퀬??*/
-    getProgram: async (progrmFileNm: string, config?: any) => {
-        return client.get<ProgrmManage>(`${BASE_URL}/${progrmFileNm}`, config);
-    },
+    /** 프로그램 등록 */
+    async createProgram(data: Partial<Program>, config?: AxiosRequestConfig): Promise<void> {
+        return this.post('', data, config);
+    }
 
-    /** ?袁⑥쨮域밸챶???源낆쨯 */
-    createProgram: async (data: Partial<ProgrmManage>, config?: any) => {
-        return client.post<void>(BASE_URL, data, config);
-    },
+    /** 프로그램 수정 */
+    async updateProgram(progrmFileNm: string, data: Partial<Program>, config?: AxiosRequestConfig): Promise<void> {
+        return this.put(`/${progrmFileNm}`, data, config);
+    }
 
-    /** ?袁⑥쨮域밸챶???類ｋ궖 ??륁젟 */
-    updateProgram: async (progrmFileNm: string, data: Partial<ProgrmManage>, config?: any) => {
-        return client.put<void>(`${BASE_URL}/${progrmFileNm}`, data, config);
-    },
+    /** 프로그램 삭제 */
+    async deleteProgram(progrmFileNm: string, config?: AxiosRequestConfig): Promise<void> {
+        return this.delete(`/${progrmFileNm}`, config);
+    }
+}
 
-    /** ?袁⑥쨮域밸챶??????*/
-    deleteProgram: async (progrmFileNm: string, config?: any) => {
-        return client.delete<void>(`${BASE_URL}/${progrmFileNm}`, config);
-    },
-};
+export const programAdminService = new ProgramAdminService();

@@ -1,30 +1,46 @@
 import { AdminService } from '@/services/core/ApiService';
+import { PaginationResponse, SearchParams } from '@/types/system';
 import { Popup } from '@/types/banner';
 
+/**
+ * 팝업창 관리 서비스 (Admin)
+ */
 class PopupAdminService extends AdminService {
     constructor() {
         super('/popups');
     }
 
-    async getPopups(params: { page?: number; size?: number; searchWrd?: string }, config?: any) {
-        // Override directly with client or use this if the backend handles /admin/system/popups
-        return this.get<any>('', { ...config, params });
+    /** 팝업창 목록 조회 */
+    async getPopupList(params?: SearchParams, config?: any): Promise<PaginationResponse<Popup>> {
+        const response = await this.get<any>('', { ...config, params });
+        return response?.result || response;
     }
 
-    async getPopup(popupId: string, config?: any) {
-        return this.get<any>(`/${popupId}`, config);
+    /** 팝업창 상세 조회 */
+    async getPopup(popupId: string, config?: any): Promise<Popup> {
+        const response = await this.get<any>(`/${popupId}`, config);
+        return response?.result || response;
     }
 
-    async createPopup(data: Popup, config?: any) {
-        return this.post<any>('', data, config);
+    /** 팝업창 등록 */
+    async createPopup(data: Partial<Popup>, config?: any): Promise<Popup> {
+        const response = await this.post<any>('', data, config);
+        return response?.result || response;
     }
 
-    async updatePopup(popupId: string, data: Popup, config?: any) {
-        return this.put<any>(`/${popupId}`, data, config);
+    /** 팝업창 수정 */
+    async updatePopup(popupId: string, data: Partial<Popup>, config?: any): Promise<void> {
+        return this.put(`/${popupId}`, data, config);
     }
 
-    async deletePopup(popupId: string, config?: any) {
-        return this.delete<any>(`/${popupId}`, config);
+    /** 팝업창 삭제 */
+    async deletePopup(popupId: string, config?: any): Promise<void> {
+        return this.delete(`/${popupId}`, config);
+    }
+
+    /** 팝업창 일괄 삭제 */
+    async deletePopups(popupIds: string[], config?: any): Promise<void> {
+        return this.post('/delete', { popupIds }, config);
     }
 }
 

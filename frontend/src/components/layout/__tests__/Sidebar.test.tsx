@@ -34,7 +34,7 @@ describe('Sidebar', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (navigation.usePathname as Mock).mockReturnValue('/cop/bbs/selectBoardList');
+        (navigation.usePathname as Mock).mockReturnValue('/admin/community/boards');
         (navigation.useSearchParams as Mock).mockReturnValue(new URLSearchParams());
     });
 
@@ -57,7 +57,7 @@ describe('Sidebar', () => {
                         {
                             menuNo: 10,
                             menuNm: 'Group 1',
-                            children: [{ menuNo: 101, menuNm: 'Sub Menu 1', chkURL: '/cop/bbs/selectBoardList' }]
+                            children: [{ menuNo: 101, menuNm: 'Sub Menu 1', chkURL: '/admin/community/boards' }]
                         }
                     ]
                 });
@@ -74,7 +74,7 @@ describe('Sidebar', () => {
     });
 
     it('sets active styles on the current link', async () => {
-        (navigation.usePathname as Mock).mockReturnValue('/cop/bbs/selectBoardList');
+        (navigation.usePathname as Mock).mockReturnValue('/admin/community/boards');
 
         (client.get as Mock).mockImplementation((url: string) => {
             if (url === '/menu/head') return Promise.resolve({ list: [{ menuNo: 1, menuNm: 'Root' }] });
@@ -83,7 +83,7 @@ describe('Sidebar', () => {
                     list: [{
                         menuNo: 10,
                         menuNm: 'Group',
-                        children: [{ menuNo: 101, menuNm: 'Active Menu', chkURL: '/cop/bbs/selectBoardList' }]
+                        children: [{ menuNo: 101, menuNm: 'Active Menu', chkURL: '/admin/community/boards' }]
                     }]
                 });
             }

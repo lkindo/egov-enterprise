@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+import { AdminService } from '@/services/core/ApiService';
 
 /**
  * 통계 관리 서비스 (Admin)
@@ -14,31 +14,30 @@ export interface StatsDto {
     [key: string]: any;
 }
 
-const BASE_URL = '/admin/stats';
+class StatsAdminService extends AdminService {
+    constructor() {
+        super('/statistics');
+    }
 
-export const statsAdminService = {
     /** 접속 통계 조회 */
-    getConnectStats: async (params?: { fromDate?: string; toDate?: string; statsKind?: string }, config?: any) => {
-        return client.get<StatsDto[]>(`${BASE_URL}/connect`, { params, ...config });
-    },
+    async getConnectStats(params?: { fromDate?: string; toDate?: string; statsKind?: string }) {
+        return this.get<StatsDto[]>('/connect', { params });
+    }
 
     /** 게시판 통계 조회 */
-    getBbsStats: async (params?: { fromDate?: string; toDate?: string; statsKind?: string }, config?: any) => {
-        return client.get<StatsDto[]>(`${BASE_URL}/bbs`, { params, ...config });
-    },
+    async getBbsStats(params?: { fromDate?: string; toDate?: string; statsKind?: string }) {
+        return this.get<StatsDto[]>('/bbs', { params });
+    }
 
     /** 사용자 통계 조회 */
-    getUserStats: async (params?: { fromDate?: string; toDate?: string; statsKind?: string }, config?: any) => {
-        return client.get<StatsDto[]>(`${BASE_URL}/user`, { params, ...config });
-    },
-
-    /** 요약 정보 조회 */
-    getSummary: async (config?: any) => {
-        return client.get(`${BASE_URL}/summary`, config);
-    },
-
-    /** 메뉴 통계 조회 */
-    getMenuStats: async (config?: any) => {
-        return client.get(`${BASE_URL}/menu`, config);
+    async getUserStats(params?: { fromDate?: string; toDate?: string; statsKind?: string }) {
+        return this.get<StatsDto[]>('/user', { params });
     }
-};
+
+    /** 요청(화면) 통계 조회 */
+    async getScreenStats(params?: { fromDate?: string; toDate?: string; statsKind?: string }) {
+        return this.get<StatsDto[]>('/screen', { params });
+    }
+}
+
+export const statsAdminService = new StatsAdminService();

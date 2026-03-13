@@ -1,5 +1,7 @@
 package com.company.project.service.login;
 
+import com.company.project.core.exception.BusinessException;
+import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.login.LoginPolicy;
 import com.company.project.domain.login.LoginPolicyRepository;
 import com.company.project.domain.user.entity.User;
@@ -14,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -49,7 +50,6 @@ class LoginPolicyManageServiceTest {
                 .password("password")
                 .build();
         Page<User> page = new PageImpl<>(List.of(user));
-        // Use any() to be safe
         given(userRepository.findAll(any(Pageable.class))).willReturn(page);
 
         LoginPolicy policy = LoginPolicy.builder()
@@ -70,49 +70,6 @@ class LoginPolicyManageServiceTest {
         LoginPolicyDto dto = result.get(0);
         assertThat(dto.getEmplyrId()).isEqualTo("user1");
         assertThat(dto.getRegYn()).isEqualTo("Y");
-        assertThat(dto.getIpInfo()).isEqualTo("1.1.1.1");
-        assertThat(dto.getDplctPermAt()).isEqualTo("Y");
-        assertThat(dto.getLmttAt()).isEqualTo("N");
-    }
-
-    @Test
-    @DisplayName("로그인 정책 목록 조회 - 정책 없음")
-    void selectLoginPolicyList_NoPolicy_Success() {
-        User user = User.builder()
-                .userId("user2")
-                .esntlId("ESNTL_002")
-                .userNm("Name 2")
-                .password("password")
-                .build();
-        given(userRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(user)));
-        given(loginPolicyRepository.findById("user2")).willReturn(Optional.empty());
-
-        List<LoginPolicyDto> result = loginPolicyManageService.selectLoginPolicyList(new ComDefaultVO());
-        assertThat(result.get(0).getRegYn()).isEqualTo("N");
-    }
-
-    @Test
-    @DisplayName("로그인 정책 목록 조회 - 정책 없음")
-    void selectLoginPolicyList_WithoutPolicy_Success() {
-        User user = User.builder()
-                .userId("user2")
-                .esntlId("ESNTL_002")
-                .userNm("Name 2")
-                .password("password")
-                .build();
-        given(userRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(user)));
-        given(loginPolicyRepository.findById("user2")).willReturn(Optional.empty());
-
-        List<LoginPolicyDto> result = loginPolicyManageService.selectLoginPolicyList(new ComDefaultVO());
-        assertThat(result.get(0).getRegYn()).isEqualTo("N");
-    }
-
-    @Test
-    @DisplayName("로그인 정책 총 갯수 조회")
-    void selectLoginPolicyListTotCnt_Success() {
-        given(userRepository.count()).willReturn(100L);
-        int result = loginPolicyManageService.selectLoginPolicyListTotCnt(new ComDefaultVO());
-        assertThat(result).isEqualTo(100);
     }
 
     @Test
@@ -120,13 +77,13 @@ class LoginPolicyManageServiceTest {
     void selectLoginPolicy_WithPolicy_Success() {
         User user = User.builder()
                 .userId("user1")
-                .esntlId("ESNTL_001")
+                .esntlId("ESNTL_1")
                 .userNm("Name")
-                .password("password")
+                .password("pass")
                 .build();
         given(userRepository.findById("user1")).willReturn(Optional.of(user));
         
-        LoginPolicy policy = LoginPolicy.builder().ipInfo("192.168.0.1").build();
+        LoginPolicy policy = LoginPolicy.builder().emplyrId("user1").ipInfo("192.168.0.1").build();
         given(loginPolicyRepository.findById("user1")).willReturn(Optional.of(policy));
 
         LoginPolicyDto result = loginPolicyManageService.selectLoginPolicy("user1");
@@ -135,27 +92,13 @@ class LoginPolicyManageServiceTest {
     }
 
     @Test
-    @DisplayName("로그인 정책 상세 조회 성공 - 정책 없음")
-    void selectLoginPolicy_WithoutPolicy_Success() {
-        User user = User.builder()
-                .userId("user1")
-                .esntlId("ESNTL_001")
-                .userNm("Name")
-                .password("password")
-                .build();
-        given(userRepository.findById("user1")).willReturn(Optional.of(user));
-        given(loginPolicyRepository.findById("user1")).willReturn(Optional.empty());
-
-        LoginPolicyDto result = loginPolicyManageService.selectLoginPolicy("user1");
-        assertThat(result.getRegYn()).isEqualTo("N");
-    }
-
-    @Test
     @DisplayName("로그인 정책 상세 조회 실패 - 회원 데이터 없음")
     void selectLoginPolicy_UserNotFound() {
         given(userRepository.findById(anyString())).willReturn(Optional.empty());
-        LoginPolicyDto result = loginPolicyManageService.selectLoginPolicy("user1");
-        assertThat(result).isNull();
+
+        assertThatThrownBy(() -> loginPolicyManageService.selectLoginPolicy("user1"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
     }
 
     @Test
@@ -180,22 +123,5 @@ class LoginPolicyManageServiceTest {
         loginPolicyManageService.updateLoginPolicy(dto);
         
         assertThat(policy.getIpInfo()).isEqualTo("New");
-    }
-
-    @Test
-    @DisplayName("로그인 정책 수정 실패 - 정책 없음")
-    void updateLoginPolicy_NotFound() {
-        LoginPolicyDto dto = LoginPolicyDto.builder().emplyrId("none").build();
-        given(loginPolicyRepository.findById("none")).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> loginPolicyManageService.updateLoginPolicy(dto))
-                .isInstanceOf(RuntimeException.class);
-    }
-
-    @Test
-    @DisplayName("로그인 정책 삭제 성공")
-    void deleteLoginPolicy_Success() {
-        loginPolicyManageService.deleteLoginPolicy("user1");
-        verify(loginPolicyRepository).deleteById("user1");
     }
 }

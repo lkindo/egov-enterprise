@@ -36,7 +36,7 @@ const InsertScrapPage = () => {
             const response = (await axios.post('/scrap', formData)) as any;
             if (response.data.success) {
                 alert(response.data.message);
-                router.push('/cop/scp/selectScrapList');
+                router.push('/admin/collaboration/scraps/selectScrapList');
             }
         } catch (error: any) {
             alert(error.response?.data?.message || '등록에 실패했습니다.');
@@ -53,7 +53,7 @@ const InsertScrapPage = () => {
                     <Home className="w-4 h-4" /> Home
                 </Link>
                 <ChevronRight className="w-4 h-4" />
-                <Link href="/cop/scp/selectScrapList" className="hover:text-foreground transition-colors font-medium">스크랩관리</Link>
+                <Link href="/admin/collaboration/scraps/selectScrapList" className="hover:text-foreground transition-colors font-medium">스크랩관리</Link>
                 <ChevronRight className="w-4 h-4" />
                 <span className="text-foreground font-semibold">새 스크랩 등록</span>
             </div>
@@ -138,7 +138,7 @@ const InsertScrapPage = () => {
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-center gap-8 py-14 border-t bg-slate-50/50 px-12 rounded-b-[2.5rem]">
-                        <Link href="/cop/scp/selectScrapList">
+                        <Link href="/admin/collaboration/scraps/selectScrapList">
                             <Button type="button" variant="ghost" className="h-16 px-12 font-black uppercase tracking-widest text-slate-500 hover:bg-white hover:shadow-xl transition-all active:scale-95 border-2 border-transparent hover:border-slate-100 rounded-2xl">
                                 <ArrowLeft className="w-5 h-5 mr-3" /> 취소
                             </Button>

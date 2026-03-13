@@ -1,4 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
+import { PaginationResponse, SearchParams } from '@/types/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface InfrmlSanctn {
@@ -16,35 +17,45 @@ export interface InfrmlSanctn {
     lastUpdusrId?: string;
 }
 
-interface PageResult<T> { content: T[]; totalElements: number; totalPages: number; }
-
+/**
+ * 전산 신청(Informal Sanction) 관리 서비스 (Admin)
+ */
 class IsmAdminService extends AdminService {
     constructor() {
-        super('/ism'); // Will map to /admin/system/ism
+        super('/ism'); // /api/v1/admin/system/ism
     }
 
-    async getInfrmlSanctnList(params: { page?: number; size?: number; sanctnerId?: string }, config?: AxiosRequestConfig): Promise<PageResult<InfrmlSanctn>> {
-        return this.get<PageResult<InfrmlSanctn>>('', { ...config, params });
+    /** 신청 목록 조회 */
+    async getInfrmlSanctnList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<InfrmlSanctn>> {
+        const response = await this.get<any>('', { ...config, params });
+        return response?.result || response;
     }
 
-    async getInfrmlSanctn(id: string): Promise<InfrmlSanctn> {
-        return this.get<InfrmlSanctn>(`/${id}`);
+    /** 신청 상세 조회 */
+    async getInfrmlSanctn(id: string, config?: AxiosRequestConfig): Promise<InfrmlSanctn> {
+        const response = await this.get<any>(`/${id}`, config);
+        return response?.result || response;
     }
 
-    async createInfrmlSanctn(data: Partial<InfrmlSanctn>): Promise<void> {
-        return this.post('', data);
+    /** 신청 등록 */
+    async createInfrmlSanctn(data: Partial<InfrmlSanctn>, config?: AxiosRequestConfig): Promise<InfrmlSanctn> {
+        const response = await this.post<any>('', data, config);
+        return response?.result || response;
     }
 
-    async updateInfrmlSanctn(id: string, data: Partial<InfrmlSanctn>): Promise<void> {
-        return this.put(`/${id}`, data);
+    /** 신청 수정 */
+    async updateInfrmlSanctn(id: string, data: Partial<InfrmlSanctn>, config?: AxiosRequestConfig): Promise<void> {
+        return this.put(`/${id}`, data, config);
     }
 
-    async confirmInfrmlSanctn(id: string, confmAt: string, returnResn?: string): Promise<void> {
-        return this.patch(`/${id}/confirm`, null, { params: { confmAt, returnResn } });
+    /** 신청 승인/반려 */
+    async confirmInfrmlSanctn(id: string, confmAt: string, returnResn?: string, config?: AxiosRequestConfig): Promise<void> {
+        return this.patch(`/${id}/confirm`, null, { ...config, params: { confmAt, returnResn } });
     }
 
-    async deleteInfrmlSanctn(id: string): Promise<void> {
-        return this.delete(`/${id}`);
+    /** 신청 삭제 */
+    async deleteInfrmlSanctn(id: string, config?: AxiosRequestConfig): Promise<void> {
+        return this.delete(`/${id}`, config);
     }
 }
 

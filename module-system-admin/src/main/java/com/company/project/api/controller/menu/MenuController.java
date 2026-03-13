@@ -16,12 +16,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/v1/menu")
 @RequiredArgsConstructor
 @Tag(name = "Menu", description = "메뉴 ?보 관??API")
 public class MenuController {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MenuController.class);
     private final MenuService menuService;
 
     @Operation(summary = "GNB ?메뉴 목록 조회")

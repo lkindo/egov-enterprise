@@ -33,6 +33,19 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    public Page<CommentDto> getAllComments(Pageable pageable) {
+        return commentRepository.findAll(Objects.requireNonNull(pageable))
+                .map(this::convertToDto);
+    }
+
+    @Override
+    public Page<CommentDto> searchComments(String keyword, Pageable pageable) {
+        return commentRepository.findByCommentCnContaining(Objects.requireNonNull(keyword),
+                Objects.requireNonNull(pageable))
+                .map(this::convertToDto);
+    }
+
+    @Override
     public CommentDto getComment(Long id) {
         return commentRepository.findById(Objects.requireNonNull(id))
                 .map(this::convertToDto)

@@ -226,12 +226,21 @@ class MenuServiceTest {
     @DisplayName("메뉴 생성 목록 조회 테스트")
     void selectMenuCreatListTest() {
         MenuCreateDto dto = new MenuCreateDto();
-        Menu menu1 = Menu.builder().id(1L).menuNm("m1").build();
-        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu1));
+        dto.setAuthorCode("ROLE_USER");
         
-        List<MenuDto> res = menuService.selectMenuCreatList(dto);
+        com.company.project.domain.auth.MenuAuthorityProjection proj = com.company.project.domain.auth.MenuAuthorityProjection.builder()
+                .authorCode("ROLE_USER")
+                .menuNo(1L)
+                .menuNm("m1")
+                .regYn("Y")
+                .build();
+        
+        when(menuAuthorityRepository.selectMenuCreatList("ROLE_USER")).thenReturn(List.of(proj));
+        
+        List<MenuCreateDto> res = menuService.selectMenuCreatList(dto);
         assertThat(res).hasSize(1);
-        assertThat(res.get(0).getMenuNm()).isEqualTo("m1");
+        assertThat(res.get(0).getMenuNo()).isEqualTo(1);
+        assertThat(res.get(0).getChkYeoBu()).isEqualTo(1);
     }
 
     @Test

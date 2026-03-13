@@ -82,7 +82,7 @@ const ScrapListPage = () => {
                         <p className="text-sm text-muted-foreground">나중에 다시 볼 중요한 웹 페이지와 정보들을 관리하세요.</p>
                     </div>
                     <CardAction>
-                        <Link href="/cop/scp/insertScrap">
+                        <Link href="/admin/collaboration/scraps/insertScrap">
                             <Button size="sm" className="gap-2 shadow-sm font-bold">
                                 <Plus className="w-4 h-4" /> 스크랩 등록
                             </Button>
@@ -131,7 +131,7 @@ const ScrapListPage = () => {
                                                 {totalCount - ((pageIndex - 1) * 10) - idx}
                                             </TableCell>
                                             <TableCell>
-                                                <Link href={`/cop/scp/selectScrapDetail/${item.scrapId}`} className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2">
+                                                <Link href={`/admin/collaboration/scraps/selectScrapDetail/${item.scrapId}`} className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2">
                                                     <FileText className="w-4 h-4 opacity-40" /> {item.scrapNm}
                                                 </Link>
                                             </TableCell>

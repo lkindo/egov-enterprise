@@ -7,18 +7,13 @@ import axios from '@/lib/api/client';
 
 import { useLayout } from '@/contexts/LayoutContext';
 
-interface MenuItem {
-    menuNo: number;
-    menuNm: string;
-    chkURL: string;
-    children?: MenuItem[];
-}
+import { MenuInfo } from '@/types/menu';
 
 const Sidebar = () => {
     const pathname = usePathname();
     const { activeMenuNo } = useLayout();
-    const [leftMenus, setLeftMenus] = useState<MenuItem[]>([]);
-    const [parentMenu, setParentMenu] = useState<MenuItem | null>(null);
+    const [leftMenus, setLeftMenus] = useState<MenuInfo[]>([]);
+    const [parentMenu, setParentMenu] = useState<MenuInfo | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const fetchLeftMenus = useCallback(async () => {
@@ -77,7 +72,7 @@ const Sidebar = () => {
                                     <li key={item.menuNo}>
                                         <Link
                                             href={item.chkURL || '#'}
-                                            className={`block px-3 py-2 rounded-lg text-sm transition-all ${isActive(item.chkURL)
+                                            className={`block px-3 py-2 rounded-lg text-sm transition-all ${isActive(item.chkURL || '')
                                                     ? 'bg-primary text-white font-bold shadow-md shadow-primary/20'
                                                     : 'text-slate-600 hover:bg-slate-100'
                                                 }`}

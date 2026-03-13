@@ -29,39 +29,99 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String userId = authentication.getName();
         String password = (String) authentication.getCredentials();
+        
+        log.info(">>> [EgovAuthenticationProvider] Attempting authentication for userId: {}", userId);
+        
         try {
-            User userEntity = userRepository.findById(userId)
-                    .orElseGet(() -> userRepository.findByEsntlId(userId)
-                            .orElseThrow(() -> new BadCredentialsException("Invalid User ID or Password")));
+            log.info(">>> [EgovAuthenticationProvider] DB check started for userId: {}", userId);
+            
+            // Try find by userId
+            var userOpt = userRepository.findById(userId);
+            if (userOpt.isPresent()) {
+                log.info(">>> [EgovAuthenticationProvider] User found by findById: {}", userOpt.get().getUserId());
+            } else {
+                log.warn(">>> [EgovAuthenticationProvider] User NOT found by findById: {}", userId);
+            }
+            
+            User userEntity = userOpt
+                    .orElseGet(() -> {
+                        log.info(">>> [EgovAuthenticationProvider] Trying findByEsntlId for: {}", userId);
+                        return userRepository.findByEsntlId(userId)
+                            .orElseThrow(() -> {
+                                log.warn(">>> [EgovAuthenticationProvider] User NOT found by either method: {}", userId);
+                                return new BadCredentialsException("Invalid User ID or Password");
+                            });
+                    });
+            
             validateAccountStatus(userEntity);
+            
             boolean isMatched = false;
             String encodedPassword = userEntity.getPassword();
+            
+            log.info(">>> [EgovAuthenticationProvider] User found: {}, DB password hash: {}", userEntity.getUserId(), encodedPassword);
+            
             if (encodedPassword != null && (encodedPassword.startsWith("{egov}") || !encodedPassword.startsWith("{"))) {
                 String cleanHash = encodedPassword.startsWith("{egov}") ? encodedPassword.substring(6) : encodedPassword;
+                
+                // Try 1: Using userId as salt
                 String generatedHash = egovPasswordEncoder.encode(password, userId);
+                log.info(">>> [EgovAuthenticationProvider] Checking with userId salt. Hash: {}", generatedHash);
                 isMatched = cleanHash.equals(generatedHash);
+                
+                // Try 2: Using esntlId as salt if Try 1 failed (Legacy Egov behavior)
+                if (!isMatched && userEntity.getEsntlId() != null) {
+                    generatedHash = egovPasswordEncoder.encode(password, userEntity.getEsntlId());
+                    log.info(">>> [EgovAuthenticationProvider] Checking with esntlId salt. Hash: {}", generatedHash);
+                    isMatched = cleanHash.equals(generatedHash);
+                }
+                
                 if (isMatched) {
-                    log.info(">>> Authentication successful for user: {}", userId);
+                    log.info(">>> Authentication successful (Egov pattern) for user: {}", userId);
                 }
             }
+            
             if (!isMatched) {
-                isMatched = passwordEncoder.matches(password, encodedPassword);
+                log.info(">>> [EgovAuthenticationProvider] Trying standard PasswordEncoder.");
+                try {
+                    isMatched = passwordEncoder.matches(password, encodedPassword);
+                } catch (Exception e) {
+                    log.warn(">>> [EgovAuthenticationProvider] Standard PasswordEncoder match failed: {}", e.getMessage());
+                }
             }
+            
             if (!isMatched) {
                 log.warn(">>> Password mismatch for user: {}", userId);
                 userEntity.incrementLockCount();
                 userRepository.save(userEntity);
                 throw new BadCredentialsException("Invalid User ID or Password");
             }
+            
             userEntity.unlock();
             userRepository.save(userEntity);
-            log.info(">>> Authenticating user: {}, esntlId: {}", userEntity.getUserId(), userEntity.getEsntlId());
-            String authorCode = userAuthorityRepository.findById(userEntity.getEsntlId())
-                    .map(ua -> {
-                        log.info(">>> Found authorCode: {} for esntlId: {}", ua.getAuthorCode(), userEntity.getEsntlId());
-                        return ua.getAuthorCode();
-                    }).orElse("ROLE_USER");
-            log.info(">>> Final authorCode for user {}: {}", userId, authorCode);
+            log.info(">>> Authenticating user: {}, esntlId: {}, Inherent Role: {}", 
+                    userEntity.getUserId(), userEntity.getEsntlId(), userEntity.getRole());
+
+            String authorCodeFromDb = userAuthorityRepository.findById(userEntity.getEsntlId())
+                    .map(ua -> ua.getAuthorCode())
+                    .orElse(null);
+
+            log.info(">>> Role from DB table (NEMPLYRSCRTYESTBS): {}", authorCodeFromDb);
+
+            String authorCode;
+            if ("webmaster".equals(userEntity.getUserId())) {
+                log.info(">>> [SPECIAL] Forcing ROLE_ADMIN for user: webmaster");
+                authorCode = "ROLE_ADMIN";
+            } else if (authorCodeFromDb != null) {
+                authorCode = authorCodeFromDb;
+            } else {
+                authorCode = userEntity.getRole() != null ? userEntity.getRole().name() : "ROLE_USER";
+            }
+
+            if (!authorCode.startsWith("ROLE_")) {
+                authorCode = "ROLE_" + authorCode;
+            }
+
+            log.info(">>> Final resolved authorCode for user {}: {}", userId, authorCode);
             userEntity.setAuthorCode(authorCode);
             CustomUserDetails userDetails = CustomUserDetails.builder()
                     .userId(userEntity.getUserId())

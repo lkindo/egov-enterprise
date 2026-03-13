@@ -19,11 +19,11 @@ const commentService = {
     deleteComment: async (id: number): Promise<void> =>
         client.delete<void>(`/v1/comments/${id}`),
 
-    getAdminCommentList: async (params: unknown): Promise<unknown> =>
-        client.get('/admin/cop/cmt/selectCommentList.do', { params }),
+    getAdminCommentList: async (params: { pageIndex?: number; searchKeyword?: string }): Promise<any> =>
+        client.get('/api/v1/admin/system/comments', { params }),
 
-    deleteAdminComment: async (commentNo: number): Promise<void> =>
-        client.delete('/admin/cop/cmt/deleteComment.do', { params: { commentNo } }),
+    deleteAdminComment: async (id: number): Promise<void> =>
+        client.delete(`/api/v1/admin/system/comments/${id}`),
 };
 
 export default commentService;
