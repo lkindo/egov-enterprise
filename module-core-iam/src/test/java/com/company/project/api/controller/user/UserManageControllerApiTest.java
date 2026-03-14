@@ -3,7 +3,6 @@ package com.company.project.api.controller.user;
 import com.company.project.service.code.CommonCodeService;
 import com.company.project.service.group.GroupManageService;
 import com.company.project.service.usermanagement.UserManageService;
-import com.company.project.service.usermanagement.dto.UserManageDto;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

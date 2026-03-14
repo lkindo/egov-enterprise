@@ -197,9 +197,6 @@ class BottleneckIdentificationTest {
     }
     long withCacheDuration = System.currentTimeMillis() - withCacheStartTime;
 
-    double noCacheTPS = (double) numberOfRequests / (Math.max(noCacheDuration, 1) / 1000.0);
-    double withCacheTPS = (double) numberOfRequests / (Math.max(withCacheDuration, 1) / 1000.0);
-    
     System.out.printf("캐시 성능 비교 - 캐시 미사용: %d ms, 캐시 사용: %d ms%n", noCacheDuration, withCacheDuration);
     // Mock 환경이므로 캐시 효과가 없을 수 있음. 에러 없이 통과하는 것에 의의를 둠.
   }

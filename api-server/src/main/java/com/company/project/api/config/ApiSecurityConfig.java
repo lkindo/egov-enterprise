@@ -1,6 +1,6 @@
 package com.company.project.api.config;
 
-import com.company.project.security.service.EgovAuthenticationProvider;
+import com.company.project.security.iam.EgovAuthenticationProvider;
 import com.company.project.security.jwt.JwtAuthenticationFilter;
 import com.company.project.security.jwt.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;

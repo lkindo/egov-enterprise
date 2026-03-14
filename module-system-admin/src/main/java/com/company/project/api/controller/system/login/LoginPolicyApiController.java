@@ -15,14 +15,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 로그인 정책 관리를 위한 컨트롤러 (Admin)
+ * 로그인 정책 관리를 위한 API 컨트롤러
  */
-@Tag(name = "LoginPolicyAdmin", description = "로그인 정책 관리 API (Admin)")
+@Tag(name = "Login Policy Management", description = "로그인 정책 관리 API (Admin)")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin/system/login-policies")
 @RequiredArgsConstructor
-public class LoginPolicyAdminController {
+public class LoginPolicyApiController {
 
     private final LoginPolicyManageService loginPolicyManageService;
     private final EgovPropertyService propertiesService;

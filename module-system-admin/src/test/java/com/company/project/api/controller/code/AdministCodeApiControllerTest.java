@@ -1,32 +1,31 @@
-package com.company.project.api.controller.system.code;
+package com.company.project.api.controller.code;
 
 import com.company.project.service.code.AdministCodeService;
 import com.company.project.service.code.dto.AdministCodeDto;
-import com.company.project.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AdministCodeAdminController.class)
+@WebMvcTest(AdministCodeApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("AdministCodeAdminController 테스트")
-class AdministCodeAdminControllerTest {
+@DisplayName("AdministCodeApiController 테스트")
+class AdministCodeApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -34,43 +33,38 @@ class AdministCodeAdminControllerTest {
     @MockitoBean
     private AdministCodeService administCodeService;
 
-    @MockitoBean
-    private JwtTokenProvider jwtTokenProvider;
-
     @Test
     @DisplayName("행정코드 목록 조회 성공")
     void getAdministCodeList_Success() throws Exception {
-        // given
+        // Given
         AdministCodeDto dto = AdministCodeDto.builder()
                 .administZoneCode("1100000000")
                 .administZoneNm("서울특별시")
                 .build();
-        Page<AdministCodeDto> page = new PageImpl<>(Collections.singletonList(dto));
+        Page<AdministCodeDto> page = new PageImpl<>(List.of(dto), PageRequest.of(0, 10), 1);
         given(administCodeService.getAdministCodeList(anyString(), any())).willReturn(page);
 
-        // when & then
+        // When & Then
         mockMvc.perform(get("/api/v1/admin/system/codes/administ")
-                        .param("pageIndex", "1")
-                        .param("pageUnit", "10")
-                        .contentType(MediaType.APPLICATION_JSON))
+                .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.resultList[0].administZoneNm").value("서울특별시"));
+                .andExpect(jsonPath("$.data.resultList[0].administZoneCode").value("1100000000"));
     }
 
     @Test
     @DisplayName("행정코드 상세 조회 성공")
     void getAdministCodeDetail_Success() throws Exception {
-        // given
+        // Given
         AdministCodeDto dto = AdministCodeDto.builder()
                 .administZoneCode("1100000000")
                 .administZoneNm("서울특별시")
                 .build();
         given(administCodeService.getAdministCodeDetail("1100000000")).willReturn(dto);
 
-        // when & then
+        // When & Then
         mockMvc.perform(get("/api/v1/admin/system/codes/administ/1100000000")
-                        .contentType(MediaType.APPLICATION_JSON))
+                .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.administZoneNm").value("서울특별시"));

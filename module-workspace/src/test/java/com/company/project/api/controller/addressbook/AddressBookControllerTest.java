@@ -1,6 +1,5 @@
 package com.company.project.api.controller.addressbook;
 
-import com.company.project.core.response.ApiResponse;
 import com.company.project.service.addressbook.AddressBookService;
 import com.company.project.service.addressbook.dto.AddressBookDto;
 import com.company.project.service.addressbook.dto.AddressBookUserDto;

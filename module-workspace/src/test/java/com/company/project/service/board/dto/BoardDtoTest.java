@@ -55,7 +55,7 @@ class BoardDtoTest {
     @Test
     @DisplayName("BoardSearchResult에서 BoardDto로 변환 테스트")
     void fromSearchResultTest() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.of(2024, 3, 14, 12, 0);
         BoardSearchResult result = BoardSearchResult.builder()
                 .nttId(1L)
                 .bbsId("BBS_001")
@@ -87,7 +87,7 @@ class BoardDtoTest {
     @Test
     @DisplayName("BoardDetailResult에서 BoardDto로 변환 테스트")
     void fromDetailResultTest() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.of(2024, 3, 14, 12, 0);
         BoardDetailResult detail = BoardDetailResult.builder()
                 .nttId(1L)
                 .bbsId("BBS_001")

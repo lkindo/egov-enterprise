@@ -23,8 +23,6 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
-import org.springframework.beans.factory.annotation.Autowired;
-import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.util.Properties;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;

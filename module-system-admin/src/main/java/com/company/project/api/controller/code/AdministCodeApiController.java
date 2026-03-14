@@ -1,10 +1,10 @@
-package com.company.project.api.controller.system.code;
+package com.company.project.api.controller.code;
 
-import com.company.project.service.code.AdministCodeService;
-import com.company.project.service.code.dto.AdministCodeDto;
-import com.company.project.security.service.CustomUserDetails;
 import com.company.project.core.response.ApiResponse;
 import com.company.project.core.response.PageResponse;
+import com.company.project.security.service.CustomUserDetails;
+import com.company.project.service.code.AdministCodeService;
+import com.company.project.service.code.dto.AdministCodeDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +17,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 행정코드 관리 API 컨트롤러 (Admin)
+ * 행정코드 관리 API 컨트롤러
  */
-@Tag(name = "AdministCodeAdmin", description = "행정코드 관리 API (Admin)")
+@Tag(name = "Administrative Code", description = "행정코드 관리 API")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin/system/codes/administ")
 @RequiredArgsConstructor
-public class AdministCodeAdminController {
+public class AdministCodeApiController {
 
     private final AdministCodeService administCodeService;
 
@@ -50,23 +50,21 @@ public class AdministCodeAdminController {
 
     @Operation(summary = "행정코드 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createAdministCode(@RequestBody AdministCodeDto dto) throws Exception {
-        String userId = getCurrentUserId();
-        String newCode = administCodeService.createAdministCode(dto, userId);
-        return ResponseEntity.ok(ApiResponse.success(newCode));
+    public ResponseEntity<ApiResponse<Void>> createAdministCode(@RequestBody AdministCodeDto dto) {
+        administCodeService.createAdministCode(dto, getCurrentUserId());
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "행정코드 수정")
     @PutMapping("/{code}")
-    public ResponseEntity<ApiResponse<Void>> updateAdministCode(@PathVariable String code, @RequestBody AdministCodeDto dto) throws Exception {
-        String userId = getCurrentUserId();
-        administCodeService.updateAdministCode(code, dto, userId);
+    public ResponseEntity<ApiResponse<Void>> updateAdministCode(@PathVariable String code, @RequestBody AdministCodeDto dto) {
+        administCodeService.updateAdministCode(code, dto, getCurrentUserId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "행정코드 삭제")
     @DeleteMapping("/{code}")
-    public ResponseEntity<ApiResponse<Void>> deleteAdministCode(@PathVariable String code) throws Exception {
+    public ResponseEntity<ApiResponse<Void>> deleteAdministCode(@PathVariable String code) {
         administCodeService.deleteAdministCode(code);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

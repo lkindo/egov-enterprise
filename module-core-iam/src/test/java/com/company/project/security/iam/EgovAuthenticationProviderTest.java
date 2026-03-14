@@ -1,9 +1,10 @@
-package com.company.project.security.service;
+package com.company.project.security.iam;
 
 import com.company.project.domain.auth.UserAuthorityRepository;
 import com.company.project.domain.auth.UserAuthority;
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;
+import com.company.project.security.service.EgovPasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,19 +60,24 @@ class EgovAuthenticationProviderTest {
     void authenticate_success_egov() {
         // Given
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "password");
-        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
-        when(egovPasswordEncoder.encode("password", "testuser")).thenReturn("hashedPassword");
+        lenient().when(
+userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(
+egovPasswordEncoder.encode("password", "testuser")).thenReturn("hashedPassword");
         
-        UserAuthority userAuthority = new UserAuthority();
-        userAuthority.setAuthorCode("ROLE_USER");
-        when(userAuthorityRepository.findById("USR_0000000000001")).thenReturn(Optional.of(userAuthority));
+        UserAuthority userAuthority = UserAuthority.builder()
+                .uniqId("USR_0000000000001")
+                .authorCode("ROLE_USER")
+                .build();
+        lenient().when(
+userAuthorityRepository.findById("USR_0000000000001")).thenReturn(Optional.of(userAuthority));
 
         // When
         Authentication result = authenticationProvider.authenticate(auth);
 
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.getName()).isEqualTo("testuser");
+        assertThat(result.getName()).isEqualTo("USR_0000000000001");
         assertThat(result.getAuthorities()).extracting("authority").contains("ROLE_USER");
         verify(userRepository).save(any(User.class)); // Unlock and save
     }
@@ -81,9 +87,12 @@ class EgovAuthenticationProviderTest {
     void authenticate_fail_wrongPassword() {
         // Given
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "wrongpassword");
-        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
-        when(egovPasswordEncoder.encode("wrongpassword", "testuser")).thenReturn("wrongHash");
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+        lenient().when(
+userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(
+egovPasswordEncoder.encode("wrongpassword", "testuser")).thenReturn("wrongHash");
+        lenient().when(
+passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         // When & Then
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
@@ -96,8 +105,10 @@ class EgovAuthenticationProviderTest {
     void authenticate_fail_userNotFound() {
         // Given
         Authentication auth = new UsernamePasswordAuthenticationToken("nonexistent", "password");
-        when(userRepository.findById("nonexistent")).thenReturn(Optional.empty());
-        when(userRepository.findByEsntlId("nonexistent")).thenReturn(Optional.empty());
+        lenient().when(
+userRepository.findById("nonexistent")).thenReturn(Optional.empty());
+        lenient().when(
+userRepository.findByEsntlId("nonexistent")).thenReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
@@ -110,7 +121,8 @@ class EgovAuthenticationProviderTest {
         // Given
         testUser.setLockAt("Y");
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "password");
-        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(
+userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
 
         // When & Then
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
@@ -123,9 +135,12 @@ class EgovAuthenticationProviderTest {
         // Given
         testUser.setUserId("webmaster");
         Authentication auth = new UsernamePasswordAuthenticationToken("webmaster", "password");
-        when(userRepository.findById("webmaster")).thenReturn(Optional.of(testUser));
-        when(egovPasswordEncoder.encode("password", "webmaster")).thenReturn("hashedPassword");
-        when(userAuthorityRepository.findById(anyString())).thenReturn(Optional.empty());
+        lenient().when(
+userRepository.findById("webmaster")).thenReturn(Optional.of(testUser));
+        lenient().when(
+egovPasswordEncoder.encode("password", "webmaster")).thenReturn("hashedPassword");
+        lenient().when(
+userAuthorityRepository.findById(anyString())).thenReturn(Optional.empty());
 
         // When
         Authentication result = authenticationProvider.authenticate(auth);

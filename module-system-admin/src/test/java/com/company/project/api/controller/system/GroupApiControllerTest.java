@@ -1,7 +1,7 @@
 package com.company.project.api.controller.system;
 
-import com.company.project.service.auth.RoleManageService;
-import com.company.project.service.auth.dto.RoleManageDto;
+import com.company.project.service.group.GroupManageService;
+import com.company.project.service.group.dto.GroupManageDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,29 +16,29 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(RoleAdminController.class)
+@WebMvcTest(GroupApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("RoleAdminController 테스트")
-class RoleAdminControllerTest {
+@DisplayName("GroupApiController 테스트")
+class GroupApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private RoleManageService roleManageService;
+    private GroupManageService groupManageService;
 
-    private final String BASE_URL = "/api/v1/admin/system/roles";
+    private final String BASE_URL = "/api/v1/admin/system/groups";
 
     @Test
-    @DisplayName("롤 상세 조회 성공")
-    void getRole_Success() throws Exception {
-        given(roleManageService.selectRole(anyString())).willReturn(
-                RoleManageDto.builder().roleCode("ROLE_USER").roleNm("User").build()
+    @DisplayName("그룹 상세 조회 성공")
+    void getGroup_Success() throws Exception {
+        given(groupManageService.selectGroup(anyString())).willReturn(
+                GroupManageDto.builder().groupId("group1").groupNm("Group One").build()
         );
 
-        mockMvc.perform(get(BASE_URL + "/ROLE_USER")
+        mockMvc.perform(get(BASE_URL + "/group1")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.roleNm").value("User"));
+                .andExpect(jsonPath("$.data.groupNm").value("Group One"));
     }
 }

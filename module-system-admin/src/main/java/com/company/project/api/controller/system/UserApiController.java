@@ -15,11 +15,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
-@Tag(name = "UserAdminController", description = "시스템 사용자 관리 API (관리자용)")
+/**
+ * 시스템 사용자 관리 API 컨트롤러
+ */
+@Tag(name = "User Management", description = "시스템 사용자 관리 API (Admin)")
 @RestController
 @RequestMapping("/api/v1/admin/system/users")
 @RequiredArgsConstructor
-public class UserAdminController {
+public class UserApiController {
 
     private final UserManageService userManageService;
 

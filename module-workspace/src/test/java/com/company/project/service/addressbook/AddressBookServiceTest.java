@@ -5,15 +5,14 @@ import com.company.project.domain.addressbook.AddressBookRepository;
 import com.company.project.domain.addressbook.AddressBookUserRepository;
 import com.company.project.service.addressbook.dto.AddressBookDto;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -25,7 +24,6 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
 
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -46,8 +44,17 @@ class AddressBookServiceTest {
     @Mock(name = "egovAdbkUserIdGnrService")
     private EgovIdGnrService egovAdbkUserIdGnrService;
 
-    @InjectMocks
     private AddressBookServiceImpl addressBookService;
+
+    @BeforeEach
+    void setUp() {
+        addressBookService = new AddressBookServiceImpl(
+            addressBookRepository,
+            addressBookUserRepository,
+            egovAdbkIdGnrService,
+            egovAdbkUserIdGnrService
+        );
+    }
 
     @Test
     @DisplayName("주소록 목록 조회 성공")

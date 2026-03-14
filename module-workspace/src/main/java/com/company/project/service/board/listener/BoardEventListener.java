@@ -1,6 +1,5 @@
 package com.company.project.service.board.listener;
 
-import com.company.project.domain.board.Board;
 import com.company.project.domain.board.BoardRepository;
 import com.company.project.domain.comment.CommentRepository;
 import com.company.project.service.comment.event.CommentCreatedEvent;

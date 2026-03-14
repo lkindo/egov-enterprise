@@ -2,7 +2,6 @@ package com.company.project.domain.board;
 
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;

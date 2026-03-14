@@ -18,7 +18,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
     const loadData = async (wrd: string = searchWrd, page: number = 1) => {
         try {
             setLoading(true);
-            const res = await codeAdminService.getAdministCodes({ searchWrd: wrd, pageIndex: page });
+            const res = await codeAdminService.getAdministCodeList({ searchWrd: wrd, pageIndex: page });
             setData(res.list || []);
             setTotal(res.totalCount || 0);
         } catch (error) {

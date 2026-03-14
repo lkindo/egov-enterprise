@@ -16,7 +16,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
-import java.util.Locale;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;

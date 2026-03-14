@@ -49,10 +49,10 @@ class MyPageApiControllerTest {
         given(myPageService.getActiveMyPageContents()).willReturn(Collections.singletonList(dto));
 
         // when & then
-        mockMvc.perform(get("/api/v1/workspace/mypage/contents")
+        mockMvc.perform(get("/api/v1/admin/workspace/mypage/contents")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].cntntsNm").value("테스트 콘텐츠"));
+                .andExpect(jsonPath("$.data[0].cntntsNm").value("테스트 콘텐츠"));
     }
 
     @Test
@@ -66,13 +66,13 @@ class MyPageApiControllerTest {
         given(myPageService.createContent(any())).willReturn("MYP002");
 
         // when & then
-        mockMvc.perform(post("/api/v1/workspace/mypage/contents")
+        mockMvc.perform(post("/api/v1/admin/workspace/mypage/contents")
                         .with(csrf())
                         .content(objectMapper.writeValueAsString(dto))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.id").value("MYP002"));
+                .andExpect(jsonPath("$.data").value("MYP002"));
     }
 
     @Test
@@ -80,7 +80,7 @@ class MyPageApiControllerTest {
     @DisplayName("마이페이지 콘텐츠 삭제 API 테스트")
     void deleteContent_Success() throws Exception {
         // when & then
-        mockMvc.perform(delete("/api/v1/workspace/mypage/contents/MYP001")
+        mockMvc.perform(delete("/api/v1/admin/workspace/mypage/contents/MYP001")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

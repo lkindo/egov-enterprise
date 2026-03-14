@@ -4,8 +4,6 @@ import com.company.project.domain.system.content.community.Community;
 import com.company.project.domain.system.content.community.CommunityRepository;
 import com.company.project.service.system.content.community.dto.CommunityDto;
 import com.querydsl.core.types.EntityPath;
-import com.querydsl.core.types.OrderSpecifier;
-import com.querydsl.core.types.Predicate;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -18,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -48,7 +44,7 @@ class CommunityServiceImplTest {
     @DisplayName("커뮤니티 목록 조회 성공")
     @SuppressWarnings("unchecked")
     void getCommunityList_Success() {
-        JPAQuery query = mock(JPAQuery.class);
+        JPAQuery<Community> query = mock(JPAQuery.class);
         given(queryFactory.selectFrom(any(EntityPath.class))).willReturn(query);
         given(query.where((com.querydsl.core.types.Predicate) any())).willReturn(query);
         given(query.offset(anyLong())).willReturn(query);
@@ -114,7 +110,7 @@ class CommunityServiceImplTest {
     @DisplayName("포틀릿 커뮤니티 목록 조회")
     @SuppressWarnings("unchecked")
     void getCommunityListPortlet_Success() {
-        JPAQuery query = mock(JPAQuery.class);
+        JPAQuery<Community> query = mock(JPAQuery.class);
         given(queryFactory.selectFrom(any(EntityPath.class))).willReturn(query);
         given(query.where((com.querydsl.core.types.Predicate) any())).willReturn(query);
         given(query.orderBy((com.querydsl.core.types.OrderSpecifier<?>) any())).willReturn(query);

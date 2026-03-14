@@ -1,8 +1,7 @@
 package com.company.project.api.controller.system;
 
-import com.company.project.service.auth.AuthorManageService;
-import com.company.project.service.auth.dto.AuthorManageDto;
-import com.company.project.service.menu.MenuService;
+import com.company.project.service.usermanagement.UserManageService;
+import com.company.project.service.usermanagement.dto.UserManageDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,32 +16,29 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AuthorAdminController.class)
+@WebMvcTest(UserApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("AuthorAdminController 테스트")
-class AuthorAdminControllerTest {
+@DisplayName("UserApiController 테스트")
+class UserApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private AuthorManageService authorManageService;
+    private UserManageService userManageService;
 
-    @MockitoBean
-    private MenuService menuService;
-
-    private final String BASE_URL = "/api/v1/admin/system/authorities";
+    private final String BASE_URL = "/api/v1/admin/system/users";
 
     @Test
-    @DisplayName("권한 상세 조회 성공")
-    void getAuthor_Success() throws Exception {
-        given(authorManageService.selectAuthor(anyString())).willReturn(
-                AuthorManageDto.builder().authorCode("ROLE_ADMIN").authorNm("Administrator").build()
+    @DisplayName("사용자 상세 조회 성공")
+    void getUser_Success() throws Exception {
+        given(userManageService.selectUser(anyString())).willReturn(
+                UserManageDto.builder().userId("user1").userNm("User One").build()
         );
 
-        mockMvc.perform(get(BASE_URL + "/ROLE_ADMIN")
+        mockMvc.perform(get(BASE_URL + "/user1")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.authorNm").value("Administrator"));
+                .andExpect(jsonPath("$.data.userNm").value("User One"));
     }
 }

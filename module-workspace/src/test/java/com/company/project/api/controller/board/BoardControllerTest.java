@@ -1,6 +1,5 @@
 package com.company.project.api.controller.board;
 
-import com.company.project.core.response.ApiResponse;
 import com.company.project.service.board.BoardService;
 import com.company.project.service.board.dto.BoardDto;
 import com.company.project.service.board.dto.BoardSaveRequest;

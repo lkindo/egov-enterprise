@@ -155,8 +155,6 @@ class LoadTest {
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
     List<Future<Boolean>> futures = new ArrayList<>();
 
-    long startTime = System.currentTimeMillis();
-
     for (int i = 0; i < numberOfRequests; i++) {
       final int requestId = i;
       Future<Boolean> future = executorService.submit(() -> {
@@ -189,8 +187,6 @@ class LoadTest {
     }
 
     latch.await(30, TimeUnit.SECONDS);
-    long endTime = System.currentTimeMillis();
-    long duration = endTime - startTime;
     
     long successfulRequests = futures.stream()
         .map(future -> {
@@ -203,7 +199,7 @@ class LoadTest {
         .filter(Boolean::booleanValue)
         .count();
 
-    System.out.printf("회원가입 부하 테스트 결과 - 요청: %d, 성공: %d, 소요: %d ms%n", numberOfRequests, successfulRequests, duration);
+    System.out.printf("회원가입 부하 테스트 결과 - 요청: %d, 성공: %d%n", numberOfRequests, successfulRequests);
     assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.90));
   }
 
@@ -213,8 +209,6 @@ class LoadTest {
     int numberOfRequests = 200;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
     List<Future<Boolean>> futures = new ArrayList<>();
-
-    long startTime = System.currentTimeMillis();
 
     for (int i = 0; i < numberOfRequests; i++) {
       final String userId = "perfUser" + (i % 10); 
@@ -235,8 +229,6 @@ class LoadTest {
     }
 
     latch.await(30, TimeUnit.SECONDS);
-    long endTime = System.currentTimeMillis();
-    long duration = endTime - startTime;
     
     long successfulRequests = futures.stream()
         .map(future -> {
@@ -249,7 +241,7 @@ class LoadTest {
         .filter(Boolean::booleanValue)
         .count();
 
-    System.out.printf("단건 조회 부하 테스트 결과 - 요청: %d, 성공: %d, 소요: %d ms%n", numberOfRequests, successfulRequests, duration);
+    System.out.printf("단건 조회 부하 테스트 결과 - 요청: %d, 성공: %d%n", numberOfRequests, successfulRequests);
     assertThat(successfulRequests).isGreaterThanOrEqualTo((long) (numberOfRequests * 0.95));
   }
 
@@ -259,8 +251,6 @@ class LoadTest {
     int numberOfRequests = 75;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
     List<Future<Boolean>> futures = new ArrayList<>();
-
-    long startTime = System.currentTimeMillis();
 
     for (int i = 0; i < numberOfRequests; i++) {
       final int pageNum = i % 5; 
@@ -281,8 +271,6 @@ class LoadTest {
     }
 
     latch.await(30, TimeUnit.SECONDS);
-    long endTime = System.currentTimeMillis();
-    long duration = endTime - startTime;
     
     long successfulRequests = futures.stream()
         .map(f -> {
@@ -298,8 +286,6 @@ class LoadTest {
     int numberOfRequests = 150;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
     List<Future<Boolean>> futures = new ArrayList<>();
-
-    long startTime = System.currentTimeMillis();
 
     for (int i = 0; i < numberOfRequests; i++) {
       final int requestType = i % 10; 
@@ -346,8 +332,6 @@ class LoadTest {
     }
 
     latch.await(30, TimeUnit.SECONDS);
-    long endTime = System.currentTimeMillis();
-    long duration = endTime - startTime;
     
     long successfulRequests = futures.stream().map(f -> {
       try { return f.get(1, TimeUnit.SECONDS); } catch(Exception e) { return false; }

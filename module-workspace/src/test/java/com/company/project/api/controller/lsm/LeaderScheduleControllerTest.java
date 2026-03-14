@@ -1,6 +1,5 @@
 package com.company.project.api.controller.lsm;
 
-import com.company.project.core.response.ApiResponse;
 import com.company.project.service.schedule.EgovLeaderScheduleService;
 import com.company.project.service.schedule.dto.LeaderScheduleDto;
 import com.company.project.service.schedule.dto.LeaderStatusDto;

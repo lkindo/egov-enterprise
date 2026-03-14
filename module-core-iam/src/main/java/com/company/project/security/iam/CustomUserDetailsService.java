@@ -1,4 +1,6 @@
-package com.company.project.security.service;
+package com.company.project.security.iam;
+
+import com.company.project.security.service.CustomUserDetails;
 
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;

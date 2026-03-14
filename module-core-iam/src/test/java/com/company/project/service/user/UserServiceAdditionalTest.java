@@ -3,7 +3,6 @@ package com.company.project.service.user;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.auth.UserAuthorityRepository;
-import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.service.user.dto.UserDto;
@@ -20,7 +19,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)

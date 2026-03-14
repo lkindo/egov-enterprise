@@ -15,12 +15,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+/**
+ * 시스템 권한 그룹(Author) 관리 API 컨트롤러
+ */
+@Tag(name = "Authority Management", description = "시스템 권한 그룹 관리 API (Admin)")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin/system/authorities")
 @RequiredArgsConstructor
-@Tag(name = "AuthorAdminController", description = "시스템 권한 그룹 관리 API (관리자용)")
-public class AuthorAdminController {
+public class AuthorApiController {
 
     private final AuthorManageService authorManageService;
     private final MenuService menuService;

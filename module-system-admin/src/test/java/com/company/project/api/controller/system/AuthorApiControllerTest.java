@@ -1,7 +1,8 @@
 package com.company.project.api.controller.system;
 
-import com.company.project.service.usermanagement.UserManageService;
-import com.company.project.service.usermanagement.dto.UserManageDto;
+import com.company.project.service.auth.AuthorManageService;
+import com.company.project.service.auth.dto.AuthorManageDto;
+import com.company.project.service.menu.MenuService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,29 +17,32 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(UserAdminController.class)
+@WebMvcTest(AuthorApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("UserAdminController 테스트")
-class UserAdminControllerTest {
+@DisplayName("AuthorApiController 테스트")
+class AuthorApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private UserManageService userManageService;
+    private AuthorManageService authorManageService;
 
-    private final String BASE_URL = "/api/v1/admin/system/users";
+    @MockitoBean
+    private MenuService menuService;
+
+    private final String BASE_URL = "/api/v1/admin/system/authorities";
 
     @Test
-    @DisplayName("사용자 상세 조회 성공")
-    void getUser_Success() throws Exception {
-        given(userManageService.selectUser(anyString())).willReturn(
-                UserManageDto.builder().userId("user1").userNm("User One").build()
+    @DisplayName("권한 상세 조회 성공")
+    void getAuthor_Success() throws Exception {
+        given(authorManageService.selectAuthor(anyString())).willReturn(
+                AuthorManageDto.builder().authorCode("ROLE_ADMIN").authorNm("Administrator").build()
         );
 
-        mockMvc.perform(get(BASE_URL + "/user1")
+        mockMvc.perform(get(BASE_URL + "/ROLE_ADMIN")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.userNm").value("User One"));
+                .andExpect(jsonPath("$.data.authorNm").value("Administrator"));
     }
 }

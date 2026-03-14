@@ -13,12 +13,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+/**
+ * 시스템 사용자 그룹 관리 API 컨트롤러
+ */
+@Tag(name = "User Group Management", description = "시스템 사용자 그룹 관리 API (Admin)")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin/system/groups")
 @RequiredArgsConstructor
-@Tag(name = "GroupAdminController", description = "시스템 사용자 그룹 관리 API (관리자용)")
-public class GroupAdminController {
+public class GroupApiController {
 
     private final GroupManageService groupManageService;
 

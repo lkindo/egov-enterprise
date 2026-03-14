@@ -1,4 +1,4 @@
-package com.company.project.api.controller.system.code;
+package com.company.project.api.controller.code;
 
 import com.company.project.service.code.CommonCodeService;
 import com.company.project.service.code.dto.CmmnClCodeDto;
@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 
-@Tag(name = "CodeAdmin", description = "공통코드 관리 API (Admin)")
+@Tag(name = "Common Code", description = "공통코드 관리 API")
 @RestController
 @RequestMapping("/api/v1/admin/system/codes")
 @RequiredArgsConstructor
-public class CodeAdminController {
+public class CommonCodeApiController {
 
     private final CommonCodeService commonCodeService;
     private final EgovPropertyService propertiesService;

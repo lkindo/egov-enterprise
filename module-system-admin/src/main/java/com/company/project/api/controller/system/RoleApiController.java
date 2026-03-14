@@ -13,12 +13,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+/**
+ * 시스템 권한(Role) 관리 API 컨트롤러
+ */
+@Tag(name = "Role Management", description = "시스템 권한(Role) 관리 API (Admin)")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin/system/roles")
 @RequiredArgsConstructor
-@Tag(name = "RoleAdminController", description = "시스템 권한(Role) 관리 API (관리자용)")
-public class RoleAdminController {
+public class RoleApiController {
 
     private final RoleManageService roleManageService;
 

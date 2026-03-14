@@ -96,7 +96,22 @@ tasks.register("jacocoRootReport", JacocoReport) {
         subproject.plugins.withType(JavaPlugin) {
             sourceDirectories.from(subproject.sourceSets.main.allSource.srcDirs)
             classDirectories.from(subproject.sourceSets.main.output.classesDirs.collect {
-                fileTree(dir: it, exclude: ["**/Q*.class", "**/Q*Entity.class"])
+                fileTree(dir: it, exclude: [
+                    "**/Q*.class",
+                    "**/Q*Entity.class",
+                    "**/*Request.class",
+                    "**/*Response.class",
+                    "**/*Dto.class",
+                    "**/dto/**",
+                    "**/*Config.class",
+                    "**/*Application.class",
+                    "**/*VO.class",
+                    "**/*DAO.class",
+                    "**/*Mapper.class",
+                    "**/*Initializer.class",
+                    "**/*Advice.class",
+                    "**/*RepositoryImpl.class"
+                ])
             })
         }
     }
