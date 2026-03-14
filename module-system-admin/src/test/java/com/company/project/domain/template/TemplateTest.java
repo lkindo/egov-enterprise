@@ -17,7 +17,7 @@ class TemplateTest {
                 .tmplatCours("/templates/main")
                 .tmplatSeCode("T01")
                 .useAt("Y")
-                .frstRegisterId("admin")
+                .createdBy("admin")
                 .build();
 
         assertThat(template.getTmplatId()).isEqualTo("TMP_001");
@@ -34,12 +34,11 @@ class TemplateTest {
                 .tmplatNm("Old Template")
                 .build();
 
-        template.update("New Template", "/new/path", "T02", "N", "user02");
+        template.update("New Template", "/new/path", "T02", "N");
 
         assertThat(template.getTmplatNm()).isEqualTo("New Template");
         assertThat(template.getTmplatCours()).isEqualTo("/new/path");
         assertThat(template.getTmplatSeCode()).isEqualTo("T02");
         assertThat(template.getUseAt()).isEqualTo("N");
-        assertThat(template.getLastUpdusrId()).isEqualTo("user02");
     }
 }

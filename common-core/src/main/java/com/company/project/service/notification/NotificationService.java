@@ -39,7 +39,7 @@ public class NotificationService implements EgovNotificationService {
     @Override
     @Transactional
     public String createNotification(String userId, NotificationDto dto) {
-        String id = "NTFC_" + String.format("%013d", System.currentTimeMillis());
+        String id = "NTFC_" + System.currentTimeMillis();
         Notification entity = Notification.builder()
                 .ntfcNo(id)
                 .ntfcSj(dto.getNtfcSj())

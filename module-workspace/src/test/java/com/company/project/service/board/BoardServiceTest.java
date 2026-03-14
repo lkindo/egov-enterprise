@@ -307,4 +307,28 @@ class BoardServiceTest {
 
         assertThat(nttId).isNotNull();
     }
+
+    @Test
+    @DisplayName("게시글 상세 조회 실패 - 존재하지 않는 게시글")
+    void getPostDetail_Fail_NotFound() {
+        // Given
+        when(boardRepository.findArticleDetail(999L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_001", 999L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ARTICLE_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("게시글 삭제 실패 - 존재하지 않는 게시글")
+    void deletePost_Fail_NotFound() {
+        // Given
+        when(boardRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> boardService.deletePost("BBS_001", 999L, "user01"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ARTICLE_NOT_FOUND);
+    }
 }

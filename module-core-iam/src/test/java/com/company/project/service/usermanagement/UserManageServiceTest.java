@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -59,7 +60,7 @@ class UserManageServiceTest {
         
         User user = createBaseUser("user1").userNm("User 1").build();
         Page<User> page = new PageImpl<>(List.of(user));
-        given(userRepository.findAll(any(Pageable.class))).willReturn(page);
+        given(userRepository.searchUsers(any(), any(), any(), any(Pageable.class))).willReturn(page);
 
         // When
         List<UserManageDto> result = userManageService.selectUserList(vo);
@@ -72,7 +73,9 @@ class UserManageServiceTest {
     @Test
     @DisplayName("사용자 총 갯수 조회")
     void selectUserListTotCnt_Success() {
-        given(userRepository.count()).willReturn(5L);
+        Page<User> page = new PageImpl<>(List.of(), PageRequest.of(0, 1), 5L);
+        given(userRepository.searchUsers(any(), any(), any(), any(Pageable.class))).willReturn(page);
+        
         int result = userManageService.selectUserListTotCnt(new ComDefaultVO());
         assertThat(result).isEqualTo(5);
     }

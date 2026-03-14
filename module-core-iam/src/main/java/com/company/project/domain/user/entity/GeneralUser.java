@@ -1,24 +1,25 @@
 package com.company.project.domain.user.entity;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.time.LocalDateTime;
 
 /**
- * ??? ??? ??? Entity
- * ?????????? NGNRLMBER
+ * 일반회원 정보 Entity
+ * 매핑 테이블: NGNRLMBER
  */
 @Entity
 @Table(name = "NGNRLMBER")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 public class GeneralUser extends BaseEntity {
 
     @Id
@@ -79,7 +80,8 @@ public class GeneralUser extends BaseEntity {
     @Column(name = "MIDDLE_TELNO", length = 4)
     private String middleTelno;
 
-    @Column(name = "SBSCRB_DE")
+    @CreatedDate
+    @Column(name = "SBSCRB_DE", updatable = false)
     private LocalDateTime sbscrbDe;
 
     @Column(name = "LOCK_AT", length = 1)
@@ -112,7 +114,6 @@ public class GeneralUser extends BaseEntity {
         this.mberFxnum = mberFxnum;
         this.mberEmailAdres = mberEmailAdres;
         this.middleTelno = middleTelno;
-        this.sbscrbDe = LocalDateTime.now();
         this.lockAt = lockAt;
         this.chgPwdLastPnttm = LocalDateTime.now();
     }

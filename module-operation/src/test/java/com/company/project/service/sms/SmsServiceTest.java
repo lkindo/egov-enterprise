@@ -39,7 +39,7 @@ class SmsServiceTest {
     private SmsRecptnRepository smsRecptnRepository;
 
     @Mock
-    private SmsSender smsSender;
+    private SmsAsyncProcessor smsAsyncProcessor;
 
     @InjectMocks
     private SmsService smsService;
@@ -99,7 +99,6 @@ class SmsServiceTest {
         
         when(smsRepository.save(any(Sms.class))).thenAnswer(i -> i.getArgument(0));
         when(smsRecptnRepository.save(any(SmsRecptn.class))).thenAnswer(i -> i.getArgument(0));
-        when(smsSender.send(anyString(), anyString(), anyString())).thenReturn(true);
 
         // When
         String smsId = smsService.sendSms("user01", dto);
@@ -108,7 +107,7 @@ class SmsServiceTest {
         assertThat(smsId).startsWith("SMS_");
         verify(smsRepository).save(any(Sms.class));
         verify(smsRecptnRepository).save(any(SmsRecptn.class));
-        verify(smsSender).send(eq("01011112222"), eq("01033334444"), eq("Test Message"));
+        verify(smsAsyncProcessor).processSending(eq(smsId), eq("01011112222"), eq("Test Message"));
     }
 
     @Test

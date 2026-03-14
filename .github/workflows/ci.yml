@@ -28,7 +28,22 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build and Test with Gradle
-        run: ./gradlew build jacocoTestReport -Dopenapi.export.path=api-docs.json
+        run: ./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json
+
+      - name: Upload Quality and Security Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports
+          path: |
+            **/build/reports/checkstyle
+            **/build/reports/dependency-check
+
+      - name: Upload JaCoCo Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: build/reports/jacoco/aggregated
 
       - name: Upload OpenAPI Spec
         uses: actions/upload-artifact@v4
@@ -104,13 +119,13 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: frontend
 
-      - name: Run Rigorous E2E Tests (including RBAC)
+      - name: Run Full E2E Tests
         run: |
           # Start frontend in background
           npm run dev -- -p 3001 &
           npx wait-on http://127.0.0.1:3001/login --timeout 60000
-          # Run ALL tests including our new RBAC check
-          npx playwright test e2e/login.spec.ts e2e/rbac_rigorous.spec.ts e2e/dashboard.spec.ts e2e/admin-user.spec.ts --workers=1
+          # Run ALL tests including new workspace flow
+          npx playwright test --workers=1
         working-directory: frontend
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1

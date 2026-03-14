@@ -9,6 +9,7 @@ import com.company.project.domain.sms.SmsRepository;
 import com.company.project.service.sms.dto.SmsDto;
 import com.company.project.service.sms.dto.SmsRecptnDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,10 @@ import java.util.Objects;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * SMS 서비스 구현체
+ */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -24,20 +29,23 @@ public class SmsService implements EgovSmsService {
 
     private final SmsRepository smsRepository;
     private final SmsRecptnRepository smsRecptnRepository;
-    private final SmsSender smsSender;
+    private final SmsAsyncProcessor smsAsyncProcessor;
 
     @Override
     public Page<SmsDto> getSmsList(String keyword, Pageable pageable) {
+        log.debug("Fetching SMS list with keyword: {}", keyword);
         return getSmsList("1", keyword, pageable); // Default to content search
     }
 
     @Override
     public Page<SmsDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable) {
+        log.debug("Searching SMS with condition: {}, keyword: {}", searchCondition, searchKeyword);
         return smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(SmsDto::from);
     }
 
     @Override
     public SmsDto getSms(String smsId) {
+        log.debug("Fetching SMS details for ID: {}", smsId);
         return smsRepository.findById(Objects.requireNonNull(smsId))
                 .map(SmsDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -46,7 +54,8 @@ public class SmsService implements EgovSmsService {
     @Override
     @Transactional
     public String sendSms(String userId, SmsDto dto) {
-        String smsId = "SMS_" + String.format("%013d", System.currentTimeMillis());
+        log.info("Sending SMS requested by user: {}, sender: {}", userId, dto.getTrnsmitTelno());
+        String smsId = "SMS_" + System.currentTimeMillis();
 
         Sms sms = Sms.builder()
                 .smsId(smsId)
@@ -57,6 +66,7 @@ public class SmsService implements EgovSmsService {
         smsRepository.save(Objects.requireNonNull(sms));
 
         if (dto.getRecipients() != null) {
+            log.info("Registering {} recipients for SMS ID: {}", dto.getRecipients().size(), smsId);
             for (SmsRecptnDto recptnDto : dto.getRecipients()) {
                 SmsRecptn recptn = SmsRecptn.builder()
                         .smsId(smsId)
@@ -64,17 +74,15 @@ public class SmsService implements EgovSmsService {
                         .resultCode("P") // Pending
                         .build();
                 smsRecptnRepository.save(Objects.requireNonNull(recptn));
-
-                // ??젣 SMS 諛쒖??泥섎??(??룞湲?泥섎???좊??媛??
-                try {
-                    smsSender.send(dto.getTrnsmitTelno(), recptnDto.getRecptnTelno(), dto.getTrnsmitCn());
-                    recptn.updateResult("S", "Success");
-                } catch (Exception e) {
-                    recptn.updateResult("F", e.getMessage());
-                }
             }
+            
+            // 비동기로 실제 발송 처리 요청
+            // 주의: 현재 트랜잭션이 커밋된 후에 가동되도록 보장하거나, 
+            // 별도 컴포넌트에서 REQUIRES_NEW로 조회하도록 설계됨
+            smsAsyncProcessor.processSending(smsId, dto.getTrnsmitTelno(), dto.getTrnsmitCn());
         }
 
+        log.info("SMS request registered successfully for ID: {}", smsId);
         return smsId;
     }
 

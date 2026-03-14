@@ -29,9 +29,8 @@ class AdministrationWordTest {
                 .administWordId("AWORD_001")
                 .build();
 
-        word.update("Updated Nm", "Eng", "Abrv", "Theme", "Domn", "Std", "Df", "Dc", "user02");
+        word.update("Updated Nm", "Eng", "Abrv", "Theme", "Domn", "Std", "Df", "Dc");
 
         assertThat(word.getAdministWordNm()).isEqualTo("Updated Nm");
-        assertThat(word.getLastModifiedBy()).isEqualTo("user02");
     }
 }

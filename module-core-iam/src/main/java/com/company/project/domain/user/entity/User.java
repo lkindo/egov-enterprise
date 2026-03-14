@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.envers.Audited;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.lang.NonNull;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -22,6 +24,7 @@ import java.util.Objects;
 @AllArgsConstructor
 @SuperBuilder
 @Audited
+@EntityListeners(AuditingEntityListener.class)
 public class User extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -126,18 +129,12 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "LOCK_LAST_PNTTM")
     private LocalDateTime lockLastDate;
 
-    @Column(name = "SBSCRB_DE")
+    @CreatedDate
+    @Column(name = "SBSCRB_DE", updatable = false)
     private LocalDateTime sbscrbDe;
 
     @Column(name = "CRTFC_DN_VALUE", length = 100)
     private String subDn;
-
-    @PrePersist
-    public void prePersist() {
-        if (this.sbscrbDe == null) {
-            this.sbscrbDe = LocalDateTime.now();
-        }
-    }
 
     public void update(String userNm, String passwordHint, String passwordCnsr,
             String emplNo, String ihidnum, String sexdstnCode, String brth,

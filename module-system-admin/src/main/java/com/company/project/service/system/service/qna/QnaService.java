@@ -34,7 +34,7 @@ public class QnaService implements EgovQnaService {
     @Override
     @Transactional
     public String createQna(String userId, QnaDto dto) {
-        String id = "QNA_" + String.format("%016d", System.currentTimeMillis());
+        String id = "QNA_" + System.currentTimeMillis();
         Qna entity = Qna.builder()
                 .qaId(id)
                 .qestnSj(dto.getQestnSj())

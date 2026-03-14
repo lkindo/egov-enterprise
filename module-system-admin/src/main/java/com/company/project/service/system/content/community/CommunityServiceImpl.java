@@ -45,7 +45,7 @@ public class CommunityServiceImpl implements CommunityService {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(qCommunity.frstRegisterPnttm.desc())
+                .orderBy(qCommunity.createdDate.desc())
                 .fetch();
 
         long totalCount = queryFactory
@@ -77,7 +77,6 @@ public class CommunityServiceImpl implements CommunityService {
                     .registSeCode("REGC01")
                     .tmplatId(dto.getTmplatId())
                     .useAt("Y")
-                    .frstRegisterId(userId)
                     .build();
             return CommunityDto.from(Objects
                     .requireNonNull(communityRepository.save(Objects.requireNonNull(community))));
@@ -96,8 +95,7 @@ public class CommunityServiceImpl implements CommunityService {
                 dto.getCmmntyNm(),
                 dto.getCmmntyIntrcn(),
                 dto.getTmplatId(),
-                dto.getUseAt(),
-                userId);
+                dto.getUseAt());
     }
 
     @Override
@@ -105,7 +103,7 @@ public class CommunityServiceImpl implements CommunityService {
     public void deleteCommunity(String cmmntyId, String userId) {
         Community community = communityRepository.findById(Objects.requireNonNull(cmmntyId))
                 .orElseThrow(() -> new IllegalArgumentException("Community not found: " + cmmntyId));
-        community.delete(userId);
+        community.delete();
     }
 
     @Override
@@ -114,7 +112,7 @@ public class CommunityServiceImpl implements CommunityService {
         return queryFactory
                 .selectFrom(qCommunity)
                 .where(qCommunity.useAt.eq("Y"))
-                .orderBy(qCommunity.frstRegisterPnttm.desc())
+                .orderBy(qCommunity.createdDate.desc())
                 .fetch()
                 .stream()
                 .map(CommunityDto::from)

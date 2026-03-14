@@ -94,6 +94,6 @@ class CommunityServiceTest {
         communityService.deleteCommunity("C1", "user");
 
         // Then
-        verify(community).delete("user");
+        verify(community).delete();
     }
 }

@@ -3,62 +3,42 @@ package com.company.project.domain.common;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
- * ??밴쉐??깅뻻, ??륁젟??깅뻻 ?癒?짗 疫꿸퀡以???袁る립 ?⑤벏???酉???
+ * 기본 시간 메타데이터 엔티티
  */
 @Getter
 @Setter
 @SuperBuilder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseTimeEntity {
 
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
     @CreatedDate
     @Column(name = "FRST_REGIST_PNTTM", updatable = false)
-    private LocalDateTime createdDate;
+    protected LocalDateTime createdDate;
 
     @LastModifiedDate
     @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastModifiedDate;
+    protected LocalDateTime lastModifiedDate;
 
-    public String getFrstRegisterPnttm() {
-        return createdDate != null ? createdDate.format(formatter) : null;
+    // 별칭 메서드 (전자정부 관례 대응)
+    public LocalDateTime getFrstRegisterPnttm() {
+        return createdDate;
     }
 
-    public String getLastUpdusrPnttm() {
-        return lastModifiedDate != null ? lastModifiedDate.format(formatter) : null;
-    }
-
-    public void setFrstRegisterPnttm(String pnttm) {
-        // Compatibility
-    }
-
-    public void setFrstRegisterPnttm(LocalDateTime pnttm) {
-        this.createdDate = pnttm;
-    }
-
-    public void setLastUpdtPnttm(String pnttm) {
-        // Compatibility
-    }
-
-    public void setLastUpdusrPnttm(String pnttm) {
-        // Compatibility
-    }
-
-    public void setLastUpdusrPnttm(LocalDateTime pnttm) {
-        this.lastModifiedDate = pnttm;
+    public LocalDateTime getLastUpdusrPnttm() {
+        return lastModifiedDate;
     }
 }

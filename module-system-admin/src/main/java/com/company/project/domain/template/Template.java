@@ -1,21 +1,21 @@
 package com.company.project.domain.template;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ??쀫탣??JPA Entity
- * ??뉕탢?????뵠?? COMTNTMPLATINFO
+ * 템플릿 정보 JPA Entity
  */
 @Entity(name = "CommonTemplate")
 @Table(name = "NTMPLATINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Template {
+@SuperBuilder
+public class Template extends BaseEntity {
 
     @Id
     @Column(name = "TMPLAT_ID", length = 20)
@@ -33,37 +33,10 @@ public class Template {
     @Column(name = "USE_AT", length = 1)
     private String useAt;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGISTER_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDUSR_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
-    @Builder
-    public Template(String tmplatId, String tmplatNm, String tmplatCours,
-            String tmplatSeCode, String useAt, String frstRegisterId) {
-        this.tmplatId = tmplatId;
+    public void update(String tmplatNm, String tmplatCours, String tmplatSeCode, String useAt) {
         this.tmplatNm = tmplatNm;
         this.tmplatCours = tmplatCours;
         this.tmplatSeCode = tmplatSeCode;
         this.useAt = useAt;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
-    }
-
-    public void update(String tmplatNm, String tmplatCours, String tmplatSeCode,
-            String useAt, String updusrId) {
-        this.tmplatNm = tmplatNm;
-        this.tmplatCours = tmplatCours;
-        this.tmplatSeCode = tmplatSeCode;
-        this.useAt = useAt;
-        this.lastUpdusrId = updusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }

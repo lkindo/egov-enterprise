@@ -403,9 +403,54 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("URL로 상위 메뉴 ID 조회 - 프로그램명 없음")
-    void getRootMenuIdByUrl_NoProgrm() {
-        when(programRepository.findByUrl(anyString())).thenReturn(Optional.empty());
-        assertThat(menuService.getRootMenuIdByUrl("/not-exist")).isNull();
+    @DisplayName("메뉴 계층 구조 조회 - modernRoute 우선순위 확인")
+    void getMenuHierarchy_ModernRoute_Priority() {
+        // Given
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn("admin");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+
+        Menu menu = Menu.builder().id(1L).menuNm("M1").upperMenuNo(0L).modernRoute("/modern").progrmFileNm("legacy").build();
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu));
+        when(menuAuthorityRepository.findAll()).thenReturn(Collections.emptyList());
+        when(programRepository.findAll()).thenReturn(Collections.emptyList());
+
+        // When
+        List<MenuDto> result = menuService.getMenuHierarchy();
+
+        // Then
+        assertThat(result.get(0).getChkURL()).isEqualTo("/modern");
+    }
+
+    @Test
+    @DisplayName("메뉴 계층 구조 조회 - 프로그램 URL이 /인 경우 #으로 변환")
+    void getMenuHierarchy_ProgramUrlRoot_ToHash() {
+        // Given
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn("admin");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+
+        Menu menu = Menu.builder().id(1L).menuNm("M1").upperMenuNo(0L).progrmFileNm("home").build();
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu));
+        when(menuAuthorityRepository.findAll()).thenReturn(Collections.emptyList());
+        
+        Program p = Program.builder().progrmFileNm("home").url("/").build();
+        when(programRepository.findAll()).thenReturn(List.of(p));
+
+        // When
+        List<MenuDto> result = menuService.getMenuHierarchy();
+
+        // Then
+        assertThat(result.get(0).getChkURL()).isEqualTo("#");
+    }
+
+    @Test
+    @DisplayName("메뉴 삭제 목록 - 빈 값 처리")
+    void deleteMenuManageList_Empty() {
+        menuService.deleteMenuManageList(null);
+        menuService.deleteMenuManageList("");
+        verify(menuRepository, never()).deleteAllById(any());
     }
 }

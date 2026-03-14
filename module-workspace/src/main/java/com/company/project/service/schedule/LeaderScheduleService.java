@@ -37,7 +37,7 @@ public class LeaderScheduleService implements EgovLeaderScheduleService {
     @Override
     @Transactional
     public String createLeaderSchedule(String userId, LeaderScheduleDto dto) {
-        String id = "LSCH_" + String.format("%014d", System.currentTimeMillis());
+        String id = "LSCH_" + System.currentTimeMillis();
         LeaderSchedule entity = LeaderSchedule.builder()
                 .scheduleId(id)
                 .scheduleSe(dto.getScheduleSe())

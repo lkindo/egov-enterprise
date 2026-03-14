@@ -30,9 +30,8 @@ class OnlineManualTest {
                 .onlineMnlId("MNL_001")
                 .build();
 
-        mnl.update("New Name", "002", "Df", "Dc", "user02");
+        mnl.update("New Name", "002", "Df", "Dc");
 
         assertThat(mnl.getOnlineMnlNm()).isEqualTo("New Name");
-        assertThat(mnl.getLastModifiedBy()).isEqualTo("user02");
     }
 }

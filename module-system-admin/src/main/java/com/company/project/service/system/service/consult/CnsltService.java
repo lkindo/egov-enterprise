@@ -40,7 +40,7 @@ public class CnsltService implements EgovCnsltService {
     @Override
     @Transactional
     public void insertCnslt(CnsltManageDto dto) {
-        String id = "CNSLT_" + String.format("%013d", System.currentTimeMillis());
+        String id = "CNSLT_" + System.currentTimeMillis();
         cnsltManageRepository.save(Objects.requireNonNull(CnsltManage.builder()
                 .cnsltId(id)
                 .cnsltSj(dto.getCnsltSj())
@@ -58,7 +58,7 @@ public class CnsltService implements EgovCnsltService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getCnsltSj(), dto.getCnsltCn(), dto.getOthbcAt(), dto.getWritngPassword(),
                 null, null, null, null, null, null,
-                null, null, dto.getWrterNm(), null, null);
+                null, null, dto.getWrterNm(), null);
     }
 
     @Override
@@ -72,6 +72,6 @@ public class CnsltService implements EgovCnsltService {
     public void answerCnslt(String cnsltId, String answerCn) {
         CnsltManage entity = cnsltManageRepository.findById(Objects.requireNonNull(cnsltId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.updateAnswer("2", answerCn, null);
+        entity.updateAnswer("2", answerCn);
     }
 }

@@ -37,7 +37,7 @@ class DeptJobEntityTest {
         assertThat(job.getDeptJobId()).isEqualTo("JOB_001");
         assertThat(job.getDeptJobNm()).isEqualTo("Initial Job");
 
-        job.update("BOX_002", "Updated Job", "Updated Content", "user01", "2", "FILE_001", "admin");
+        job.update("BOX_002", "Updated Job", "Updated Content", "user01", "2", "FILE_001");
         
         assertThat(job.getDeptJobbxId()).isEqualTo("BOX_002");
         assertThat(job.getDeptJobNm()).isEqualTo("Updated Job");
@@ -45,6 +45,5 @@ class DeptJobEntityTest {
         assertThat(job.getChargerId()).isEqualTo("user01");
         assertThat(job.getPriort()).isEqualTo("2");
         assertThat(job.getAtchFileId()).isEqualTo("FILE_001");
-        assertThat(job.getLastUpdusrId()).isEqualTo("admin");
     }
 }

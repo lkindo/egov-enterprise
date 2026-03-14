@@ -29,9 +29,8 @@ class WordDicaryTest {
                 .wordId("WORD_001")
                 .build();
 
-        word.update("New Word", "Eng", "Dc", "Syn", "user02");
+        word.update("New Word", "Eng", "Dc", "Syn");
 
         assertThat(word.getWordNm()).isEqualTo("New Word");
-        assertThat(word.getLastModifiedBy()).isEqualTo("user02");
     }
 }

@@ -51,7 +51,7 @@ public class MemoReportService implements EgovMemoReportService {
     @Override
     @Transactional
     public String createMemoReport(String userId, MemoReportDto dto) {
-        String id = "MRM_" + String.format("%013d", System.currentTimeMillis());
+        String id = "MRM_" + System.currentTimeMillis();
         MemoReport entity = MemoReport.builder()
                 .reprtId(id)
                 .reprtSj(dto.getReprtSj())

@@ -1,10 +1,10 @@
 package com.company.project.domain.isg;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "NINTNETSVC")
@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 @DynamicInsert
 @DynamicUpdate
-public class InternetSvcGuidance {
+public class InternetSvcGuidance extends BaseEntity {
 
     @Id
     @Column(name = "INTNET_SVC_ID", length = 20)
@@ -29,28 +29,9 @@ public class InternetSvcGuidance {
     @Column(name = "REFLCT_AT", length = 1)
     private String reflctAt;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM", updatable = false)
-    private LocalDateTime frstRegistPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdtPnttm;
-
-    @PrePersist
-    protected void onCreate() {
-        this.frstRegistPnttm = LocalDateTime.now();
-        this.lastUpdtPnttm = LocalDateTime.now();
-        if (this.reflctAt == null)
-            this.reflctAt = "N";
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.lastUpdtPnttm = LocalDateTime.now();
+    public void update(String intnetSvcNm, String intnetSvcDc, String reflctAt) {
+        this.intnetSvcNm = intnetSvcNm;
+        this.intnetSvcDc = intnetSvcDc;
+        this.reflctAt = reflctAt;
     }
 }

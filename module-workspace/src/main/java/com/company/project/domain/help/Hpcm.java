@@ -1,12 +1,10 @@
 package com.company.project.domain.help;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * 도움말 정보 Entity
@@ -19,6 +17,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
 public class Hpcm extends BaseEntity {
 
     @Id
@@ -34,12 +33,9 @@ public class Hpcm extends BaseEntity {
     @Column(name = "HPCM_DC", columnDefinition = "TEXT")
     private String hpcmDc;
 
-    public void update(String hpcmSeCode, String hpcmDf, String hpcmDc, String userId) {
+    public void update(String hpcmSeCode, String hpcmDf, String hpcmDc) {
         this.hpcmSeCode = hpcmSeCode;
         this.hpcmDf = hpcmDf;
         this.hpcmDc = hpcmDc;
-        if (userId != null) {
-            this.lastModifiedBy = userId;
-        }
     }
 }

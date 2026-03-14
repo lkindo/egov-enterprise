@@ -1,25 +1,17 @@
 package com.company.project.domain.deptjob;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import java.time.LocalDateTime;
+import lombok.experimental.SuperBuilder;
 
-/**
- * ?봔??뽯씜???酉???
- *
- * @see COMTNDEPTJOB ???뵠??筌띲끋釉?
- */
 @Entity
 @Table(name = "NDEPTJOB")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
-public class DeptJob {
+@SuperBuilder
+public class DeptJob extends BaseEntity {
 
     @Id
     @Column(name = "DEPT_JOB_ID", length = 20)
@@ -43,28 +35,13 @@ public class DeptJob {
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @CreatedDate
-    @Column(name = "FRST_REGIST_PNTTM", updatable = false)
-    private LocalDateTime frstRegistPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @LastModifiedDate
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdtPnttm;
-
     public void update(String deptJobbxId, String deptJobNm, String deptJobCn, String chargerId, String priort,
-            String atchFileId, String lastUpdusrId) {
+            String atchFileId) {
         this.deptJobbxId = deptJobbxId;
         this.deptJobNm = deptJobNm;
         this.deptJobCn = deptJobCn;
         this.chargerId = chargerId;
         this.priort = priort;
         this.atchFileId = atchFileId;
-        this.lastUpdusrId = lastUpdusrId;
     }
 }

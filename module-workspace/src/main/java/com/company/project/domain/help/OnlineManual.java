@@ -1,24 +1,23 @@
 package com.company.project.domain.help;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
- * 온라인매뉴얼 정보 Entity
- * 테이블명: NONLINEMANUAL
+ * 온라인 메뉴얼 Entity
+ * 매핑 테이블: NONLINEMNUAL
  */
 @Entity
-@Table(name = "NONLINEMANUAL")
+@Table(name = "NONLINEMNUAL")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
 public class OnlineManual extends BaseEntity {
 
     @Id
@@ -31,19 +30,16 @@ public class OnlineManual extends BaseEntity {
     @Column(name = "ONLINE_MNL_SE_CODE", length = 3, nullable = false)
     private String onlineMnlSeCode;
 
-    @Column(name = "ONLINE_MNL_DFN", columnDefinition = "TEXT")
+    @Column(name = "ONLINE_MNL_DFN", length = 1000)
     private String onlineMnlDf;
 
     @Column(name = "ONLINE_MNL_DC", columnDefinition = "TEXT")
     private String onlineMnlDc;
 
-    public void update(String onlineMnlNm, String onlineMnlSeCode, String onlineMnlDf, String onlineMnlDc, String userId) {
+    public void update(String onlineMnlNm, String onlineMnlSeCode, String onlineMnlDf, String onlineMnlDc) {
         this.onlineMnlNm = onlineMnlNm;
         this.onlineMnlSeCode = onlineMnlSeCode;
         this.onlineMnlDf = onlineMnlDf;
         this.onlineMnlDc = onlineMnlDc;
-        if (userId != null) {
-            this.lastModifiedBy = userId;
-        }
     }
 }

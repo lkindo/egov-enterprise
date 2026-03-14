@@ -14,6 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
+/**
+ * 도움말(용어사전, 안내문 등) 서비스 구현 클래스
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -43,7 +46,7 @@ public class HelpService implements EgovHelpService {
     @Override
     @Transactional
     public String createAdministrationWord(String userId, AdministrationWordDto dto) {
-        String id = "AWORD_" + String.format("%014d", System.currentTimeMillis());
+        String id = "AWORD_" + System.currentTimeMillis();
         AdministrationWord entity = AdministrationWord.builder()
                 .administWordId(id)
                 .administWordNm(dto.getAdministWordNm())
@@ -54,7 +57,6 @@ public class HelpService implements EgovHelpService {
                 .stdWord(dto.getStdWord())
                 .administWordDf(dto.getAdministWordDf())
                 .administWordDc(dto.getAdministWordDc())
-                .createdBy(userId)
                 .build();
         administrationWordRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -67,7 +69,7 @@ public class HelpService implements EgovHelpService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getAdministWordNm(), dto.getAdministWordEngNm(), dto.getAdministWordAbrv(),
                 dto.getThemaRelm(), dto.getWordDomn(), dto.getStdWord(), dto.getAdministWordDf(),
-                dto.getAdministWordDc(), userId);
+                dto.getAdministWordDc());
     }
 
     @Override
@@ -94,13 +96,12 @@ public class HelpService implements EgovHelpService {
     @Override
     @Transactional
     public String createHpcm(String userId, HpcmDto dto) {
-        String id = "HPCM_" + String.format("%015d", System.currentTimeMillis());
+        String id = "HPCM_" + System.currentTimeMillis();
         Hpcm entity = Hpcm.builder()
                 .hpcmId(id)
                 .hpcmSeCode(dto.getHpcmSeCode())
                 .hpcmDf(dto.getHpcmDf())
                 .hpcmDc(dto.getHpcmDc())
-                .createdBy(userId)
                 .build();
         hpcmRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -111,7 +112,7 @@ public class HelpService implements EgovHelpService {
     public void updateHpcm(String hpcmId, String userId, HpcmDto dto) {
         Hpcm entity = hpcmRepository.findById(Objects.requireNonNull(hpcmId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getHpcmSeCode(), dto.getHpcmDf(), dto.getHpcmDc(), userId);
+        entity.update(dto.getHpcmSeCode(), dto.getHpcmDf(), dto.getHpcmDc());
     }
 
     @Override
@@ -138,14 +139,13 @@ public class HelpService implements EgovHelpService {
     @Override
     @Transactional
     public String createOnlineManual(String userId, OnlineManualDto dto) {
-        String id = "MNL_" + String.format("%016d", System.currentTimeMillis());
+        String id = "MNL_" + System.currentTimeMillis();
         OnlineManual entity = OnlineManual.builder()
                 .onlineMnlId(id)
                 .onlineMnlNm(dto.getOnlineMnlNm())
                 .onlineMnlSeCode(dto.getOnlineMnlSeCode())
                 .onlineMnlDf(dto.getOnlineMnlDf())
                 .onlineMnlDc(dto.getOnlineMnlDc())
-                .createdBy(userId)
                 .build();
         onlineManualRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -156,8 +156,7 @@ public class HelpService implements EgovHelpService {
     public void updateOnlineManual(String mnlId, String userId, OnlineManualDto dto) {
         OnlineManual entity = onlineManualRepository.findById(Objects.requireNonNull(mnlId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getOnlineMnlNm(), dto.getOnlineMnlSeCode(), dto.getOnlineMnlDf(), dto.getOnlineMnlDc(),
-                userId);
+        entity.update(dto.getOnlineMnlNm(), dto.getOnlineMnlSeCode(), dto.getOnlineMnlDf(), dto.getOnlineMnlDc());
     }
 
     @Override
@@ -184,14 +183,13 @@ public class HelpService implements EgovHelpService {
     @Override
     @Transactional
     public String createWordDicary(String userId, WordDicaryDto dto) {
-        String id = "WDIC_" + String.format("%015d", System.currentTimeMillis());
+        String id = "WDIC_" + System.currentTimeMillis();
         WordDicary entity = WordDicary.builder()
                 .wordId(id)
                 .wordNm(dto.getWordNm())
                 .engNm(dto.getEngNm())
                 .wordDc(dto.getWordDc())
                 .synonm(dto.getSynonm())
-                .createdBy(userId)
                 .build();
         wordDicaryRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -202,7 +200,7 @@ public class HelpService implements EgovHelpService {
     public void updateWordDicary(String wordId, String userId, WordDicaryDto dto) {
         WordDicary entity = wordDicaryRepository.findById(Objects.requireNonNull(wordId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getWordNm(), dto.getEngNm(), dto.getWordDc(), dto.getSynonm(), userId);
+        entity.update(dto.getWordNm(), dto.getEngNm(), dto.getWordDc(), dto.getSynonm());
     }
 
     @Override

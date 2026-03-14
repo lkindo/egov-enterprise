@@ -44,7 +44,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void insertPoll(OnlinePollManageDto dto) {
-        String id = "POLL_" + String.format("%013d", System.currentTimeMillis());
+        String id = "POLL_" + System.currentTimeMillis();
         pollManageRepository.save(Objects.requireNonNull(OnlinePollManage.builder()
                 .pollId(id)
                 .pollNm(dto.getPollNm())
@@ -85,7 +85,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void insertPollItem(OnlinePollItemDto dto) {
-        String id = "POLIEM_" + String.format("%013d", System.currentTimeMillis());
+        String id = "POLIEM_" + System.currentTimeMillis();
         pollItemRepository.save(Objects.requireNonNull(OnlinePollItem.builder()
                 .pollIemId(id)
                 .pollId(dto.getPollId())
@@ -110,7 +110,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void vote(String pollId, String pollIemId, String userId) {
-        String id = "POLRES_" + String.format("%013d", System.currentTimeMillis());
+        String id = "POLRES_" + System.currentTimeMillis();
         pollResultRepository.save(Objects.requireNonNull(OnlinePollResult.builder()
                 .pollResultId(id)
                 .pollId(pollId)

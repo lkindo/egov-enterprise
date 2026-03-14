@@ -111,12 +111,12 @@ public class ScheduleService implements EgovScheduleService {
     @Transactional
     public String createSchedule(String userId, ScheduleDto dto) {
         // ID: SCHDUL_ + timestamp
-        String id = "SCHDUL_" + String.format("%013d", System.currentTimeMillis());
+        String id = "SCHDUL_" + System.currentTimeMillis();
 
         Schedule schedule = Schedule.builder()
                 .schdulId(id)
                 .schdulSe(dto.getSchdulSe())
-                .schdulDeptId(dto.getSchdulDeptId()) // Or fetch user's dept
+                .schdulDeptId(dto.getSchdulDeptId())
                 .schdulKindCode(dto.getSchdulKindCode())
                 .schdulBgnde(dto.getSchdulBgnde())
                 .schdulEndde(dto.getSchdulEndde())
@@ -124,13 +124,12 @@ public class ScheduleService implements EgovScheduleService {
                 .schdulCn(dto.getSchdulCn())
                 .schdulPlace(dto.getSchdulPlace())
                 .schdulIpcrCode(dto.getSchdulIpcrCode())
-                .schdulChargerId(userId) // Default to creator
+                .schdulChargerId(dto.getSchdulChargerId())
                 .atchFileId(dto.getAtchFileId())
                 .reptitSeCode(dto.getReptitSeCode())
-                .frstRegisterId(userId)
                 .build();
 
-        scheduleRepository.save(Objects.requireNonNull(schedule));
+        scheduleRepository.save(schedule);
         return id;
     }
 
@@ -139,12 +138,6 @@ public class ScheduleService implements EgovScheduleService {
     public void updateSchedule(String id, String userId, ScheduleDto dto) {
         Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        // Permission Check?
-        if (!schedule.getFrstRegisterId().equals(userId)) {
-            // throw new BusinessException(ErrorCode.ACCESS_DENIED);
-            // Skip check for now or assume authorized context
-        }
 
         schedule.update(
                 dto.getSchdulSe(),
@@ -156,8 +149,7 @@ public class ScheduleService implements EgovScheduleService {
                 dto.getSchdulPlace(),
                 dto.getSchdulIpcrCode(),
                 dto.getAtchFileId(),
-                dto.getReptitSeCode(),
-                userId);
+                dto.getReptitSeCode());
     }
 
     @Override

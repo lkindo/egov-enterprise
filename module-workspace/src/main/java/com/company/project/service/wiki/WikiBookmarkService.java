@@ -36,7 +36,7 @@ public class WikiBookmarkService implements EgovWikiBookmarkService {
             throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE);
         }
 
-        String id = "WIK_" + String.format("%013d", System.currentTimeMillis());
+        String id = "WIK_" + System.currentTimeMillis();
         WikiBookmark entity = WikiBookmark.builder()
                 .wikiBkmkId(id)
                 .userId(userId)

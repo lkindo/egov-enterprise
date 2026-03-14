@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -49,8 +48,6 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
                 .deptJobbxNm(dto.getDeptJobbxNm())
                 .deptId(dto.getDeptId())
                 .indictOrdr(dto.getIndictOrdr())
-                .frstRegisterId(userId)
-                .frstRegistPnttm(LocalDateTime.now())
                 .build();
         deptJobBoxRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -62,17 +59,10 @@ public class DeptJobBoxService implements EgovDeptJobBoxService {
         DeptJobBox entity = deptJobBoxRepository.findById(Objects.requireNonNull(deptJobbxId))
                 .orElseThrow(() -> new IllegalArgumentException("DeptJobBox not found: " + deptJobbxId));
 
-        DeptJobBox updated = DeptJobBox.builder()
-                .deptJobbxId(entity.getDeptJobbxId())
-                .deptJobbxNm(dto.getDeptJobbxNm())
-                .deptId(dto.getDeptId())
-                .indictOrdr(dto.getIndictOrdr())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegistPnttm(entity.getFrstRegistPnttm())
-                .lastUpdusrId(userId)
-                .lastUpdtPnttm(LocalDateTime.now())
-                .build();
-        deptJobBoxRepository.save(Objects.requireNonNull(updated));
+        entity.update(
+                dto.getDeptJobbxNm(),
+                dto.getDeptId(),
+                dto.getIndictOrdr());
     }
 
     @Override

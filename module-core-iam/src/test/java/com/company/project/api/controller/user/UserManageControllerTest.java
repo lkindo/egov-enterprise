@@ -2,61 +2,140 @@ package com.company.project.api.controller.user;
 
 import com.company.project.service.code.CommonCodeService;
 import com.company.project.service.group.GroupManageService;
-
-import com.company.project.service.usermanagement.UserManageService; // Fixed import
+import com.company.project.service.usermanagement.UserManageService;
 import egovframework.com.cmm.ComDefaultVO;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.ui.ModelMap;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.Collections;
+import java.util.Locale;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-public class UserManageControllerTest {
+@ExtendWith(MockitoExtension.class)
+@DisplayName("UserManageController 단위 테스트")
+class UserManageControllerTest {
 
-  @Mock
-  private UserManageService userManageService;
+    private MockMvc mockMvc;
 
-  @Mock
-  private CommonCodeService commonCodeService;
+    @Mock
+    private UserManageService userManageService;
 
-  @Mock
-  private GroupManageService groupManageService;
+    @Mock
+    private CommonCodeService commonCodeService;
 
-  @Mock
-  private EgovPropertyService propertiesService;
+    @Mock
+    private GroupManageService groupManageService;
 
-  @Mock
-  private org.springframework.context.MessageSource messageSource;
+    @Mock
+    private EgovPropertyService propertiesService;
 
-  @InjectMocks
-  private UserManageController userManageController;
+    @Mock
+    private MessageSource messageSource;
 
-  @BeforeEach
-  public void setup() {
-    MockitoAnnotations.openMocks(this);
-  }
+    @InjectMocks
+    private UserManageController userManageController;
 
-  @Test
-  public void selectUserList_ShouldLogAndThrow_WhenExceptionOccurs() throws Exception {
-    // Arrange
-    ComDefaultVO searchVO = new ComDefaultVO();
-    ModelMap model = new ModelMap();
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(userManageController).build();
+    }
 
-    // Mock propertiesService to avoid NullPointerException before the service call
-    when(propertiesService.getInt("pageUnit")).thenReturn(10);
-    when(propertiesService.getInt("pageSize")).thenReturn(10);
+    @Test
+    @DisplayName("사용자 목록 조회 테스트")
+    void selectUserListTest() throws Exception {
+        when(propertiesService.getInt("pageUnit")).thenReturn(10);
+        when(propertiesService.getInt("pageSize")).thenReturn(10);
+        when(userManageService.selectUserList(any(ComDefaultVO.class))).thenReturn(Collections.emptyList());
+        when(userManageService.selectUserListTotCnt(any(ComDefaultVO.class))).thenReturn(0);
 
-    // Simulate an exception in the service layer
-    when(userManageService.selectUserList(any())).thenThrow(new RuntimeException("Test Exception"));
+        mockMvc.perform(get("/uss/umt/EgovUserManage.do"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("cmm/uss/umt/EgovUserManage"))
+                .andExpect(model().attributeExists("resultList"))
+                .andExpect(model().attributeExists("paginationInfo"));
+    }
 
-    // Act & Assert
-    assertThrows(RuntimeException.class, () -> {
-      userManageController.selectUserList(searchVO, model);
-    });
-  }
+    @Test
+    @DisplayName("사용자 등록 테스트")
+    void insertUserTest() throws Exception {
+        when(messageSource.getMessage(eq("success.common.insert"), any(), any(Locale.class)))
+                .thenReturn("성공적으로 등록되었습니다.");
+
+        mockMvc.perform(post("/uss/umt/EgovUserInsert.do")
+                        .param("userId", "user01")
+                        .param("userNm", "홍길동")
+                        .param("password", "password"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("forward:/uss/umt/EgovUserManage.do"))
+                .andExpect(model().attributeExists("resultMsg"));
+    }
+
+    @Test
+    @DisplayName("사용자 수정 테스트")
+    void updateUserTest() throws Exception {
+        when(messageSource.getMessage(eq("success.common.update"), any(), any(Locale.class)))
+                .thenReturn("성공적으로 수정되었습니다.");
+
+        mockMvc.perform(post("/uss/umt/EgovUserSelectUpdt.do")
+                        .param("userId", "user01")
+                        .param("userNm", "홍길동"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("forward:/uss/umt/EgovUserManage.do"))
+                .andExpect(model().attributeExists("resultMsg"));
+    }
+
+    @Test
+    @DisplayName("사용자 삭제 테스트")
+    void deleteUserTest() throws Exception {
+        when(messageSource.getMessage(eq("success.common.delete"), any(), any(Locale.class)))
+                .thenReturn("성공적으로 삭제되었습니다.");
+
+        mockMvc.perform(post("/uss/umt/EgovUserDelete.do")
+                        .param("checkedIdForDel", "user01,user02"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("forward:/uss/umt/EgovUserManage.do"))
+                .andExpect(model().attributeExists("resultMsg"));
+    }
+
+    @Test
+    @DisplayName("아이디 중복 확인 테스트")
+    void checkIdDplctTest() throws Exception {
+        when(userManageService.checkIdDplct("user01")).thenReturn(0);
+
+        mockMvc.perform(post("/uss/umt/EgovIdDplctCnfirm.do")
+                        .param("checkId", "user01"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("cmm/uss/umt/EgovIdDplctCnfirm"))
+                .andExpect(model().attribute("usedCnt", 0))
+                .andExpect(model().attribute("checkId", "user01"));
+    }
+
+    @Test
+    @DisplayName("비밀번호 수정 테스트")
+    void updatePasswordTest() throws Exception {
+        when(messageSource.getMessage(eq("success.common.update"), any(), any(Locale.class)))
+                .thenReturn("성공적으로 수정되었습니다.");
+
+        mockMvc.perform(post("/uss/umt/EgovUserPasswordUpdt.do")
+                        .param("userId", "user01")
+                        .param("newPassword", "newPassword"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("cmm/uss/umt/EgovUserPasswordUpdt"))
+                .andExpect(model().attributeExists("resultMsg"));
+    }
 }

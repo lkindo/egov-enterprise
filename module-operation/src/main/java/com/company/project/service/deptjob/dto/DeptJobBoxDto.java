@@ -32,10 +32,10 @@ public class DeptJobBoxDto {
                 .deptJobbxNm(entity.getDeptJobbxNm())
                 .deptId(entity.getDeptId())
                 .indictOrdr(entity.getIndictOrdr())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegistPnttm(entity.getFrstRegistPnttm())
-                .lastUpdusrId(entity.getLastUpdusrId())
-                .lastUpdtPnttm(entity.getLastUpdtPnttm())
+                .frstRegisterId(entity.getCreatedBy())
+                .frstRegistPnttm(entity.getCreatedDate())
+                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdtPnttm(entity.getLastModifiedDate())
                 .build();
     }
 
@@ -45,10 +45,6 @@ public class DeptJobBoxDto {
                 .deptJobbxNm(this.deptJobbxNm)
                 .deptId(this.deptId)
                 .indictOrdr(this.indictOrdr)
-                .frstRegisterId(this.frstRegisterId)
-                .frstRegistPnttm(this.frstRegistPnttm)
-                .lastUpdusrId(this.lastUpdusrId)
-                .lastUpdtPnttm(this.lastUpdtPnttm)
                 .build();
     }
 }

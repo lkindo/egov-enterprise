@@ -17,7 +17,7 @@ class CnsltManageTest {
                 .cnsltCn("Description")
                 .othbcAt("Y")
                 .wrterNm("Tester")
-                .frstRegisterId("admin")
+                .createdBy("admin")
                 .build();
 
         assertThat(cnslt.getCnsltId()).isEqualTo("CNSLT_001");
@@ -35,12 +35,10 @@ class CnsltManageTest {
                 .cnsltSj("Old Subject")
                 .build();
 
-        cnslt.update("New Subject", "New Cn", "N", "pwd", "02", "111", "222", "010", "333", "444", "test@test.com", "Y", "Mod Writer", "FILE_001", "user01");
+        cnslt.update("New Subject", "New Cn", "N", "pwd", "02", "111", "222", "010", "333", "444", "test@test.com", "Y", "Mod Writer", "FILE_001");
 
         assertThat(cnslt.getCnsltSj()).isEqualTo("New Subject");
         assertThat(cnslt.getOthbcAt()).isEqualTo("N");
-        assertThat(cnslt.getLastUpdusrId()).isEqualTo("user01");
-        assertThat(cnslt.getLastUpdusrPnttm()).isNotNull();
     }
 
     @Test
@@ -56,11 +54,10 @@ class CnsltManageTest {
     @DisplayName("답변 업데이트 테스트")
     void updateAnswerTest() {
         CnsltManage cnslt = CnsltManage.builder().build();
-        cnslt.updateAnswer("3", "Answer Content", "admin2");
+        cnslt.updateAnswer("3", "Answer Content");
 
         assertThat(cnslt.getQnaProcessSttusCode()).isEqualTo("3");
         assertThat(cnslt.getManagtCn()).isEqualTo("Answer Content");
-        assertThat(cnslt.getLastUpdusrId()).isEqualTo("admin2");
         assertThat(cnslt.getManagtDe()).isNotNull();
     }
 }

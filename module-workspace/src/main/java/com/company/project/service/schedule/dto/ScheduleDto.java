@@ -44,7 +44,7 @@ public class ScheduleDto {
                 .frstRegisterId(entity.getFrstRegisterId())
                 .createdDate(entity.getCreatedDate())
                 .lastUpdusrId(entity.getLastUpdusrId())
-                .modifiedDate(entity.getModifiedDate())
+                .modifiedDate(entity.getLastModifiedDate())
                 .build();
     }
 }

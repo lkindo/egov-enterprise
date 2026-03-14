@@ -41,7 +41,7 @@ public class RoughMapService implements EgovRoughMapService {
     @Override
     @Transactional
     public void insertRoughMap(RoughMapDto dto) {
-        String id = "ROUGH_" + String.format("%013d", System.currentTimeMillis());
+        String id = "ROUGH_" + System.currentTimeMillis();
         RoughMap entity = RoughMap.builder()
                 .roughMapId(id)
                 .roughMapSj(dto.getRoughMapSj())

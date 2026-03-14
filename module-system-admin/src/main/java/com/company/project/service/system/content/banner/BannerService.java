@@ -40,7 +40,7 @@ public class BannerService implements EgovBannerService {
     @Override
     @Transactional
     public void insertBanner(BannerDto dto) {
-        String id = "BANNER_" + String.format("%013d", System.currentTimeMillis());
+        String id = "BANNER_" + System.currentTimeMillis();
         Banner entity = Banner.builder()
                 .bannerId(id)
                 .bannerNm(dto.getBannerNm())

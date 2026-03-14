@@ -51,7 +51,7 @@ public class TemplateService implements EgovTemplateService {
     @Override
     @Transactional
     public String createTemplate(String userId, TemplateDto dto) {
-        String tmplatId = "TMPL_" + String.format("%013d", System.currentTimeMillis());
+        String tmplatId = "TMPL_" + System.currentTimeMillis();
 
         Template template = Template.builder()
                 .tmplatId(tmplatId)
@@ -59,7 +59,6 @@ public class TemplateService implements EgovTemplateService {
                 .tmplatCours(dto.getTmplatCours())
                 .tmplatSeCode(dto.getTmplatSeCode())
                 .useAt(dto.getUseAt())
-                .frstRegisterId(userId)
                 .build();
 
         templateRepository.save(Objects.requireNonNull(template));
@@ -73,7 +72,7 @@ public class TemplateService implements EgovTemplateService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         template.update(dto.getTmplatNm(), dto.getTmplatCours(), dto.getTmplatSeCode(),
-                dto.getUseAt(), userId);
+                dto.getUseAt());
     }
 
     @Override

@@ -1,25 +1,23 @@
 package com.company.project.domain.common;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
- * ??밴쉐?? ??밴쉐??깅뻻, ??륁젟?? ??륁젟??깅뻻 ?癒?짗 疫꿸퀡以???袁る립 ?⑤벏???酉???
+ * 기본 생성/수정자 메타데이터 엔티티
  */
 @Getter
 @Setter
 @SuperBuilder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity extends BaseTimeEntity {
 
     @CreatedBy
@@ -30,6 +28,7 @@ public abstract class BaseEntity extends BaseTimeEntity {
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     protected String lastModifiedBy;
 
+    // 별칭 메서드 (전자정부 관례 대응)
     public String getFrstRegisterId() {
         return createdBy;
     }
@@ -38,11 +37,21 @@ public abstract class BaseEntity extends BaseTimeEntity {
         return lastModifiedBy;
     }
 
+    // 하위 호환성을 위한 Setter Alias
     public void setFrstRegisterId(String id) {
         this.createdBy = id;
     }
 
     public void setLastUpdusrId(String id) {
+        this.lastModifiedBy = id;
+    }
+
+    // LeaderScheduleService 등에서의 직접 호출 대응
+    public void setCreatedBy(String id) {
+        this.createdBy = id;
+    }
+
+    public void setLastModifiedBy(String id) {
         this.lastModifiedBy = id;
     }
 }

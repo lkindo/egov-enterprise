@@ -161,7 +161,7 @@ class NotificationServiceTest {
             ReflectionTestUtils.setField(dto, "uniqId", "/link/url");
 
             Notification savedNotification = Notification.builder()
-                    .ntfcNo("NTFC_" + String.format("%013d", System.currentTimeMillis()))
+                    .ntfcNo("NTFC_" + System.currentTimeMillis())
                     .ntfcSj(dto.getNtfcSj())
                     .ntfcCn(dto.getNtfcCn())
                     .receiverId(userId)

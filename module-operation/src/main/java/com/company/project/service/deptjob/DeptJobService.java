@@ -83,7 +83,6 @@ public class DeptJobService extends EgovAbstractServiceImpl implements EgovDeptJ
                 .chargerId(dto.getChargerId())
                 .priort(dto.getPriort())
                 .atchFileId(dto.getAtchFileId())
-                .frstRegisterId(dto.getFrstRegisterId())
                 .build();
         deptJobRepository.save(Objects.requireNonNull(deptJob));
         return deptJob.getDeptJobId();
@@ -100,8 +99,7 @@ public class DeptJobService extends EgovAbstractServiceImpl implements EgovDeptJ
                 dto.getDeptJobCn(),
                 dto.getChargerId(),
                 dto.getPriort(),
-                dto.getAtchFileId(),
-                dto.getLastUpdusrId());
+                dto.getAtchFileId());
     }
 
     @Override

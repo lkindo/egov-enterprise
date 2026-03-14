@@ -1,24 +1,25 @@
 package com.company.project.domain.user.entity;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.time.LocalDateTime;
 
 /**
- * ??? ??? ??? Entity
- * ?????????? NENTRPRSMBER
+ * 기업회원 정보 Entity
+ * 매핑 테이블: NENTRPRSMBER
  */
 @Entity
 @Table(name = "NENTRPRSMBER")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 public class EnterpriseUser extends BaseEntity {
 
     @Column(name = "ESNTL_ID", nullable = false, length = 20)
@@ -61,7 +62,8 @@ public class EnterpriseUser extends BaseEntity {
     @Column(name = "APPLCNT_NM", length = 50)
     private String applcntNm;
 
-    @Column(name = "SBSCRB_DE")
+    @CreatedDate
+    @Column(name = "SBSCRB_DE", updatable = false)
     private LocalDateTime sbscrbDe;
 
     @Column(name = "ENTRPRS_MBER_STTUS", length = 15)
@@ -130,7 +132,6 @@ public class EnterpriseUser extends BaseEntity {
         this.areaNo = areaNo;
         this.applcntEmailAdres = applcntEmailAdres;
         this.applcntIhidnum = applcntIhidnum;
-        this.sbscrbDe = LocalDateTime.now();
         this.lockAt = lockAt;
         this.chgPwdLastPnttm = LocalDateTime.now();
     }

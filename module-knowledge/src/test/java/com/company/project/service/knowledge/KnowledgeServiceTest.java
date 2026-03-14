@@ -82,6 +82,7 @@ class KnowledgeServiceTest {
     void createKnowledge_Success() {
         // Given
         KnowledgeDto dto = KnowledgeDto.builder().knoNm("Title").build();
+        given(knowledgeRepository.save(any(Knowledge.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // When
         String knoId = knowledgeService.createKnowledge("user1", dto);
@@ -110,7 +111,7 @@ class KnowledgeServiceTest {
     @DisplayName("지식 수정 성공")
     void updateKnowledge_Success() {
         // Given
-        Knowledge knowledge = Knowledge.builder().knoId("KNO1").frstRegisterId("user1").build();
+        Knowledge knowledge = Knowledge.builder().knoId("KNO1").build();
         given(knowledgeRepository.findById("KNO1")).willReturn(Optional.of(knowledge));
         KnowledgeDto dto = KnowledgeDto.builder().knoNm("Updated").build();
 

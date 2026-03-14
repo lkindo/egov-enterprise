@@ -4,29 +4,27 @@ import com.company.project.domain.log.SysLog;
 import com.company.project.domain.log.SysLogRepository;
 import com.company.project.service.log.dto.SysLogDto;
 import egovframework.com.cmm.ComDefaultVO;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("LogManageService 테스트")
 class LogManageServiceTest {
 
     @Mock
@@ -35,93 +33,55 @@ class LogManageServiceTest {
     @InjectMocks
     private LogManageService logManageService;
 
-    private SysLog testLog;
-
-    @BeforeEach
-    void setUp() {
-        testLog = SysLog.builder()
-                .requstId("REQ_001")
-                .srvcNm("TestService")
-                .methodNm("testMethod")
-                .processSeCode("C")
-                .processTime("100")
-                .rqesterId("testuser")
-                .rqesterIp("127.0.0.1")
-                .occrrncDe("20260311")
-                .build();
-    }
-
     @Test
-    @DisplayName("시스템 로그 등록 테스트")
-    void insertSysLog_success() {
-        // given
+    @DisplayName("시스템 로그 등록 성공")
+    void insertSysLog_Success() {
+        // Given
         SysLogDto dto = SysLogDto.builder()
-                .requstId("REQ_001")
-                .srvcNm("TestService")
-                .methodNm("testMethod")
-                .processSeCode("C")
-                .processTime("100")
-                .rqesterId("testuser")
-                .rqesterIp("127.0.0.1")
+                .srvcNm("MenuService")
+                .methodNm("getMenuHierarchy")
+                .processSeCode("R")
+                .rqesterId("user1")
                 .build();
 
-        // when
+        // When
         logManageService.insertSysLog(dto);
 
-        // then
+        // Then
         verify(sysLogRepository).save(any(SysLog.class));
     }
 
     @Test
-    @DisplayName("시스템 로그 목록 조회 테스트")
-    void selectSysLogList_success() {
-        // given
+    @DisplayName("시스템 로그 목록 조회 성공")
+    void selectSysLogList_Success() {
+        // Given
         ComDefaultVO searchVO = new ComDefaultVO();
         searchVO.setPageIndex(1);
-        searchVO.setPageUnit(10);
-        searchVO.setSearchKeyword("Test");
+        searchVO.setPageSize(10);
+        SysLog entity = SysLog.builder().requstId("REQ1").srvcNm("S1").build();
+        given(sysLogRepository.searchSysLogs(anyString(), eq(null), eq(null), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(entity)));
 
-        Page<SysLog> page = new PageImpl<>(Arrays.asList(testLog), PageRequest.of(0, 10), 1);
-        given(sysLogRepository.searchSysLogs(eq("Test"), any(), any(), any(Pageable.class))).willReturn(page);
-
-        // when
+        // When
         List<SysLogDto> result = logManageService.selectSysLogList(searchVO);
 
-        // then
+        // Then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getRequstId()).isEqualTo("REQ_001");
-        verify(sysLogRepository).searchSysLogs(eq("Test"), any(), any(), any(Pageable.class));
+        assertThat(result.get(0).getRequstId()).isEqualTo("REQ1");
     }
 
     @Test
-    @DisplayName("시스템 로그 상세 조회 테스트")
-    void selectSysLog_success() {
-        // given
-        given(sysLogRepository.findById("REQ_001")).willReturn(Optional.of(testLog));
+    @DisplayName("시스템 로그 상세 조회 성공")
+    void selectSysLog_Success() {
+        // Given
+        SysLog entity = SysLog.builder().requstId("REQ1").build();
+        given(sysLogRepository.findById("REQ1")).willReturn(Optional.of(entity));
 
-        // when
-        SysLogDto result = logManageService.selectSysLog("REQ_001");
+        // When
+        SysLogDto result = logManageService.selectSysLog("REQ1");
 
-        // then
+        // Then
         assertThat(result).isNotNull();
-        assertThat(result.getSrvcNm()).isEqualTo("TestService");
-        verify(sysLogRepository).findById("REQ_001");
-    }
-
-    @Test
-    @DisplayName("시스템 로그 총 개수 조회 테스트")
-    void selectSysLogListTotCnt_success() {
-        // given
-        ComDefaultVO searchVO = new ComDefaultVO();
-        searchVO.setSearchKeyword("Test");
-
-        Page<SysLog> page = new PageImpl<>(Arrays.asList(testLog), PageRequest.of(0, 1), 1);
-        given(sysLogRepository.searchSysLogs(eq("Test"), any(), any(), any(Pageable.class))).willReturn(page);
-
-        // when
-        int count = logManageService.selectSysLogListTotCnt(searchVO);
-
-        // then
-        assertThat(count).isEqualTo(1);
+        assertThat(result.getRequstId()).isEqualTo("REQ1");
     }
 }

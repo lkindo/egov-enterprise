@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 硫붿????퉬???ы쁽?
+ * 메일 서비스 구현체
  */
 @Slf4j
 @Service
@@ -23,10 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class MailService implements EgovMailService {
 
     private final SentMailRepository sentMailRepository;
-    private final EmailSender emailSender;
+    private final MailAsyncProcessor mailAsyncProcessor;
 
     @Override
     public Page<SentMailDto> getSentMailList(String keyword, Pageable pageable) {
+        log.debug("Fetching sent mail list with keyword: {}", keyword);
         if (keyword == null || keyword.isEmpty()) {
             return sentMailRepository.findAll(Objects.requireNonNull(pageable)).map(SentMailDto::from);
         }
@@ -35,12 +36,14 @@ public class MailService implements EgovMailService {
 
     @Override
     public Page<SentMailDto> getSentMailList(String searchCondition, String searchKeyword, Pageable pageable) {
+        log.debug("Searching sent mails with condition: {}, keyword: {}", searchCondition, searchKeyword);
         return sentMailRepository.searchSentMails(searchCondition, searchKeyword, Objects.requireNonNull(pageable))
                 .map(SentMailDto::from);
     }
 
     @Override
     public SentMailDto getSentMail(String mssageId) {
+        log.debug("Fetching mail details for ID: {}", mssageId);
         SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(mssageId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return SentMailDto.from(sentMail);
@@ -49,7 +52,8 @@ public class MailService implements EgovMailService {
     @Override
     @Transactional
     public String sendMail(String userId, SentMailDto dto) {
-        String mssageId = "MAIL_" + String.format("%013d", System.currentTimeMillis());
+        log.info("Sending mail requested by user: {}, subject: {}", userId, dto.getSj());
+        String mssageId = "MAIL_" + System.currentTimeMillis();
 
         SentMail sentMail = Objects.requireNonNull(SentMail.builder()
                 .mssageId(mssageId)
@@ -63,15 +67,10 @@ public class MailService implements EgovMailService {
 
         sentMailRepository.save(Objects.requireNonNull(sentMail));
 
-        try {
-            emailSender.send(dto.getSj(), dto.getEmailCn(), dto.getDsptchPerson(), dto.getRecptnPerson());
+        // 비동기로 실제 발송 처리 요청
+        mailAsyncProcessor.processSending(mssageId, dto.getSj(), dto.getEmailCn(), dto.getDsptchPerson(), dto.getRecptnPerson());
 
-            sentMail.updateResult("S"); // Success
-        } catch (Exception e) {
-            log.error("Failed to send mail: {}", e.getMessage(), e);
-            sentMail.updateResult("F"); // Failure
-        }
-
+        log.info("Mail request registered successfully for ID: {}", mssageId);
         return mssageId;
     }
 

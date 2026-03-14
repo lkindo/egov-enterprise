@@ -1,21 +1,22 @@
 package com.company.project.domain.knowledge;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
+import lombok.experimental.SuperBuilder;
 
 /**
- * 筌왖?????JPA Entity
- * ??뉕탢?????뵠?? COMTNKNOWLEDGE
+ * 지식 정보 JPA Entity
+ * 테이블: NKNOWLEDGE
  */
 @Entity
 @Table(name = "NKNOWLEDGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Knowledge {
+@SuperBuilder
+public class Knowledge extends BaseEntity {
 
     @Id
     @Column(name = "KNO_ID", length = 20)
@@ -45,42 +46,12 @@ public class Knowledge {
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGISTER_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDUSR_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
-    @Builder
-    public Knowledge(String knoId, String orgnztId, String emplyrId, String knoTypeCd,
-            String knoNm, String knoCn, String othbcAt, String atchFileId, String frstRegisterId) {
-        this.knoId = knoId;
-        this.orgnztId = orgnztId;
-        this.emplyrId = emplyrId;
-        this.knoTypeCd = knoTypeCd;
-        this.knoNm = knoNm;
-        this.knoCn = knoCn;
-        this.othbcAt = othbcAt;
-        this.atchFileId = atchFileId;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
-        this.colYmd = java.time.LocalDate.now().toString().replace("-", "");
-    }
-
     public void update(String knoTypeCd, String knoNm, String knoCn, String othbcAt,
-            String atchFileId, String updusrId) {
+            String atchFileId) {
         this.knoTypeCd = knoTypeCd;
         this.knoNm = knoNm;
         this.knoCn = knoCn;
         this.othbcAt = othbcAt;
         this.atchFileId = atchFileId;
-        this.lastUpdusrId = updusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }

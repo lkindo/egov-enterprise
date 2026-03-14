@@ -33,8 +33,6 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
                 .intnetSvcNm(dto.getIntnetSvcNm())
                 .intnetSvcDc(dto.getIntnetSvcDc())
                 .reflctAt(dto.getReflctAt())
-                .frstRegisterId(dto.getUserId())
-                .lastUpdusrId(dto.getUserId())
                 .build();
         internetSvcGuidanceRepository.save(Objects.requireNonNull(isg));
     }
@@ -43,9 +41,7 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
     @Transactional
     public void updateIntnetSvcGuidance(InternetSvcGuidanceDto dto) {
         internetSvcGuidanceRepository.findById(Objects.requireNonNull(dto.getIntnetSvcId()))
-                .ifPresent(isg -> {
-                    // update logic here
-                });
+                .ifPresent(isg -> isg.update(dto.getIntnetSvcNm(), dto.getIntnetSvcDc(), dto.getReflctAt()));
     }
 
     @Override
@@ -56,6 +52,10 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
 
     @Override
     public Page<InternetSvcGuidanceDto> getIntnetSvcGuidanceList(String searchKeyword, Pageable pageable) {
+        if (searchKeyword != null && !searchKeyword.isEmpty()) {
+            return internetSvcGuidanceRepository.findByIntnetSvcNmContaining(searchKeyword, pageable)
+                    .map(this::convertToDto);
+        }
         return internetSvcGuidanceRepository.findAll(Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
@@ -72,7 +72,7 @@ public class InternetSvcGuidanceService implements EgovInternetSvcGuidanceServic
                 .intnetSvcDc(isg.getIntnetSvcDc())
                 .reflctAt(isg.getReflctAt())
                 .userId(isg.getLastUpdusrId())
-                .regDate(isg.getLastUpdtPnttm())
+                .regDate(isg.getLastUpdusrPnttm())
                 .build();
     }
 }

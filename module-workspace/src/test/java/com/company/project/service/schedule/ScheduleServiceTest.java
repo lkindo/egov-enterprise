@@ -114,7 +114,7 @@ class ScheduleServiceTest {
     @DisplayName("일정 수정 성공")
     void updateSchedule_Success() {
         // Given
-        Schedule entity = Schedule.builder().schdulId("SCH1").frstRegisterId("user").build();
+        Schedule entity = Schedule.builder().schdulId("SCH1").createdBy("user").build();
         given(scheduleRepository.findById("SCH1")).willReturn(Optional.of(entity));
         ScheduleDto dto = ScheduleDto.builder().schdulNm("Updated").build();
 

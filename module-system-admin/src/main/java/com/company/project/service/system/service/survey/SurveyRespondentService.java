@@ -36,7 +36,7 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
     @Override
     @Transactional
     public String createSurveyRespondent(String userId, SurveyRespondentDto dto) {
-        String id = "SRES_" + String.format("%014d", System.currentTimeMillis());
+        String id = "SRES_" + System.currentTimeMillis();
         SurveyRespondent entity = SurveyRespondent.builder()
                 .qestnrRespondId(id)
                 .qestnrId(dto.getQestnrId())

@@ -46,7 +46,7 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void insertTmplat(QestnrTmplatDto dto) {
-        String id = "QUSTMP_" + String.format("%013d", System.currentTimeMillis());
+        String id = "QUSTMP_" + System.currentTimeMillis();
         tmplatRepository.save(Objects.requireNonNull(QestnrTmplat.builder()
                 .qestnrTmplatId(id)
                 .qestnrTmplatTy(dto.getQestnrTmplatTy())
@@ -89,7 +89,7 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void insertSurvey(QestnrInfoDto dto) {
-        String id = "QESTNR_" + String.format("%013d", System.currentTimeMillis());
+        String id = "QESTNR_" + System.currentTimeMillis();
         infoRepository.save(Objects.requireNonNull(QestnrInfo.builder()
                 .qestnrId(id)
                 .qestnrSj(dto.getQestnrSj())
@@ -138,7 +138,7 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void insertQuestion(QustnrQesitmDto dto) {
-        String id = "QESITM_" + String.format("%013d", System.currentTimeMillis());
+        String id = "QESITM_" + System.currentTimeMillis();
         qesitmRepository.save(Objects.requireNonNull(QustnrQesitm.builder()
                 .qestnrQesitmId(id)
                 .qestnrId(dto.getQestnrId())
@@ -174,7 +174,7 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void insertItem(QustnrIemDto dto) {
-        String id = "IEM_" + String.format("%013d", System.currentTimeMillis());
+        String id = "IEM_" + System.currentTimeMillis();
         iemRepository.save(Objects.requireNonNull(QustnrIem.builder()
                 .qustnrIemId(id)
                 .qestnrQesitmId(dto.getQestnrQesitmId())

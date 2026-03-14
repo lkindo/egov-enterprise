@@ -95,7 +95,7 @@ class HelpServiceTest {
 
         helpService.updateAdministrationWord("ID", "user", dto);
 
-        verify(entity).update(any(), any(), any(), any(), any(), any(), any(), any(), anyString());
+        verify(entity).update(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test

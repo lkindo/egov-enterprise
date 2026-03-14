@@ -41,7 +41,7 @@ public class SiteService implements EgovSiteService {
     @Override
     @Transactional
     public String createSite(String userId, SiteDto dto) {
-        String siteId = "SITE_" + String.format("%015d", System.currentTimeMillis());
+        String siteId = "SITE_" + System.currentTimeMillis();
         Site site = Site.builder()
                 .siteId(siteId)
                 .siteUrl(dto.getSiteUrl())
@@ -50,7 +50,6 @@ public class SiteService implements EgovSiteService {
                 .siteThemaClCode(dto.getSiteThemaClCode())
                 .actvtyAt(dto.getActvtyAt())
                 .useAt(dto.getUseAt())
-                .frstRegisterId(userId)
                 .build();
         siteRepository.save(Objects.requireNonNull(site));
         return siteId;
@@ -62,7 +61,7 @@ public class SiteService implements EgovSiteService {
         Site site = siteRepository.findById(Objects.requireNonNull(siteId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         site.update(dto.getSiteUrl(), dto.getSiteNm(), dto.getSiteDc(), dto.getSiteThemaClCode(),
-                dto.getActvtyAt(), dto.getUseAt(), userId);
+                dto.getActvtyAt(), dto.getUseAt());
     }
 
     @Override

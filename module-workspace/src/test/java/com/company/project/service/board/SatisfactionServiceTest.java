@@ -74,6 +74,45 @@ class SatisfactionServiceTest {
     }
 
     @Test
+    @DisplayName("만족도 상세 조회 성공")
+    void getSatisfaction_Success() {
+        // Given
+        Satisfaction entity = Satisfaction.builder().id(1L).articleId(1L).build();
+        given(satisfactionRepository.findById(1L)).willReturn(Optional.of(entity));
+
+        // When
+        SatisfactionDto result = satisfactionService.getSatisfaction(1L);
+
+        // Then
+        assertThat(result.getSatisfactionId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("만족도 수정 성공")
+    void updateSatisfaction_Success() {
+        // Given
+        Satisfaction entity = Satisfaction.builder().id(1L).build();
+        given(satisfactionRepository.findById(1L)).willReturn(Optional.of(entity));
+        SatisfactionDto dto = SatisfactionDto.builder().satisfactionId(1L).satisfactionLevel(3).build();
+
+        // When
+        satisfactionService.updateSatisfaction(dto);
+
+        // Then
+        verify(satisfactionRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("만족도 삭제 성공")
+    void deleteSatisfaction_Success() {
+        // When
+        satisfactionService.deleteSatisfaction(1L);
+
+        // Then
+        verify(satisfactionRepository).deleteById(1L);
+    }
+
+    @Test
     @DisplayName("비밀번호 확인 성공")
     void checkPassword_Success() {
         // Given
@@ -85,5 +124,19 @@ class SatisfactionServiceTest {
 
         // Then
         assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("비밀번호 확인 실패 - 암호 틀림")
+    void checkPassword_Fail() {
+        // Given
+        Satisfaction entity = Satisfaction.builder().id(1L).password("correct").build();
+        given(satisfactionRepository.findById(1L)).willReturn(Optional.of(entity));
+
+        // When
+        boolean result = satisfactionService.checkPassword(1L, "wrong");
+
+        // Then
+        assertThat(result).isFalse();
     }
 }

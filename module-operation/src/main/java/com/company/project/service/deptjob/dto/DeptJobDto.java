@@ -35,10 +35,10 @@ public class DeptJobDto {
                 .chargerId(entity.getChargerId())
                 .priort(entity.getPriort())
                 .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegistPnttm(entity.getFrstRegistPnttm())
-                .lastUpdusrId(entity.getLastUpdusrId())
-                .lastUpdtPnttm(entity.getLastUpdtPnttm())
+                .frstRegisterId(entity.getCreatedBy())
+                .frstRegistPnttm(entity.getCreatedDate())
+                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdtPnttm(entity.getLastModifiedDate())
                 .build();
     }
 }

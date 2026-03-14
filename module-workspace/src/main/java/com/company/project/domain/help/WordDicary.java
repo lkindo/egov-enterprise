@@ -1,24 +1,23 @@
 package com.company.project.domain.help;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
- * 용어사전 정보 Entity
- * 테이블명: NWORDDICARYINFO
+ * 용어 사전 Entity
+ * 매핑 테이블: NWORDDICARYINFO
  */
 @Entity
 @Table(name = "NWORDDICARYINFO")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
 public class WordDicary extends BaseEntity {
 
     @Id
@@ -28,22 +27,19 @@ public class WordDicary extends BaseEntity {
     @Column(name = "WORD_NM", length = 255, nullable = false)
     private String wordNm;
 
-    @Column(name = "ENG_NM", length = 60)
+    @Column(name = "ENG_NM", length = 255)
     private String engNm;
 
     @Column(name = "WORD_DC", columnDefinition = "TEXT")
     private String wordDc;
 
-    @Column(name = "SYNONM", length = 100)
+    @Column(name = "SYNONM", length = 255)
     private String synonm;
 
-    public void update(String wordNm, String engNm, String wordDc, String synonm, String userId) {
+    public void update(String wordNm, String engNm, String wordDc, String synonm) {
         this.wordNm = wordNm;
         this.engNm = engNm;
         this.wordDc = wordDc;
         this.synonm = synonm;
-        if (userId != null) {
-            this.lastModifiedBy = userId;
-        }
     }
 }

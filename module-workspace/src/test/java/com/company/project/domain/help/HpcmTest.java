@@ -33,10 +33,9 @@ class HpcmTest {
                 .hpcmSeCode("001")
                 .build();
 
-        hpcm.update("002", "New Df", "New Dc", "user02");
+        hpcm.update("002", "New Df", "New Dc");
 
         assertThat(hpcm.getHpcmSeCode()).isEqualTo("002");
         assertThat(hpcm.getHpcmDf()).isEqualTo("New Df");
-        assertThat(hpcm.getLastModifiedBy()).isEqualTo("user02");
     }
 }

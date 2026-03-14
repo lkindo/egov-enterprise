@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
+/**
+ * FAQ 서비스 구현 클래스
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -34,14 +37,14 @@ public class FaqService implements EgovFaqService {
     @Override
     @Transactional
     public String createFaq(String userId, FaqDto dto) {
-        String id = "FAQ_" + String.format("%016d", System.currentTimeMillis());
+        // 불필요한 패딩 제거 및 가독성 개선
+        String id = "FAQ_" + System.currentTimeMillis();
         Faq entity = Faq.builder()
                 .faqId(id)
                 .qestnSj(dto.getQestnSj())
                 .qestnCn(dto.getQestnCn())
                 .answerCn(dto.getAnswerCn())
                 .atchFileId(dto.getAtchFileId())
-                .frstRegisterId(userId)
                 .build();
         faqRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -52,7 +55,7 @@ public class FaqService implements EgovFaqService {
     public void updateFaq(String faqId, String userId, FaqDto dto) {
         Faq entity = faqRepository.findById(Objects.requireNonNull(faqId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getQestnSj(), dto.getQestnCn(), dto.getAnswerCn(), dto.getAtchFileId(), userId);
+        entity.update(dto.getQestnSj(), dto.getQestnCn(), dto.getAnswerCn(), dto.getAtchFileId());
     }
 
     @Override

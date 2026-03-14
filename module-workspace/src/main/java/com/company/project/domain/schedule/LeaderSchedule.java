@@ -3,10 +3,11 @@ package com.company.project.domain.schedule;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * 揶쏄쑬???깆젟 ?類ｋ궖 Entity
- * ??뉕탢?????뵠?? NLEADERSCHDUL
+ * 리더 일정 Entity
+ * 매핑 테이블: NLEADERSCHDUL
  */
 @Entity
 @Table(name = "NLEADERSCHDUL")
@@ -14,7 +15,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class LeaderSchedule extends BaseEntity {
 
     @Id
@@ -64,6 +65,6 @@ public class LeaderSchedule extends BaseEntity {
         this.beginDate = beginDate;
         this.endDate = endDate;
         this.chargerId = chargerId;
-        this.lastModifiedBy = userId;
+        this.setLastModifiedBy(userId);
     }
 }

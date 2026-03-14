@@ -1,21 +1,21 @@
 package com.company.project.domain.site;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 /**
- * ????紐꾩젟癰?JPA Entity
- * ??뉕탢?????뵠?? COMTNSITEINFO
+ * 사이트 정보 조회를 위한 JPA Entity
+ * 대응 테이블 이름: COMTNSITEINFO
  */
 @Entity(name = "SiteDomain")
 @Table(name = "NSITEINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Site {
+public class Site extends BaseEntity {
 
     @Id
     @Column(name = "SITE_ID", length = 20)
@@ -39,21 +39,9 @@ public class Site {
     @Column(name = "USE_AT", length = 1)
     private String useAt;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGISTER_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDUSR_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
     @Builder
     public Site(String siteId, String siteUrl, String siteNm, String siteDc,
-            String siteThemaClCode, String actvtyAt, String useAt, String frstRegisterId) {
+            String siteThemaClCode, String actvtyAt, String useAt) {
         this.siteId = siteId;
         this.siteUrl = siteUrl;
         this.siteNm = siteNm;
@@ -61,19 +49,15 @@ public class Site {
         this.siteThemaClCode = siteThemaClCode;
         this.actvtyAt = actvtyAt;
         this.useAt = useAt;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
     }
 
     public void update(String siteUrl, String siteNm, String siteDc, String siteThemaClCode,
-            String actvtyAt, String useAt, String updusrId) {
+            String actvtyAt, String useAt) {
         this.siteUrl = siteUrl;
         this.siteNm = siteNm;
         this.siteDc = siteDc;
         this.siteThemaClCode = siteThemaClCode;
         this.actvtyAt = actvtyAt;
         this.useAt = useAt;
-        this.lastUpdusrId = updusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }

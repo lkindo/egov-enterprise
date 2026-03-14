@@ -41,7 +41,7 @@ public class UnityLinkService implements EgovUnityLinkService {
     @Override
     @Transactional
     public void insertUnityLink(UnityLinkDto dto) {
-        String id = "ULM_" + String.format("%013d", System.currentTimeMillis());
+        String id = "ULM_" + System.currentTimeMillis();
         UnityLink entity = UnityLink.builder()
                 .unityLinkId(id)
                 .unityLinkCategoryCode(dto.getUnityLinkCategoryCode())

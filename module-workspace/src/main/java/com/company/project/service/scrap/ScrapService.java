@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * ??겕????퉬???ы쁽?
+ * 스크랩 서비스 구현 클래스
  */
 @Service("egovScrapService")
 @RequiredArgsConstructor
@@ -39,7 +39,8 @@ public class ScrapService implements EgovScrapService {
     @Override
     @Transactional
     public String createScrap(String userId, ScrapDto dto) {
-        String scrapId = "SCRP_" + String.format("%013d", System.currentTimeMillis());
+        // ID 생성 규칙 단순화
+        String scrapId = "SCRP_" + System.currentTimeMillis();
 
         Scrap scrap = Scrap.builder()
                 .scrapId(scrapId)
@@ -47,8 +48,6 @@ public class ScrapService implements EgovScrapService {
                 .nttId(dto.getNttId())
                 .scrapNm(dto.getScrapNm())
                 .useAt("Y")
-                .uniqId(userId)
-                .frstRegisterId(userId)
                 .build();
 
         scrapRepository.save(Objects.requireNonNull(scrap));
@@ -61,7 +60,7 @@ public class ScrapService implements EgovScrapService {
         Scrap scrap = scrapRepository.findById(Objects.requireNonNull(scrapId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        scrap.update(dto.getScrapNm(), dto.getUseAt(), userId);
+        scrap.update(dto.getScrapNm(), dto.getUseAt());
     }
 
     @Override

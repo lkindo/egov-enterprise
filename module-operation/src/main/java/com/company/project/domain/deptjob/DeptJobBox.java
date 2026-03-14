@@ -1,8 +1,9 @@
 package com.company.project.domain.deptjob;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
+import lombok.experimental.SuperBuilder;
 
 /**
  * ?봔??뽯씜?얜똾釉??酉???
@@ -14,8 +15,8 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
-public class DeptJobBox {
+@SuperBuilder
+public class DeptJobBox extends BaseEntity {
 
     @Id
     @Column(name = "dept_jobbx_id", length = 20)
@@ -30,15 +31,9 @@ public class DeptJobBox {
     @Column(name = "indict_ordr")
     private Integer indictOrdr;
 
-    @Column(name = "frst_register_id", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "frst_regist_pnttm")
-    private LocalDateTime frstRegistPnttm;
-
-    @Column(name = "last_updusr_id", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "last_updt_pnttm")
-    private LocalDateTime lastUpdtPnttm;
+    public void update(String deptJobbxNm, String deptId, Integer indictOrdr) {
+        this.deptJobbxNm = deptJobbxNm;
+        this.deptId = deptId;
+        this.indictOrdr = indictOrdr;
+    }
 }

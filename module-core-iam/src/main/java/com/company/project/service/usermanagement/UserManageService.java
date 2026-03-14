@@ -41,7 +41,13 @@ public class UserManageService {
         int pageSize = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageSize);
 
-        Page<User> page = userRepository.findAll(Objects.requireNonNull(pageable));
+        // searchVO의 검색 조건을 Repository에 전달
+        Page<User> page = userRepository.searchUsers(
+                null, // sbscrbSttus (필요 시 VO에서 추출 가능)
+                searchVO.getSearchCondition(),
+                searchVO.getSearchKeyword(),
+                pageable);
+
         return page.map(UserDtoMapper::toUserManageDto).getContent();
     }
 
@@ -52,7 +58,14 @@ public class UserManageService {
      * @return 총 갯수
      */
     public int selectUserListTotCnt(ComDefaultVO searchVO) {
-        return (int) userRepository.count();
+        // 이미 selectUserList에서 조회가 가능하므로, 별도 호출 시에도 Repository의 기능을 활용
+        Pageable pageable = PageRequest.of(0, 1);
+        Page<User> page = userRepository.searchUsers(
+                null, 
+                searchVO.getSearchCondition(),
+                searchVO.getSearchKeyword(),
+                pageable);
+        return (int) page.getTotalElements();
     }
 
     /**

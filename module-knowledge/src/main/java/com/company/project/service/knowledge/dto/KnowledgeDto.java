@@ -36,10 +36,10 @@ public class KnowledgeDto {
                 .othbcAt(entity.getOthbcAt())
                 .colYmd(entity.getColYmd())
                 .atchFileId(entity.getAtchFileId())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
-                .lastUpdusrId(entity.getLastUpdusrId())
-                .lastUpdusrPnttm(entity.getLastUpdusrPnttm())
+                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterPnttm(entity.getCreatedDate())
+                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrPnttm(entity.getLastModifiedDate())
                 .build();
     }
 }

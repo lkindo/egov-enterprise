@@ -1,15 +1,14 @@
 package com.company.project.domain.faq;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
- * FAQ ?類ｋ궖 Entity
- * ??뉕탢?????뵠?? NFAQINFO
+ * FAQ 정보 Entity
+ * 매핑 테이블: NFAQINFO
  */
 @Entity
 @Table(name = "NFAQINFO")
@@ -17,7 +16,8 @@ import lombok.*;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
 public class Faq extends BaseEntity {
 
     @Id
@@ -40,25 +40,11 @@ public class Faq extends BaseEntity {
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @Builder
-    public Faq(String faqId, String qestnSj, String qestnCn, String answerCn, Integer inqireCo, String atchFileId, String frstRegisterId) {
-        this.faqId = faqId;
-        this.qestnSj = qestnSj;
-        this.qestnCn = qestnCn;
-        this.answerCn = answerCn;
-        this.inqireCo = inqireCo != null ? inqireCo : 0;
-        this.atchFileId = atchFileId;
-        this.createdBy = frstRegisterId;
-    }
-
-    public void update(String qestnSj, String qestnCn, String answerCn, String atchFileId, String userId) {
+    public void update(String qestnSj, String qestnCn, String answerCn, String atchFileId) {
         this.qestnSj = qestnSj;
         this.qestnCn = qestnCn;
         this.answerCn = answerCn;
         this.atchFileId = atchFileId;
-        if (userId != null) {
-            this.lastModifiedBy = userId;
-        }
     }
 
     public void increaseInqireCo() {
