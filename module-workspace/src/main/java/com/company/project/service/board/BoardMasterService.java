@@ -89,8 +89,8 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .atchPosblFileSize(dto.getAtchPosblFileSize())
                 .tmplatId(dto.getTmplatId())
                 .useAt("Y")
-                .frstRegisterId(dto.getFrstRegisterId())
-                .lastUpdusrId(dto.getFrstRegisterId())
+                .createdBy(dto.getFrstRegisterId())
+                .lastModifiedBy(dto.getFrstRegisterId())
                 .cmmntyId(dto.getCmmntyId())
                 .blogId(dto.getBlogId())
                 .blogAt(dto.getBlogAt() != null ? dto.getBlogAt() : "N") // Ensure default
@@ -116,7 +116,6 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 dto.getAtchPosblFileSize(),
                 dto.getTmplatId(),
                 dto.getUseAt(),
-                dto.getLastUpdusrId(),
                 dto.getCommentAt(),
                 dto.getStsfdgAt());
     }
@@ -127,7 +126,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
         BoardMaster entity = boardMasterRepository.findById(Objects.requireNonNull(bbsId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        entity.delete(userId);
+        entity.delete();
     }
 
     @Override
@@ -160,7 +159,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
     @Override
     @Transactional(readOnly = true)
     public boolean checkBlogUser(String frstRegisterId) {
-        return blogRepository.existsByFrstRegisterId(frstRegisterId);
+        return blogRepository.existsByCreatedBy(frstRegisterId);
     }
 
     @Override
@@ -174,7 +173,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .registSeCode(dto.getRegistSeCode())
                 .tmplatId(dto.getTmplatId())
                 .useAt(dto.getUseAt())
-                .frstRegisterId(dto.getFrstRegisterId())
+                .createdBy(dto.getFrstRegisterId())
                 .blogAt(dto.getBlogAt())
                 .build();
         blogRepository.save(Objects.requireNonNull(entity));
@@ -188,7 +187,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .emplyrId(userId)
                 .mngrAt(mngrAt)
                 .useAt("Y")
-                .frstRegisterId(userId)
+                .createdBy(userId)
                 .build();
         blogUserRepository.save(Objects.requireNonNull(user));
     }

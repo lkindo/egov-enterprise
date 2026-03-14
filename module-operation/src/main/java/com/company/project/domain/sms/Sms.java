@@ -2,19 +2,19 @@ package com.company.project.domain.sms;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
  * SMS JPA Entity
- * ??뉕탢?????뵠?? NSMS
+ * 매핑 테이블: NSMS
  */
 @Entity
 @Table(name = "NSMS")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class Sms extends BaseEntity {
 
     @Id
@@ -26,11 +26,4 @@ public class Sms extends BaseEntity {
 
     @Column(name = "TRNSMIS_CN", length = 2000)
     private String trnsmitCn;
-
-    @Builder
-    public Sms(String smsId, String trnsmitTelno, String trnsmitCn) {
-        this.smsId = smsId;
-        this.trnsmitTelno = trnsmitTelno;
-        this.trnsmitCn = trnsmitCn;
-    }
 }

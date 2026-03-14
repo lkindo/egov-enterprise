@@ -48,7 +48,7 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 템플릿 목록 조회 - 키워드 없음")
     void getTmplatList_NoKeyword() {
-        given(tmplatRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(new QestnrTmplat())));
+        given(tmplatRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(QestnrTmplat.builder().build())));
         Page<QestnrTmplatDto> result = surveyService.getTmplatList(null, Pageable.unpaged());
         assertThat(result.getContent()).hasSize(1);
     }
@@ -57,7 +57,7 @@ class SurveyServiceTest {
     @DisplayName("설문 템플릿 목록 조회 - 키워드 포함")
     void getTmplatList_WithKeyword() {
         given(tmplatRepository.findByQestnrTmplatTyContaining(anyString(), any(Pageable.class)))
-                .willReturn(new PageImpl<>(List.of(new QestnrTmplat())));
+                .willReturn(new PageImpl<>(List.of(QestnrTmplat.builder().build())));
         Page<QestnrTmplatDto> result = surveyService.getTmplatList("ty", Pageable.unpaged());
         assertThat(result.getContent()).hasSize(1);
     }
@@ -110,7 +110,7 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 정보 목록 조회 - 키워드 없음")
     void getSurveyList_NoKeyword() {
-        given(infoRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(new QestnrInfo())));
+        given(infoRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(QestnrInfo.builder().build())));
         Page<QestnrInfoDto> result = surveyService.getSurveyList(null, Pageable.unpaged());
         assertThat(result.getContent()).hasSize(1);
     }
@@ -119,7 +119,7 @@ class SurveyServiceTest {
     @DisplayName("설문 정보 목록 조회 - 키워드 포함")
     void getSurveyList_WithKeyword() {
         given(infoRepository.findByQestnrSjContaining(anyString(), any(Pageable.class)))
-                .willReturn(new PageImpl<>(List.of(new QestnrInfo())));
+                .willReturn(new PageImpl<>(List.of(QestnrInfo.builder().build())));
         Page<QestnrInfoDto> result = surveyService.getSurveyList("sj", Pageable.unpaged());
         assertThat(result.getContent()).hasSize(1);
     }

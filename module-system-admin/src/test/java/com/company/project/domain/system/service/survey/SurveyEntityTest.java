@@ -31,7 +31,7 @@ class SurveyEntityTest {
                 .pollResultId("RES_001")
                 .pollId("POLL_001")
                 .pollIemId("ITEM_001")
-                .frstRegisterId("admin")
+                .createdBy("admin")
                 .build();
 
         assertThat(result.getPollResultId()).isEqualTo("RES_001");

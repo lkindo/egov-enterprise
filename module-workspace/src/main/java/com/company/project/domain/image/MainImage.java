@@ -6,18 +6,20 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 /**
- * 筌롫뗄?????筌왖 ?類ｋ궖 Entity
- * ??뉕탢?????뵠?? NMAINIMAGE
+ * 메인 이미지 엔티티
  */
 @Entity
 @Table(name = "NMAINIMAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class MainImage extends BaseEntity {
 
     @Id
@@ -38,16 +40,6 @@ public class MainImage extends BaseEntity {
 
     @Column(name = "REFLCT_AT", length = 1)
     private String reflctAt;
-
-    @Builder
-    public MainImage(String imageId, String imageNm, String image, String imageFile, String imageDc, String reflctAt) {
-        this.imageId = imageId;
-        this.imageNm = imageNm;
-        this.image = image;
-        this.imageFile = imageFile;
-        this.imageDc = imageDc;
-        this.reflctAt = reflctAt;
-    }
 
     public void update(String imageNm, String image, String imageFile, String imageDc, String reflctAt) {
         this.imageNm = imageNm;

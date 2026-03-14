@@ -27,8 +27,6 @@ public class MemoTodoService implements EgovMemoTodoService {
                 .todoBeginTime(dto.getTodoBeginTime())
                 .todoEndTime(dto.getTodoEndTime())
                 .wrterId(dto.getWriterId())
-                .frstRegisterId(dto.getWriterId())
-                .lastUpdusrId(dto.getWriterId())
                 .build();
         memoTodoRepository.save(Objects.requireNonNull(todo));
     }
@@ -41,8 +39,7 @@ public class MemoTodoService implements EgovMemoTodoService {
                         dto.getTodoNm(),
                         dto.getTodoBeginTime(),
                         dto.getTodoEndTime(),
-                        dto.getTodoCn(),
-                        dto.getWriterId()));
+                        dto.getTodoCn()));
     }
 
     @Override

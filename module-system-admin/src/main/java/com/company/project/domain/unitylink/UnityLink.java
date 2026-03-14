@@ -5,15 +5,15 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "NUNITYLINK")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class UnityLink extends BaseEntity {
 
     @Id
@@ -31,16 +31,6 @@ public class UnityLink extends BaseEntity {
 
     @Column(name = "UNITY_LINK_DC", length = 1000)
     private String unityLinkDescription;
-
-    @Builder
-    public UnityLink(String unityLinkId, String unityLinkCategoryCode, String unityLinkName,
-            String unityLinkUrl, String unityLinkDescription) {
-        this.unityLinkId = unityLinkId;
-        this.unityLinkCategoryCode = unityLinkCategoryCode;
-        this.unityLinkName = unityLinkName;
-        this.unityLinkUrl = unityLinkUrl;
-        this.unityLinkDescription = unityLinkDescription;
-    }
 
     public void update(String unityLinkCategoryCode, String unityLinkName, String unityLinkUrl,
             String unityLinkDescription) {

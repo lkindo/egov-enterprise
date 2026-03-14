@@ -46,8 +46,7 @@ public class LoginImageService implements EgovLoginImageService {
         LoginImage loginImage = loginImageRepository.findById(Objects.requireNonNull(dto.getImageId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        loginImage.update(dto.getImageNm(), dto.getImage(), dto.getImageFile(), dto.getImageDc(), dto.getReflctAt(),
-                "SYSTEM");
+        loginImage.update(dto.getImageNm(), dto.getImage(), dto.getImageFile(), dto.getImageDc(), dto.getReflctAt());
     }
 
     @Override

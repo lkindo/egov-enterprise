@@ -1,18 +1,21 @@
 package com.company.project.domain.board;
 
-import com.company.project.domain.common.BaseTimeEntity;
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
+/**
+ * 만족도 조사 엔티티
+ * 매핑 테이블: NSTSFDG
+ */
 @Entity
 @Table(name = "NSTSFDG")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
-public class Satisfaction extends BaseTimeEntity {
+@SuperBuilder
+public class Satisfaction extends BaseEntity {
 
     @Id
     @Column(name = "STSFDG_NO")
@@ -43,23 +46,15 @@ public class Satisfaction extends BaseTimeEntity {
     @Column(name = "USE_AT", length = 1)
     private String useAt = "Y";
 
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    public void update(Integer satisfactionLevel, String satisfactionOpinion, String lastUpdusrId, String password) {
+    public void update(Integer satisfactionLevel, String satisfactionOpinion, String password) {
         this.satisfactionLevel = satisfactionLevel;
         this.satisfactionOpinion = satisfactionOpinion;
-        this.lastUpdusrId = lastUpdusrId;
         if (password != null && !password.isEmpty()) {
             this.password = password;
         }
     }
 
-    public void delete(String lastUpdusrId) {
+    public void delete() {
         this.useAt = "N";
-        this.lastUpdusrId = lastUpdusrId;
     }
 }

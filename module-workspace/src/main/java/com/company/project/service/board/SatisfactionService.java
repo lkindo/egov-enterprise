@@ -33,8 +33,7 @@ public class SatisfactionService implements EgovSatisfactionService {
                 .satisfactionOpinion(dto.getSatisfactionOpinion())
                 .password(dto.getSatisfactionPassword())
                 .useAt("Y")
-                .frstRegisterId(dto.getWriterId())
-                .lastUpdusrId(dto.getWriterId())
+                .createdBy(dto.getWriterId())
                 .build();
         satisfactionRepository.save(Objects.requireNonNull(satisfaction));
     }
@@ -43,7 +42,7 @@ public class SatisfactionService implements EgovSatisfactionService {
     @Transactional
     public void updateSatisfaction(SatisfactionDto dto) {
         satisfactionRepository.findById(Objects.requireNonNull(dto.getSatisfactionId()))
-                .ifPresent(s -> s.update(dto.getSatisfactionLevel(), dto.getSatisfactionOpinion(), dto.getWriterId(),
+                .ifPresent(s -> s.update(dto.getSatisfactionLevel(), dto.getSatisfactionOpinion(),
                         dto.getSatisfactionPassword()));
     }
 

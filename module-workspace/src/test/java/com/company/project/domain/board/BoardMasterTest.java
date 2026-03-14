@@ -36,7 +36,7 @@ class BoardMasterTest {
                 .bbsNm("Old Name")
                 .build();
 
-        master.update("New Name", "New Description", "Y", "Y", 5, 1024L, "TMP_01", "Y", "admin", "Y", "Y");
+        master.update("New Name", "New Description", "Y", "Y", 5, 1024L, "TMP_01", "Y", "Y", "Y");
 
         assertThat(master.getBbsNm()).isEqualTo("New Name");
         assertThat(master.getBbsIntrcn()).isEqualTo("New Description");
@@ -45,7 +45,6 @@ class BoardMasterTest {
         assertThat(master.getAtchPosblFileNumber()).isEqualTo(5);
         assertThat(master.getAtchPosblFileSize()).isEqualTo(1024L);
         assertThat(master.getTmplatId()).isEqualTo("TMP_01");
-        assertThat(master.getLastUpdusrId()).isEqualTo("admin");
         assertThat(master.getCommentAt()).isEqualTo("Y");
         assertThat(master.getStsfdgAt()).isEqualTo("Y");
     }
@@ -58,9 +57,8 @@ class BoardMasterTest {
                 .useAt("Y")
                 .build();
 
-        master.delete("admin");
+        master.delete();
 
         assertThat(master.getUseAt()).isEqualTo("N");
-        assertThat(master.getLastUpdusrId()).isEqualTo("admin");
     }
 }

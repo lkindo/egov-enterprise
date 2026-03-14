@@ -6,10 +6,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * Q&A ?類ｋ궖 Entity
- * ??뉕탢?????뵠?? NQAINFO
+ * Q&A 엔티티
+ * 매핑 테이블: NQAINFO
  */
 @Entity
 @Table(name = "NQAINFO")
@@ -17,6 +18,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@SuperBuilder
 public class Qna extends BaseEntity {
 
     @Id
@@ -60,54 +62,26 @@ public class Qna extends BaseEntity {
     private String answerDe;
 
     @Column(name = "RDCNT")
+    @Builder.Default
     private Integer inqireCo = 0;
 
     @Column(name = "WRITNG_DE", length = 20)
     private String writngDe;
 
-    @Builder
-    public Qna(String qaId, String qestnSj, String qestnCn, String writngPassword, String wrterNm,
-            String emailAdres, String emailAnswerAt, String areaNo, String middleTelno, String endTelno,
-            String qnaProcessSttusCode, String answerCn, String answerDe, Integer inqireCo, String writngDe,
-            String frstRegisterId) {
-        this.qaId = qaId;
-        this.qestnSj = qestnSj;
-        this.qestnCn = qestnCn;
-        this.writngPassword = writngPassword;
-        this.wrterNm = wrterNm;
-        this.emailAdres = emailAdres;
-        this.emailAnswerAt = emailAnswerAt;
-        this.areaNo = areaNo;
-        this.middleTelno = middleTelno;
-        this.endTelno = endTelno;
-        this.qnaProcessSttusCode = qnaProcessSttusCode != null ? qnaProcessSttusCode : "Q";
-        this.answerCn = answerCn;
-        this.answerDe = answerDe;
-        this.inqireCo = inqireCo != null ? inqireCo : 0;
-        this.writngDe = writngDe != null ? writngDe : java.time.LocalDate.now().toString().replace("-", "");
-        this.createdBy = frstRegisterId;
-    }
-
     public void updateQuestion(String qestnSj, String qestnCn, String emailAdres, String areaNo, String middleTelno,
-            String endTelno, String userId) {
+            String endTelno) {
         this.qestnSj = qestnSj;
         this.qestnCn = qestnCn;
         this.emailAdres = emailAdres;
         this.areaNo = areaNo;
         this.middleTelno = middleTelno;
         this.endTelno = endTelno;
-        if (userId != null) {
-            this.lastModifiedBy = userId;
-        }
     }
 
-    public void answer(String answerCn, String userId) {
+    public void answer(String answerCn) {
         this.answerCn = answerCn;
         this.answerDe = java.time.LocalDate.now().toString().replace("-", "");
-        this.qnaProcessSttusCode = "A"; // ??? ?袁⑥┷
-        if (userId != null) {
-            this.lastModifiedBy = userId;
-        }
+        this.qnaProcessSttusCode = "A";
     }
 
     public void increaseInqireCo() {

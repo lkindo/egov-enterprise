@@ -34,10 +34,10 @@ public class BlogDto {
                 .registSeCode(entity.getRegistSeCode())
                 .tmplatId(entity.getTmplatId())
                 .useAt(entity.getUseAt())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
-                .lastUpdusrId(entity.getLastUpdusrId())
-                .lastUpdusrPnttm(entity.getLastUpdusrPnttm())
+                .frstRegisterId(entity.getCreatedBy())
+                .frstRegisterPnttm(entity.getCreatedDate())
+                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdusrPnttm(entity.getLastModifiedDate())
                 .blogAt(entity.getBlogAt())
                 .build();
     }

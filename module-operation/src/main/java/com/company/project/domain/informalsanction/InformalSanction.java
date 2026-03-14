@@ -6,9 +6,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 /**
@@ -18,6 +19,8 @@ import java.time.LocalDateTime;
 @Table(name = "NINFRMLSANCTN")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class InformalSanction extends BaseEntity {
 
     @Id
@@ -44,19 +47,6 @@ public class InformalSanction extends BaseEntity {
 
     @Column(name = "RETURN_RESN", length = 1000)
     private String returnResn;
-
-    @Builder
-    public InformalSanction(String informalSanctionId, String jobSeCode, String applicantId, String requestDe,
-            String sanctionerId, String confmAt, LocalDateTime sanctionDt, String returnResn) {
-        this.informalSanctionId = informalSanctionId;
-        this.jobSeCode = jobSeCode;
-        this.applicantId = applicantId;
-        this.requestDe = requestDe;
-        this.sanctionerId = sanctionerId;
-        this.confmAt = confmAt != null ? confmAt : "N";
-        this.sanctionDt = sanctionDt;
-        this.returnResn = returnResn;
-    }
 
     public void update(String jobSeCode, String requestDe, String sanctionerId) {
         this.jobSeCode = jobSeCode;

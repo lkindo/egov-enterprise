@@ -66,6 +66,11 @@ subprojects {
     }
 
     dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter'
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+        testCompileOnly 'org.projectlombok:lombok'
+        testAnnotationProcessor 'org.projectlombok:lombok'
         implementation 'com.google.code.findbugs:jsr305:3.0.2'
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testImplementation 'org.springframework.security:spring-security-test'
@@ -86,11 +91,9 @@ tasks.register("jacocoRootReport", JacocoReport) {
     description = "Generates an aggregate JaCoCo report from all subprojects"
 
     dependsOn(subprojects.test)
+    mustRunAfter(subprojects.test)
 
-    // 실행 시점(Lazy evaluation)에 생성된 모든 .exec 파일 수집
-    executionData.setFrom(project.files {
-        fileTree(dir: project.rootDir, include: "**/build/jacoco/*.exec").files
-    })
+    executionData.from(project.files(subprojects.jacocoTestReport.executionData).filter { it.exists() })
 
     subprojects.each { subproject ->
         subproject.plugins.withType(JavaPlugin) {

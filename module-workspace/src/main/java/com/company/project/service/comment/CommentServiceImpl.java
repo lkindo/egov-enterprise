@@ -104,7 +104,7 @@ public class CommentServiceImpl implements CommentService {
                 .commentCn(entity.getCommentCn())
                 .useAt(entity.getUseAt())
                 .createdDate(entity.getCreatedDate())
-                .modifiedDate(entity.getModifiedDate())
+                .modifiedDate(entity.getLastModifiedDate())
                 .build();
     }
 }

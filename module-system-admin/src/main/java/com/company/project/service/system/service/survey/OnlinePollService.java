@@ -115,6 +115,7 @@ public class OnlinePollService implements EgovOnlinePollService {
                 .pollResultId(id)
                 .pollId(pollId)
                 .pollIemId(pollIemId)
+                .createdBy(userId)
                 .build()));
     }
 }

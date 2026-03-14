@@ -1,16 +1,17 @@
 package com.company.project.domain.report;
 
-import com.company.project.domain.common.BaseTimeEntity;
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "NWIKMNTHNGREPRT")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
-public class WorkReport extends BaseTimeEntity {
+@SuperBuilder
+public class WorkReport extends BaseEntity {
 
     @Id
     @Column(name = "REPRT_ID", length = 20)
@@ -23,7 +24,7 @@ public class WorkReport extends BaseTimeEntity {
     private String reportContent;
 
     @Column(name = "REPRT_SE", length = 1)
-    private String reportType; // 1:雅뚯눊而? 2:?遺쎌퍢
+    private String reportType; // 1: 주간, 2: 월간
 
     @Column(name = "REPRT_DE", length = 20)
     private String reportDate;
@@ -32,21 +33,14 @@ public class WorkReport extends BaseTimeEntity {
     private String writerId;
 
     @Column(name = "REPRT_STTUS", length = 1)
-    private String reportStatus; // 1:?臾믨쉐餓? 2:癰귣떯??袁⑥┷
-
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
+    private String reportStatus; // 1: 작업중, 2: 보고완료
 
     public void update(String reportSubject, String reportContent, String reportType, String reportDate,
-            String reportStatus, String lastUpdusrId) {
+            String reportStatus) {
         this.reportSubject = reportSubject;
         this.reportContent = reportContent;
         this.reportType = reportType;
         this.reportDate = reportDate;
         this.reportStatus = reportStatus;
-        this.lastUpdusrId = lastUpdusrId;
     }
 }

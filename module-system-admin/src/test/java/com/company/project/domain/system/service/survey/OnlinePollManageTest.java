@@ -17,7 +17,7 @@ class OnlinePollManageTest {
                 .pollBeginDe("20240101")
                 .pollEndDe("20241231")
                 .pollKindCode("K01")
-                .frstRegisterId("admin")
+                .createdBy("admin")
                 .build();
 
         assertThat(poll.getPollId()).isEqualTo("POLL_001");
@@ -37,7 +37,8 @@ class OnlinePollManageTest {
                 .pollNm("Old Survey")
                 .build();
 
-        poll.update("New Survey", "20240201", "20241130", "K02", "Y", "Y", "staff");
+        poll.update("New Survey", "20240201", "20241130", "K02", "Y", "Y");
+        poll.setLastModifiedBy("staff");
 
         assertThat(poll.getPollNm()).isEqualTo("New Survey");
         assertThat(poll.getPollBeginDe()).isEqualTo("20240201");

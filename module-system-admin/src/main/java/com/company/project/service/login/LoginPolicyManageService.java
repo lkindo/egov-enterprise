@@ -97,7 +97,7 @@ public class LoginPolicyManageService {
                 .ipInfo(dto.getIpInfo())
                 .dplctPermAt(dto.getDplctPermAt())
                 .lmttAt(dto.getLmttAt())
-                .frstRegisterId(dto.getFrstRegisterId())
+                .createdBy(dto.getFrstRegisterId())
                 .build();
         loginPolicyRepository.save(Objects.requireNonNull(entity));
     }
@@ -109,7 +109,7 @@ public class LoginPolicyManageService {
     public void updateLoginPolicy(LoginPolicyDto dto) {
         LoginPolicy entity = loginPolicyRepository.findById(Objects.requireNonNull(dto.getEmplyrId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
-        entity.update(dto.getIpInfo(), dto.getDplctPermAt(), dto.getLmttAt(), dto.getLastUpdusrId());
+        entity.update(dto.getIpInfo(), dto.getDplctPermAt(), dto.getLmttAt());
     }
 
     /**

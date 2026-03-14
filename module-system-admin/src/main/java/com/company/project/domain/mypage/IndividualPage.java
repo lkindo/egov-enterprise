@@ -1,16 +1,21 @@
 package com.company.project.domain.mypage;
 
-import com.company.project.domain.common.BaseTimeEntity;
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
+/**
+ * 마이페이지 설정 엔티티
+ * 매핑 테이블: NINDVDLPGE
+ */
 @Entity
 @Table(name = "NINDVDLPGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
-public class IndividualPage extends BaseTimeEntity {
+@SuperBuilder
+public class IndividualPage extends BaseEntity {
 
     @Id
     @Column(name = "PGE_ID", length = 20)
@@ -25,15 +30,8 @@ public class IndividualPage extends BaseTimeEntity {
     @Column(name = "EMPLYR_ID", length = 20, nullable = false)
     private String userId;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    public void update(String pageNm, String pageDc, String lastUpdusrId) {
+    public void update(String pageNm, String pageDc) {
         this.pageNm = pageNm;
         this.pageDc = pageDc;
-        this.lastUpdusrId = lastUpdusrId;
     }
 }

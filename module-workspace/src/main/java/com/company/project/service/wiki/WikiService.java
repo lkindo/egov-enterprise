@@ -24,8 +24,8 @@ public class WikiService implements EgovWikiService {
                 .wikiBkmkId(dto.getWikiBkmkId())
                 .userId(dto.getUserId())
                 .wikiBkmkNm(dto.getWikiBkmkNm())
-                .frstRegisterId(dto.getUserId())
-                .lastUpdusrId(dto.getUserId())
+                .createdBy(dto.getUserId())
+                .lastModifiedBy(dto.getUserId())
                 .build();
         wikiBookmarkRepository.save(Objects.requireNonNull(bookmark));
     }

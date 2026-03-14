@@ -5,19 +5,19 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * 獄쏄퀡瑗??類ｋ궖 Entity
- * ??뉕탢?????뵠?? NBANNER
+ * 배너 정보 Entity
+ * 매핑 테이블: NBANNER
  */
 @Entity
 @Table(name = "NBANNER")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class Banner extends BaseEntity {
 
     @Id
@@ -44,19 +44,6 @@ public class Banner extends BaseEntity {
 
     @Column(name = "BANNER_IMAGE_FILE", length = 20)
     private String bannerImageFile;
-
-    @Builder
-    public Banner(String bannerId, String bannerNm, String linkUrl, String bannerImage,
-                  String bannerDc, Integer sortOrdr, String reflctAt, String bannerImageFile) {
-        this.bannerId = bannerId;
-        this.bannerNm = bannerNm;
-        this.linkUrl = linkUrl;
-        this.bannerImage = bannerImage;
-        this.bannerDc = bannerDc;
-        this.sortOrdr = sortOrdr;
-        this.reflctAt = reflctAt;
-        this.bannerImageFile = bannerImageFile;
-    }
 
     public void update(String bannerNm, String linkUrl, String bannerImage,
                       String bannerDc, Integer sortOrdr, String reflctAt, String bannerImageFile) {

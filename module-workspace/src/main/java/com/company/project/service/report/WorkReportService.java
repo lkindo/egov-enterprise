@@ -28,8 +28,8 @@ public class WorkReportService implements EgovWorkReportService {
                 .reportDate(dto.getReportDate())
                 .writerId(dto.getWriterId())
                 .reportStatus(dto.getReportStatus())
-                .frstRegisterId(dto.getWriterId())
-                .lastUpdusrId(dto.getWriterId())
+                .createdBy(dto.getWriterId())
+                .lastModifiedBy(dto.getWriterId())
                 .build();
         workReportRepository.save(Objects.requireNonNull(report));
     }
@@ -43,8 +43,7 @@ public class WorkReportService implements EgovWorkReportService {
                         dto.getReportContent(),
                         dto.getReportType(),
                         dto.getReportDate(),
-                        dto.getReportStatus(),
-                        dto.getWriterId()));
+                        dto.getReportStatus()));
     }
 
     @Override

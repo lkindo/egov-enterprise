@@ -3,49 +3,46 @@ package com.company.project.domain.system.service.survey;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ??뿅??????類ｋ궖 Entity
- * ??뉕탢?????뵠?? NQUSTNRIEM
+ * 설문 항목 엔티티
+ * 매핑 테이블: NQUSTNRIEM
  */
 @Entity
 @Table(name = "NQUSTNRIEM")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class QustnrIem extends BaseEntity {
 
     @Id
     @Column(name = "QUSTNR_IEM_ID", length = 20)
     private String qustnrIemId;
 
+    @Column(name = "QESTNR_ID", length = 20, nullable = false)
+    private String qestnrId;
+
     @Column(name = "QUSTNR_QESITM_ID", length = 20, nullable = false)
     private String qestnrQesitmId;
 
-    @Column(name = "QESTNR_ID", length = 20, nullable = false)
-    private String qestnrId;
+    @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
+    private String qestnrTmplatId;
 
     @Column(name = "IEM_SN")
     private Long iemSn;
 
-    @Column(name = "IEM_CN", length = 1000, nullable = false)
+    @Column(name = "IEM_CN", length = 1000)
     private String iemCn;
 
     @Column(name = "ETC_ANSWER_AT", length = 1)
     private String etcAnswerAt;
 
-    @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
-    private String qestnrTmplatId;
-
     public void update(Long iemSn, String iemCn, String etcAnswerAt) {
         this.iemSn = iemSn;
         this.iemCn = iemCn;
         this.etcAnswerAt = etcAnswerAt;
-    }
-
-    public void setLastUpdtPnttm(String pnttm) {
-        // Compatibility
     }
 }

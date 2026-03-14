@@ -23,6 +23,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @org.junit.jupiter.api.Disabled
@@ -61,8 +62,8 @@ class BoardMasterServiceLogicTest {
         .atchPosblFileSize(1024L * 1024L * 5L) // 5MB
         .tmplatId("TMPL01")
         .useAt("Y")
-        .frstRegisterId("USER001")
-        .lastUpdusrId("USER001")
+        .createdBy("USER001")
+        .lastModifiedBy("USER001")
         .blogAt("N")
         .commentAt("Y")
         .stsfdgAt("Y")
@@ -89,7 +90,7 @@ class BoardMasterServiceLogicTest {
   }
 
   @Test
-  @DisplayName("게시판嶺뚮씭???사용자 醫롫윞??)")
+  @DisplayName("게시판 생성 성공")
   void createBoardMaster_success() throws Exception {
     // Given
     when(idgenService.getNextStringId()).thenReturn("BBS_NEW0000001");
@@ -119,11 +120,11 @@ class BoardMasterServiceLogicTest {
     assertThat(savedEntity.getBbsId()).isEqualTo("BBS_NEW0000001");
     assertThat(savedEntity.getBbsNm()).isEqualTo("신규 게시판");
     assertThat(savedEntity.getUseAt()).isEqualTo("Y"); // Default value
-    assertThat(savedEntity.getFrstRegisterId()).isEqualTo("USER001");
+    assertThat(savedEntity.getCreatedBy()).isEqualTo("USER001");
   }
 
   @Test
-  @DisplayName("게시판嶺뚮씭???사용자이후 - ID 사용자 醫롫윥筌?)")
+  @DisplayName("게시판 생성 실패 - ID 생성 오류")
   void createBoardMaster_fail_idGeneration() throws Exception {
     // Given
     when(idgenService.getNextStringId()).thenThrow(new Exception("ID generation failed"));
@@ -135,7 +136,7 @@ class BoardMasterServiceLogicTest {
   }
 
   @Test
-  @DisplayName("게시판嶺뚮씭???사용자 醫롫윞??)")
+  @DisplayName("게시판 수정 성공")
   void updateBoardMaster_success() {
     // Given
     when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
@@ -157,7 +158,7 @@ class BoardMasterServiceLogicTest {
   }
 
   @Test
-  @DisplayName("게시판嶺뚮씭???사용자이후 - 존재하지 않는 테스트ID")
+  @DisplayName("게시판 수정 실패 - 존재하지 않는 ID")
   void updateBoardMaster_fail_notFound() {
     // Given
     when(boardMasterRepository.findById("NONEXISTENT")).thenReturn(Optional.empty());
@@ -169,7 +170,7 @@ class BoardMasterServiceLogicTest {
   }
 
   @Test
-  @DisplayName("게시판嶺뚮씭???????성공)")
+  @DisplayName("게시판 삭제 성공")
   void deleteBoardMaster_success() {
     // Given
     when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
@@ -179,11 +180,10 @@ class BoardMasterServiceLogicTest {
 
     // Then
     verify(boardMasterRepository).findById("BBS_0000000001");
-    // Verify that the delete method was called on the entity
   }
 
   @Test
-  @DisplayName("게시판嶺뚮씭???탈퇴醫???- 존재하지 않는 테스트ID")
+  @DisplayName("게시판 삭제 실패 - 존재하지 않는 ID")
   void deleteBoardMaster_fail_notFound() {
     // Given
     when(boardMasterRepository.findById("NONEXISTENT")).thenReturn(Optional.empty());
@@ -195,7 +195,7 @@ class BoardMasterServiceLogicTest {
   }
 
   @Test
-  @DisplayName("嶺뚮씭???사용자띠럾????? 회원- 사용자띠럾???)")
+  @DisplayName("만족도 조사 사용 가능 여부 확인 - 사용 가능")
   void canUseSatisfaction_true() {
     // Given
     when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
@@ -208,7 +208,7 @@ class BoardMasterServiceLogicTest {
   }
 
   @Test
-  @DisplayName("嶺뚮씭???사용자띠럾????? 회원- 사용자釉띾쐣??")
+  @DisplayName("만족도 조사 사용 가능 여부 확인 - 사용 불가")
   void canUseSatisfaction_false() {
     // Given
     BoardMaster inactiveBoard = BoardMaster.builder()
@@ -225,7 +225,7 @@ class BoardMasterServiceLogicTest {
   }
 
   @Test
-  @DisplayName("존재하지 않는 게시판 삭제 시도)")
+  @DisplayName("댓글 사용 가능 여부 확인 - 게시판 없음")
   void canUseComment_boardNotFound() {
     // Given
     when(boardMasterRepository.findById("NONEXISTENT")).thenReturn(Optional.empty());
@@ -238,7 +238,7 @@ class BoardMasterServiceLogicTest {
   }
 
   @Test
-  @DisplayName("존재하지 않는 게시판 삭제 활성화)")
+  @DisplayName("댓글 사용 가능 여부 확인 - 사용 가능")
   void canUseComment_true() {
     // Given
     when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
@@ -251,7 +251,7 @@ class BoardMasterServiceLogicTest {
   }
 
   @Test
-  @DisplayName("게시판嶺뚮씭????嶺뚮ㅄ維뽨빳??브퀗???성공)")
+  @DisplayName("게시판 목록 조회 성공")
   void getBoardMasterList_success() {
     // Given
     List<BoardMasterSearchResult> searchResults = Arrays.asList(
@@ -279,7 +279,7 @@ class BoardMasterServiceLogicTest {
   }
 
   @Test
-  @DisplayName("게시판嶺뚮씭?????브퀗???성공)")
+  @DisplayName("게시판 정보 조회 성공")
   void getBoardMaster_success() {
     // Given
     when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
@@ -294,7 +294,7 @@ class BoardMasterServiceLogicTest {
   }
 
   @Test
-  @DisplayName("게시판嶺뚮씭?????브퀗????이후 - 존재하지 않는 테스트ID")
+  @DisplayName("게시판 정보 조회 실패 - 존재하지 않는 ID")
   void getBoardMaster_fail_notFound() {
     // Given
     when(boardMasterRepository.findById("NONEXISTENT")).thenReturn(Optional.empty());

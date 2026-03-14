@@ -1,19 +1,20 @@
 package com.company.project.domain.image;
 
-import com.company.project.domain.common.BaseTimeEntity;
-import lombok.*;
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * 嚥≪뮄??????筌왖 ?온???酉???
+ * 로그인 화면 이미지 엔티티
  */
 @Entity
 @Table(name = "NLOGINSCRINIMAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
-public class LoginImage extends BaseTimeEntity {
+@SuperBuilder
+public class LoginImage extends BaseEntity {
 
     @Id
     @Column(name = "IMAGE_ID", length = 20)
@@ -34,19 +35,11 @@ public class LoginImage extends BaseTimeEntity {
     @Column(name = "REFLCT_AT", length = 1, nullable = false)
     private String reflctAt;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    public void update(String imageNm, String image, String imageFile, String imageDc, String reflctAt,
-            String lastUpdusrId) {
+    public void update(String imageNm, String image, String imageFile, String imageDc, String reflctAt) {
         this.imageNm = imageNm;
         this.image = image;
         this.imageFile = imageFile;
         this.imageDc = imageDc;
         this.reflctAt = reflctAt;
-        this.lastUpdusrId = lastUpdusrId;
     }
 }

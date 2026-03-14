@@ -48,7 +48,7 @@ public class QnaService implements EgovQnaService {
                 .endTelno(dto.getEndTelno())
                 .qnaProcessSttusCode("Q")
                 .writngDe(java.time.LocalDate.now().toString().replace("-", ""))
-                .frstRegisterId(userId)
+                .createdBy(userId)
                 .build();
         qnaRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -60,7 +60,7 @@ public class QnaService implements EgovQnaService {
         Qna entity = qnaRepository.findById(Objects.requireNonNull(qaId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.updateQuestion(dto.getQestnSj(), dto.getQestnCn(), dto.getEmailAdres(),
-                dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno(), userId);
+                dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno());
     }
 
     @Override
@@ -74,7 +74,7 @@ public class QnaService implements EgovQnaService {
     public void updateAnswer(String qaId, String userId, String answerCn) {
         Qna entity = qnaRepository.findById(Objects.requireNonNull(qaId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.answer(answerCn, userId);
+        entity.answer(answerCn);
     }
 
     @Override

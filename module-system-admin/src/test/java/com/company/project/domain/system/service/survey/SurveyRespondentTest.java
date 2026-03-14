@@ -17,7 +17,7 @@ class SurveyRespondentTest {
                 .respondNm("John Doe")
                 .sexdstnCode("M")
                 .occpTyCode("O01")
-                .frstRegisterId("admin")
+                .createdBy("admin")
                 .build();
 
         assertThat(respondent.getQestnrRespondId()).isEqualTo("RES_001");
@@ -40,7 +40,7 @@ class SurveyRespondentTest {
         assertThat(respondent.getRespondNm()).isEqualTo("New Jane");
         assertThat(respondent.getSexdstnCode()).isEqualTo("F");
         assertThat(respondent.getOccpTyCode()).isEqualTo("O02");
-        assertThat(respondent.getBrth()).isEqualTo("19900101");
-        assertThat(respondent.getLastModifiedBy()).isEqualTo("staff");
+        assertThat(respondent.getBrthdy()).isEqualTo("19900101");
+        assertThat(respondent.getRespondId()).isEqualTo("staff");
     }
 }

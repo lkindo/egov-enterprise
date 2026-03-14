@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 /**
@@ -16,9 +17,9 @@ import java.time.LocalDateTime;
 @Table(name = "NWIKIBKMK")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class WikiBookmark extends BaseEntity {
 
     @Id
@@ -30,16 +31,6 @@ public class WikiBookmark extends BaseEntity {
 
     @Column(name = "WIKI_BKMK_NM", length = 255, nullable = false)
     private String wikiBkmkNm;
-
-    @Builder
-    public WikiBookmark(String wikiBkmkId, String userId, String wikiBkmkNm, String frstRegisterId,
-            String lastUpdusrId) {
-        this.wikiBkmkId = wikiBkmkId;
-        this.userId = userId;
-        this.wikiBkmkNm = wikiBkmkNm;
-        this.createdBy = frstRegisterId;
-        this.lastModifiedBy = lastUpdusrId;
-    }
 
     public void update(String wikiBkmkNm) {
         this.wikiBkmkNm = wikiBkmkNm;

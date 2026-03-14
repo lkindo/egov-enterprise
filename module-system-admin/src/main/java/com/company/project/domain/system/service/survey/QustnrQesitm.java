@@ -3,18 +3,19 @@ package com.company.project.domain.system.service.survey;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ??뿅??얜챸鍮??類ｋ궖 Entity
- * ??뉕탢?????뵠?? NQUSTNRQESITM
+ * 설문 문항 엔티티
+ * 매핑 테이블: NQUSTNRQESITM
  */
 @Entity
 @Table(name = "NQUSTNRQESITM")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class QustnrQesitm extends BaseEntity {
 
     @Id
@@ -33,7 +34,7 @@ public class QustnrQesitm extends BaseEntity {
     @Column(name = "QESTN_TY_CODE", length = 1)
     private String qestnTyCode;
 
-    @Column(name = "QESTN_CN", length = 2500, nullable = false)
+    @Column(name = "QESTN_CN", length = 2500)
     private String qestnCn;
 
     @Column(name = "MXMM_CHOISE_CO")
@@ -44,13 +45,5 @@ public class QustnrQesitm extends BaseEntity {
         this.qestnTyCode = qestnTyCode;
         this.qestnCn = qestnCn;
         this.mxmmChoiseCo = mxmmChoiseCo;
-    }
-
-    public void setLastUpdtPnttm(String pnttm) {
-        // Compatibility
-    }
-
-    public void setFrstRegisterPnttm(String pnttm) {
-        // Compatibility
     }
 }

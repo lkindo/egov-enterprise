@@ -1,16 +1,13 @@
 package com.company.project.domain.board;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.Table;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -19,9 +16,8 @@ import java.time.LocalDateTime;
 @IdClass(BlogUserId.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
-public class BlogUser {
+@SuperBuilder
+public class BlogUser extends BaseEntity {
 
     @Id
     @Column(name = "BLOG_ID", length = 20)
@@ -45,19 +41,13 @@ public class BlogUser {
 
     @Column(name = "USE_AT", length = 1)
     private String useAt;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
 }
 
 @EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
-@Builder
+@SuperBuilder
 class BlogUserId implements Serializable {
     private String blogId;
     private String emplyrId;

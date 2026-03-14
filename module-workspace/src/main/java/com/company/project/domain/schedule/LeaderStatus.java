@@ -6,18 +6,20 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 /**
- * 揶쏄쑬? ?怨밴묶 ?類ｋ궖 Entity
- * ??뉕탢?????뵠?? NLEADERSTTUS
+ * 간부 상태 엔티티
  */
 @Entity
 @Table(name = "NLEADERSTTUS")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class LeaderStatus extends BaseEntity {
 
     @Id
@@ -26,12 +28,6 @@ public class LeaderStatus extends BaseEntity {
 
     @Column(name = "LEADER_STTUS", length = 1)
     private String leaderSttus;
-
-    @Builder
-    public LeaderStatus(String leaderId, String leaderSttus) {
-        this.leaderId = leaderId;
-        this.leaderSttus = leaderSttus;
-    }
 
     public void updateStatus(String leaderSttus) {
         this.leaderSttus = leaderSttus;

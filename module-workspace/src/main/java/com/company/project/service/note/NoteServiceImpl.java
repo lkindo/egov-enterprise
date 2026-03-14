@@ -58,7 +58,7 @@ public class NoteServiceImpl implements NoteService {
                 .noteSj(note.getNoteSj())
                 .noteCn(note.getNoteCn())
                 .atchFileId(note.getAtchFileId())
-                .regDate(note.getFrstRegistPnttm())
+                .regDate(note.getFrstRegisterPnttm())
                 .build();
 
         if ("recv".equals(type)) {
@@ -90,7 +90,7 @@ public class NoteServiceImpl implements NoteService {
                     .noteSj(dto.getNoteSj())
                     .noteCn(dto.getNoteCn())
                     .atchFileId(dto.getAtchFileId())
-                    .frstRegisterId(userId)
+                    .createdBy(userId)
                     .build();
             noteRepository.save(Objects.requireNonNull(note));
 
@@ -100,7 +100,7 @@ public class NoteServiceImpl implements NoteService {
                     .note(note)
                     .trnsmiterId(userId)
                     .deleteAt("N")
-                    .frstRegisterId(userId)
+                    .createdBy(userId)
                     .build();
             noteTrnsmitRepository.save(Objects.requireNonNull(trnsmit));
 
@@ -114,7 +114,7 @@ public class NoteServiceImpl implements NoteService {
                             .rcverId(rDto.getRcverId())
                             .openYn("N")
                             .recptnSe(rDto.getRecptnSe())
-                            .frstRegisterId(userId)
+                            .createdBy(userId)
                             .build();
                     noteRecptnRepository.save(Objects.requireNonNull(recptn));
                 }
@@ -144,7 +144,7 @@ public class NoteServiceImpl implements NoteService {
                 .noteRecptnId(entity.getNoteRecptnId())
                 .rcverId(entity.getRcverId())
                 .openYn(entity.getOpenYn())
-                .regDate(entity.getFrstRegistPnttm())
+                .regDate(entity.getFrstRegisterPnttm())
                 .build();
     }
 
@@ -155,7 +155,7 @@ public class NoteServiceImpl implements NoteService {
                 .noteSj(note.getNoteSj())
                 .noteTrnsmitId(entity.getNoteTrnsmitId())
                 .trnsmiterId(entity.getTrnsmiterId())
-                .regDate(entity.getFrstRegistPnttm())
+                .regDate(entity.getFrstRegisterPnttm())
                 .build();
     }
 }

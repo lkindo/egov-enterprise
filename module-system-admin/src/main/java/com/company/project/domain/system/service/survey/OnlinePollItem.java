@@ -5,19 +5,19 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ??ㅼ뵬????紐??????類ｋ궖 Entity
- * ??뉕탢?????뵠?? NONLINEPOLLIEM
+ * 온라인 폴 항목 엔티티
+ * 매핑 테이블: NONLINEPOLLIEM
  */
 @Entity
 @Table(name = "NONLINEPOLLIEM")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class OnlinePollItem extends BaseEntity {
 
     @Id
@@ -29,13 +29,6 @@ public class OnlinePollItem extends BaseEntity {
 
     @Column(name = "POLL_IEM_NM", length = 255, nullable = false)
     private String pollIemNm;
-
-    @Builder
-    public OnlinePollItem(String pollIemId, String pollId, String pollIemNm) {
-        this.pollIemId = pollIemId;
-        this.pollId = pollId;
-        this.pollIemNm = pollIemNm;
-    }
 
     public void update(String pollIemNm) {
         this.pollIemNm = pollIemNm;

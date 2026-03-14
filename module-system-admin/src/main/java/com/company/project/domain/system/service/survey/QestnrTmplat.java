@@ -3,31 +3,32 @@ package com.company.project.domain.system.service.survey;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ??뿅??쀫탣???類ｋ궖 Entity
- * ??뉕탢?????뵠?? NQUSTNRTMPLAT
+ * 설문지 템플릿 엔티티
+ * 매핑 테이블: NQESTNRTMPLAT
  */
 @Entity
-@Table(name = "NQUSTNRTMPLAT")
+@Table(name = "NQESTNRTMPLAT")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class QestnrTmplat extends BaseEntity {
 
     @Id
     @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
     private String qestnrTmplatId;
 
-    @Column(name = "QUSTNR_TMPLAT_TY", length = 100, nullable = false)
+    @Column(name = "QUSTNR_TMPLAT_TY", length = 100)
     private String qestnrTmplatTy;
 
-    @Column(name = "QUSTNR_TMPLAT_IMAGE_INFO", length = 2000)
+    @Column(name = "QUSTNR_TMPLAT_IMAGEPATHNM", length = 100)
     private String qestnrTmplatImagepathnm;
 
-    @Column(name = "QUSTNR_TMPLAT_DC", length = 2000)
+    @Column(name = "QUSTNR_TMPLAT_CN", length = 1000)
     private String qestnrTmplatCn;
 
     public void update(String qestnrTmplatTy, String qestnrTmplatImagepathnm, String qestnrTmplatCn) {

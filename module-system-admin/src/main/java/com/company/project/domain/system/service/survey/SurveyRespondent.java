@@ -1,23 +1,21 @@
 package com.company.project.domain.system.service.survey;
 
 import com.company.project.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ??뿅??臾먮뼗???類ｋ궖 Entity
- * ??뉕탢?????뵠?? NQUSTNRRESPONDINFO
+ * 설문 응답자 엔티티
+ * 매핑 테이블: NQESTNRRESPOND
  */
 @Entity
-@Table(name = "NQUSTNRRESPONDINFO")
+@Table(name = "NQESTNRRESPOND")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class SurveyRespondent extends BaseEntity {
 
     @Id
@@ -27,56 +25,42 @@ public class SurveyRespondent extends BaseEntity {
     @Column(name = "QESTNR_ID", length = 20, nullable = false)
     private String qestnrId;
 
-    @Column(name = "QUSTNR_TMPLAT_ID", length = 20)
+    @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
     private String qestnrTmplatId;
 
-    @Column(name = "SEXDSTN_CODE", length = 20)
+    @Column(name = "SEXDSTN_CODE", length = 1)
     private String sexdstnCode;
 
-    @Column(name = "OCCP_TY_CODE", length = 20)
+    @Column(name = "OCCP_TY_CODE", length = 1)
     private String occpTyCode;
 
-    @Column(name = "RESPOND_NM", length = 100, nullable = false)
+    @Column(name = "RESPOND_NM", length = 50)
     private String respondNm;
 
     @Column(name = "BRTHDY", length = 20)
-    private String brth;
+    private String brthdy;
 
-    @Column(name = "AREA_NO", length = 10)
+    @Column(name = "AREA_NO", length = 4)
     private String areaNo;
 
-    @Column(name = "MIDDLE_TELNO", length = 10)
+    @Column(name = "MIDDLE_TELNO", length = 4)
     private String middleTelno;
 
-    @Column(name = "END_TELNO", length = 10)
+    @Column(name = "END_TELNO", length = 4)
     private String endTelno;
 
-    @Builder
-    public SurveyRespondent(String qestnrRespondId, String qestnrId, String qestnrTmplatId,
-                           String sexdstnCode, String occpTyCode, String respondNm, String brth,
-                           String areaNo, String middleTelno, String endTelno, String frstRegisterId) {
-        this.qestnrRespondId = qestnrRespondId;
-        this.qestnrId = qestnrId;
-        this.qestnrTmplatId = qestnrTmplatId;
-        this.sexdstnCode = sexdstnCode;
-        this.occpTyCode = occpTyCode;
-        this.respondNm = respondNm;
-        this.brth = brth;
-        this.areaNo = areaNo;
-        this.middleTelno = middleTelno;
-        this.endTelno = endTelno;
-        this.createdBy = frstRegisterId;
-    }
+    @Column(name = "RESPOND_ID", length = 20)
+    private String respondId;
 
-    public void update(String sexdstnCode, String occpTyCode, String respondNm, String brth,
-                      String areaNo, String middleTelno, String endTelno, String userId) {
+    public void update(String sexdstnCode, String occpTyCode, String respondNm, String brthdy,
+            String areaNo, String middleTelno, String endTelno, String respondId) {
         this.sexdstnCode = sexdstnCode;
         this.occpTyCode = occpTyCode;
         this.respondNm = respondNm;
-        this.brth = brth;
+        this.brthdy = brthdy;
         this.areaNo = areaNo;
         this.middleTelno = middleTelno;
         this.endTelno = endTelno;
-        this.lastModifiedBy = userId;
+        this.respondId = respondId;
     }
 }

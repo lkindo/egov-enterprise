@@ -1,16 +1,18 @@
 package com.company.project.domain.schedule;
 
-import com.company.project.domain.common.BaseTimeEntity;
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "NMEMOTODO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
-public class MemoTodo extends BaseTimeEntity {
+@SuperBuilder
+public class MemoTodo extends BaseEntity {
 
     @Id
     @Column(name = "TODO_ID", length = 20)
@@ -31,17 +33,10 @@ public class MemoTodo extends BaseTimeEntity {
     @Column(name = "WRTER_ID", length = 20, nullable = false)
     private String wrterId;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    public void update(String todoNm, String todoBeginTime, String todoEndTime, String todoCn, String lastUpdusrId) {
+    public void update(String todoNm, String todoBeginTime, String todoEndTime, String todoCn) {
         this.todoNm = todoNm;
         this.todoBeginTime = todoBeginTime;
         this.todoEndTime = todoEndTime;
         this.todoCn = todoCn;
-        this.lastUpdusrId = lastUpdusrId;
     }
 }

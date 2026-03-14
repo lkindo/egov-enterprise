@@ -1,19 +1,20 @@
 package com.company.project.domain.organization;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "NORGNZTINFO")
-public class OrganizationManage {
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
+public class OrganizationManage extends BaseEntity {
 
     @Id
     @Column(name = "ORGNZT_ID", length = 20)
@@ -24,11 +25,4 @@ public class OrganizationManage {
 
     @Column(name = "ORGNZT_DC", length = 100)
     private String orgnztDc;
-
-    @Builder
-    public OrganizationManage(String orgnztId, String orgnztNm, String orgnztDc) {
-        this.orgnztId = orgnztId;
-        this.orgnztNm = orgnztNm;
-        this.orgnztDc = orgnztDc;
-    }
 }

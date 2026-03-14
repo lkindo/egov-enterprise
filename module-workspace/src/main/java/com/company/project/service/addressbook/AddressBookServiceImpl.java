@@ -62,7 +62,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                     .trgetOrgnztId(dto.getTrgetOrgnztId())
                     .useAt("Y")
                     .wrterId(userId)
-                    .frstRegisterId(userId)
+                    .createdBy(userId)
                     .build();
 
             addressBookRepository.save(Objects.requireNonNull(entity));
@@ -95,7 +95,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(dto.getAdbkId()))
                 .orElseThrow(() -> new IllegalArgumentException("AddressBook not found: " + dto.getAdbkId()));
 
-        entity.update(dto.getAdbkNm(), dto.getOthbcScope(), dto.getUseAt(), Objects.requireNonNull(userId));
+        entity.update(dto.getAdbkNm(), dto.getOthbcScope(), dto.getUseAt());
 
         if (dto.getAdbkMan() == null) {
             return;
@@ -145,7 +145,7 @@ public class AddressBookServiceImpl implements AddressBookService {
         AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(adbkId))
                 .orElseThrow(() -> new IllegalArgumentException("AddressBook not found: " + adbkId));
 
-        entity.update(entity.getAdbkNm(), entity.getOthbcScope(), "N", userId);
+        entity.update(entity.getAdbkNm(), entity.getOthbcScope(), "N");
     }
 
     @Override
@@ -175,10 +175,10 @@ public class AddressBookServiceImpl implements AddressBookService {
                 .trgetOrgnztId(entity.getTrgetOrgnztId())
                 .useAt(entity.getUseAt())
                 .wrterId(entity.getWrterId())
-                .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegistPnttm(entity.getFrstRegisterPnttm())
-                .lastUpdusrId(entity.getLastUpdusrId())
-                .lastUpdtPnttm(entity.getLastUpdusrPnttm())
+                .frstRegisterId(entity.getCreatedBy())
+                .frstRegistPnttm(entity.getCreatedDate())
+                .lastUpdusrId(entity.getLastModifiedBy())
+                .lastUpdtPnttm(entity.getLastModifiedDate())
                 .build();
     }
 

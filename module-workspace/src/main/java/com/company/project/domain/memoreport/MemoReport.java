@@ -3,15 +3,14 @@ package com.company.project.domain.memoreport;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-/**
- * 筌롫뗀?덅퉪?욱??酉???
- * ??뉕탢?????뵠?? NMEMOREPRT
- */
 @Entity
 @Table(name = "NMEMOREPRT")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class MemoReport extends BaseEntity {
 
     @Id
@@ -45,22 +44,6 @@ public class MemoReport extends BaseEntity {
     @Column(name = "REPORTR_INQIRE_DT", length = 20)
     private String reportrInqireDt;
 
-    @Builder
-    public MemoReport(String reprtId, String reprtSj, String reportDe, String wrterId,
-                      String reportrId, String reportCn, String atchFileId,
-                      String drctMatter, String drctMatterRegistDt, String reportrInqireDt) {
-        this.reprtId = reprtId;
-        this.reprtSj = reprtSj;
-        this.reportDe = reportDe;
-        this.wrterId = wrterId;
-        this.reportrId = reportrId;
-        this.reportCn = reportCn;
-        this.atchFileId = atchFileId;
-        this.drctMatter = drctMatter;
-        this.drctMatterRegistDt = drctMatterRegistDt;
-        this.reportrInqireDt = reportrInqireDt;
-    }
-
     public void update(String reprtSj, String reportDe, String wrterId, String reportrId,
                       String reportCn, String atchFileId) {
         this.reprtSj = reprtSj;
@@ -71,12 +54,12 @@ public class MemoReport extends BaseEntity {
         this.atchFileId = atchFileId;
     }
 
+    public void updateInqireDt(String reportrInqireDt) {
+        this.reportrInqireDt = reportrInqireDt;
+    }
+
     public void updateDrctMatter(String drctMatter, String drctMatterRegistDt) {
         this.drctMatter = drctMatter;
         this.drctMatterRegistDt = drctMatterRegistDt;
-    }
-
-    public void updateInqireDt(String reportrInqireDt) {
-        this.reportrInqireDt = reportrInqireDt;
     }
 }

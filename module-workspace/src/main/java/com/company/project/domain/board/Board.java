@@ -1,29 +1,29 @@
 package com.company.project.domain.board;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "NBBS")
-@EntityListeners(AuditingEntityListener.class)
+@EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
 @SQLRestriction("use_at = 'Y'")
-public class Board implements Serializable {
+@SuperBuilder
+public class Board extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    @jakarta.persistence.Id
-    @jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.SEQUENCE, generator = "nttIdSeq")
-    @jakarta.persistence.SequenceGenerator(name = "nttIdSeq", sequenceName = "NTT_ID_SEQ", allocationSize = 1)
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "nttIdSeq")
+    @SequenceGenerator(name = "nttIdSeq", sequenceName = "NTT_ID_SEQ", allocationSize = 1)
     @Column(name = "NTT_ID")
     private Long nttId;
 
@@ -78,22 +78,6 @@ public class Board implements Serializable {
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @CreatedBy
-    @Column(name = "FRST_REGISTER_ID", length = 20, updatable = false)
-    private String frstRegisterId;
-
-    @LastModifiedBy
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @CreatedDate
-    @Column(name = "FRST_REGIST_PNTTM", updatable = false)
-    private LocalDateTime createdDate;
-
-    @LastModifiedDate
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime modifiedDate;
-
     @Column(name = "SECRET_AT", length = 1)
     private String secretAt;
 
@@ -110,10 +94,10 @@ public class Board implements Serializable {
     @Column(name = "FILE_CO")
     private Integer fileCo;
 
-    @Builder
+    // @SuperBuilder 는 클래스 레벨에 이미 선언됨
     public Board(Long nttId, String bbsId, Long nttNo, String nttSj, String nttCn, String replyAt,
             Long parnts, Integer replyLc, Long sortOrdr, Integer inqireCo, String useAt,
-            String ntceBgnde, String ntceEndde, String ntcrId, String ntcrNm, String password,   
+            String ntceBgnde, String ntceEndde, String ntcrId, String ntcrNm, String password,
             String atchFileId, Integer commentCo, Integer fileCo) {
         this.nttId = nttId;
         this.bbsId = Objects.requireNonNull(bbsId);

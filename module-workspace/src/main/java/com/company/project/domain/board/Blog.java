@@ -1,20 +1,18 @@
 package com.company.project.domain.board;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "NBLOG")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
-public class Blog {
+@SuperBuilder
+public class Blog extends BaseEntity {
 
     @Id
     @Column(name = "BLOG_ID", length = 20)
@@ -35,30 +33,15 @@ public class Blog {
     @Column(name = "USE_AT", length = 1)
     private String useAt;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @CreatedDate
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @LastModifiedDate
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdusrPnttm;
-
     @Column(name = "BBS_ID", length = 20)
     private String bbsId;
 
     @Column(name = "BLOG_AT", length = 1)
     private String blogAt;
 
-    public void update(String blogNm, String blogIntrcn, String useAt, String lastUpdusrId) {
+    public void update(String blogNm, String blogIntrcn, String useAt) {
         this.blogNm = blogNm;
         this.blogIntrcn = blogIntrcn;
         this.useAt = useAt;
-        this.lastUpdusrId = lastUpdusrId;
     }
 }

@@ -3,29 +3,30 @@ package com.company.project.domain.system.service.survey;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ??뿅??臾먮뼗 ?類ｋ궖 Entity
- * ??뉕탢?????뵠?? NQUSTNRRESPONDINFO
+ * 설문 응답 정보 엔티티
+ * 매핑 테이블: NQUSTNRRSPNSRESULT
  */
 @Entity
-@Table(name = "NQUSTNRRESPONDINFO")
+@Table(name = "NQUSTNRRSPNSRESULT")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class QustnrRespondInfo extends BaseEntity {
 
     @Id
-    @Column(name = "QUSTNR_QESRSPNS_ID", length = 20)
+    @Column(name = "QUSTNR_RSPNS_ID", length = 20)
     private String qestnrQesrspnsId;
-
-    @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
-    private String qestnrTmplatId;
 
     @Column(name = "QESTNR_ID", length = 20, nullable = false)
     private String qestnrId;
+
+    @Column(name = "QUSTNR_TMPLAT_ID", length = 20, nullable = false)
+    private String qestnrTmplatId;
 
     @Column(name = "QUSTNR_QESITM_ID", length = 20, nullable = false)
     private String qestnrQesitmId;
@@ -46,13 +47,5 @@ public class QustnrRespondInfo extends BaseEntity {
         this.respondAnswerCn = respondAnswerCn;
         this.respondNm = respondNm;
         this.etcAnswerCn = etcAnswerCn;
-    }
-
-    public void setLastUpdtPnttm(String pnttm) {
-        // Compatibility
-    }
-
-    public void setFrstRegisterPnttm(String pnttm) {
-        // Compatibility
     }
 }

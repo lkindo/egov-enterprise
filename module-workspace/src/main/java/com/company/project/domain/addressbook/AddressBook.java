@@ -1,11 +1,9 @@
 package com.company.project.domain.addressbook;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
  * 주소록 정보 JPA Entity
@@ -14,8 +12,17 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "nadbkmanage")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class AddressBook {
+@AllArgsConstructor
+@SuperBuilder
+@AttributeOverrides({
+    @AttributeOverride(name = "createdBy", column = @Column(name = "frst_register_id", updatable = false, length = 20)),
+    @AttributeOverride(name = "lastModifiedBy", column = @Column(name = "last_updusr_id", length = 20)),
+    @AttributeOverride(name = "createdDate", column = @Column(name = "frst_regist_pnttm", updatable = false)),
+    @AttributeOverride(name = "lastModifiedDate", column = @Column(name = "last_updt_pnttm"))
+})
+public class AddressBook extends BaseEntity {
 
     @Id
     @Column(name = "adbk_id", length = 20)
@@ -36,36 +43,9 @@ public class AddressBook {
     @Column(name = "wrter_id", length = 20)
     private String wrterId;
 
-    @Column(name = "frst_register_id", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "frst_regist_pnttm")
-    private LocalDateTime frstRegisterPnttm;
-
-    @Column(name = "last_updusr_id", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "last_updt_pnttm")
-    private LocalDateTime lastUpdusrPnttm;
-
-    @Builder
-    public AddressBook(String adbkId, String adbkNm, String othbcScope, String trgetOrgnztId,
-            String useAt, String wrterId, String frstRegisterId) {
-        this.adbkId = adbkId;
-        this.adbkNm = adbkNm;
-        this.othbcScope = othbcScope;
-        this.trgetOrgnztId = trgetOrgnztId;
-        this.useAt = useAt;
-        this.wrterId = wrterId;
-        this.frstRegisterId = frstRegisterId;
-        this.frstRegisterPnttm = LocalDateTime.now();
-    }
-
-    public void update(String adbkNm, String othbcScope, String useAt, String updusrId) {
+    public void update(String adbkNm, String othbcScope, String useAt) {
         this.adbkNm = adbkNm;
         this.othbcScope = othbcScope;
         this.useAt = useAt;
-        this.lastUpdusrId = updusrId;
-        this.lastUpdusrPnttm = LocalDateTime.now();
     }
 }

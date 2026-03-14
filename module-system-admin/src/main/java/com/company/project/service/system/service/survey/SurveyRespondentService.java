@@ -21,7 +21,6 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
 
     @Override
     public Page<SurveyRespondentDto> getSurveyRespondentList(String qestnrId, String keyword, Pageable pageable) {
-        // Simplified search, normally we would filter by qestnrId too
         return surveyRespondentRepository.findByRespondNmContaining(keyword == null ? "" : keyword, pageable)
                 .map(SurveyRespondentDto::from);
     }
@@ -44,11 +43,11 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
                 .sexdstnCode(dto.getSexdstnCode())
                 .occpTyCode(dto.getOccpTyCode())
                 .respondNm(dto.getRespondNm())
-                .brth(dto.getBrth())
+                .brthdy(dto.getBrth())
                 .areaNo(dto.getAreaNo())
                 .middleTelno(dto.getMiddleTelno())
                 .endTelno(dto.getEndTelno())
-                .frstRegisterId(userId)
+                .createdBy(userId)
                 .build();
         surveyRespondentRepository.save(Objects.requireNonNull(entity));
         return id;
@@ -60,7 +59,7 @@ public class SurveyRespondentService implements EgovSurveyRespondentService {
         SurveyRespondent entity = surveyRespondentRepository.findById(Objects.requireNonNull(respondentId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getSexdstnCode(), dto.getOccpTyCode(), dto.getRespondNm(),
-                dto.getBrth(), dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno(), userId);
+                dto.getBrth(), dto.getAreaNo(), dto.getMiddleTelno(), dto.getEndTelno(), dto.getRespondId());
     }
 
     @Override

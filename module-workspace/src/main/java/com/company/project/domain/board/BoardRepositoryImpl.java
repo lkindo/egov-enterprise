@@ -34,7 +34,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.nttNo,
                                                 QBoard.board.nttCn,
                                                 QBoard.board.password,
-                                                QBoard.board.frstRegisterId,
+                                                QBoard.board.createdBy.as("frstRegisterId"),
                                                 QUser.user.userNm.coalesce(QBoard.board.ntcrNm).as("frstRegisterNm"),
                                                 QBoard.board.createdDate,
                                                 QBoard.board.ntceBgnde,
@@ -51,13 +51,13 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.secretAt,
                                                 QBoardMaster.boardMaster.bbsTyCode,
                                                 QBoardMaster.boardMaster.replyPosblAt,
-                                                QBoardMaster.boardMaster.fileAtchPosblAt,        
-                                                QBoardMaster.boardMaster.atchPosblFileNumber,    
+                                                QBoardMaster.boardMaster.fileAtchPosblAt,
+                                                QBoardMaster.boardMaster.atchPosblFileNumber,
                                                 QBoardMaster.boardMaster.bbsNm))
                                 .from(QBoard.board)
-                                .leftJoin(QUser.user).on(QBoard.board.frstRegisterId.eq(QUser.user.esntlId))
+                                .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
                                 .leftJoin(QBoardMaster.boardMaster)
-                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))       
+                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
                                 .where(QBoard.board.nttId.eq(id))
                                 .fetchOne();
 
@@ -99,9 +99,9 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.nttNo,
                                                 QBoard.board.noticeAt,
                                                 QBoard.board.secretAt,
-                                                QBoard.board.commentCo)) 
+                                                QBoard.board.commentCo))
                                 .from(QBoard.board)
-                                .leftJoin(QUser.user).on(QBoard.board.frstRegisterId.eq(QUser.user.esntlId))
+                                .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
                                 .where(builder)
                                 .orderBy(orderSpecifier, QBoard.board.nttNo.asc())
                                 .offset(pageable.getOffset())
@@ -111,7 +111,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 Long total = queryFactory
                                 .select(QBoard.board.count())
                                 .from(QBoard.board)
-                                .leftJoin(QUser.user).on(QBoard.board.frstRegisterId.eq(QUser.user.esntlId))
+                                .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
                                 .where(builder)
                                 .fetchOne();
 

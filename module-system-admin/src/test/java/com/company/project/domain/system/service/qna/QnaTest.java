@@ -16,7 +16,7 @@ class QnaTest {
                 .qestnSj("Question Title")
                 .qestnCn("Question Content")
                 .wrterNm("Tester")
-                .frstRegisterId("admin")
+                .createdBy("admin")
                 .build();
 
         assertThat(qna.getQaId()).isEqualTo("QA_001");
@@ -34,7 +34,8 @@ class QnaTest {
                 .qestnSj("Old Title")
                 .build();
 
-        qna.updateQuestion("New Title", "New Content", "test@test.com", "02", "111", "222", "user01");
+        qna.updateQuestion("New Title", "New Content", "test@test.com", "02", "111", "222");
+        qna.setLastModifiedBy("user01");
 
         assertThat(qna.getQestnSj()).isEqualTo("New Title");
         assertThat(qna.getQestnCn()).isEqualTo("New Content");
@@ -45,7 +46,8 @@ class QnaTest {
     @DisplayName("답변 기능 테스트")
     void answerTest() {
         Qna qna = Qna.builder().build();
-        qna.answer("This is an answer", "admin2");
+        qna.answer("This is an answer");
+        qna.setLastModifiedBy("admin2");
 
         assertThat(qna.getAnswerCn()).isEqualTo("This is an answer");
         assertThat(qna.getQnaProcessSttusCode()).isEqualTo("A");

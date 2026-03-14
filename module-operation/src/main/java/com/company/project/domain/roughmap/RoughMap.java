@@ -5,19 +5,19 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ??덈즲 ?類ｋ궖 Entity
- * ??뉕탢?????뵠?? NROUGHMAP
+ * 약도 정보 Entity
+ * 매핑 테이블: NROUGHMAP
  */
 @Entity
 @Table(name = "NROUGHMAP")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class RoughMap extends BaseEntity {
 
     @Id
@@ -47,20 +47,6 @@ public class RoughMap extends BaseEntity {
 
     @Column(name = "ZOOMLEVEL", length = 3)
     private String zoomLevel;
-
-    @Builder
-    public RoughMap(String roughMapId, String roughMapSj, String roughMapAddress, String la, String lo,
-                    String markerLa, String markerLo, String infoWindow, String zoomLevel) {
-        this.roughMapId = roughMapId;
-        this.roughMapSj = roughMapSj;
-        this.roughMapAddress = roughMapAddress;
-        this.la = la;
-        this.lo = lo;
-        this.markerLa = markerLa;
-        this.markerLo = markerLo;
-        this.infoWindow = infoWindow;
-        this.zoomLevel = zoomLevel;
-    }
 
     public void update(String roughMapSj, String roughMapAddress, String la, String lo,
                       String markerLa, String markerLo, String infoWindow, String zoomLevel) {

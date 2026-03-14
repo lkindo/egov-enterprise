@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 /**
- * ???묐떟??DTO
+ * 설문 응답자 DTO
  */
 @Getter
 @Builder
@@ -21,6 +21,7 @@ public class SurveyRespondentDto {
     private String areaNo;
     private String middleTelno;
     private String endTelno;
+    private String respondId;
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
@@ -34,10 +35,11 @@ public class SurveyRespondentDto {
                 .sexdstnCode(entity.getSexdstnCode())
                 .occpTyCode(entity.getOccpTyCode())
                 .respondNm(entity.getRespondNm())
-                .brth(entity.getBrth())
+                .brth(entity.getBrthdy())
                 .areaNo(entity.getAreaNo())
                 .middleTelno(entity.getMiddleTelno())
                 .endTelno(entity.getEndTelno())
+                .respondId(entity.getRespondId())
                 .frstRegisterId(entity.getCreatedBy())
                 .frstRegisterPnttm(entity.getCreatedDate())
                 .lastUpdusrId(entity.getLastModifiedBy())

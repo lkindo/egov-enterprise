@@ -1,28 +1,20 @@
 package com.company.project.domain.calendar;
 
-import com.company.project.domain.common.BaseTimeEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ??곸뵬 ?온???酉???
+ * 휴일 정보 엔티티
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "NCALRESTDE")
-public class Restde extends BaseTimeEntity {
+public class Restde extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,17 +33,10 @@ public class Restde extends BaseTimeEntity {
     @Column(name = "RESTDE_SE_CODE", length = 1)
     private String restdeSeCode;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    public void update(String restdeDe, String restdeNm, String restdeDc, String restdeSeCode, String lastUpdusrId) {
+    public void update(String restdeDe, String restdeNm, String restdeDc, String restdeSeCode) {
         this.restdeDe = restdeDe;
         this.restdeNm = restdeNm;
         this.restdeDc = restdeDc;
         this.restdeSeCode = restdeSeCode;
-        this.lastUpdusrId = lastUpdusrId;
     }
 }

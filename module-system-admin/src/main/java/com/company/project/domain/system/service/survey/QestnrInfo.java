@@ -3,18 +3,19 @@ package com.company.project.domain.system.service.survey;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ??뿅??類ｋ궖 Entity
- * ??뉕탢?????뵠?? NQESTNRINFO
+ * 설문조사 정보 엔티티
+ * 매핑 테이블: NQESTNRINFO
  */
 @Entity
 @Table(name = "NQESTNRINFO")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class QestnrInfo extends BaseEntity {
 
     @Id
