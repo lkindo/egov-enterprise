@@ -3,6 +3,8 @@ package com.company.project.domain.board;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -13,6 +15,7 @@ import java.util.Objects;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Entity
 @Table(name = "NBBS")
 @EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
@@ -55,10 +58,12 @@ public class Board extends BaseEntity implements Serializable {
     private String sjBoldAt;
 
     @Column(name = "RDCNT")
-    private Integer inqireCo;
+    @Builder.Default
+    private Integer inqireCo = 0;
 
     @Column(name = "USE_AT", length = 1)
-    private String useAt;
+    @Builder.Default
+    private String useAt = "Y";
 
     @Column(name = "NTCE_BGNDE", length = 20)
     private String ntceBgnde;
@@ -89,36 +94,12 @@ public class Board extends BaseEntity implements Serializable {
 
     // 반정규화 필드 (성능 최적화용)
     @Column(name = "COMMENT_CO")
-    private Integer commentCo;
+    @Builder.Default
+    private Integer commentCo = 0;
 
     @Column(name = "FILE_CO")
-    private Integer fileCo;
-
-    // @SuperBuilder 는 클래스 레벨에 이미 선언됨
-    public Board(Long nttId, String bbsId, Long nttNo, String nttSj, String nttCn, String replyAt,
-            Long parnts, Integer replyLc, Long sortOrdr, Integer inqireCo, String useAt,
-            String ntceBgnde, String ntceEndde, String ntcrId, String ntcrNm, String password,
-            String atchFileId, Integer commentCo, Integer fileCo) {
-        this.nttId = nttId;
-        this.bbsId = Objects.requireNonNull(bbsId);
-        this.nttNo = nttNo;
-        this.nttSj = nttSj;
-        this.nttCn = nttCn;
-        this.replyAt = replyAt;
-        this.parnts = parnts;
-        this.replyLc = replyLc;
-        this.sortOrdr = sortOrdr;
-        this.inqireCo = inqireCo == null ? 0 : inqireCo;
-        this.useAt = useAt == null ? "Y" : useAt;
-        this.ntceBgnde = ntceBgnde;
-        this.ntceEndde = ntceEndde;
-        this.ntcrId = ntcrId;
-        this.ntcrNm = ntcrNm;
-        this.password = password;
-        this.atchFileId = atchFileId;
-        this.commentCo = commentCo == null ? 0 : commentCo;
-        this.fileCo = fileCo == null ? 0 : fileCo;
-    }
+    @Builder.Default
+    private Integer fileCo = 0;
 
     public void update(String nttSj, String nttCn, String ntcrId, String ntcrNm, String password, String ntceBgnde,
             String ntceEndde, String atchFileId) {
