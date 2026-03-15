@@ -51,13 +51,12 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
         "com.company.project.security",
         "com.company.project.api"
 }, nameGenerator = com.company.project.core.config.FullBeanNameGenerator.class, excludeFilters = {
-        @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = {
-                org.springframework.stereotype.Controller.class,
-                org.springframework.web.bind.annotation.RestController.class
-        }),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Scheduling.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\..*"),
-        @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Interceptor.*")
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Interceptor.*"),
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test$"),
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*"),
+        @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = { org.springframework.boot.test.context.TestConfiguration.class })
 })
 @EnableJpaRepositories(basePackages = "com.company.project.domain")
 @EntityScan(basePackages = { "com.company.project.domain" })
@@ -142,7 +141,7 @@ public class MinimalTestConfig {
     }
 
     @Bean
-    @Profile("!security-test")
+    @Profile("minimal-test-security")
     @org.springframework.core.annotation.Order(org.springframework.core.Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(auth -> auth.anyRequest().permitAll());

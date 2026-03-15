@@ -1,13 +1,17 @@
 package com.company.project.domain.auth;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Entity
 @Table(name = "NROLEINFO")
-public class RoleInfo {
+@SuperBuilder
+public class RoleInfo extends BaseEntity {
 
     @Id
     @Column(name = "ROLE_CODE", length = 50)
@@ -29,18 +33,8 @@ public class RoleInfo {
     private String roleSort;
 
     @Column(name = "ROLE_CREAT_DE", length = 20)
-    private String creatDt;
-
-    @Builder
-    public RoleInfo(String roleCode, String roleNm, String rolePttrn, String roleDc, String roleTy, String roleSort) {
-        this.roleCode = roleCode;
-        this.roleNm = roleNm;
-        this.rolePttrn = rolePttrn;
-        this.roleDc = roleDc;
-        this.roleTy = roleTy;
-        this.roleSort = roleSort;
-        this.creatDt = java.time.LocalDate.now().toString().replace("-", "");
-    }
+    @Builder.Default
+    private String creatDt = java.time.LocalDate.now().toString().replace("-", "");
 
     /**
      * Updates the role information.

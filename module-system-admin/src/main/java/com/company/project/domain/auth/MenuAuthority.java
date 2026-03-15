@@ -1,26 +1,25 @@
 package com.company.project.domain.auth;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import java.io.Serializable;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Entity
 @Table(name = "NMENUCREATDTLS")
-public class MenuAuthority {
+@EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
+@SuperBuilder
+public class MenuAuthority extends BaseEntity {
 
     @EmbeddedId
     private MenuAuthorityId id;
 
     @Column(name = "MAPNG_CREAT_ID", length = 30)
     private String mapngCreatId;
-
-    @Builder
-    public MenuAuthority(MenuAuthorityId id, String mapngCreatId) {
-        this.id = id;
-        this.mapngCreatId = mapngCreatId;
-    }
 
     @Embeddable
     @Getter

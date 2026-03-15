@@ -42,18 +42,44 @@ class EgovFileScrtyTest {
     }
 
     @Test
-    @DisplayName("비밀번호 암호화(해시) 테스트")
-    void passwordEncryptionTest() throws Exception {
+    @DisplayName("비밀번호 일치 확인 테스트")
+    void checkPasswordTest() throws Exception {
         String password = "password123";
-        String salt = "salt";
+        byte[] salt = "salt".getBytes();
+        String encoded = EgovFileScrty.encryptPassword(password, salt);
 
-        String encrypted = EgovFileScrty.encryptPassword(password, salt.getBytes());
+        assertThat(EgovFileScrty.checkPassword(password, encoded, salt)).isTrue();
+        assertThat(EgovFileScrty.checkPassword("wrong", encoded, salt)).isFalse();
+    }
 
+    @Test
+    @DisplayName("문자열 인코딩 및 디코딩 테스트")
+    void encodeDecodeTest() throws Exception {
+        String original = "eGovFrame 현대화";
+        String encoded = EgovFileScrty.encode(original);
+        String decoded = EgovFileScrty.decode(encoded);
+
+        assertThat(encoded).isNotEqualTo(original);
+        assertThat(decoded).isEqualTo(original);
+    }
+
+    @Test
+    @DisplayName("ID 기반 비밀번호 암호화 테스트")
+    void encryptPasswordWithIdTest() throws Exception {
+        String password = "password123";
+        String id = "user01";
+
+        String encrypted = EgovFileScrty.encryptPassword(password, id);
         assertThat(encrypted).isNotNull();
         assertThat(encrypted).isNotEqualTo(password);
+    }
 
-        // Same input should produce same output
-        String encrypted2 = EgovFileScrty.encryptPassword(password, salt.getBytes());
-        assertThat(encrypted).isEqualTo(encrypted2);
+    @Test
+    @DisplayName("null 입력 시 빈 문자열 반환 확인")
+    void nullInputTest() throws Exception {
+        assertThat(EgovFileScrty.encodeBinary(null)).isEqualTo("");
+        assertThat(EgovFileScrty.encryptPassword(null)).isEqualTo("");
+        assertThat(EgovFileScrty.encryptPassword(null, "id")).isEqualTo("");
+        assertThat(EgovFileScrty.encryptPassword(null, new byte[0])).isEqualTo("");
     }
 }

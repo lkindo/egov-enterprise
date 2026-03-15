@@ -3,9 +3,11 @@ package com.company.project.domain.user.entity;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -19,7 +21,9 @@ import java.time.LocalDateTime;
 @Table(name = "NENTRPRSMBER")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@SuperBuilder
 public class EnterpriseUser extends BaseEntity {
 
     @Column(name = "ESNTL_ID", nullable = false, length = 20)
@@ -100,41 +104,8 @@ public class EnterpriseUser extends BaseEntity {
     private String lockAt;
 
     @Column(name = "CHG_PWD_LAST_PNTTM")
-    private LocalDateTime chgPwdLastPnttm;
-
-    @Builder
-    public EnterpriseUser(String esntlId, String entrprsmberId, String entrprsSeCode, String bizrno, String jurirno,
-            String cmpnyNm, String cxfc, String zip, String adres, String entrprsMiddleTelno,
-            String fxnum, String indutyCode, String applcntNm, String entrprsMberSttus,
-            String entrprsMberPassword, String entrprsMberPasswordHint, String entrprsMberPasswordCnsr,
-            String groupId, String detailAdres, String entrprsEndTelno, String areaNo,
-            String applcntEmailAdres, String applcntIhidnum, String lockAt) {
-        this.esntlId = esntlId;
-        this.entrprsmberId = entrprsmberId;
-        this.entrprsSeCode = entrprsSeCode;
-        this.bizrno = bizrno;
-        this.jurirno = jurirno;
-        this.cmpnyNm = cmpnyNm;
-        this.cxfc = cxfc;
-        this.zip = zip;
-        this.adres = adres;
-        this.entrprsMiddleTelno = entrprsMiddleTelno;
-        this.fxnum = fxnum;
-        this.indutyCode = indutyCode;
-        this.applcntNm = applcntNm;
-        this.entrprsMberSttus = entrprsMberSttus;
-        this.entrprsMberPassword = entrprsMberPassword;
-        this.entrprsMberPasswordHint = entrprsMberPasswordHint;
-        this.entrprsMberPasswordCnsr = entrprsMberPasswordCnsr;
-        this.groupId = groupId;
-        this.detailAdres = detailAdres;
-        this.entrprsEndTelno = entrprsEndTelno;
-        this.areaNo = areaNo;
-        this.applcntEmailAdres = applcntEmailAdres;
-        this.applcntIhidnum = applcntIhidnum;
-        this.lockAt = lockAt;
-        this.chgPwdLastPnttm = LocalDateTime.now();
-    }
+    @Builder.Default
+    private LocalDateTime chgPwdLastPnttm = LocalDateTime.now();
 
     public void update(String entrprsmberId, String entrprsSeCode, String bizrno, String jurirno, String cmpnyNm,
             String cxfc, String zip, String adres, String entrprsMiddleTelno, String fxnum,

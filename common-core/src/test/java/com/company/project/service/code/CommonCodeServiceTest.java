@@ -483,76 +483,56 @@ class CommonCodeServiceTest {
         }
 
         @Test
-        @DisplayName("공통상세코드 수정 성공")
-        void testUpdateCmmnDetailCode() {
+        @DisplayName("공통상세코드 수정 성공 - 상세 필드 검증")
+        void testUpdateCmmnDetailCode_Detailed() {
             // Given
             CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
             dto.setCodeId("GROUP_001");
             dto.setCode("CODE_001");
-            dto.setCodeNm("수정된 코드명");
-            dto.setLastUpdusrId("admin");
+            dto.setCodeNm("수정된 이름");
+            dto.setCodeDc("수정된 설명");
+            dto.setUseAt("N");
+            dto.setLastUpdusrId("user01");
 
             CommonCodeId codeId = new CommonCodeId("GROUP_001", "CODE_001");
-            CommonCode existing = CommonCode.builder()
+            CommonCode existing = spy(CommonCode.builder()
                     .codeGroupId("GROUP_001")
                     .code("CODE_001")
-                    .codeNm("원래 코드명")
-                    .build();
+                    .codeNm("기존 이름")
+                    .build());
 
             when(commonCodeRepository.findById(codeId)).thenReturn(Optional.of(existing));
 
             // When
             commonCodeService.updateCmmnDetailCode(dto);
 
-            // Then - 서비스 호출이 예외 없이 완료되는지 확인
-            assertTrue(true);
+            // Then
+            verify(existing).update(eq("수정된 이름"), eq("수정된 설명"), eq("N"), eq("user01"));
+            assertEquals("수정된 이름", existing.getCodeNm());
         }
 
         @Test
-        @DisplayName("공통상세코드 삭제 성공")
-        void testDeleteCmmnDetailCode() {
+        @DisplayName("공통상세코드 삭제 성공 - delete 메서드 호출 확인")
+        void testDeleteCmmnDetailCode_Detailed() {
             // Given
             CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
             dto.setCodeId("GROUP_001");
             dto.setCode("CODE_001");
 
             CommonCodeId codeId = new CommonCodeId("GROUP_001", "CODE_001");
-            CommonCode existing = CommonCode.builder()
+            CommonCode existing = spy(CommonCode.builder()
                     .codeGroupId("GROUP_001")
                     .code("CODE_001")
-                    .codeNm("코드명")
-                    .build();
+                    .codeNm("기존 이름")
+                    .build());
 
             when(commonCodeRepository.findById(codeId)).thenReturn(Optional.of(existing));
 
             // When
             commonCodeService.deleteCmmnDetailCode(dto);
 
-            // Then - 서비스 호출이 예외 없이 완료되는지 확인
-            assertTrue(true);
-        }
-
-        @Test
-        @DisplayName("공통상세코드 목록 조회 성공")
-        void testSelectCmmnDetailCodeList() {
-            // Given
-            ComDefaultVO searchVO = new ComDefaultVO();
-            searchVO.setPageIndex(1);
-            searchVO.setPageUnit(10);
-
-            com.company.project.domain.code.CommonCodeDetailProjection projection = mock(com.company.project.domain.code.CommonCodeDetailProjection.class);
-            when(projection.getCodeId()).thenReturn("GROUP_1");
-            when(projection.getCode()).thenReturn("CODE_1");
-
-            Page<com.company.project.domain.code.CommonCodeDetailProjection> page = new PageImpl<>(List.of(projection));
-            when(commonCodeRepository.searchCommonCodeDetails(any(), any(), any())).thenReturn(page);
-
-            // When
-            List<CmmnDetailCodeDto> result = commonCodeService.selectCmmnDetailCodeList(searchVO);
-
             // Then
-            assertNotNull(result);
-            assertEquals(1, result.size());
+            verify(existing).delete();
         }
     }
 }

@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(classes = { MinimalTestConfig.class, UserController.class }, properties = "spring.main.allow-bean-definition-overriding=true")
 @AutoConfigureMockMvc(addFilters = false)
-@ActiveProfiles("test")
+@ActiveProfiles({"test", "minimal-test-security"})
 class UserControllerHttpStatusTest {
 
         @Autowired

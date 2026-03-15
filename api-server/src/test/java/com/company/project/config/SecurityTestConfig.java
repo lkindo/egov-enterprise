@@ -17,7 +17,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
-@org.springframework.context.annotation.Profile("security-test")
+@org.springframework.context.annotation.Profile("mock-security-test")
 public class SecurityTestConfig {
 
         @org.springframework.core.annotation.Order(org.springframework.core.Ordered.HIGHEST_PRECEDENCE)

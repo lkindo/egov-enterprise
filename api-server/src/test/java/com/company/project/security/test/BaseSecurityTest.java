@@ -20,7 +20,7 @@ import com.company.project.config.SecurityTestConfig;
     "springdoc.api-docs.enabled=false"
 })
 @AutoConfigureMockMvc
-@ActiveProfiles({ "test", "security-test" })
+@ActiveProfiles({ "test", "mock-security-test" })
 @Import(SecurityTestConfig.class)
 public abstract class BaseSecurityTest {
 

@@ -19,6 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
@@ -38,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = "springdoc.api-docs.enabled=false")
 @AutoConfigureMockMvc
 @EnableWebMvc
-@ActiveProfiles("test")
+@ActiveProfiles({"test", "load-test"})
 class LoadTest {
 
   @Autowired
@@ -53,11 +55,19 @@ class LoadTest {
 
   // 기존 컨텍스트 충돌 및 NotAMockException 방지를 위한 명시적 Mock 등록
   @TestConfiguration
+  @org.springframework.context.annotation.Profile("load-test")
   static class LoadTestConfig {
       @Bean
       @Primary
       public UserService mockUserService() {
           return Mockito.mock(UserService.class);
+      }
+
+      @Bean
+      public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+          http.csrf(csrf -> csrf.disable())
+              .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+          return http.build();
       }
   }
 

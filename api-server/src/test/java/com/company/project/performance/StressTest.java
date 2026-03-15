@@ -19,6 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.mockito.Mockito;
 
 import java.util.List;
@@ -35,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = "springdoc.api-docs.enabled=false")
 @AutoConfigureMockMvc
 @EnableWebMvc
-@ActiveProfiles("test")
+@ActiveProfiles({"test", "stress-test"})
 class StressTest {
 
   @Autowired
@@ -49,11 +51,19 @@ class StressTest {
 
   // 기존 컨텍스트 충돌 방지용 명시적 Mock 생성
   @TestConfiguration
+  @org.springframework.context.annotation.Profile("stress-test")
   static class StressTestConfig {
     @Bean
     @Primary
     public UserService mockUserService() {
       return Mockito.mock(UserService.class);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+      http.csrf(csrf -> csrf.disable())
+          .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+      return http.build();
     }
   }
 

@@ -3,9 +3,11 @@ package com.company.project.domain.user.entity;
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -19,7 +21,9 @@ import java.time.LocalDateTime;
 @Table(name = "NGNRLMBER")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@SuperBuilder
 public class GeneralUser extends BaseEntity {
 
     @Id
@@ -88,35 +92,8 @@ public class GeneralUser extends BaseEntity {
     private String lockAt;
 
     @Column(name = "CHG_PWD_LAST_PNTTM")
-    private LocalDateTime chgPwdLastPnttm;
-
-    @Builder
-    public GeneralUser(String esntlId, String mberId, String mberNm, String password, String passwordHint,
-            String passwordCnsr, String ihidnum, String sexdstnCode, String zip, String adres, String areaNo,
-            String mberSttus, String detailAdres, String endTelno, String moblphonNo, String groupId,
-            String mberFxnum, String mberEmailAdres, String middleTelno, String lockAt) {
-        this.esntlId = esntlId;
-        this.mberId = mberId;
-        this.mberNm = mberNm;
-        this.password = password;
-        this.passwordHint = passwordHint;
-        this.passwordCnsr = passwordCnsr;
-        this.ihidnum = ihidnum;
-        this.sexdstnCode = sexdstnCode;
-        this.zip = zip;
-        this.adres = adres;
-        this.areaNo = areaNo;
-        this.mberSttus = mberSttus;
-        this.detailAdres = detailAdres;
-        this.endTelno = endTelno;
-        this.moblphonNo = moblphonNo;
-        this.groupId = groupId;
-        this.mberFxnum = mberFxnum;
-        this.mberEmailAdres = mberEmailAdres;
-        this.middleTelno = middleTelno;
-        this.lockAt = lockAt;
-        this.chgPwdLastPnttm = LocalDateTime.now();
-    }
+    @Builder.Default
+    private LocalDateTime chgPwdLastPnttm = LocalDateTime.now();
 
     public void update(String mberNm, String passwordHint, String passwordCnsr, String ihidnum, String sexdstnCode,
             String zip, String adres, String areaNo, String mberSttus, String detailAdres, String endTelno,

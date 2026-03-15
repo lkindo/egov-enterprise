@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
-@Profile("!test")
+@Profile({"!test", "security-test"})
 @EnableWebSecurity
 public class ApiSecurityConfig {
         private final EgovAuthenticationProvider egovAuthenticationProvider;
@@ -93,7 +93,10 @@ public class ApiSecurityConfig {
                                                                 "/api/v1/auth/logout",
                                                                 "/api/v1/users/signup",
                                                                 "/api/v1/health",
-                                                                "/api/v1/images/**")
+                                                                "/api/v1/images/**",
+                                                                "/v3/api-docs/**",
+                                                                "/swagger-ui/**",
+                                                                "/error")
                                                 .permitAll()
                                                 .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SYSTEM")
                                                 .requestMatchers("/api/v1/dashboard",
@@ -130,7 +133,9 @@ public class ApiSecurityConfig {
                                                                 "/uat/uia/actionLogout.do",
                                                                 "/ws/**",
                                                                 "/index.jsp", "/", "/uss/olp/qri/**",
-                                                                "/favicon.ico")
+                                                                "/favicon.ico",
+                                                                "/v3/api-docs/**", "/swagger-ui/**",
+                                                                "/error")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .formLogin(form -> form.disable())

@@ -1,7 +1,9 @@
 package com.company.project.domain.auth;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.lang.NonNull;
 import java.io.Serializable;
 import java.util.Objects;
@@ -10,7 +12,9 @@ import java.util.Objects;
 @Table(name = "NEMPLYRSCRTYESTBS")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserAuthority implements Serializable {
+@AllArgsConstructor
+@SuperBuilder
+public class UserAuthority extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -24,13 +28,6 @@ public class UserAuthority implements Serializable {
 
     @Column(name = "MBER_TY_CODE", length = 15)
     private String mberTyCode;
-
-    @Builder
-    public UserAuthority(@NonNull String uniqId, @NonNull String authorCode, String mberTyCode) {
-        this.uniqId = Objects.requireNonNull(uniqId);
-        this.authorCode = Objects.requireNonNull(authorCode);
-        this.mberTyCode = mberTyCode;
-    }
 
     public void update(@NonNull String authorCode, String mberTyCode) {
         this.authorCode = Objects.requireNonNull(authorCode);

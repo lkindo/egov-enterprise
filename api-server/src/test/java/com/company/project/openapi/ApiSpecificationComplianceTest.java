@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest(properties = "spring.main.allow-bean-definition-overriding=true")
 @AutoConfigureMockMvc
-@ActiveProfiles({ "test", "security-test" })
+@ActiveProfiles({ "test", "mock-security-test" })
 @org.springframework.context.annotation.Import(com.company.project.config.SecurityTestConfig.class)
 @org.springframework.security.test.context.support.WithMockUser
 class ApiSpecificationComplianceTest {

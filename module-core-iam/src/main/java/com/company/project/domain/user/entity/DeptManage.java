@@ -6,18 +6,21 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 /**
- * ???????) ??? Entity
- * ?????????? NORGNZTINFO
+ * 부서 정보 Entity
+ * 매핑 테이블: NORGNZTINFO
  */
 @Entity
 @Table(name = "NORGNZTINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
 public class DeptManage extends BaseEntity {
 
     @Id
@@ -29,13 +32,6 @@ public class DeptManage extends BaseEntity {
 
     @Column(name = "ORGNZT_DC", length = 255)
     private String orgnztDc;
-
-    @Builder
-    public DeptManage(String orgnztId, String orgnztNm, String orgnztDc) {
-        this.orgnztId = orgnztId;
-        this.orgnztNm = orgnztNm;
-        this.orgnztDc = orgnztDc;
-    }
 
     public void update(String orgnztNm, String orgnztDc) {
         this.orgnztNm = orgnztNm;

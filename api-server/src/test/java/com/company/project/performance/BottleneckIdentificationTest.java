@@ -19,6 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
@@ -59,6 +61,13 @@ class BottleneckIdentificationTest {
     @Primary
     public UserService mockUserService() {
       return Mockito.mock(UserService.class);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+      http.csrf(csrf -> csrf.disable())
+          .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+      return http.build();
     }
   }
 

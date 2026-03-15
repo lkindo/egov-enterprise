@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ActiveProfiles({"test", "security-headers-test"})
 @DisplayName("Security Headers 보안 테스트")
 public class SecurityHeadersTest {
 
@@ -26,6 +26,7 @@ public class SecurityHeadersTest {
     private MockMvc mockMvc;
 
     @TestConfiguration
+    @org.springframework.context.annotation.Profile("security-headers-test")
     static class SecurityTestConfig {
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

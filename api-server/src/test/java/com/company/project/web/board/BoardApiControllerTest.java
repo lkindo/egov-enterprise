@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(BoardController.class)
-@ActiveProfiles("test")
+@ActiveProfiles({"test", "minimal-test-security"})
 class BoardApiControllerTest {
 
     @SpringBootConfiguration

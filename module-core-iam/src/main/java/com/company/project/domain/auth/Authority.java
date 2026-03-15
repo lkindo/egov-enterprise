@@ -1,16 +1,20 @@
 package com.company.project.domain.auth;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.lang.NonNull;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Entity
 @Table(name = "NAUTHORINFO")
-public class Authority implements java.io.Serializable {
+@SuperBuilder
+public class Authority extends BaseEntity implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -26,15 +30,8 @@ public class Authority implements java.io.Serializable {
     private String authorDc;
 
     @Column(name = "AUTHOR_CREAT_DE")
-    private LocalDateTime authorCreatDe;
-
-    @Builder
-    public Authority(@NonNull String authorCode, @NonNull String authorNm, String authorDc) {
-        this.authorCode = Objects.requireNonNull(authorCode);
-        this.authorNm = Objects.requireNonNull(authorNm);
-        this.authorDc = authorDc;
-        this.authorCreatDe = LocalDateTime.now();
-    }
+    @Builder.Default
+    private LocalDateTime authorCreatDe = LocalDateTime.now();
 
     public void update(@NonNull String authorNm, String authorDc) {
         this.authorNm = Objects.requireNonNull(authorNm);

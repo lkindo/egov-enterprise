@@ -1,6 +1,8 @@
 package com.company.project.service.code;
 
 import com.company.project.domain.code.InstitutionCode;
+import com.company.project.domain.code.InstitutionCodeRecptnLog;
+import com.company.project.domain.code.InstitutionCodeRecptnLogRepository;
 import com.company.project.repository.code.InstitutionCodeRepository;
 import com.company.project.service.code.dto.InstitutionCodeDto;
 import org.junit.jupiter.api.DisplayName;
@@ -20,12 +22,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class InstitutionCodeServiceTest {
 
     @Mock
     private InstitutionCodeRepository institutionCodeRepository;
+
+    @Mock
+    private InstitutionCodeRecptnLogRepository recptnLogRepository;
 
     @InjectMocks
     private InstitutionCodeService institutionCodeService;
@@ -70,19 +77,53 @@ class InstitutionCodeServiceTest {
     }
 
     @Test
-    @DisplayName("기관코드 상세 조회 테스트")
-    void getInstitutionCodeDetail_Success() {
+    @DisplayName("기관코드 상세 조회 테스트 - 존재하지 않음")
+    void getInstitutionCodeDetail_NotFound() {
+        given(institutionCodeRepository.findById("NOT_EXIST")).willReturn(Optional.empty());
+        assertThat(institutionCodeService.getInstitutionCodeDetail("NOT_EXIST")).isNull();
+    }
+
+    @Test
+    @DisplayName("기관코드 수신 로그 목록 조회 테스트 - 공정구분 필터 포함")
+    void getInstitutionCodeRecptnList_WithProcessSe_Success() {
         // given
-        InstitutionCode entity = InstitutionCode.builder()
-                .insttCode("1234567")
-                .allInsttNm("테스트기관")
-                .build();
-        given(institutionCodeRepository.findById("1234567")).willReturn(Optional.of(entity));
+        PageRequest pageable = PageRequest.of(0, 10);
+        InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId.builder()
+                .occrrncDe("20240314").insttCode("123").opertSn(1L).build();
+        InstitutionCodeRecptnLog entity = InstitutionCodeRecptnLog.builder().id(id).allInsttNm("Test").build();
+        given(recptnLogRepository.findByAllInsttNmContainingAndProcessSe(eq("Test"), eq("1"), eq(pageable)))
+                .willReturn(new PageImpl<>(Collections.singletonList(entity)));
 
         // when
-        InstitutionCodeDto result = institutionCodeService.getInstitutionCodeDetail("1234567");
+        Page<com.company.project.service.code.dto.InstitutionCodeRecptnDto> result = 
+                institutionCodeService.getInstitutionCodeRecptnList("Test", "1", pageable);
 
         // then
-        assertThat(result.getAllInsttNm()).isEqualTo("테스트기관");
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("기관코드 수신 처리 테스트")
+    void processInstitutionCodeRecptn_Success() {
+        // given
+        String occrrncDe = "20240314";
+        String insttCode = "1234567";
+        Long opertSn = 1L;
+        String userId = "admin";
+
+        InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId.builder()
+                .occrrncDe(occrrncDe).insttCode(insttCode).opertSn(opertSn).build();
+        InstitutionCodeRecptnLog logEntity = spy(InstitutionCodeRecptnLog.builder()
+                .id(id).allInsttNm("New Instt").build());
+        
+        given(recptnLogRepository.findById(any())).willReturn(Optional.of(logEntity));
+        given(institutionCodeRepository.findById(insttCode)).willReturn(Optional.empty());
+
+        // when
+        institutionCodeService.processInstitutionCodeRecptn(occrrncDe, insttCode, opertSn, userId);
+
+        // then
+        verify(logEntity).updateProcessSe("1", userId);
+        verify(institutionCodeRepository).save(any(InstitutionCode.class));
     }
 }

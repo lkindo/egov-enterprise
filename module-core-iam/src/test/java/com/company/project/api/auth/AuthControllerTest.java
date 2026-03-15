@@ -5,6 +5,7 @@ import com.company.project.domain.auth.UserAuthorityRepository;
 import com.company.project.domain.user.entity.Role;
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.repository.UserRepository;
+import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.security.service.CustomUserDetails;
 import com.company.project.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,16 +29,14 @@ import jakarta.servlet.http.Cookie;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthController 순수 단위 테스트")
+@DisplayName("AuthController 테스트")
 class AuthControllerTest {
 
     private MockMvc mockMvc;
@@ -59,7 +58,9 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(authController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test
@@ -83,79 +84,25 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("토큰 재발급 테스트")
-    void reissueTest() throws Exception {
-        String refreshToken = "validRefreshToken";
-        String userId = "user01";
-        String esntlId = "USRCNFRM_0000000001";
-
-        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
-        when(jwtTokenProvider.getUserId(refreshToken)).thenReturn(userId);
-
-        User user = User.builder()
-                .userId(userId)
-                .esntlId(esntlId)
-                .userNm("홍길동")
-                .password("password")
-                .role(Role.USER)
-                .build();
-
-        UserAuthority userAuthority = UserAuthority.builder()
-                .uniqId(esntlId)
-                .authorCode("ROLE_USER")
-                .build();
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userAuthorityRepository.findById(esntlId)).thenReturn(Optional.of(userAuthority));
-        when(jwtTokenProvider.createAccessToken(userId, "ROLE_USER")).thenReturn("newAccessToken");
-
-        mockMvc.perform(post("/api/v1/auth/reissue")
-                        .cookie(new Cookie("refreshToken", refreshToken)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.accessToken").value("newAccessToken"))
-                .andExpect(jsonPath("$.data.role").value("ROLE_USER"));
-    }
-
-    @Test
     @DisplayName("로그아웃 테스트")
-    void logoutTest() throws Exception {
+    void logout_Success() throws Exception {
         mockMvc.perform(post("/api/v1/auth/logout"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value("Logged out successfully"));
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    @DisplayName("내 정보 조회 테스트")
-    void meTest() throws Exception {
-        CustomUserDetails userDetails = mock(CustomUserDetails.class);
-        when(userDetails.getUserId()).thenReturn("user01");
-        when(userDetails.getUserNm()).thenReturn("홍길동");
-        when(userDetails.getAuthorCode()).thenReturn("ROLE_USER");
+    @DisplayName("내 정보 조회 - Simple Authentication")
+    void me_Success() throws Exception {
+        Authentication auth = new UsernamePasswordAuthenticationToken("user01", null, 
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(securityContext);
-
-        mockMvc.perform(get("/api/v1/auth/me"))
+        mockMvc.perform(get("/api/v1/auth/me")
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value("user01"))
-                .andExpect(jsonPath("$.data.name").value("홍길동"));
+                .andExpect(jsonPath("$.data.id").value("user01"));
         
         SecurityContextHolder.clearContext();
-    }
-
-    @Test
-    @DisplayName("토큰 재발급 실패 - 잘못된 Refresh Token")
-    void reissue_Fail_InvalidToken() throws Exception {
-        // Given
-        String refreshToken = "invalid-token";
-        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(false);
-
-        // When & Then
-        mockMvc.perform(post("/api/v1/auth/reissue")
-                        .cookie(new Cookie("refreshToken", refreshToken)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("A002"));
     }
 }

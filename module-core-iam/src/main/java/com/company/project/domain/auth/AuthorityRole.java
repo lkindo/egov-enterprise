@@ -1,27 +1,23 @@
 package com.company.project.domain.auth;
 
+import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Entity
 @Table(name = "NAUTHORROLERELATE")
-public class AuthorityRole {
+@EntityListeners(org.springframework.data.jpa.domain.support.AuditingEntityListener.class)
+@AttributeOverride(name = "createdDate", column = @Column(name = "CREAT_DT", updatable = false))
+@SuperBuilder
+public class AuthorityRole extends BaseEntity {
 
     @EmbeddedId
     private AuthorityRoleId id;
-
-    @Column(name = "CREAT_DT")
-    private LocalDateTime creatDt;
-
-    @Builder
-    public AuthorityRole(AuthorityRoleId id) {
-        this.id = id;
-        this.creatDt = LocalDateTime.now();
-    }
 
     @Embeddable
     @Getter
