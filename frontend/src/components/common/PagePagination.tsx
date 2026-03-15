@@ -11,15 +11,22 @@ import {
 import { PaginationInfo } from "@/types/system";
 
 interface PagePaginationProps {
-    pagination: PaginationInfo;
+    pagination?: PaginationInfo;
+    total?: number;
+    page?: number;
+    size?: number;
     onPageChange: (page: number) => void;
 }
 
-export function PagePagination({ pagination, onPageChange }: PagePaginationProps) {
-    const totalPageCount = pagination.totalPageCount || 0;
-    const currentPageNo = pagination.currentPageNo || 1;
+export function PagePagination({ pagination, total, page, size, onPageChange }: PagePaginationProps) {
+    const totalRecordCount = total ?? pagination?.totalRecordCount ?? 0;
+    const recordCountPerPage = size ?? pagination?.recordCountPerPage ?? 10;
+    const currentPageNo = page ?? pagination?.currentPageNo ?? 1;
+    const totalPageCount = total !== undefined && size !== undefined 
+        ? Math.ceil(total / size) 
+        : (pagination?.totalPageCount || 0);
 
-    if (totalPageCount <= 1) return null;
+    if (totalPageCount <= 1 && totalRecordCount <= recordCountPerPage) return null;
 
     const renderPageNumbers = () => {
         const pages = [];

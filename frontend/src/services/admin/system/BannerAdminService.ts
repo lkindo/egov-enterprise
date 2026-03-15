@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface Banner {
@@ -23,7 +23,7 @@ class BannerAdminService extends AdminService {
     }
 
     /** 배너 목록 조회 */
-    async getBannerList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<Banner>> {
+    async getBannerList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Banner>> {
         const response = await this.get<any>('', {
             ...config,
             params: {
@@ -31,7 +31,7 @@ class BannerAdminService extends AdminService {
                 keyword: params?.searchKeyword || params?.searchWrd || '',
             },
         });
-        return response?.result || response;
+        return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
     }
 
     /** 배너 상세 조회 */

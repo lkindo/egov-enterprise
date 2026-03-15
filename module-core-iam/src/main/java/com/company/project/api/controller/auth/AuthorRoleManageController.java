@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 권한??관리? ?한 컨트롤러 ?래?? */
+@Deprecated
 @Controller
 @RequiredArgsConstructor
 public class AuthorRoleManageController {

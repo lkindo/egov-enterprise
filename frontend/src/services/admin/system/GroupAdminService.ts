@@ -1,15 +1,11 @@
 import { AdminService } from '@/services/core/ApiService';
-import { SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
+import { GroupManage } from '@/types/security';
 
-export interface GroupInfo {
-    groupId: string;
-    groupNm: string;
-    groupDc?: string;
-    groupCreatDe?: string;
-}
+export type GroupInfo = GroupManage;
 
 /**
- * 사용자 그룹 관리 서비스 (Admin)
+ * 그룹 관리 서비스 (Admin)
  */
 class GroupAdminService extends AdminService {
     constructor() {
@@ -17,33 +13,33 @@ class GroupAdminService extends AdminService {
     }
 
     /** 그룹 목록 조회 */
-    async getGroupList(params?: SearchParams, config?: any) {
-        const response = await this.get<any>('', { ...config, params });
-        return response?.result || response;
+    async getGroupList(params?: SearchParams, config?: any): Promise<PageResponse<GroupInfo>> {
+        return this.get<PageResponse<GroupInfo>>('', { ...config, params });
     }
 
     /** 그룹 상세 조회 */
-    async getGroup(groupId: string, config?: any) {
-        const response = await this.get<any>(`/${groupId}`, config);
-        return response?.result || response;
+    async getGroup(groupId: string, config?: any): Promise<GroupInfo> {
+        return this.get<GroupInfo>(`/${groupId}`, config);
     }
 
     /** 그룹 등록 */
-    async createGroup(data: Partial<GroupInfo>, config?: any) {
-        const response = await this.post<any>('', data, config);
-        return response?.result || response;
+    async createGroup(data: Partial<GroupInfo>, config?: any): Promise<void> {
+        return this.post<void>('', data, config);
     }
 
     /** 그룹 수정 */
-    async updateGroup(groupId: string, data: Partial<GroupInfo>, config?: any) {
-        const response = await this.put<any>(`/${groupId}`, data, config);
-        return response?.result || response;
+    async updateGroup(groupId: string, data: Partial<GroupInfo>, config?: any): Promise<void> {
+        return this.put<void>(`/${groupId}`, data, config);
     }
 
     /** 그룹 삭제 */
-    async deleteGroup(groupId: string, config?: any) {
-        const response = await this.delete<any>(`/${groupId}`, config);
-        return response?.result || response;
+    async deleteGroup(groupId: string, config?: any): Promise<void> {
+        return this.delete<void>(`/${groupId}`, config);
+    }
+
+    /** 그룹 다중 삭제 */
+    async deleteGroups(groupIds: string[], config?: any): Promise<void> {
+        return this.delete<void>('', { ...config, data: groupIds });
     }
 }
 

@@ -2,25 +2,28 @@
 
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
-import { codeAdminService } from '@/services/admin/system/CodeAdminService';
+import { codeAdminService, AdministCode } from '@/services/admin/system/CodeAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { PagePagination } from '@/components/common/PagePagination';
 
 export default function AdministCodeClient({ initialData }: { initialData: any }) {
     const [data, setData] = useState(initialData?.list || []);
-    const [total, setTotal] = useState(initialData?.totalCount || 0);
+    const [total, setTotal] = useState(initialData?.total || 0);
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
     const [searchWrd, setSearchWrd] = useState('');
+    const [pageIndex, setPageIndex] = useState(1);
 
-    const loadData = async (wrd: string = searchWrd, page: number = 1) => {
+    const loadData = async (wrd: string = searchWrd, page: number = pageIndex) => {
         try {
             setLoading(true);
             const res = await codeAdminService.getAdministCodeList({ searchWrd: wrd, pageIndex: page });
             setData(res.list || []);
-            setTotal(res.totalCount || 0);
+            setTotal(res.total || 0);
+            setPageIndex(page);
         } catch (error) {
             toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
         } finally {
@@ -28,7 +31,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
         }
     };
 
-    const columns = [
+    const columns: Column<AdministCode>[] = [
         { header: '코드', accessor: 'administZoneCode', className: 'w-32' },
         { 
             header: '구분', 
@@ -75,6 +78,13 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
                 data={data}
                 loading={loading}
                 emptyMessage="등록된 행정코드가 없습니다."
+            />
+
+            <PagePagination
+                total={total}
+                size={10}
+                page={pageIndex}
+                onPageChange={(p) => loadData(searchWrd, p)}
             />
         </div>
     );

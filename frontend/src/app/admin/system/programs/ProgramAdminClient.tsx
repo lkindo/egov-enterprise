@@ -2,9 +2,12 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { UltimateDataGrid, ColumnDef } from '@/app/components/ui/ultimate-data-grid';
-import { SmartSearchPanel } from '@/app/components/ui/standard-search-filter';
-import { Program, ProgramResponse } from '@/types/program';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
+import { PagePagination } from '@/components/common/PagePagination';
+import { Program } from '@/types/program';
+import { PageResponse } from '@/types/system';
+import { programAdminService } from '@/services/admin/system/ProgramAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import {
@@ -32,7 +35,7 @@ import { saveProgramAction, deleteProgramAction } from '@/app/actions/programAct
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-export default function ProgramAdminClient({ initialData, searchWrd }: { initialData: ProgramResponse; searchWrd: string }) {
+export default function ProgramAdminClient({ initialData, searchWrd }: { initialData: PageResponse<Program>; searchWrd: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -47,8 +50,25 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
     progrmDc: ''
   });
 
-  const programs = initialData.content || [];
-  const total = initialData.totalElements || 0;
+  const [data, setData] = useState(initialData?.list || []);
+  const [total, setTotal] = useState(initialData?.total || 0);
+  const [loading, setLoading] = useState(false);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [currentSearchWrd, setCurrentSearchWrd] = useState(searchWrd);
+
+  const loadData = async (wrd: string = currentSearchWrd, page: number = 1) => {
+    try {
+      setLoading(true);
+      const res = await programAdminService.getProgramList({ pageIndex: page, size: 10, searchWrd: wrd });
+      setData(res.list || []);
+      setTotal(res.total || 0);
+      setPageIndex(page);
+    } catch (error) {
+      toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOpenCreate = () => {
     setMode('create');
@@ -89,12 +109,10 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
     }
   };
 
-  const columns: ColumnDef<Program>[] = [
+  const columns: Column<Program>[] = [
     {
-      id: 'progrmFileNm',
       header: 'Artifact Name',
-      pinned: 'left',
-      width: 280,
+      className: 'w-[280px]',
       accessor: (item: Program) => (
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-slate-900 text-white rounded-[1rem] flex items-center justify-center shadow-lg group-hover:rotate-3 transition-transform">
@@ -110,16 +128,14 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       )
     },
     {
-      id: 'progrmNm',
       header: 'Technical Name',
       accessor: (item: Program) => (
         <span className="font-black text-slate-700 tracking-tight italic uppercase">{item.progrmNm}</span>
       )
     },
     {
-      id: 'url',
       header: 'Endpoint Mapping',
-      width: 300,
+      className: 'w-[300px]',
       accessor: (item: Program) => (
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 px-4 py-2 rounded-xl text-slate-500 font-mono text-xs font-bold shadow-inner w-full">
@@ -130,14 +146,12 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       )
     },
     {
-      id: 'progrmStrePath',
       header: 'Physical Path',
       accessor: (item: Program) => (
         <span className="text-[10px] font-black text-slate-400 font-mono tracking-tighter">{item.progrmStrePath}</span>
       )
     },
     {
-      id: 'actions',
       header: 'SYSTEM CONTROL',
       className: 'text-right',
       accessor: (item: Program) => (
@@ -196,7 +210,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
           </div>
           <div className="relative z-10">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">ENDPOINT ACCESSIBLE</p>
-            <h4 className="text-3xl font-black italic tracking-tighter tabular-nums text-primary">{programs.filter(p => p.url).length} Nodes</h4>
+            <h4 className="text-3xl font-black italic tracking-tighter tabular-nums text-primary">{data.filter(p => p.url).length} Nodes</h4>
           </div>
           <Globe size={100} className="absolute right-[-20px] bottom-[-20px] opacity-[0.02] -rotate-12" />
         </div>
@@ -213,26 +227,37 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       </div>
 
       <div className="p-8 rounded-[3rem] bg-slate-50 border border-slate-100 shadow-inner relative overflow-hidden group">
-        <SmartSearchPanel
+        <StandardSearchFilter
           fields={[
             { name: 'searchWrd', label: 'Logic Name / Identifier', type: 'text', placeholder: 'Enter code or technical term...' }
           ]}
           onSearch={(v: any) => {
             const val = v.searchWrd || '';
-            router.push(`/admin/system/programs?searchWrd=${val}`);
+            setCurrentSearchWrd(val);
+            loadData(val, 1);
           }}
-          onReset={() => router.push('/admin/system/programs')}
+          onReset={() => {
+            setCurrentSearchWrd('');
+            loadData('', 1);
+          }}
         />
         <Search size={150} className="absolute right-[-20px] bottom-[-20px] opacity-[0.02] -rotate-12 group-hover:rotate-0 transition-transform duration-700" />
       </div>
 
       <div className="bg-white rounded-[4rem] p-4 shadow-2xl border border-slate-100 ring-1 ring-slate-50 relative">
-        <UltimateDataGrid
-          title="PROGRAM MIDDLEWARE INVENTORY"
+        <StandardDataTable
           columns={columns}
-          data={programs}
+          data={data}
+          loading={loading}
           keyField="progrmFileNm"
           className="bg-slate-50/50 p-6 rounded-[3rem] border border-dashed border-slate-200"
+        />
+        
+        <PagePagination
+          total={total}
+          size={10}
+          page={pageIndex}
+          onPageChange={(p) => loadData(currentSearchWrd, p)}
         />
       </div>
 

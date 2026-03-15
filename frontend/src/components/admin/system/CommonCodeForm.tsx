@@ -64,9 +64,9 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             if (isEdit && data?.codeId) {
-                await codeAdminService.updateGroup(data.codeId, values as CmmnCode);
+                await codeAdminService.updateCmmnCode(data.codeId, values as CmmnCode);
             } else {
-                await codeAdminService.createGroup(values as CmmnCode);
+                await codeAdminService.createCmmnCode(values as CmmnCode);
             }
             onSuccess();
             onOpenChange(false);
@@ -80,7 +80,7 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
         if (!data?.codeId) return;
         if (confirm('정말로 삭제하시겠습니까?')) {
             try {
-                await codeAdminService.deleteGroup(data.codeId);
+                await codeAdminService.deleteCmmnCode(data.codeId);
                 onSuccess();
                 onOpenChange(false);
             } catch (error) {

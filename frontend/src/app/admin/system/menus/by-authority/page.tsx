@@ -11,7 +11,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ChevronRight, Folder, File, Loader2 } from "lucide-react";
-import { getAuthorList, getMenuCreatList } from '@/services/security/securityService';
+import { authorAdminService } from '@/services/admin/system';
 import { MenuByAuthority } from '@/types/security';
 
 /**
@@ -47,16 +47,16 @@ export default function MenuByAuthorityPage() {
 
     const { data: authorData } = useQuery({
         queryKey: ['admin-authorities-all'],
-        queryFn: () => getAuthorList({ pageIndex: 1, searchCondition: '1', searchKeyword: '' }),
+        queryFn: () => authorAdminService.getAuthorList({ pageIndex: 1, searchCondition: '1', searchKeyword: '' } as any),
     });
 
-    const authorities = authorData?.resultList || [];
+    const authorities = (authorData as any)?.list || [];
 
     const { data: rawMenus = [], isLoading: isMenuLoading } = useQuery({
         queryKey: ['admin-menu-tree', selectedAuthority],
         queryFn: async () => {
-            const data = await getMenuCreatList(selectedAuthority);
-            return (data as any)?.resultList as MenuByAuthority[] || [];
+            const data = await authorAdminService.getAuthorMenus(selectedAuthority);
+            return ((data as any)?.list || (data as any)?.resultList || data || []) as MenuByAuthority[];
         },
         enabled: !!selectedAuthority,
     });
@@ -123,7 +123,7 @@ export default function MenuByAuthorityPage() {
                             <SelectValue placeholder="권한을 선택하세요" />
                         </SelectTrigger>
                         <SelectContent>
-                            {authorities.map(auth => (
+                            {(authorities as import('@/services/admin/system/AuthorAdminService').AuthorInfo[]).map((auth) => (
                                 <SelectItem key={auth.authorCode} value={auth.authorCode}>
                                     {auth.authorNm} ({auth.authorCode})
                                 </SelectItem>

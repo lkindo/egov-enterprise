@@ -10,8 +10,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { deptAdminService, Department } from '@/services/admin/system/DeptAdminService';
-import { AuthorInfo } from '@/services/admin/system/RoleAdminService';
-import { roleAdminService } from '@/services/admin/system/RoleAdminService';
+import { deptAuthorityAdminService } from '@/services/admin/system/DeptAuthorityAdminService';
+import { AuthorInfo, authorAdminService } from '@/services/admin/system/AuthorAdminService';
 
 const DEPTS_KEY = ['admin', 'departments'] as const;
 const ROLES_KEY = ['admin', 'authorities'] as const;
@@ -26,18 +26,18 @@ export default function DeptAuthorityPage() {
   // [async-parallel] 독립 API (부서, 권한 목록) 개별 useQuery
   const { data: deptsData, isLoading: deptsLoading } = useQuery({
     queryKey: DEPTS_KEY,
-    queryFn: () => deptAdminService.getDepts(),
+    queryFn: () => deptAdminService.getDeptList(),
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: rolesData, isLoading: rolesLoading } = useQuery({
     queryKey: ROLES_KEY,
-    queryFn: () => roleAdminService.getAuthors(),
+    queryFn: () => authorAdminService.getAuthorList(),
     staleTime: 5 * 60 * 1000,
   });
 
-  const depts: Department[] = (deptsData as any)?.content || (deptsData as any)?.resultList || (deptsData as any)?.data || deptsData || [];
-  const roles: AuthorInfo[] = (rolesData as any)?.content || (rolesData as any)?.resultList || (rolesData as any)?.data || rolesData || [];
+  const depts: Department[] = (deptsData as any)?.list || (deptsData as any)?.resultList || deptsData || [];
+  const roles: AuthorInfo[] = (rolesData as any)?.list || (rolesData as any)?.resultList || rolesData || [];
 
   const filteredDepts = depts.filter(d =>
     d.orgnztNm.toLocaleLowerCase().includes(searchKeyword.toLocaleLowerCase()) ||
@@ -48,7 +48,7 @@ export default function DeptAuthorityPage() {
 
   const saveMutation = useMutation({
     mutationFn: (authorCode: string) =>
-      deptAdminService.updateDeptAuthorities({
+      deptAuthorityAdminService.updateDeptAuthorities({
         deptId: selectedDept!,
         authorCode,
         allMembers: true

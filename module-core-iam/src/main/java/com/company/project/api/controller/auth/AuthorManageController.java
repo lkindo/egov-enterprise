@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 /**
  * 권한 관리? ?한 컨트롤러 ?래?? */
 @Slf4j
+@Deprecated
 @Controller
 @RequiredArgsConstructor
 public class AuthorManageController {

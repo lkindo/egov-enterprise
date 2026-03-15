@@ -10,6 +10,22 @@ export interface PaginationInfo {
     lastRecordIndex?: number;
 }
 
+/**
+ * 백엔드 신규 페이징 응답 포맷 (PageResponse)
+ * - list: 현재 페이지 데이터
+ * - total: 전체 레코드 수
+ * - page: 현재 페이지 번호 (1-based)
+ * - size: 페이지당 항목 수
+ * - totalPage: 전체 페이지 수
+ */
+export interface PageResponse<T = unknown> {
+    list: T[];
+    total: number;
+    page: number;
+    size: number;
+    totalPage: number;
+}
+
 export interface PaginationResponse<T> {
     success?: boolean;
     list?: T[];
@@ -30,6 +46,7 @@ export interface SearchParams {
     ntwrkId?: string; // 추가
     codeId?: string; // 추가
     pageUnit?: number; // 추가
+    sbscrbSttus?: string; // 사용자 가입 상태 필터 추가
 }
 
 // Common Code

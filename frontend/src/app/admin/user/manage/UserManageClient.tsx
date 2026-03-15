@@ -36,7 +36,10 @@ export default function UserManageClient({ initialData, initialParams }: { initi
         userSttusCode: 'P',
     });
 
-    const users: UserManage[] = initialData?.resultList || [];
+    const users: UserManage[] = initialData?.list || [];
+    const totalCount: number = initialData?.total ?? 0;
+    const currentPage: number = initialData?.page ?? initialParams.pageIndex ?? 1;
+    const pageSize: number = initialData?.size ?? 10;
 
     const handleCreate = () => {
         setEditingUser(null);
@@ -53,8 +56,12 @@ export default function UserManageClient({ initialData, initialParams }: { initi
     const handleDelete = async (userId: string) => {
         if (!confirm(t('common.deleteConfirm'))) return;
         const res = await deleteUserAction(null, userId);
-        if (res.success) toast(res.message, 'success');
-        else toast(res.message, 'error');
+        if (res.success) {
+            toast(res.message, 'success');
+            router.refresh();
+        } else {
+            toast(res.message, 'error');
+        }
     };
 
     const handleSubmit = async () => {
@@ -62,7 +69,13 @@ export default function UserManageClient({ initialData, initialParams }: { initi
         if (res.success) {
             toast(res.message, 'success');
             setIsDialogOpen(false);
+            router.refresh();
         } else toast(res.message, 'error');
+    };
+
+    const handlePageChange = (page: number) => {
+        const query = `pageIndex=${page}&searchKeyword=${params.searchKeyword || ''}&searchCondition=${params.searchCondition || '0'}&sbscrbSttus=${params.sbscrbSttus || ''}`;
+        router.push(`/admin/user/manage?${query}`);
     };
 
     const filterFields = [
@@ -93,6 +106,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
             title={t('admin.user.title')}
             filterFields={filterFields}
             onSearch={(values) => {
+                setParams(values);
                 const query = `pageIndex=1&searchKeyword=${values.searchKeyword || ''}&searchCondition=${values.searchCondition || '0'}&sbscrbSttus=${values.sbscrbSttus || ''}`;
                 router.push(`/admin/user/manage?${query}`);
             }}
@@ -101,6 +115,10 @@ export default function UserManageClient({ initialData, initialParams }: { initi
             columns={columns}
             data={users}
             keyField="userId"
+            totalCount={totalCount}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
             actionButton={
                 <Button onClick={handleCreate} className="rounded-2xl h-14 px-8 font-black shadow-2xl shadow-primary/20 gap-3 hover:-translate-y-1 transition-all active:scale-95">
                     <Plus size={20} /> {t('admin.user.newUser')}

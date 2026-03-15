@@ -7,31 +7,37 @@ import com.company.project.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-@SpringBootTest(properties = "springdoc.api-docs.enabled=false")
-@AutoConfigureMockMvc
-@EnableWebMvc
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import com.company.project.api.interceptor.OperationalAuditInterceptor;
+import com.company.project.api.controller.UserController;
+import com.company.project.core.exception.GlobalExceptionHandler;
+import org.springframework.context.annotation.Import;
+
+@WebMvcTest(controllers = UserController.class)
+@Import(GlobalExceptionHandler.class)
 @ActiveProfiles("test")
 class ExceptionResponseTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
+    @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private OperationalAuditInterceptor operationalAuditInterceptor;
 
     @Test
     @DisplayName("비즈니스 예외(BusinessException) 발생 시 매핑된 에러 코드와 응답 반환 테스트")

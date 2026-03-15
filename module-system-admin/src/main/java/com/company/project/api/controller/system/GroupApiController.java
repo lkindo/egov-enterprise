@@ -18,7 +18,7 @@ import java.util.List;
  */
 @Tag(name = "User Group Management", description = "시스템 사용자 그룹 관리 API (Admin)")
 @Slf4j
-@RestController
+@RestController("systemGroupApiController")
 @RequestMapping("/api/v1/admin/system/groups")
 @RequiredArgsConstructor
 public class GroupApiController {
@@ -69,6 +69,13 @@ public class GroupApiController {
     @DeleteMapping("/{groupId}")
     public ResponseEntity<ApiResponse<Void>> deleteGroup(@PathVariable String groupId) {
         groupManageService.deleteGroup(groupId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "그룹 다중 삭제", description = "여러 사용자 그룹 정보를 한꺼번에 삭제합니다.")
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> deleteGroups(@RequestBody List<String> groupIds) {
+        groupManageService.deleteGroups(groupIds.toArray(new String[0]));
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

@@ -21,9 +21,9 @@ export default async function ProgramAdminPage({
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  let initialData: any = { content: [], totalElements: 0 };
+  let initialData: any = { list: [], total: 0 };
   try {
-    initialData = await programAdminService.getPrograms({ page: 0, size: 100, searchWrd }, axiosConfig);
+    initialData = await programAdminService.getProgramList({ pageIndex: 1, size: 10, searchWrd }, axiosConfig);
   } catch (error) {
     console.error('Server-side fetch programs failed:', error);
   }

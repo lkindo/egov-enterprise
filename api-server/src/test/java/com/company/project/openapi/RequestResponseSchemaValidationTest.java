@@ -4,12 +4,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
@@ -22,21 +19,30 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import com.company.project.api.interceptor.OperationalAuditInterceptor;
+import com.company.project.api.controller.UserController;
+import com.company.project.core.exception.GlobalExceptionHandler;
+import org.springframework.context.annotation.Import;
+
 /**
  * 요청/응답 스키마 검증 테스트
  * API의 입출력 데이터 구조 및 제약 조건 검증
  */
-@SpringBootTest(properties = "springdoc.api-docs.enabled=false")
-@AutoConfigureMockMvc(addFilters = false)
-@EnableWebMvc
+@WebMvcTest(controllers = UserController.class)
+@Import(GlobalExceptionHandler.class)
 @ActiveProfiles("test")
 class RequestResponseSchemaValidationTest {
 
         @Autowired
         private MockMvc mockMvc;
 
-        @Autowired
+        @MockitoBean
         private UserService userService;
+
+        @MockitoBean
+        private OperationalAuditInterceptor operationalAuditInterceptor;
 
         private UserDto testUserDto;
         private UserResponse testUserResponse;

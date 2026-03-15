@@ -1,14 +1,8 @@
 import { AdminService } from '@/services/core/ApiService';
-import { SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
+import { RoleManage } from '@/types/security';
 
-export interface RoleInfo {
-    roleCode: string;
-    roleNm: string;
-    roleDc?: string;
-    roleTy?: string;
-    roleSort?: string;
-    roleCreatDe?: string;
-}
+export type RoleInfo = RoleManage;
 
 /**
  * 롤 관리 서비스 (Admin)
@@ -19,33 +13,33 @@ class RoleAdminService extends AdminService {
     }
 
     /** 롤 목록 조회 */
-    async getRoleList(params?: SearchParams, config?: any) {
-        const response = await this.get<any>('', { ...config, params });
-        return response?.result || response;
+    async getRoleList(params?: SearchParams, config?: any): Promise<PageResponse<RoleInfo>> {
+        return this.get<PageResponse<RoleInfo>>('', { ...config, params });
     }
 
     /** 롤 상세 조회 */
-    async getRole(roleCode: string, config?: any) {
-        const response = await this.get<any>(`/${roleCode}`, config);
-        return response?.result || response;
+    async getRole(roleCode: string, config?: any): Promise<RoleInfo> {
+        return this.get<RoleInfo>(`/${roleCode}`, config);
     }
 
     /** 롤 등록 */
-    async createRole(data: Partial<RoleInfo>, config?: any) {
-        const response = await this.post<any>('', data, config);
-        return response?.result || response;
+    async createRole(data: Partial<RoleInfo>, config?: any): Promise<void> {
+        return this.post<void>('', data, config);
     }
 
     /** 롤 수정 */
-    async updateRole(roleCode: string, data: Partial<RoleInfo>, config?: any) {
-        const response = await this.put<any>(`/${roleCode}`, data, config);
-        return response?.result || response;
+    async updateRole(roleCode: string, data: Partial<RoleInfo>, config?: any): Promise<void> {
+        return this.put<void>(`/${roleCode}`, data, config);
     }
 
     /** 롤 삭제 */
-    async deleteRole(roleCode: string, config?: any) {
-        const response = await this.delete<any>(`/${roleCode}`, config);
-        return response?.result || response;
+    async deleteRole(roleCode: string, config?: any): Promise<void> {
+        return this.delete<void>(`/${roleCode}`, config);
+    }
+
+    /** 롤 다중 삭제 */
+    async deleteRoles(roleCodes: string[], config?: any): Promise<void> {
+        return this.delete<void>('', { ...config, data: roleCodes });
     }
 }
 

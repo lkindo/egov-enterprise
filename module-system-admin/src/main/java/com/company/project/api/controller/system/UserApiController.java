@@ -19,7 +19,7 @@ import java.util.List;
  * 시스템 사용자 관리 API 컨트롤러
  */
 @Tag(name = "User Management", description = "시스템 사용자 관리 API (Admin)")
-@RestController
+@RestController("systemUserApiController")
 @RequestMapping("/api/v1/admin/system/users")
 @RequiredArgsConstructor
 public class UserApiController {
@@ -71,6 +71,22 @@ public class UserApiController {
     public ResponseEntity<ApiResponse<Void>> deleteUser(
             @Parameter(description = "사용자 ID") @PathVariable String userId) {
         userManageService.deleteUser(userId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "사용자 다중 삭제", description = "시스템에서 여러 명의 사용자를 한꺼번에 삭제합니다.")
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> deleteUsers(@RequestBody List<String> userIds) {
+        userManageService.deleteUserList(userIds);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "비밀번호 변경", description = "특정 사용자의 비밀번호를 관리자 권한으로 변경합니다.")
+    @PatchMapping("/{userId}/password")
+    public ResponseEntity<ApiResponse<Void>> updatePassword(
+            @PathVariable String userId,
+            @RequestBody String newPassword) {
+        userManageService.updatePassword(userId, newPassword);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

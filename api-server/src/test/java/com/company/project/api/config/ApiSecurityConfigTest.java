@@ -5,18 +5,14 @@ import com.company.project.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.context.annotation.Import;
-import org.springframework.security.test.context.support.WithMockUser;
-
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
@@ -24,10 +20,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles({"prod", "test", "security-test"})
-@ContextConfiguration(classes = {ApiSecurityConfig.class})
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import com.company.project.api.controller.UserController;
+import com.company.project.service.user.UserService;
+import com.company.project.api.interceptor.OperationalAuditInterceptor;
+
+@WebMvcTest(controllers = UserController.class)
+@ActiveProfiles({ "prod", "test", "security-test" })
+@ContextConfiguration(classes = { ApiSecurityConfig.class })
 @DisplayName("ApiSecurityConfig 설정 테스트")
 public class ApiSecurityConfigTest {
 
@@ -39,6 +39,12 @@ public class ApiSecurityConfigTest {
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private UserService userService;
+
+    @MockitoBean
+    private OperationalAuditInterceptor operationalAuditInterceptor;
 
     @Autowired(required = false)
     private PasswordEncoder passwordEncoder;

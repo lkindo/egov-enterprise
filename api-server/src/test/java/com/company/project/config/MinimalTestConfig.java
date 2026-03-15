@@ -56,7 +56,8 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Interceptor.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test$"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*"),
-        @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = { org.springframework.boot.test.context.TestConfiguration.class })
+        @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = { org.springframework.boot.test.context.TestConfiguration.class }),
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = { com.company.project.api.config.ApiSecurityConfig.class })
 })
 @EnableJpaRepositories(basePackages = "com.company.project.domain")
 @EntityScan(basePackages = { "com.company.project.domain" })

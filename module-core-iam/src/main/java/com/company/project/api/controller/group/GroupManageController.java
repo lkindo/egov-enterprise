@@ -4,6 +4,7 @@ import com.company.project.service.group.GroupManageService;
 import com.company.project.service.group.dto.GroupManageDto;
 import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.context.MessageSource;
@@ -18,6 +19,8 @@ import jakarta.validation.Valid;
 
 /**
  * 그룹 관리? ?한 컨트롤러 ?래?? */
+@Slf4j
+@Deprecated
 @Controller
 @RequiredArgsConstructor
 public class GroupManageController {

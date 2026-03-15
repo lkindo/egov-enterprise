@@ -1,21 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-
-export interface DeptAuthorBatchRequest {
-    deptId: string;
-    authorCode: string;
-    allMembers: boolean;
-    userIds?: string[];
-}
-
-export interface DeptAuthorProjection {
-    deptCode: string;
-    deptNm: string;
-    userId: string;
-    userNm: string;
-    authorCode: string;
-    uniqId: string;
-    regYn: string;
-}
+import { PageResponse, SearchParams } from '@/types/system';
 
 export interface Department {
     orgnztId: string;
@@ -23,34 +7,37 @@ export interface Department {
     orgnztDc?: string;
 }
 
+/**
+ * 부서 관리 서비스 (Admin)
+ */
 class DeptAdminService extends AdminService {
     constructor() {
         super('/departments');
     }
 
-    /**
-     * 전체 부서(조직) 목록 조회
-     */
-    async getDepts(): Promise<Department[]> {
-        const response = await this.get<any>('');
-        return response?.result || response;
+    /** 부서 목록 조회 */
+    async getDeptList(params?: SearchParams, config?: any): Promise<PageResponse<Department>> {
+        return this.get<PageResponse<Department>>('', { ...config, params });
     }
 
-    /**
-     * 특정 부서의 사용자별 권한 목록 조회
-     */
-    async getDeptAuthorities(deptId: string): Promise<DeptAuthorProjection[]> {
-        // security 관련 API는 별도 경로이므로 basePath 무시
-        const response = await this.client.get<any>(`admin/security/dept-authorities/${deptId}`);
-        return response?.result || response;
+    /** 부서 상세 조회 */
+    async getDept(deptId: string, config?: any): Promise<Department> {
+        return this.get<Department>(`/${deptId}`, config);
     }
 
-    /**
-     * 부서 권한 일괄 설정
-     */
-    async updateDeptAuthorities(data: DeptAuthorBatchRequest): Promise<void> {
-        const response = await this.client.post<any>(`admin/security/dept-authorities/batch`, data);
-        return response?.result || response;
+    /** 부서 등록 */
+    async createDept(data: Partial<Department>, config?: any): Promise<void> {
+        return this.post<void>('', data, config);
+    }
+
+    /** 부서 수정 */
+    async updateDept(deptId: string, data: Partial<Department>, config?: any): Promise<void> {
+        return this.put<void>(`/${deptId}`, data, config);
+    }
+
+    /** 부서 삭제 */
+    async deleteDept(deptId: string, config?: any): Promise<void> {
+        return this.delete<void>(`/${deptId}`, config);
     }
 }
 

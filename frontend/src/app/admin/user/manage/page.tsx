@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { userAdminService } from '@/services/admin/user/UserAdminService';
+import { userAdminService } from '@/services/admin/system';
 import UserManageClient from './UserManageClient';
 import { Loader2 } from 'lucide-react';
 import { selectFieldsList } from '@/lib/utils/serialization';
@@ -26,21 +26,28 @@ export default async function UserManagePage({
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    let initialData: any = { resultList: [], paginationInfo: { totalRecordCount: 0 } };
+    let initialData: any = { list: [], total: 0 };
     try {
-        const rawData = await userAdminService.getUsers({
+        const rawData = await userAdminService.getUserList({
             pageIndex,
             searchCondition,
             searchKeyword,
             sbscrbSttus
-        }, axiosConfig);
+        } as any, axiosConfig);
 
         // 직렬화 최적화: 필요한 필드만 추출하여 클라이언트로 전송
+        const fields = ['userId', 'userNm', 'email', 'userSttusCode', 'sbscrbDe'] as const;
+        type UserField = typeof fields[number];
         initialData = {
-            resultList: selectFieldsList(rawData.resultList || [], [
-                'userId', 'userNm', 'email', 'userSttusCode', 'sbscrbDe'
-            ] as any[]),
-            paginationInfo: rawData.paginationInfo || { totalRecordCount: 0 }
+            list: (rawData?.list || []).map((item) =>
+                fields.reduce((acc, key) => {
+                    acc[key] = item[key as keyof typeof item] as unknown;
+                    return acc;
+                }, {} as Record<UserField, unknown>)
+            ),
+            total: rawData?.total || 0,
+            page: rawData?.page || 1,
+            size: rawData?.size || 10,
         };
     } catch (error: any) {
         console.error('Server-side fetch users failed:', error);

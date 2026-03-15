@@ -16,15 +16,15 @@ describe('Admin System Services Part 2', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('BannerAdminService should call correct endpoints', async () => {
-    await bannerAdminService.getBanners({ page: 1 });
+    await bannerAdminService.getBannerList({ page: 1 });
     expect(client.get).toHaveBeenCalledWith('/banners', expect.objectContaining({
-      params: { page: 1 }
+      params: expect.objectContaining({ page: 1 })
     }));
   });
 
   it('CommunityAdminService should call correct endpoints', async () => {
     // CommunityAdminService uses AdminService which prepends /admin/system
-    await communityAdminService.getCommunities({ page: 0 });
+    await communityAdminService.getCommunityList({ page: 0 });
     expect(client.get).toHaveBeenCalledWith('/admin/system/communities', expect.objectContaining({
       params: { page: 0 }
     }));

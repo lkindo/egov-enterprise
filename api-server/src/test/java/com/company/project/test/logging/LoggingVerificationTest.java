@@ -25,13 +25,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import com.company.project.api.interceptor.OperationalAuditInterceptor;
+import org.springframework.context.annotation.Import;
 
 import java.util.List;
 
@@ -42,9 +43,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(properties = "springdoc.api-docs.enabled=false")
-@AutoConfigureMockMvc
-@EnableWebMvc
+
+@WebMvcTest(controllers = UserController.class)
+@Import(GlobalExceptionHandler.class)
 @ActiveProfiles("test")
 public class LoggingVerificationTest {
 
@@ -62,8 +63,11 @@ public class LoggingVerificationTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
+    @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private OperationalAuditInterceptor operationalAuditInterceptor;
 
     private Appender<ILoggingEvent> mockAppender;
     private Logger controllerLogger;

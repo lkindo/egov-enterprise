@@ -18,7 +18,7 @@ import java.util.List;
  */
 @Tag(name = "Role Management", description = "시스템 권한(Role) 관리 API (Admin)")
 @Slf4j
-@RestController
+@RestController("systemRoleApiController")
 @RequestMapping("/api/v1/admin/system/roles")
 @RequiredArgsConstructor
 public class RoleApiController {
@@ -69,6 +69,13 @@ public class RoleApiController {
     @DeleteMapping("/{roleCode}")
     public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable String roleCode) {
         roleManageService.deleteRole(roleCode);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "롤 다중 삭제", description = "여러 권한(Role) 정보를 한꺼번에 삭제합니다.")
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> deleteRoles(@RequestBody List<String> roleCodes) {
+        roleManageService.deleteRoles(roleCodes.toArray(new String[0]));
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

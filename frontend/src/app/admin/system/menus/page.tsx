@@ -45,8 +45,7 @@ export default async function MenuAdminPage() {
     ]);
 
     menus = menuData || [];
-    // @ts-ignore
-    programs = programData?.content || programData?.resultList || [];
+    programs = programData?.list || [];
   } catch (error: any) {
     if (error.response?.status === 401) {
       isUnauthorized = true;

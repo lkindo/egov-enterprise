@@ -28,14 +28,14 @@ export default async function CommonCodePage({
 
   try {
     const [clRes, groupsRes, detailsRes] = await Promise.all([
-      codeAdminService.getClCodes({ pageUnit: 999 } as any, axiosConfig),
-      codeAdminService.getGroups({ pageUnit: 999 } as any, axiosConfig),
-      groupId ? codeAdminService.getDetails({ codeId: groupId, pageUnit: 999 } as any, axiosConfig) : Promise.resolve({ resultList: [] } as any)
+      codeAdminService.getClCodeList({ pageUnit: 999 } as any, axiosConfig),
+      codeAdminService.getCmmnCodeList({ pageUnit: 999 } as any, axiosConfig),
+      groupId ? codeAdminService.getDetailCodeList({ codeId: groupId, pageUnit: 999 } as any, axiosConfig) : Promise.resolve({ list: [] } as any)
     ]);
 
-    clCodes = clRes.list || clRes.resultList || [];
-    groups = groupsRes.list || groupsRes.resultList || [];
-    details = detailsRes.list || detailsRes.resultList || [];
+    clCodes = clRes.list || [];
+    groups = groupsRes.list || [];
+    details = detailsRes.list || [];
   } catch (error: any) {
     console.error('Server-side fetch common codes failed:', error);
     if (error.response?.status === 401 || !accessToken) {

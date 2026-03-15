@@ -22,7 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2, Plus, Loader2 } from "lucide-react";
-import { getRoleList, createRole, deleteRole } from '@/services/security/securityService';
+import { roleAdminService } from '@/services/admin/system';
 import { RoleManage } from '@/types/security';
 import { SearchParams } from '@/types/system';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
@@ -46,14 +46,20 @@ export default function RoleManagePage() {
 
     const { data, isLoading } = useQuery({
         queryKey: ['admin-roles', params],
-        queryFn: () => getRoleList(params),
+        queryFn: () => roleAdminService.getRoleList(params),
     });
 
-    const roles: RoleManage[] = data?.resultList || [];
-    const pagination = data?.paginationInfo;
+    const roles: RoleManage[] = data?.list || [];
+    // Map new pagination fields to the old PaginationInfo structure if necessary
+    const pagination = data ? {
+        currentPageNo: data.page,
+        recordCountPerPage: data.size,
+        totalRecordCount: data.total,
+        totalPageCount: data.totalPage
+    } : null;
 
     const createMutation = useMutation({
-        mutationFn: createRole,
+        mutationFn: (data: RoleManage) => roleAdminService.createRole(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
             setIsDialogOpen(false);
@@ -62,7 +68,7 @@ export default function RoleManagePage() {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: deleteRole,
+        mutationFn: (roleCode: string) => roleAdminService.deleteRole(roleCode),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
         },

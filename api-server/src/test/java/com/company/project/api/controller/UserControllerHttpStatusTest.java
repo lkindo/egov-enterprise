@@ -1,6 +1,4 @@
 package com.company.project.api.controller;
-
-import com.company.project.config.MinimalTestConfig;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
@@ -8,9 +6,9 @@ import com.company.project.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import com.company.project.api.interceptor.OperationalAuditInterceptor;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,9 +22,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(classes = { MinimalTestConfig.class }, properties = "spring.main.allow-bean-definition-overriding=true")
-@AutoConfigureMockMvc(addFilters = false)
-@ActiveProfiles({"test", "minimal-test-security"})
+@WebMvcTest(controllers = UserController.class)
+@ActiveProfiles("test")
 class UserControllerHttpStatusTest {
 
         @Autowired
@@ -34,6 +31,9 @@ class UserControllerHttpStatusTest {
 
         @MockitoBean
         private UserService userService;
+
+        @MockitoBean
+        private OperationalAuditInterceptor operationalAuditInterceptor;
 
         @Test
         @DisplayName("POST /api/v1/users/signup - Success (200 OK)")

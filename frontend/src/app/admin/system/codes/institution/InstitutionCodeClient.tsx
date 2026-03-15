@@ -2,26 +2,30 @@
 
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
 import { codeAdminService, InstitutionCode, InstitutionCodeRecptn } from '@/services/admin/system/CodeAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import { PagePagination } from '@/components/common/PagePagination';
 
 export default function InstitutionCodeClient({ initialData }: { initialData: any }) {
     const [activeTab, setActiveTab] = useState<'list' | 'reception'>('list');
     const [data, setData] = useState<InstitutionCode[]>(initialData?.list || []);
     const [receptionData, setReceptionData] = useState<InstitutionCodeRecptn[]>([]);
-    const [total, setTotal] = useState(initialData?.totalCount || 0);
+    const [total, setTotal] = useState(initialData?.total || 0);
     const [loading, setLoading] = useState(false);
+    const [pageIndex, setPageIndex] = useState(1);
+    const [searchWrd, setSearchWrd] = useState('');
     const { toast } = useToast();
 
-    const loadListData = async (searchWrd: string = '', page: number = 1) => {
+    const loadListData = async (wrd: string = searchWrd, page: number = pageIndex) => {
         try {
             setLoading(true);
-            const res = await codeAdminService.getInstitutionCodeList({ searchWrd, pageIndex: page });
+            const res = await codeAdminService.getInstitutionCodeList({ searchWrd: wrd, pageIndex: page });
             setData(res.list || []);
-            setTotal(res.totalCount || 0);
+            setTotal(res.total || 0);
+            setPageIndex(page);
         } catch (error) {
             toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
         } finally {
@@ -29,12 +33,13 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
         }
     };
 
-    const loadReceptionData = async (searchWrd: string = '', page: number = 1) => {
+    const loadReceptionData = async (wrd: string = searchWrd, page: number = pageIndex) => {
         try {
             setLoading(true);
-            const res = await codeAdminService.getInstitutionCodeRecptnList({ searchWrd, pageIndex: page });
+            const res = await codeAdminService.getInstitutionCodeRecptnList({ searchWrd: wrd, pageIndex: page });
             setReceptionData(res.list || []);
-            setTotal(res.totalCount || 0);
+            setTotal(res.total || 0);
+            setPageIndex(page);
         } catch (error) {
             toast('수신 내역을 불러오는 중 오류가 발생했습니다.', 'error');
         } finally {
@@ -66,7 +71,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
         }
     }, [activeTab]);
 
-    const listColumns = [
+    const listColumns: Column<InstitutionCode>[] = [
         { header: '기관코드', accessor: 'insttCode', className: 'w-32' },
         { header: '전체기관명', accessor: 'allInsttNm' },
         { header: '최하위기관명', accessor: 'lowestInsttNm' },
@@ -82,7 +87,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
         },
     ];
 
-    const receptionColumns = [
+    const receptionColumns: Column<InstitutionCodeRecptn>[] = [
         { header: '발생일자', accessor: 'occrrncDe', className: 'w-24' },
         { header: '기관코드', accessor: 'insttCode', className: 'w-28' },
         { header: '기관명', accessor: 'allInsttNm' },
@@ -148,7 +153,10 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
                 fields={[
                     { name: 'searchWrd', label: '기관명', type: 'text', placeholder: '기관명 입력...' }
                 ]}
-                onSearch={(v) => activeTab === 'list' ? loadListData(v.searchWrd, 1) : loadReceptionData(v.searchWrd, 1)}
+                onSearch={(v) => {
+                    setSearchWrd(v.searchWrd);
+                    activeTab === 'list' ? loadListData(v.searchWrd, 1) : loadReceptionData(v.searchWrd, 1);
+                }}
             />
 
             {activeTab === 'list' ? (
@@ -166,6 +174,13 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
                     emptyMessage="수신된 내역이 없습니다."
                 />
             )}
+
+            <PagePagination
+                total={total}
+                size={10}
+                page={pageIndex}
+                onPageChange={(p) => activeTab === 'list' ? loadListData(searchWrd, p) : loadReceptionData(searchWrd, p)}
+            />
         </div>
     );
 }

@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 
 export interface Community {
     cmmntyId: string;
@@ -20,9 +20,9 @@ class CommunityAdminService extends AdminService {
     }
 
     /** 커뮤니티 목록 조회 */
-    async getCommunityList(params?: SearchParams, config?: any): Promise<PaginationResponse<Community>> {
+    async getCommunityList(params?: SearchParams, config?: any): Promise<PageResponse<Community>> {
         const response = await this.get<any>('', { ...config, params });
-        return response?.result || response;
+        return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
     }
 
     /** 커뮤니티 상세 조회 */

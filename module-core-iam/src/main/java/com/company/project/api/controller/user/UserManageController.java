@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
  * 사용자 관리를 위한 컨트롤러
  */
 @Slf4j
+@Deprecated
 @Controller("userPkgUserManageController")
 @RequiredArgsConstructor
 public class UserManageController {

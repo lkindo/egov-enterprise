@@ -22,7 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Trash2, Plus, Loader2 } from "lucide-react";
-import { getGroupList, createGroup, updateGroup, deleteGroup } from '@/services/security/securityService';
+import { groupAdminService } from '@/services/admin/system';
 import { GroupManage } from '@/types/security';
 import { SearchParams } from '@/types/system';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
@@ -44,14 +44,19 @@ export default function GroupManagePage() {
 
     const { data, isLoading } = useQuery({
         queryKey: ['admin-groups', params],
-        queryFn: () => getGroupList(params),
+        queryFn: () => groupAdminService.getGroupList(params),
     });
 
-    const groups: GroupManage[] = data?.resultList || [];
-    const pagination = data?.paginationInfo;
+    const groups: GroupManage[] = data?.list || [];
+    const pagination = data ? {
+        currentPageNo: data.page,
+        recordCountPerPage: data.size,
+        totalRecordCount: data.total,
+        totalPageCount: data.totalPage
+    } : null;
 
     const createMutation = useMutation({
-        mutationFn: createGroup,
+        mutationFn: (data: GroupManage) => groupAdminService.createGroup(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
             setIsDialogOpen(false);
@@ -60,7 +65,7 @@ export default function GroupManagePage() {
     });
 
     const updateMutation = useMutation({
-        mutationFn: updateGroup,
+        mutationFn: (data: GroupManage) => groupAdminService.updateGroup(data.groupId, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
             setIsDialogOpen(false);
@@ -69,7 +74,7 @@ export default function GroupManagePage() {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: deleteGroup,
+        mutationFn: (groupId: string) => groupAdminService.deleteGroup(groupId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
         },

@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface Menu {
@@ -28,7 +28,7 @@ class MenuAdminService extends AdminService {
     }
 
     /** 메뉴 목록 조회 */
-    async getMenuList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<Menu>> {
+    async getMenuList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Menu>> {
         const response = await this.get<any>('', {
             ...config,
             params: {
@@ -36,7 +36,7 @@ class MenuAdminService extends AdminService {
                 searchWrd: params?.searchKeyword || params?.searchWrd || '',
             },
         });
-        return response?.result || response;
+        return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
     }
 
     /** 메뉴 전체 트리용 조회 */
@@ -67,9 +67,9 @@ class MenuAdminService extends AdminService {
     }
 
     /** 권한별 메뉴 생성 관리 목록 조회 */
-    async getMenuCreationManageList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<MenuCreate>> {
+    async getMenuCreationManageList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<MenuCreate>> {
         const response = await this.get<any>('/creation-manage', { ...config, params });
-        return response?.result || response;
+        return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
     }
 }
 

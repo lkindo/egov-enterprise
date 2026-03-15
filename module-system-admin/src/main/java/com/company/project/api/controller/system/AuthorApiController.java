@@ -20,7 +20,7 @@ import java.util.List;
  */
 @Tag(name = "Authority Management", description = "시스템 권한 그룹 관리 API (Admin)")
 @Slf4j
-@RestController
+@RestController("systemAuthorApiController")
 @RequestMapping("/api/v1/admin/system/authorities")
 @RequiredArgsConstructor
 public class AuthorApiController {
@@ -85,6 +85,13 @@ public class AuthorApiController {
     @DeleteMapping("/{authorCode}")
     public ResponseEntity<ApiResponse<Void>> deleteAuthor(@PathVariable String authorCode) {
         authorManageService.deleteAuthor(authorCode);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "권한 그룹 다중 삭제", description = "여러 권한 그룹 정보를 한꺼번에 삭제합니다.")
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> deleteAuthors(@RequestBody List<String> authorCodes) {
+        authorManageService.deleteAuthors(authorCodes.toArray(new String[0]));
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

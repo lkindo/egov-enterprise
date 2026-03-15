@@ -14,7 +14,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Trash2, Plus, ShieldCheck, ShieldAlert, Key, Loader2, FileText, Calendar } from "lucide-react";
-import { getAuthorList, createAuthor, updateAuthor, deleteAuthor } from '@/services/security/securityService';
+import { authorAdminService } from '@/services/admin/system';
 import { AuthorManage } from '@/types/security';
 import { SearchParams } from '@/types/system';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
@@ -39,14 +39,14 @@ export default function AuthorityManagePage() {
 
     const { data, isLoading } = useQuery({
         queryKey: ['admin-authorities', params],
-        queryFn: () => getAuthorList(params),
+        queryFn: () => authorAdminService.getAuthorList(params),
     });
 
-    const authorities: AuthorManage[] = data?.resultList || [];
-    const pagination = data?.paginationInfo;
+    const authorities: AuthorManage[] = data?.list || [];
+    const totalCount = data?.total || 0;
 
     const saveMutation = useMutation({
-        mutationFn: (data: AuthorManage) => editingAuthority ? updateAuthor(data) : createAuthor(data),
+        mutationFn: (data: AuthorManage) => editingAuthority ? authorAdminService.updateAuthor(data.authorCode, data) : authorAdminService.createAuthor(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
             toast(editingAuthority ? '권한 정보가 수정되었습니다.' : '새 권한이 등록되었습니다.', 'success');
@@ -56,7 +56,7 @@ export default function AuthorityManagePage() {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: deleteAuthor,
+        mutationFn: (authorCode: string) => authorAdminService.deleteAuthor(authorCode),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
             toast('권한이 삭제되었습니다.', 'success');
@@ -159,7 +159,7 @@ export default function AuthorityManagePage() {
                 <div className="p-8 rounded-[2.5rem] border-2 border-primary/5 bg-card shadow-sm flex items-center justify-between overflow-hidden relative group">
                     <div className="relative z-10">
                         <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1">Active Roles</p>
-                        <h4 className="text-4xl font-black text-primary">{pagination?.totalRecordCount || 0}</h4>
+                        <h4 className="text-4xl font-black text-primary">{totalCount}</h4>
                         <p className="text-[11px] text-muted-foreground mt-4 font-bold">시스템 전체에 적용된 활성 권한 수입니다.</p>
                     </div>
                     <div className="w-20 h-20 rounded-[2rem] bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">

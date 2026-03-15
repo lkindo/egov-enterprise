@@ -1,14 +1,8 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 import { AxiosRequestConfig } from 'axios';
 
-export interface Program {
-    progrmFileNm: string;
-    progrmStrePath: string;
-    progrmKoreanNm: string;
-    progrmDc: string;
-    url: string;
-}
+import { Program } from '@/types/program';
 
 /**
  * 프로그램 관리 서비스 (Admin)
@@ -19,7 +13,7 @@ class ProgramAdminService extends AdminService {
     }
 
     /** 프로그램 목록 조회 */
-    async getProgramList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<Program>> {
+    async getProgramList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Program>> {
         const response = await this.get<any>('', {
             ...config,
             params: {
@@ -27,7 +21,7 @@ class ProgramAdminService extends AdminService {
                 searchWrd: params?.searchKeyword || params?.searchWrd || '',
             },
         });
-        return response?.result || response;
+        return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
     }
 
     /** 프로그램 상세 조회 */

@@ -13,9 +13,9 @@ export default async function InstitutionCodePage() {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    let initialData = { list: [], totalCount: 0 };
+    let initialData: any = { list: [], total: 0 };
     try {
-        initialData = await codeAdminService.getInstitutionCodes({ pageIndex: 1, pageUnit: 10 }, axiosConfig);
+        initialData = await codeAdminService.getInstitutionCodeList({ pageIndex: 1, pageUnit: 10 }, axiosConfig);
     } catch (error) {
         console.error('Failed to fetch initial institution codes:', error);
     }

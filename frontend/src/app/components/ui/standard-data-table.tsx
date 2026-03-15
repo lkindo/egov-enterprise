@@ -6,13 +6,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Trash2, Edit3, MoreHorizontal, ChevronDown, List } from "lucide-react";
 
-interface Column<T> {
+export interface Column<T> {
   header: string;
   accessor: keyof T | ((item: T) => React.ReactNode);
   className?: string;
 }
 
-interface BulkAction<T> {
+export interface BulkAction<T> {
   label: string;
   icon?: React.ReactNode;
   variant?: 'default' | 'destructive' | 'outline';

@@ -1,29 +1,6 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams, CmmnClCode, CmmnCode, CmmnDetailCode } from '@/types/system';
 import { AxiosRequestConfig } from 'axios';
-
-export interface CmmnClCode {
-    clCode: string;
-    clCodeNm: string;
-    clCodeDc: string;
-    useAt: string;
-}
-
-export interface CmmnCode {
-    codeId: string;
-    codeIdNm: string;
-    codeIdDc: string;
-    useAt: string;
-    clCode: string;
-}
-
-export interface CmmnDetailCode {
-    codeId: string;
-    code: string;
-    codeNm: string;
-    codeDc: string;
-    useAt: string;
-}
 
 export interface AdministCode {
     administZoneCode: string;
@@ -81,21 +58,19 @@ class CodeAdminService extends AdminService {
     }
 
     // --- 분류코드 (Classification Code) ---
-    async getClCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<CmmnClCode>> {
-        const response = await this.get<any>('/cl', { ...config, params });
-        return response?.result || response;
+    async getClCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CmmnClCode>> {
+        return this.get<PageResponse<CmmnClCode>>('/cl', { ...config, params });
     }
 
     async getClCode(clCode: string, config?: AxiosRequestConfig): Promise<CmmnClCode> {
-        const response = await this.get<any>(`/cl/${clCode}`, config);
-        return response?.result || response;
+        return this.get<CmmnClCode>(`/cl/${clCode}`, config);
     }
 
-    async createClCode(data: CmmnClCode, config?: AxiosRequestConfig): Promise<void> {
+    async createClCode(data: Partial<CmmnClCode>, config?: AxiosRequestConfig): Promise<void> {
         return this.post('/cl', data, config);
     }
 
-    async updateClCode(clCode: string, data: CmmnClCode, config?: AxiosRequestConfig): Promise<void> {
+    async updateClCode(clCode: string, data: Partial<CmmnClCode>, config?: AxiosRequestConfig): Promise<void> {
         return this.put(`/cl/${clCode}`, data, config);
     }
 
@@ -104,21 +79,19 @@ class CodeAdminService extends AdminService {
     }
 
     // --- 공통코드 (Common Code) ---
-    async getCmmnCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<CmmnCode>> {
-        const response = await this.get<any>('/cmmn', { ...config, params });
-        return response?.result || response;
+    async getCmmnCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CmmnCode>> {
+        return this.get<PageResponse<CmmnCode>>('/cmmn', { ...config, params });
     }
 
     async getCmmnCode(codeId: string, config?: AxiosRequestConfig): Promise<CmmnCode> {
-        const response = await this.get<any>(`/cmmn/${codeId}`, config);
-        return response?.result || response;
+        return this.get<CmmnCode>(`/cmmn/${codeId}`, config);
     }
 
-    async createCmmnCode(data: CmmnCode, config?: AxiosRequestConfig): Promise<void> {
+    async createCmmnCode(data: Partial<CmmnCode>, config?: AxiosRequestConfig): Promise<void> {
         return this.post('/cmmn', data, config);
     }
 
-    async updateCmmnCode(codeId: string, data: CmmnCode, config?: AxiosRequestConfig): Promise<void> {
+    async updateCmmnCode(codeId: string, data: Partial<CmmnCode>, config?: AxiosRequestConfig): Promise<void> {
         return this.put(`/cmmn/${codeId}`, data, config);
     }
 
@@ -127,21 +100,19 @@ class CodeAdminService extends AdminService {
     }
 
     // --- 상세코드 (Detail Code) ---
-    async getDetailCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<CmmnDetailCode>> {
-        const response = await this.get<any>('/detail', { ...config, params });
-        return response?.result || response;
+    async getDetailCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CmmnDetailCode>> {
+        return this.get<PageResponse<CmmnDetailCode>>('/detail', { ...config, params });
     }
 
     async getDetailCode(codeId: string, code: string, config?: AxiosRequestConfig): Promise<CmmnDetailCode> {
-        const response = await this.get<any>(`/detail/${codeId}/${code}`, config);
-        return response?.result || response;
+        return this.get<CmmnDetailCode>(`/detail/${codeId}/${code}`, config);
     }
 
-    async createDetailCode(data: CmmnDetailCode, config?: AxiosRequestConfig): Promise<void> {
+    async createDetailCode(data: Partial<CmmnDetailCode>, config?: AxiosRequestConfig): Promise<void> {
         return this.post('/detail', data, config);
     }
 
-    async updateDetailCode(codeId: string, code: string, data: CmmnDetailCode, config?: AxiosRequestConfig): Promise<void> {
+    async updateDetailCode(codeId: string, code: string, data: Partial<CmmnDetailCode>, config?: AxiosRequestConfig): Promise<void> {
         return this.put(`/detail/${codeId}/${code}`, data, config);
     }
 
@@ -150,14 +121,12 @@ class CodeAdminService extends AdminService {
     }
 
     // --- 행정코드 (Administrative Code) ---
-    async getAdministCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<AdministCode>> {
-        const response = await this.get<any>('/administ', { ...config, params });
-        return response?.result || response;
+    async getAdministCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<AdministCode>> {
+        return this.get<PageResponse<AdministCode>>('/administ', { ...config, params });
     }
 
     async getAdministCodeDetail(administZoneCode: string, config?: AxiosRequestConfig): Promise<AdministCode> {
-        const response = await this.get<any>(`/administ/${administZoneCode}`, config);
-        return response?.result || response;
+        return this.get<AdministCode>(`/administ/${administZoneCode}`, config);
     }
 
     async createAdministCode(data: AdministCode, config?: AxiosRequestConfig): Promise<void> {
@@ -173,15 +142,13 @@ class CodeAdminService extends AdminService {
     }
 
     // --- 기관코드 (Institution Code) ---
-    async getInstitutionCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<InstitutionCode>> {
-        const response = await this.get<any>('/institution', { ...config, params });
-        return response?.result || response;
+    async getInstitutionCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<InstitutionCode>> {
+        return this.get<PageResponse<InstitutionCode>>('/institution', { ...config, params });
     }
 
     /** 기관코드 수신 내역 조회 */
-    async getInstitutionCodeRecptnList(params?: SearchParams & { processSe?: string }, config?: AxiosRequestConfig): Promise<PaginationResponse<InstitutionCodeRecptn>> {
-        const response = await this.get<any>('/institution/receptions', { ...config, params });
-        return response?.result || response;
+    async getInstitutionCodeRecptnList(params?: SearchParams & { processSe?: string }, config?: AxiosRequestConfig): Promise<PageResponse<InstitutionCodeRecptn>> {
+        return this.get<PageResponse<InstitutionCodeRecptn>>('/institution/receptions', { ...config, params });
     }
 
     /** 기관코드 수신 처리 */
