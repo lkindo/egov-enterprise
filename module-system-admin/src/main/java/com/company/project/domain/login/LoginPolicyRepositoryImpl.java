@@ -36,8 +36,8 @@ public class LoginPolicyRepositoryImpl implements LoginPolicyRepositoryCustom {
                         loginPolicy.ipInfo,
                         loginPolicy.dplctPermAt,
                         loginPolicy.lmttAt,
-                        loginPolicy.lastUpdusrId,
-                        loginPolicy.lastUpdtPnttm,
+                        loginPolicy.lastModifiedBy,
+                        loginPolicy.lastModifiedDate,
                         Expressions.stringTemplate("CASE WHEN {0} IS NULL THEN 'N' ELSE 'Y' END", loginPolicy.emplyrId)
                                 .as("regYn")))
                 .from(user)

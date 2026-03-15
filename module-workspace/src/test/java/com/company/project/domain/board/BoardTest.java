@@ -74,8 +74,10 @@ class BoardTest {
     @Test
     @DisplayName("조회수가 null일 때 증가 테스트")
     void increaseInqireCoNullTest() {
-        // use builder with null to test edge case
-        Board board = new Board(null, "BBS_001", null, null, null, null, null, null, null, null, "Y", null, null, null, null, null, null, null, null);
+        Board board = Board.builder()
+                .bbsId("BBS_001")
+                .inqireCo(null)
+                .build();
         
         board.increaseInqireCo();
 

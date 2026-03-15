@@ -73,12 +73,17 @@ class DeptJobBoxServiceTest {
     @Test
     @DisplayName("부서함 수정 테스트")
     void updateDeptJobBoxTest() {
-        DeptJobBox box = DeptJobBox.builder().deptJobbxId("B1").build();
+        DeptJobBox box = DeptJobBox.builder()
+                .deptJobbxId("B1")
+                .deptJobbxNm("Old")
+                .build();
         given(deptJobBoxRepository.findById("B1")).willReturn(Optional.of(box));
         DeptJobBoxDto dto = DeptJobBoxDto.builder().deptJobbxNm("Updated").build();
 
         deptJobBoxService.updateDeptJobBox("B1", "user1", dto);
-        verify(deptJobBoxRepository).save(any(DeptJobBox.class));
+        
+        // 더티 체킹을 사용하므로 save 호출 여부 대신 엔티티 상태 변화를 확인
+        assertThat(box.getDeptJobbxNm()).isEqualTo("Updated");
     }
 
     @Test

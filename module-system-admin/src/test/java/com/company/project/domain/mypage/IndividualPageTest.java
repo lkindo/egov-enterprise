@@ -16,13 +16,13 @@ class IndividualPageTest {
                 .pageNm("My Custom Page")
                 .pageDc("Personal Dashboard")
                 .userId("user01")
-                .frstRegisterId("admin")
+                .createdBy("admin")
                 .build();
 
         assertThat(page.getPageId()).isEqualTo("PAGE_001");
         assertThat(page.getPageNm()).isEqualTo("My Custom Page");
         assertThat(page.getUserId()).isEqualTo("user01");
-        assertThat(page.getFrstRegisterId()).isEqualTo("admin");
+        assertThat(page.getCreatedBy()).isEqualTo("admin");
     }
 
     @Test
@@ -33,10 +33,9 @@ class IndividualPageTest {
                 .pageNm("Old Page")
                 .build();
 
-        page.update("New Page", "New Description", "user02");
+        page.update("New Page", "New Description");
 
         assertThat(page.getPageNm()).isEqualTo("New Page");
         assertThat(page.getPageDc()).isEqualTo("New Description");
-        assertThat(page.getLastUpdusrId()).isEqualTo("user02");
     }
 }

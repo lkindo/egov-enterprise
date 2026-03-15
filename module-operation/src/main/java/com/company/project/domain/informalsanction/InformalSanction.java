@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -40,7 +41,8 @@ public class InformalSanction extends BaseEntity {
     private String sanctionerId;
 
     @Column(name = "CONFM_AT", length = 1)
-    private String confmAt;
+    @Builder.Default
+    private String confmAt = "N";
 
     @Column(name = "SANCTN_DT")
     private LocalDateTime sanctionDt;

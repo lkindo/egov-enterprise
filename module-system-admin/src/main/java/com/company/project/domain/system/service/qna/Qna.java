@@ -53,7 +53,8 @@ public class Qna extends BaseEntity {
     private String endTelno;
 
     @Column(name = "QNA_PROCESS_STTUS_CODE", length = 20)
-    private String qnaProcessSttusCode;
+    @Builder.Default
+    private String qnaProcessSttusCode = "Q";
 
     @Column(name = "ANSWER_CN", columnDefinition = "TEXT")
     private String answerCn;

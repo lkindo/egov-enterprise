@@ -7,6 +7,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -14,6 +16,7 @@ import lombok.experimental.SuperBuilder;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Table(name = "NCNSLTLIST")
 @SuperBuilder
 public class CnsltManage extends BaseEntity {
@@ -62,13 +65,15 @@ public class CnsltManage extends BaseEntity {
     private String wrterNm;
 
     @Column(name = "WRITNG_DE", length = 20)
-    private String writngDe; 
+    private String writngDe;
 
     @Column(name = "RDCNT")
-    private Integer inqireCo;
+    @Builder.Default
+    private Integer inqireCo = 0;
 
     @Column(name = "QNA_PROCESS_STTUS_CODE", length = 3)
-    private String qnaProcessSttusCode;
+    @Builder.Default
+    private String qnaProcessSttusCode = "1";
 
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
@@ -106,6 +111,6 @@ public class CnsltManage extends BaseEntity {
     public void updateAnswer(String qnaProcessSttusCode, String managtCn) {
         this.qnaProcessSttusCode = qnaProcessSttusCode;
         this.managtCn = managtCn;
-        this.managtDe = LocalDateTime.now().toString(); 
+        this.managtDe = LocalDateTime.now().toString();
     }
 }
