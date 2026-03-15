@@ -3,6 +3,7 @@ package com.company.project.api.config;
 import com.company.project.security.iam.EgovAuthenticationProvider;
 import com.company.project.security.jwt.JwtAuthenticationFilter;
 import com.company.project.security.jwt.JwtTokenProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -17,6 +18,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -34,8 +36,9 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
-@Profile({"!test", "security-test"})
+@Profile({"default", "prod", "security-test", "test"})
 @EnableWebSecurity
+@Slf4j
 public class ApiSecurityConfig {
         private final EgovAuthenticationProvider egovAuthenticationProvider;
         private final JwtTokenProvider jwtTokenProvider;
@@ -84,28 +87,16 @@ public class ApiSecurityConfig {
         @Order(1)
         public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
                 http
-                                .securityMatcher("/api/v1/**")
+                                .securityMatcher(AntPathRequestMatcher.antMatcher("/api/v1/**"))
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(AbstractHttpConfigurer::disable)
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/me",
-                                                                "/api/v1/auth/reissue",
-                                                                "/api/v1/auth/logout",
-                                                                "/api/v1/users/signup",
-                                                                "/api/v1/health",
-                                                                "/api/v1/images/**",
-                                                                "/v3/api-docs/**",
-                                                                "/swagger-ui/**",
-                                                                "/error")
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/health"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/auth/**"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/public/**"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/images/**"))
                                                 .permitAll()
-                                                .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SYSTEM")
-                                                .requestMatchers("/api/v1/dashboard",
-                                                                "/api/v1/bbs/**", "/api/v1/community/**",
-                                                                "/api/v1/deptjob/**", "/api/v1/addressbook/**",
-                                                                "/api/v1/schedule/**", "/api/v1/scrap/**",
-                                                                "/api/v1/banners/**", "/api/v1/popups/**",
-                                                                "/api/v1/menu/**")
-                                                .authenticated()
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**")).hasAnyRole("ADMIN", "SYSTEM")
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(
@@ -124,18 +115,25 @@ public class ApiSecurityConfig {
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf
                                                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                                                .ignoringRequestMatchers("/uat/uia/actionLogin.do"))
+                                                .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/uat/uia/actionLogin.do")))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(
-                                                                "/css/**", "/js/**", "/images/**",
-                                                                "/validator.do", "/cmm/fms/getImage.do",
-                                                                "/uat/uia/egovLoginUsr.do", "/uat/uia/actionLogin.do",
-                                                                "/uat/uia/actionLogout.do",
-                                                                "/ws/**",
-                                                                "/index.jsp", "/", "/uss/olp/qri/**",
-                                                                "/favicon.ico",
-                                                                "/v3/api-docs/**", "/swagger-ui/**",
-                                                                "/error")
+                                                                AntPathRequestMatcher.antMatcher("/css/**"),
+                                                                AntPathRequestMatcher.antMatcher("/js/**"),
+                                                                AntPathRequestMatcher.antMatcher("/images/**"),
+                                                                AntPathRequestMatcher.antMatcher("/validator.do"),
+                                                                AntPathRequestMatcher.antMatcher("/cmm/fms/getImage.do"),
+                                                                AntPathRequestMatcher.antMatcher("/uat/uia/egovLoginUsr.do"),
+                                                                AntPathRequestMatcher.antMatcher("/uat/uia/actionLogin.do"),
+                                                                AntPathRequestMatcher.antMatcher("/uat/uia/actionLogout.do"),
+                                                                AntPathRequestMatcher.antMatcher("/ws/**"),
+                                                                AntPathRequestMatcher.antMatcher("/index.jsp"),
+                                                                AntPathRequestMatcher.antMatcher("/"),
+                                                                AntPathRequestMatcher.antMatcher("/uss/olp/qri/**"),
+                                                                AntPathRequestMatcher.antMatcher("/favicon.ico"),
+                                                                AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
+                                                                AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
+                                                                AntPathRequestMatcher.antMatcher("/error"))
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .formLogin(form -> form.disable())

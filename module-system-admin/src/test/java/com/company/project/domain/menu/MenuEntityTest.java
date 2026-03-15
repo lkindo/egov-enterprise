@@ -2,54 +2,44 @@ package com.company.project.domain.menu;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DisplayName("Menu 엔티티 테스트")
 class MenuEntityTest {
 
     @Test
     @DisplayName("메뉴 정보 수정 테스트")
-    void update_success() {
-        // given
+    void updateTest() {
         Menu menu = Menu.builder()
                 .id(1L)
-                .menuNm("Old Name")
+                .menuNm("Old Menu")
                 .menuOrdr(1)
                 .build();
-
-        // when
-        menu.update("New Name", "prog.jsp", 0L, 2, "Description", "/path/", "image.png");
-
-        // then
-        assertThat(menu.getMenuNm()).isEqualTo("New Name");
-        assertThat(menu.getProgrmFileNm()).isEqualTo("prog.jsp");
+        
+        menu.update("New Menu", "prog1", 0L, 2, "Desc", "/path", "image");
+        
+        assertThat(menu.getMenuNm()).isEqualTo("New Menu");
         assertThat(menu.getMenuOrdr()).isEqualTo(2);
+        assertThat(menu.getProgrmFileNm()).isEqualTo("prog1");
     }
 
     @Test
-    @DisplayName("현대적 라우트 업데이트 테스트")
-    void updateModernRoute_success() {
-        // given
+    @DisplayName("모던 라우트 업데이트 테스트")
+    void updateModernRouteTest() {
         Menu menu = Menu.builder().id(1L).build();
-
-        // when
         menu.updateModernRoute("/admin/new-route");
-
-        // then
         assertThat(menu.getModernRoute()).isEqualTo("/admin/new-route");
     }
 
     @Test
-    @DisplayName("현대적 라우트 포함 전체 수정 테스트")
-    void updateWithModernRoute_success() {
-        // given
-        Menu menu = Menu.builder().id(1L).build();
-
-        // when
-        menu.updateWithModernRoute("Name", "file", 0L, 1, "Dc", "path", "img", "/modern");
-
-        // then
+    @DisplayName("전체 정보 수정 테스트 (모던 라우트 포함)")
+    void updateWithModernRouteTest() {
+        Menu menu = Menu.builder().id(1L).menuNm("Old").build();
+        
+        menu.updateWithModernRoute("New", "prog2", 10L, 5, "D", "P", "I", "/modern");
+        
+        assertThat(menu.getMenuNm()).isEqualTo("New");
         assertThat(menu.getModernRoute()).isEqualTo("/modern");
-        assertThat(menu.getMenuNm()).isEqualTo("Name");
+        assertThat(menu.getUpperMenuNo()).isEqualTo(10L);
     }
 }

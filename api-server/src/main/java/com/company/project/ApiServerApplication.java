@@ -21,7 +21,9 @@ import com.company.project.core.config.FullBeanNameGenerator;
                                                 org.egovframe.rte.fdl.crypto.config.EgovCryptoConfiguration.class,
                                                 org.egovframe.rte.fdl.access.config.EgovAccessConfiguration.class
                                 }),
-                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com\\.company\\.project\\.config\\.MinimalTestConfig"),
+
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test$"),
+                                @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*"),
 
                                 // 보안 및 권한 관리 (web 패키지 제외)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.ram\\.web\\..*"),

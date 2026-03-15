@@ -60,6 +60,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 })
 @EnableJpaRepositories(basePackages = "com.company.project.domain")
 @EntityScan(basePackages = { "com.company.project.domain" })
+@org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 public class MinimalTestConfig {
 
     @MockitoBean

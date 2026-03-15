@@ -33,7 +33,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = UserController.class)
 @ContextConfiguration(classes = {
-        UserController.class,
         GlobalExceptionHandler.class,
         UserApiControllerTest.TestConfig.class
 })

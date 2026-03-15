@@ -32,6 +32,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -92,16 +93,72 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("내 정보 조회 - Simple Authentication")
-    void me_Success() throws Exception {
-        Authentication auth = new UsernamePasswordAuthenticationToken("user01", null, 
-                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    @DisplayName("로그인 실패 테스트 - 인증 오류")
+    void loginFailTest() throws Exception {
+        when(authenticationManager.authenticate(any())).thenThrow(new org.springframework.security.authentication.BadCredentialsException("Auth failed"));
+
+        String requestBody = "{\"id\":\"user01\",\"password\":\"wrong\"}";
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Login Failed"));
+    }
+
+    @Test
+    @DisplayName("토큰 재발급 성공 테스트")
+    void reissue_Success() throws Exception {
+        String refreshToken = "validRefreshToken";
+        User mockUser = mock(User.class);
+        when(mockUser.getUserId()).thenReturn("user01");
+        when(mockUser.getRole()).thenReturn(Role.USER);
+        when(mockUser.getEsntlId()).thenReturn("USR01");
+
+        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
+        when(jwtTokenProvider.getUserId(refreshToken)).thenReturn("user01");
+        when(userRepository.findById("user01")).thenReturn(Optional.of(mockUser));
+        when(userAuthorityRepository.findById("USR01")).thenReturn(Optional.empty());
+        when(jwtTokenProvider.createAccessToken("user01", "ROLE_USER")).thenReturn("newAccessToken");
+
+        mockMvc.perform(post("/api/v1/auth/reissue")
+                        .cookie(new Cookie("refreshToken", refreshToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").value("newAccessToken"))
+                .andExpect(jsonPath("$.data.role").value("ROLE_USER"));
+    }
+
+    @Test
+    @DisplayName("토큰 재발급 실패 테스트 - 유효하지 않은 토큰")
+    void reissue_Fail_InvalidToken() throws Exception {
+        String refreshToken = "invalidToken";
+        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(false);
+
+        mockMvc.perform(post("/api/v1/auth/reissue")
+                        .cookie(new Cookie("refreshToken", refreshToken)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("A002")); // INVALID_TOKEN
+    }
+
+    @Test
+    @DisplayName("내 정보 조회 - CustomUserDetails 사용")
+    void me_Success_WithCustomUserDetails() throws Exception {
+        CustomUserDetails userDetails = mock(CustomUserDetails.class);
+        when(userDetails.getUserId()).thenReturn("user01");
+        when(userDetails.getUserNm()).thenReturn("홍길동");
+        when(userDetails.getAuthorCode()).thenReturn("ROLE_ADMIN");
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, null, 
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         mockMvc.perform(get("/api/v1/auth/me")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value("user01"));
+                .andExpect(jsonPath("$.data.id").value("user01"))
+                .andExpect(jsonPath("$.data.name").value("홍길동"))
+                .andExpect(jsonPath("$.data.role").value("ROLE_ADMIN"));
         
         SecurityContextHolder.clearContext();
     }
