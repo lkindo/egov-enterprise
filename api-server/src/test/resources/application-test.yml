@@ -65,8 +65,8 @@ jwt:
 logging:
   level:
     root: INFO
-    org.springframework.beans.factory: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    com.company.project: DEBUG
-    org.springframework.boot.autoconfigure: DEBUG
+    org.springframework.beans.factory: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO
+    com.company.project: INFO
+    org.springframework.boot.autoconfigure: INFO
