@@ -14,20 +14,18 @@ class ProgramAdminService extends AdminService {
 
     /** 프로그램 목록 조회 */
     async getProgramList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Program>> {
-        const response = await this.get<any>('', {
+        return this.get<PageResponse<Program>>('', {
             ...config,
             params: {
                 ...params,
                 searchWrd: params?.searchKeyword || params?.searchWrd || '',
             },
         });
-        return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
     }
 
     /** 프로그램 상세 조회 */
     async getProgram(progrmFileNm: string, config?: AxiosRequestConfig): Promise<Program> {
-        const response = await this.get<any>(`/${progrmFileNm}`, config);
-        return response?.result || response;
+        return this.get<Program>(`/${progrmFileNm}`, config);
     }
 
     /** 프로그램 등록 */

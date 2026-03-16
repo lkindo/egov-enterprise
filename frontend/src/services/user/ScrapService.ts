@@ -1,4 +1,5 @@
 import { ApiService } from '@/services/core/ApiService';
+import { PageResponse } from '@/types/system';
 
 export interface Scrap {
     scrapId: string;
@@ -16,17 +17,15 @@ class ScrapService extends ApiService {
     /**
      * 나의 스크랩 목록 조회
      */
-    async getMyScraps(params: { page?: number; size?: number }) {
-        const response = await this.get<any>('', { params });
-        return response?.result || response;
+    async getMyScraps(params: { page?: number; size?: number }): Promise<PageResponse<Scrap>> {
+        return this.get<PageResponse<Scrap>>('', { params });
     }
 
     /**
      * 스크랩 삭제
      */
-    async deleteScrap(id: string) {
-        const response = await this.delete<any>(`/${id}`);
-        return response?.result || response;
+    async deleteScrap(id: string): Promise<void> {
+        return this.delete<void>(`/${id}`);
     }
 }
 

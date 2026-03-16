@@ -21,20 +21,17 @@ class CommunityAdminService extends AdminService {
 
     /** 커뮤니티 목록 조회 */
     async getCommunityList(params?: SearchParams, config?: any): Promise<PageResponse<Community>> {
-        const response = await this.get<any>('', { ...config, params });
-        return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
+        return this.get<PageResponse<Community>>('', { ...config, params });
     }
 
     /** 커뮤니티 상세 조회 */
     async getCommunity(cmmntyId: string, config?: any): Promise<Community> {
-        const response = await this.get<any>(`/${cmmntyId}`, config);
-        return response?.result || response;
+        return this.get<Community>(`/${cmmntyId}`, config);
     }
 
     /** 커뮤니티 개설/등록 */
     async createCommunity(data: Partial<Community>, config?: any): Promise<Community> {
-        const response = await this.post<any>('', data, config);
-        return response?.result || response;
+        return this.post<Community>('', data, config);
     }
 
     /** 커뮤니티 정보 수정 */
@@ -49,8 +46,7 @@ class CommunityAdminService extends AdminService {
 
     /** 포틀릿용 목록 조회 */
     async getCommunityPortlet(config?: any): Promise<Community[]> {
-        const response = await this.get<any>('/portlet', config);
-        return response?.result || response;
+        return this.get<Community[]>('/portlet', config);
     }
 }
 

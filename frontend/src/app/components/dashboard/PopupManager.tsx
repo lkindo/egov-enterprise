@@ -13,26 +13,22 @@ export function PopupManager() {
   useEffect(() => {
     async function fetchPopups() {
       try {
-        const res = (await popupService.getActivePopups()) as any;
-        if (res?.success) {
-          const popups: Popup[] = res.data;
-
-          // 필터링: "오늘 하루 보지 않기" 체크된 팝업 제외
-          const filteredPopups = popups.filter(popup => {
-            const expireDate = localStorage.getItem(`popup_hide_${popup.popupId}`);
-            if (expireDate) {
-              const now = new Date().getTime();
-              if (now < parseInt(expireDate)) {
-                return false;
-              }
-              localStorage.removeItem(`popup_hide_${popup.popupId}`);
+        const popups = await popupService.getActivePopups();
+        // 필터링: "오늘 하루 보지 않기" 체크된 팝업 제외
+        const filteredPopups = (popups || []).filter(popup => {
+          const expireDate = localStorage.getItem(`popup_hide_${popup.popupId}`);
+          if (expireDate) {
+            const now = new Date().getTime();
+            if (now < parseInt(expireDate)) {
+              return false;
             }
-            return true;
-          });
+            localStorage.removeItem(`popup_hide_${popup.popupId}`);
+          }
+          return true;
+        });
 
-          setActivePopups(filteredPopups);
-          setVisiblePopupIds(filteredPopups.map(p => p.popupId));
-        }
+        setActivePopups(filteredPopups);
+        setVisiblePopupIds(filteredPopups.map(p => p.popupId));
       } catch (error) {
         console.error('Failed to fetch popups:', error);
       }

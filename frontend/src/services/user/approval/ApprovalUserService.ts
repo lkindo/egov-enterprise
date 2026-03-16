@@ -1,4 +1,5 @@
 import { UserService } from '@/services/core/ApiService';
+import { PageResponse } from '@/types/system';
 
 export interface Approval {
     approvalId: string;
@@ -17,19 +18,16 @@ class ApprovalUserService extends UserService {
         super('/approvals');
     }
 
-    async getPending(params: { page?: number; size?: number }) {
-        const response = await this.get<any>('/pending', { params });
-        return response?.result || response;
+    async getPending(params: { page?: number; size?: number }): Promise<PageResponse<Approval>> {
+        return this.get<PageResponse<Approval>>('/pending', { params });
     }
 
-    async getMyHistory(params: { page?: number; size?: number }) {
-        const response = await this.get<any>('/my', { params });
-        return response?.result || response;
+    async getMyHistory(params: { page?: number; size?: number }): Promise<PageResponse<Approval>> {
+        return this.get<PageResponse<Approval>>('/my', { params });
     }
 
-    async confirm(id: string, status: 'Y' | 'N', reason?: string) {
-        const response = await this.put<any>(`/${id}/confirm`, { status, reason });
-        return response?.result || response;
+    async confirm(id: string, status: 'Y' | 'N', reason?: string): Promise<void> {
+        return this.put<void>(`/${id}/confirm`, { status, reason });
     }
 }
 

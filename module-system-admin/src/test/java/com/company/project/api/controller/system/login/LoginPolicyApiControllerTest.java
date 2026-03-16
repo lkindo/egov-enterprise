@@ -48,7 +48,7 @@ class LoginPolicyApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.resultList[0].emplyrId").value("USER1"));
+                .andExpect(jsonPath("$.data.list[0].emplyrId").value("USER1"));
     }
 
     @Test

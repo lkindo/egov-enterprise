@@ -1,9 +1,9 @@
 import client from '@/lib/api/client';
-import { PaginationResponse } from '@/types/system';
+import { PageResponse } from '@/types/system';
 import { WorkReport, ReportSearchParams } from '@/types/schedule';
 
-export const getReportList = async (params: ReportSearchParams): Promise<PaginationResponse<WorkReport>> =>
-    client.get<PaginationResponse<WorkReport>>('/smart-toolkit/work-report/EgovWikMnthngReprtList.do', { params });
+export const getReportList = async (params: ReportSearchParams): Promise<PageResponse<WorkReport>> =>
+    client.get<PageResponse<WorkReport>>('/smart-toolkit/work-report/EgovWikMnthngReprtList.do', { params });
 
 export const getReport = async (reprtId: string): Promise<WorkReport> =>
     client.get<WorkReport>(`/smart-toolkit/work-report/selectWikMnthngReprt.do?reprtId=${reprtId}`);

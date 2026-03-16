@@ -18,27 +18,23 @@ export interface UserInfo {
 const BASE_URL = 'auth';
 
 export const authService = {
-    /** 嚥≪뮄???*/
+    /** 로그인 */
     login: async (loginData: Record<string, string>): Promise<LoginResponse> => {
-        const response = await client.post<any>(`${BASE_URL}/login`, loginData);
-        return response?.result || response;
+        return client.post<LoginResponse>(`${BASE_URL}/login`, loginData);
     },
 
-    /** 嚥≪뮄??袁⑹뜍 */
+    /** 로그아웃 */
     logout: async (): Promise<void> => {
-        const response = await client.post<any>(`${BASE_URL}/logout`);
-        return response?.result || response;
+        return client.post<void>(`${BASE_URL}/logout`);
     },
 
-    /** ?醫뤾쿃 ??而삥묾?*/
+    /** 토큰 재발행 */
     reissue: async (): Promise<{ accessToken: string }> => {
-        const response = await client.post<any>(`${BASE_URL}/reissue`);
-        return response?.result || response;
+        return client.post<{ accessToken: string }>(`${BASE_URL}/reissue`);
     },
 
-    /** ?袁⑹삺 ??????類ｋ궖 鈺곌퀬??*/
+    /** 현재 사용자 정보 조회 */
     getCurrentUser: async (): Promise<UserInfo> => {
-        const response = await client.get<any>(`${BASE_URL}/me`);
-        return response?.result || response;
+        return client.get<UserInfo>(`${BASE_URL}/me`);
     },
 };

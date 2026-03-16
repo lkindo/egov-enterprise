@@ -1,18 +1,7 @@
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/system';
+import { Banner } from '@/types/banner';
 import { AxiosRequestConfig } from 'axios';
-
-export interface Banner {
-    bannerId: string;
-    bannerNm: string;
-    linkCours: string;
-    bannerImage: string;
-    bannerImageFile: string;
-    bannerDc: string;
-    reflctAt: 'Y' | 'N';
-    userId: string;
-    regDate: string;
-}
 
 /**
  * 배너 관리 서비스 (Admin)
@@ -24,26 +13,23 @@ class BannerAdminService extends AdminService {
 
     /** 배너 목록 조회 */
     async getBannerList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Banner>> {
-        const response = await this.get<any>('', {
+        return this.get<PageResponse<Banner>>('', {
             ...config,
             params: {
                 ...params,
                 keyword: params?.searchKeyword || params?.searchWrd || '',
             },
         });
-        return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
     }
 
     /** 배너 전체 트리용 조회 */
     async getReflectedBanners(config?: AxiosRequestConfig): Promise<Banner[]> {
-        const response = await this.get<any>('/reflected', config);
-        return response?.result || response;
+        return this.get<Banner[]>('/reflected', config);
     }
 
     /** 배너 상세 조회 */
     async getBanner(id: string, config?: AxiosRequestConfig): Promise<Banner> {
-        const response = await this.get<any>(`/${id}`, config);
-        return response?.result || response;
+        return this.get<Banner>(`/${id}`, config);
     }
 
     /** 배너 등록 */

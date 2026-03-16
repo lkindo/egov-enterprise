@@ -1,4 +1,6 @@
 import { AdminService } from '@/services/core/ApiService';
+import { PageResponse } from '@/types/system';
+import { AxiosRequestConfig } from 'axios';
 
 export interface CommentDetail {
     commentNo: number;
@@ -10,17 +12,22 @@ export interface CommentDetail {
     createdDate: string;
 }
 
+/**
+ * 댓글 관리 서비스 (Admin)
+ */
 class CommentAdminService extends AdminService {
     constructor() {
         super('/comments');
     }
 
-    async getComments(params: { page?: number; size?: number; searchWrd?: string }, config?: any) {
-        return this.get<any>('', { ...config, params });
+    /** 전체 댓글 목록 조회 */
+    async getComments(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
+        return this.get<PageResponse<CommentDetail>>('', { ...config, params });
     }
 
-    async deleteComment(commentNo: number, config?: any) {
-        return this.delete(`/${commentNo}`, config);
+    /** 댓글 삭제 */
+    async deleteComment(commentNo: number, config?: AxiosRequestConfig): Promise<void> {
+        return this.delete<void>(`/${commentNo}`, config);
     }
 }
 

@@ -18,8 +18,8 @@ export default function DeptJobPage() {
   const loadJobs = useCallback(async () => {
     try {
       setLoading(true);
-      const res = (await deptJobUserService.getDeptJobs({ page: 0, size: 20 })) as any;
-      if (res?.success) setData(res.data.content || []);
+      const res = await deptJobUserService.getDeptJobs({ page: 0, size: 20 });
+      setData(res.list || []);
     } catch (error) {
       toast('업무 목록을 불러오지 못했습니다.', 'error');
     } finally {

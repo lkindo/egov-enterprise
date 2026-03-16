@@ -20,26 +20,22 @@ class MyPageAdminService extends AdminService {
 
     /** 마이페이지 콘텐츠 목록 조회 */
     async getContents(params?: { all?: boolean }, config?: AxiosRequestConfig): Promise<MyPageContent[]> {
-        const response = await this.get<any>('', { ...config, params });
-        return response?.result || response;
+        return this.get<MyPageContent[]>('', { ...config, params });
     }
 
     /** 마이페이지 콘텐츠 등록 */
     async createContent(data: Partial<MyPageContent>, config?: AxiosRequestConfig): Promise<string> {
-        const response = await this.post<any>('', data, config);
-        return response?.result || response;
+        return this.post<string>('', data, config);
     }
 
     /** 마이페이지 콘텐츠 수정 */
     async updateContent(id: string, data: Partial<MyPageContent>, config?: AxiosRequestConfig): Promise<void> {
-        const response = await this.put<any>(`/${id}`, data, config);
-        return response?.result || response;
+        return this.put<void>(`/${id}`, data, config);
     }
 
     /** 마이페이지 콘텐츠 삭제 */
     async deleteContent(id: string, config?: AxiosRequestConfig): Promise<void> {
-        const response = await this.delete<any>(`/${id}`, config);
-        return response?.result || response;
+        return this.delete<void>(`/${id}`, config);
     }
 }
 

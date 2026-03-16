@@ -1,44 +1,48 @@
 import { ApiService } from '@/services/core/ApiService';
 import { Survey, SurveyQuestion, SurveyResultStats } from '@/types/survey';
+import { PageResponse } from '@/types/system';
 
+/**
+ * 설문 관리 서비스 (Admin)
+ */
 class SurveyAdminService extends ApiService {
     constructor() {
         super('/surveys');
     }
 
     /**
-     * ??뿅?筌뤴뫖以?鈺곌퀬??
+     * 설문 목록 조회
      */
-    async getSurveys(params: { page?: number; size?: number; searchWrd?: string }, config?: any) {
-        return this.get<any>('', { ...config, params });
+    async getSurveys(params: { page?: number; size?: number; searchWrd?: string }, config?: any): Promise<PageResponse<Survey>> {
+        return this.get<PageResponse<Survey>>('', { ...config, params });
     }
 
     /**
-     * ??뿅??怨멸쉭 ?類ｋ궖 鈺곌퀬??
+     * 설문 상세 정보 조회
      */
-    async getSurvey(id: string, config?: any) {
-        return this.get<any>(`/${id}`, config);
+    async getSurvey(id: string, config?: any): Promise<Survey> {
+        return this.get<Survey>(`/${id}`, config);
     }
 
     /**
-     * ??뿅?筌욌뜄揆 筌뤴뫖以?鈺곌퀬??
+     * 설문 문항 목록 조회
      */
-    async getQuestions(surveyId: string, config?: any) {
-        return this.get<any>(`/${surveyId}/questions`, config);
+    async getQuestions(surveyId: string, config?: any): Promise<SurveyQuestion[]> {
+        return this.get<SurveyQuestion[]>(`/${surveyId}/questions`, config);
     }
 
     /**
-     * ??뿅??臾먮뼗 ??뽱뀱
+     * 설문 응답 제출
      */
-    async submitAnswers(surveyId: string, answers: any, config?: any) {
-        return this.post<any>(`/${surveyId}/respond`, answers, config);
+    async submitAnswers(surveyId: string, answers: any, config?: any): Promise<void> {
+        return this.post<void>(`/${surveyId}/respond`, answers, config);
     }
 
     /**
-     * ??뿅?野껉퀗??????鈺곌퀬??
+     * 설문 결과 통계 조회
      */
-    async getStats(surveyId: string, config?: any) {
-        return this.get<any>(`/${surveyId}/stats`, config);
+    async getStats(surveyId: string, config?: any): Promise<SurveyResultStats> {
+        return this.get<SurveyResultStats>(`/${surveyId}/stats`, config);
     }
 }
 

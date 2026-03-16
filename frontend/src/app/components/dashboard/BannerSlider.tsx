@@ -14,10 +14,8 @@ export function BannerSlider() {
   useEffect(() => {
     async function fetchBanners() {
       try {
-        const res = (await bannerAdminService.getReflectedBanners()) as any;
-        if (res?.success) {
-          setBanners(res.data);
-        }
+        const res = await bannerAdminService.getReflectedBanners();
+        setBanners(res || []);
       } catch (error) {
         console.error('Failed to fetch banners:', error);
       } finally {

@@ -1,7 +1,8 @@
 import { UserService } from '@/services/core/ApiService';
+import { PageResponse } from '@/types/system';
 
 /**
- * 野껊슣????蹂? ??뺥돩?? * 獄쏄퉮肉?? com.company.project.api.controller.comment.CommentController
+ * 댓글 정보 인터페이스
  */
 export interface Comment {
     id: number;
@@ -20,28 +21,24 @@ class CommentService extends UserService {
         super('/comments');
     }
 
-    /** ?蹂? 筌뤴뫖以?鈺곌퀬??*/
-    async getComments(params: { nttId: number; bbsId: string; page?: number; size?: number }) {
-        const response = await this.get<any>('', { params });
-        return response?.result || response;
+    /** 댓글 목록 조회 */
+    async getComments(params: { nttId: number; bbsId: string; page?: number; size?: number }): Promise<PageResponse<Comment>> {
+        return this.get<PageResponse<Comment>>('', { params });
     }
 
-    /** ?蹂? ??밴쉐 */
-    async createComment(data: Partial<Comment>) {
-        const response = await this.post<any>('', data);
-        return response?.result || response;
+    /** 댓글 등록 */
+    async createComment(data: Partial<Comment>): Promise<Comment> {
+        return this.post<Comment>('', data);
     }
 
-    /** ?蹂? ??륁젟 */
-    async updateComment(id: number, data: Partial<Comment>) {
-        const response = await this.put<any>(`/${id}`, data);
-        return response?.result || response;
+    /** 댓글 수정 */
+    async updateComment(id: number, data: Partial<Comment>): Promise<void> {
+        return this.put<void>(`/${id}`, data);
     }
 
-    /** ?蹂? ????*/
-    async deleteComment(id: number) {
-        const response = await this.delete<any>(`/${id}`);
-        return response?.result || response;
+    /** 댓글 삭제 */
+    async deleteComment(id: number): Promise<void> {
+        return this.delete<void>(`/${id}`);
     }
 }
 

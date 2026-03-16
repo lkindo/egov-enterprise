@@ -1,3 +1,5 @@
+import { SearchParams } from './system';
+
 export interface CnsltVO {
     cnsltId?: string;
     cnsltSj: string;
@@ -13,7 +15,7 @@ export interface CnsltVO {
     createdDate?: string;
 }
 
-export interface CnsltSearchParams {
+export interface CnsltSearchParams extends SearchParams {
     pageIndex?: number;
     searchCondition?: string;
     searchKeyword?: string;

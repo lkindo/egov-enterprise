@@ -10,7 +10,8 @@ export const metadata = {
 export default async function ExternalHrPage() {
     let initialData: any[] = [];
     try {
-        initialData = await operationAdminService.getExternalHrList();
+        const res = await operationAdminService.getExternalHrList();
+        initialData = res.list || [];
     } catch (error) {
         console.error('Failed to fetch initial external HR info:', error);
     }

@@ -46,7 +46,7 @@ class SurveyApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.resultList[0].qestnrId").value("S1"));
+                .andExpect(jsonPath("$.data.list[0].qestnrId").value("S1"));
     }
 
     @Test
@@ -63,6 +63,6 @@ class SurveyApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.resultList[0].qestnrTmplatId").value("T1"));
+                .andExpect(jsonPath("$.data.list[0].qestnrTmplatId").value("T1"));
     }
 }

@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 
 export interface UnityLink {
     unityLinkId: string;
@@ -22,21 +22,18 @@ class UnityLinkAdminService extends AdminService {
     }
 
     /** 통합링크 목록 조회 */
-    async getUnityLinkList(params?: SearchParams, config?: any): Promise<PaginationResponse<UnityLink>> {
-        const response = await this.get<any>('', { ...config, params });
-        return response?.result || response;
+    async getUnityLinkList(params?: SearchParams, config?: any): Promise<PageResponse<UnityLink>> {
+        return this.get<PageResponse<UnityLink>>('', { ...config, params });
     }
 
     /** 통합링크 상세 조회 */
     async getUnityLink(unityLinkId: string, config?: any): Promise<UnityLink> {
-        const response = await this.get<any>(`/${unityLinkId}`, config);
-        return response?.result || response;
+        return this.get<UnityLink>(`/${unityLinkId}`, config);
     }
 
     /** 통합링크 등록 */
     async createUnityLink(data: Partial<UnityLink>, config?: any): Promise<UnityLink> {
-        const response = await this.post<any>('', data, config);
-        return response?.result || response;
+        return this.post<UnityLink>('', data, config);
     }
 
     /** 통합링크 수정 */

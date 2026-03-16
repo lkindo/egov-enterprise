@@ -28,7 +28,7 @@ class StatisticsApiControllerTest {
     @MockitoBean
     private StatsService statsService;
 
-    private final String BASE_URL = "/api/v1/admin/system/stats";
+    private final String BASE_URL = "/api/v1/admin/system/statistics";
 
     @Test
     @DisplayName("접속 통계 조회 성공")

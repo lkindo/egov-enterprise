@@ -1,4 +1,5 @@
-import client from '@/lib/api/client';
+import { AdminService } from '@/services/core/ApiService';
+import { AxiosRequestConfig } from 'axios';
 
 /**
  * 전송/동기화 서버 관리 서비스 (Admin)
@@ -11,31 +12,35 @@ export interface SyncServer {
     targetDrctry: string;
 }
 
-const BASE_URL = '/admin/system/sync';
+class SyncAdminService extends AdminService {
+    constructor() {
+        super('/sync');
+    }
 
-export const syncAdminService = {
     /** 동기화 서버 목록 조회 */
-    getSyncServers: async (config?: any) => {
-        return client.get<SyncServer[]>(BASE_URL, config);
-    },
+    async getSyncServers(config?: AxiosRequestConfig): Promise<SyncServer[]> {
+        return this.get<SyncServer[]>('', config);
+    }
 
     /** 동기화 서버 등록 */
-    createSyncServer: async (data: SyncServer, config?: any) => {
-        return client.post(BASE_URL, data, config);
-    },
+    async createSyncServer(data: SyncServer, config?: AxiosRequestConfig): Promise<void> {
+        return this.post('', data, config);
+    }
 
     /** 동기화 서버 수정 */
-    updateSyncServer: async (id: string, data: Partial<SyncServer>, config?: any) => {
-        return client.put(`${BASE_URL}/${id}`, data, config);
-    },
+    async updateSyncServer(id: string, data: Partial<SyncServer>, config?: AxiosRequestConfig): Promise<void> {
+        return this.put(`/${id}`, data, config);
+    }
 
     /** 동기화 서버 삭제 */
-    deleteSyncServer: async (id: string, config?: any) => {
-        return client.delete(`${BASE_URL}/${id}`, config);
-    },
+    async deleteSyncServer(id: string, config?: AxiosRequestConfig): Promise<void> {
+        return this.delete(`/${id}`, config);
+    }
 
     /** 동기화 실행 */
-    executeSync: async (id: string, config?: any) => {
-        return client.post(`${BASE_URL}/${id}/execute`, {}, config);
+    async executeSync(id: string, config?: AxiosRequestConfig): Promise<void> {
+        return this.post(`/${id}/execute`, {}, config);
     }
-};
+}
+
+export const syncAdminService = new SyncAdminService();
