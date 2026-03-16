@@ -3,7 +3,7 @@ package com.company.project.test.logging;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
-import com.company.project.api.controller.UserController;
+import com.company.project.api.controller.UserApiController;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.core.exception.GlobalExceptionHandler;
@@ -41,7 +41,7 @@ public class LoggingVerificationTest {
     @SuppressWarnings("unchecked")
     void setUp() {
         userService = mock(UserService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
 
@@ -49,7 +49,7 @@ public class LoggingVerificationTest {
         when(mockAppender.getName()).thenReturn("MockAppender");
         when(mockAppender.isStarted()).thenReturn(true); 
 
-        controllerLogger = (Logger) LoggerFactory.getLogger(UserController.class);
+        controllerLogger = (Logger) LoggerFactory.getLogger(UserApiController.class);
         controllerLogger.addAppender(mockAppender);
         
         exceptionHandlerLogger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);

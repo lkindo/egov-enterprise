@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-public class UserControllerTest {
+public class UserApiControllerTest {
 
     private MockMvc mockMvc;
 
@@ -27,7 +27,7 @@ public class UserControllerTest {
     private UserService userService;
 
     @InjectMocks
-    private UserController userController;
+    private UserApiController userController;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 

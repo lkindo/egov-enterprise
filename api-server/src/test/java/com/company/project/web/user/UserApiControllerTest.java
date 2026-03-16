@@ -1,6 +1,6 @@
 package com.company.project.web.user;
 
-import com.company.project.api.controller.UserController;
+import com.company.project.api.controller.UserApiController;
 import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.domain.user.entity.Role;
 import com.company.project.service.user.UserService;
@@ -35,7 +35,7 @@ class UserApiControllerTest {
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }

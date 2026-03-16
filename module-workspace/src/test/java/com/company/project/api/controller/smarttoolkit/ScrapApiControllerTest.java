@@ -21,10 +21,10 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ScrapController.class)
+@WebMvcTest(ScrapApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("ScrapController 테스트")
-class ScrapControllerTest {
+@DisplayName("ScrapApiController 테스트")
+class ScrapApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,12 +40,13 @@ class ScrapControllerTest {
         given(egovScrapService.getMyScrapList(anyString(), any(PageRequest.class))).willReturn(page);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/scrap")
+        mockMvc.perform(get("/api/v1/scraps")
                 .param("pageIndex", "1")
                 .param("pageUnit", "10")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultList[0].scrapId").value("SCR1"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.list[0].scrapId").value("SCR1"));
     }
 
     @Test
@@ -55,9 +56,10 @@ class ScrapControllerTest {
         given(egovScrapService.getScrap(anyString())).willReturn(ScrapDto.builder().scrapId("SCR1").scrapNm("Scrap").build());
 
         // When & Then
-        mockMvc.perform(get("/api/v1/scrap/SCR1")
+        mockMvc.perform(get("/api/v1/scraps/SCR1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.scrap.scrapId").value("SCR1"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.scrapId").value("SCR1"));
     }
 }

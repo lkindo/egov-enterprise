@@ -28,8 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("HelpController 단위 테스트")
-class HelpControllerTest {
+@DisplayName("HelpApiController 단위 테스트")
+class HelpApiControllerTest {
 
     private MockMvc mockMvc;
 
@@ -37,13 +37,13 @@ class HelpControllerTest {
     private EgovHelpService helpService;
 
     @InjectMocks
-    private HelpController helpController;
+    private HelpApiController helpApiController;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(helpController)
+        mockMvc = MockMvcBuilders.standaloneSetup(helpApiController)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }
@@ -59,7 +59,8 @@ class HelpControllerTest {
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.list").isArray());
     }
 
     @Test

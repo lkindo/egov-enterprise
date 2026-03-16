@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-class UserControllerIntegrationTest {
+class UserApiControllerIntegrationTest {
 
     private MockMvc mockMvc;
     private UserService userService;
@@ -29,7 +29,7 @@ class UserControllerIntegrationTest {
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -101,10 +101,10 @@ class UserControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.content").isArray())
-                .andExpect(jsonPath("$.data.totalElements").value(1))
-                .andExpect(jsonPath("$.data.content[0].userId").value("user1"))
-                .andExpect(jsonPath("$.data.content[0].userNm").value("사용자1"));
+                .andExpect(jsonPath("$.data.list").isArray())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.list[0].userId").value("user1"))
+                .andExpect(jsonPath("$.data.list[0].userNm").value("사용자1"));
     }
 
     @Test

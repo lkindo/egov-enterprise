@@ -20,7 +20,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-class UserControllerHttpStatusTest {
+class UserApiControllerHttpStatusTest {
 
     private MockMvc mockMvc;
     private UserService userService;
@@ -32,7 +32,7 @@ class UserControllerHttpStatusTest {
         operationalAuditInterceptor = mock(OperationalAuditInterceptor.class);
         when(operationalAuditInterceptor.preHandle(any(), any(), any())).thenReturn(true);
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
                 .addInterceptors(operationalAuditInterceptor)
                 .setControllerAdvice(new com.company.project.core.exception.GlobalExceptionHandler())
                 .build();
@@ -129,14 +129,15 @@ class UserControllerHttpStatusTest {
         mockMvc.perform(get("/api/v1/users/paged")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.data.list").isArray());
     }
 
     @Test
     @DisplayName("POST /api/v1/users/signup - Internal Error (500 Internal Server Error)")
     void signup_fail_internalError_returns500() throws Exception {
         when(userService.signup(any(UserSignupRequest.class)))
-                .thenThrow(new RuntimeException("Internal server error"));
+                .thenThrow(new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR));
 
         String requestBody = """
                 {

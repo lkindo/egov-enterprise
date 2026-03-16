@@ -17,10 +17,10 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(PopupController.class)
+@WebMvcTest(PopupUserApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("PopupController 테스트")
-class PopupControllerTest {
+@DisplayName("PopupUserApiController 테스트")
+class PopupUserApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;

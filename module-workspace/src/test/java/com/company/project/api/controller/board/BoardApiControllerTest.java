@@ -24,10 +24,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(BoardController.class)
+@WebMvcTest(BoardApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("BoardController 테스트")
-class BoardControllerTest {
+@DisplayName("BoardApiController 테스트")
+class BoardApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -47,7 +47,7 @@ class BoardControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.content[0].id").value(1));
+                .andExpect(jsonPath("$.data.list[0].id").value(1));
     }
 
     @Test

@@ -28,10 +28,10 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(DeptJobController.class)
+@WebMvcTest(DeptJobApiController.class)
 @ContextConfiguration(classes = TestApplication.class)
-@DisplayName("DeptJobController 테스트")
-class DeptJobControllerTest {
+@DisplayName("DeptJobApiController 테스트")
+class DeptJobApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -51,11 +51,12 @@ class DeptJobControllerTest {
         given(egovDeptJobBoxService.getDeptJobBoxList(anyString(), any(Pageable.class))).willReturn(page);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/deptjob/boxes")
+        mockMvc.perform(get("/api/v1/dept-jobs/boxes")
                 .param("pageIndex", "1")
                 .param("pageUnit", "10")
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
@@ -66,9 +67,10 @@ class DeptJobControllerTest {
         given(egovDeptJobBoxService.getDeptJobBox("BOX1")).willReturn(DeptJobBoxDto.builder().deptJobbxId("BOX1").build());
 
         // When & Then
-        mockMvc.perform(get("/api/v1/deptjob/boxes/BOX1")
+        mockMvc.perform(get("/api/v1/dept-jobs/boxes/BOX1")
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
@@ -81,7 +83,7 @@ class DeptJobControllerTest {
         given(egovDeptJobBoxService.createDeptJobBox(eq("USR_001"), any(DeptJobBoxDto.class))).willReturn("NEW_ID");
 
         // When & Then
-        mockMvc.perform(post("/api/v1/deptjob/boxes")
+        mockMvc.perform(post("/api/v1/dept-jobs/boxes")
                         .with(user(userDetails))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -89,7 +91,8 @@ class DeptJobControllerTest {
                                 .deptJobbxNm("Test Box")
                                 .deptId("D1")
                                 .build())))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
@@ -102,7 +105,7 @@ class DeptJobControllerTest {
         doNothing().when(egovDeptJobBoxService).updateDeptJobBox(eq("BOX1"), eq("USR_001"), any(DeptJobBoxDto.class));
 
         // When & Then
-        mockMvc.perform(put("/api/v1/deptjob/boxes/BOX1")
+        mockMvc.perform(put("/api/v1/dept-jobs/boxes/BOX1")
                         .with(user(userDetails))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -110,7 +113,8 @@ class DeptJobControllerTest {
                                 .deptJobbxNm("Updated Box")
                                 .deptId("D1")
                                 .build())))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
@@ -123,9 +127,10 @@ class DeptJobControllerTest {
         doNothing().when(egovDeptJobBoxService).deleteDeptJobBox("BOX1");
 
         // When & Then
-        mockMvc.perform(delete("/api/v1/deptjob/boxes/BOX1")
+        mockMvc.perform(delete("/api/v1/dept-jobs/boxes/BOX1")
                         .with(user(userDetails))
                         .with(csrf()))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 }

@@ -1,6 +1,6 @@
 package com.company.project.web.file;
 
-import com.company.project.api.controller.file.FileController;
+import com.company.project.api.controller.file.FileApiController;
 import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.service.file.FileService;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +27,7 @@ class FileApiControllerTest {
     @BeforeEach
     void setUp() {
         fileService = mock(FileService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new FileController(fileService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new FileApiController(fileService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }

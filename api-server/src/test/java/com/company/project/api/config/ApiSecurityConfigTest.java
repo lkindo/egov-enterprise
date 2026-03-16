@@ -21,11 +21,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import com.company.project.api.controller.UserController;
+import com.company.project.api.controller.UserApiController;
 import com.company.project.service.user.UserService;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
 
-@WebMvcTest(controllers = UserController.class)
+@WebMvcTest(controllers = UserApiController.class)
 @ActiveProfiles({ "prod", "test", "security-test" })
 @ContextConfiguration(classes = { ApiSecurityConfig.class })
 @DisplayName("ApiSecurityConfig 설정 테스트")

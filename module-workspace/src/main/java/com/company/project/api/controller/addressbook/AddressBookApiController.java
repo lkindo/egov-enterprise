@@ -1,6 +1,7 @@
 package com.company.project.api.controller.addressbook;
 
 import com.company.project.core.response.ApiResponse;
+import com.company.project.core.response.PageResponse;
 import com.company.project.service.addressbook.AddressBookService;
 import com.company.project.service.addressbook.dto.AddressBookDto;
 import com.company.project.service.addressbook.dto.AddressBookUserDto;
@@ -20,21 +21,20 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/address-books")
 @RequiredArgsConstructor
-public class AddressBookController {
+public class AddressBookApiController {
 
     private final AddressBookService addressBookService;
 
     @Operation(summary = "주소록 목록 조회", description = "사용자가 생성한 주소록 또는 공개된 주소록 목록을 조회합니다.")
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<AddressBookDto>>> getAddressBooks(
+    public ResponseEntity<ApiResponse<PageResponse<AddressBookDto>>> getAddressBooks(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String trgetOrgnztId,
             @RequestParam(required = false) String searchCnd,
             @RequestParam(required = false) String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(
-                addressBookService.getAddressBookList(userDetails.getUsername(), trgetOrgnztId, searchCnd, searchWrd,
-                        pageable)));
+        Page<AddressBookDto> result = addressBookService.getAddressBookList(userDetails.getUsername(), trgetOrgnztId, searchCnd, searchWrd, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
     @Operation(summary = "주소록 상세 조회", description = "주소록의 상세 정보와 포함된 사용자 목록을 조회합니다.")
@@ -75,9 +75,10 @@ public class AddressBookController {
 
     @Operation(summary = "주소록 사용자 검색", description = "주소록에 추가할 사용자를 시스템 전체에서 검색합니다.")
     @GetMapping("/search-users")
-    public ResponseEntity<ApiResponse<Page<AddressBookUserDto>>> searchUsers(
+    public ResponseEntity<ApiResponse<PageResponse<AddressBookUserDto>>> searchUsers(
             @RequestParam String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(addressBookService.searchUsers(searchWrd, pageable)));
+        Page<AddressBookUserDto> result = addressBookService.searchUsers(searchWrd, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 }

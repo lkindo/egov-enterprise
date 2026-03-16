@@ -17,9 +17,10 @@ class PageResponseTest {
 
         PageResponse<String> response = PageResponse.of(list, currentPage, size, total);
 
-        assertThat(response.getResultList()).hasSize(2);
-        assertThat(response.getPaginationInfo().getTotalRecordCount()).isEqualTo(total);
-        assertThat(response.getPaginationInfo().getTotalPageCount()).isEqualTo(3); // 25 / 10 = 2.5 -> 3
-        assertThat(response.getPaginationInfo().getCurrentPageNo()).isEqualTo(currentPage);
+        assertThat(response.getList()).hasSize(2);
+        assertThat(response.getTotal()).isEqualTo(total);
+        assertThat(response.getPage()).isEqualTo(currentPage);
+        assertThat(response.getSize()).isEqualTo(size);
+        assertThat(response.getTotalPage()).isEqualTo(3); // 25 / 10 = 2.5 -> 3
     }
 }

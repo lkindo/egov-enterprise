@@ -24,10 +24,10 @@ import static org.mockito.BDDMockito.willDoNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(FaqController.class)
+@WebMvcTest(FaqApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("FaqController 테스트")
-class FaqControllerTest {
+@DisplayName("FaqApiController 테스트")
+class FaqApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -46,7 +46,8 @@ class FaqControllerTest {
         mockMvc.perform(get("/api/v1/faqs")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content[0].faqId").value("FAQ1")); // Fixed: Added .data.content
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.list[0].faqId").value("FAQ1"));
     }
 
     @Test
@@ -61,8 +62,8 @@ class FaqControllerTest {
                 .param("keyword", "keyword")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content[0].faqId").value("FAQ1")) // Fixed
-                .andExpect(jsonPath("$.data.content[0].qestnSj").value("Keyword Question"));
+                .andExpect(jsonPath("$.data.list[0].faqId").value("FAQ1"))
+                .andExpect(jsonPath("$.data.list[0].qestnSj").value("Keyword Question"));
     }
 
     @Test

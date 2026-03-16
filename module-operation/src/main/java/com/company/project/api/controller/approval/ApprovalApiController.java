@@ -1,6 +1,7 @@
-package com.company.project.api.controller.sanctn;
+package com.company.project.api.controller.approval;
 
 import com.company.project.core.response.ApiResponse;
+import com.company.project.core.response.PageResponse;
 import com.company.project.security.annotation.LoginUser;
 import com.company.project.security.service.CustomUserDetails;
 import com.company.project.service.informalsanction.InformalSanctionService;
@@ -25,20 +26,20 @@ public class ApprovalApiController {
 
     @Operation(summary = "Get Pending Approvals (Inbox)")
     @GetMapping("/pending")
-    public ResponseEntity<ApiResponse<Page<InformalSanctionDto>>> getPending(
+    public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getPending(
             @LoginUser CustomUserDetails userDetails,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(
-                approvalService.getReceivedInformalSanctionList(userDetails.getEsntlId(), pageable)));
+        Page<InformalSanctionDto> result = approvalService.getReceivedInformalSanctionList(userDetails.getEsntlId(), pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
     @Operation(summary = "Get My Approval History")
     @GetMapping("/my")
-    public ResponseEntity<ApiResponse<Page<InformalSanctionDto>>> getMyHistory(
+    public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getMyHistory(
             @LoginUser CustomUserDetails userDetails,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(
-                approvalService.getInformalSanctionList(userDetails.getEsntlId(), pageable)));
+        Page<InformalSanctionDto> result = approvalService.getInformalSanctionList(userDetails.getEsntlId(), pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
     @Operation(summary = "Confirm Approval (Approve/Reject)")

@@ -11,11 +11,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
-@Tag(name = "Popup", description = "팝업 사용자 API")
-@RestController("com.company.project.api.controller.system.content.popup.PopupController")
+/**
+ * 팝업 사용자용 API 컨트롤러
+ */
+@Tag(name = "Popup User", description = "팝업 사용자 API")
+@RestController("systemPopupUserApiController")
 @RequestMapping("/api/v1/popups")
 @RequiredArgsConstructor
-public class PopupController {
+public class PopupUserApiController {
 
     private final PopupService popupService;
 

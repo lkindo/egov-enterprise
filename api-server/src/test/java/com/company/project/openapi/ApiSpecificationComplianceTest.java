@@ -1,6 +1,6 @@
 package com.company.project.openapi;
 
-import com.company.project.api.controller.UserController;
+import com.company.project.api.controller.UserApiController;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
 import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.service.user.UserService;
@@ -53,7 +53,7 @@ class ApiSpecificationComplianceTest {
     when(userService.getPagedUserList(any())).thenReturn(new PageImpl<>(List.of(mockUser), PageRequest.of(0, 10), 1));
     when(userService.signup(any())).thenReturn(new UserResponse("testUser", "Test User", Role.USER));
 
-    mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+    mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
         .addInterceptors(operationalAuditInterceptor)
         .setControllerAdvice(new GlobalExceptionHandler())
         .build();
@@ -140,7 +140,7 @@ class ApiSpecificationComplianceTest {
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data").exists())
-        .andExpect(jsonPath("$.data.content").isArray());
+        .andExpect(jsonPath("$.data.list").isArray());
   }
 
   @Test

@@ -23,10 +23,10 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AddressBookController.class)
+@WebMvcTest(AddressBookApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("AddressBookController 테스트")
-class AddressBookControllerTest {
+@DisplayName("AddressBookApiController 테스트")
+class AddressBookApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,13 +40,14 @@ class AddressBookControllerTest {
     void getAddressBooks_Success() throws Exception {
         // Given
         Page<AddressBookDto> page = new PageImpl<>(List.of(new AddressBookDto()));
-        given(addressBookService.getAddressBookList(anyString(), anyString(), anyString(), anyString(), any(Pageable.class))).willReturn(page);
+        given(addressBookService.getAddressBookList(any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/v1/address-books")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.list").isArray());
     }
 
     @Test
@@ -84,6 +85,7 @@ class AddressBookControllerTest {
         mockMvc.perform(get("/api/v1/address-books/search-users")
                 .param("searchWrd", "test")
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list").isArray());
     }
 }

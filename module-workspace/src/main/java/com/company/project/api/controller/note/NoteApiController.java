@@ -1,6 +1,7 @@
 package com.company.project.api.controller.note;
 
 import com.company.project.core.response.ApiResponse;
+import com.company.project.core.response.PageResponse;
 import com.company.project.service.note.NoteService;
 import com.company.project.service.note.dto.NoteDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,31 +20,31 @@ import org.springframework.web.bind.annotation.*;
  * 쪽지 관리를 위한 API 컨트롤러
  */
 @Tag(name = "Note", description = "쪽지 관리 API")
-@RestController("noteNoteController")
+@RestController("noteNoteApiController")
 @RequestMapping("/api/v1/notes")
 @RequiredArgsConstructor
-public class NoteController {
+public class NoteApiController {
 
     private final NoteService noteService;
 
     @Operation(summary = "수신 쪽지 목록 조회", description = "로그인한 사용자의 수신 쪽지 목록을 조회합니다.")
     @GetMapping("/received")
-    public ResponseEntity<ApiResponse<Page<NoteDto>>> getReceivedNotes(
+    public ResponseEntity<ApiResponse<PageResponse<NoteDto>>> getReceivedNotes(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(
-                noteService.getReceivedNotes(userDetails.getUsername(), searchWrd, pageable)));
+        Page<NoteDto> result = noteService.getReceivedNotes(userDetails.getUsername(), searchWrd, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
     @Operation(summary = "발신 쪽지 목록 조회", description = "로그인한 사용자의 발신 쪽지 목록을 조회합니다.")
     @GetMapping("/sent")
-    public ResponseEntity<ApiResponse<Page<NoteDto>>> getSentNotes(
+    public ResponseEntity<ApiResponse<PageResponse<NoteDto>>> getSentNotes(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(
-                noteService.getSentNotes(userDetails.getUsername(), searchWrd, pageable)));
+        Page<NoteDto> result = noteService.getSentNotes(userDetails.getUsername(), searchWrd, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
     @Operation(summary = "쪽지 상세 조회", description = "쪽지 상세 정보를 조회합니다.")

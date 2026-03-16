@@ -23,10 +23,10 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(CommentController.class)
+@WebMvcTest(CommentApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("CommentController 테스트")
-class CommentControllerTest {
+@DisplayName("CommentApiController 테스트")
+class CommentApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -48,7 +48,7 @@ class CommentControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.content[0].id").value(1));
+                .andExpect(jsonPath("$.data.list[0].id").value(1));
     }
 
     @Test
@@ -61,7 +61,7 @@ class CommentControllerTest {
         // When & Then
         mockMvc.perform(post("/api/v1/comments")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nttId\":1, \"bbsId\":\"BBS_001\", \"commentCn\":\"Content\"}") // Fixed: Add bbsId
+                .content("{\"nttId\":1, \"bbsId\":\"BBS_001\", \"commentCn\":\"Content\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

@@ -22,10 +22,10 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(LeaderScheduleController.class)
+@WebMvcTest(LeaderScheduleApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("LeaderScheduleController 테스트")
-class LeaderScheduleControllerTest {
+@DisplayName("LeaderScheduleApiController 테스트")
+class LeaderScheduleApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -38,13 +38,14 @@ class LeaderScheduleControllerTest {
     void getLeaderSchedules_Success() throws Exception {
         // Given
         Page<LeaderScheduleDto> page = new PageImpl<>(List.of(LeaderScheduleDto.builder().scheduleId("L1").build()));
-        given(leaderScheduleService.getLeaderScheduleList(anyString(), any(Pageable.class))).willReturn(page);
+        given(leaderScheduleService.getLeaderScheduleList(any(), any(Pageable.class))).willReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/v1/leader-schedules")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.list").isArray());
     }
 
     @Test
@@ -52,12 +53,13 @@ class LeaderScheduleControllerTest {
     void getLeaderStatuses_Success() throws Exception {
         // Given
         Page<LeaderStatusDto> page = new PageImpl<>(List.of(LeaderStatusDto.builder().leaderId("LEADER1").build()));
-        given(leaderScheduleService.getLeaderStatusList(anyString(), any(Pageable.class))).willReturn(page);
+        given(leaderScheduleService.getLeaderStatusList(any(), any(Pageable.class))).willReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/v1/leader-schedules/status")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.list").isArray());
     }
 }

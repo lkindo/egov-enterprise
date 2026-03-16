@@ -21,10 +21,10 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ScheduleController.class)
+@WebMvcTest(ScheduleApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("ScheduleController 테스트")
-class ScheduleControllerTest {
+@DisplayName("ScheduleApiController 테스트")
+class ScheduleApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,12 +40,13 @@ class ScheduleControllerTest {
         given(egovScheduleService.getScheduleList(anyString(), any(PageRequest.class))).willReturn(page);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/schedule")
+        mockMvc.perform(get("/api/v1/schedules")
                 .param("pageIndex", "1")
                 .param("pageUnit", "10")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultList[0].schdulId").value("SCH1"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.list[0].schdulId").value("SCH1"));
     }
 
     @Test
@@ -55,10 +56,11 @@ class ScheduleControllerTest {
         given(egovScheduleService.getMonthlySchedule(anyString(), anyString())).willReturn(List.of(ScheduleDto.builder().schdulId("SCH1").build()));
 
         // When & Then
-        mockMvc.perform(get("/api/v1/schedule/monthly")
+        mockMvc.perform(get("/api/v1/schedules/monthly")
                 .param("yearMonth", "2023-10")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.schedules[0].schdulId").value("SCH1"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].schdulId").value("SCH1"));
     }
 }

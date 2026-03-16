@@ -1,6 +1,7 @@
-package com.company.project.api.controller.informalsanction;
+package com.company.project.api.controller.approval;
 
 import com.company.project.core.response.ApiResponse;
+import com.company.project.core.response.PageResponse;
 import com.company.project.security.annotation.LoginUser;
 import com.company.project.security.service.CustomUserDetails;
 import com.company.project.service.informalsanction.InformalSanctionService;
@@ -23,14 +24,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/informal-sanctions")
 @RequiredArgsConstructor
-public class InformalSanctionController {
+public class InformalSanctionApiController {
 
     private final InformalSanctionService informalSanctionService;
     private final EgovIdGnrService egovInfrmlSanctnIdGnrService;
 
     @Operation(summary = "비정형 결재 목록 조회", description = "신청자 또는 결재자 기준의 결재 목록을 조회합니다.")
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<InformalSanctionDto>>> getInformalSanctionList(
+    public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getInformalSanctionList(
             @LoginUser CustomUserDetails userDetails,
             @RequestParam(required = false) String type,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -41,7 +42,7 @@ public class InformalSanctionController {
         } else {
             list = informalSanctionService.getInformalSanctionList(userDetails.getEsntlId(), pageable);
         }
-        return ResponseEntity.ok(ApiResponse.success(list));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list)));
     }
 
     @Operation(summary = "비정형 결재 상세 조회", description = "비정형 결재 상세 정보를 조회합니다.")
