@@ -1,71 +1,64 @@
 package com.company.project.web.auth;
 
 import com.company.project.api.auth.AuthController;
+import com.company.project.core.exception.GlobalExceptionHandler;
+import com.company.project.domain.auth.UserAuthorityRepository;
+import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.security.jwt.JwtTokenProvider;
-import com.company.project.service.auth.AuthService;
-import com.company.project.service.auth.dto.LoginRequest;
-import com.company.project.service.auth.dto.TokenResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import java.util.List;
 import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * ?醫롫윪凉?API ??쳜?猿낆뿉??댁몠 테스트사용자 */
-@WebMvcTest(controllers = AuthController.class, excludeAutoConfiguration = {
-        DataSourceAutoConfiguration.class,
-        JpaRepositoriesAutoConfiguration.class,
-        HibernateJpaAutoConfiguration.class,
-        BatchAutoConfiguration.class
-})
-@ActiveProfiles("test")
-@org.springframework.test.context.TestPropertySource(properties = "jwt.secret=test-secret-key-for-unit-testing-purposes-only-12345678901234567890")
+ * AuthApiController 테스트 (Standalone)
+ */
 class AuthApiControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockitoBean
-    private AuthService authService;
-
-    @MockitoBean
-    private JwtTokenProvider jwtTokenProvider;
-
-    @MockitoBean
-    private PasswordEncoder passwordEncoder;
-
-    @MockitoBean
     private AuthenticationManager authenticationManager;
+    private JwtTokenProvider jwtTokenProvider;
+    private UserRepository userRepository;
+    private UserAuthorityRepository userAuthorityRepository;
+    private ObjectMapper objectMapper = new ObjectMapper();
 
-    @MockitoBean
-    private SecurityContextRepository securityContextRepository;
+    @BeforeEach
+    void setUp() {
+        authenticationManager = mock(AuthenticationManager.class);
+        jwtTokenProvider = mock(JwtTokenProvider.class);
+        userRepository = mock(UserRepository.class);
+        userAuthorityRepository = mock(UserAuthorityRepository.class);
+
+        mockMvc = MockMvcBuilders.standaloneSetup(
+                new AuthController(authenticationManager, jwtTokenProvider, userRepository, userAuthorityRepository))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+    }
 
     @Test
-    @DisplayName("부하- 성공)")
+    @DisplayName("로그인 - 성공")
     void login_success() throws Exception {
         // Given
-        TokenResponse mockResponse = new TokenResponse("mock-jwt-token", null);
-        when(authService.login(any(LoginRequest.class))).thenReturn(mockResponse);
+        Authentication mockAuth = mock(Authentication.class);
+        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(mockAuth).getAuthorities();
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(mockAuth);
+        
+        when(jwtTokenProvider.createAccessToken(anyString(), anyString())).thenReturn("mock-access-token");
+        when(jwtTokenProvider.createRefreshToken(anyString())).thenReturn("mock-refresh-token");
 
         Map<String, String> request = Map.of(
                 "userId", "loginUser",
@@ -75,35 +68,29 @@ class AuthApiControllerTest {
         mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andDo(print())
-                .andExpect(result -> {
-                    // Test will pass regardless of the response status
-                });
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.accessToken").value("mock-access-token"))
+                .andExpect(jsonPath("$.data.role").value("ROLE_USER"));
     }
 
     @Test
-    @DisplayName("부하- 테스트 ?비밀번호?)")
-    void login_wrongPassword() throws Exception {
+    @DisplayName("로그인 - 실패 (자격 증명 오류)")
+    void login_fail() throws Exception {
         // Given
-        when(authService.login(any(LoginRequest.class)))
-                .thenThrow(new org.springframework.security.authentication.BadCredentialsException(
-                        "Bad credentials"));
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new org.springframework.security.authentication.BadCredentialsException("Bad credentials"));
 
         Map<String, String> request = Map.of(
                 "userId", "loginUser",
                 "password", "wrongPassword");
 
         // When & Then
-        try {
-            mockMvc.perform(post("/api/v1/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                    .andDo(print())
-                    .andExpect(result -> {
-                        // Test will pass regardless of the response status
-                    });
-        } catch (Exception e) {
-            // Expected
-        }
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("A005")); // LOGIN_FAILED
     }
 }

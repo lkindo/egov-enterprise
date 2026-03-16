@@ -62,8 +62,8 @@ class AuthorRoleApiControllerTest {
         mockMvc.perform(get(BASE_URL)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].roleNm").value("일반사용자"))
-                .andExpect(jsonPath("$.data.list[0].regYn").value("Y"));
+                .andExpect(jsonPath("$.data.resultList[0].roleNm").value("일반사용자"))
+                .andExpect(jsonPath("$.data.resultList[0].regYn").value("Y"));
     }
 
     @Test

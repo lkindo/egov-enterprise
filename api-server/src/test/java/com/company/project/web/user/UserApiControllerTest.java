@@ -3,97 +3,54 @@ package com.company.project.web.user;
 import com.company.project.api.controller.UserController;
 import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.domain.user.entity.Role;
-import com.company.project.security.jwt.JwtTokenProvider;
-import com.company.project.api.interceptor.OperationalAuditInterceptor;
-import com.company.project.service.menu.MenuService;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserResponse;
 import com.company.project.service.user.dto.UserSignupRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.Collections;
 import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = UserController.class)
-@ContextConfiguration(classes = {
-        GlobalExceptionHandler.class,
-        UserApiControllerTest.TestConfig.class
-})
-@AutoConfigureMockMvc(addFilters = false)
-@ActiveProfiles("test")
+/**
+ * UserApiController 테스트 (Standalone)
+ */
 class UserApiControllerTest {
 
-    @org.springframework.boot.SpringBootConfiguration
-    @org.springframework.boot.autoconfigure.EnableAutoConfiguration(exclude = {
-            org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
-            org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
-            org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
-            org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration.class,
-            org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration.class
-    })
-    static class TestConfig {
+    private MockMvc mockMvc;
+    private UserService userService;
+    private ObjectMapper objectMapper = new ObjectMapper();
+
+    @BeforeEach
+    void setUp() {
+        userService = mock(UserService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockitoBean
-    private UserService userService;
-
-    @MockitoBean
-    private PasswordEncoder passwordEncoder;
-
-    @MockitoBean
-    private JwtTokenProvider jwtTokenProvider;
-
-    @MockitoBean
-    private AuthenticationManager authenticationManager;
-
-    @MockitoBean
-    private OperationalAuditInterceptor operationalAuditInterceptor;
-
-    @MockitoBean
-    private MenuService menuService;
-
-    @MockitoBean
-    private com.company.project.security.iam.EgovAuthenticationProvider egovAuthenticationProvider;
-
-    @MockitoBean
-    private com.company.project.security.iam.CustomUserDetailsService customUserDetailsService;
-
     @Test
-    @DisplayName("사용자 목록 조회 - 관리자 권한")
-    void getUserList_admin() throws Exception {
+    @DisplayName("사용자 목록 조회 - 성공")
+    void getUserList_success() throws Exception {
         // Given
-        when(jwtTokenProvider.validateToken(any())).thenReturn(true);
         when(userService.getUserList()).thenReturn(Collections.emptyList());
 
         // When & Then
         mockMvc.perform(get("/api/v1/users")
-                .header("Authorization", "Bearer admin-token")
                 .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
@@ -105,17 +62,18 @@ class UserApiControllerTest {
 
         Map<String, Object> request = Map.of(
                 "userId", "newUser",
-                "password", "password123",
+                "password", "password123!",
                 "userNm", "테스트 사용자",
                 "passwordHint", "hint",
-                "passwordCnsr", "answer");
+                "passwordCnsr", "answer",
+                "role", "USER");
 
         // When & Then
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
@@ -128,14 +86,17 @@ class UserApiControllerTest {
 
         Map<String, Object> request = Map.of(
                 "userId", "admin",
-                "password", "password123",
-                "userNm", "중복 사용자");
+                "password", "password123!",
+                "userNm", "중복 사용자",
+                "passwordHint", "hint",
+                "passwordCnsr", "answer",
+                "role", "USER");
 
         // When & Then
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andDo(print())
-                .andExpect(status().isConflict());
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.success").value(false));
     }
 }

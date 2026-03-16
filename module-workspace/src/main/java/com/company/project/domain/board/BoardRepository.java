@@ -18,12 +18,12 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
         @Transactional
         void deleteById(@NonNull Long id);
 
-        @Query("SELECT COALESCE(MAX(b.sortOrdr), 0) FROM Board b WHERE b.bbsId = :bbsId")
+        @Query("SELECT COALESCE(MAX(b.sortOrdr), 0L) FROM Board b WHERE b.bbsId = :bbsId")
         Long findMaxSortOrdr(@Param("bbsId") String bbsId);
 
-        @Query("SELECT COALESCE(MAX(b.nttNo), 0) FROM Board b WHERE b.bbsId = :bbsId AND b.sortOrdr = :sortOrdr")
+        @Query("SELECT COALESCE(MAX(b.nttNo), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.sortOrdr = :sortOrdr")
         Long findMaxNttNo(@Param("bbsId") String bbsId, @Param("sortOrdr") Long sortOrdr);
 
-        @Query("SELECT COALESCE(MAX(b.nttId), 0) FROM Board b")
+        @Query("SELECT COALESCE(MAX(b.nttId), 0L) FROM Board b")
         Long findMaxNttId();
 }

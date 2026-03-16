@@ -62,8 +62,8 @@ class UserAuthorityApiControllerTest {
         mockMvc.perform(get(BASE_URL)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].userId").value("user1"))
-                .andExpect(jsonPath("$.data.list[0].regYn").value("Y"));
+                .andExpect(jsonPath("$.data.resultList[0].userId").value("user1"))
+                .andExpect(jsonPath("$.data.resultList[0].regYn").value("Y"));
     }
 
     @Test

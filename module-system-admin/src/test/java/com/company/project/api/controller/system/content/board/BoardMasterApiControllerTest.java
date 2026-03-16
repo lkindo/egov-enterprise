@@ -30,7 +30,7 @@ class BoardMasterApiControllerTest {
     @MockitoBean
     private EgovBoardMasterService boardMasterService;
 
-    private final String BASE_URL = "/api/v1/admin/system/boards";
+    private final String BASE_URL = "/api/v1/admin/system/board-masters";
 
     @Test
     @DisplayName("게시판 목록 조회 성공")

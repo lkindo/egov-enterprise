@@ -45,7 +45,7 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
   @Query("""
       SELECT d FROM DtaUseStats d
       WHERE d.bbsId = :bbsId AND d.nttId = :nttId AND d.atchFileId = :atchFileId AND d.fileSn = :fileSn
-      ORDER BY d.frstRegistPnttm DESC
+      ORDER BY d.createdDate DESC
       """)
   Page<DtaUseStats> selectDtaUseStatsDetail(@Param("bbsId") String bbsId,
       @Param("nttId") Long nttId,
@@ -58,9 +58,9 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
    */
   @Query("""
       SELECT d FROM DtaUseStats d
-      WHERE d.frstRegistPnttm BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
+      WHERE d.createdDate BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
           AND CAST(:toDate AS java.time.LocalDateTime)
-      ORDER BY d.frstRegistPnttm DESC
+      ORDER BY d.createdDate DESC
       """)
   Page<DtaUseStats> findByDateRange(
       @Param("fromDate") String fromDate,
@@ -72,7 +72,7 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
    */
   @Query("""
       SELECT COUNT(d) FROM DtaUseStats d
-      WHERE d.frstRegistPnttm BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
+      WHERE d.createdDate BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
           AND CAST(:toDate AS java.time.LocalDateTime)
       """)
   long countByDateRange(

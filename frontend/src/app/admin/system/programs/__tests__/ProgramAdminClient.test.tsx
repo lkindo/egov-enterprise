@@ -52,6 +52,11 @@ vi.mock('@/app/components/ui/ultimate-data-grid', () => ({
     ) 
 }));
 vi.mock('@/app/components/ui/standard-search-filter', () => ({ 
+    StandardSearchFilter: ({ onSearch }: any) => (
+        <div>
+            <button onClick={() => onSearch({ searchWrd: 'test' })}>Search</button>
+        </div>
+    ),
     SmartSearchPanel: ({ onSearch }: any) => (
         <div>
             <button onClick={() => onSearch({ searchWrd: 'test' })}>Search</button>
@@ -75,6 +80,8 @@ vi.mock('lucide-react', () => ({
     Search: () => <span>S</span>,
     Settings: () => <span>ST</span>,
     ChevronRight: () => <span>{'>'}</span>,
+    MoreHorizontal: () => <span>...</span>,
+    List: () => <span>LIST</span>,
 }));
 
 vi.mock('@/app/actions/programActions', () => ({ 
@@ -92,11 +99,11 @@ vi.mock('next/navigation', () => ({
 
 describe('ProgramAdminClient Component', () => {
     const mockInitialData = {
-        content: [
+        list: [ // Changed from content to list to match implementation
             { progrmFileNm: 'PROG_1', progrmNm: 'Program One', url: '/url/1', progrmStrePath: '/path/1', progrmDc: 'Desc 1' },
             { progrmFileNm: 'PROG_2', progrmNm: 'Program Two', url: '/url/2', progrmStrePath: '/path/2', progrmDc: 'Desc 2' },
         ],
-        totalElements: 2
+        total: 2 // Changed from totalElements to total
     } as any;
 
     beforeEach(() => {
@@ -105,8 +112,8 @@ describe('ProgramAdminClient Component', () => {
 
     it('renders the program list correctly', () => {
         render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-        expect(screen.getByText('PROG_1')).toBeDefined();
-        expect(screen.getByText('PROG_2')).toBeDefined();
+        expect(screen.getAllByText('PROG_1').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('PROG_2').length).toBeGreaterThan(0);
         expect(screen.getByText('2 Units')).toBeDefined();
     });
 

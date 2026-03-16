@@ -41,7 +41,7 @@ class CnsltApiControllerTest {
                 .willReturn(new PageImpl<>(List.of(dto), PageRequest.of(0, 10), 1));
 
         // When & Then
-        mockMvc.perform(get("/api/v1/admin/system/consultations")
+        mockMvc.perform(get("/api/v1/admin/system/cnslt")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

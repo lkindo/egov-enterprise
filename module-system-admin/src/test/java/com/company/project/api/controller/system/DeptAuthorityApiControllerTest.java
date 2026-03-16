@@ -58,7 +58,7 @@ class DeptAuthorityApiControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].userId").value("user1"));
+                .andExpect(jsonPath("$.data.resultList[0].userId").value("user1"));
     }
 
     @Test

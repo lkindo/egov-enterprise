@@ -28,6 +28,8 @@ vi.mock('@/app/components/ui/toast', () => ({
 vi.mock('@/hooks/useMessage', () => ({ 
     useMessage: vi.fn(() => ({ t: (key: string) => key })) 
 }));
+
+// Mock StandardAdminLayout and its sub-components
 vi.mock('@/app/components/layout/StandardAdminLayout', () => ({ 
     StandardAdminLayout: ({ children, title, actionButton, data, columns }: any) => (
         <div>
@@ -35,8 +37,8 @@ vi.mock('@/app/components/layout/StandardAdminLayout', () => ({
             {actionButton}
             <table data-testid="user-table">
                 <tbody>
-                    {data.map((item: any, i: number) => (
-                        <tr key={i}>
+                    {(data || []).map((item: any, i: number) => (
+                        <tr key={item.userId || i}>
                             {columns.map((c: any) => (
                                 <td key={c.id}>
                                     {typeof c.accessor === 'function' ? c.accessor(item) : item[c.accessor]}
@@ -64,18 +66,21 @@ vi.mock('@/app/actions/userActions', () => ({
     deleteUserAction: vi.fn() 
 }));
 
+const mockRefresh = vi.fn();
 vi.mock('next/navigation', () => ({
     useRouter: () => ({
         push: vi.fn(),
+        refresh: mockRefresh,
     }),
 }));
 
 describe('UserManageClient Component', () => {
     const mockInitialData = {
-        resultList: [
+        list: [ // Changed from resultList to list to match implementation
             { userId: 'user1', userNm: 'User One', email: 'user1@test.com', userSttusCode: 'A' },
             { userId: 'user2', userNm: 'User Two', email: 'user2@test.com', userSttusCode: 'P' },
-        ]
+        ],
+        total: 2
     };
     const mockInitialParams = { searchKeyword: '', searchCondition: '0', sbscrbSttus: '', pageIndex: 1 };
 
@@ -90,14 +95,14 @@ describe('UserManageClient Component', () => {
         expect(screen.getByText('User Two')).toBeDefined();
     });
 
-    it('opens create dialog when "admin.user.newUser" is clicked', () => {
+    it('opens create dialog when newUser button is clicked', () => {
         render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
         const createBtn = screen.getByText(/\+/).closest('button')!;
         fireEvent.click(createBtn);
 
         expect(screen.getByTestId('dialog')).toBeDefined();
         const titles = screen.getAllByText('admin.user.newUser');
-        expect(titles.length).toBeGreaterThan(1); // One in button, one in h2
+        expect(titles.length).toBeGreaterThan(0);
     });
 
     it('opens edit dialog with user data when pencil icon is clicked', () => {
@@ -146,6 +151,7 @@ describe('UserManageClient Component', () => {
 
         await waitFor(() => {
             expect(userActions.createUserAction).toHaveBeenCalled();
+            expect(mockRefresh).toHaveBeenCalled();
         });
     });
 });

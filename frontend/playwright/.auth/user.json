@@ -2,22 +2,8 @@
   "cookies": [
     {
       "name": "accessToken",
-      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VyX3JlZ3VsYXIiLCJyb2xlIjoiUk9MRV9VU0VSIiwiaWF0IjoxNzczNDA2NTc1LCJleHAiOjE3NzM0MTAxNzV9.0OgwOAx6T1-hbnwxVCr3mHQduVOrriaVwL3pZExxSXk3KcWe3huAO1-hP2Z5y-0AHpzT3TDOEepCcRvXF82oVQ",
-      "domain": "127.0.0.1",
-      "path": "/",
-      "expires": -1
-    },
-    {
-      "name": "accessToken",
-      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VyX3JlZ3VsYXIiLCJyb2xlIjoiUk9MRV9VU0VSIiwiaWF0IjoxNzczNDA2NTc1LCJleHAiOjE3NzM0MTAxNzV9.0OgwOAx6T1-hbnwxVCr3mHQduVOrriaVwL3pZExxSXk3KcWe3huAO1-hP2Z5y-0AHpzT3TDOEepCcRvXF82oVQ",
+      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VyX3JlZ3VsYXIiLCJyb2xlIjoiUk9MRV9VU0VSIiwiaWF0IjoxNzczNjQ5ODI3LCJleHAiOjE3NzM2NTM0Mjd9.Wshzt80tWwSq4szxMoGe68pzvyo3tbgqDvDEn0YBs99r3_p_GPPySHSBJIgPutiNl2XShx3fnaEGgqbm_O5bCg",
       "domain": "localhost",
-      "path": "/",
-      "expires": -1
-    },
-    {
-      "name": "userRole",
-      "value": "ROLE_USER",
-      "domain": "127.0.0.1",
       "path": "/",
       "expires": -1
     },
@@ -31,20 +17,11 @@
   ],
   "origins": [
     {
-      "origin": "http://127.0.0.1:3001",
-      "localStorage": [
-        {
-          "name": "accessToken",
-          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VyX3JlZ3VsYXIiLCJyb2xlIjoiUk9MRV9VU0VSIiwiaWF0IjoxNzczNDA2NTc1LCJleHAiOjE3NzM0MTAxNzV9.0OgwOAx6T1-hbnwxVCr3mHQduVOrriaVwL3pZExxSXk3KcWe3huAO1-hP2Z5y-0AHpzT3TDOEepCcRvXF82oVQ"
-        }
-      ]
-    },
-    {
       "origin": "http://localhost:3001",
       "localStorage": [
         {
           "name": "accessToken",
-          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VyX3JlZ3VsYXIiLCJyb2xlIjoiUk9MRV9VU0VSIiwiaWF0IjoxNzczNDA2NTc1LCJleHAiOjE3NzM0MTAxNzV9.0OgwOAx6T1-hbnwxVCr3mHQduVOrriaVwL3pZExxSXk3KcWe3huAO1-hP2Z5y-0AHpzT3TDOEepCcRvXF82oVQ"
+          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VyX3JlZ3VsYXIiLCJyb2xlIjoiUk9MRV9VU0VSIiwiaWF0IjoxNzczNjQ5ODI3LCJleHAiOjE3NzM2NTM0Mjd9.Wshzt80tWwSq4szxMoGe68pzvyo3tbgqDvDEn0YBs99r3_p_GPPySHSBJIgPutiNl2XShx3fnaEGgqbm_O5bCg"
         }
       ]
     }

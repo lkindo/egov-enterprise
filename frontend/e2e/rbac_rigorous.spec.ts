@@ -9,8 +9,8 @@ test.describe('Rigorous RBAC Check - Regular User Access Control', () => {
         '/admin/system/common-code',
         '/admin/user/manage',
         '/admin/security/author-manage',
-        '/admin/stats/visit-stats',
-        '/admin/workflow/approvals'
+        '/admin/stats',
+        '/admin/workflow'
     ];
 
     for (const pagePath of adminPages) {

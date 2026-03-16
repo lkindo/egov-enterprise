@@ -31,6 +31,7 @@ import com.company.project.domain.user.repository.UserRepository;
 import com.company.project.domain.user.repository.EnterpriseUserRepository;
 import com.company.project.domain.user.repository.GeneralUserRepository;
 import com.company.project.domain.auth.UserAuthorityRepository;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
@@ -134,6 +135,12 @@ public class MinimalTestConfig {
     public PlatformTransactionManager transactionManager(
             jakarta.persistence.EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
+    }
+
+    @Bean
+    @Primary
+    public JPAQueryFactory jpaQueryFactory(jakarta.persistence.EntityManager entityManager) {
+        return new JPAQueryFactory(entityManager);
     }
 
     @Bean
