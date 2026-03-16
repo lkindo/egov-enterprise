@@ -1,4 +1,8 @@
 package com.company.project.domain.log;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -7,14 +11,15 @@ import jakarta.persistence.Table;
 import lombok.*;
 import java.time.LocalDateTime;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NPRIVACYLOG")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class PrivacyLog {
+@SuperBuilder
+public class PrivacyLog extends BaseEntity {
 
     @Id
     @Column(name = "REQUST_ID", length = 20)

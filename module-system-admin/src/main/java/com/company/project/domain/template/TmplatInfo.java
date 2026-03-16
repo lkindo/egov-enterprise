@@ -1,4 +1,7 @@
 package com.company.project.domain.template;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -7,12 +10,13 @@ import lombok.*;
 /**
  * ??쀫탣???類ｋ궖 ?酉???
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NTMPLATINFO")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class TmplatInfo extends BaseEntity {
 
     @Id

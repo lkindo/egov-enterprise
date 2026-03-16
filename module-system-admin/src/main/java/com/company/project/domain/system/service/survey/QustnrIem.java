@@ -1,4 +1,6 @@
 package com.company.project.domain.system.service.survey;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -9,6 +11,7 @@ import lombok.experimental.SuperBuilder;
  * 설문 항목 엔티티
  * 매핑 테이블: NQUSTNRIEM
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NQUSTNRIEM")
 @Getter

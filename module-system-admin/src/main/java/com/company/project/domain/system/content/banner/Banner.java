@@ -1,4 +1,6 @@
 package com.company.project.domain.system.content.banner;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -12,6 +14,7 @@ import lombok.experimental.SuperBuilder;
  * 배너 정보 Entity
  * 매핑 테이블: NBANNER
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NBANNER")
 @Getter

@@ -1,4 +1,6 @@
 package com.company.project.domain.schedule;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -14,6 +16,7 @@ import lombok.experimental.SuperBuilder;
 /**
  * 간부 상태 엔티티
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NLEADERSTTUS")
 @Getter

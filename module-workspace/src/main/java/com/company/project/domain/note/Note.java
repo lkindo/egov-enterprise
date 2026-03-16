@@ -1,4 +1,6 @@
 package com.company.project.domain.note;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -7,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity(name = "NoteDomain")
 @Table(name = "NNOTE")
 @Getter

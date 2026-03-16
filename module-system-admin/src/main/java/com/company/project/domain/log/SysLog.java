@@ -1,19 +1,25 @@
 package com.company.project.domain.log;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NSYSLOG")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SysLog {
+@SuperBuilder
+public class SysLog extends BaseEntity {
 
     @Id
     @Column(name = "REQUST_ID", length = 20)
@@ -49,7 +55,6 @@ public class SysLog {
     @Column(name = "ERROR_SE", length = 3)
     private String errorSe;
 
-    @Builder
     public SysLog(String requstId, String srvcNm, String methodNm, String processSeCode, String processTime,
             String rqesterId, String rqesterIp, String occrrncDe, String rspnsCode, String errorCode, String errorSe) {
         this.requstId = requstId;

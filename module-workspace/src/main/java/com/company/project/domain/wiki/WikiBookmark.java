@@ -1,4 +1,6 @@
 package com.company.project.domain.wiki;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
  * ?袁り텕 ?브낮彛???類ｋ궖 Entity
  * ??뉕탢?????뵠?? NWIKIBKMK
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NWIKIBKMK")
 @Getter

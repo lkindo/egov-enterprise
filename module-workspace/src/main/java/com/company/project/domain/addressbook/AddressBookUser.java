@@ -1,8 +1,12 @@
 package com.company.project.domain.addressbook;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -10,11 +14,13 @@ import lombok.NoArgsConstructor;
  * 雅뚯눘?쇗에??닌딄쉐??JPA Entity
  * ??뉕탢?????뵠?? COMTNADBK
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NADBK")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class AddressBookUser {
+@SuperBuilder
+public class AddressBookUser extends BaseEntity {
 
     @Id
     @Column(name = "adbk_constnt_id", length = 20)
@@ -25,7 +31,6 @@ public class AddressBookUser {
 
     @Column(name = "emplyr_id", length = 20)
     private String emplyrId;
-
 
     @Column(name = "nm", length = 50)
     private String nm;
@@ -45,7 +50,6 @@ public class AddressBookUser {
     @Column(name = "fxnum", length = 20)
     private String fxnum;
 
-    @Builder
     public AddressBookUser(String adbkUserId, String adbkId, String emplyrId, String nm,
             String emailAdres, String homeTelno, String moblphonNo, String offmTelno, String fxnum) {
         this.adbkUserId = adbkUserId;

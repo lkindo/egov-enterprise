@@ -1,4 +1,6 @@
 package com.company.project.domain.login;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -15,6 +17,7 @@ import lombok.experimental.SuperBuilder;
  * 로그인 정책 엔티티
  * 매핑 테이블: NLOGINPOLICY
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NLOGINPOLICY")
 @Getter

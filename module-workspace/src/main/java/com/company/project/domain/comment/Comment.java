@@ -1,4 +1,6 @@
 package com.company.project.domain.comment;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
 import com.company.project.domain.common.BaseEntity;
@@ -11,6 +13,7 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NCOMMENT")
 @SQLRestriction("use_at = 'Y'")

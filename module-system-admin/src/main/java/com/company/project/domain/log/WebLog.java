@@ -1,20 +1,26 @@
 package com.company.project.domain.log;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NWEBLOG")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class WebLog {
+@SuperBuilder
+public class WebLog extends BaseEntity {
 
     @Id
     @Column(name = "REQUST_ID", length = 20)
@@ -32,7 +38,6 @@ public class WebLog {
     @Column(name = "OCCRRNC_DE")
     private LocalDateTime occrrncDe;
 
-    @Builder
     public WebLog(String requstId, String url, String rqesterId, String rqesterIp, LocalDateTime occrrncDe) {
         this.requstId = requstId;
         this.url = url;

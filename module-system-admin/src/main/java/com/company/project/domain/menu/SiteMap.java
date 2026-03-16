@@ -1,19 +1,25 @@
 package com.company.project.domain.menu;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NSITEMAP")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SiteMap {
+@SuperBuilder
+public class SiteMap extends BaseEntity {
 
     @Id
     @Column(name = "MAPNG_CREAT_ID", length = 30)
@@ -28,7 +34,6 @@ public class SiteMap {
     @Column(name = "MAPNG_FILE_PATH", length = 100)
     private String bndeFilePath;
 
-    @Builder
     public SiteMap(String mapCreatId, String creatPersonId, String bndeFileNm, String bndeFilePath) {
         this.mapCreatId = mapCreatId;
         this.creatPersonId = creatPersonId;

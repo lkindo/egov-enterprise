@@ -1,8 +1,12 @@
 package com.company.project.domain.mail;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -10,11 +14,13 @@ import lombok.NoArgsConstructor;
  * 獄쏆뮇?싷쭖遺우뵬 JPA Entity
  * ??뉕탢?????뵠?? COMTNSNDNGMAIL
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "HEMAILDSPTCHMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SentMail {
+@SuperBuilder
+public class SentMail extends BaseEntity {
 
     @Id
     @Column(name = "MSSAGE_ID", length = 20)
@@ -41,7 +47,6 @@ public class SentMail {
     @Column(name = "ATCH_FILE_ID", length = 20)
     private String atchFileId;
 
-    @Builder
     public SentMail(String mssageId, String sj, String emailCn, String dsptchPerson,
             String recptnPerson, String sndngResultCode, String atchFileId) {
         this.mssageId = mssageId;

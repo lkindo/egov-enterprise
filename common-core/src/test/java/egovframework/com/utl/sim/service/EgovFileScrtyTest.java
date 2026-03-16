@@ -76,6 +76,7 @@ class EgovFileScrtyTest {
 
     @Test
     @DisplayName("null 입력 시 빈 문자열 반환 확인")
+    @SuppressWarnings("deprecation")
     void nullInputTest() throws Exception {
         assertThat(EgovFileScrty.encodeBinary(null)).isEqualTo("");
         assertThat(EgovFileScrty.encryptPassword(null)).isEqualTo("");

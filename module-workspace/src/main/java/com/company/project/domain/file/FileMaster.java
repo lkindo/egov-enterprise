@@ -1,10 +1,15 @@
 package com.company.project.domain.file;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Builder;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,9 +19,11 @@ import java.util.List;
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NFILE")
-public class FileMaster {
+@SuperBuilder
+public class FileMaster extends BaseEntity {
 
     @Id
     @Column(name = "ATCH_FILE_ID", length = 20)
@@ -28,10 +35,10 @@ public class FileMaster {
     @Column(name = "USE_AT", nullable = false, length = 1)
     private String useAt;
 
+    @Builder.Default
     @OneToMany(mappedBy = "fileMaster", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileDetail> fileDetails = new ArrayList<>();
 
-    @Builder
     public FileMaster(String atchFileId) {
         this.atchFileId = atchFileId;
         this.creatDt = LocalDateTime.now();

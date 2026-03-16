@@ -1,4 +1,6 @@
 package com.company.project.domain.calendar;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -12,6 +14,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NCALRESTDE")
 public class Restde extends BaseEntity {

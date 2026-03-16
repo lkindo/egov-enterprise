@@ -1,4 +1,7 @@
 package com.company.project.domain.board;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import com.company.project.domain.common.BaseTimeEntity;
 import jakarta.persistence.Column;
@@ -7,16 +10,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NBBSUSE")
 @IdClass(BoardUseId.class)
+@SuperBuilder
 public class BoardUse extends BaseTimeEntity implements Serializable {
 
     @Id
@@ -33,7 +38,6 @@ public class BoardUse extends BaseTimeEntity implements Serializable {
     @Column(name = "USE_AT", length = 1)
     private String useAt;
 
-    @Builder
     public BoardUse(String bbsId, String trgetId, String registSeCode, String useAt) {
         this.bbsId = bbsId;
         this.trgetId = trgetId;

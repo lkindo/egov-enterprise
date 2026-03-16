@@ -1,4 +1,8 @@
 package com.company.project.domain.stats;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -7,16 +11,17 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 /**
  * ?癒?┷??곸뒠?袁れ넺 ????JPA Entity
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NDTAUSESTATS")
-public class DtaUseStats {
+@SuperBuilder
+public class DtaUseStats extends BaseEntity {
 
     @Id
     @Column(name = "DTA_USE_STATS_ID", length = 20)
@@ -34,15 +39,4 @@ public class DtaUseStats {
     @Column(name = "FILE_SN")
     private Integer fileSn;
 
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegistPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdtPnttm;
 }

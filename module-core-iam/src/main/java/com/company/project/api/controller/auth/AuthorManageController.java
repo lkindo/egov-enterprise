@@ -32,6 +32,7 @@ public class AuthorManageController {
     /**
      * 권한 목록??조회?다.
      */
+    @Deprecated
     @RequestMapping({ "/sec/ram/EgovAuthorList.do", "/sec/ram/EgovAuthorManage.do" })
     public String selectAuthorList(@ModelAttribute("authorManageVO") ComDefaultVO searchVO, ModelMap model)
             throws Exception {
@@ -61,6 +62,7 @@ public class AuthorManageController {
     /**
      * 권한 ???보?조회?다.
      */
+    @Deprecated
     @RequestMapping(value = { "/api/v1/auth/authors", "/sec/ram/EgovAuthor.do" })
     public String selectAuthor(@RequestParam("authorCode") String authorCode, ModelMap model)
             throws Exception {
@@ -85,6 +87,7 @@ public class AuthorManageController {
     /**
      * 권한 ?록 ?면?로 ?동?다.
      */
+    @Deprecated
     @RequestMapping("/sec/ram/EgovAuthorInsertView.do")
     public String insertAuthorView(Model model) throws Exception {
         model.addAttribute("authorManage", new AuthorManageDto());
@@ -94,6 +97,7 @@ public class AuthorManageController {
     /**
      * 권한 ?보??록?다.
      */
+    @Deprecated
     @PostMapping("/sec/ram/EgovAuthorInsert.do")
     public String insertAuthor(@Valid @ModelAttribute("authorManage") AuthorManageDto authorManage,
             BindingResult bindingResult, ModelMap model, RedirectAttributes redirectAttributes) throws Exception {
@@ -111,6 +115,7 @@ public class AuthorManageController {
     /**
      * 권한 ?보??정?다.
      */
+    @Deprecated
     @PostMapping("/sec/ram/EgovAuthorUpdate.do")
     public String updateAuthor(@Valid @ModelAttribute("authorManage") AuthorManageDto authorManage,
             BindingResult bindingResult, Model model, RedirectAttributes redirectAttributes) throws Exception {
@@ -128,6 +133,7 @@ public class AuthorManageController {
     /**
      * 권한 ?보????다.
      */
+    @Deprecated
     @PostMapping("/sec/ram/EgovAuthorDelete.do")
     public String deleteAuthor(@RequestParam("authorCode") String authorCode,
             RedirectAttributes redirectAttributes) throws Exception {
@@ -141,6 +147,7 @@ public class AuthorManageController {
     /**
      * 권한 목록??멀?????다.
      */
+    @Deprecated
     @PostMapping("/sec/ram/EgovAuthorListDelete.do")
     public String deleteAuthorList(@RequestParam("authorCodes") String authorCodes,
             RedirectAttributes redirectAttributes) throws Exception {
@@ -155,6 +162,7 @@ public class AuthorManageController {
     /**
      * ?근 거? ?면?로 ?동?다.
      */
+    @Deprecated
     @RequestMapping("/sec/ram/accessDenied.do")
     public String accessDenied() throws Exception {
         return "sec/accessDenied";

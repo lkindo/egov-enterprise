@@ -1,6 +1,8 @@
 package com.company.project.api.controller;
 
 import com.company.project.core.response.ApiResponse;
+import com.company.project.security.annotation.LoginUser;
+import com.company.project.security.service.CustomUserDetails;
 import com.company.project.service.user.UserService;
 import com.company.project.service.user.dto.UserDto;
 import com.company.project.service.user.dto.UserResponse;
@@ -16,8 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 
 @Tag(name = "User", description = "User Management APIs")
 @Slf4j
@@ -30,26 +30,26 @@ public class UserController {
 
     @Operation(summary = "Get Current User Profile")
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserDto>> getMe(@AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(ApiResponse.success(userService.getUserById(userDetails.getUsername())));
+    public ResponseEntity<ApiResponse<UserDto>> getMe(@LoginUser CustomUserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getUserById(userDetails.getUserId())));
     }
 
     @Operation(summary = "Update Current User Profile")
     @PutMapping("/me")
     public ResponseEntity<ApiResponse<Void>> updateMe(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @LoginUser CustomUserDetails userDetails,
             @RequestBody UserDto userDto) {
-        userService.updateUser(userDetails.getUsername(), userDto);
+        userService.updateUser(userDetails.getUserId(), userDto) ;
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "Change Password")
     @PutMapping("/me/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @LoginUser CustomUserDetails userDetails,
             @RequestBody java.util.Map<String, String> request) {
         userService.changePassword(
-                userDetails.getUsername(),
+                userDetails.getUserId(),
                 request.get("oldPassword"),
                 request.get("newPassword")
         );

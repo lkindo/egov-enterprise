@@ -1,11 +1,11 @@
 package com.company.project.domain.board;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.Builder;
 import java.io.Serializable;
 
 @Getter

@@ -1,8 +1,12 @@
 package com.company.project.domain.file;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,10 +16,12 @@ import lombok.Setter;
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @IdClass(FileDetailId.class)
 @Table(name = "NFILEDETAIL")
-public class FileDetail {
+@SuperBuilder
+public class FileDetail extends BaseEntity {
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
@@ -45,7 +51,6 @@ public class FileDetail {
     @Column(name = "FILE_CN")
     private String fileCn; // ???뵬 ??살구
 
-    @Builder
     public FileDetail(FileMaster fileMaster, Integer fileSn, String fileStreCours, String streFileNm,
             String orignlFileNm, String fileExtsn, Long fileMg, String fileCn) {
         this.fileMaster = fileMaster;

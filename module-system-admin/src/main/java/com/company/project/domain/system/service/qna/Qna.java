@@ -1,4 +1,6 @@
 package com.company.project.domain.system.service.qna;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -7,11 +9,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 
 /**
  * Q&A 엔티티
  * 매핑 테이블: NQAINFO
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NQAINFO")
 @Getter

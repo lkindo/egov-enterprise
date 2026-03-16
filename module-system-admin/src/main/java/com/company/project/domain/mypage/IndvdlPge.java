@@ -1,19 +1,25 @@
 package com.company.project.domain.mypage;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "COMTNINDVDLPGE")
-public class IndvdlPge {
+@SuperBuilder
+public class IndvdlPge extends BaseEntity {
 
     @Id
     @Column(name = "CNTNTS_ID", length = 20)
@@ -31,7 +37,6 @@ public class IndvdlPge {
     @Column(name = "CNTNTS_DC", length = 255)
     private String cntntsDc;
 
-    @Builder
     public IndvdlPge(String cntntsId, String cntntsNm, String cntntsUseAt, String cntntsLinkUrl,
             String cntntsDc) {
         this.cntntsId = cntntsId;

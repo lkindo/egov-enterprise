@@ -1,14 +1,18 @@
 package com.company.project.domain.board;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 
 /**
  * 만족도 조사 엔티티
  * 매핑 테이블: NSTSFDG
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NSTSFDG")
 @Getter

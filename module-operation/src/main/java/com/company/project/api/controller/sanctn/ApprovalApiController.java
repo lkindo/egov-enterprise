@@ -1,6 +1,8 @@
 package com.company.project.api.controller.sanctn;
 
 import com.company.project.core.response.ApiResponse;
+import com.company.project.security.annotation.LoginUser;
+import com.company.project.security.service.CustomUserDetails;
 import com.company.project.service.informalsanction.InformalSanctionService;
 import com.company.project.service.informalsanction.dto.InformalSanctionDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,9 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @Tag(name = "Approval", description = "Unified Electronic Approval APIs")
@@ -25,19 +26,19 @@ public class ApprovalApiController {
     @Operation(summary = "Get Pending Approvals (Inbox)")
     @GetMapping("/pending")
     public ResponseEntity<ApiResponse<Page<InformalSanctionDto>>> getPending(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @LoginUser CustomUserDetails userDetails,
             Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(
-                approvalService.getReceivedInformalSanctionList(userDetails.getUsername(), pageable)));
+                approvalService.getReceivedInformalSanctionList(userDetails.getEsntlId(), pageable)));
     }
 
     @Operation(summary = "Get My Approval History")
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<Page<InformalSanctionDto>>> getMyHistory(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @LoginUser CustomUserDetails userDetails,
             Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(
-                approvalService.getInformalSanctionList(userDetails.getUsername(), pageable)));
+                approvalService.getInformalSanctionList(userDetails.getEsntlId(), pageable)));
     }
 
     @Operation(summary = "Confirm Approval (Approve/Reject)")

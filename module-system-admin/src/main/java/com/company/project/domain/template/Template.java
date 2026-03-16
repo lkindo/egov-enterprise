@@ -1,4 +1,6 @@
 package com.company.project.domain.template;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -10,6 +12,7 @@ import lombok.experimental.SuperBuilder;
 /**
  * 템플릿 정보 JPA Entity
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity(name = "CommonTemplate")
 @Table(name = "NTMPLATINFO")
 @Getter

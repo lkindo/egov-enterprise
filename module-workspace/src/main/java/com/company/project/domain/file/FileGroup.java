@@ -1,18 +1,24 @@
 package com.company.project.domain.file;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import com.company.project.domain.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Builder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "FILE_GROUP")
+@SuperBuilder
 public class FileGroup extends BaseTimeEntity {
 
     @Id
@@ -25,6 +31,7 @@ public class FileGroup extends BaseTimeEntity {
     @Column(length = 1)
     private String useAt;
 
+    @Builder.Default
     @OneToMany(mappedBy = "fileGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileItem> fileItems = new ArrayList<>();
 

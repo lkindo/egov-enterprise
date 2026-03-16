@@ -1,14 +1,18 @@
 package com.company.project.domain.board;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
 @Entity(name = "BoardTemplate")
 @Table(name = "NTMPLATINFO")
 public class Template extends BaseEntity {

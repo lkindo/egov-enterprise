@@ -1,16 +1,21 @@
 package com.company.project.domain.file;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import com.company.project.domain.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "FILE_ITEM")
+@SuperBuilder
 public class FileItem extends BaseTimeEntity {
 
     @Id
@@ -36,7 +41,6 @@ public class FileItem extends BaseTimeEntity {
 
     private Long fileSize; // ???뵬 ??由?
 
-    @Builder
     public FileItem(FileGroup fileGroup, Integer fileSn, String fileStreCours, String streFileNm, String orignlFileNm,
             String fileExtsn, Long fileSize) {
         this.fileGroup = fileGroup;

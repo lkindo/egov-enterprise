@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
-@Profile({"default", "prod", "security-test", "test & !mock-security-test & !minimal-test-security"})
+@Profile({"default", "local", "prod", "security-test", "test & !mock-security-test & !minimal-test-security"})
 @EnableWebSecurity
 @Slf4j
 public class ApiSecurityConfig {
@@ -94,6 +94,7 @@ public class ApiSecurityConfig {
                                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/health"),
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/auth/**"),
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/public/**"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/menu/**"),
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/images/**"))
                                                 .permitAll()
                                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**")).hasAnyRole("ADMIN", "SYSTEM")

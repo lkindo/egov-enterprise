@@ -1,4 +1,6 @@
 package com.company.project.domain.unitylink;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -8,6 +10,7 @@ import jakarta.persistence.Table;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NUNITYLINK")
 @Getter

@@ -1,4 +1,8 @@
 package com.company.project.domain.log;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,10 +15,12 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "SSYSLOGSUMMARY")
 @IdClass(SysLogSummaryId.class)
-public class SysLogSummary {
+@SuperBuilder
+public class SysLogSummary extends BaseEntity {
 
     @Id
     @Column(name = "SRVC_NM", length = 60)

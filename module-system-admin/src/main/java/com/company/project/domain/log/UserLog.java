@@ -1,4 +1,8 @@
 package com.company.project.domain.log;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -6,16 +10,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NUSERLOG")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @IdClass(UserLogId.class)
-public class UserLog {
+@SuperBuilder
+public class UserLog extends BaseEntity {
 
     @Id
     @Column(name = "OCCRRNC_DE", length = 20)
@@ -51,7 +57,6 @@ public class UserLog {
     @Column(name = "ERROR_CO")
     private Integer errorCo;
 
-    @Builder
     public UserLog(String occrrncDe, String rqesterId, String srvcNm, String methodNm,
             Integer creatCo, Integer updtCo, Integer rdCnt, Integer deleteCo,
             Integer outptCo, Integer errorCo) {

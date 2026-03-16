@@ -1,14 +1,21 @@
 package com.company.project.domain.menu;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.Builder;
 import java.io.Serializable;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NBKMKMENUMANAGERESULT")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class BkmkMenu {
+@SuperBuilder
+public class BkmkMenu extends BaseEntity {
 
     @EmbeddedId
     private BkmkMenuId id;
@@ -19,7 +26,6 @@ public class BkmkMenu {
     @Column(name = "PROGRM_STRE_PATH", length = 100)
     private String progrmStrePath;
 
-    @Builder
     public BkmkMenu(BkmkMenuId id, String menuNm, String progrmStrePath) {
         this.id = id;
         this.menuNm = menuNm;

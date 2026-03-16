@@ -1,4 +1,6 @@
 package com.company.project.domain.schedule;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -7,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NMEMOTODO")
 @Getter

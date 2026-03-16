@@ -1,4 +1,6 @@
 package com.company.project.domain.addressbook;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -9,6 +11,7 @@ import lombok.experimental.SuperBuilder;
  * 주소록 정보 JPA Entity
  * 테이블명: nadbkmanage (기존: COMTNADBKINFO)
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "nadbkmanage")
 @Getter

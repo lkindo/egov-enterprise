@@ -4,6 +4,7 @@ import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 import java.io.Serializable;
 
 @Getter

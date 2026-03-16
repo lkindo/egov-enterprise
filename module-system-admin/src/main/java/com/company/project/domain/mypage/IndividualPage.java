@@ -1,4 +1,6 @@
 package com.company.project.domain.mypage;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -9,6 +11,7 @@ import lombok.experimental.SuperBuilder;
  * 마이페이지 설정 엔티티
  * 매핑 테이블: NINDVDLPGE
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NINDVDLPGE")
 @Getter

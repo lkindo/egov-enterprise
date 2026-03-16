@@ -4,10 +4,10 @@ import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.io.Serializable;

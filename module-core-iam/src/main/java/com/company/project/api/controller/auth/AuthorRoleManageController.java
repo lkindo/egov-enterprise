@@ -27,6 +27,7 @@ public class AuthorRoleManageController {
     /**
      * 권한??목록 ?면?로 ?동?다.
      */
+    @Deprecated
     @RequestMapping({ "/sec/ram/EgovAuthorRoleListView.do" })
     public String selectAuthorRoleListView() throws Exception {
         return "sec/ram/EgovAuthorRoleManage";
@@ -35,6 +36,7 @@ public class AuthorRoleManageController {
     /**
      * 권한??목록??조회?다.
      */
+    @Deprecated
     @RequestMapping({ "/sec/ram/EgovAuthorRoleList.do", "/sec/rgm/EgovAuthorGroupListView.do" })
     public String selectAuthorRoleList(@ModelAttribute("searchVO") ComDefaultVO searchVO, ModelMap model)
             throws Exception {
@@ -68,6 +70,7 @@ public class AuthorRoleManageController {
     /**
      * 권한???보??록?다.
      */
+    @Deprecated
     @PostMapping("/sec/ram/EgovAuthorRoleInsert.do")
     public String insertAuthorRole(@RequestParam("authorCode") String authorCode,
             @RequestParam("roleCodes") String roleCodes,

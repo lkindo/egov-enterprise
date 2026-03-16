@@ -1,4 +1,6 @@
 package com.company.project.domain.board;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -11,6 +13,7 @@ import lombok.experimental.SuperBuilder;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NBLOGUSER")
 @IdClass(BlogUserId.class)

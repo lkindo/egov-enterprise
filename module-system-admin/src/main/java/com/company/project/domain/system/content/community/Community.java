@@ -1,4 +1,6 @@
 package com.company.project.domain.system.content.community;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import lombok.AccessLevel;
@@ -11,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

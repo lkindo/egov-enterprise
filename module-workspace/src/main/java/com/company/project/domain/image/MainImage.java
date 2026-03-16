@@ -1,4 +1,6 @@
 package com.company.project.domain.image;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -14,6 +16,7 @@ import lombok.experimental.SuperBuilder;
 /**
  * 메인 이미지 엔티티
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NMAINIMAGE")
 @Getter

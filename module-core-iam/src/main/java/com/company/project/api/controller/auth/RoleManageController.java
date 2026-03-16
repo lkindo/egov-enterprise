@@ -31,6 +31,7 @@ public class RoleManageController {
     /**
      * ?목록 ?면?로 ?동?다.
      */
+    @Deprecated
     @RequestMapping("/sec/rmt/EgovRoleListView.do")
     public String selectRoleListView() throws Exception {
         return "sec/rmt/EgovRoleManage";
@@ -39,6 +40,7 @@ public class RoleManageController {
     /**
      * ?목록??조회?다.
      */
+    @Deprecated
     @RequestMapping({ "/sec/rmt/EgovRoleList.do", "/sec/rmt/EgovRoleManage.do" })
     public String selectRoleList(@ModelAttribute("roleManageVO") ComDefaultVO searchVO, ModelMap model)
             throws Exception {
@@ -68,6 +70,7 @@ public class RoleManageController {
     /**
      * ????보?조회?다.
      */
+    @Deprecated
     @RequestMapping(value = { "/api/v1/auth/roles", "/sec/rmt/EgovRole.do" })
     public String selectRole(@RequestParam("roleCode") String roleCode, ModelMap model)
             throws Exception {
@@ -78,6 +81,7 @@ public class RoleManageController {
     /**
      * ??록 ?면?로 ?동?다.
      */
+    @Deprecated
     @RequestMapping("/sec/rmt/EgovRoleInsertView.do")
     public String insertRoleView(Model model) throws Exception {
         model.addAttribute("roleManage", new RoleManageDto());
@@ -87,6 +91,7 @@ public class RoleManageController {
     /**
      * ??보??록?다.
      */
+    @Deprecated
     @PostMapping("/sec/rmt/EgovRoleInsert.do")
     public String insertRole(@Valid @ModelAttribute("roleManage") RoleManageDto roleManage,
             BindingResult bindingResult, ModelMap model) throws Exception {
@@ -104,6 +109,7 @@ public class RoleManageController {
     /**
      * ??보????다.
      */
+    @Deprecated
     @PostMapping("/sec/rmt/EgovRoleDelete.do")
     public String deleteRole(@RequestParam("roleCode") String roleCode, ModelMap model)
             throws Exception {
@@ -117,6 +123,7 @@ public class RoleManageController {
     /**
      * ?목록??멀?????다.
      */
+    @Deprecated
     @PostMapping("/sec/rmt/EgovRoleListDelete.do")
     public String deleteRoleList(@RequestParam("roleCodes") String roleCodes, Model model)
             throws Exception {

@@ -1,4 +1,6 @@
 package com.company.project.domain.system.service.consult;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import com.company.project.domain.common.BaseEntity;
@@ -8,11 +10,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

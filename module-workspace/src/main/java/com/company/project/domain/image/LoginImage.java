@@ -1,4 +1,6 @@
 package com.company.project.domain.image;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -8,6 +10,7 @@ import lombok.experimental.SuperBuilder;
 /**
  * 로그인 화면 이미지 엔티티
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NLOGINSCRINIMAGE")
 @Getter

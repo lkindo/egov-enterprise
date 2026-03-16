@@ -1,4 +1,6 @@
 package com.company.project.domain.schedule;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -16,6 +18,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NDIARYINFO")
 public class Diary extends BaseEntity implements Serializable {

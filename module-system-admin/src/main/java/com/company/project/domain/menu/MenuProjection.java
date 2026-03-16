@@ -1,6 +1,7 @@
 package com.company.project.domain.menu;
 
 import lombok.*;
+import lombok.Builder;
 
 @Getter
 @Setter

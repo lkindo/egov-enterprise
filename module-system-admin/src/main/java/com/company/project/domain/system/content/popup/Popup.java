@@ -1,4 +1,7 @@
 package com.company.project.domain.system.content.popup;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -6,14 +9,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@EntityListeners(AuditingEntityListener.class)
 @Entity(name = "PopupDomain")
 @Table(name = "NPOPUPMANAGE")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
 public class Popup extends BaseEntity {
 
     @Id
@@ -50,7 +55,6 @@ public class Popup extends BaseEntity {
     @Column(name = "NTCE_AT", length = 1)
     private String isNotice;
 
-    @Builder
     public Popup(String popupId, String popupTitleName, String fileUrl, String popupWidthLocation,
             String popupHeightLocation, String popupHeightSize, String popupWidthSize,
             String noticeBeginDate, String noticeEndDate, String isStopView, String isNotice) {

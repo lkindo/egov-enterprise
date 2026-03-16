@@ -1,4 +1,8 @@
 package com.company.project.domain.system;
+import com.company.project.domain.common.BaseEntity;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -6,10 +10,11 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
+@SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "IMGTEMP")
-public class ImgTemp {
+public class ImgTemp extends BaseEntity {
 
     @EmbeddedId
     private ImgTempId id;

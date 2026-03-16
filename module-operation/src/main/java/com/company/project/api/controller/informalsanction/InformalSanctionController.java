@@ -1,6 +1,8 @@
 package com.company.project.api.controller.informalsanction;
 
 import com.company.project.core.response.ApiResponse;
+import com.company.project.security.annotation.LoginUser;
+import com.company.project.security.service.CustomUserDetails;
 import com.company.project.service.informalsanction.InformalSanctionService;
 import com.company.project.service.informalsanction.dto.InformalSanctionDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,8 +14,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -31,15 +31,15 @@ public class InformalSanctionController {
     @Operation(summary = "비정형 결재 목록 조회", description = "신청자 또는 결재자 기준의 결재 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<InformalSanctionDto>>> getInformalSanctionList(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @LoginUser CustomUserDetails userDetails,
             @RequestParam(required = false) String type,
             @PageableDefault(size = 10) Pageable pageable) {
 
         Page<InformalSanctionDto> list;
         if ("received".equals(type)) {
-            list = informalSanctionService.getReceivedInformalSanctionList(userDetails.getUsername(), pageable);
+            list = informalSanctionService.getReceivedInformalSanctionList(userDetails.getEsntlId(), pageable);
         } else {
-            list = informalSanctionService.getInformalSanctionList(userDetails.getUsername(), pageable);
+            list = informalSanctionService.getInformalSanctionList(userDetails.getEsntlId(), pageable);
         }
         return ResponseEntity.ok(ApiResponse.success(list));
     }
@@ -54,12 +54,12 @@ public class InformalSanctionController {
     @Operation(summary = "비정형 결재 등록", description = "새로운 비정형 결재를 요청합니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<String>> registerInformalSanction(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @LoginUser CustomUserDetails userDetails,
             @RequestBody InformalSanctionDto dto) throws Exception {
 
         String id = egovInfrmlSanctnIdGnrService.getNextStringId();
         dto.setInformalSanctionId(id);
-        dto.setApplicantId(userDetails.getUsername());
+        dto.setApplicantId(userDetails.getEsntlId());
 
         informalSanctionService.registerInformalSanction(dto);
         return ResponseEntity.ok(ApiResponse.success(id));

@@ -1,4 +1,6 @@
 package com.company.project.domain.system.service.survey;
+import jakarta.persistence.EntityListeners;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.company.project.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -9,6 +11,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.CascadeType;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +19,7 @@ import java.util.List;
  * 온라인 폴 관리 엔티티
  * 매핑 테이블: NONLINEPOLLMANAGE
  */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NONLINEPOLLMANAGE")
 @Getter
