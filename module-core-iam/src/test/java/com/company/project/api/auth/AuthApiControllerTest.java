@@ -35,8 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthController 테스트")
-class AuthControllerTest {
+@DisplayName("AuthApiController 테스트")
+class AuthApiControllerTest {
 
     private MockMvc mockMvc;
 
@@ -53,11 +53,11 @@ class AuthControllerTest {
     private UserAuthorityRepository userAuthorityRepository;
 
     @InjectMocks
-    private AuthController authController;
+    private AuthApiController authApiController;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(authController)
+        mockMvc = MockMvcBuilders.standaloneSetup(authApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }

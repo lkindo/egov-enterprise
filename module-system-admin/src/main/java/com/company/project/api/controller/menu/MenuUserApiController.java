@@ -1,5 +1,6 @@
 package com.company.project.api.controller.menu;
 
+import com.company.project.core.response.ApiResponse;
 import com.company.project.domain.menu.Menu;
 import com.company.project.service.menu.MenuService;
 import com.company.project.service.menu.dto.MenuDto;
@@ -16,37 +17,37 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/menu")
+@RequestMapping("/api/v1/menus")
 @RequiredArgsConstructor
-@Tag(name = "Menu", description = "메뉴 ?보 관??API")
-public class MenuController {
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MenuController.class);
+@Tag(name = "Menu", description = "메뉴 정보 조회 API")
+public class MenuUserApiController {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MenuUserApiController.class);
     private final MenuService menuService;
 
-    @Operation(summary = "GNB ?메뉴 목록 조회")
+    @Operation(summary = "GNB 메인 메뉴 목록 조회")
     @GetMapping("/head")
-    public ResponseEntity<com.company.project.core.response.ApiResponse<Map<String, Object>>> getHeadMenu() {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getHeadMenu() {
         log.info("getHeadMenu called");
         List<MenuDto> resultList = menuService.getMenuHierarchy();
         log.info("getHeadMenu returned {} items", resultList.size());
         Map<String, Object> data = new HashMap<>();
         data.put("list", resultList);
-        return ResponseEntity.ok(com.company.project.core.response.ApiResponse.success(data));
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    @Operation(summary = "?정 메뉴???위 메뉴 목록 조회")
+    @Operation(summary = "특정 메뉴의 하위 메뉴 목록 조회")
     @GetMapping("/left")
-    public ResponseEntity<com.company.project.core.response.ApiResponse<Map<String, Object>>> getLeftMenu(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getLeftMenu(
             @RequestParam("menuNo") Long menuNo) {
         log.info("getLeftMenu called with menuNo={}", menuNo);
         List<MenuDto> resultList = menuService.getSubMenus(menuNo);
         log.info("getLeftMenu returned {} items", resultList.size());
         Map<String, Object> data = new HashMap<>();
         data.put("list", resultList);
-        return ResponseEntity.ok(com.company.project.core.response.ApiResponse.success(data));
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    @Operation(summary = "메뉴 목록 ?스??- Menu ?티??직접 반환")
+    @Operation(summary = "메뉴 목록 테스트 - Menu 엔티티 직접 반환")
     @GetMapping("/test/raw")
     public ResponseEntity<Map<String, Object>> getRawMenus() {
         log.info("getRawMenus called");
@@ -69,7 +70,7 @@ public class MenuController {
         }
     }
 
-    @Operation(summary = "메뉴 목록 ?스??- Program 조회")
+    @Operation(summary = "메뉴 목록 테스트 - Program 조회")
     @GetMapping("/test/programs")
     public ResponseEntity<Map<String, Object>> getPrograms() {
         log.info("getPrograms called");

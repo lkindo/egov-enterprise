@@ -19,9 +19,9 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(MenuController.class)
-@DisplayName("MenuController 테스트")
-class MenuControllerTest {
+@WebMvcTest(MenuUserApiController.class)
+@DisplayName("MenuUserApiController 테스트")
+class MenuUserApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,7 +36,7 @@ class MenuControllerTest {
         MenuDto dto = MenuDto.builder().menuNo(1L).menuNm("Home").build();
         given(menuService.getMenuHierarchy()).willReturn(List.of(dto));
 
-        mockMvc.perform(get("/api/v1/menu/head")
+        mockMvc.perform(get("/api/v1/menus/head")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -50,7 +50,7 @@ class MenuControllerTest {
         MenuDto dto = MenuDto.builder().menuNo(2L).menuNm("Sub").build();
         given(menuService.getSubMenus(1L)).willReturn(List.of(dto));
 
-        mockMvc.perform(get("/api/v1/menu/left")
+        mockMvc.perform(get("/api/v1/menus/left")
                         .param("menuNo", "1")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -65,7 +65,7 @@ class MenuControllerTest {
         Menu menu = Menu.builder().id(1L).menuNm("Raw").build();
         given(menuService.getAllMenusCached()).willReturn(List.of(menu));
 
-        mockMvc.perform(get("/api/v1/menu/test/raw")
+        mockMvc.perform(get("/api/v1/menus/test/raw")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -78,7 +78,7 @@ class MenuControllerTest {
     void getPrograms_Success() throws Exception {
         given(menuService.getAllPrograms()).willReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/api/v1/menu/test/programs")
+        mockMvc.perform(get("/api/v1/menus/test/programs")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -91,7 +91,7 @@ class MenuControllerTest {
     void getRawMenus_Fail() throws Exception {
         given(menuService.getAllMenusCached()).willThrow(new RuntimeException("DB Error"));
 
-        mockMvc.perform(get("/api/v1/menu/test/raw"))
+        mockMvc.perform(get("/api/v1/menus/test/raw"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("DB Error"));
