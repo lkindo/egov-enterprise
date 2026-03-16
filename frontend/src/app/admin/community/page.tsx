@@ -17,7 +17,7 @@ export default function CommunityAdminPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const res = await communityAdminService.getCommunities({ page: 0, size: 20 }) as any;
+        const res = await communityAdminService.getCommunityList({ page: 0, size: 20 }) as any;
         setData(res?.data?.content || res?.content || []);
       } catch (error) {
         toast('동호회 목록을 불러오지 못했습니다.', 'error');

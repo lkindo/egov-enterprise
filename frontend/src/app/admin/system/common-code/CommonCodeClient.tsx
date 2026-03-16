@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { DataTable, Column } from '@/components/common/DataTable';
 import { exportToCsv } from '@/lib/utils/exportUtils';
-import { CommonCodeDetail } from '@/services/admin/system/CodeAdminService';
+import { CmmnDetailCode as CommonCodeDetail } from '@/types/system';
 import { useToast } from '@/app/components/ui/toast';
 import {
   Layers,
@@ -22,7 +22,8 @@ import {
   ArrowRightCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { StandardModal } from '@/app/components/ui/standard-modal';
+import dynamic from 'next/dynamic';
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { saveCodeDetail, deleteCodeDetail } from '@/app/actions/codeActions';

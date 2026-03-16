@@ -14,7 +14,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Trash2, Plus, ShieldCheck, ShieldAlert, Key, Loader2, FileText, Calendar } from "lucide-react";
-import { authorAdminService } from '@/services/admin/system';
+import { authorAdminService } from '@/services/admin/system/AuthorAdminService';
 import { AuthorManage } from '@/types/security';
 import { SearchParams } from '@/types/system';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
@@ -40,9 +40,10 @@ export default function AuthorityManagePage() {
     const { data, isLoading } = useQuery({
         queryKey: ['admin-authorities', params],
         queryFn: () => authorAdminService.getAuthorList(params),
+        staleTime: 5 * 60 * 1000,
     });
 
-    const authorities: AuthorManage[] = data?.list || [];
+    const authorities: AuthorManage[] = (data?.list as AuthorManage[]) || [];
     const totalCount = data?.total || 0;
 
     const saveMutation = useMutation({

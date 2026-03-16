@@ -2,7 +2,6 @@ package com.company.project.domain.user.repository;
 
 import com.company.project.domain.user.entity.User;
 import com.company.project.domain.user.entity.Role;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

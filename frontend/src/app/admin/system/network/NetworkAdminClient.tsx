@@ -28,7 +28,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { StandardModal } from '@/app/components/ui/standard-modal';
+import dynamic from 'next/dynamic';
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
 export default function NetworkAdminClient({ initialNetworks }: { initialNetworks: Network[] }) {
   const { toast } = useToast();

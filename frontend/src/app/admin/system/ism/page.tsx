@@ -14,7 +14,7 @@ export default async function InformalSanctionPage() {
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  let rawData = { content: [] as InfrmlSanctn[], totalElements: 0, totalPages: 0 };
+  let rawData: any = { content: [] as InfrmlSanctn[], totalElements: 0, totalPages: 0 };
 
   try {
     rawData = await ismAdminService.getInfrmlSanctnList({ page: 0, size: 50 }, axiosConfig);
@@ -23,9 +23,9 @@ export default async function InformalSanctionPage() {
   }
 
   // [Server Serialization Optimization]
-  const optimizedContent = selectFieldsList(rawData.content, [
+  const optimizedContent = selectFieldsList(rawData.content as InfrmlSanctn[], [
     'infrmlSanctnId', 'jobSe', 'jobSeCode', 'applcntId', 'confmAt', 'sancltNm'
-  ]);
+  ] as (keyof InfrmlSanctn)[]);
 
   return (
     <Suspense fallback={<IsmLoading />}>

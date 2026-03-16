@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, ZoomIn, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 interface ImageLightboxProps {
   src: string;
@@ -25,14 +26,15 @@ export function ImageLightbox({ src, alt, isOpen, onClose }: ImageLightboxProps)
         </button>
       </div>
 
-      <div className="relative max-w-[90vw] max-h-[90vh]">
-        <img
+      <div className="relative max-w-[90vw] max-h-[90vh] w-full h-[85vh]">
+        <Image
           src={src}
           alt={alt || "확대 이미지"}
+          fill
           className="object-contain max-w-full max-h-[85vh] rounded-lg shadow-2xl animate-in zoom-in-95 duration-300"
         />
         {alt && (
-          <div className="mt-4 text-white text-center font-medium opacity-80">
+          <div className="absolute bottom-[-2rem] left-0 right-0 text-white text-center font-medium opacity-80">
             {alt}
           </div>
         )}

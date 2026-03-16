@@ -27,7 +27,8 @@ import {
   Settings,
   ChevronRight
 } from 'lucide-react';
-import { StandardModal } from '@/app/components/ui/standard-modal';
+import dynamic from 'next/dynamic';
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

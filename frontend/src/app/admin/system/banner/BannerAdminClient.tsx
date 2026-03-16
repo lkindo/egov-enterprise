@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { UltimateDataGrid, ColumnDef } from '@/app/components/ui/ultimate-data-grid';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { StandardModal } from '@/app/components/ui/standard-modal';
+import dynamic from 'next/dynamic';
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
 import { FormField } from '@/app/components/ui/standard-form';
 import { StatusBadge } from '@/app/components/ui/status-badge';
@@ -142,10 +144,12 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
         <div className="w-40 h-16 bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-xl relative group/img">
           <ImageIcon size={20} className="absolute inset-0 m-auto text-white/10" />
           {item.bannerImageFile && (
-            <img
+            <Image
               src={`/api/v1/files/download?fileId=${item.bannerImageFile}`}
-              className="absolute inset-0 w-full h-full object-cover z-10 group-hover/img:scale-110 transition-transform duration-500"
+              className="object-cover z-10 group-hover/img:scale-110 transition-transform duration-500"
               alt="banner"
+              fill
+              sizes="(max-width: 160px) 100vw, 160px"
             />
           )}
           <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover/img:opacity-100 transition-opacity z-20 flex items-center justify-center">

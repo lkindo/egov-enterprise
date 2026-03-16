@@ -53,7 +53,7 @@ export function PageHeader({ title, breadcrumbs, actions }: PageHeaderProps) {
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           {title || autoBreadcrumbs[autoBreadcrumbs.length - 1]?.label}
         </h1>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
       </div>
 
       <div className="h-1 w-12 bg-primary rounded-full" />

@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
-import { loginPolicyAdminService, LoginPolicy } from '@/services/admin/user/LoginPolicyAdminService';
+import { loginPolicyAdminService, LoginPolicy } from '@/services/admin/system/LoginPolicyAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { ShieldCheck, Smartphone, MonitorOff, CheckCircle2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,7 +19,7 @@ export default function LoginPolicyPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: [...LOGIN_POLICIES_KEY, searchWrd],
-    queryFn: () => loginPolicyAdminService.getPolicies({ page: 0, size: 50, searchWrd }),
+    queryFn: () => loginPolicyAdminService.getLoginPolicyList({ page: 0, size: 50, searchWrd }),
     staleTime: 60 * 1000,
   });
 
@@ -29,7 +29,7 @@ export default function LoginPolicyPage() {
     mutationFn: ({ policy, field }: { policy: LoginPolicy, field: 'dplctPermAt' | 'lmttAt' }) => {
       const newValue = policy[field] === 'Y' ? 'N' : 'Y';
       const updatedData = { ...policy, [field]: newValue };
-      return loginPolicyAdminService.updatePolicy(policy.emplyrId, updatedData);
+      return loginPolicyAdminService.saveLoginPolicy(policy.emplyrId, updatedData);
     },
     onSuccess: (_, variables) => {
       toast(`${variables.field === 'dplctPermAt' ? '중복 허용' : '접속 제한'} 설정이 변경되었습니다.`, 'success');

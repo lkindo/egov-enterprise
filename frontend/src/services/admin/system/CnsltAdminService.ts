@@ -1,6 +1,6 @@
 import { AdminService } from '@/services/core/ApiService';
 import { PaginationResponse, SearchParams } from '@/types/system';
-import { Consult } from '@/types/consult';
+import { CnsltVO as Consult } from '@/types/consult';
 
 /**
  * 상담 관리 서비스 (Admin)

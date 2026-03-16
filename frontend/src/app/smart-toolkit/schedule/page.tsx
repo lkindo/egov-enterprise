@@ -27,7 +27,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardModal } from '@/app/components/ui/standard-modal';
+import dynamic from 'next/dynamic';
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { StandardDatePicker } from '@/app/components/ui/standard-date-picker';
 import { FormField } from '@/app/components/ui/standard-form';
 import { useToast } from '@/app/components/ui/toast';

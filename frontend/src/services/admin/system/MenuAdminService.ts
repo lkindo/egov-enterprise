@@ -61,6 +61,11 @@ class MenuAdminService extends AdminService {
         return this.put(`/${menuNo}`, data, config);
     }
 
+    /** 메뉴 순서 일괄 수정 */
+    async updateMenuOrder(data: any[], config?: AxiosRequestConfig): Promise<void> {
+        return this.put('/order', data, config);
+    }
+
     /** 메뉴 삭제 */
     async deleteMenu(menuNo: number, config?: AxiosRequestConfig): Promise<void> {
         return this.delete(`/${menuNo}`, config);

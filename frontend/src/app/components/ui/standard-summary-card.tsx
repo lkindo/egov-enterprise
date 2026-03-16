@@ -58,7 +58,7 @@ export function StandardSummaryCard({
       <div>
         <h4 className="text-2xl font-black text-foreground">
           {typeof value === 'number' ? value.toLocaleString() : (value || '0')}
-          {unit && <span className="text-sm font-normal text-muted-foreground ml-1">{unit}</span>}
+          {unit ? <span className="text-sm font-normal text-muted-foreground ml-1">{unit}</span> : null}
         </h4>
         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">
           {title}

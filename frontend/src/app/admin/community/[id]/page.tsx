@@ -70,7 +70,7 @@ function CommunityDetailContent() {
       accessor: (item: BoardPost) => (
         <div className="flex flex-col gap-0.5">
           <span className="font-bold text-foreground hover:text-primary transition-colors">{item.nttSj}</span>
-          {item.nttCn && <span className="text-[11px] text-muted-foreground line-clamp-1">{item.nttCn.substring(0, 50)}</span>}
+          {item.nttCn ? <span className="text-[11px] text-muted-foreground line-clamp-1">{item.nttCn.substring(0, 50)}</span> : null}
         </div>
       ),
       className: 'min-w-[300px]'

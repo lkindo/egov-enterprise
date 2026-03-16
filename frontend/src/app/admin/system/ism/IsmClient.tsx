@@ -25,7 +25,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { StandardModal } from '@/app/components/ui/standard-modal';
+import dynamic from 'next/dynamic';
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { useRouter } from 'next/navigation';
 
 export default function IsmClient({ initialData }: { initialData: { content: InfrmlSanctn[] } }) {

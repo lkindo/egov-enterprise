@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from '@/lib/api/client';
 import { useLayout } from '@/contexts/LayoutContext';
@@ -61,7 +62,7 @@ const Header = () => {
                 <div className="left_col">
                     <h1 className="logo">
                         <Link href="/">
-                            <img src="/api/v1/images/logo.png" alt="표준프레임워크 포털 eGovFrame 샘플 포털" />
+                            <Image src="/api/v1/images/logo.png" alt="표준프레임워크 포털 eGovFrame 샘플 포털" width={200} height={40} priority />
                         </Link>
                     </h1>
                 </div>

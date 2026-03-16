@@ -74,7 +74,7 @@ export function DataTable<T>({
       {/* Table Header Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1">
         <div>
-          {title && <h2 className="text-xl font-bold tracking-tight">{title}</h2>}
+          {title ? <h2 className="text-xl font-bold tracking-tight">{title}</h2> : null}
         </div>
         <div className="flex items-center gap-2">
           <form onSubmit={handleSearchSubmit} className="relative w-full md:w-64">

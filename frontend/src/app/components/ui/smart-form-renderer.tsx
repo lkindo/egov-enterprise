@@ -57,7 +57,7 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
                             render={({ field: formField }) => (
                                 <FormItem className={cn(field.width === 'full' ? "col-span-2" : "col-span-1")}>
                                     <FormLabel className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
-                                        {field.label} {field.required && <span className="text-destructive">*</span>}
+                                        {field.label} {field.required ? <span className="text-destructive">*</span> : null}
                                     </FormLabel>
                                     <FormControl>
                                         {field.type === 'textarea' ? (

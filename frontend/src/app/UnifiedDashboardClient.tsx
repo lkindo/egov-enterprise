@@ -27,7 +27,7 @@ import { BannerSlider } from '@/app/components/dashboard/BannerSlider';
 import { PopupManager } from '@/app/components/dashboard/PopupManager';
 import { ActivityFeed } from '@/app/components/dashboard/ActivityFeed';
 import { RealTimeDashboard } from '@/components/features/dashboard/RealTimeDashboard';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Link from 'next/link';
 
 const DashboardVisitorChart = dynamic(
@@ -49,9 +49,17 @@ const DashboardPostChart = dynamic(
 import { statsAdminService, StatsDto } from '@/services/admin/system/StatsAdminService';
 import { useQuery } from '@tanstack/react-query';
 
+export interface DashboardTask {
+  id?: string;
+  nttId?: string;
+  nttSj?: string;
+  frstRegisterPnttmStr?: string;
+  isNew?: boolean;
+}
+
 interface UnifiedDashboardClientProps {
-  initialNotiList: any[];
-  initialTaskList: any[];
+  initialNotiList: DashboardTask[];
+  initialTaskList: DashboardTask[];
   pendingApprovalCount: number;
 }
 
@@ -63,19 +71,19 @@ export default function UnifiedDashboardClient({
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  const [notiList] = useState(initialNotiList);
-  const [taskList] = useState(initialTaskList);
-  const [pendingCount] = useState(pendingApprovalCount);
+  const [notiList] = useState<DashboardTask[]>(initialNotiList);
+  const [taskList] = useState<DashboardTask[]>(initialTaskList);
+  const [pendingCount] = useState<number>(pendingApprovalCount);
 
   // 접속 통계 데이터 조회 (최근 7일)
-  const { data: connectStats = [] } = useQuery({
+  const { data: connectStats = [] } = useQuery<StatsDto[]>({
     queryKey: ['dashboard', 'stats', 'connect'],
     queryFn: () => statsAdminService.getConnectStats({ statsKind: 'SERVICE' }),
     enabled: !!user
   });
 
   // 게시물 통계 데이터 조회 (최근 7일)
-  const { data: bbsStats = [] } = useQuery({
+  const { data: bbsStats = [] } = useQuery<StatsDto[]>({
     queryKey: ['dashboard', 'stats', 'bbs'],
     queryFn: () => statsAdminService.getBbsStats({ statsKind: 'COM101' }),
     enabled: !!user
@@ -89,7 +97,7 @@ export default function UnifiedDashboardClient({
   }, [user, loading, router]);
 
   // Framer Motion Variants
-  const containerVariants: any = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -99,7 +107,7 @@ export default function UnifiedDashboardClient({
     }
   };
 
-  const itemVariants: any = {
+  const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
@@ -167,7 +175,7 @@ export default function UnifiedDashboardClient({
           key="summary-tasks"
           title="내 업무 현황"
           value={taskList.length.toString().padStart(2, '0')}
-          description={`${taskList.filter((t: any) => t.isNew).length} new tasks assigned recently`}
+          description={`${taskList.filter((t: DashboardTask) => t.isNew).length} new tasks assigned recently`}
           icon={<Zap size={24} />}
           trend={-5}
           color="orange"
@@ -277,15 +285,24 @@ export default function UnifiedDashboardClient({
   );
 }
 
-function SummaryCard({ title, value, description, icon, trend, color }: any) {
-  const colorMap: any = {
+interface SummaryCardProps {
+  title: string;
+  value: string | number;
+  description: string;
+  icon: React.ReactNode;
+  trend: number;
+  color: 'blue' | 'orange' | 'purple' | 'emerald';
+}
+
+function SummaryCard({ title, value, description, icon, trend, color }: SummaryCardProps) {
+  const colorMap: Record<string, string> = {
     blue: "bg-blue-600/5 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 shadow-xl shadow-blue-500/5",
     orange: "bg-slate-900 text-white border-slate-800 shadow-2xl shadow-slate-900/20",
     purple: "bg-white dark:bg-white/5 text-slate-900 dark:text-white border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none",
     emerald: "bg-emerald-600/5 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 shadow-xl shadow-emerald-500/5"
   };
 
-  const iconBgMap: any = {
+  const iconBgMap: Record<string, string> = {
     blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
     orange: "bg-primary/20 text-primary",
     purple: "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white",
@@ -301,11 +318,11 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
       whileHover={{ y: -8, transition: { duration: 0.2 } }}
       className={cn(
         "p-10 rounded-[3.5rem] border transition-all flex flex-col justify-between h-[320px] relative overflow-hidden group",
-        colorMap[color]
+        colorMap[color] || colorMap['blue']
       )}
     >
       <div className="flex justify-between items-start relative z-10">
-        <div className={cn("p-5 rounded-[1.5rem] transition-transform duration-500 group-hover:rotate-12", iconBgMap[color])}>
+        <div className={cn("p-5 rounded-[1.5rem] transition-transform duration-500 group-hover:rotate-12", iconBgMap[color] || iconBgMap['blue'])}>
           {icon}
         </div>
         {trend !== 0 && (
@@ -330,14 +347,22 @@ function SummaryCard({ title, value, description, icon, trend, color }: any) {
       </div>
 
       <div className="absolute -bottom-6 -left-6 opacity-[0.03] group-hover:opacity-[0.08] group-hover:rotate-12 transition-all duration-700 pointer-events-none">
-        {React.cloneElement(icon, { size: 140 })}
+        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 140 }) : null}
       </div>
     </motion.div>
   );
 }
 
-function DashboardListCard({ title, items, icon, moreHref, color }: any) {
-  const itemColorMap: any = {
+interface DashboardListCardProps {
+  title: string;
+  items: DashboardTask[];
+  icon: React.ReactNode;
+  moreHref?: string;
+  color: 'blue' | 'emerald';
+}
+
+function DashboardListCard({ title, items, icon, moreHref, color }: DashboardListCardProps) {
+  const itemColorMap: Record<string, string> = {
     blue: "group-hover/item:border-blue-500/30 group-hover/item:bg-blue-50/50 dark:group-hover/item:bg-blue-500/5",
     emerald: "group-hover/item:border-emerald-500/30 group-hover/item:bg-emerald-50/50 dark:group-hover/item:bg-emerald-500/5"
   };
@@ -369,13 +394,13 @@ function DashboardListCard({ title, items, icon, moreHref, color }: any) {
       </div>
       <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar">
         {items && items.length > 0 ? (
-          items.slice(0, 6).map((item: any, idx: number) => (
+          items.slice(0, 6).map((item: DashboardTask, idx: number) => (
             <motion.div
               key={`list-item-${title}-${item.id || item.nttId || idx}`}
               whileHover={{ x: 5 }}
               className={cn(
                 "flex flex-col gap-2 p-6 rounded-[2rem] border border-transparent transition-all cursor-pointer group/item",
-                itemColorMap[color]
+                itemColorMap[color] || itemColorMap['blue']
               )}
             >
               <div className="flex items-center justify-between">

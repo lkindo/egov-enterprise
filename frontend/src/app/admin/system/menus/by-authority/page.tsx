@@ -11,7 +11,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ChevronRight, Folder, File, Loader2 } from "lucide-react";
-import { authorAdminService } from '@/services/admin/system';
+import { authorAdminService } from '@/services/admin/system/AuthorAdminService';
 import { MenuByAuthority } from '@/types/security';
 
 /**
@@ -48,6 +48,7 @@ export default function MenuByAuthorityPage() {
     const { data: authorData } = useQuery({
         queryKey: ['admin-authorities-all'],
         queryFn: () => authorAdminService.getAuthorList({ pageIndex: 1, searchCondition: '1', searchKeyword: '' } as any),
+        staleTime: 5 * 60 * 1000,
     });
 
     const authorities = (authorData as any)?.list || [];

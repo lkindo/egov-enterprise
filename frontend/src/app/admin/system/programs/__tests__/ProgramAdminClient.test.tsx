@@ -97,7 +97,7 @@ describe('ProgramAdminClient Component', () => {
             { progrmFileNm: 'PROG_2', progrmNm: 'Program Two', url: '/url/2', progrmStrePath: '/path/2', progrmDc: 'Desc 2' },
         ],
         totalElements: 2
-    };
+    } as any;
 
     beforeEach(() => {
         vi.clearAllMocks();

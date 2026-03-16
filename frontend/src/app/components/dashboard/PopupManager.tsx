@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { popupService } from '@/services/user/PopupService';
 import { Popup } from '@/types/banner';
+import Image from 'next/image';
 
 export function PopupManager() {
   const [activePopups, setActivePopups] = useState<Popup[]>([]);
@@ -81,11 +82,14 @@ export function PopupManager() {
             {/* Content */}
             <div className="relative w-full h-[calc(100%-80px)] overflow-auto">
               {/* 팝업 내용이 HTML이거나 이미지일 수 있음. 여기서는 이미지로 가정하거나 iframe 사용 가능 */}
-              <img
-                src={popup.fileUrl || '/api/placeholder/400/300'}
-                alt={popup.popupTitleNm}
-                className="w-full h-auto object-contain"
-              />
+              <div className="relative w-full min-h-[300px] h-full">
+                <Image
+                  src={popup.fileUrl || '/api/placeholder/400/300'}
+                  alt={popup.popupTitleNm}
+                  fill
+                  className="object-contain"
+                />
+              </div>
             </div>
 
             {/* Footer */}

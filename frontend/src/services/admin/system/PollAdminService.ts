@@ -1,6 +1,6 @@
 import { AdminService } from '@/services/core/ApiService';
 import { PaginationResponse, SearchParams } from '@/types/system';
-import { OnlinePoll } from '@/types/poll';
+import { OnlinePollManageVO as OnlinePoll } from '@/types/poll';
 
 /**
  * 온라인 설문(Poll) 관리 서비스 (Admin)

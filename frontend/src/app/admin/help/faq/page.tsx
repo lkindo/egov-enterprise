@@ -237,7 +237,7 @@ export default function FaqManagePage() {
                             <>
                                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
                                 <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
-                                    {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {(createMutation.isPending || updateMutation.isPending) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                     저장
                                 </Button>
                             </>

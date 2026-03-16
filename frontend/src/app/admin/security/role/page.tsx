@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, Plus, Loader2 } from "lucide-react";
-import { roleAdminService } from '@/services/admin/system';
+import { Loader2, Plus, Trash2 } from "lucide-react";
+import { roleAdminService } from '@/services/admin/system/RoleAdminService';
 import { RoleManage } from '@/types/security';
 import { SearchParams } from '@/types/system';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
@@ -47,6 +47,7 @@ export default function RoleManagePage() {
     const { data, isLoading } = useQuery({
         queryKey: ['admin-roles', params],
         queryFn: () => roleAdminService.getRoleList(params),
+        staleTime: 5 * 60 * 1000,
     });
 
     const roles: RoleManage[] = data?.list || [];
@@ -236,7 +237,7 @@ export default function RoleManagePage() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
                         <Button onClick={handleSubmit} disabled={createMutation.isPending}>
-                            {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {createMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             저장
                         </Button>
                     </DialogFooter>

@@ -70,10 +70,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             )}
           >
             <div className="flex items-center gap-3">
-              {t.type === 'success' && <CheckCircle size={18} />}
-              {t.type === 'error' && <AlertCircle size={18} />}
-              {t.type === 'info' && <Info size={18} />}
-              {t.type === 'loading' && <Loader2 size={18} className="animate-spin" />}
+              {t.type === 'success' ? <CheckCircle size={18} /> : null}
+              {t.type === 'error' ? <AlertCircle size={18} /> : null}
+              {t.type === 'info' ? <Info size={18} /> : null}
+              {t.type === 'loading' ? <Loader2 size={18} className="animate-spin" /> : null}
               <span className="text-sm font-medium">{t.message}</span>
             </div>
             <button onClick={() => removeToast(t.id)} className="opacity-50 hover:opacity-100">

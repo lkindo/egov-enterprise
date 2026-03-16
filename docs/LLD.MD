@@ -151,6 +151,15 @@ frontend/
         └── uiStore.ts                # UI 상태
 ```
 
+### 1.3. 인프라 및 DevOps (Infra & DevOps)
+
+| 구성 요소 | 기술 | 역할 |
+| :--- | :--- | :--- |
+| **CI/CD** | GitHub Actions | 자동 빌드, 테스트, E2E 검증, Artifact 관리 |
+| **Container** | Docker, Docker Compose | 개발/운영 환경 격리 및 컨테이너화 된 배포 |
+| **Monitoring** | Micrometer, Prometheus | 서버 상태 및 비즈니스 메트릭 수집 |
+| **Logging** | Logback | 파일 및 콘솔 로깅, 일별 롤링 정책 |
+
 ## 2. 도메인 상세 설계 (Domain Details)
 
 ### 2.1. 주요 모듈 및 엔티티 매핑

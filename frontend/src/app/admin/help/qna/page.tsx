@@ -229,7 +229,7 @@ export default function ConsultManagePage() {
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>닫기</Button>
                         {!isViewMode && (
                             <Button onClick={handleAnswerSubmit} disabled={answerMutation.isPending}>
-                                {answerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {answerMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 답변 완료
                             </Button>
                         )}

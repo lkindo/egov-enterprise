@@ -230,7 +230,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`loading-row-${i}`} className="animate-pulse">
-                    {enableSelection && <td className="px-4 py-4 text-center"><div className="w-5 h-5 bg-muted rounded-lg m-auto" /></td>}
+                    {enableSelection ? <td className="px-4 py-4 text-center"><div className="w-5 h-5 bg-muted rounded-lg m-auto" /></td> : null}
                     {columns.map((_, j) => (
                       <td key={`loading-cell-${j}`} className="px-4 py-4">
                         <div className="h-4 bg-muted/60 rounded-full w-3/4" />

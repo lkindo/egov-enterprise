@@ -1,6 +1,6 @@
 import { AdminService } from '@/services/core/ApiService';
 import { PaginationResponse, SearchParams } from '@/types/system';
-import { SurveyInfo, SurveyTemplate } from '@/types/survey';
+import { Survey as SurveyInfo, Survey as SurveyTemplate } from '@/types/survey';
 
 /**
  * 설문 관리 서비스 (Admin)

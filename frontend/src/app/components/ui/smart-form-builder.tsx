@@ -172,7 +172,7 @@ export function SmartFormBuilder() {
                         "bg-background shadow-2xl transition-all duration-700 overflow-hidden relative",
                         previewMode === 'desktop' ? "w-full max-w-3xl rounded-[3rem] p-12" : "w-[375px] rounded-[3.5rem] border-[8px] border-slate-900 p-8 pt-16 min-h-[667px]"
                     )}>
-                        {previewMode === 'mobile' && <div className="absolute top-6 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-900 rounded-full" />}
+                        {previewMode === 'mobile' ? <div className="absolute top-6 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-900 rounded-full" /> : null}
 
                         <div className="space-y-2 mb-10 text-center">
                             <h1 className="text-3xl font-black tracking-tight">{schema.title}</h1>
@@ -193,7 +193,7 @@ export function SmartFormBuilder() {
                                 >
                                     <div className="flex items-center justify-between mb-3">
                                         <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">
-                                            {field.label} {field.required && <span className="text-destructive">*</span>}
+                                            {field.label} {field.required ? <span className="text-destructive">*</span> : null}
                                         </label>
                                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <div className="p-1.5 bg-background border rounded-lg text-muted-foreground hover:text-primary"><GripVertical size={12} /></div>

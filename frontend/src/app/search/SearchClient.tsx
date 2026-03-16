@@ -215,7 +215,7 @@ function FilterToggle({ label, active = false }: { label: string, active?: boole
             active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-muted"
         )}>
             {label}
-            {active && <CheckCircle2 size={14} />}
+            {active ? <CheckCircle2 size={14} /> : null}
         </button>
     );
 }

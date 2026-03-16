@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { userAdminService } from '@/services/admin/system';
+import { userAdminService } from '@/services/admin/system/UserAdminService';
 import UserManageClient from './UserManageClient';
 import { Loader2 } from 'lucide-react';
 import { selectFieldsList } from '@/lib/utils/serialization';

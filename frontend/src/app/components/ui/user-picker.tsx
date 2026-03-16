@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { StandardModal } from './standard-modal';
+import dynamic from 'next/dynamic';
+const StandardModal = dynamic(() => import('./standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { VirtualScrollList } from './virtual-scroll-list';
 import { addressbookUserService } from '@/services/user/addressbook/AddressbookUserService';
 import { NameCard } from '@/types/addressbook';

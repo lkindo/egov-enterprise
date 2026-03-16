@@ -24,7 +24,8 @@ import {
   ChevronsUpDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { StandardModal } from '@/app/components/ui/standard-modal';
+import dynamic from 'next/dynamic';
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -323,7 +324,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                   <ChevronRight size={16} className={cn("transition-transform duration-300", isExpanded && "rotate-90")} />
                 </button>
               )}
-              {!hasChildren && level < 2 && <div className="w-6" />} {/* Spacing for alignment if no children but could have some */}
+              {!hasChildren && level < 2 ? <div className="w-6" /> : null} {/* Spacing for alignment if no children but could have some */}
 
               <div className={cn(
                 "w-12 h-12 rounded-[1rem] flex items-center justify-center shadow-lg transition-transform group-hover:rotate-3",

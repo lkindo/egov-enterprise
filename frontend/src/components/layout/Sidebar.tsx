@@ -55,7 +55,7 @@ const Sidebar = () => {
     return (
         <nav className="nav" aria-label="서브 메뉴">
             <div className="inner">
-                {parentMenu && <h2 className="text-xl font-bold mb-6">{parentMenu.menuNm}</h2>}
+                {parentMenu ? <h2 className="text-xl font-bold mb-6">{parentMenu.menuNm}</h2> : null}
 
                 {error && (
                     <div className="text-red-500 text-sm p-2">{error}</div>

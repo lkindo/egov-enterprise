@@ -24,8 +24,8 @@ export function StandardForm({
     <div className={cn("bg-card border rounded-xl shadow-sm overflow-hidden", className)}>
       {(title || description) && (
         <div className="px-6 py-5 border-b bg-muted/20">
-          {title && <h3 className="text-lg font-bold text-foreground">{title}</h3>}
-          {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
+          {title ? <h3 className="text-lg font-bold text-foreground">{title}</h3> : null}
+          {description ? <p className="text-sm text-muted-foreground mt-1">{description}</p> : null}
         </div>
       )}
 
@@ -62,10 +62,10 @@ export function FormField({
     <div className="space-y-2">
       <label className="text-sm font-semibold text-foreground flex items-center gap-1">
         {label}
-        {required && <span className="text-destructive">*</span>}
+        {required ? <span className="text-destructive">*</span> : null}
       </label>
       {children}
-      {error && <p className="text-xs font-medium text-destructive">{error}</p>}
+      {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
     </div>
   );
 }

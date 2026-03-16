@@ -34,6 +34,12 @@ class BannerAdminService extends AdminService {
         return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
     }
 
+    /** 배너 전체 트리용 조회 */
+    async getReflectedBanners(config?: AxiosRequestConfig): Promise<Banner[]> {
+        const response = await this.get<any>('/reflected', config);
+        return response?.result || response;
+    }
+
     /** 배너 상세 조회 */
     async getBanner(id: string, config?: AxiosRequestConfig): Promise<Banner> {
         const response = await this.get<any>(`/${id}`, config);

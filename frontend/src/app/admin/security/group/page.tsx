@@ -22,7 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Trash2, Plus, Loader2 } from "lucide-react";
-import { groupAdminService } from '@/services/admin/system';
+import { groupAdminService } from '@/services/admin/system/GroupAdminService';
 import { GroupManage } from '@/types/security';
 import { SearchParams } from '@/types/system';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
@@ -222,7 +222,7 @@ export default function GroupManagePage() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
                         <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
-                            {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {(createMutation.isPending || updateMutation.isPending) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             저장
                         </Button>
                     </DialogFooter>
