@@ -67,8 +67,10 @@ subprojects {
 
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter'
+        implementation libs.springdoc.openapi
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
+
         testCompileOnly 'org.projectlombok:lombok'
         testAnnotationProcessor 'org.projectlombok:lombok'
         implementation 'com.google.code.findbugs:jsr305:3.0.2'

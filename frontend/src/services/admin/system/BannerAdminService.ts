@@ -31,7 +31,17 @@ class BannerAdminService extends AdminService {
                 keyword: params?.searchKeyword || params?.searchWrd || '',
             },
         });
-        return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
+        const list = response?.list || response?.result || [];
+        const total = response?.total || response?.totalCount || 0;
+        return {
+            list,
+            content: list,
+            total,
+            totalElements: total,
+            page: params?.pageIndex || 1,
+            size: params?.size || 10,
+            totalPage: response?.totalPage || 1
+        };
     }
 
     /** 배너 전체 트리용 조회 */

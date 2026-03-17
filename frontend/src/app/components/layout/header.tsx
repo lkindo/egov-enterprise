@@ -14,11 +14,9 @@ import {
   Menu,
   X,
   LayoutGrid,
-  Briefcase,
-  Library,
-  UserCheck,
-  Cpu,
-  BarChart3,
+  Users,
+  HeartHandshake,
+  ShieldCheck,
   CircleDot
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,12 +32,10 @@ import { menuService } from '@/services/user/MenuService';
 import { usePathname } from 'next/navigation';
 
 const DOMAIN_ICON_MAP: Record<number, any> = {
-  10: LayoutGrid,    // 워크스페이스
-  20: Briefcase,     // 운영 지원
-  30: Library,       // 지식 자산
-  40: UserCheck,     // 계정 및 권한
-  50: Cpu,           // 시스템 관리
-  60: BarChart3,     // 인사이트
+  10: LayoutGrid,     // 워크스페이스
+  11: Users,          // 커뮤니티
+  12: HeartHandshake, // 고객지원센터
+  90: ShieldCheck,    // 통합 관리 센터
 };
 
 export function Header({ initialMenus = [] }: { initialMenus?: any[] }) {
@@ -66,27 +62,33 @@ export function Header({ initialMenus = [] }: { initialMenus?: any[] }) {
   useEffect(() => {
     if (menus.length === 0) return;
 
-    const findActive = async () => {
-      try {
-        const currentPath = pathname;
-        for (const m of menus) {
-          const children = await menuService.getLeftMenus(m.menuNo);
-          const hasMatch = children.some((c: any) => {
-            if (c.modernRoute && currentPath.startsWith(c.modernRoute)) return true;
-            if (c.children?.some((cc: any) => cc.modernRoute && currentPath.startsWith(cc.modernRoute))) return true;
-            return false;
-          });
-          if (hasMatch) {
-            setActiveMenuNo(m.menuNo);
-            break;
-          }
+    const currentPath = pathname;
+    
+    // Find top menu containing the current path
+    const matchTopMenu = () => {
+      for (const m of menus) {
+        // Check children (LNB)
+        const hasMatch = (m.children || []).some((c: any) => {
+          if (c.modernRoute && currentPath.startsWith(c.modernRoute)) return true;
+          if (c.children?.some((cc: any) => cc.modernRoute && currentPath.startsWith(cc.modernRoute))) return true;
+          return false;
+        });
+        
+        if (hasMatch) {
+          return m.menuNo;
         }
-      } catch (e) {
-        console.error('Header: findActive error', e);
+
+        // Also check top menu itself
+        if (m.modernRoute && currentPath.startsWith(m.modernRoute)) return m.menuNo;
       }
+      return null;
     };
-    if (activeMenuNo === 0) findActive();
-  }, [pathname, menus, setActiveMenuNo]);
+
+    const matchedNo = matchTopMenu();
+    if (matchedNo && matchedNo !== activeMenuNo) {
+      setActiveMenuNo(matchedNo);
+    }
+  }, [pathname, menus, activeMenuNo, setActiveMenuNo]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">

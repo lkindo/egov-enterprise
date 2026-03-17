@@ -21,7 +21,6 @@ test.describe('Admin Common Code - Ultimate CRUD', () => {
         if (await taxonomyBtn.isVisible()) {
             await taxonomyBtn.click();
             await page.waitForLoadState('networkidle');
-            await page.waitForTimeout(3000);
         }
 
         // 5. Verify basic page structure first
