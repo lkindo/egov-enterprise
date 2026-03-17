@@ -4,10 +4,10 @@ import com.company.project.domain.note.*;
 import com.company.project.service.note.dto.NoteDto;
 import com.company.project.service.note.dto.NoteRecipientDto;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -43,8 +44,19 @@ class NoteServiceImplTest {
     @Mock
     private EgovIdGnrService egovNoteRecptnIdGnrService;
 
-    @InjectMocks
     private NoteServiceImpl noteService;
+
+    @BeforeEach
+    void setUp() {
+        noteService = new NoteServiceImpl(
+                noteRepository,
+                noteTrnsmitRepository,
+                noteRecptnRepository,
+                egovNoteManageIdGnrService,
+                egovNoteTrnsmitIdGnrService,
+                egovNoteRecptnIdGnrService
+        );
+    }
 
     @Test
     @DisplayName("수신 쪽지 목록 조회")
@@ -61,6 +73,20 @@ class NoteServiceImplTest {
     }
 
     @Test
+    @DisplayName("수신 쪽지 목록 조회 - 검색어 포함")
+    void getReceivedNotes_WithSearchWrd_Success() {
+        Note note = Note.builder().noteId("N1").noteSj("Search Result").build();
+        NoteRecptn recptn = NoteRecptn.builder().noteRecptnId("R1").note(note).rcverId("user1").build();
+        Page<NoteRecptn> page = new PageImpl<>(List.of(recptn));
+        
+        given(noteRecptnRepository.searchReceivedNotes(eq("user1"), eq("Search"), any(Pageable.class))).willReturn(page);
+
+        Page<NoteDto> result = noteService.getReceivedNotes("user1", "Search", Pageable.unpaged());
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getNoteSj()).isEqualTo("Search Result");
+    }
+
+    @Test
     @DisplayName("발신 쪽지 목록 조회")
     void getSentNotes_Success() {
         Note note = Note.builder().noteId("N1").noteSj("Title").build();
@@ -71,6 +97,20 @@ class NoteServiceImplTest {
 
         Page<NoteDto> result = noteService.getSentNotes("user1", "", Pageable.unpaged());
         assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("발신 쪽지 목록 조회 - 검색어 포함")
+    void getSentNotes_WithSearchWrd_Success() {
+        Note note = Note.builder().noteId("N1").noteSj("Sent Search").build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteTrnsmitId("T1").note(note).trnsmiterId("user1").build();
+        Page<NoteTrnsmit> page = new PageImpl<>(List.of(trnsmit));
+
+        given(noteTrnsmitRepository.searchSentNotes(eq("user1"), eq("Sent"), any(Pageable.class))).willReturn(page);
+
+        Page<NoteDto> result = noteService.getSentNotes("user1", "Sent", Pageable.unpaged());
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getNoteSj()).isEqualTo("Sent Search");
     }
 
     @Test
@@ -101,6 +141,18 @@ class NoteServiceImplTest {
     }
 
     @Test
+    @DisplayName("쪽지 상세 조회 - 연관 정보(Recptn) 없음")
+    void getNoteDetail_RelationNotFound_Success() {
+        Note note = Note.builder().noteId("N1").noteSj("Sj").build();
+        given(noteRepository.findById("N1")).willReturn(Optional.of(note));
+        given(noteRecptnRepository.findById("R1")).willReturn(Optional.empty());
+
+        NoteDto result = noteService.getNoteDetail("N1", "recv", "R1");
+        assertThat(result.getNoteId()).isEqualTo("N1");
+        assertThat(result.getRcverId()).isNull();
+    }
+
+    @Test
     @DisplayName("쪽지 발송 성공")
     void sendNote_Success() throws Exception {
         given(egovNoteManageIdGnrService.getNextStringId()).willReturn("N_NEW");
@@ -118,6 +170,40 @@ class NoteServiceImplTest {
         verify(noteRepository).save(any(Note.class));
         verify(noteTrnsmitRepository).save(any(NoteTrnsmit.class));
         verify(noteRecptnRepository).save(any(NoteRecptn.class));
+    }
+
+    @Test
+    @DisplayName("쪽지 발송 성공 - 다중 수신인")
+    void sendNote_MultipleRecipients_Success() throws Exception {
+        given(egovNoteManageIdGnrService.getNextStringId()).willReturn("N_NEW");
+        given(egovNoteTrnsmitIdGnrService.getNextStringId()).willReturn("T_NEW");
+        given(egovNoteRecptnIdGnrService.getNextStringId()).willReturn("R_NEW");
+
+        NoteDto dto = NoteDto.builder()
+                .noteSj("Title")
+                .recipients(List.of(
+                        NoteRecipientDto.builder().rcverId("rcv1").build(),
+                        NoteRecipientDto.builder().rcverId("rcv2").build()
+                ))
+                .build();
+
+        noteService.sendNote("user1", dto);
+        
+        verify(noteRepository, times(1)).save(any(Note.class));
+        verify(noteTrnsmitRepository, times(1)).save(any(NoteTrnsmit.class));
+        verify(noteRecptnRepository, times(2)).save(any(NoteRecptn.class));
+    }
+
+    @Test
+    @DisplayName("쪽지 발송 실패 - 예외 발생")
+    void sendNote_Failure_ThrowsException() throws Exception {
+        given(egovNoteManageIdGnrService.getNextStringId()).willThrow(new RuntimeException("ID Gen Failed"));
+
+        NoteDto dto = NoteDto.builder().noteSj("Title").build();
+
+        assertThatThrownBy(() -> noteService.sendNote("user1", dto))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Failed to send note");
     }
 
     @Test

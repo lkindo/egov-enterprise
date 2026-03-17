@@ -84,16 +84,29 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
   const [isOpen, setIsOpen] = useState(false);
   const Icon = ICON_MAP[item.menuNm] || ICON_MAP['기본'];
 
+  // URL normalization and mapping
   const href = useMemo(() => {
-    return item.modernRoute || item.chkURL || '#';
+    const rawUrl = item.modernRoute || item.chkURL;
+    if (!rawUrl || rawUrl === '#') return '#';
+    
+    // Ensure leading slash for internal links
+    let formatted = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
+    
+    // Legacy mapping (expand as needed)
+    if (formatted.includes('selectBoardList.do')) return '/admin/community/boards';
+    if (formatted.includes('AdminStats.do')) return '/admin/stats';
+    if (formatted.includes('selectAddressBookList.do')) return '/admin/collaboration/address-book/selectAddressBookList';
+    if (formatted.includes('selectAdministrationWordList.do')) return '/admin/system/codes/administration';
+    
+    return formatted;
   }, [item.modernRoute, item.chkURL]);
 
   const isActive = useMemo(() => {
-    if (pathname === href) return true;
+    if (href !== '#' && pathname.startsWith(href)) return true;
     if (hasChildren && item.children) {
       return item.children.some(child => {
-        const childHref = child.modernRoute || child.chkURL || '#';
-        return pathname === childHref;
+        const childHref = child.modernRoute || child.chkURL;
+        return childHref && pathname.startsWith(childHref.startsWith('/') ? childHref : `/${childHref}`);
       });
     }
     return false;
@@ -105,7 +118,19 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
     }
   }, [isActive, hasChildren]);
 
-  const content = (
+  const handleLinkClick = (e: React.MouseEvent) => {
+    setSidebarOpen(false);
+    if (href === '#') {
+      if (hasChildren) {
+        e.preventDefault();
+        setIsOpen(!isOpen);
+      }
+    } else if (href.endsWith('.do')) {
+      console.warn(`[Sidebar] Legacy URL detected: ${href}`);
+    }
+  };
+
+  const navContent = (
     <div className={cn(
       "flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-bold tracking-tight rounded-lg transition-all duration-200 w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
       isActive
@@ -130,6 +155,13 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
           className="opacity-50"
+          onClick={(e) => {
+            if (href !== '#') {
+               e.preventDefault();
+               e.stopPropagation();
+               setIsOpen(!isOpen);
+            }
+          }}
         >
           <ChevronDown size={14} />
         </motion.div>
@@ -139,29 +171,13 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
 
   return (
     <div className="w-full">
-      {hasChildren ? (
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full text-left focus-visible:outline-none"
-          aria-expanded={isOpen}
-          aria-label={`${item.menuNm} 메뉴 ${isOpen ? '닫기' : '열기'}`}
-        >
-          {content}
-        </button>
-      ) : (
-        <Link
-          href={href}
-          className="block w-full focus-visible:outline-none"
-          onClick={() => {
-            setSidebarOpen(false);
-            if (href.endsWith('.do')) {
-              console.warn(`Navigation Warning: Legacy URL detected: ${href}`);
-            }
-          }}
-        >
-          {content}
-        </Link>
-      )}
+      <Link
+        href={href}
+        className="block w-full focus-visible:outline-none"
+        onClick={handleLinkClick}
+      >
+        {navContent}
+      </Link>
 
       <AnimatePresence initial={false}>
         {hasChildren && isOpen && (
@@ -276,13 +292,14 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: any[] }) {
     async function loadMenus() {
       if (!activeMenuNo) return;
 
-      // Try to find in initialMenus tree first
+      // Try to find in topMenus tree first (pre-fetched in RootLayout)
       const activeTop = topMenus.find(m => m.menuNo === activeMenuNo);
       if (activeTop?.children && activeTop.children.length > 0) {
         setMenus(activeTop.children);
         return;
       }
 
+      // Fallback if children not present
       try {
         setLoading(true);
         const leftList = await menuService.getLeftMenus(activeMenuNo);

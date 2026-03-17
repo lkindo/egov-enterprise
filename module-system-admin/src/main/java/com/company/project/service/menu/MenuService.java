@@ -78,10 +78,9 @@ public class MenuService {
             // 신규 메뉴 체계(menu_no <= 9999)만 GNB/LNB에 포함
             List<Menu> menus = allMenus.stream()
                     .filter(m -> {
-                        boolean isNewMenuScheme = m.getId() != null && m.getId() <= 9999;        
                         boolean isAuthorized = authorizedMenuNos.contains(m.getId());
                         boolean isAdmin = roles.contains("ROLE_ADMIN");
-                        return isNewMenuScheme && (isAuthorized || isAdmin);
+                        return isAuthorized || isAdmin;
                     })
                     .collect(Collectors.toList());
 
@@ -128,7 +127,7 @@ public class MenuService {
 
                 Long upperMenuNo = dto.getUpperMenuNo();
                 if (upperMenuNo == null || upperMenuNo == 0) {
-                    if (dto.getId() != null && dto.getId() != 0) {
+                    if (dto.getId() != null && dto.getId() != 0 && dto.getId() <= 9999) {
                         rootMenus.add(dto);
                     }
                 } else {

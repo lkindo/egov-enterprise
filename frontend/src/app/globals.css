@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;500;700;900&display=swap');
+@import "tailwindcss";
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
@@ -149,7 +149,17 @@
   .glass-dark {
     @apply bg-slate-950/80 backdrop-blur-md border border-white/5 shadow-2xl;
   }
+  .responsive-card {
+    @apply bg-card border border-border/70 rounded-[1.5rem] md:rounded-[2.5rem] lg:rounded-[4rem] shadow-sm transition-all;
+  }
+  .hide-on-mobile {
+    @apply hidden md:block;
+  }
+  .show-only-mobile {
+    @apply block md:hidden;
+  }
 }
+
 
 /* API Progress Bar */
 .api-progress {
@@ -164,3 +174,26 @@
   50% { transform: translateX(50%); width: 50%; }
   100% { transform: translateX(100%); width: 30%; }
 }
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@keyframes soft-float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@layer utilities {
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  .animate-soft-float {
+    animation: soft-float 4s ease-in-out infinite;
+  }
+}
+

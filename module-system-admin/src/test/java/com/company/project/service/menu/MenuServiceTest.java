@@ -453,4 +453,78 @@ class MenuServiceTest {
         menuService.deleteMenuManageList("");
         verify(menuRepository, never()).deleteAllById(any());
     }
+
+    @Test
+    @DisplayName("메뉴 계층 구조 조회 - 메뉴 번호 9999 이하 필터링 테스트")
+    void getMenuHierarchy_MenuSchemeLimit_Success() {
+        // Given
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn("admin");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+
+        Menu validMenu = Menu.builder().id(9999L).menuNm("Valid").upperMenuNo(0L).menuOrdr(1).build();
+        Menu invalidMenu = Menu.builder().id(10000L).menuNm("Invalid").upperMenuNo(0L).menuOrdr(2).build();
+
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(validMenu, invalidMenu));
+        when(menuAuthorityRepository.findAll()).thenReturn(Collections.emptyList());
+        when(programRepository.findAll()).thenReturn(Collections.emptyList());
+
+        // When
+        List<MenuDto> result = menuService.getMenuHierarchy();
+
+        // Then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getId()).isEqualTo(9999L);
+        assertThat(result.get(1).getId()).isEqualTo(10000L);
+    }
+
+    @Test
+    @DisplayName("메뉴 계층 구조 조회 - ROLE_ADMIN은 모든 메뉴를 볼 수 있음")
+    void getMenuHierarchy_Admin_Bypass_AuthorityCheck() {
+        // Given
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn("admin");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+
+        Menu menu = Menu.builder().id(100L).menuNm("Admin Menu").upperMenuNo(0L).menuOrdr(1).build();
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu));
+        
+        // MenuAuthority에 ROLE_ADMIN에 대한 권한이 없는 상황 가정
+        when(menuAuthorityRepository.findAll()).thenReturn(Collections.emptyList());
+        when(programRepository.findAll()).thenReturn(Collections.emptyList());
+
+        // When
+        List<MenuDto> result = menuService.getMenuHierarchy();
+
+        // Then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(100L);
+    }
+
+    @Test
+    @DisplayName("메뉴 계층 구조 조회 - anonymousUser 처리 테스트")
+    void getMenuHierarchy_AnonymousUserPrincipal_Success() {
+        // Given
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn("anonymousUser");
+
+        Menu guestMenu = Menu.builder().id(50L).menuNm("Guest Menu").upperMenuNo(0L).menuOrdr(1).build();
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(guestMenu));
+        
+        MenuAuthority ma = MenuAuthority.builder()
+                .id(MenuAuthority.MenuAuthorityId.builder().authorCode("ROLE_ANONYMOUS").menuNo(50L).build())
+                .build();
+        when(menuAuthorityRepository.findAll()).thenReturn(List.of(ma));
+        when(programRepository.findAll()).thenReturn(Collections.emptyList());
+
+        // When
+        List<MenuDto> result = menuService.getMenuHierarchy();
+
+        // Then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(50L);
+    }
 }

@@ -9,7 +9,6 @@ test.describe('Admin User Management', () => {
 
         // Ensure we explicitly load the homepage to allow React Context (useAuth) to hydrate from cookies
         await page.goto('/', { waitUntil: 'networkidle' });
-        await page.waitForTimeout(1000);
     });
 
     test('should display user list in admin panel', async ({ page }) => {

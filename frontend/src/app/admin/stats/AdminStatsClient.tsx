@@ -84,142 +84,145 @@ export default function AdminStatsClient({
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="max-w-6xl mx-auto space-y-8 md:space-y-12 px-4 md:px-0 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <PageHeader
         title="인텔리전스 시스템 아키텍처 분석"
         breadcrumbs={[{ label: '시스템관리' }, { label: '분석 대시보드' }]}
         actions={
-          <div className="flex items-center gap-4">
-            <select className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-white font-black text-[10px] uppercase tracking-widest italic outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer">
+          <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+            <select className="h-10 md:h-14 px-3 md:px-6 rounded-xl md:rounded-2xl border-2 border-slate-100 bg-white font-black text-[9px] md:text-[10px] uppercase tracking-widest italic outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer">
               <option>PAST 14 DAYS</option>
               <option>LATEST 30 DAYS</option>
               <option>QUARTERLY ANALYSIS</option>
             </select>
             <Button
                 onClick={handleRefresh}
-                className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl active:scale-95"
+                className="h-10 md:h-14 w-10 md:w-14 rounded-xl md:rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md md:shadow-xl active:scale-95"
             >
-                <RefreshCcw size={20} className={cn(loading && "animate-spin")} />
+                <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
             </Button>
-            <DataExportExcel
-              data={initialMenuData}
-              headers={[
-                { label: '메뉴명', key: 'menuNm' },
-                { label: '사용횟수', key: 'count' },
-                { label: '비중(%)', key: 'percentage' }
-              ]}
-              filename="system_intelligence_stats"
-            />
+            <div className="hidden sm:block">
+                <DataExportExcel
+                  data={initialMenuData}
+                  headers={[
+                    { label: '메뉴명', key: 'menuNm' },
+                    { label: '사용횟수', key: 'count' },
+                    { label: '비중(%)', key: 'percentage' }
+                  ]}
+                  filename="system_intelligence_stats"
+                />
+            </div>
           </div>
         }
       />
 
       {/* Luxury Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
         <LuxuryStatCard title="Accumulated Nodes" value={initialSummary?.totalUsers} icon={<Users size={24} />} trend="+2.5%" color="slate" />
         <LuxuryStatCard title="Active Protocols" value={initialSummary?.todayConnects} icon={<Zap size={24} />} trend="+12%" color="primary" />
         <LuxuryStatCard title="Data Persistence" value={initialSummary?.totalPosts} icon={<FileText size={24} />} trend="+0.8%" color="indigo" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-2 bg-white rounded-[4rem] p-10 shadow-2xl border border-slate-100 relative overflow-hidden group">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
+        <div className="lg:col-span-2 responsive-card p-6 md:p-10 relative overflow-hidden group">
             <StandardChartWrapper
                 title="NETWORK TRAFFIC EVOLUTION"
                 type="area"
                 data={initialConnectData}
                 dataKeys={['count']}
                 loading={loading}
-                height={350}
+                height={300}
                 className="relative z-10"
             />
             <div className="absolute right-[-5%] top-[-5%] text-slate-50 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -rotate-12 pointer-events-none">
-                <TrendingUp size={300} />
+                <TrendingUp size={200} />
             </div>
         </div>
 
-        <div className="bg-slate-900 text-white rounded-[4rem] p-10 shadow-2xl relative overflow-hidden group">
+        <div className="bg-slate-900 text-white rounded-[1.5rem] md:rounded-[2.5rem] lg:rounded-[4rem] p-6 md:p-10 shadow-2xl relative overflow-hidden group">
             <StandardChartWrapper
                 title="ENVIRONMENT DISTRIBUTION"
                 type="pie"
                 data={browserData}
                 dataKeys={['count']}
                 loading={loading}
-                height={350}
+                height={300}
                 className="relative z-10"
             />
             <div className="absolute left-[-20%] bottom-[-20%] opacity-5 rotate-12 pointer-events-none">
-                <Globe size={320} />
+                <Globe size={220} />
             </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        <div className="bg-white rounded-[4rem] p-10 shadow-2xl border border-slate-100 h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10">
+        <div className="responsive-card p-6 md:p-10 h-full">
             <StandardChartWrapper
                 title="HIGH-INTERACTION SERVICES"
                 type="bar"
                 data={initialMenuData.slice(0, 5).map(m => ({ name: m.menuNm, count: m.count }))}
                 dataKeys={['count']}
                 loading={loading}
-                height={400}
+                height={350}
             />
         </div>
-        <div className="bg-white rounded-[4rem] p-4 shadow-2xl border border-slate-100 ring-1 ring-slate-50 flex items-center justify-center min-h-[460px]">
+        <div className="responsive-card p-2 md:p-4 ring-1 ring-slate-50 flex items-center justify-center min-h-[360px] md:min-h-[460px]">
             <NationalDistributionMap />
         </div>
       </div>
 
       {/* Deep Analytics Table */}
-      <div className="bg-white rounded-[5rem] p-4 shadow-2xl border border-slate-100 ring-1 ring-slate-50 relative overflow-hidden">
-        <div className="p-12 space-y-10 bg-slate-50/50 rounded-[4.5rem]">
-            <div className="flex items-center justify-between px-6">
-                <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.75rem] flex items-center justify-center shadow-xl">
-                        <Cpu size={28} />
+      <div className="responsive-card p-2 md:p-4 ring-1 ring-slate-50 relative overflow-hidden">
+        <div className="p-6 md:p-12 space-y-6 md:space-y-10 bg-slate-50/50 rounded-[1.5rem] md:rounded-[4.5rem]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2 md:px-6">
+                <div className="flex items-center gap-4 md:gap-6">
+                    <div className="w-12 md:w-16 h-12 md:h-16 bg-slate-900 text-white rounded-xl md:rounded-[1.75rem] flex items-center justify-center shadow-xl">
+                        <Cpu size={24} />
                     </div>
                     <div>
-                        <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter italic">Deep Intelligence Report</h3>
-                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">Sub-system interaction matrix</p>
+                        <h3 className="text-xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter italic">Deep Intelligence Report</h3>
+                        <p className="text-[9px] md:text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">Sub-system interaction matrix</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 px-6 py-2.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+                <div className="flex items-center gap-3 px-4 md:px-6 py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 w-fit">
                     <div className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Real-time Stream</span>
+                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] italic">Real-time Stream</span>
                 </div>
             </div>
 
-            <div className="px-2">
+            <div className="px-1 md:px-2 overflow-x-auto">
                 <StandardDataTable
                     columns={menuColumns}
                     data={initialMenuData.slice(0, 10)}
                     loading={loading}
                     emptyMessage="Analyzing system patterns..."
-                    className="border-none rounded-none bg-transparent"
+                    className="border-none rounded-none bg-transparent min-w-[600px]"
                 />
             </div>
         </div>
       </div>
 
       {/* System Intelligence Summary Footer */}
-      <div className="p-16 rounded-[5rem] bg-slate-900 text-white shadow-2xl relative overflow-hidden group border border-white/5">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-slate-800 rounded-full -translate-y-1/2 translate-x-1/2 blur-[120px]" />
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
-          <div className="space-y-8 flex-1 text-center md:text-left">
-            <h2 className="text-4xl md:text-7xl font-black tracking-tighter leading-tight uppercase italic tabular-nums">
+      <div className="p-8 md:p-16 rounded-[1.5rem] md:rounded-[2.5rem] lg:rounded-[5rem] bg-slate-900 text-white shadow-2xl relative overflow-hidden group border border-white/5">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-slate-800 rounded-full -translate-y-1/2 translate-x-1/2 blur-[100px]" />
+        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8 md:gap-12 text-center lg:text-left">
+          <div className="space-y-6 md:space-y-8 flex-1">
+            <h2 className="text-3xl md:text-7xl font-black tracking-tighter leading-tight uppercase italic tabular-nums">
                 Optimized <br />
                 <span className="text-primary italic">Intelligence</span> Core
             </h2>
-            <p className="text-lg text-slate-400 font-bold max-w-2xl leading-relaxed">
-                시스템 자원의 99.9%가 효율적으로 관리되고 있습니다. 인텔리전스 엔진은 실시간 도메인 이벤트를 추적하여 <span className="text-white">최적의 성능 프로파일</span>을 생성합니다. 분석 리포트의 심층 편차는 AI 보안 프로토콜을 통해 즉시 검증됩니다.
+            <p className="text-sm md:text-lg text-slate-400 font-bold max-w-2xl leading-relaxed">
+                시스템 자원의 99.9%가 효율적으로 관리되고 있습니다. 인텔리전스 엔진은 실시간 도메인 이벤트를 추적하여 최적의 성능 프로파일을 생성합니다.
             </p>
           </div>
-          <button className="h-20 px-14 bg-white text-slate-900 rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] shadow-[0_20px_60px_-15px_rgba(255,255,255,0.3)] hover:bg-primary hover:text-white transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-4 italic group/btn">
+          <button className="h-16 md:h-20 px-8 md:px-14 bg-white text-slate-900 rounded-2xl md:rounded-[2rem] font-black text-xs md:text-sm uppercase tracking-[0.2em] shadow-xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-4 italic group/btn">
             Generate Report
-            <TrendingUp size={22} className="group-hover/btn:translate-x-1 transition-transform" />
+            <TrendingUp size={20} className="group-hover/btn:translate-x-1 transition-transform" />
           </button>
         </div>
       </div>
     </div>
+
   );
 }
 

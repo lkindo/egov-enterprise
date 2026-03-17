@@ -49,14 +49,15 @@ export function PageHeader({ title, breadcrumbs, actions }: PageHeaderProps) {
       </nav>
 
       {/* Title and Actions */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
           {title || autoBreadcrumbs[autoBreadcrumbs.length - 1]?.label}
         </h1>
-        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="flex items-center gap-2 flex-wrap">{actions}</div> : null}
       </div>
 
       <div className="h-1 w-12 bg-primary rounded-full" />
     </div>
+
   );
 }
