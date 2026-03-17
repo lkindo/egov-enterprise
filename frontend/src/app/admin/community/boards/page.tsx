@@ -31,16 +31,14 @@ function BoardListContent() {
     async function loadPosts() {
       try {
         setLoading(true);
-        const res = (await boardUserService.getPosts(values.bbsId, {
+        const res = await boardUserService.getPosts(values.bbsId, {
           page: parseInt(values.page),
           size: 10,
           searchWrd: values.searchWrd,
           searchCnd: values.searchCnd
-        })) as any;
-        if (res?.success) {
-          setData(res.data.content);
-          setTotal(res.data.totalElements);
-        }
+        });
+        setData(res.list || []);
+        setTotal(res.total || 0);
       } catch (error) {
         toast('목록을 불러오는 중 오류가 발생했습니다.', 'error');
       } finally {

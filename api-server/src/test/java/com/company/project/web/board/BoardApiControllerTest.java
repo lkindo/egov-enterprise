@@ -1,6 +1,6 @@
 package com.company.project.web.board;
 
-import com.company.project.api.controller.board.BoardController;
+import com.company.project.api.controller.board.BoardApiController;
 import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.service.board.BoardService;
 import com.company.project.service.board.dto.BoardDto;
@@ -36,7 +36,7 @@ class BoardApiControllerTest {
     @BeforeEach
     void setUp() {
         boardService = mock(BoardService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new BoardController(boardService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new BoardApiController(boardService))
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();

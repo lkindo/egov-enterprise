@@ -21,8 +21,8 @@ export default function SurveyListPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const res = (await surveyAdminService.getSurveys({ page: 0, size: 10 })) as any;
-        if (res?.success) setData(res.data.content);
+        const res = await surveyAdminService.getSurveys({ page: 0, size: 10 });
+        setData(res.list || []);
       } catch (error) {
         toast('설문 목록을 불러오지 못했습니다.', 'error');
       } finally {

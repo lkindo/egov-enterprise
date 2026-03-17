@@ -10,7 +10,8 @@ export const metadata = {
 export default async function RewardManagePage() {
     let initialData: any[] = [];
     try {
-        initialData = await operationAdminService.getRewardList();
+        const res = await operationAdminService.getRewardList();
+        initialData = res.list || [];
     } catch (error) {
         console.error('Failed to fetch initial reward info:', error);
     }

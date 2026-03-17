@@ -1,6 +1,6 @@
 package com.company.project.performance;
 
-import com.company.project.api.controller.UserController;
+import com.company.project.api.controller.UserApiController;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
 import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.service.user.UserService;
@@ -45,7 +45,7 @@ class LoadTest {
     operationalAuditInterceptor = mock(OperationalAuditInterceptor.class);
     when(operationalAuditInterceptor.preHandle(any(), any(), any())).thenReturn(true);
 
-    mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+    mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
         .addInterceptors(operationalAuditInterceptor)
         .setControllerAdvice(new GlobalExceptionHandler())
         .build();

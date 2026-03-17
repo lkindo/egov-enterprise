@@ -1,6 +1,6 @@
 package com.company.project.test.errorhandling;
 
-import com.company.project.api.controller.UserController;
+import com.company.project.api.controller.UserApiController;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.core.exception.GlobalExceptionHandler;
@@ -32,7 +32,7 @@ class ExceptionResponseTest {
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }

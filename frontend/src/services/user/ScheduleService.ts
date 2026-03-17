@@ -1,5 +1,6 @@
 import { ApiService } from '@/services/core/ApiService';
-import { Schedule, ScheduleResponse, MonthlyScheduleResponse } from '@/types/schedule';
+import { PageResponse } from '@/types/system';
+import { Schedule, MonthlyScheduleResponse } from '@/types/schedule';
 
 class ScheduleService extends ApiService {
     constructor() {
@@ -9,18 +10,16 @@ class ScheduleService extends ApiService {
     /**
      * 전체 일정 목록 조회 (페이징)
      */
-    async getScheduleList(params: { pageIndex?: number; pageUnit?: number }) {
-        const response = await this.get<any>('', { params });
-        return response?.result || response;
+    async getScheduleList(params: { pageIndex?: number; pageUnit?: number }): Promise<PageResponse<Schedule>> {
+        return this.get<PageResponse<Schedule>>('', { params });
     }
 
     /**
      * 월별 일정 조회
      * @param yearMonth yyyyMM
      */
-    async getMonthlySchedule(yearMonth: string) {
-        const response = await this.get<any>('/monthly', { params: { yearMonth } });
-        return response?.result || response;
+    async getMonthlySchedule(yearMonth: string): Promise<MonthlyScheduleResponse> {
+        return this.get<MonthlyScheduleResponse>('/monthly', { params: { yearMonth } });
     }
 
     /**
@@ -28,41 +27,36 @@ class ScheduleService extends ApiService {
      * @param startDate yyyyMMdd
      * @param endDate yyyyMMdd
      */
-    async getScheduleByRange(startDate: string, endDate: string) {
-        const response = await this.get<any>('/range', { params: { startDate, endDate } });
-        return response?.result || response;
+    async getScheduleByRange(startDate: string, endDate: string): Promise<Schedule[]> {
+        return this.get<Schedule[]>('/range', { params: { startDate, endDate } });
     }
 
     /**
      * 일정 상세 조회
      */
-    async getSchedule(id: string) {
-        const response = await this.get<any>(`/${id}`);
-        return response?.result || response;
+    async getSchedule(id: string): Promise<Schedule> {
+        return this.get<Schedule>(`/${id}`);
     }
 
     /**
      * 일정 등록
      */
-    async createSchedule(data: Partial<Schedule>) {
-        const response = await this.post<any>('', data);
-        return response?.result || response;
+    async createSchedule(data: Partial<Schedule>): Promise<Schedule> {
+        return this.post<Schedule>('', data);
     }
 
     /**
      * 일정 수정
      */
-    async updateSchedule(id: string, data: Partial<Schedule>) {
-        const response = await this.put<any>(`/${id}`, data);
-        return response?.result || response;
+    async updateSchedule(id: string, data: Partial<Schedule>): Promise<void> {
+        return this.put<void>(`/${id}`, data);
     }
 
     /**
      * 일정 삭제
      */
-    async deleteSchedule(id: string) {
-        const response = await this.delete<any>(`/${id}`);
-        return response?.result || response;
+    async deleteSchedule(id: string): Promise<void> {
+        return this.delete<void>(`/${id}`);
     }
 }
 

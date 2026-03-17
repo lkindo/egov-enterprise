@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 
 export interface TemplateInfo {
     tmplatId: string;
@@ -21,21 +21,18 @@ class TemplateAdminService extends AdminService {
     }
 
     /** 템플릿 목록 조회 */
-    async getTemplateList(params?: SearchParams, config?: any): Promise<PaginationResponse<TemplateInfo>> {
-        const response = await this.get<any>('', { ...config, params });
-        return response?.result || response;
+    async getTemplateList(params?: SearchParams, config?: any): Promise<PageResponse<TemplateInfo>> {
+        return this.get<PageResponse<TemplateInfo>>('', { ...config, params });
     }
 
     /** 템플릿 상세 조회 */
     async getTemplate(tmplatId: string, config?: any): Promise<TemplateInfo> {
-        const response = await this.get<any>(`/${tmplatId}`, config);
-        return response?.result || response;
+        return this.get<TemplateInfo>(`/${tmplatId}`, config);
     }
 
     /** 템플릿 등록 */
     async createTemplate(data: Partial<TemplateInfo>, config?: any): Promise<TemplateInfo> {
-        const response = await this.post<any>('', data, config);
-        return response?.result || response;
+        return this.post<TemplateInfo>('', data, config);
     }
 
     /** 템플릿 수정 */

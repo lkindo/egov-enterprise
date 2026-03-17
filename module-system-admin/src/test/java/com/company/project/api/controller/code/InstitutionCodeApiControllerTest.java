@@ -50,7 +50,7 @@ class InstitutionCodeApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.resultList[0].insttCode").value("1100000"));
+                .andExpect(jsonPath("$.data.list[0].insttCode").value("1100000"));
     }
 
     @Test
@@ -69,7 +69,7 @@ class InstitutionCodeApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.resultList[0].allInsttNm").value("테스트수신기관"));
+                .andExpect(jsonPath("$.data.list[0].allInsttNm").value("테스트수신기관"));
     }
 
     @Test

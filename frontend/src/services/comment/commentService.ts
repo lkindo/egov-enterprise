@@ -1,29 +1,41 @@
-import client from '@/lib/api/client';
+import { ApiService, AdminService } from '@/services/core/ApiService';
 import { CommentVO, CommentSearchParams, CommentSaveRequest } from '@/types/comment';
+import { PageResponse } from '@/types/system';
+import { AxiosRequestConfig } from 'axios';
 
 interface CommentListResult {
     resultList: CommentVO[];
     paginationInfo: unknown;
 }
 
-const commentService = {
-    getComments: async (params: CommentSearchParams): Promise<CommentListResult> =>
-        client.get<CommentListResult>('/v1/comments', { params }),
+/**
+ * 댓글 서비스
+ */
+class CommentService extends ApiService {
+    constructor() {
+        super('/v1/comments');
+    }
 
-    createComment: async (data: CommentSaveRequest): Promise<number> =>
-        client.post<number>('/v1/comments', data),
+    /** 댓글 목록 조회 */
+    async getComments(params: CommentSearchParams, config?: AxiosRequestConfig): Promise<CommentListResult> {
+        return this.get<CommentListResult>('', { ...config, params });
+    }
 
-    updateComment: async (id: number, data: CommentSaveRequest): Promise<void> =>
-        client.put<void>(`/v1/comments/${id}`, data),
+    /** 댓글 등록 */
+    async createComment(data: CommentSaveRequest, config?: AxiosRequestConfig): Promise<number> {
+        return this.post<number>('', data, config);
+    }
 
-    deleteComment: async (id: number): Promise<void> =>
-        client.delete<void>(`/v1/comments/${id}`),
+    /** 댓글 수정 */
+    async updateComment(id: number, data: CommentSaveRequest, config?: AxiosRequestConfig): Promise<void> {
+        return this.put<void>(`/${id}`, data, config);
+    }
 
-    getAdminCommentList: async (params: { pageIndex?: number; searchKeyword?: string }): Promise<any> =>
-        client.get('/api/v1/admin/system/comments', { params }),
+    /** 댓글 삭제 */
+    async deleteComment(id: number, config?: AxiosRequestConfig): Promise<void> {
+        return this.delete<void>(`/${id}`, config);
+    }
+}
 
-    deleteAdminComment: async (id: number): Promise<void> =>
-        client.delete(`/api/v1/admin/system/comments/${id}`),
-};
-
+export const commentService = new CommentService();
 export default commentService;

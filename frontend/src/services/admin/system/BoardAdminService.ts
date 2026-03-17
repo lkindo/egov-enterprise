@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface BoardMaster {
@@ -28,8 +28,8 @@ class BoardAdminService extends AdminService {
     }
 
     /** 게시판 목록 조회 */
-    async getBoardMasterList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<BoardMaster>> {
-        const response = await this.get<any>('', {
+    async getBoardMasterList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<BoardMaster>> {
+        return this.get<PageResponse<BoardMaster>>('', {
             ...config,
             params: {
                 ...params,
@@ -37,13 +37,11 @@ class BoardAdminService extends AdminService {
                 searchWrd: params?.searchKeyword || params?.searchWrd || '',
             },
         });
-        return response?.result || response;
     }
 
     /** 게시판 상세 조회 */
     async getBoardMaster(id: string, config?: AxiosRequestConfig): Promise<BoardMaster> {
-        const response = await this.get<any>(`/${id}`, config);
-        return response?.result || response;
+        return this.get<BoardMaster>(`/${id}`, config);
     }
 
     /** 게시판 등록 */

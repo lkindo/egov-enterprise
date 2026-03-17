@@ -45,6 +45,6 @@ class UnityLinkApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.resultList[0].unityLinkId").value("L1"));
+                .andExpect(jsonPath("$.data.list[0].unityLinkId").value("L1"));
     }
 }

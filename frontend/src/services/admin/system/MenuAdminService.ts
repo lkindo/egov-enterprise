@@ -29,26 +29,23 @@ class MenuAdminService extends AdminService {
 
     /** 메뉴 목록 조회 */
     async getMenuList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Menu>> {
-        const response = await this.get<any>('', {
+        return this.get<PageResponse<Menu>>('', {
             ...config,
             params: {
                 ...params,
                 searchWrd: params?.searchKeyword || params?.searchWrd || '',
             },
         });
-        return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
     }
 
     /** 메뉴 전체 트리용 조회 */
     async getAllMenus(config?: AxiosRequestConfig): Promise<Menu[]> {
-        const response = await this.get<any>('/all', config);
-        return response?.result || response;
+        return this.get<Menu[]>('/all', config);
     }
 
     /** 메뉴 상세 조회 */
     async getMenu(menuNo: number, config?: AxiosRequestConfig): Promise<Menu> {
-        const response = await this.get<any>(`/${menuNo}`, config);
-        return response?.result || response;
+        return this.get<Menu>(`/${menuNo}`, config);
     }
 
     /** 메뉴 등록 */
@@ -73,8 +70,7 @@ class MenuAdminService extends AdminService {
 
     /** 권한별 메뉴 생성 관리 목록 조회 */
     async getMenuCreationManageList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<MenuCreate>> {
-        const response = await this.get<any>('/creation-manage', { ...config, params });
-        return response?.list ? response : { list: response?.result || [], total: response?.totalCount || 0, page: params?.pageIndex || 1, size: params?.size || 10, totalPage: 1 };
+        return this.get<PageResponse<MenuCreate>>('/creation-manage', { ...config, params });
     }
 }
 

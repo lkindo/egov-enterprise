@@ -36,16 +36,14 @@ function CommunityDetailContent() {
         setLoading(true);
         // 실제로는 communityId에 따른 bbsId를 조회해야 할 수도 있으나, 
         // 기존 로직을 현대화된 경로로 이식합니다.
-        const res = (await boardUserService.getPosts(values.bbsId, {
+        const res = await boardUserService.getPosts(values.bbsId, {
           page: parseInt(values.page),
           size: 10,
           searchWrd: values.searchWrd,
           searchCnd: values.searchCnd
-        })) as any;
-        if (res?.success) {
-          setData(res.data.content);
-          setTotal(res.data.totalElements);
-        }
+        });
+        setData(res.list || []);
+        setTotal(res.total || 0);
       } catch (error) {
         toast('목록을 불러오는 중 오류가 발생했습니다.', 'error');
       } finally {

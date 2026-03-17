@@ -1,6 +1,6 @@
 package com.company.project.openapi;
 
-import com.company.project.api.controller.UserController;
+import com.company.project.api.controller.UserApiController;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
 import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.service.user.UserService;
@@ -53,7 +53,7 @@ class RequestResponseSchemaValidationTest {
         
         testUserResponse = new UserResponse("testUser", "테스트사용자", Role.USER);
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
                 .addInterceptors(operationalAuditInterceptor)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -173,8 +173,8 @@ class RequestResponseSchemaValidationTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").exists())
-                .andExpect(jsonPath("$.data.content").isArray())
-                .andExpect(jsonPath("$.data.totalElements").exists());
+                .andExpect(jsonPath("$.data.list").isArray())
+                .andExpect(jsonPath("$.data.total").exists());
     }
 
     @Test

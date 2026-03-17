@@ -46,7 +46,7 @@ class BannerApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.resultList[0].bannerId").value("B1"));
+                .andExpect(jsonPath("$.data.list[0].bannerId").value("B1"));
     }
 
     @Test

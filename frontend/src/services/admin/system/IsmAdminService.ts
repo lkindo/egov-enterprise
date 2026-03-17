@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface InfrmlSanctn {
@@ -26,21 +26,18 @@ class IsmAdminService extends AdminService {
     }
 
     /** 신청 목록 조회 */
-    async getInfrmlSanctnList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<InfrmlSanctn>> {
-        const response = await this.get<any>('', { ...config, params });
-        return response?.result || response;
+    async getInfrmlSanctnList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<InfrmlSanctn>> {
+        return this.get<PageResponse<InfrmlSanctn>>('', { ...config, params });
     }
 
     /** 신청 상세 조회 */
     async getInfrmlSanctn(id: string, config?: AxiosRequestConfig): Promise<InfrmlSanctn> {
-        const response = await this.get<any>(`/${id}`, config);
-        return response?.result || response;
+        return this.get<InfrmlSanctn>(`/${id}`, config);
     }
 
     /** 신청 등록 */
     async createInfrmlSanctn(data: Partial<InfrmlSanctn>, config?: AxiosRequestConfig): Promise<InfrmlSanctn> {
-        const response = await this.post<any>('', data, config);
-        return response?.result || response;
+        return this.post<InfrmlSanctn>('', data, config);
     }
 
     /** 신청 수정 */

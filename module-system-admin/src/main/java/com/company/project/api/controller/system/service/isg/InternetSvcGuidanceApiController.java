@@ -1,6 +1,7 @@
 package com.company.project.api.controller.system.service.isg;
 
 import com.company.project.core.response.ApiResponse;
+import com.company.project.core.response.PageResponse;
 import com.company.project.service.isg.EgovInternetSvcGuidanceService;
 import com.company.project.service.isg.dto.InternetSvcGuidanceDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,10 +28,11 @@ public class InternetSvcGuidanceApiController {
 
     @Operation(summary = "서비스 안내 목록 조회")
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<InternetSvcGuidanceDto>>> getIsgList(
+    public ResponseEntity<ApiResponse<PageResponse<InternetSvcGuidanceDto>>> getIsgList(
             @RequestParam(required = false) String keyword, 
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(isgService.getIntnetSvcGuidanceList(keyword, pageable)));
+        Page<InternetSvcGuidanceDto> result = isgService.getIntnetSvcGuidanceList(keyword, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
     @Operation(summary = "서비스 안내 상세 조회")

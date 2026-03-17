@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface LoginLog {
@@ -39,27 +39,23 @@ class LogAdminService extends AdminService {
     }
 
     /** 로그인 로그 목록 조회 */
-    async getLoginLogList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<LoginLog>> {
-        const response = await this.get<any>('/login', { ...config, params });
-        return response?.result || response;
+    async getLoginLogList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginLog>> {
+        return this.get<PageResponse<LoginLog>>('/login', { ...config, params });
     }
 
     /** 로그인 로그 상세 조회 */
     async getLoginLog(id: string, config?: AxiosRequestConfig): Promise<LoginLog> {
-        const response = await this.get<any>(`/login/${id}`, config);
-        return response?.result || response;
+        return this.get<LoginLog>(`/login/${id}`, config);
     }
 
     /** 시스템 로그 목록 조회 */
-    async getSystemLogList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<SystemLog>> {
-        const response = await this.get<any>('/system', { ...config, params });
-        return response?.result || response;
+    async getSystemLogList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SystemLog>> {
+        return this.get<PageResponse<SystemLog>>('/system', { ...config, params });
     }
 
     /** 시스템 로그 상세 조회 */
     async getSystemLog(id: string, config?: AxiosRequestConfig): Promise<SystemLog> {
-        const response = await this.get<any>(`/system/${id}`, config);
-        return response?.result || response;
+        return this.get<SystemLog>(`/system/${id}`, config);
     }
 }
 

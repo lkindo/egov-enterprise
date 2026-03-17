@@ -22,11 +22,11 @@ export default function HelpCenterPage() {
       try {
         setLoading(true);
         if (tab === 'faq') {
-          const res = (await helpUserService.getFaqs({})) as any;
-          if (res?.success) setFaqs(res.data || []);
+          const res = await helpUserService.getFaqs({});
+          setFaqs(res || []);
         } else {
-          const res = (await helpUserService.getQnas({ page: 0, size: 10 })) as any;
-          if (res?.success) setQnas(res.data.content || []);
+          const res = await helpUserService.getQnas({ page: 0, size: 10 });
+          setQnas(res.list || []);
         }
       } catch (error) {
         toast('데이터를 불러오지 못했습니다.', 'error');

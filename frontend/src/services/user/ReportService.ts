@@ -1,9 +1,11 @@
 import { ApiService } from '@/services/core/ApiService';
+import { PageResponse } from '@/types/system';
+import { AxiosRequestConfig } from 'axios';
 
 export interface WorkReport {
     reprtId: string;
     reprtSj: string;
-    reprtSe: string; // 1:雅뚯눊而? 2:?遺쎌퍢
+    reprtSe: string; // 1: 주간, 2: 월간
     reprtDe: string;
     wrterId: string;
     wrterNm?: string;
@@ -15,25 +17,40 @@ export interface WorkReport {
     sttus: 'R' | 'Y' | 'N';
 }
 
+/**
+ * 보고서 관리 서비스 (User)
+ */
 class ReportService extends ApiService {
     constructor() {
         super('/reports');
     }
 
-    async getReports(params: { page?: number; size?: number; searchWrd?: string }) {
-        return this.get<any>('', { params });
+    /**
+     * 보고서 목록 조회
+     */
+    async getReports(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<WorkReport>> {
+        return this.get<PageResponse<WorkReport>>('', { ...config, params });
     }
 
-    async getReport(id: string) {
-        return this.get<any>(`/${id}`);
+    /**
+     * 보고서 상세 조회
+     */
+    async getReport(id: string, config?: AxiosRequestConfig): Promise<WorkReport> {
+        return this.get<WorkReport>(`/${id}`, config);
     }
 
-    async createReport(data: Partial<WorkReport>) {
-        return this.post<any>('', data);
+    /**
+     * 보고서 등록
+     */
+    async createReport(data: Partial<WorkReport>, config?: AxiosRequestConfig): Promise<void> {
+        return this.post<void>('', data, config);
     }
 
-    async confirmReport(id: string, confmAt: 'Y' | 'N') {
-        return this.put<any>(`/${id}/confirm`, { confmAt });
+    /**
+     * 보고서 승인/반려
+     */
+    async confirmReport(id: string, confmAt: 'Y' | 'N', config?: AxiosRequestConfig): Promise<void> {
+        return this.put<void>(`/${id}/confirm`, { confmAt }, config);
     }
 }
 

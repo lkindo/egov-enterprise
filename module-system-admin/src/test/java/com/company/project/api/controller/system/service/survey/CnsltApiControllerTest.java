@@ -45,6 +45,6 @@ class CnsltApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.resultList[0].cnsltId").value("C1"));
+                .andExpect(jsonPath("$.data.list[0].cnsltId").value("C1"));
     }
 }

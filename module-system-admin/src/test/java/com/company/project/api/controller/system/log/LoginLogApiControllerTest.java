@@ -48,6 +48,6 @@ class LoginLogApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.resultList[0].logId").value("LOG1"));
+                .andExpect(jsonPath("$.data.list[0].logId").value("LOG1"));
     }
 }

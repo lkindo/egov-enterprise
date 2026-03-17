@@ -38,13 +38,14 @@ export default function ApprovalInboxPage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const result = tab === 'received'
-        ? await approvalUserService.getPending({ page: 0, size: 20 })
-        : await approvalUserService.getMyHistory({ page: 0, size: 20 });
+      const result = await (tab === 'received'
+        ? approvalUserService.getPending({ page: 0, size: 20 })
+        : approvalUserService.getMyHistory({ page: 0, size: 20 }));
 
-      setData(result.content || []);
-      if (result.content?.length > 0) {
-        setSelectedItem(result.content[0]);
+      const list = result.list || [];
+      setData(list);
+      if (list.length > 0) {
+        setSelectedItem(list[0]);
       } else {
         setSelectedItem(null);
       }

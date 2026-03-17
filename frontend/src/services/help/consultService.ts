@@ -1,32 +1,18 @@
 import client from '@/lib/api/client';
-import { PaginationResponse } from '@/types/system';
+import { PageResponse } from '@/types/system';
 import { CnsltVO, CnsltSearchParams } from '@/types/consult';
 
 const BASE_URL = '/api/v1/consultations';
 
-export const getCnsltList = async (params: CnsltSearchParams): Promise<PaginationResponse<CnsltVO>> => {
-    const response = await client.get<any>(BASE_URL, {
+export const getCnsltList = async (params: CnsltSearchParams): Promise<PageResponse<CnsltVO>> => {
+    return client.get<PageResponse<CnsltVO>>(BASE_URL, {
         params: {
-            keyword: params.searchKeyword,
+            ...params,
+            keyword: params.searchKeyword || params.searchWrd || '',
             page: (params.pageIndex || 1) - 1,
-            size: 10
+            size: params.pageUnit || 10
         }
     });
-    
-    return {
-        resultList: response.content || [],
-        paginationInfo: {
-            totalRecordCount: response.totalElements || 0,
-            currentPageNo: (params.pageIndex || 1),
-            recordCountPerPage: 10,
-            pageSize: 10,
-            totalPageCount: Math.ceil((response.totalElements || 0) / 10),
-            firstPageNoOnPageList: 1,
-            lastPageNoOnPageList: 1,
-            firstRecordIndex: 0,
-            lastRecordIndex: 0
-        }
-    } as any;
 };
 
 export const getCnslt = async (cnsltId: string): Promise<CnsltVO> =>

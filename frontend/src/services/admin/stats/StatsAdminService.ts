@@ -1,49 +1,54 @@
 import { ApiService } from '@/services/core/ApiService';
 import { ConnectStats, MenuStats, SummaryStats, StatsVO, StatsSearchParams } from '@/types/stats';
+import { AxiosRequestConfig } from 'axios';
 
+/**
+ * 통계 관리 서비스 (Admin)
+ */
 class StatsAdminService extends ApiService {
     constructor() {
-        super(''); // Endpoints have different base paths
+        super('/admin/stats');
     }
 
-    // Summary stats (legacy)
-    async getSummary(config?: any): Promise<SummaryStats> {
-        return this.get<SummaryStats>('/admin/dashboard/summary', config);
+    /**
+     * 관리자 대시보드 요약 정보 조회
+     */
+    async getAdminSummary(config?: AxiosRequestConfig): Promise<SummaryStats> {
+        return this.get<SummaryStats>('/summary', config);
     }
 
-    // Summary stats (new)
-    async getAdminSummary(config?: any): Promise<SummaryStats> {
-        return this.get<SummaryStats>('/admin/stats/summary', config);
+    /**
+     * 접속 통계 조회
+     */
+    async getAdminConnectStats(params: { startDate: string; endDate: string }, config?: AxiosRequestConfig): Promise<ConnectStats[]> {
+        return this.get<ConnectStats[]>('/connect', { ...config, params });
     }
 
-    // Connection stats (legacy)
-    async getConnectStats(params: { startDate: string; endDate: string }, config?: any): Promise<ConnectStats[]> {
-        return this.get<ConnectStats[]>('/stats/connect', { ...config, params });
+    /**
+     * 메뉴별 이용 통계 조회
+     */
+    async getAdminMenuStats(config?: AxiosRequestConfig): Promise<MenuStats[]> {
+        return this.get<MenuStats[]>('/menu', config);
     }
 
-    // Connection stats (new)
-    async getAdminConnectStats(params: { startDate: string; endDate: string }, config?: any): Promise<ConnectStats[]> {
-        return this.get<ConnectStats[]>('/admin/stats/connect', { ...config, params });
+    /**
+     * 사용자별 이용 통계 조회
+     */
+    async getUserStats(params: StatsSearchParams, config?: AxiosRequestConfig): Promise<{ list: StatsVO[]; statsVO: StatsVO }> {
+        return this.get<{ list: StatsVO[]; statsVO: StatsVO }>('/user', { ...config, params });
     }
 
-    // Menu stats (legacy)
-    async getMenuStats(config?: any): Promise<MenuStats[]> {
-        return this.get<MenuStats[]>('/stats/menu', config);
+    /**
+     * 화면별 이용 통계 조회
+     */
+    async getScrinStats(params: StatsSearchParams, config?: AxiosRequestConfig): Promise<{ scrinStats: StatsVO[]; statsInfo: StatsVO }> {
+        return this.get<{ scrinStats: StatsVO[]; statsInfo: StatsVO }>('/screen', { ...config, params });
     }
 
-    // Menu stats (new)
-    async getAdminMenuStats(config?: any): Promise<MenuStats[]> {
-        return this.get<MenuStats[]>('/admin/stats/menu', config);
-    }
-
-    // User stats
-    async getUserStats(params: StatsSearchParams, config?: any): Promise<{ list: StatsVO[]; statsVO: StatsVO }> {
-        return this.get('/admin/stats/user', { ...config, params });
-    }
-
-    // Screen stats
-    async getScrinStats(params: StatsSearchParams, config?: any): Promise<{ scrinStats: StatsVO[]; statsInfo: StatsVO }> {
-        return this.get('/admin/stats/screen', { ...config, params });
+    // --- Legacy / Compatibility ---
+    /** @deprecated Use getAdminSummary */
+    async getSummary(config?: AxiosRequestConfig): Promise<SummaryStats> {
+        return this.get<SummaryStats>('/summary', config);
     }
 }
 

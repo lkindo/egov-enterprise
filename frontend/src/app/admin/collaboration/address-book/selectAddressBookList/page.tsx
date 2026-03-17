@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { addressbookUserService } from '@/services/user/addressbook/AddressbookUserService';
+import { addressbookUserService, AddressBook } from '@/services/user/addressbook/AddressbookUserService';
 import {
     Table,
     TableBody,
@@ -19,14 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Plus, Trash2, Home, ChevronRight } from "lucide-react";
 
-interface AddressBook {
-    adbkId: string;
-    adbkNm: string;
-    telNo: string;
-    email: string;
-    adres: string;
-    frstRegisterPnttm: string;
-}
+
 
 const AddressBookListPage = () => {
     const [list, setList] = useState<AddressBook[]>([]);
@@ -43,9 +36,9 @@ const AddressBookListPage = () => {
             const response = await addressbookUserService.getAddressBooks(params);
 
             // Spring Data Page 객체 구조에 맞게 매핑
-            setList(response.content || []);
-            setTotalCount(response.totalElements || 0);
-            setTotalPages(response.totalPages || 0);
+            setList(response.list || []);
+            setTotalCount(response.total || 0);
+            setTotalPages(response.totalPage || 0);
         } catch (error) {
             console.error('Failed to fetch address books', error);
         } finally {
@@ -170,7 +163,7 @@ const AddressBookListPage = () => {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center text-sm text-muted-foreground">
-                                                {item.frstRegisterPnttm?.substring(0, 10)}
+                                                {item.createdDate?.substring(0, 10)}
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 <Button

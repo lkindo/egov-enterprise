@@ -1,4 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
+import { AxiosRequestConfig } from 'axios';
 
 export interface AuthorRoleDto {
     authorCode: string;
@@ -15,13 +16,13 @@ class AuthorRoleAdminService extends AdminService {
     }
 
     /** 특정 권한에 할당된 롤 목록 조회 */
-    async getAuthorRoles(authorCode: string, config?: any) {
-        return this.get<any>(`/${authorCode}`, config);
+    async getAuthorRoles(authorCode: string, config?: AxiosRequestConfig): Promise<AuthorRoleDto[]> {
+        return this.get<AuthorRoleDto[]>(`/${authorCode}`, config);
     }
 
     /** 권한-롤 매핑 정보 저장 */
-    async saveAuthorRoles(authorCode: string, roleCodes: string[], config?: any) {
-        return this.post<any>(`/${authorCode}`, roleCodes, config);
+    async saveAuthorRoles(authorCode: string, roleCodes: string[], config?: AxiosRequestConfig): Promise<void> {
+        return this.post<void>(`/${authorCode}`, roleCodes, config);
     }
 }
 

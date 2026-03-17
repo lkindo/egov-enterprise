@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 import { Survey as SurveyInfo, Survey as SurveyTemplate } from '@/types/survey';
 
 /**
@@ -11,21 +11,18 @@ class SurveyAdminService extends AdminService {
     }
 
     /** 설문 목록 조회 */
-    async getSurveyList(params?: SearchParams, config?: any): Promise<PaginationResponse<SurveyInfo>> {
-        const response = await this.get<any>('', { ...config, params });
-        return response?.result || response;
+    async getSurveyList(params?: SearchParams, config?: any): Promise<PageResponse<SurveyInfo>> {
+        return this.get<PageResponse<SurveyInfo>>('', { ...config, params });
     }
 
     /** 설문 상세 조회 */
     async getSurvey(qestnrId: string, config?: any): Promise<SurveyInfo> {
-        const response = await this.get<any>(`/${qestnrId}`, config);
-        return response?.result || response;
+        return this.get<SurveyInfo>(`/${qestnrId}`, config);
     }
 
     /** 설문 등록 */
     async createSurvey(data: Partial<SurveyInfo>, config?: any): Promise<SurveyInfo> {
-        const response = await this.post<any>('', data, config);
-        return response?.result || response;
+        return this.post<SurveyInfo>('', data, config);
     }
 
     /** 설문 수정 */
@@ -39,9 +36,8 @@ class SurveyAdminService extends AdminService {
     }
 
     /** 설문 템플릿 목록 조회 */
-    async getTemplateList(params?: SearchParams, config?: any): Promise<PaginationResponse<SurveyTemplate>> {
-        const response = await this.get<any>('/templates', { ...config, params });
-        return response?.result || response;
+    async getTemplateList(params?: SearchParams, config?: any): Promise<PageResponse<SurveyTemplate>> {
+        return this.get<PageResponse<SurveyTemplate>>('/templates', { ...config, params });
     }
 }
 

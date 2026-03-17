@@ -17,7 +17,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
         try {
             setLoading(true);
             const res = await operationAdminService.getRewardList({ name });
-            setData(res || []);
+            setData(res.list || []);
         } catch (error) {
             toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
         } finally {

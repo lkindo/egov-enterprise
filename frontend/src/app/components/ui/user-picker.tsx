@@ -32,10 +32,8 @@ export function UserPicker({
 
     try {
       setLoading(true);
-      const res = (await addressbookUserService.searchUsers(keyword)) as any;
-      if (res?.success) {
-        setResults(res.data || []);
-      }
+      const res = await addressbookUserService.searchUsers(keyword);
+      setResults(res || []);
     } catch (error) {
       console.error('Search failed', error);
     } finally {

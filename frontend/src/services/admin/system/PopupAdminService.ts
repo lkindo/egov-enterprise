@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 import { Popup } from '@/types/banner';
 
 /**
@@ -11,21 +11,18 @@ class PopupAdminService extends AdminService {
     }
 
     /** 팝업창 목록 조회 */
-    async getPopupList(params?: SearchParams, config?: any): Promise<PaginationResponse<Popup>> {
-        const response = await this.get<any>('', { ...config, params });
-        return response?.result || response;
+    async getPopupList(params?: SearchParams, config?: any): Promise<PageResponse<Popup>> {
+        return this.get<PageResponse<Popup>>('', { ...config, params });
     }
 
     /** 팝업창 상세 조회 */
     async getPopup(popupId: string, config?: any): Promise<Popup> {
-        const response = await this.get<any>(`/${popupId}`, config);
-        return response?.result || response;
+        return this.get<Popup>(`/${popupId}`, config);
     }
 
     /** 팝업창 등록 */
     async createPopup(data: Partial<Popup>, config?: any): Promise<Popup> {
-        const response = await this.post<any>('', data, config);
-        return response?.result || response;
+        return this.post<Popup>('', data, config);
     }
 
     /** 팝업창 수정 */

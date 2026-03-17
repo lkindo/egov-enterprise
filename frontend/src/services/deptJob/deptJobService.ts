@@ -1,24 +1,22 @@
 import client from '@/lib/api/client';
-import { PaginationResponse } from '@/types/system';
-import { DeptJobVO, DeptJobSearchParams } from '@/types/deptJob';
+import { PageResponse } from '@/types/system';
+import { DeptJobVO, DeptJobBxVO, DeptJobSearchParams } from '@/types/deptJob';
 
 const BASE_URL = '/deptjob';
 
-export const getDeptJobList = async (params: any = {}): Promise<any[]> => {
-    const result = await client.get<any>(`${BASE_URL}/boxes`, { params });
-    return result.resultList || [];
+export const getDeptJobList = async (params: DeptJobSearchParams = {}): Promise<PageResponse<DeptJobBxVO>> => {
+    return client.get<PageResponse<DeptJobBxVO>>(`${BASE_URL}/boxes`, { params });
 };
 
-export const getDeptJobDetail = async (id: string): Promise<any> => {
-    const result = await client.get<any>(`${BASE_URL}/boxes/${id}`);
-    return result.deptJobBox;
+export const getDeptJobDetail = async (id: string): Promise<DeptJobBxVO> => {
+    return client.get<DeptJobBxVO>(`${BASE_URL}/boxes/${id}`);
 };
 
-export const createDeptJob = async (data: any): Promise<void> =>
+export const createDeptJob = async (data: Partial<DeptJobBxVO>): Promise<DeptJobBxVO> =>
     client.post(`${BASE_URL}/boxes`, data);
 
-export const updateDeptJob = async (data: any): Promise<void> => {
-    const id = data.deptJobbxId;
+export const updateDeptJob = async (data: Partial<DeptJobBxVO>): Promise<void> => {
+    const id = data.deptJobBxId;
     return client.put(`${BASE_URL}/boxes/${id}`, data);
 };
 

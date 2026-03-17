@@ -1,6 +1,6 @@
 package com.company.project.web.auth;
 
-import com.company.project.api.auth.AuthController;
+import com.company.project.api.auth.AuthApiController;
 import com.company.project.core.exception.GlobalExceptionHandler;
 import com.company.project.domain.auth.UserAuthorityRepository;
 import com.company.project.domain.user.repository.UserRepository;
@@ -43,7 +43,7 @@ class AuthApiControllerTest {
         userAuthorityRepository = mock(UserAuthorityRepository.class);
 
         mockMvc = MockMvcBuilders.standaloneSetup(
-                new AuthController(authenticationManager, jwtTokenProvider, userRepository, userAuthorityRepository))
+                new AuthApiController(authenticationManager, jwtTokenProvider, userRepository, userAuthorityRepository))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }

@@ -32,11 +32,11 @@ export default function NotePage() {
   const loadNotes = useCallback(async () => {
     try {
       setLoading(true);
-      const res = (tab === 'received'
-        ? await noteService.getReceivedNotes({ page: 0, size: 20 })
-        : await noteService.getSentNotes({ page: 0, size: 20 })) as any;
+      const res = await (tab === 'received'
+        ? noteService.getReceivedNotes({ page: 0, size: 20 })
+        : noteService.getSentNotes({ page: 0, size: 20 }));
 
-      if (res?.success) setNotes(res.data.content || []);
+      setNotes(res.list || []);
     } catch (error) {
       toast('쪽지 목록을 불러오지 못했습니다.', 'error');
     } finally {

@@ -1,4 +1,6 @@
 import { UserService } from '@/services/core/ApiService';
+import { PageResponse } from '@/types/system';
+import { AxiosRequestConfig } from 'axios';
 
 export interface FAQ {
     faqId: string;
@@ -17,24 +19,31 @@ export interface QNA {
     writngPassword?: string;
     wrterNm: string;
     writngDe: string;
-    qnaProcessSttusCode: string; // 1:?臾믩땾, 2:???餓? 3:????袁⑥┷
+    qnaProcessSttusCode: string; // 1: 접수, 2: 처리중, 3: 답변완료
 }
 
+/**
+ * 도움말 센터 서비스 (User)
+ */
 class HelpUserService extends UserService {
     constructor() {
         super('');
     }
 
-    async getFaqs(params: { searchWrd?: string }) {
-        return this.get<any>('/faqs', { params });
+    /** FAQ 목록 조회 */
+    async getFaqs(params: { searchWrd?: string }, config?: AxiosRequestConfig): Promise<FAQ[]> {
+        // FAQ는 보통 전체 목록을 가져오는 경우가 많음 (배경 구조에 따라 PageResponse일 수도 있으나 현재 UI는 배열 기대)
+        return this.get<FAQ[]>('/faqs', { ...config, params });
     }
 
-    async getQnas(params: { page?: number; size?: number; searchWrd?: string }) {
-        return this.get<any>('/qnas', { params });
+    /** Q&A 목록 조회 (페이징) */
+    async getQnas(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<QNA>> {
+        return this.get<PageResponse<QNA>>('/qnas', { ...config, params });
     }
 
-    async createQna(data: Partial<QNA>) {
-        return this.post<any>('/qnas', data);
+    /** Q&A 등록 */
+    async createQna(data: Partial<QNA>, config?: AxiosRequestConfig): Promise<void> {
+        return this.post<void>('/qnas', data, config);
     }
 }
 

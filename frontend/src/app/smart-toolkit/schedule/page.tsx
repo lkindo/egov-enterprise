@@ -55,7 +55,7 @@ export default function SchedulePage() {
     try {
       setLoading(true);
       const yearMonth = format(currentDate, 'yyyyMM');
-      const res = (await scheduleService.getMonthlySchedule(yearMonth)) as any;
+      const res = await scheduleService.getMonthlySchedule(yearMonth);
       setSchedules(res.schedules || []);
     } catch (error) {
       toast('일정을 불러오는 중 오류가 발생했습니다.', 'error');
@@ -86,8 +86,8 @@ export default function SchedulePage() {
         schdulEndde: dateStr + "1800", // Default 6 PM
       };
 
-      const res = (await scheduleService.createSchedule(payload)) as any;
-      if (res?.success) {
+      const res = await scheduleService.createSchedule(payload);
+      if (res) {
         toast('일정이 등록되었습니다.', 'success');
         setIsOpen(false);
         setFormData({ schdulNm: '', schdulCn: '', schdulSe: '2', schdulPlace: '' });

@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PaginationResponse, SearchParams } from '@/types/system';
+import { PageResponse, SearchParams } from '@/types/system';
 
 export interface LoginPolicy {
     emplyrId: string;
@@ -20,8 +20,8 @@ class LoginPolicyAdminService extends AdminService {
     }
 
     /** 로그인 정책 목록 조회 */
-    async getLoginPolicyList(params?: SearchParams, config?: any): Promise<PaginationResponse<LoginPolicy>> {
-        const response = await this.get<any>('', {
+    async getLoginPolicyList(params?: SearchParams, config?: any): Promise<PageResponse<LoginPolicy>> {
+        return this.get<PageResponse<LoginPolicy>>('', {
             ...config,
             params: {
                 ...params,
@@ -29,13 +29,11 @@ class LoginPolicyAdminService extends AdminService {
                 searchKeyword: params?.searchKeyword || params?.searchWrd || '',
             },
         });
-        return response?.result || response;
     }
 
     /** 로그인 정책 상세 조회 */
     async getLoginPolicy(emplyrId: string, config?: any): Promise<LoginPolicy> {
-        const response = await this.get<any>(`/${emplyrId}`, config);
-        return response?.result || response;
+        return this.get<LoginPolicy>(`/${emplyrId}`, config);
     }
 
     /** 로그인 정책 저장 (등록/수정) */

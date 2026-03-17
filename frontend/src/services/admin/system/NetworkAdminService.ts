@@ -1,4 +1,5 @@
-import client from '@/lib/api/client';
+import { AdminService } from '@/services/core/ApiService';
+import { AxiosRequestConfig } from 'axios';
 
 /**
  * 네트워크 인프라 관리 서비스 (Admin)
@@ -14,26 +15,30 @@ export interface Network {
     useAt: string;
 }
 
-const BASE_URL = '/admin/system/network';
+class NetworkAdminService extends AdminService {
+    constructor() {
+        super('/network');
+    }
 
-export const networkAdminService = {
     /** 네트워크 목록 조회 */
-    getNetworks: async (params?: any, config?: any) => {
-        return client.get<Network[]>(BASE_URL, { params, ...config });
-    },
+    async getNetworks(params?: any, config?: AxiosRequestConfig): Promise<Network[]> {
+        return this.get<Network[]>('', { ...config, params });
+    }
 
     /** 네트워크 등록 */
-    createNetwork: async (data: Network, config?: any) => {
-        return client.post(BASE_URL, data, config);
-    },
+    async createNetwork(data: Network, config?: AxiosRequestConfig): Promise<void> {
+        return this.post('', data, config);
+    }
 
     /** 네트워크 수정 */
-    updateNetwork: async (id: string, data: Partial<Network>, config?: any) => {
-        return client.put(`${BASE_URL}/${id}`, data, config);
-    },
+    async updateNetwork(id: string, data: Partial<Network>, config?: AxiosRequestConfig): Promise<void> {
+        return this.put(`/${id}`, data, config);
+    }
 
     /** 네트워크 삭제 */
-    deleteNetwork: async (id: string, config?: any) => {
-        return client.delete(`${BASE_URL}/${id}`, config);
-    },
-};
+    async deleteNetwork(id: string, config?: AxiosRequestConfig): Promise<void> {
+        return this.delete(`/${id}`, config);
+    }
+}
+
+export const networkAdminService = new NetworkAdminService();
