@@ -2,7 +2,7 @@ import client from '@/lib/api/client';
 import { PaginationResponse } from '@/types/system';
 import { CnsltVO, CnsltSearchParams } from '@/types/consult';
 
-const BASE_URL = '/api/v1/consultations';
+const BASE_URL = '/consultations';
 
 export const getCnsltList = async (params: CnsltSearchParams): Promise<PaginationResponse<CnsltVO>> => {
     return client.get<PaginationResponse<CnsltVO>>(BASE_URL, {

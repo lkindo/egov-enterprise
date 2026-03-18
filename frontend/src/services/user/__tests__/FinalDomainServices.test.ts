@@ -30,6 +30,6 @@ describe('Final Domain Services', () => {
     // MenuService expects { list: [] }
     (client.get as any).mockResolvedValue({ list: [] });
     await menuService.getHeadMenus();
-    expect(client.get).toHaveBeenCalledWith('/menu/head', undefined);
+    expect(client.get).toHaveBeenCalledWith('/menus/head', undefined);
   });
 });

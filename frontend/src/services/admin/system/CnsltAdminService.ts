@@ -7,7 +7,7 @@ import { CnsltVO as Consult } from '@/types/consult';
  */
 class CnsltAdminService extends AdminService {
     constructor() {
-        super('/consultations');
+        super('/cnslt');
     }
 
     /** 상담 목록 조회 */

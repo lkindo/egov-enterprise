@@ -25,12 +25,12 @@ const Sidebar = () => {
         try {
             setError(null);
             // Fetch the root category itself to get its name
-            const headRes = (await axios.get('/menu/head')) as any;
+            const headRes = (await axios.get('/menus/head')) as any;
             const root = headRes?.list?.find((m: any) => m.menuNo === activeMenuNo);
             if (root) setParentMenu(root);
 
             // Fetch children (mid-categories)
-            const response = (await axios.get(`/menu/left?menuNo=${activeMenuNo}`)) as any;
+            const response = (await axios.get(`/menus/left?menuNo=${activeMenuNo}`)) as any;
             const list = response?.list || [];
             setLeftMenus(list);
         } catch (err: any) {

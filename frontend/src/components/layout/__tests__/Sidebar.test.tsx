@@ -48,10 +48,10 @@ describe('Sidebar', () => {
 
     it('renders navigation with aria-label', async () => {
         (client.get as Mock).mockImplementation((url: string) => {
-            if (url === '/menu/head') {
+            if (url === '/menus/head') {
                 return Promise.resolve({ list: [{ menuNo: 1, menuNm: 'Root Category' }] });
             }
-            if (url.startsWith('/menu/left')) {
+            if (url.startsWith('/menus/left')) {
                 return Promise.resolve({
                     list: [
                         {
@@ -77,8 +77,8 @@ describe('Sidebar', () => {
         (navigation.usePathname as Mock).mockReturnValue('/admin/community/boards');
 
         (client.get as Mock).mockImplementation((url: string) => {
-            if (url === '/menu/head') return Promise.resolve({ list: [{ menuNo: 1, menuNm: 'Root' }] });
-            if (url.startsWith('/menu/left')) {
+            if (url === '/menus/head') return Promise.resolve({ list: [{ menuNo: 1, menuNm: 'Root' }] });
+            if (url.startsWith('/menus/left')) {
                 return Promise.resolve({
                     list: [{
                         menuNo: 10,

@@ -20,8 +20,8 @@ const Header = () => {
     const fetchMenus = useCallback(async () => {
         try {
             setMenuError(null);
-            const response = (await axios.get('/menu/head')) as any;
-            const list = response?.list || [];
+            const headRes = (await axios.get('/menus/head')) as any;
+            const list = headRes?.list || [];
             setMenus(list);
         } catch (err: any) {
             console.error('Failed to fetch menus:', err);

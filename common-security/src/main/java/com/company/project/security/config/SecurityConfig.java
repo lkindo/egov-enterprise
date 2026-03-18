@@ -62,7 +62,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/connection").permitAll()      
                                                 .requestMatchers("/WEB-INF/**", "/upload/**").permitAll()
                                                 .requestMatchers("/api/v1/public/**").permitAll()
-                                                .requestMatchers("/api/v1/menu/**").permitAll()
+                                                .requestMatchers("/api/v1/menus/**").permitAll()
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),  
                                                 UsernamePasswordAuthenticationFilter.class);     

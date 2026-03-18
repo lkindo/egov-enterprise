@@ -216,7 +216,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                                     </tr>
                                 ))
                             ) : filteredData.map((item, rowIdx) => (
-                                <tr key={item[keyField] !== undefined ? `item-${item[keyField]}` : `row-${rowIdx}`} className="group hover:bg-primary/[0.02] transition-colors">
+                                <tr key={`row-${item[keyField] ?? rowIdx}`} className="group hover:bg-primary/[0.02] transition-colors">
                                     {sortedColumns.map((col, colIdx) => {
                                         const isEditing = editingCell?.rowId === item[keyField] && editingCell?.colId === col.id;
                                         const value = typeof col.accessor === 'function' ? col.accessor(item) : item[col.accessor as keyof T];

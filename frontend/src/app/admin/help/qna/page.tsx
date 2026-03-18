@@ -22,7 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Eye, MessageSquare, Trash2, Loader2, Search } from "lucide-react";
-import { getCnsltList, answerCnslt, deleteCnslt } from '@/services/help/consultService';
+import { cnsltAdminService } from '@/services/admin/system/CnsltAdminService';
 import { CnsltVO, CnsltSearchParams } from '@/types/consult';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
 import { PagePagination } from "@/components/common/PagePagination";
@@ -42,14 +42,14 @@ export default function ConsultManagePage() {
 
     const { data, isLoading } = useQuery({
         queryKey: ['admin-consults', params],
-        queryFn: () => getCnsltList(params),
+        queryFn: () => cnsltAdminService.getConsultationList(params),
     });
 
     const consults: CnsltVO[] = data?.resultList || [];
     const pagination = data?.paginationInfo;
 
     const answerMutation = useMutation({
-        mutationFn: ({ id, answer }: { id: string, answer: string }) => answerCnslt(id, answer),
+        mutationFn: ({ id, answer }: { id: string, answer: string }) => cnsltAdminService.answerConsultation(id, { managtCn: answer }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-consults'] });
             setIsDialogOpen(false);
@@ -59,7 +59,7 @@ export default function ConsultManagePage() {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: deleteCnslt,
+        mutationFn: (id: string) => cnsltAdminService.deleteConsultation(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-consults'] });
         },
