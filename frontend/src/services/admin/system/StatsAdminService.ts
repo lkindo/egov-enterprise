@@ -44,6 +44,16 @@ class StatsAdminService extends AdminService {
         return this.get<StatsDto[]>('/screen', { ...config, params });
     }
 
+    /** 보고서 통계 조회 */
+    async getReportStats(params?: { fromDate?: string; toDate?: string }, config?: any) {
+        return this.get<StatsDto[]>('/report', { ...config, params });
+    }
+
+    /** 자료이용현황 통계 조회 */
+    async getDataUsageStats(params?: { fromDate?: string; toDate?: string }, config?: any) {
+        return this.get<StatsDto[]>('/data-usage', { ...config, params });
+    }
+
     /** 메뉴 통계 조회 */
     async getMenuStats(config?: any) {
         return this.get<any[]>('/menu', config);

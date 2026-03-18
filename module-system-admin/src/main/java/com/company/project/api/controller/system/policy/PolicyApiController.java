@@ -1,7 +1,7 @@
 package com.company.project.api.controller.system.policy;
 
 import com.company.project.core.response.ApiResponse;
-import com.company.project.service.site.PolicyService;
+import com.company.project.service.system.policy.PolicyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

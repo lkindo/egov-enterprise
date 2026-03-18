@@ -1,5 +1,6 @@
 package com.company.project.api.controller.system.stats;
 
+import com.company.project.service.stats.ReportStatsService;
 import com.company.project.service.stats.StatsService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,9 @@ class StatisticsApiControllerTest {
     @MockitoBean
     private StatsService statsService;
 
+    @MockitoBean
+    private ReportStatsService reportStatsService;
+
     private final String BASE_URL = "/api/v1/admin/system/statistics";
 
     @Test
@@ -49,6 +53,30 @@ class StatisticsApiControllerTest {
                 .willReturn(Collections.emptyList());
 
         mockMvc.perform(get(BASE_URL + "/bbs")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("보고서 통계 조회 성공")
+    void getReportStats_Success() throws Exception {
+        given(reportStatsService.getReprtStatsByDate(anyString(), anyString()))
+                .willReturn(Collections.emptyList());
+
+        mockMvc.perform(get(BASE_URL + "/report")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("자료이용현황 통계 조회 성공")
+    void getDataUsageStats_Success() throws Exception {
+        given(reportStatsService.getDtaUseStatsByDate(anyString(), anyString()))
+                .willReturn(Collections.emptyList());
+
+        mockMvc.perform(get(BASE_URL + "/data-usage")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

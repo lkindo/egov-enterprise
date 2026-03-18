@@ -1,11 +1,11 @@
 import client from '@/lib/api/client';
-import { PageResponse } from '@/types/system';
+import { PaginationResponse } from '@/types/system';
 import { CnsltVO, CnsltSearchParams } from '@/types/consult';
 
 const BASE_URL = '/api/v1/consultations';
 
-export const getCnsltList = async (params: CnsltSearchParams): Promise<PageResponse<CnsltVO>> => {
-    return client.get<PageResponse<CnsltVO>>(BASE_URL, {
+export const getCnsltList = async (params: CnsltSearchParams): Promise<PaginationResponse<CnsltVO>> => {
+    return client.get<PaginationResponse<CnsltVO>>(BASE_URL, {
         params: {
             ...params,
             keyword: params.searchKeyword || params.searchWrd || '',

@@ -3,10 +3,8 @@ package com.company.project.service.help;
 import com.company.project.core.exception.BusinessException;
 import com.company.project.core.exception.ErrorCode;
 import com.company.project.domain.help.*;
-import com.company.project.service.help.dto.AdministrationWordDto;
 import com.company.project.service.help.dto.HpcmDto;
 import com.company.project.service.help.dto.OnlineManualDto;
-import com.company.project.service.help.dto.WordDicaryDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,68 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * 도움말(용어사전, 안내문 등) 서비스 구현 클래스
+ * 도움말(안내문 등) 서비스 구현 클래스
  */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class HelpService implements EgovHelpService {
 
-    private final AdministrationWordRepository administrationWordRepository;
     private final HpcmRepository hpcmRepository;
     private final OnlineManualRepository onlineManualRepository;
-    private final WordDicaryRepository wordDicaryRepository;
-
-    // Administration Word
-    @Override
-    public Page<AdministrationWordDto> getAdministrationWordList(String keyword, Pageable pageable) {
-        return administrationWordRepository
-                .findByAdministWordNmContaining(Objects.requireNonNullElse(keyword, ""),
-                        Objects.requireNonNull(pageable))
-                .map(AdministrationWordDto::from);
-    }
-
-    @Override
-    public AdministrationWordDto getAdministrationWord(String wordId) {
-        return administrationWordRepository.findById(Objects.requireNonNull(wordId))
-                .map(AdministrationWordDto::from)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-    }
-
-    @Override
-    @Transactional
-    public String createAdministrationWord(String userId, AdministrationWordDto dto) {
-        String id = "AWORD_" + System.currentTimeMillis();
-        AdministrationWord entity = AdministrationWord.builder()
-                .administWordId(id)
-                .administWordNm(dto.getAdministWordNm())
-                .administWordEngNm(dto.getAdministWordEngNm())
-                .administWordAbrv(dto.getAdministWordAbrv())
-                .themaRelm(dto.getThemaRelm())
-                .wordDomn(dto.getWordDomn())
-                .stdWord(dto.getStdWord())
-                .administWordDf(dto.getAdministWordDf())
-                .administWordDc(dto.getAdministWordDc())
-                .build();
-        administrationWordRepository.save(Objects.requireNonNull(entity));
-        return id;
-    }
-
-    @Override
-    @Transactional
-    public void updateAdministrationWord(String wordId, String userId, AdministrationWordDto dto) {
-        AdministrationWord entity = administrationWordRepository.findById(Objects.requireNonNull(wordId))
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getAdministWordNm(), dto.getAdministWordEngNm(), dto.getAdministWordAbrv(),
-                dto.getThemaRelm(), dto.getWordDomn(), dto.getStdWord(), dto.getAdministWordDf(),
-                dto.getAdministWordDc());
-    }
-
-    @Override
-    @Transactional
-    public void deleteAdministrationWord(String wordId) {
-        administrationWordRepository.deleteById(Objects.requireNonNull(wordId));
-    }
 
     // HPCM (Help)
     @Override
@@ -163,49 +108,5 @@ public class HelpService implements EgovHelpService {
     @Transactional
     public void deleteOnlineManual(String mnlId) {
         onlineManualRepository.deleteById(Objects.requireNonNull(mnlId));
-    }
-
-    // Word Dictionary
-    @Override
-    public Page<WordDicaryDto> getWordDicaryList(String keyword, Pageable pageable) {
-        return wordDicaryRepository
-                .findByWordNmContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
-                .map(WordDicaryDto::from);
-    }
-
-    @Override
-    public WordDicaryDto getWordDicary(String wordId) {
-        return wordDicaryRepository.findById(Objects.requireNonNull(wordId))
-                .map(WordDicaryDto::from)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-    }
-
-    @Override
-    @Transactional
-    public String createWordDicary(String userId, WordDicaryDto dto) {
-        String id = "WDIC_" + System.currentTimeMillis();
-        WordDicary entity = WordDicary.builder()
-                .wordId(id)
-                .wordNm(dto.getWordNm())
-                .engNm(dto.getEngNm())
-                .wordDc(dto.getWordDc())
-                .synonm(dto.getSynonm())
-                .build();
-        wordDicaryRepository.save(Objects.requireNonNull(entity));
-        return id;
-    }
-
-    @Override
-    @Transactional
-    public void updateWordDicary(String wordId, String userId, WordDicaryDto dto) {
-        WordDicary entity = wordDicaryRepository.findById(Objects.requireNonNull(wordId))
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getWordNm(), dto.getEngNm(), dto.getWordDc(), dto.getSynonm());
-    }
-
-    @Override
-    @Transactional
-    public void deleteWordDicary(String wordId) {
-        wordDicaryRepository.deleteById(Objects.requireNonNull(wordId));
     }
 }

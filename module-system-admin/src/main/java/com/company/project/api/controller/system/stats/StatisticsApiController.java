@@ -2,6 +2,7 @@ package com.company.project.api.controller.system.stats;
 
 import com.company.project.core.response.ApiResponse;
 import com.company.project.service.stats.StatsService;
+import com.company.project.service.stats.ReportStatsService;
 import com.company.project.service.stats.dto.StatsDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,6 +23,7 @@ import java.util.List;
 public class StatisticsApiController {
 
     private final StatsService statsService;
+    private final ReportStatsService reportStatsService;
 
     @Operation(summary = "접속 통계 조회")
     @GetMapping("/connect")
@@ -65,6 +67,37 @@ public class StatisticsApiController {
 
         String[] dates = setDefaultDates(fromDate, toDate);
         return ResponseEntity.ok(ApiResponse.success(statsService.getRequestStats(dates[0], dates[1], statsKind)));
+    }
+
+    @Operation(summary = "보고서 통계 조회")
+    @GetMapping("/report")
+    public ResponseEntity<ApiResponse<List<StatsDto>>> getReportStats(
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate) throws Exception {
+
+        String[] dates = setDefaultDates(fromDate, toDate);
+        List<Object[]> stats = reportStatsService.getReprtStatsByDate(dates[0], dates[1]);
+        return ResponseEntity.ok(ApiResponse.success(convertToStatsDto(stats)));
+    }
+
+    @Operation(summary = "자료이용현황 통계 조회")
+    @GetMapping("/data-usage")
+    public ResponseEntity<ApiResponse<List<StatsDto>>> getDataUsageStats(
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate) throws Exception {
+
+        String[] dates = setDefaultDates(fromDate, toDate);
+        List<Object[]> stats = reportStatsService.getDtaUseStatsByDate(dates[0], dates[1]);
+        return ResponseEntity.ok(ApiResponse.success(convertToStatsDto(stats)));
+    }
+
+    private List<StatsDto> convertToStatsDto(List<Object[]> stats) {
+        return stats.stream()
+                .map(row -> StatsDto.builder()
+                        .statsDate((String) row[0])
+                        .statsCo(((Number) row[1]).intValue())
+                        .build())
+                .toList();
     }
 
     private String[] setDefaultDates(String fromDate, String toDate) {

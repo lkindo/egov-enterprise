@@ -474,9 +474,9 @@ class MenuServiceTest {
         List<MenuDto> result = menuService.getMenuHierarchy();
 
         // Then
-        assertThat(result).hasSize(2);
+        // 10000번 메뉴는 9999 초과이므로 rootMenus에 포함되지 않음 (130라인 로직)
+        assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(9999L);
-        assertThat(result.get(1).getId()).isEqualTo(10000L);
     }
 
     @Test
@@ -526,5 +526,48 @@ class MenuServiceTest {
         // Then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(50L);
+    }
+
+    @Test
+    @DisplayName("메뉴 계층 구조 조회 - modernRoute가 없을 때 프로그램명으로 폴백 추론 테스트")
+    void getMenuHierarchy_InferredRoute_Success() {
+        // Given
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn("admin");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+
+        // modernRoute는 null, 프로그램명은 EgovGroupList
+        Menu menu = Menu.builder().id(1L).menuNm("Group Management").upperMenuNo(0L).progrmFileNm("EgovGroupList").build();
+        when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(menu));
+        when(menuAuthorityRepository.findAll()).thenReturn(Collections.emptyList());
+        
+        // Program URL도 레거시 형태인 경우
+        Program p = Program.builder().progrmFileNm("EgovGroupList").url("/sec/gmt/EgovGroupList.do").build();
+        when(programRepository.findAll()).thenReturn(List.of(p));
+
+        // When
+        List<MenuDto> result = menuService.getMenuHierarchy();
+
+        // Then
+        // inferModernRoute 로직에 의해 /admin/security/group으로 반환되어야 함
+        assertThat(result.get(0).getChkURL()).isEqualTo("/admin/security/group");
+    }
+
+    @Test
+    @DisplayName("메뉴 상세 조회 - 레거시 URL에서 현대적 라우트 추론 테스트")
+    void selectMenuManage_InferFromLegacyUrl_Success() {
+        Long menuNo = 1L;
+        // modernRoute는 null, inferModernRoute에 잡히지 않는 특수 프로그램명 사용
+        Menu menu = Menu.builder().id(menuNo).menuNm("Unknown").progrmFileNm("UnknownProgram").build();
+        when(menuRepository.findById(menuNo)).thenReturn(Optional.of(menu));
+        
+        // 레거시 URL 패턴 매칭을 통해 추론되는지 확인
+        Program p1 = Program.builder().progrmFileNm("UnknownProgram").url("/uss/olh/faq/Something.do").build();
+        when(programRepository.findById("UnknownProgram")).thenReturn(Optional.of(p1));
+
+        MenuDto result = menuService.selectMenuManage(menuNo);
+
+        assertThat(result.getChkURL()).isEqualTo("/admin/help/faq");
     }
 }

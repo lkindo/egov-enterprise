@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PageResponse, SearchParams } from '@/types/system';
+import { PaginationResponse, SearchParams } from '@/types/system';
 import { CnsltVO as Consult } from '@/types/consult';
 
 /**
@@ -11,8 +11,8 @@ class CnsltAdminService extends AdminService {
     }
 
     /** 상담 목록 조회 */
-    async getConsultationList(params?: SearchParams, config?: any): Promise<PageResponse<Consult>> {
-        return this.get<PageResponse<Consult>>('', { ...config, params });
+    async getConsultationList(params?: SearchParams, config?: any): Promise<PaginationResponse<Consult>> {
+        return this.get<PaginationResponse<Consult>>('', { ...config, params });
     }
 
     /** 상담 상세 조회 */

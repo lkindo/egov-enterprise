@@ -93,21 +93,7 @@ public class MenuService {
             List<MenuDto> rootMenus = new ArrayList<>();
 
             for (Menu menu : menus) {
-                String url = "#";
-                if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {     
-                    url = menu.getModernRoute();
-                } else {
-                    String progrm = menu.getProgrmFileNm();
-                    if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {    
-                        Program program = programMap.get(progrm);
-                        if (program != null && program.getUrl() != null) {
-                            String progrmUrl = program.getUrl();
-                            url = "/".equals(progrmUrl) ? "#" : progrmUrl;
-                        } else {
-                            url = "/";
-                        }
-                    }
-                }
+                String url = calculateUrl(menu, programMap);
 
                 MenuDto dto = MenuDto.builder()
                         .id(menu.getId())
@@ -171,21 +157,7 @@ public class MenuService {
         List<MenuDto> result = new ArrayList<>();
 
         for (Menu menu : menus) {
-            String url = "#";
-            if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
-                url = menu.getModernRoute();
-            } else {
-                String progrm = menu.getProgrmFileNm();
-                if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
-                    Program program = programMap.get(progrm);
-                    if (program != null && program.getUrl() != null) {
-                        String progrmUrl = program.getUrl();
-                        url = "/".equals(progrmUrl) ? "#" : progrmUrl;
-                    } else {
-                        url = "/";
-                    }
-                }
-            }
+            String url = calculateUrl(menu, programMap);
 
             MenuDto dto = MenuDto.builder()
                     .id(menu.getId())
@@ -367,21 +339,7 @@ public class MenuService {
         return allMenus.stream()
                 .filter(menu -> menu.getUpperMenuNo() != null && menu.getUpperMenuNo().equals(menuNo))
                 .map(menu -> {
-                    String url = "#";
-                    if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
-                        url = menu.getModernRoute();
-                    } else {
-                        String progrm = menu.getProgrmFileNm();
-                        if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
-                            Program program = programMap.get(progrm);
-                            if (program != null && program.getUrl() != null) {
-                                String progrmUrl = program.getUrl();
-                                url = "/".equals(progrmUrl) ? "#" : progrmUrl;
-                            } else {
-                                url = "/";
-                            }
-                        }
-                    }
+                    String url = calculateUrl(menu, programMap);
 
                     return MenuDto.builder()
                             .id(menu.getId())
@@ -411,21 +369,7 @@ public class MenuService {
                 .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
 
         return allMenus.stream().map(menu -> {
-            String url = "#";
-            if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
-                url = menu.getModernRoute();
-            } else {
-                String progrm = menu.getProgrmFileNm();
-                if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
-                    Program program = programMap.get(progrm);
-                    if (program != null && program.getUrl() != null) {
-                        String progrmUrl = program.getUrl();
-                        url = "/".equals(progrmUrl) ? "#" : progrmUrl;
-                    } else {
-                        url = "/";
-                    }
-                }
-            }
+            String url = calculateUrl(menu, programMap);
 
             return MenuDto.builder()
                     .id(menu.getId())
@@ -457,21 +401,7 @@ public class MenuService {
         Menu menu = menuRepository.findById(Objects.requireNonNull(menuNo))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
 
-        String url = "#";
-        if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
-            url = menu.getModernRoute();
-        } else {
-            String progrm = menu.getProgrmFileNm();
-            if (progrm != null && !"dir".equals(progrm) && !"/".equals(progrm)) {
-                Program program = programRepository.findById(progrm).orElse(null);
-                if (program != null && program.getUrl() != null) {
-                    String progrmUrl = program.getUrl();
-                    url = "/".equals(progrmUrl) ? "#" : progrmUrl;
-                } else {
-                    url = "/";
-                }
-            }
-        }
+        String url = calculateUrl(menu, null);
 
         return MenuDto.builder()
                 .id(menu.getId())
@@ -486,5 +416,84 @@ public class MenuService {
                 .relateImagePath(menu.getRelateImagePath())
                 .relateImageNm(menu.getRelateImageNm())
                 .build();
+    }
+
+    /**
+     * 메뉴에 대한 최적의 URL을 계산합니다.
+     * 1. modernRoute가 존재하면 우선 사용
+     * 2. 없으면 프로그램명을 기반으로 현대적 라우트 추론
+     * 3. 추론 실패 시 레거시 프로그램 URL 사용 (없는 경우 #)
+     */
+    private String calculateUrl(Menu menu, Map<String, Program> programMap) {
+        if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
+            return menu.getModernRoute();
+        }
+
+        String progrmFileNm = menu.getProgrmFileNm();
+        if (progrmFileNm == null || "dir".equals(progrmFileNm) || "/".equals(progrmFileNm)) {
+            return "#";
+        }
+
+        // 1. 프로그램명 기반 정교한 추론
+        String inferred = inferModernRoute(progrmFileNm);
+        if (inferred != null) return inferred;
+
+        // 2. 레거시 프로그램 URL 폴백
+        Program program = null;
+        if (programMap != null) {
+            program = programMap.get(progrmFileNm);
+        } else {
+            program = programRepository.findById(progrmFileNm).orElse(null);
+        }
+
+        if (program != null && program.getUrl() != null) {
+            String legacyUrl = program.getUrl();
+            if (legacyUrl.contains(".do")) {
+                // 레거시 URL인 경우 한 번 더 추론 시도
+                String inferredFromLegacy = inferFromLegacyUrl(legacyUrl);
+                return inferredFromLegacy != null ? inferredFromLegacy : "#";
+            }
+            return "/".equals(legacyUrl) ? "#" : legacyUrl;
+        }
+
+        return "/";
+    }
+
+    private String inferModernRoute(String progrmFileNm) {
+        if (progrmFileNm == null) return null;
+
+        if (progrmFileNm.contains("BoardManage")) return "/admin/community/boards";
+        if (progrmFileNm.contains("BBSMaster")) return "/admin/community";
+        if (progrmFileNm.contains("CmmCode")) return "/admin/system/common-code";
+        if (progrmFileNm.contains("GroupList")) return "/admin/security/group";
+        if (progrmFileNm.contains("RoleList")) return "/admin/security/role";
+        if (progrmFileNm.contains("AuthorGroup")) return "/admin/security/authority";
+        if (progrmFileNm.contains("QustnrManage")) return "/admin/survey/manage";
+        if (progrmFileNm.contains("QustnrTmplat")) return "/admin/survey/templates";
+        if (progrmFileNm.contains("AdbkList")) return "/admin/collaboration/address-book";
+        if (progrmFileNm.contains("FaqList")) return "/admin/help/faq";
+        if (progrmFileNm.contains("CnsltList")) return "/admin/help/qna";
+        if (progrmFileNm.contains("MainImage")) return "/admin/system/banner";
+        if (progrmFileNm.contains("FileMng")) return "/admin/system/files";
+        if (progrmFileNm.contains("ProgramList")) return "/admin/system/programs";
+        if (progrmFileNm.contains("MenuCreat")) return "/admin/system/menus/by-authority";
+        if (progrmFileNm.contains("MenuList")) return "/admin/system/menus";
+
+        return null;
+    }
+
+    private String inferFromLegacyUrl(String legacyUrl) {
+        if (legacyUrl == null) return null;
+        
+        // 레거시 경로 패턴을 현대적 패턴으로 변환
+        if (legacyUrl.contains("/uss/olh/qna/")) return "/admin/help/qna";
+        if (legacyUrl.contains("/uss/olh/faq/")) return "/admin/help/faq";
+        if (legacyUrl.contains("/sec/gmt/")) return "/admin/security/group";
+        if (legacyUrl.contains("/sec/ram/")) return "/admin/security/role";
+        if (legacyUrl.contains("/sym/ccm/")) return "/admin/system/common-code";
+        if (legacyUrl.contains("/uss/olp/qtm/")) return "/admin/survey/templates";
+        if (legacyUrl.contains("/uss/olp/qmc/")) return "/admin/survey/manage";
+        
+        return null;
     }
 }

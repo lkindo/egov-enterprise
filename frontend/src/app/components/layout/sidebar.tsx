@@ -27,7 +27,8 @@ import {
   UserCheck,
   Cpu,
   BarChart3,
-  Sparkles
+  Sparkles,
+  Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,31 +51,39 @@ const ICON_MAP: Record<string, any> = {
   '대시보드': LayoutDashboard,
   '관리자': Settings,
   '사용자관리': Users,
+  '사용자 계정 및 권한 관리': Users,
   '보안관리': ShieldCheck,
+  '통합 보안 및 접속 정책': ShieldCheck,
   '시스템관리': Settings,
   '시스템 설정': Settings,
   '게시판': MessageSquare,
   '협업': Users,
   '일정관리': CalendarDays,
+  '스마트 일정/일지 관리': CalendarDays,
   '통계': LayoutDashboard,
+  '감사 및 통계 모니터링': BarChart3,
   '도움말': BookOpen,
+  '사용자지원': UserCheck,
   '설문조사': ClipboardList,
-    '마이페이지': UserCircle,
-    '마이페이지관리': Settings,
-    '공통코드관리': Database,
-    '행정코드관리': Database,
-    '기관코드수신': Database,
-    '로그관리': FileText,
-    '기본': CircleDot
+  '설문조사 및 투표 센터': ClipboardList,
+  '마이페이지': UserCircle,
+  '마이페이지관리': Settings,
+  '공통코드관리': Database,
+  '행정코드관리': Database,
+  '기관코드수신': Database,
+  '로그관리': FileText,
+  '임직원 및 부서 관리': Building2,
+  '기본': CircleDot
 };
 
 const DOMAIN_ICON_MAP: Record<number, any> = {
-  10: LayoutGrid,    // 워크스페이스
-  20: Briefcase,     // 운영 지원
-  30: Library,       // 지식 자산
-  40: UserCheck,     // 계정 및 권한
-  50: Cpu,           // 시스템 관리
-  60: BarChart3,     // 인사이트
+  10: LayoutGrid,      // 워크스페이스
+  11: MessageSquare,   // 커뮤니티
+  12: BookOpen,        // 고객지원센터
+  90: Settings,        // 통합 관리 센터
+  1000000: Briefcase,  // 🏢 Workspace (New Domain Layout)
+  2000000: Library,    // 💬 Community & Content (New Domain Layout)
+  3000000: Sparkles,   // 🙋‍♂️ Service & Operation (New Domain Layout)
 };
 
 const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
@@ -96,7 +105,6 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
     if (formatted.includes('selectBoardList.do')) return '/admin/community/boards';
     if (formatted.includes('AdminStats.do')) return '/admin/stats';
     if (formatted.includes('selectAddressBookList.do')) return '/admin/collaboration/address-book/selectAddressBookList';
-    if (formatted.includes('selectAdministrationWordList.do')) return '/admin/system/codes/administration';
     
     return formatted;
   }, [item.modernRoute, item.chkURL]);

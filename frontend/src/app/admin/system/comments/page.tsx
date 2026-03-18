@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 
 export const metadata = {
   title: '전사 지능형 댓글 통합 관리 | 전자정부 표준프레임워크',
-  description: '시스템 전반의 모든 커뮤니케이션 스트림을 실시간으로 관제하고 무결성을 보장합니다.',
+  description: '시스템 전반의 모든 커뮤니케이션 스트림을 실시간으로 관찰하고 무결성을 보장합니다.',
 };
 
 export default async function AdminCommentPage() {
@@ -19,9 +19,9 @@ export default async function AdminCommentPage() {
 
   try {
     const response = await commentAdminService.getComments({ page: 0, size: 500 }, axiosConfig);
-    initialComments = response?.content || response?.data?.content || response || [];
+    initialComments = (response as any)?.content || (response as any)?.data?.content || [];
   } catch (error) {
-    console.error('Server-side fetch audit logs failed:', error);
+    console.error('Server-side fetch comments failed:', error);
   }
 
   return (

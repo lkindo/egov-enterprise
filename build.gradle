@@ -53,9 +53,6 @@ subprojects {
         systemProperties System.properties
         maxHeapSize = "6144m"
         ignoreFailures = true
-        jacoco {
-            destinationFile = file("${project.projectDir}/build/jacoco/test.exec").absoluteFile
-        }
         finalizedBy 'jacocoTestReport'
     }
 

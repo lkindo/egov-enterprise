@@ -36,7 +36,7 @@ const CommunityListPage = () => {
         try {
             const params = { pageIndex, pageUnit: 10 };
             const data = await getCommunityList(params);
-            setList(data.resultList || []);
+            setList((data.resultList as any) || []);
             setTotalCount(data.totalCount || 0);
             // Calculate total pages if not provided by backend
             setTotalPages(Math.ceil((data.totalCount || 0) / 10));

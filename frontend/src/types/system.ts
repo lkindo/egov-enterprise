@@ -21,11 +21,15 @@ export interface PaginationInfo {
 export interface PageResponse<T = unknown> {
     list: T[];
     content?: T[]; // Spring Data JPA
+    resultList?: T[]; // eGovFrame Legacy 대응
     total: number;
     totalElements?: number; // Spring Data JPA
     page: number;
     size: number;
     totalPage: number;
+    paginationInfo?: PaginationInfo; // eGovFrame Legacy 대응
+    totalCount?: number; // eGovFrame Legacy 대응
+    [key: string]: any; // 모든 추가 필드 허용
 }
 
 export interface ApiResponse<T = unknown> {
@@ -59,6 +63,7 @@ export interface SearchParams {
     codeId?: string; // 추가
     pageUnit?: number; // 추가
     sbscrbSttus?: string; // 사용자 가입 상태 필터 추가
+    [key: string]: any; // 모든 추가 필드 허용
 }
 
 // Common Code

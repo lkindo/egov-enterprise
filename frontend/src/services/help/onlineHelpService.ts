@@ -1,9 +1,9 @@
 import client from '@/lib/api/client';
-import { PageResponse } from '@/types/system';
+import { PaginationResponse } from '@/types/system';
 import { FaqVO, OnlineHelpSearchParams } from '@/types/onlineHelp';
 
-export const getFaqList = async (params: OnlineHelpSearchParams): Promise<PageResponse<FaqVO>> =>
-    client.get<PageResponse<FaqVO>>('/uss/olh/faq/selectFaqList.do', { params });
+export const getFaqList = async (params: OnlineHelpSearchParams): Promise<PaginationResponse<FaqVO>> =>
+    client.get<PaginationResponse<FaqVO>>('/uss/olh/faq/selectFaqList.do', { params });
 
 export const getFaq = async (faqId: string): Promise<FaqVO> =>
     client.get<FaqVO>(`/uss/olh/faq/selectFaqDetail.do?faqId=${faqId}`);

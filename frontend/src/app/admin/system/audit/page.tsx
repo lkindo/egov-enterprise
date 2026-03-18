@@ -19,7 +19,7 @@ export default async function AdminAuditPage() {
 
   try {
     const response = await auditAdminService.getAuditLogs({ page: 0, size: 500 }, axiosConfig);
-    initialLogs = response?.content || response?.data?.content || response || [];
+    initialLogs = (response as any)?.content || (response as any)?.data?.content || [];
   } catch (error) {
     console.error('Server-side fetch audit logs failed:', error);
   }
