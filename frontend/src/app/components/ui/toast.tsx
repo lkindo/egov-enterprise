@@ -7,87 +7,87 @@ import { cn } from '@/lib/utils';
 type ToastType = 'success' | 'error' | 'info' | 'loading';
 
 interface Toast {
-  id: string;
-  message: string;
-  type: ToastType;
+ id: string;
+ message: string;
+ type: ToastType;
 }
 
 interface ToastContextType {
-  toast: (message: string, type?: ToastType) => void;
-  success: (message: string) => void;
-  error: (message: string) => void;
-  removeToast: (id: string) => void;
+ toast: (message: string, type?: ToastType) => void;
+ success: (message: string) => void;
+ error: (message: string) => void;
+ removeToast: (id: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+ const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+ const removeToast = useCallback((id: string) => {
+ setToasts((prev) => prev.filter((t) => t.id !== id));
+ }, []);
 
-  const toast = useCallback((message: string, type: ToastType = 'info') => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message, type }]);
+ const toast = useCallback((message: string, type: ToastType = 'info') => {
+ const id = Math.random().toString(36).substring(2, 9);
+ setToasts((prev) => [...prev, { id, message, type }]);
 
-    if (type !== 'loading') {
-      setTimeout(() => removeToast(id), 4000);
-    }
-  }, [removeToast]);
+ if (type !== 'loading') {
+ setTimeout(() => removeToast(id), 4000);
+ }
+ }, [removeToast]);
 
-  const success = useCallback((message: string) => toast(message, 'success'), [toast]);
-  const error = useCallback((message: string) => toast(message, 'error'), [toast]);
+ const success = useCallback((message: string) => toast(message, 'success'), [toast]);
+ const error = useCallback((message: string) => toast(message, 'error'), [toast]);
 
-  // API 전역 에러 리스너
-  React.useEffect(() => {
-    const handleApiError = (e: any) => {
-      const { message, status } = e.detail;
-      // 401은 토큰 재발급 로직이 처리하므로 사용자에게는 알리지 않음
-      if (status !== 401) {
-        error(message);
-      }
-    };
+ // API 전역 에러 리스너
+ React.useEffect(() => {
+ const handleApiError = (e: any) => {
+ const { message, status } = e.detail;
+ // 401은 토큰 재발급 로직이 처리하므로 사용자에게는 알리지 않음
+ if (status !== 401) {
+ error(message);
+ }
+ };
 
-    window.addEventListener('api-error', handleApiError);
-    return () => window.removeEventListener('api-error', handleApiError);
-  }, [error]);
+ window.addEventListener('api-error', handleApiError);
+ return () => window.removeEventListener('api-error', handleApiError);
+ }, [error]);
 
-  return (
-    <ToastContext.Provider value={{ toast, success, error, removeToast }}>
-      {children}
-      <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 w-full max-w-sm">
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-lg shadow-lg border animate-in slide-in-from-right-full",
-              t.type === 'success' && "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400",
-              t.type === 'error' && "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400",
-              t.type === 'info' && "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400",
-              t.type === 'loading' && "bg-white border-border text-foreground dark:bg-zinc-900"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              {t.type === 'success' ? <CheckCircle size={18} /> : null}
-              {t.type === 'error' ? <AlertCircle size={18} /> : null}
-              {t.type === 'info' ? <Info size={18} /> : null}
-              {t.type === 'loading' ? <Loader2 size={18} className="animate-spin" /> : null}
-              <span className="text-sm font-medium">{t.message}</span>
-            </div>
-            <button onClick={() => removeToast(t.id)} className="opacity-50 hover:opacity-100">
-              <X size={16} />
-            </button>
-          </div>
-        ))}
-      </div>
-    </ToastContext.Provider>
-  );
+ return (
+ <ToastContext.Provider value={{ toast, success, error, removeToast }}>
+ {children}
+ <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 w-full max-w-sm">
+ {toasts.map((t) => (
+ <div
+ key={t.id}
+ className={cn(
+ "flex items-center justify-between p-4 rounded-lg shadow-lg border animate-in slide-in-from-right-full",
+ t.type === 'success' && "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400",
+ t.type === 'error' && "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400",
+ t.type === 'info' && "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400",
+ t.type === 'loading' && "bg-white border-border text-foreground dark:bg-zinc-900"
+ )}
+ >
+ <div className="flex items-center gap-3">
+ {t.type === 'success' ? <CheckCircle size={18} /> : null}
+ {t.type === 'error' ? <AlertCircle size={18} /> : null}
+ {t.type === 'info' ? <Info size={18} /> : null}
+ {t.type === 'loading' ? <Loader2 size={18} className="animate-spin" /> : null}
+ <span className="text-sm font-medium">{t.message}</span>
+ </div>
+ <button onClick={() => removeToast(t.id)} className="opacity-50 hover:opacity-100">
+ <X size={16} />
+ </button>
+ </div>
+ ))}
+ </div>
+ </ToastContext.Provider>
+ );
 }
 
 export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) throw new Error('useToast must be used within ToastProvider');
-  return context;
+ const context = useContext(ToastContext);
+ if (!context) throw new Error('useToast must be used within ToastProvider');
+ return context;
 };

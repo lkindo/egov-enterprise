@@ -6,59 +6,59 @@ import { SearchParams, PageResponse } from '@/types/system';
  * 연결: com.company.project.api.controller.system.NtwrkController
  */
 export interface NetworkInfo {
-    ntwrkId: string;
-    manageIem: string;
-    ntwrkIp: string;
-    userNm: string;
-    subnet: string;
-    gtwy: string;
-    domnServer: string;
-    useAt: "Y" | "N";
+ ntwrkId: string;
+ manageIem: string;
+ ntwrkIp: string;
+ userNm: string;
+ subnet: string;
+ gtwy: string;
+ domnServer: string;
+ useAt: "Y" | "N";
 }
 
 export interface NetworkStatusDetailed {
-    sysNm: string;
-    sysIp: string;
-    sysPort: string;
-    svcSttus: string;
-    logDt: string;
+ sysNm: string;
+ sysIp: string;
+ sysPort: string;
+ svcSttus: string;
+ logDt: string;
 }
 
 const BASE_URL = '/admin/system/networks';
 
 export const networkService = {
-    /** 네트워크 목록 조회 */
-    getNetworks: async (params?: SearchParams): Promise<PageResponse<NetworkInfo>> => {
-        return client.get<PageResponse<NetworkInfo>>(BASE_URL, { params });
-    },
+ /** 네트워크 목록 조회 */
+ getNetworks: async (params?: SearchParams): Promise<PageResponse<NetworkInfo>> => {
+ return client.get<PageResponse<NetworkInfo>>(BASE_URL, { params });
+ },
 
-    /** 네트워크 상세 조회 */
-    getNetwork: async (ntwrkId: string): Promise<NetworkInfo> => {
-        return client.get<NetworkInfo>(`${BASE_URL}/${ntwrkId}`);
-    },
+ /** 네트워크 상세 조회 */
+ getNetwork: async (ntwrkId: string): Promise<NetworkInfo> => {
+ return client.get<NetworkInfo>(`${BASE_URL}/${ntwrkId}`);
+ },
 
-    /** 네트워크 기초 정보 등록 */
-    createNetwork: async (data: Partial<NetworkInfo>): Promise<string> => {
-        return client.post<string>(BASE_URL, data);
-    },
+ /** 네트워크 기초 정보 등록 */
+ createNetwork: async (data: Partial<NetworkInfo>): Promise<string> => {
+ return client.post<string>(BASE_URL, data);
+ },
 
-    /** 네트워크 정보 수정 */
-    updateNetwork: async (ntwrkId: string, data: Partial<NetworkInfo>): Promise<void> => {
-        return client.put<void>(`${BASE_URL}/${ntwrkId}`, data);
-    },
+ /** 네트워크 정보 수정 */
+ updateNetwork: async (ntwrkId: string, data: Partial<NetworkInfo>): Promise<void> => {
+ return client.put<void>(`${BASE_URL}/${ntwrkId}`, data);
+ },
 
-    /** 네트워크 정보 삭제 */
-    deleteNetwork: async (ntwrkId: string): Promise<void> => {
-        return client.delete<void>(`${BASE_URL}/${ntwrkId}`);
-    },
+ /** 네트워크 정보 삭제 */
+ deleteNetwork: async (ntwrkId: string): Promise<void> => {
+ return client.delete<void>(`${BASE_URL}/${ntwrkId}`);
+ },
 
-    /** (모니터링) 네트워크 서비스 상태 목록 조회 */
-    getStatus: async (params?: SearchParams): Promise<PageResponse<NetworkStatusDetailed>> => {
-        return client.get<PageResponse<NetworkStatusDetailed>>('/admin/system/ntwrksvc-monitoring', { params });
-    },
+ /** (모니터링) 네트워크 서비스 상태 목록 조회 */
+ getStatus: async (params?: SearchParams): Promise<PageResponse<NetworkStatusDetailed>> => {
+ return client.get<PageResponse<NetworkStatusDetailed>>('/admin/system/ntwrksvc-monitoring', { params });
+ },
 
-    /** 네트워크 로그 조회 (Alias) */
-    getNetworkLogs: async (params?: SearchParams): Promise<PageResponse<NetworkStatusDetailed>> => {
-        return client.get<PageResponse<NetworkStatusDetailed>>('/admin/system/ntwrksvc-monitoring', { params });
-    },
+ /** 네트워크 로그 조회 (Alias) */
+ getNetworkLogs: async (params?: SearchParams): Promise<PageResponse<NetworkStatusDetailed>> => {
+ return client.get<PageResponse<NetworkStatusDetailed>>('/admin/system/ntwrksvc-monitoring', { params });
+ },
 };

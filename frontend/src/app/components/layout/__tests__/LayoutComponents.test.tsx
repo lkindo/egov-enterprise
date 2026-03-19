@@ -5,23 +5,23 @@ import { ScrollToTop } from '../scroll-to-top';
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/',
-  useSearchParams: () => new URLSearchParams(),
+ usePathname: () => '/',
+ useSearchParams: () => new URLSearchParams(),
 }));
 
 describe('Layout Components', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
+ beforeEach(() => {
+ vi.useFakeTimers();
+ });
 
-  it('ScrollToTop handles route changes', async () => {
-    window.scrollTo = vi.fn();
-    render(<ScrollToTop />);
+ it('ScrollToTop handles route changes', async () => {
+ window.scrollTo = vi.fn();
+ render(<ScrollToTop />);
 
-    act(() => {
-      vi.runAllTimers();
-    });
+ act(() => {
+ vi.runAllTimers();
+ });
 
-    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
-  });
+ expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+ });
 });

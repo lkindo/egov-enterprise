@@ -6,12 +6,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+ Table,
+ TableBody,
+ TableCell,
+ TableHead,
+ TableHeader,
+ TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Search, BarChart3 } from "lucide-react";
@@ -21,94 +21,94 @@ import { TableSkeleton } from "@/components/common/TableSkeleton";
 import { PagePagination } from "@/components/common/PagePagination";
 
 export default function SurveyStatsPage() {
-    const router = useRouter();
-    const [params, setParams] = useState<PollSearchParams>({
-        pageIndex: 1,
-        searchKeyword: '',
-    });
+ const router = useRouter();
+ const [params, setParams] = useState<PollSearchParams>({
+ page번호: 1,
+ searchKeyword: '',
+ });
 
-    const { data, isLoading } = useQuery({
-        queryKey: ['admin-survey-stats', params],
-        queryFn: () => getPollList(params),
-    });
+ const { data, isLoading } = useQuery({
+ queryKey: ['admin-survey-stats', params],
+ queryFn: () => getPollList(params),
+ });
 
-    const polls: OnlinePollManageVO[] = data?.resultList || [];
-    const pagination = data?.paginationInfo;
+ const polls: OnlinePollManageVO[] = data?.resultList || [];
+ const pagination = data?.paginationInfo;
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        setParams(prev => ({ ...prev, pageIndex: 1 }));
-    };
+ const handleSearch = (e: React.FormEvent) => {
+ e.preventDefault();
+ setParams(prev => ({ ...prev, page번호: 1 }));
+ };
 
-    return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold tracking-tight">설문 통계 분석</h2>
-            </div>
+ return (
+ <div className="space-y-6">
+ <div className="flex justify-between items-center">
+ <h2 className="text-2xl font-bold tracking-tight">설문 통계 분석</h2>
+ </div>
 
-            <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
-                <Input
-                    placeholder="설문명 검색"
-                    className="max-w-sm"
-                    value={params.searchKeyword || ''}
-                    onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
-                />
-                <Button type="submit">
-                    <Search className="mr-2 h-4 w-4" />
-                    조회
-                </Button>
-            </form>
+ <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
+ <Input
+ placeholder="설문명 검색"
+ className="max-w-sm"
+ value={params.searchKeyword || ''}
+ onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
+ />
+ <Button type="submit">
+ <Search className="mr-2 h-4 w-4" />
+ 조회
+ </Button>
+ </form>
 
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[60px]">번호</TableHead>
-                            <TableHead>설문명</TableHead>
-                            <TableHead>응답수</TableHead>
-                            <TableHead>기간</TableHead>
-                            <TableHead>상태</TableHead>
-                            <TableHead className="text-right">통계보기</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableSkeleton columnCount={6} rowCount={10} />
-                        ) : polls.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
-                                    설문 데이터가 없습니다.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            polls.map((poll, index) => (
-                                <TableRow key={poll.pollId}>
-                                    <TableCell>{index + 1 + ((params.pageIndex || 1) - 1) * 10}</TableCell>
-                                    <TableCell className="font-medium">{poll.pollNm}</TableCell>
-                                    <TableCell>0</TableCell>
-                                    <TableCell>{poll.pollBeginDe} ~ {poll.pollEndDe}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline">집계중</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/survey/stats/${poll.pollId}`)}>
-                                            <BarChart3 className="h-4 w-4 mr-1" />
-                                            결과 
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+ <div className="rounded-md border">
+ <Table>
+ <TableHeader>
+ <TableRow>
+ <TableHead className="w-[60px]">번호</TableHead>
+ <TableHead>설문명</TableHead>
+ <TableHead>응답수</TableHead>
+ <TableHead>기간</TableHead>
+ <TableHead>상태</TableHead>
+ <TableHead className="text-right">통계보기</TableHead>
+ </TableRow>
+ </TableHeader>
+ <TableBody>
+ {isLoading ? (
+ <TableSkeleton columnCount={6} rowCount={10} />
+ ) : polls.length === 0 ? (
+ <TableRow>
+ <TableCell colSpan={6} className="h-24 text-center">
+ 설문 데이터가 없습니다.
+ </TableCell>
+ </TableRow>
+ ) : (
+ polls.map((poll, index) => (
+ <TableRow key={poll.pollId}>
+ <TableCell>{index + 1 + ((params.page번호 || 1) - 1) * 10}</TableCell>
+ <TableCell className="font-medium">{poll.pollNm}</TableCell>
+ <TableCell>0</TableCell>
+ <TableCell>{poll.pollBeginDe} ~ {poll.pollEndDe}</TableCell>
+ <TableCell>
+ <Badge variant="outline">집계중</Badge>
+ </TableCell>
+ <TableCell className="text-right">
+ <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/survey/stats/${poll.pollId}`)}>
+ <BarChart3 className="h-4 w-4 mr-1" />
+ 결과 
+ </Button>
+ </TableCell>
+ </TableRow>
+ ))
+ )}
+ </TableBody>
+ </Table>
+ </div>
 
-            {pagination && (
-                <PagePagination
-                    pagination={pagination}
-                    onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
-                />
-            )}
-        </div>
-    );
+ {pagination && (
+ <PagePagination
+ pagination={pagination}
+ onPageChange={(page) => setParams(prev => ({ ...prev, page번호: page }))}
+ />
+ )}
+ </div>
+ );
 }

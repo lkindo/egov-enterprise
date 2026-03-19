@@ -3,53 +3,53 @@ import { authService } from '../authService';
 import api from '@/lib/api/client';
 
 vi.mock('@/lib/api/client', () => ({
-  default: {
-    post: vi.fn(),
-    get: vi.fn(),
-  },
+ default: {
+ post: vi.fn(),
+ get: vi.fn(),
+ },
 }));
 
 describe('authService', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+ beforeEach(() => {
+ vi.clearAllMocks();
+ });
 
-  it('login should call api.post with credentials', async () => {
-    const mockResponse = { result: { accessToken: 'token', role: 'ROLE_USER' } };
-    (api.post as any).mockResolvedValue(mockResponse);
+ it('login should call api.post with credentials', async () => {
+ const mockResponse = { result: { accessToken: 'token', role: 'ROLE_USER' } };
+ (api.post as any).mockResolvedValue(mockResponse);
 
-    const loginData = { id: 'testuser', password: 'password' };
-    const result = await authService.login(loginData);
+ const loginData = { id: 'testuser', password: 'password' };
+ const result = await authService.login(loginData);
 
-    expect(api.post).toHaveBeenCalledWith('auth/login', loginData);
-    expect(result).toEqual(mockResponse.result);
-  });
+ expect(api.post).toHaveBeenCalledWith('auth/login', loginData);
+ expect(result).toEqual(mockResponse);
+ });
 
-  it('logout should call api.post', async () => {
-    (api.post as any).mockResolvedValue({ result: null });
+ it('logout should call api.post', async () => {
+ (api.post as any).mockResolvedValue({ result: null });
 
-    await authService.logout();
+ await authService.logout();
 
-    expect(api.post).toHaveBeenCalledWith('auth/logout');
-  });
+ expect(api.post).toHaveBeenCalledWith('auth/logout');
+ });
 
-  it('reissue should call api.post', async () => {
-    const mockResponse = { result: { accessToken: 'new-token' } };
-    (api.post as any).mockResolvedValue(mockResponse);
+ it('reissue should call api.post', async () => {
+ const mockResponse = { result: { accessToken: 'new-token' } };
+ (api.post as any).mockResolvedValue(mockResponse);
 
-    const result = await authService.reissue();
+ const result = await authService.reissue();
 
-    expect(api.post).toHaveBeenCalledWith('auth/reissue');
-    expect(result).toEqual(mockResponse.result);
-  });
+ expect(api.post).toHaveBeenCalledWith('auth/reissue');
+ expect(result).toEqual(mockResponse);
+ });
 
-  it('getCurrentUser should call api.get', async () => {
-    const mockResponse = { result: { id: 'user01', name: 'Tester' } };
-    (api.get as any).mockResolvedValue(mockResponse);
+ it('getCurrentUser should call api.get', async () => {
+ const mockResponse = { result: { id: 'user01', name: 'Tester' } };
+ (api.get as any).mockResolvedValue(mockResponse);
 
-    const result = await authService.getCurrentUser();
+ const result = await authService.getCurrentUser();
 
-    expect(api.get).toHaveBeenCalledWith('auth/me');
-    expect(result).toEqual(mockResponse.result);
-  });
+ expect(api.get).toHaveBeenCalledWith('auth/me');
+ expect(result).toEqual(mockResponse);
+ });
 });

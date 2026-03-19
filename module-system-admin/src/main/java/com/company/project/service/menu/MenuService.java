@@ -66,69 +66,81 @@ public class MenuService {
                 roles.add("ROLE_ANONYMOUS");
             }
 
-            List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();    
-            List<MenuAuthority> authorities = menuAuthorityRepository.findAll();
-
-            List<Long> authorizedMenuNos = authorities.stream()
-                    .filter(ma -> roles.contains(ma.getId().getAuthorCode()))
-                    .map(ma -> ma.getId().getMenuNo())
-                    .distinct()
-                    .collect(Collectors.toList());
-
-            // 신규 메뉴 체계(menu_no <= 9999)만 GNB/LNB에 포함
-            List<Menu> menus = allMenus.stream()
-                    .filter(m -> {
-                        boolean isAuthorized = authorizedMenuNos.contains(m.getId());
-                        boolean isAdmin = roles.contains("ROLE_ADMIN");
-                        return isAuthorized || isAdmin;
-                    })
-                    .collect(Collectors.toList());
-
-            List<Program> programs = programRepository.findAll();
-            Map<String, Program> programMap = programs.stream()
-                    .filter(p -> p.getProgrmFileNm() != null)
-                    .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
-
-            Map<Long, MenuDto> menuMap = new LinkedHashMap<>();
-            List<MenuDto> rootMenus = new ArrayList<>();
-
-            for (Menu menu : menus) {
-                String url = calculateUrl(menu, programMap);
-
-                MenuDto dto = MenuDto.builder()
-                        .id(menu.getId())
-                        .menuNo(menu.getId())
-                        .menuNm(menu.getMenuNm())
-                        .progrmFileNm(menu.getProgrmFileNm())
-                        .upperMenuNo(menu.getUpperMenuNo())
-                        .upperMenuId(menu.getUpperMenuNo())
-                        .menuOrdr(menu.getMenuOrdr())
-                        .chkURL(url)
-                        .modernRoute(menu.getModernRoute())
-                        .relateImagePath(menu.getRelateImagePath())
-                        .relateImageNm(menu.getRelateImageNm())
-                        .build();
-
-                menuMap.put(dto.getId(), dto);
-
-                Long upperMenuNo = dto.getUpperMenuNo();
-                if (upperMenuNo == null || upperMenuNo == 0) {
-                    if (dto.getId() != null && dto.getId() != 0 && dto.getId() <= 9999) {
-                        rootMenus.add(dto);
-                    }
-                } else {
-                    MenuDto parent = menuMap.get(upperMenuNo);
-                    if (parent != null) {
-                        parent.addChild(dto);
-                    }
-                }
-            }
-
-            return rootMenus;
+            return buildMenuTree(null, roles);
         } catch (Exception e) {
             log.error("getMenuHierarchy failed", e);
             throw e;
         }
+    }
+
+    /**
+     * 공통 메뉴 트리 빌더
+     * @param rootMenuNo 최상단 부모 번호 (null 인 경우 전체 루트 조회)
+     * @param roles 사용자 권한 목록
+     */
+    private List<MenuDto> buildMenuTree(Long rootMenuNo, List<String> roles) {
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        List<MenuAuthority> authorities = menuAuthorityRepository.findAll();
+
+        List<Long> authorizedMenuNos = authorities.stream()
+                .filter(ma -> roles.contains(ma.getId().getAuthorCode()))
+                .map(ma -> ma.getId().getMenuNo())
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<Menu> filteredMenus = allMenus.stream()
+                .filter(m -> {
+                    boolean isAuthorized = authorizedMenuNos.contains(m.getId());
+                    boolean isAdmin = roles.contains("ROLE_ADMIN");
+                    return (isAuthorized || isAdmin) && m.getId() <= 9999999;
+                })
+                .collect(Collectors.toList());
+
+        List<Program> programs = programRepository.findAll();
+        Map<String, Program> programMap = programs.stream()
+                .filter(p -> p.getProgrmFileNm() != null)
+                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
+
+        Map<Long, MenuDto> menuMap = new LinkedHashMap<>();
+        List<MenuDto> rootNodes = new ArrayList<>();
+
+        for (Menu menu : filteredMenus) {
+            String url = calculateUrl(menu, programMap);
+
+            MenuDto dto = MenuDto.builder()
+                    .id(menu.getId())
+                    .menuNo(menu.getId())
+                    .menuNm(menu.getMenuNm())
+                    .progrmFileNm(menu.getProgrmFileNm())
+                    .upperMenuNo(menu.getUpperMenuNo())
+                    .upperMenuId(menu.getUpperMenuNo())
+                    .menuOrdr(menu.getMenuOrdr())
+                    .chkURL(url)
+                    .modernRoute(menu.getModernRoute())
+                    .relateImagePath(menu.getRelateImagePath())
+                    .relateImageNm(menu.getRelateImageNm())
+                    .build();
+
+            menuMap.put(dto.getId(), dto);
+
+            Long upperNo = dto.getUpperMenuNo();
+            if (rootMenuNo == null) {
+                // 전체 루트 조회인 경우
+                if (upperNo == null || upperNo == 0) {
+                    rootNodes.add(dto);
+                } else if (menuMap.containsKey(upperNo)) {
+                    menuMap.get(upperNo).addChild(dto);
+                }
+            } else {
+                // 특정 서브트리 조회인 경우
+                if (upperNo != null && upperNo.equals(rootMenuNo)) {
+                    rootNodes.add(dto);
+                } else if (menuMap.containsKey(upperNo)) {
+                    menuMap.get(upperNo).addChild(dto);
+                }
+            }
+        }
+        return rootNodes;
     }
 
     @Cacheable(value = "allMenus", unless = "#result == null")
@@ -148,7 +160,7 @@ public class MenuService {
 
     @Cacheable(value = "allMenuDtos")
     public List<MenuDto> getAllMenus() {
-        List<Menu> menus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
+        List<Menu> filteredMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
                 .filter(p -> p.getProgrmFileNm() != null)
@@ -156,7 +168,7 @@ public class MenuService {
 
         List<MenuDto> result = new ArrayList<>();
 
-        for (Menu menu : menus) {
+        for (Menu menu : filteredMenus) {
             String url = calculateUrl(menu, programMap);
 
             MenuDto dto = MenuDto.builder()
@@ -330,32 +342,16 @@ public class MenuService {
      * 하위 메뉴 목록 조회
      */
     public List<MenuDto> getSubMenus(Long menuNo) {
-        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
-        List<Program> programs = programRepository.findAll();
-        Map<String, Program> programMap = programs.stream()
-                .filter(p -> p.getProgrmFileNm() != null)
-                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
-
-        return allMenus.stream()
-                .filter(menu -> menu.getUpperMenuNo() != null && menu.getUpperMenuNo().equals(menuNo))
-                .map(menu -> {
-                    String url = calculateUrl(menu, programMap);
-
-                    return MenuDto.builder()
-                            .id(menu.getId())
-                            .menuNo(menu.getId())
-                            .menuNm(menu.getMenuNm())
-                            .progrmFileNm(menu.getProgrmFileNm())
-                            .upperMenuNo(menu.getUpperMenuNo())
-                            .upperMenuId(menu.getUpperMenuNo())
-                            .menuOrdr(menu.getMenuOrdr())
-                            .chkURL(url)
-                            .modernRoute(menu.getModernRoute())
-                            .relateImagePath(menu.getRelateImagePath())
-                            .relateImageNm(menu.getRelateImageNm())
-                            .build();
-                })
-                .collect(Collectors.toList());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();        
+        List<String> roles = new ArrayList<>();
+        if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
+            for (GrantedAuthority authority : auth.getAuthorities()) {
+                roles.add(authority.getAuthority());
+            }
+        } else {
+            roles.add("ROLE_ANONYMOUS");
+        }
+        return buildMenuTree(menuNo, roles);
     }
 
     /**

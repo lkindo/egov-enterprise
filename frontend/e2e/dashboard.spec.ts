@@ -16,12 +16,12 @@ test.describe('Dashboard Features', () => {
         await expect(page.getByText('보안 지수')).toBeVisible();
 
         // Check for charts - Using regex for flexibility
-        await expect(page.getByText(/Traffic Analytics|System Pulse/).first()).toBeVisible({ timeout: 20000 });
+        await expect(page.getByText(/트래픽 데이터 분석|시스템 활성 지표/).first()).toBeVisible({ timeout: 20000 });
     });
 
     test('should verify quick links', async ({ page }) => {
         // Look for Recent Notices link
-        const noticeLink = page.getByRole('link', { name: /Recent Notices|더보기/i }).first();
+        const noticeLink = page.getByRole('link', { name: /최근 공지사항|더보기/i }).first();
         await expect(noticeLink).toBeVisible();
         await noticeLink.click();
 

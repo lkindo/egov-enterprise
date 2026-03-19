@@ -1,14 +1,20 @@
 import { test, expect } from '@playwright/test';
 
-test('Snapshot Debug', async ({ page }) => {
-    await page.addInitScript(() => { window.localStorage.setItem('egov_smart_tour_v1', 'true'); });
-    await page.goto('/admin/system/common-code', { waitUntil: 'networkidle' });
+test('capture-admin-pages', async ({ page }) => {
+    // Bypass onboarding tour
+    await page.addInitScript(() => {
+        window.localStorage.setItem('egov_smart_tour_v1', 'true');
+    });
+    // Ensure we explicitly load the homepage once
+    await page.goto('/', { waitUntil: 'networkidle' });
 
-    // Screenshot to see what's actually rendered
-    await page.screenshot({ path: 'playwright-screenshots/admin-code-debug.png', fullPage: true });
-
-    // Check for "코드 등록" presence in DOM regardless of visibility
-    const html = await page.content();
-    console.log('>>> Is "코드 등록" in HTML?', html.includes('코드 등록'));
-    console.log('>>> Current URL:', page.url());
+    console.log("--- User Management ---");
+    await page.goto('/admin/user/manage');
+    await page.waitForLoadState('networkidle');
+    await page.screenshot({ path: 'playwright/debug_user_manage_v2.png', fullPage: true });
+    
+    console.log("\n--- Online Poll ---");
+    await page.goto('/admin/survey/polls');
+    await page.waitForLoadState('networkidle');
+    await page.screenshot({ path: 'playwright/debug_poll_manage_v2.png', fullPage: true });
 });

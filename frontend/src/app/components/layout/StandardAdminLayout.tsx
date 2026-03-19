@@ -8,28 +8,28 @@ import { useMessage } from '@/hooks/useMessage';
 import { PagePagination } from '@/components/common/PagePagination';
 
 interface StandardAdminLayoutProps<T extends { [key: string]: any }> {
-    title: string;
-    breadcrumbParent?: string;
-    filterFields: FilterField[];
-    onSearch: (values: Record<string, any>) => void;
-    onReset?: () => void;
+ title: string;
+ breadcrumbParent?: string;
+ filterFields: FilterField[];
+ onSearch: (values: Record<string, any>) => void;
+ onReset?: () => void;
 
-    gridTitle: string;
-    columns: ColumnDef<T>[];
-    data: T[];
-    keyField: keyof T;
+ gridTitle: string;
+ columns: ColumnDef<T>[];
+ data: T[];
+ keyField: keyof T;
 
-    /** 전체 레코드 수 */
-    totalCount?: number;
-    /** 페이지당 항목 수 (기본 10) */
-    pageSize?: number;
-    /** 현재 페이지 번호 (1-based) */
-    currentPage?: number;
-    /** 페이지 변경 콜백 */
-    onPageChange?: (page: number) => void;
+ /** 전체 레코드 수 */
+ totalCount?: number;
+ /** 페이지당 항목 수 (기본 10) */
+ pageSize?: number;
+ /** 현재 페이지 번호 (1-based) */
+ currentPage?: number;
+ /** 페이지 변경 콜백 */
+ onPageChange?: (page: number) => void;
 
-    actionButton?: React.ReactNode;
-    children?: React.ReactNode; // 모달 등 추가 요소
+ actionButton?: React.ReactNode;
+ children?: React.ReactNode; // 모달 등 추가 요소
 }
 
 /**
@@ -37,69 +37,69 @@ interface StandardAdminLayoutProps<T extends { [key: string]: any }> {
  * - 검색 필터, 데이터 그리드, 페이지 헤더를 통합한 표준 패턴
  */
 export function StandardAdminLayout<T extends { [key: string]: any }>({
-    title,
-    breadcrumbParent = 'ADMIN',
-    filterFields,
-    onSearch,
-    onReset,
-    gridTitle,
-    columns,
-    data,
-    keyField,
-    totalCount,
-    pageSize = 10,
-    currentPage = 1,
-    onPageChange,
-    actionButton,
-    children
+ title,
+ breadcrumbParent = 'ADMIN',
+ filterFields,
+ onSearch,
+ onReset,
+ gridTitle,
+ columns,
+ data,
+ keyField,
+ totalCount,
+ pageSize = 10,
+ currentPage = 1,
+ onPageChange,
+ actionButton,
+ children
 }: StandardAdminLayoutProps<T>) {
-    const { t } = useMessage();
+ const { t } = useMessage();
 
-    const totalPageCount = totalCount !== undefined ? Math.max(1, Math.ceil(totalCount / pageSize)) : undefined;
+ const totalPageCount = totalCount !== undefined ? Math.max(1, Math.ceil(totalCount / pageSize)) : undefined;
 
-    return (
-        <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* 1. Page Header */}
-            <PageHeader
-                title={title}
-                breadcrumbs={[{ label: breadcrumbParent }, { label: title }]}
-                actions={actionButton}
-            />
+ return (
+ <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
+ {/* 1. Page Header */}
+ <PageHeader
+ title={title}
+ breadcrumbs={[{ label: breadcrumbParent }, { label: title }]}
+ actions={actionButton}
+ />
 
-            {/* 2. Search Panel */}
-            <div className="rounded-[2.5rem] bg-slate-50 border border-slate-100 p-8 shadow-inner">
-                <SmartSearchPanel
-                    fields={filterFields}
-                    onSearch={onSearch}
-                    onReset={onReset}
-                />
-            </div>
+ {/* 2. Search Panel */}
+ <div className="rounded-[2.5rem] bg-slate-50 border border-slate-100 p-8 shadow-inner">
+ <SmartSearchPanel
+ fields={filterFields}
+ onSearch={onSearch}
+ onReset={onReset}
+ />
+ </div>
 
-            {/* 3. Data Grid + Pagination */}
-            <div className="rounded-[3rem] bg-white shadow-2xl border border-slate-100 overflow-hidden ring-1 ring-slate-50">
-                <UltimateDataGrid
-                    title={gridTitle}
-                    columns={columns}
-                    data={data}
-                    keyField={keyField as string}
-                />
-                {totalPageCount !== undefined && totalPageCount > 1 && onPageChange && (
-                    <div className="border-t border-slate-100 px-8 py-4">
-                        <PagePagination
-                            pagination={{
-                                currentPageNo: currentPage,
-                                totalPageCount,
-                                totalRecordCount: totalCount,
-                                recordCountPerPage: pageSize,
-                            }}
-                            onPageChange={onPageChange}
-                        />
-                    </div>
-                )}
-            </div>
+ {/* 3. Data Grid + Pagination */}
+ <div className="rounded-[3rem] bg-white shadow-2xl border border-slate-100 overflow-hidden ring-1 ring-slate-50">
+ <UltimateDataGrid
+ title={gridTitle}
+ columns={columns}
+ data={data}
+ keyField={keyField as string}
+ />
+ {totalPageCount !== undefined && totalPageCount > 1 && onPageChange && (
+ <div className="border-t border-slate-100 px-8 py-4">
+ <PagePagination
+ pagination={{
+ currentPageNo: currentPage,
+ totalPageCount,
+ totalRecordCount: totalCount,
+ recordCountPerPage: pageSize,
+ }}
+ onPageChange={onPageChange}
+ />
+ </div>
+ )}
+ </div>
 
-            {/* 4. Extra Content (Modals, etc.) */}
-            {children}
-        </div>
-    );
+ {/* 4. Extra Content (Modals, etc.) */}
+ {children}
+ </div>
+ );
 }

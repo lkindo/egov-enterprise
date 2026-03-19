@@ -13,21 +13,21 @@ import { paths, components } from './generated-api';
  * type UserInfo = ApiResponseData<'/api/v1/users/{id}', 'get'>;
  */
 export type ApiResponseData<
-    Path extends keyof paths,
-    Method extends keyof paths[Path] & string
+ Path extends keyof paths,
+ Method extends keyof paths[Path] & string
 > = paths[Path][Method] extends { responses: { 200: { content: { 'application/json': infer T } } } }
-    ? T
-    : never;
+ ? T
+ : never;
 
 /**
  * 특정 엔드포인트의 요청 데이터(Body) 타입을 추출합니다.
  */
 export type ApiRequestBody<
-    Path extends keyof paths,
-    Method extends keyof paths[Path] & string
+ Path extends keyof paths,
+ Method extends keyof paths[Path] & string
 > = paths[Path][Method] extends { requestBody: { content: { 'application/json': infer T } } }
-    ? T
-    : never;
+ ? T
+ : never;
 
 /**
  * 스키마 컴포넌트(DTO)를 직접 참조합니다.

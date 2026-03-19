@@ -3,21 +3,21 @@
  * (Server Serialization Optimization)
  */
 export function selectFields<T extends object, K extends keyof T>(
-    data: T,
-    fields: K[]
-  ): Pick<T, K> {
-    const result = {} as Pick<T, K>;
-    fields.forEach((field) => {
-      if (field in data) {
-        result[field] = data[field];
-      }
-    });
-    return result;
-  }
+ data: T,
+ fields: K[]
+ ): Pick<T, K> {
+ const result = {} as Pick<T, K>;
+ fields.forEach((field) => {
+ if (field in data) {
+ result[field] = data[field];
+ }
+ });
+ return result;
+ }
 
-  export function selectFieldsList<T extends object, K extends keyof T>(
-    dataList: T[],
-    fields: K[]
-  ): Pick<T, K>[] {
-    return dataList.map((item) => selectFields(item, fields));
-  }
+ export function selectFieldsList<T extends object, K extends keyof T>(
+ dataList: T[],
+ fields: K[]
+ ): Pick<T, K>[] {
+ return dataList.map((item) => selectFields(item, fields));
+ }

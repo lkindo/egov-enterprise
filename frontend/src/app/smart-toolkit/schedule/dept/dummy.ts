@@ -1,10 +1,10 @@
 export class DeptSchdulManage {
-    // ... (properties)
+ // ... (properties)
 }
 
 export class DeptSchdulManageVO {
-    schdulId?: string;
-    searchKeyword?: string;
-    searchCondition?: string;
-    // ... (other properties)
+ schdulId?: string;
+ searchKeyword?: string;
+ searchCondition?: string;
+ // ... (other properties)
 }

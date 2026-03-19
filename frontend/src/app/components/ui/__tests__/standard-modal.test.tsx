@@ -4,16 +4,16 @@ import { StandardModal } from '../standard-modal';
 import React from 'react';
 
 describe('StandardModal', () => {
-  it('renders standard modal structure (basic)', () => {
-    // Basic rendering test that doesn't trigger portal issues
-    render(
-      <div id="modal-root">
-        <StandardModal isOpen={true} onClose={() => { }} title="Base Title">
-          <div>Content</div>
-        </StandardModal>
-      </div>
-    );
-    // Since Shadcn Dialog renders in portal, we just check existence of component call
-    expect(true).toBe(true);
-  });
+ it('renders standard modal structure (basic)', () => {
+ // Basic rendering test that doesn't trigger portal issues
+ render(
+ <div id="modal-root">
+ <StandardModal isOpen={true} onClose={() => { }} title="Base Title">
+ <div>내용</div>
+ </StandardModal>
+ </div>
+ );
+ // Since Shadcn Dialog renders in portal, we just check existence of component call
+ expect(true).toBe(true);
+ });
 });

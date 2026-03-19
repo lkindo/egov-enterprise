@@ -3,27 +3,27 @@ import client from '@/lib/api/client';
 import { commentService } from '@/services/user/board/CommentService';
 
 vi.mock('@/lib/api/client', () => ({
-  default: {
-    get: vi.fn(),
-    post: vi.fn(),
-    put: vi.fn(),
-    delete: vi.fn(),
-  }
+ default: {
+ get: vi.fn(),
+ post: vi.fn(),
+ put: vi.fn(),
+ delete: vi.fn(),
+ }
 }));
 
 describe('Board Comment Service', () => {
-  beforeEach(() => vi.clearAllMocks());
+ beforeEach(() => vi.clearAllMocks());
 
-  it('getComments calls correct endpoint', async () => {
-    await commentService.getComments({ nttId: 1, bbsId: 'BBS01' });
-    expect(client.get).toHaveBeenCalledWith('/comments', expect.objectContaining({
-      params: expect.objectContaining({ nttId: 1, bbsId: 'BBS01' })
-    }));
-  });
+ it('getComments calls correct endpoint', async () => {
+ await commentService.getComments({ nttId: 1, bbsId: 'BBS01' });
+ expect(client.get).toHaveBeenCalledWith('/comments', expect.objectContaining({
+ params: expect.objectContaining({ nttId: 1, bbsId: 'BBS01' })
+ }));
+ });
 
-  it('createComment calls post with data', async () => {
-    const data = { commentCn: 'Test comment', nttId: 1 };
-    await commentService.createComment(data as any);
-    expect(client.post).toHaveBeenCalledWith('/comments', data, undefined);
-  });
+ it('createComment calls post with data', async () => {
+ const data = { commentCn: 'Test comment', nttId: 1 };
+ await commentService.createComment(data as any);
+ expect(client.post).toHaveBeenCalledWith('/comments', data, undefined);
+ });
 });

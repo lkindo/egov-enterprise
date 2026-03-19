@@ -8,95 +8,95 @@ import { LayoutContext } from '@/contexts/LayoutContext';
 
 // Mock dependencies
 vi.mock('next/navigation', () => ({
-    usePathname: vi.fn(),
-    useSearchParams: vi.fn(),
+ usePathname: vi.fn(),
+ useSearchParams: vi.fn(),
 }));
 
 // Mock the API client
 vi.mock('@/lib/api/client', () => {
-    const mockClient = {
-        get: vi.fn(),
-        interceptors: {
-            response: { use: vi.fn() }
-        }
-    };
-    return { default: mockClient };
+ const mockClient = {
+ get: vi.fn(),
+ interceptors: {
+ response: { use: vi.fn() }
+ }
+ };
+ return { default: mockClient };
 });
 
 describe('Sidebar', () => {
-    const mockLayoutContext = {
-        activeMenuNo: 1,
-        setActiveMenuNo: vi.fn(),
-        isSidebarOpen: true,
-        setSidebarOpen: vi.fn(),
-        toggleSidebar: vi.fn(),
-    };
+ const mockLayoutContext = {
+ activeMenuNo: 1,
+ setActiveMenuNo: vi.fn(),
+ isSidebarOpen: true,
+ setSidebarOpen: vi.fn(),
+ toggleSidebar: vi.fn(),
+ };
 
-    beforeEach(() => {
-        vi.clearAllMocks();
-        (navigation.usePathname as Mock).mockReturnValue('/admin/community/boards');
-        (navigation.useSearchParams as Mock).mockReturnValue(new URLSearchParams());
-    });
+ beforeEach(() => {
+ vi.clearAllMocks();
+ (navigation.usePathname as Mock).mockReturnValue('/admin/community/boards');
+ (navigation.useSearchParams as Mock).mockReturnValue(new URLSearchParams());
+ });
 
-    const renderSidebar = () => {
-        return render(
-            <LayoutContext.Provider value={mockLayoutContext}>
-                <Sidebar />
-            </LayoutContext.Provider>
-        );
-    };
+ const renderSidebar = () => {
+ return render(
+ <LayoutContext.Provider value={mockLayoutContext}>
+ <Sidebar />
+ </LayoutContext.Provider>
+ );
+ };
 
-    it('renders navigation with aria-label', async () => {
-        (client.get as Mock).mockImplementation((url: string) => {
-            if (url === '/menus/head') {
-                return Promise.resolve({ list: [{ menuNo: 1, menuNm: 'Root Category' }] });
-            }
-            if (url.startsWith('/menus/left')) {
-                return Promise.resolve({
-                    list: [
-                        {
-                            menuNo: 10,
-                            menuNm: 'Group 1',
-                            children: [{ menuNo: 101, menuNm: 'Sub Menu 1', chkURL: '/admin/community/boards' }]
-                        }
-                    ]
-                });
-            }
-            return Promise.resolve({ list: [] });
-        });
+ it('renders navigation with aria-label', async () => {
+ (client.get as Mock).mockImplementation((url: string) => {
+ if (url === '/menus/head') {
+ return Promise.resolve({ list: [{ menuNo: 1, menuNm: 'Root Category' }] });
+ }
+ if (url.startsWith('/menus/left')) {
+ return Promise.resolve({
+ list: [
+ {
+ menuNo: 10,
+ menuNm: 'Group 1',
+ children: [{ menuNo: 101, menuNm: 'Sub Menu 1', chkURL: '/admin/community/boards' }]
+ }
+ ]
+ });
+ }
+ return Promise.resolve({ list: [] });
+ });
 
-        renderSidebar();
+ renderSidebar();
 
-        await waitFor(() => {
-            expect(screen.getByRole('navigation', { name: '서브 메뉴' })).toBeInTheDocument();
-            expect(screen.getByText('Group 1')).toBeInTheDocument();
-        });
-    });
+ await waitFor(() => {
+ expect(screen.getByRole('navigation', { name: '서브 메뉴' })).toBeInTheDocument();
+ expect(screen.getByText('Group 1')).toBeInTheDocument();
+ });
+ });
 
-    it('sets active styles on the current link', async () => {
-        (navigation.usePathname as Mock).mockReturnValue('/admin/community/boards');
+ it('sets active styles on the current link', async () => {
+ (navigation.usePathname as Mock).mockReturnValue('/admin/community/boards');
 
-        (client.get as Mock).mockImplementation((url: string) => {
-            if (url === '/menus/head') return Promise.resolve({ list: [{ menuNo: 1, menuNm: 'Root' }] });
-            if (url.startsWith('/menus/left')) {
-                return Promise.resolve({
-                    list: [{
-                        menuNo: 10,
-                        menuNm: 'Group',
-                        children: [{ menuNo: 101, menuNm: 'Active Menu', chkURL: '/admin/community/boards' }]
-                    }]
-                });
-            }
-            return Promise.resolve({ list: [] });
-        });
+ (client.get as Mock).mockImplementation((url: string) => {
+ if (url === '/menus/head') return Promise.resolve({ list: [{ menuNo: 1, menuNm: 'Root' }] });
+ if (url.startsWith('/menus/left')) {
+ return Promise.resolve({
+ list: [{
+ menuNo: 10,
+ menuNm: 'Group',
+ children: [{ menuNo: 101, menuNm: 'Active Menu', chkURL: '/admin/community/boards' }]
+ }]
+ });
+ }
+ return Promise.resolve({ list: [] });
+ });
 
-        renderSidebar();
+ renderSidebar();
 
-        await waitFor(() => {
-            const activeLink = screen.getByRole('link', { name: 'Active Menu' });
-            // The active class is dynamic, check for the presence of the link
-            expect(activeLink).toBeInTheDocument();
-            expect(activeLink).toHaveClass('bg-primary');
-        });
-    });
+ await waitFor(() => {
+ const activeLink = screen.getByRole('link', { name: 'Active Menu' });
+ // The active class is dynamic, check for the presence of the link
+ expect(activeLink).toBeInTheDocument();
+ expect(activeLink).toHaveClass('bg-primary');
+ });
+ });
 });

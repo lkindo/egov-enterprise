@@ -18,40 +18,40 @@ const SmartOnboardingHub = dynamic(() => import('./components/ui/smart-onboardin
 
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 60 * 1000,
-            retry: 1,
-            refetchOnWindowFocus: false,
-          },
-        },
-      })
-  );
+ const [queryClient] = useState(
+ () =>
+ new QueryClient({
+ defaultOptions: {
+ queries: {
+ staleTime: 60 * 1000,
+ retry: 1,
+ refetchOnWindowFocus: false,
+ },
+ },
+ })
+ );
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <ConfirmProvider>
-          <GlobalShortcutProvider>
-            <AuthProvider>
-              <LayoutProvider>
-                <WebSocketProvider>
-                  <StandardErrorBoundary>
-                    <ApiErrorNotifier />
-                    {children}
-                  </StandardErrorBoundary>
-                  <GlobalCommandCenter />
-                  <SmartOnboardingHub />
-                </WebSocketProvider>
-              </LayoutProvider>
-            </AuthProvider>
-          </GlobalShortcutProvider>
-        </ConfirmProvider>
-      </ToastProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
-  );
+ return (
+ <QueryClientProvider client={queryClient}>
+ <ToastProvider>
+ <ConfirmProvider>
+ <GlobalShortcutProvider>
+ <AuthProvider>
+ <LayoutProvider>
+ <WebSocketProvider>
+ <StandardErrorBoundary>
+ <ApiErrorNotifier />
+ {children}
+ </StandardErrorBoundary>
+ <GlobalCommandCenter />
+ <SmartOnboardingHub />
+ </WebSocketProvider>
+ </LayoutProvider>
+ </AuthProvider>
+ </GlobalShortcutProvider>
+ </ConfirmProvider>
+ </ToastProvider>
+ <ReactQueryDevtools initialIsOpen={false} />
+ </QueryClientProvider>
+ );
 }
