@@ -32,7 +32,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // --- Types ---
 type LayoutTab = 'BANNERS' | 'QUICKLINKS' | 'THEMES';
 
-export default function Layout관리자Client() {
+export default function LayoutManagerClient() {
  const queryClient = useQueryClient();
  const { toast } = useToast();
 
@@ -73,22 +73,22 @@ export default function Layout관리자Client() {
  </div>
  <div>
  <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none">
- Design & Layout Hub
+ 디자인 및 레이아웃 허브
  </h2>
  <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 italic">
- Site Visual Appearance Control Center
+ 사이트 시각적 디자인 관리 센터
  </p>
  </div>
  </div>
  <div className="flex gap-4">
  <Button variant="outline" className="h-14 px-8 rounded-2xl border-2 font-black tracking-tight hover:bg-slate-50 gap-3">
- <Eye size={20} /> Preview Site
+ <Eye size={20} /> 사이트 미리보기
  </Button>
  <Button 
  onClick={() => saveThemeMutation.mutate(themeConfig)}
  className="h-14 px-8 rounded-2xl bg-primary text-white font-black tracking-tight shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all gap-3"
  >
- <Save size={20} /> Deploy Changes
+ <Save size={20} /> 변경 사항 적용
  </Button>
  </div>
  </div>
@@ -100,25 +100,25 @@ export default function Layout관리자Client() {
  <Card className="rounded-[2.5rem] border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100">
  <CardHeader className="bg-slate-50/50 p-8 border-b">
  <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.3em] italic">
- Appearance Modules
+ 디자인 구성 요소
  </CardTitle>
  </CardHeader>
  <CardContent className="p-4 space-y-2">
  <NavButton 
  icon={<ImageIcon size={20} />} 
- label="Main Banners" 
+ label="메인 배너 관리" 
  active={activeTab === 'BANNERS'} 
  onClick={() => setActiveTab('BANNERS')} 
  />
  <NavButton 
  icon={<Plus size={20} />} 
- label="Quick Links & Assets" 
+ label="퀵링크 및 자산" 
  active={activeTab === 'QUICKLINKS'} 
  onClick={() => setActiveTab('QUICKLINKS')} 
  />
  <NavButton 
  icon={<Palette size={20} />} 
- label="테마 " 
+ label="테마 설정" 
  active={activeTab === 'THEMES'} 
  onClick={() => setActiveTab('THEMES')} 
  />
@@ -128,8 +128,8 @@ export default function Layout관리자Client() {
  {/* Quick Stats/Info */}
  <Card className="rounded-[2.5rem] border-0 bg-slate-900 text-white shadow-2xl p-8 space-y-6">
  <div>
- <p className="text-[10px] font-bold text-white/40 tracking-tight mb-1">Active Theme</p>
- <h4 className="text-xl font-black italic tracking-tighter">Modern Default</h4>
+ <p className="text-[10px] font-bold text-white/40 tracking-tight mb-1">활성 테마</p>
+ <h4 className="text-xl font-black italic tracking-tighter">모던 기본 테마</h4>
  </div>
  <div className="flex items-center gap-3">
  <div className="w-10 h-10 rounded-full bg-primary" />
@@ -156,8 +156,8 @@ export default function Layout관리자Client() {
  <Plus size={32} />
  </div>
  <div className="text-center">
- <p className="text-sm font-black text-slate-900 italic ">Upload Banner</p>
- <p className="text-[9px] font-bold text-slate-400 tracking-tight mt-2">Max 5MB • JPG, PNG</p>
+ <p className="text-sm font-black text-slate-900 italic ">배너 업로드</p>
+ <p className="text-[9px] font-bold text-slate-400 tracking-tight mt-2">최대 5MB • JPG, PNG</p>
  </div>
  </div>
  {banners.map((banner: any) => (
@@ -168,14 +168,14 @@ export default function Layout관리자Client() {
  <div className="p-6">
  <div className="flex items-center justify-between mb-4">
  <span className="bg-primary/10 text-primary text-[8px] font-black px-2 py-0.5 rounded-full border border-primary/20 tracking-tight">
- Order {banner.bannerNm.split(' ')[1] || '0'}
+ 순서 {banner.bannerNm.split(' ')[1] || '0'}
  </span>
  <span className="flex items-center gap-1 text-[8px] font-bold text-slate-400">
- <Clock size={10} /> {banner.reflctAt === 'Y' ? 'Active' : 'Draft'}
+ <Clock size={10} /> {banner.reflctAt === 'Y' ? '활성' : '초안'}
  </span>
  </div>
  <h4 className="text-sm font-black text-slate-900 italic truncate">{banner.bannerNm}</h4>
- <p className="text-[10px] text-slate-400 font-bold truncate mt-1">Link: {banner.linkSvcNm}</p>
+ <p className="text-[10px] text-slate-400 font-bold truncate mt-1">링크: {banner.linkSvcNm}</p>
  </div>
  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
  <Button size="icon" variant="ghost" className="w-10 h-10 bg-white/90 backdrop-blur shadow-lg rounded-xl hover:bg-white"><Pencil size={16} /></Button>
@@ -202,12 +202,12 @@ export default function Layout관리자Client() {
  <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center text-primary">
  <Settings2 size={18} />
  </div>
- <h3 className="text-xl font-black tracking-tighter italic">Global Tokens</h3>
+ <h3 className="text-xl font-black tracking-tighter italic">글로벌 스타일 토큰</h3>
  </div>
  
  <div className="space-y-6">
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight">Primary Color</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight">기능 대표 색상 (Primary)</label>
  <div className="flex gap-4">
  <input 
  type="color" 
@@ -224,7 +224,7 @@ export default function Layout관리자Client() {
  </div>
 
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight">Border Radius</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight">테두리 곡률 (Border Radius)</label>
  <div className="grid grid-cols-4 gap-4">
  <RadiusOption label="S" value="4px" active={themeConfig.borderRadius === '4px'} onClick={() => setThemeConfig({...themeConfig, borderRadius: '4px'})} />
  <RadiusOption label="M" value="8px" active={themeConfig.borderRadius === '8px'} onClick={() => setThemeConfig({...themeConfig, borderRadius: '8px'})} />
@@ -234,15 +234,15 @@ export default function Layout관리자Client() {
  </div>
 
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight">Typography System</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight">타이포그래피 시스템</label>
  <select 
  className="w-full h-16 bg-slate-50 rounded-2xl px-6 font-black italic text-sm outline-none border-2 border-transparent focus:border-primary/20 transition-all appearance-none"
  value={themeConfig.fontFamily}
  onChange={(e) => setThemeConfig({...themeConfig, fontFamily: e.target.value})}
  >
- <option value="Inter">Inter (Sans)</option>
- <option value="Outfit">Outfit (Display)</option>
- <option value="Manrope">Manrope (Clean)</option>
+ <option value="Inter">인터 (기본 산세리프)</option>
+ <option value="Outfit">아웃핏 (디스플레이용)</option>
+ <option value="Manrope">맨로프 (깔끔함)</option>
  </select>
  </div>
  </div>
@@ -253,7 +253,7 @@ export default function Layout관리자Client() {
  <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center text-primary">
  <Monitor size={18} />
  </div>
- <h3 className="text-xl font-black tracking-tighter italic">Live Preview</h3>
+ <h3 className="text-xl font-black tracking-tighter italic">라이브 미리보기</h3>
  </div>
 
  <div className="h-[400px] border-4 border-slate-50 bg-white rounded-[2rem] p-10 flex flex-col gap-6 shadow-inner relative overflow-hidden">
@@ -272,7 +272,7 @@ export default function Layout관리자Client() {
  className="mt-auto h-14 w-full bg-slate-900 text-white font-black italic tracking-tight shadow-xl"
  style={{ backgroundColor: themeConfig.primaryColor, borderRadius: themeConfig.borderRadius }}
  >
- Action Button
+ 동작 버튼 (예시)
  </Button>
 
  {/* Grid Overlay for "Designer" feel */}

@@ -95,7 +95,7 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
  const columns: ColumnDef<Network>[] = [
  {
  id: 'manageIem',
- header: 'Infra Cluster',
+ header: '인프라 클러스터',
  width: 250,
  accessor: (item: Network) => (
  <div className="flex items-center gap-4 py-1">
@@ -111,7 +111,7 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
  },
  {
  id: 'ntwrkIp',
- header: 'Virtual Address',
+ header: '가상 주소 (IP)',
  width: 200,
  accessor: (item: Network) => (
  <div className="flex flex-col gap-1">
@@ -125,7 +125,7 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
  },
  {
  id: 'gtwy',
- header: 'Gateway Logic',
+ header: '게이트웨이 로직',
  accessor: (item: Network) => (
  <div className="flex items-center gap-2">
  <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center text-slate-400">
@@ -137,7 +137,7 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
  },
  {
  id: 'userNm',
- header: 'Node Controller',
+ header: '노드 컨트롤러',
  accessor: (item: Network) => (
  <div className="flex items-center gap-2">
  <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
@@ -149,13 +149,13 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
  },
  {
  id: 'useAt',
- header: 'State',
+ header: '상태',
  width: 100,
  accessor: (item: Network) => <StatusBadge status={item.useAt === 'Y' ? 'Y' : 'N'} />
  },
  {
  id: 'actions',
- header: 'Control',
+ header: '제어',
  className: 'text-right',
  accessor: (item: Network) => (
  <div className="flex justify-end gap-2 pr-4">
@@ -187,17 +187,17 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
  onClick={handleCreate}
  className="h-14 px-8 bg-slate-900 text-white rounded-2xl font-black italic tracking-tight text-[10px] shadow-2xl shadow-slate-900/20 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3"
  >
- <Plus size={18} /> Register Active Node
+ <Plus size={18} /> 신규 노드 등록
  </Button>
  </div>
  }
  />
 
  <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
- <LuxurySummaryCard title="ACTIVE SLOTS" count={initialNetworks.filter(n => n.useAt === 'Y').length} icon={<Activity size={24} />} color="emerald" />
- <LuxurySummaryCard title="IP CLUSTERS" count={initialNetworks.length} icon={<Globe size={24} />} color="primary" />
- <LuxurySummaryCard title="SECURITY ZONES" count={new Set(initialNetworks.map(n => n.manageIem)).size} icon={<Shield size={24} />} color="indigo" />
- <LuxurySummaryCard title="LOGICAL NODES" count={initialNetworks.length} icon={<NetworkIcon size={24} />} color="slate" />
+ <LuxurySummaryCard title="활성 슬롯" count={initialNetworks.filter(n => n.useAt === 'Y').length} icon={<Activity size={24} />} color="emerald" />
+ <LuxurySummaryCard title="IP 클러스터" count={initialNetworks.length} icon={<Globe size={24} />} color="primary" />
+ <LuxurySummaryCard title="보안 구역" count={new Set(initialNetworks.map(n => n.manageIem)).size} icon={<Shield size={24} />} color="indigo" />
+ <LuxurySummaryCard title="논리 노드" count={initialNetworks.length} icon={<NetworkIcon size={24} />} color="slate" />
  </div>
 
  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -208,10 +208,10 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
  <Cpu size={40} className="text-primary-foreground group-hover:scale-110 transition-transform" />
  </div>
  <div className="space-y-4 flex-1 text-center md:text-left">
- <h4 className="text-4xl font-black italic tracking-tighter tabular-nums leading-tight">Infrastructure Intelligence Core</h4>
+ <h4 className="text-4xl font-black italic tracking-tighter tabular-nums leading-tight">인프라스트럭처 인텔리전스 코어</h4>
  <p className="text-lg text-slate-400 font-bold leading-relaxed max-w-2xl">
  시스템 네트워크 토폴로지를 시각화하고 제어하십시오. <br />
- 모든 <span className="text-white">Logical Interconnect</span>는 보안 프로토콜을 준수하며 실시간으로 모니터링됩니다.
+ 모든 <span className="text-white">논리 인터커넥트</span>는 보안 프로토콜을 준수하며 실시간으로 모니터링됩니다.
  </p>
  </div>
  </div>
@@ -220,26 +220,26 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
 
  <div className="bg-white border-2 border-slate-100 rounded-[4rem] p-10 shadow-xl flex flex-col gap-8 justify-center">
  <div className="space-y-2">
- <label className="text-[10px] font-black text-slate-400 tracking-[0.3em] italic px-2">Infra Cluster Search</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-[0.3em] italic px-2">인프라 클러스터 검색</label>
  <div className="relative">
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
  <input
  value={searchParams.manageIem}
  onChange={(e) => setSearchParams({ ...searchParams, manageIem: e.target.value })}
  className="w-full h-14 pl-12 pr-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-primary/20 focus:bg-white transition-all text-sm font-black italic outline-none"
- placeholder="CLUSTER IDENTITY"
+ placeholder="클러스터 식별자"
  />
  </div>
  </div>
  <div className="space-y-2">
- <label className="text-[10px] font-black text-slate-400 tracking-[0.3em] italic px-2">Controller Probe</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-[0.3em] italic px-2">컨트롤러 프로브</label>
  <div className="relative">
  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
  <input
  value={searchParams.userNm}
  onChange={(e) => setSearchParams({ ...searchParams, userNm: e.target.value })}
  className="w-full h-14 pl-12 pr-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-primary/20 focus:bg-white transition-all text-sm font-black italic outline-none"
- placeholder="OPERATOR NAME"
+ placeholder="운영자 성명"
  />
  </div>
  </div>
@@ -248,7 +248,7 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
 
  <div className="bg-white rounded-[5rem] p-4 shadow-2xl border border-slate-100 ring-1 ring-slate-50 relative overflow-hidden">
  <UltimateDataGrid
- title="INFRASTRUCTURE STREAM INVENTORY"
+ title="인프라스트럭처 스트림 인벤토리"
  columns={columns as any}
  data={filteredData as any}
  keyField="ntwrkId"
@@ -260,7 +260,7 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
  <StandardModal
  isOpen={isModalOpen}
  onClose={() => setIsOpen(false)}
- title={editingItem ? 'Alter Infrastructure Node' : 'Broadcast New Network Slot'}
+ title={editingItem ? '인프라 노드 수정' : '신규 네트워크 슬롯 배포'}
  maxWidth="lg"
  >
  <form onSubmit={handleSubmit} className="p-10 space-y-12">
@@ -268,8 +268,8 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
 
  <div className="space-y-10">
  <div className="space-y-4">
- <label className="text-[10px] font-black text-slate-400 tracking-[0.3em] italic px-2">Cluster Nomenclature</label>
- <input name="manageIem" type="text" defaultValue={editingItem?.manageIem} className="w-full h-16 rounded-2xl border-2 text-xl font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner" required placeholder="CLUSTER IDENTITY" />
+ <label className="text-[10px] font-black text-slate-400 tracking-[0.3em] italic px-2">클러스터 명칭</label>
+ <input name="manageIem" type="text" defaultValue={editingItem?.manageIem} className="w-full h-16 rounded-2xl border-2 text-xl font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner" required placeholder="클러스터 아이덴티티" />
  </div>
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200">
@@ -290,11 +290,11 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
  </div>
  <div className="space-y-4">
  <label className="text-[10px] font-black text-slate-400 tracking-tight px-2">Domain Server</label>
- <input name="domnServer" type="text" defaultValue={editingItem?.domnServer} className="w-full h-14 rounded-xl border-2 text-sm font-mono font-bold px-4 focus:ring-4 focus:ring-primary/10 transition-all" required placeholder="DNS POINT" />
+ <input name="domnServer" type="text" defaultValue={editingItem?.domnServer} className="w-full h-14 rounded-xl border-2 text-sm font-mono font-bold px-4 focus:ring-4 focus:ring-primary/10 transition-all" required placeholder="DNS 포인트" />
  </div>
  <div className="space-y-4">
  <label className="text-[10px] font-black text-slate-400 tracking-tight px-2">Primary Operator</label>
- <input name="userNm" type="text" defaultValue={editingItem?.userNm} className="w-full h-14 rounded-xl border-2 text-sm font-black italic px-4 focus:ring-4 focus:ring-primary/10 transition-all" required placeholder="CONTROLLER NAME" />
+ <input name="userNm" type="text" defaultValue={editingItem?.userNm} className="w-full h-14 rounded-xl border-2 text-sm font-black italic px-4 focus:ring-4 focus:ring-primary/10 transition-all" required placeholder="컨트롤러 명칭" />
  </div>
  </div>
 
@@ -320,9 +320,9 @@ export default function NetworkAdminClient({ initialNetworks }: { initialNetwork
  </div>
 
  <div className="flex gap-4 pt-10">
- <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black text-[10px] tracking-tight border-2 hover:bg-slate-50 transition-all">Abort Action</Button>
+ <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black text-[10px] tracking-tight border-2 hover:bg-slate-50 transition-all">실행 중단</Button>
  <Button type="submit" className="flex-[2] h-16 rounded-2xl bg-slate-900 text-white font-black shadow-2xl shadow-slate-900/20 italic tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:-translate-y-1 transition-all active:scale-95">
- {editingItem ? 'Commit Configuration' : 'Establish New Interconnect'}
+ {editingItem ? '구성 커밋' : '신규 연결 수립'}
  </Button>
  </div>
  </form>

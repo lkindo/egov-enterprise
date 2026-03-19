@@ -68,9 +68,8 @@ describe('MenuAdminClient Component', () => {
  render(<MenuAdminClient initialMenus={mockInitialMenus} programs={mockPrograms} />);
  const btn = screen.getByText(/상위 메뉴 추가/i);
  fireEvent.click(btn);
- expect(screen.getByText(/신규 메뉴 정의/i)).toBeDefined();
+ expect(await screen.findByText(/신규 메뉴 정의/i)).toBeDefined();
  });
-
  it('handles deletion', async () => {
  const mockConfirmFn = vi.fn().mockResolvedValue(true);
  vi.mocked(useConfirm).mockReturnValue(mockConfirmFn);

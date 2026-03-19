@@ -111,7 +111,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
  router.push(`/admin/user/manage?${query}`);
  }}
  onReset={() => router.push('/admin/user/manage')}
- gridTitle="USER DIRECTORY MASTER"
+ gridTitle="사용자 통합 관리 마스터"
  columns={columns}
  data={users}
  keyField="userId"
@@ -139,11 +139,11 @@ export default function UserManageClient({ initialData, initialParams }: { initi
  <div className="space-y-6 py-8">
  <div className="space-y-3">
  <Label htmlFor="userId" className="text-[10px] font-black text-slate-400 tracking-tight px-1">{t('admin.user.id')}</Label>
- <Input id="userId" className="h-14 rounded-2xl border-2 text-lg font-black px-6 focus:ring-primary/20" value={formData.userId} onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))} disabled={!!editingUser} placeholder="example_uid" />
+ <Input id="userId" className="h-14 rounded-2xl border-2 text-lg font-black px-6 focus:ring-primary/20" value={formData.userId} onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))} disabled={!!editingUser} placeholder="아이디를 입력하세요 (예: user01)" />
  </div>
  <div className="space-y-3">
  <Label htmlFor="userNm" className="text-[10px] font-black text-slate-400 tracking-tight px-1">{t('admin.user.name')}</Label>
- <Input id="userNm" className="h-14 rounded-2xl border-2 text-lg font-black px-6 focus:ring-primary/20" value={formData.userNm} onChange={(e) => setFormData(prev => ({ ...prev, userNm: e.target.value }))} placeholder="John Doe" />
+ <Input id="userNm" className="h-14 rounded-2xl border-2 text-lg font-black px-6 focus:ring-primary/20" value={formData.userNm} onChange={(e) => setFormData(prev => ({ ...prev, userNm: e.target.value }))} placeholder="홍길동" />
  </div>
  {!editingUser && (
  <div className="space-y-3">
@@ -153,7 +153,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
  )}
  <div className="space-y-3">
  <Label htmlFor="email" className="text-[10px] font-black text-slate-400 tracking-tight px-1">{t('admin.user.email')}</Label>
- <Input id="email" type="email" className="h-14 rounded-2xl border-2 text-lg font-black px-6 focus:ring-primary/20" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="connect@egov.com" />
+ <Input id="email" type="email" className="h-14 rounded-2xl border-2 text-lg font-black px-6 focus:ring-primary/20" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="user@example.com" />
  </div>
  </div>
  <DialogFooter className="gap-3 sm:justify-between">

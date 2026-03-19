@@ -117,28 +117,27 @@ describe('ProgramAdminClient Component', () => {
  expect(screen.getAllByText('2 개').length).toBeGreaterThan(0);
  });
 
- it('opens the deployment modal when "Deploy New Logic" is clicked', () => {
+ it('opens the deployment modal when "Deploy New Logic" is clicked', async () => {
  render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
  const deployBtn = screen.getByText(/신규 프로그램 등록/i);
  fireEvent.click(deployBtn);
 
  expect(screen.getAllByText(/신규 프로그램 등록/i).length).toBeGreaterThan(0);
- expect(screen.getByTestId('modal')).toBeDefined();
+ expect(await screen.findByTestId('modal')).toBeDefined();
  });
 
- it('opens the edit modal with correct data when settings icon is clicked', () => {
+ it('opens the edit modal with correct data when settings icon is clicked', async () => {
  render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
- 
+
  // Find ST icons (Settings) and click the first one
  const settingsBtns = screen.getAllByText('ST');
  fireEvent.click(settingsBtns[0].closest('button')!);
 
- expect(screen.getByText(/프로그램 정보 수정/i)).toBeDefined();
+ expect(await screen.findByText(/프로그램 정보 수정/i)).toBeDefined();
  const input = screen.getByPlaceholderText('E.g. SYSTEM_LOG_V1') as HTMLInputElement;
  expect(input.value).toBe('PROG_1');
  expect(input.disabled).toBe(true);
  });
-
  it('handles program deletion after confirmation', async () => {
  const mockConfirm = vi.fn().mockResolvedValue(true);
  vi.mocked(useConfirm).mockReturnValue(mockConfirm);

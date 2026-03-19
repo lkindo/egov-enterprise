@@ -363,9 +363,15 @@ class MenuServiceTest {
     @Test
     @DisplayName("하위 메뉴 목록 조회")
     void getSubMenusTest() {
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn("admin");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+
         Menu root = Menu.builder().id(1L).upperMenuNo(0L).build();
         Menu child = Menu.builder().id(2L).upperMenuNo(1L).build();
         when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(root, child));
+        when(menuAuthorityRepository.findAll()).thenReturn(Collections.emptyList());
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> list = menuService.getSubMenus(1L);
@@ -455,7 +461,7 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("메뉴 계층 구조 조회 - 메뉴 번호 9999 이하 필터링 테스트")
+    @DisplayName("메뉴 계층 구조 조회 - 메뉴 번호 9999999 이하 필터링 테스트")
     void getMenuHierarchy_MenuSchemeLimit_Success() {
         // Given
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -464,7 +470,7 @@ class MenuServiceTest {
         doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
         Menu validMenu = Menu.builder().id(9999L).menuNm("Valid").upperMenuNo(0L).menuOrdr(1).build();
-        Menu invalidMenu = Menu.builder().id(10000L).menuNm("Invalid").upperMenuNo(0L).menuOrdr(2).build();
+        Menu invalidMenu = Menu.builder().id(10000000L).menuNm("Invalid").upperMenuNo(0L).menuOrdr(2).build();
 
         when(menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc()).thenReturn(List.of(validMenu, invalidMenu));
         when(menuAuthorityRepository.findAll()).thenReturn(Collections.emptyList());
@@ -474,7 +480,7 @@ class MenuServiceTest {
         List<MenuDto> result = menuService.getMenuHierarchy();
 
         // Then
-        // 10000번 메뉴는 9999 초과이므로 rootMenus에 포함되지 않음 (130라인 로직)
+        // 10000000번 메뉴는 9999999 초과이므로 rootMenus에 포함되지 않음 (130라인 로직)
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(9999L);
     }

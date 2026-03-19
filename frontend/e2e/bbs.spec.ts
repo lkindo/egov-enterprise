@@ -9,11 +9,11 @@ test.describe('BBS Module', () => {
 
         console.log('>>> Step 2: BBS List');
         await expect(page.locator('main')).toBeVisible();
-        // Wait for the table or the empty message
-        await expect(page.locator('table, .bbs-list, [role="grid"], :text-matches("게시글이 존재하지 않습니다", "i")').first()).toBeVisible({ timeout: 30000 });
+        // Wait for the table, grid, articles or the empty message
+        await expect(page.locator('table, .bbs-list, [role="grid"], [role="article"], .stream-item, :text-matches("게시글이 존재하지 않습니다|데이터가 없습니다", "i")').first()).toBeVisible({ timeout: 30000 });
 
         // Search action
-        const searchInput = page.locator('input[placeholder*="검색"], input[type="text"]').first();
+        const searchInput = page.locator('input[placeholder*="검색"], input[type="text"], [role="searchbox"]').first();
         if (await searchInput.isVisible()) {
             await searchInput.fill('공지');
             await page.keyboard.press('Enter');

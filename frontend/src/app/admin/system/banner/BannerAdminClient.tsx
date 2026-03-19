@@ -159,7 +159,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  )
  },
  {
- header: 'IDENTIFIER',
+ header: '식별자',
  accessor: (item: Banner) => (
  <div className="flex flex-col gap-1">
  <span className="font-black italic tracking-tighter text-slate-900">{item.bannerNm}</span>
@@ -168,16 +168,16 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  )
  },
  {
- header: 'PRIORITY',
+ header: '우선순위',
  accessor: (item: Banner) => (
  <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 font-black text-sm text-slate-500 shadow-inner">
  {item.sortOrdr}
  </span>
  )
  },
- { header: 'STATUS', accessor: (item: Banner) => <StatusBadge status={item.reflctAt} /> },
+ { header: '상태', accessor: (item: Banner) => <StatusBadge status={item.reflctAt} /> },
  {
- header: 'CONTROL',
+ header: '제어',
  className: 'text-right',
  accessor: (item: Banner) => (
  <div className="flex justify-end gap-2">
@@ -194,7 +194,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  const popupColumns = [
  {
- header: 'DOMAIN',
+ header: '도메인',
  accessor: (item: Popup) => (
  <div className="flex flex-col gap-1 py-1">
  <span className="font-black italic tracking-tighter text-slate-900 text-lg">{item.popupTitleNm}</span>
@@ -208,7 +208,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  )
  },
  {
- header: 'GEOMETRY',
+ header: '규격',
  accessor: (item: Popup) => (
  <div className="flex items-center gap-2">
  <div className="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 shadow-inner">
@@ -218,9 +218,9 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  )
  },
- { header: 'VISIBILITY', accessor: (item: Popup) => <StatusBadge status={item.ntceAt} /> },
+ { header: '가시성', accessor: (item: Popup) => <StatusBadge status={item.ntceAt} /> },
  {
- header: 'CONTROL',
+ header: '제어',
  className: 'text-right',
  accessor: (item: Popup) => (
  <div className="flex justify-end gap-2">
@@ -245,7 +245,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  onClick={handleCreate}
  className="h-14 px-10 rounded-[1.5rem] font-black shadow-2xl shadow-primary/20 gap-3 hover:-translate-y-1 transition-all active:scale-95 italic tracking-tight text-sm"
  >
- <Plus size={20} /> Deploy {activeTab === 'banner' ? 'Banner' : 'Popup'} Node
+ <Plus size={20} /> {activeTab === 'banner' ? '배너' : '팝업'} 노드 배포
  </Button>
  }
  />
@@ -263,7 +263,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  )}
  >
  <ImageIcon size={20} />
- Banner Control
+ 배너 컨트롤
  </button>
  <button
  onClick={() => setTab('popup')}
@@ -275,7 +275,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  )}
  >
  <LayoutPanelTop size={20} />
- Popup Domain
+ 팝업 도메인
  </button>
  </div>
  </div>
@@ -285,7 +285,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <Sparkles size={40} className="text-primary-foreground group-hover:scale-110 transition-transform" />
  </div>
  <div className="space-y-4 flex-1 text-center md:text-left relative z-10">
- <h4 className="text-3xl font-black italic tracking-tighter tabular-nums">Promotional Intelligence Matrix</h4>
+ <h4 className="text-3xl font-black italic tracking-tighter tabular-nums">프로모션 인텔리전스 매트릭스</h4>
  <p className="text-base text-slate-400 font-bold leading-relaxed max-w-3xl">
  배너 및 팝업 자산을 실시간으로 관리하십시오. 모든 변화는 시스템 전반에 즉시 동기화됩니다. <span className="text-primary font-black italic">Active Status</span>를 확인하여 사용자 경험의 일관성을 유지하십시오.
  </p>
@@ -295,26 +295,26 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
  <SummaryCard
- title="ACTIVE BANNERS"
+ title="활성 배너"
  value={banners.filter(b => b.reflctAt === 'Y').length}
  icon={<ImageIcon size={24} />}
  color="slate"
  />
  <SummaryCard
- title="ACTIVE POPUPS"
+ title="활성 팝업"
  value={popups.filter(p => p.ntceAt === 'Y').length}
  icon={<LayoutPanelTop size={24} />}
  color="primary"
  />
  <SummaryCard
- title="TOTAL ASSETS"
+ title="총 자산"
  value={banners.length + popups.length}
  icon={<Layers size={24} />}
  color="indigo"
  />
  <SummaryCard
- title="SYSTEM HEALTH"
- value="OPTIMAL"
+ title="시스템 상태"
+ value="최적"
  icon={<Sparkles size={24} />}
  color="emerald"
  />
@@ -322,7 +322,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  <div className="bg-white rounded-[4.5rem] p-6 shadow-2xl border border-slate-100 ring-1 ring-slate-50 relative">
  <UltimateDataGrid
- title={activeTab === 'banner' ? "BANNER REGISTRY MASTER" : "POPUP ARCHITECTURE INVENTORY"}
+ title={activeTab === 'banner' ? "배너 레지스트리 마스터" : "팝업 아키텍처 인벤토리"}
  columns={activeTab === 'banner' ? (bannerColumns as any) : (popupColumns as any)}
  data={activeTab === 'banner' ? (banners as any) : (popups as any)}
  keyField={activeTab === 'banner' ? "bannerId" : "popupId"}
@@ -335,8 +335,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  isOpen={isModalOpen}
  onClose={() => setIsOpen(false)}
  title={activeTab === 'banner'
- ? (editingItem ? 'Alter Banner Logic' : 'Establish New Banner')
- : (editingItem ? 'Refactor Popup Domain' : 'Define New Popup Node')}
+ ? (editingItem ? '배너 로직 수정' : '신규 배너 생성')
+ : (editingItem ? '팝업 도메인 리팩토링' : '신규 팝업 노드 정의')}
  maxWidth="lg"
  >
  <form id="admin-form" onSubmit={handleSubmit} className="p-8 space-y-12">
@@ -451,9 +451,9 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  </div>
  <div className="flex gap-4 pt-12 border-t border-slate-100">
- <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black text-[10px] tracking-tight border-2 hover:bg-slate-50 transition-all">Abort Transaction</Button>
+ <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black text-[10px] tracking-tight border-2 hover:bg-slate-50 transition-all">트랜잭션 중단</Button>
  <Button type="submit" className="flex-[2] h-16 rounded-2xl font-black shadow-2xl shadow-primary/20 italic tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:-translate-y-1 transition-all">
- {editingItem ? 'Execute Update Protocol' : 'Finalize Domain Deployment'}
+ {editingItem ? '업데이트 프로토콜 실행' : '도메인 배포 완료'}
  </Button>
  </div>
  </form>

@@ -523,7 +523,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
  onValueChange={(v) => setFormData({ ...formData, progrmFileNm: v })}
  >
  <SelectTrigger className="h-16 rounded-2xl border-2 font-black text-lg px-8">
- <SelectValue placeholder="Unlinked" />
+ <SelectValue placeholder="연동되지 않음" />
  </SelectTrigger>
  <SelectContent>
  {programs.map(p => (

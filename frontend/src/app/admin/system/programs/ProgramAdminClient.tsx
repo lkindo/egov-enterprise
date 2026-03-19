@@ -286,7 +286,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  value={formData.progrmFileNm}
  onChange={(e) => setFormData({ ...formData, progrmFileNm: e.target.value })}
  disabled={mode === 'edit'}
- placeholder="E.g. SYSTEM_LOG_V1"
+ placeholder="예: SYSTEM_LOG_V1"
  className="h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all bg-slate-50 dark:bg-slate-800 disabled:opacity-50"
  />
  </div>
@@ -298,7 +298,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <Input
  value={formData.progrmNm}
  onChange={(e) => setFormData({ ...formData, progrmNm: e.target.value })}
- placeholder="E.g. AUDIT TRAIL ENGINE"
+ placeholder="예: 감사 추적 가이드"
  className="h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all dark:bg-slate-800"
  />
  </div>
@@ -313,7 +313,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <Input
  value={formData.url}
  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
- placeholder="E.g. /sys/audit/logs"
+ placeholder="예: /sys/audit/logs"
  className="h-16 rounded-2xl border-2 text-lg font-black pl-16 pr-8 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner bg-slate-50 dark:bg-slate-800 font-mono"
  />
  </div>
@@ -324,7 +324,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <Input
  value={formData.progrmStrePath}
  onChange={(e) => setFormData({ ...formData, progrmStrePath: e.target.value })}
- placeholder="E.g. /opt/middleware/v1/"
+ placeholder="예: /opt/middleware/v1/"
  className="h-16 rounded-2xl border-2 text-lg font-black px-8 focus:ring-4 focus:ring-primary/10 transition-all italic text-slate-400 font-mono bg-slate-50 dark:bg-slate-800"
  />
  </div>
