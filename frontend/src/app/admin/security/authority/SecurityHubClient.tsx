@@ -32,8 +32,8 @@ import { menuAdminService, Menu } from '@/services/admin/system/MenuAdminService
 import { useToast } from '@/app/components/ui/toast';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { StandardForm } from '@/app/components/ui/standard-form';
-import { Label } from '@/app/components/ui/label';
-import { Textarea } from '@/app/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Types ---

@@ -52,5 +52,3 @@ const nextConfig: NextConfig = {
 
 
 export default nextConfig;
-
-process.env.PORT = '3001';

@@ -167,7 +167,8 @@ export default function ApprovalInboxPage() {
  {tab === 'received' ? '미처리 요청' : '기안 이력'}
  </h3>
  <span className="text-[10px] font-bold bg-primary/10 text-primary px-3 py-1 rounded-full ">
- {data.length} Items
+ 				{data.length} 건
+
  </span>
  </div>
  <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
@@ -192,7 +193,7 @@ export default function ApprovalInboxPage() {
  <div className="space-y-2">
  <div className="flex items-center gap-3">
  <div className="px-3 py-1 bg-primary text-white text-[10px] font-black rounded-lg tracking-tight shadow-lg shadow-primary/20">
- Detail View
+   상세 보기
  </div>
  <span className="text-sm font-bold text-muted-foreground font-mono">#{selectedItem.approvalId}</span>
  </div>
@@ -222,9 +223,10 @@ export default function ApprovalInboxPage() {
  <div className="bg-background/50 rounded-[2rem] p-8 border-2 border-primary/5 shadow-inner">
  <div className="flex items-center justify-between mb-6">
  <h4 className="text-sm font-black text-muted-foreground tracking-[0.2em] flex items-center gap-2">
- <Zap size={14} className="text-primary" /> Approval Workflow
+   <Zap size={14} className="text-primary" /> 결재 워크플로우
  </h4>
- <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">Live Update</span>
+   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">실시간 업데이트</span>
+
  </div>
  <ApprovalStepper steps={workflowSteps} />
  </div>
@@ -251,7 +253,7 @@ export default function ApprovalInboxPage() {
 
  <div className="p-8 bg-muted/5 border-t border-primary/5 flex items-center justify-center">
  <p className="text-[10px] font-bold text-muted-foreground/40 tracking-[0.3em]">
- Electronic Approval Certification System v5.0
+   전자결재 인증 시스템 v5.0
  </p>
  </div>
  </div>

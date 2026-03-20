@@ -22,10 +22,6 @@ allprojects {
     }
 }
 
-// 하이브리드 의존성 관리를 위한 설정
-
-
-
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'
@@ -53,6 +49,7 @@ subprojects {
         systemProperties System.properties
         maxHeapSize = "6144m"
         ignoreFailures = true
+        
         finalizedBy 'jacocoTestReport'
     }
 
@@ -84,43 +81,39 @@ subprojects {
     }
 }
 
-// 명시적 파일 경로 병합 기반 통합 리포트
-tasks.register("jacocoRootReport", JacocoReport) {
-    group = "Verification"
-    description = "Generates an aggregate JaCoCo report from all subprojects"
+// 통합 리포트 태스크 (Gradle 8.x 공식 가이드 방식)
+task jacocoRootReport(type: JacocoReport) {
+    description = 'Generates an aggregate report from all subprojects'
+    group = 'Verification'
 
-    dependsOn(subprojects.test)
-    mustRunAfter(subprojects.test)
+    def subprojectTests = subprojects.collect { it.tasks.withType(Test) }.flatten()
+    dependsOn subprojectTests
 
-    executionData.from(project.files(subprojects.jacocoTestReport.executionData).filter { it.exists() })
-
-    subprojects.each { subproject ->
-        subproject.plugins.withType(JavaPlugin) {
-            sourceDirectories.from(subproject.sourceSets.main.allSource.srcDirs)
-            classDirectories.from(subproject.sourceSets.main.output.classesDirs.collect {
-                fileTree(dir: it, exclude: [
-                    "**/Q*.class",
-                    "**/Q*Entity.class",
-                    "**/*Request.class",
-                    "**/*Response.class",
-                    "**/*Dto.class",
-                    "**/dto/**",
-                    "**/*Config.class",
-                    "**/*Application.class",
-                    "**/*VO.class",
-                    "**/*DAO.class",
-                    "**/*Mapper.class",
-                    "**/*Initializer.class",
-                    "**/*Advice.class",
-                    "**/*RepositoryImpl.class"
-                ])
-            })
-        }
+    sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
+    classDirectories.from = files(subprojects.sourceSets.main.output.classesDirs).collect {
+        fileTree(dir: it, exclude: [
+            "**/Q*.class",
+            "**/Q*Entity.class",
+            "**/*Request.class",
+            "**/*Response.class",
+            "**/*Dto.class",
+            "**/dto/**",
+            "**/*Config.class",
+            "**/*Application.class",
+            "**/*VO.class",
+            "**/*DAO.class",
+            "**/*Mapper.class",
+            "**/*Initializer.class",
+            "**/*Advice.class",
+            "**/*RepositoryImpl.class"
+        ])
     }
+    executionData.from = files(subprojects.jacocoTestReport.executionData).filter { it.exists() }
 
     reports {
         html.required = true
         xml.required = true
+        csv.required = true
         html.outputLocation = layout.buildDirectory.dir("reports/jacoco/aggregated")
     }
 }

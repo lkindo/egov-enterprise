@@ -206,7 +206,7 @@ export function GlobalCommandCenter() {
  }}
  />
  <div className="hidden sm:flex items-center gap-3">
- <div className="px-3 py-1.5 bg-muted rounded-xl border text-[10px] font-black text-muted-foreground tracking-tight">ESC to close</div>
+   <div className="px-3 py-1.5 bg-muted rounded-xl border text-[10px] font-black text-muted-foreground tracking-tight">ESC로 닫기</div>
  </div>
  </div>
 
@@ -292,7 +292,7 @@ export function GlobalCommandCenter() {
  <div className="flex items-center gap-8">
  <div className="flex items-center gap-2">
  <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">↑↓</kbd>
- <span className="text-[10px] font-black text-muted-foreground opacity-60">Move</span>
+   <span className="text-[10px] font-black text-muted-foreground opacity-60">이동</span>
  </div>
  <div className="flex items-center gap-2">
  <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">ENTER</kbd>
@@ -305,7 +305,7 @@ export function GlobalCommandCenter() {
  <div className="flex items-center gap-3">
  <Globe size={14} className="text-emerald-500 animate-pulse" />
  <span className="text-[10px] font-black text-muted-foreground tracking-tight tracking-tighter">
- System Status: <span className="text-emerald-500">Optimized</span>
+   시스템 상태: <span className="text-emerald-500">최적화됨</span>
  </span>
  </div>
  </div>

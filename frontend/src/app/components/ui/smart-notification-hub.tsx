@@ -139,9 +139,9 @@ export function SmartNotificationHub() {
  <div className="absolute top-0 right-0 w-3 h-3 bg-rose-500 border-2 border-white rounded-full" />
  </div>
  <div>
- <h2 className="text-xl font-black tracking-tighter ">Live Notification Stream</h2>
+   <h2 className="text-xl font-black tracking-tighter ">실시간 알림 스트림</h2>
  <div className="flex items-center gap-2 mt-0.5 text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">
- <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Channel Integrity: Optimized
+   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 채널 무결성: 최적화됨
  </div>
  </div>
  </div>
@@ -163,7 +163,7 @@ export function SmartNotificationHub() {
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30" size={14} />
  <input
  className="w-full bg-muted/20 border-none rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/10 transition-all"
- placeholder="Filtering..."
+   placeholder="검색 및 필터링..."
  value={search}
  onChange={(e) => setSearch(e.target.value)}
  />
@@ -203,7 +203,7 @@ export function SmartNotificationHub() {
  <div className="p-2 bg-background rounded-full border shadow-sm group-hover:rotate-12 transition-transform">
  {getStatusIcon(log.status)}
  </div>
- <span className="text-[9px] font-black text-muted-foreground opacity-40">{log.status}</span>
+   <span className="text-[9px] font-black text-muted-foreground opacity-40">{log.status === 'sent' ? '발송완료' : log.status === 'pending' ? '대기중' : '실패'}</span>
  </div>
 
  <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical size={16} /></Button>
@@ -222,7 +222,7 @@ export function SmartNotificationHub() {
  <Zap size={40} className="text-white fill-white" />
  </div>
  <div>
- <h3 className="text-2xl font-black tracking-tighter">AI Smart Delivery</h3>
+   <h3 className="text-2xl font-black tracking-tighter">AI 스마트 배달</h3>
  <p className="text-sm font-bold opacity-80 mt-2 leading-relaxed">수신자의 업무 패턴을 분석하여<br />최적의 시간에 알림을 배달합니다.</p>
  </div>
  <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-2xl h-14 font-black shadow-xl">발송 최적화 엔진 활성</Button>
@@ -231,7 +231,7 @@ export function SmartNotificationHub() {
 
  <div className="p-10 bg-card border-2 border-primary/5 rounded-[3.5rem] shadow-xl space-y-8 flex-1">
  <div>
- <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-6">Channel Health Score</h4>
+   <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-6">채널 상태 지표</h4>
  <div className="space-y-6">
  {[
  { name: 'System Push', score: 99, color: 'primary' },
@@ -252,7 +252,7 @@ export function SmartNotificationHub() {
  </div>
 
  <div className="pt-8 border-t border-primary/5 space-y-4">
- <h4 className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">Intelligence Insights</h4>
+   <h4 className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">지능형 인사이트</h4>
  <div className="p-5 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-4">
  <Info size={16} className="text-indigo-500 mt-0.5" />
  <p className="text-[10px] font-bold text-indigo-900/60 leading-relaxed">

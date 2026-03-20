@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.spy;
 
 @ExtendWith(MockitoExtension.class)
 class AdministCodeServiceTest {
@@ -72,20 +73,16 @@ class AdministCodeServiceTest {
     }
 
     @Test
-    @DisplayName("행정코드 상세 조회 테스트")
-    void getAdministCodeDetail_Success() {
+    @DisplayName("행정코드 상세 조회 테스트 - 존재하지 않는 경우")
+    void getAdministCodeDetail_NotFound() {
         // given
-        AdministCode entity = AdministCode.builder()
-                .administZoneCode("1100000000")
-                .administZoneNm("서울특별시")
-                .build();
-        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(entity));
+        given(administCodeRepository.findById("NOT_FOUND")).willReturn(Optional.empty());
 
         // when
-        AdministCodeDto result = administCodeService.getAdministCodeDetail("1100000000");
+        AdministCodeDto result = administCodeService.getAdministCodeDetail("NOT_FOUND");
 
         // then
-        assertThat(result.getAdministZoneNm()).isEqualTo("서울특별시");
+        assertThat(result).isNull();
     }
 
     @Test
@@ -108,6 +105,40 @@ class AdministCodeServiceTest {
         // then
         assertThat(result).isEqualTo("1100000000");
         verify(administCodeRepository).save(any(AdministCode.class));
+    }
+
+    @Test
+    @DisplayName("행정코드 수정 테스트 - 성공")
+    void updateAdministCode_Success() {
+        // given
+        AdministCode entity = spy(AdministCode.builder()
+                .administZoneCode("1100000000")
+                .administZoneNm("Old Name")
+                .build());
+        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(entity));
+
+        AdministCodeDto dto = AdministCodeDto.builder()
+                .administZoneNm("New Name")
+                .build();
+
+        // when
+        administCodeService.updateAdministCode("1100000000", dto, "admin");
+
+        // then
+        verify(entity).update(any(), eq("New Name"), any(), any(), eq("admin"));
+    }
+
+    @Test
+    @DisplayName("행정코드 수정 테스트 - 존재하지 않는 경우 실패")
+    void updateAdministCode_NotFound_ThrowsException() {
+        // given
+        given(administCodeRepository.findById("NOT_FOUND")).willReturn(Optional.empty());
+        AdministCodeDto dto = AdministCodeDto.builder().build();
+
+        // when & then
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            administCodeService.updateAdministCode("NOT_FOUND", dto, "admin");
+        });
     }
 
     @Test

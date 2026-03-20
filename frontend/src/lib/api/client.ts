@@ -17,11 +17,12 @@ const getBaseURL = () => {
 };
 
 const axiosInstance = axios.create({
- baseURL: getBaseURL(),
- headers: { 'Content-Type': 'application/json' },
- withCredentials: true,
- xsrfCookieName: 'XSRF-TOKEN',
- xsrfHeaderName: 'X-XSRF-TOKEN',
+  baseURL: getBaseURL(),
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
+  timeout: 15000,
 });
 
 // Request interceptor: Access Token 첨부

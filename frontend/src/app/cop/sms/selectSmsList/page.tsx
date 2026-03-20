@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/card';
-import { Input } from '@/app/components/ui/input';
-import { Button } from '@/app/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Search, Send, MessageSquare, Phone, Calendar, CheckCircle, AlertTriangle, RefreshCw, X, UserPlus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import client from '@/lib/api/client';
-import { Badge } from '@/app/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/app/components/ui/dialog';
-import { Label } from '@/app/components/ui/label';
-import { Textarea } from '@/app/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Sms {
  smsId: string;

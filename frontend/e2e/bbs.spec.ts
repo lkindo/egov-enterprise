@@ -1,37 +1,44 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/base-test';
 
-test.describe('BBS Module', () => {
-    test.use({ storageState: 'playwright/.auth/user.json' });
+test.describe('BBS Module - Optimized with POM', () => {
+    // Inject session for specific test run if needed, but baseline uses projects in config
+    test.use({ storageState: 'playwright/.auth/admin.json' });
 
-    test('BBS List and Search', async ({ page }) => {
-        const bbsId = 'BBSMSTR_AAAAAAAAAAAA'; // Default sample BBS ID
-        await page.goto(`/admin/community/boards?bbsId=${bbsId}`, { waitUntil: 'networkidle' });
+    test('BBS List and Search Flow', async ({ bbsPage }) => {
+        console.log('>>> Step 1: Navigating to BBS Page');
+        await bbsPage.goto();
+        
+        console.log('>>> Step 2: Verifying Page Structure');
+        await bbsPage.verifyPageStructure();
 
-        console.log('>>> Step 2: BBS List');
-        await expect(page.locator('main')).toBeVisible();
-        // Wait for the table, grid, articles or the empty message
-        await expect(page.locator('table, .bbs-list, [role="grid"], [role="article"], .stream-item, :text-matches("게시글이 존재하지 않습니다|데이터가 없습니다", "i")').first()).toBeVisible({ timeout: 30000 });
+        console.log('>>> Step 3: Performing Search Action');
+        await bbsPage.search('공지');
+        
+        // Final verification post-search
+        await expect(bbsPage.dataTable).toBeVisible();
+    });
 
-        // Search action
-        const searchInput = page.locator('input[placeholder*="검색"], input[type="text"], [role="searchbox"]').first();
-        if (await searchInput.isVisible()) {
-            await searchInput.fill('공지');
-            await page.keyboard.press('Enter');
-            await page.waitForTimeout(2000);
-            await expect(page.locator('table, .bbs-list, [role="grid"], :text-matches("데이터|게시글|목록", "i")').first()).toBeVisible({ timeout: 20000 });
+    test('BBS Detail Navigation Flow', async ({ bbsPage }) => {
+        console.log('>>> Step 1: Navigating to BBS Page');
+        await bbsPage.goto();
+
+        console.log('>>> Step 2: Clicking First Record Row');
+        if (await bbsPage.firstRow.isVisible()) {
+            await bbsPage.clickFirstRow();
+            
+            console.log('>>> Step 3: Verifying Detail View Content');
+            await bbsPage.verifyDetailView();
+        } else {
+            console.log('>>> Info: No board articles found for detail view testing');
         }
     });
 
-    test('BBS Detail View', async ({ page }) => {
-        const bbsId = 'BBSMSTR_AAAAAAAAAAAA';
-        await page.goto(`/admin/community/boards?bbsId=${bbsId}`, { waitUntil: 'networkidle' });
-
-        // StandardDataTable triggers row click, but the test looks for links
-        const firstRow = page.locator('table tbody tr').first();
-        if (await firstRow.isVisible()) {
-            await firstRow.click();
-            await expect(page.locator('main')).toBeVisible();
-            await expect(page.getByText(/상세|내용|목록|Back/i).first()).toBeVisible();
-        }
+    // Example of Visual Regression Test (Optional improvement)
+    test('BBS Visual Snapshot Check', async ({ page, bbsPage }) => {
+        await bbsPage.goto();
+        await bbsPage.verifyPageStructure();
+        
+        // Automated visual diff (Needs --update-snapshots on first run)
+        // await expect(page).toHaveScreenshot('bbs-list-view.png', { mask: [page.locator('.timestamp')] });
     });
 });

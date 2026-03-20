@@ -17,12 +17,12 @@ import ScheduleListPage from '../../smart-toolkit/schedule/page';
 
 describe('ScheduleListPage', () => {
  it('renders schedule list page structure', () => {
- const queryClient = new QueryClient();
- render(
- <QueryClientProvider client={queryClient}>
- <ScheduleListPage />
- </QueryClientProvider>
- );
- expect(screen.getByText(/Work & Project/i)).toBeInTheDocument();
+  const queryClient = new QueryClient();
+  render(
+  <QueryClientProvider client={queryClient}>
+  <ScheduleListPage />
+  </QueryClientProvider>
+  );
+  expect(screen.getByText(/업무 및 프로젝트/i)).toBeInTheDocument();
  });
 });

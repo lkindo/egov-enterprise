@@ -141,7 +141,7 @@ export default function UnifiedDashboardClient({
             <Sparkles size={14} className="animate-pulse" />
             <span>{t('dashboard.badge')}</span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-foreground leading-tight">
+          <h1 className="text-2xl md:text-4xl font-black tracking-tighter text-foreground leading-tight">
             {t('dashboard.greeting')} <span className="text-primary italic">{user.name}</span>님
           </h1>
           <p className="text-lg text-muted-foreground font-medium max-w-xl">

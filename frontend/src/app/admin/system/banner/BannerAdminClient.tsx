@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { UltimateDataGrid, ColumnDef } from '@/app/components/ui/ultimate-data-grid';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
@@ -15,485 +14,445 @@ import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { fileAdminService } from '@/services/admin/system/FileAdminService';
 import {
- LayoutPanelTop,
- Plus,
- Image as ImageIcon,
- ExternalLink,
- Trash2,
- Edit,
- Monitor,
- Calendar,
- Layers,
- Sparkles,
- Info,
- CheckCircle2
+  Plus,
+  Image as ImageIcon,
+  ExternalLink,
+  Trash2,
+  Edit,
+  Monitor,
+  Calendar,
+  Layers,
+  Sparkles,
+  Info,
+  CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
- saveBannerAction,
- deleteBannerAction,
- savePopupAction,
- deletePopupAction
+  saveBannerAction,
+  deleteBannerAction,
+  savePopupAction,
+  deletePopupAction
 } from '@/app/actions/promotionActions';
 
 interface BannerAdminClientProps {
- initialBanners: Banner[];
- initialPopups: Popup[];
+  initialBanners: Banner[];
+  initialPopups: Popup[];
 }
 
 export default function BannerAdminClient({ initialBanners, initialPopups }: BannerAdminClientProps) {
- const { toast } = useToast();
- const confirm = useConfirm();
- const [activeTab, setTab] = useState<'banner' | 'popup'>('banner');
+  const { toast } = useToast();
+  const confirm = useConfirm();
+  const [activeTab, setTab] = useState<'banner' | 'popup'>('banner');
 
- const [isModalOpen, setIsOpen] = useState(false);
- const [editingItem, setEditingItem] = useState<Banner | Popup | null>(null);
- const [formFiles, setFormFiles] = useState<File[]>([]);
+  const [isModalOpen, setIsOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Banner | Popup | null>(null);
+  const [formFiles, setFormFiles] = useState<File[]>([]);
 
- const banners = initialBanners;
- const popups = initialPopups;
+  const banners = initialBanners;
+  const popups = initialPopups;
 
- const handleCreate = () => {
- setEditingItem(null);
- setFormFiles([]);
- setIsOpen(true);
- };
+  const handleCreate = () => {
+    setEditingItem(null);
+    setFormFiles([]);
+    setIsOpen(true);
+  };
 
- const handleEdit = (item: Banner | Popup) => {
- setEditingItem(item);
- setFormFiles([]);
- setIsOpen(true);
- };
+  const handleEdit = (item: Banner | Popup) => {
+    setEditingItem(item);
+    setFormFiles([]);
+    setIsOpen(true);
+  };
 
- const handleDelete = async (id: string) => {
- const ok = await confirm({
- title: '삭제 확인',
- message: '정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
- variant: 'destructive',
- confirmText: '삭제'
- });
+  const handleDelete = async (id: string) => {
+    const ok = await confirm({
+      title: '삭제 확인',
+      message: '정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      variant: 'destructive',
+      confirmText: '삭제'
+    });
 
- if (!ok) return;
+    if (!ok) return;
 
- const res = activeTab === 'banner'
- ? await deleteBannerAction(null, id)
- : await deletePopupAction(null, id);
+    const res = activeTab === 'banner'
+      ? await deleteBannerAction(null, id)
+      : await deletePopupAction(null, id);
 
- if (res.success) {
- toast(res.message, 'success');
- } else {
- toast(res.message, 'error');
- }
- };
+    if (res.success) {
+      toast(res.message, 'success');
+    } else {
+      toast(res.message, 'error');
+    }
+  };
 
- const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
- e.preventDefault();
- const formDataObj = new FormData(e.currentTarget);
- const data: any = Object.fromEntries(formDataObj.entries());
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formDataObj = new FormData(e.currentTarget);
+    const data: any = Object.fromEntries(formDataObj.entries());
 
- try {
- // Logic for file upload
- if (formFiles.length > 0) {
- const uploadRes = await fileAdminService.uploadFiles(formFiles) as any;
- const uploadedFileId = uploadRes?.data?.data || uploadRes?.data || uploadRes;
- if (uploadedFileId) {
- if (activeTab === 'banner') {
- data.bannerImageFile = uploadedFileId;
- data.bannerImage = formFiles[0].name;
- } else {
- data.fileUrl = `/api/v1/files/download?fileId=${uploadedFileId}`;
- }
- }
- } else if (editingItem) {
- if (activeTab === 'banner') {
- data.bannerImageFile = (editingItem as Banner).bannerImageFile;
- data.bannerImage = (editingItem as Banner).bannerImage;
- } else {
- data.fileUrl = (editingItem as Popup).fileUrl;
- }
- }
+    try {
+      if (formFiles.length > 0) {
+        const uploadRes = await fileAdminService.uploadFiles(formFiles) as any;
+        const uploadedFileId = uploadRes?.data?.data || uploadRes?.data || uploadRes;
+        if (uploadedFileId) {
+          if (activeTab === 'banner') {
+            data.bannerImageFile = uploadedFileId;
+            data.bannerImage = formFiles[0].name;
+          } else {
+            data.fileUrl = `/api/v1/files/download?fileId=${uploadedFileId}`;
+          }
+        }
+      } else if (editingItem) {
+        if (activeTab === 'banner') {
+          data.bannerImageFile = (editingItem as Banner).bannerImageFile;
+          data.bannerImage = (editingItem as Banner).bannerImage;
+        } else {
+          data.fileUrl = (editingItem as Popup).fileUrl;
+        }
+      }
 
- const res = activeTab === 'banner'
- ? await saveBannerAction(null, {
- mode: editingItem ? 'edit' : 'create',
- data: data as Banner,
- id: (editingItem as Banner)?.bannerId
- })
- : await savePopupAction(null, {
- mode: editingItem ? 'edit' : 'create',
- data: data as Popup,
- id: (editingItem as Popup)?.popupId
- });
+      const res = activeTab === 'banner'
+        ? await saveBannerAction(null, {
+            mode: editingItem ? 'edit' : 'create',
+            data: data as Banner,
+            id: (editingItem as Banner)?.bannerId
+          })
+        : await savePopupAction(null, {
+            mode: editingItem ? 'edit' : 'create',
+            data: data as Popup,
+            id: (editingItem as Popup)?.popupId
+          });
 
- if (res.success) {
- toast(res.message, 'success');
- setIsOpen(false);
- } else {
- toast(res.message, 'error');
- }
- } catch (error) {
- toast('저장에 실패했습니다.', 'error');
- }
- };
+      if (res.success) {
+        toast(res.message, 'success');
+        setIsOpen(false);
+      } else {
+        toast(res.message, 'error');
+      }
+    } catch (error) {
+      toast('저장에 실패했습니다.', 'error');
+    }
+  };
 
- const bannerColumns = [
- {
- header: '배너 이미지',
- accessor: (item: Banner) => (
- <div className="w-40 h-16 bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-xl relative group/img">
- <ImageIcon size={20} className="absolute inset-0 m-auto text-white/10" />
- {item.bannerImageFile && (
- <Image
- src={`/api/v1/files/download?fileId=${item.bannerImageFile}`}
- className="object-cover z-10 group-hover/img:scale-110 transition-transform duration-500"
- alt="banner"
- fill
- sizes="(max-width: 160px) 100vw, 160px"
- />
- )}
- <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover/img:opacity-100 transition-opacity z-20 flex items-center justify-center">
- <ExternalLink size={16} className="text-white" />
- </div>
- </div>
- )
- },
- {
- header: '식별자',
- accessor: (item: Banner) => (
- <div className="flex flex-col gap-1">
- <span className="font-black italic tracking-tighter text-slate-900">{item.bannerNm}</span>
- <span className="text-[9px] font-mono text-slate-400 font-bold">SN: {item.bannerId}</span>
- </div>
- )
- },
- {
- header: '우선순위',
- accessor: (item: Banner) => (
- <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 font-black text-sm text-slate-500 shadow-inner">
- {item.sortOrdr}
- </span>
- )
- },
- { header: '상태', accessor: (item: Banner) => <StatusBadge status={item.reflctAt} /> },
- {
- header: '제어',
- className: 'text-right',
- accessor: (item: Banner) => (
- <div className="flex justify-end gap-2">
- <Button variant="ghost" size="icon" className="h-11 w-11 rounded-[1.25rem] hover:bg-slate-900 hover:text-white transition-all border-2 border-transparent hover:border-slate-800" onClick={() => handleEdit(item)}>
- <Edit size={18} />
- </Button>
- <Button variant="ghost" size="icon" className="h-11 w-11 rounded-[1.25rem] hover:bg-rose-50 hover:text-rose-600 transition-all border-2 border-transparent hover:border-rose-100" onClick={() => handleDelete(item.bannerId)}>
- <Trash2 size={18} />
- </Button>
- </div>
- )
- }
- ];
+  const bannerColumns = [
+    {
+      header: '배너 이미지',
+      accessor: (item: Banner) => (
+        <div className="w-40 h-16 bg-slate-900 rounded-xl overflow-hidden border border-border shadow-sm relative group/img">
+          <ImageIcon size={20} className="absolute inset-0 m-auto text-white/10" />
+          {item.bannerImageFile && (
+            <Image
+              src={`/api/v1/files/download?fileId=${item.bannerImageFile}`}
+              className="object-cover z-10 group-hover/img:scale-110 transition-transform duration-500"
+              alt="banner"
+              fill
+              sizes="(max-width: 160px) 100vw, 160px"
+            />
+          )}
+        </div>
+      )
+    },
+    {
+      header: '배너 명칭',
+      accessor: (item: Banner) => (
+        <div className="flex flex-col">
+          <span className="font-bold text-foreground italic">{item.bannerNm}</span>
+          <span className="text-[10px] font-mono text-muted-foreground">ID: {item.bannerId}</span>
+        </div>
+      )
+    },
+    {
+      header: '순서',
+      accessor: (item: Banner) => (
+        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-muted font-bold text-sm text-foreground">
+          {item.sortOrdr}
+        </span>
+      )
+    },
+    { header: '상태', accessor: (item: Banner) => <StatusBadge status={item.reflctAt} /> },
+    {
+      header: '액션',
+      className: 'text-right',
+      accessor: (item: Banner) => (
+        <div className="flex justify-end gap-1">
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => handleEdit(item)}>
+            <Edit size={16} />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-rose-500 hover:text-rose-600 rounded-lg" onClick={() => handleDelete(item.bannerId)}>
+            <Trash2 size={16} />
+          </Button>
+        </div>
+      )
+    }
+  ];
 
- const popupColumns = [
- {
- header: '도메인',
- accessor: (item: Popup) => (
- <div className="flex flex-col gap-1 py-1">
- <span className="font-black italic tracking-tighter text-slate-900 text-lg">{item.popupTitleNm}</span>
- <div className="flex items-center gap-2">
- <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-black text-slate-400 tracking-tight italic">Live Duration</span>
- <span className="text-[10px] font-bold text-slate-500 font-mono tracking-tighter opacity-60">
- {item.ntceBgnde} ~ {item.ntceEndde}
- </span>
- </div>
- </div>
- )
- },
- {
- header: '규격',
- accessor: (item: Popup) => (
- <div className="flex items-center gap-2">
- <div className="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 shadow-inner">
- <Monitor size={12} className="text-slate-300" />
- <span className="text-[10px] font-black font-mono text-slate-600">{item.popupWSize} <span className="text-slate-300">x</span> {item.popupHSize}</span>
- </div>
- </div>
- )
- },
- { header: '가시성', accessor: (item: Popup) => <StatusBadge status={item.ntceAt} /> },
- {
- header: '제어',
- className: 'text-right',
- accessor: (item: Popup) => (
- <div className="flex justify-end gap-2">
- <Button variant="ghost" size="icon" className="h-11 w-11 rounded-[1.25rem] hover:bg-slate-900 hover:text-white transition-all border-2 border-transparent hover:border-slate-800" onClick={() => handleEdit(item)}>
- <Edit size={18} />
- </Button>
- <Button variant="ghost" size="icon" className="h-11 w-11 rounded-[1.25rem] hover:bg-rose-50 hover:text-rose-600 transition-all border-2 border-transparent hover:border-rose-100" onClick={() => handleDelete(item.popupId)}>
- <Trash2 size={18} />
- </Button>
- </div>
- )
- }
- ];
+  const popupColumns = [
+    {
+      header: '팝업 타이틀',
+      accessor: (item: Popup) => (
+        <div className="flex flex-col py-1">
+          <span className="font-bold text-foreground italic">{item.popupTitleNm}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground font-mono">
+              Duration: {item.ntceBgnde} ~ {item.ntceEndde}
+            </span>
+          </div>
+        </div>
+      )
+    },
+    {
+      header: '사이즈',
+      accessor: (item: Popup) => (
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md border text-[10px] font-mono text-muted-foreground">
+            <Monitor size={12} />
+            {item.popupWSize} x {item.popupHSize}
+          </div>
+        </div>
+      )
+    },
+    { header: '게시여부', accessor: (item: Popup) => <StatusBadge status={item.ntceAt} /> },
+    {
+      header: '액션',
+      className: 'text-right',
+      accessor: (item: Popup) => (
+        <div className="flex justify-end gap-1">
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => handleEdit(item)}>
+            <Edit size={16} />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-rose-500 hover:text-rose-600 rounded-lg" onClick={() => handleDelete(item.popupId)}>
+            <Trash2 size={16} />
+          </Button>
+        </div>
+      )
+    }
+  ];
 
- return (
- <div className="max-w-6xl mx-auto space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
- <PageHeader
- title="시스템 홍보 엔진 최적화"
- breadcrumbs={[{ label: '시스템관리' }, { label: '홍보관리' }]}
- actions={
- <Button
- onClick={handleCreate}
- className="h-14 px-10 rounded-[1.5rem] font-black shadow-2xl shadow-primary/20 gap-3 hover:-translate-y-1 transition-all active:scale-95 italic tracking-tight text-sm"
- >
- <Plus size={20} /> {activeTab === 'banner' ? '배너' : '팝업'} 노드 배포
- </Button>
- }
- />
+  return (
+    <div className="max-w-6xl mx-auto space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+      <PageHeader
+        title="포털 홍보 채널 관리"
+        breadcrumbs={[{ label: '시스템관리' }, { label: '홍보관리' }]}
+        actions={
+          <Button
+            onClick={handleCreate}
+            className="h-14 px-10 rounded-2xl font-bold shadow-lg gap-3 hover:-translate-y-1 transition-all italic text-sm"
+          >
+            <Plus size={20} /> {activeTab === 'banner' ? '배너' : '팝업'} 등록
+          </Button>
+        }
+      />
 
- {/* Modern High-End Tab Switcher */}
- <div className="flex justify-center">
- <div className="flex bg-slate-900/5 backdrop-blur-3xl border-2 border-white p-2 rounded-[2.5rem] shadow-2xl ring-1 ring-slate-900/5">
- <button
- onClick={() => setTab('banner')}
- className={cn(
- "flex items-center gap-4 px-10 py-4 text-sm font-black rounded-[1.75rem] transition-all tracking-[0.2em] italic",
- activeTab === 'banner'
- ? "bg-slate-900 text-white shadow-2xl scale-105"
- : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
- )}
- >
- <ImageIcon size={20} />
- 배너 컨트롤
- </button>
- <button
- onClick={() => setTab('popup')}
- className={cn(
- "flex items-center gap-4 px-10 py-4 text-sm font-black rounded-[1.75rem] transition-all tracking-[0.2em] italic",
- activeTab === 'popup'
- ? "bg-slate-900 text-white shadow-2xl scale-105"
- : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
- )}
- >
- <LayoutPanelTop size={20} />
- 팝업 도메인
- </button>
- </div>
- </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <SummaryCard title="Active Banners" value={banners.filter(b => b.reflctAt === 'Y').length} icon={<ImageIcon />} color="slate" />
+        <SummaryCard title="Live Popups" value={popups.filter(p => p.ntceAt === 'Y').length} icon={<Monitor />} color="primary" />
+        <SummaryCard title="Scheduled" value={popups.filter(p => new Date(p.ntceBgnde) > new Date()).length} icon={<Calendar />} color="emerald" />
+        <SummaryCard title="Total Assets" value={banners.length + popups.length} icon={<Layers />} color="indigo" />
+      </div>
 
- <div className="p-10 bg-slate-900 text-white rounded-[4rem] shadow-2xl flex flex-col md:flex-row items-center gap-10 relative overflow-hidden group">
- <div className="w-24 h-24 bg-white/10 rounded-[2rem] flex items-center justify-center backdrop-blur-2xl border border-white/20 shadow-2xl group-hover:rotate-12 transition-transform duration-700">
- <Sparkles size={40} className="text-primary-foreground group-hover:scale-110 transition-transform" />
- </div>
- <div className="space-y-4 flex-1 text-center md:text-left relative z-10">
- <h4 className="text-3xl font-black italic tracking-tighter tabular-nums">프로모션 인텔리전스 매트릭스</h4>
- <p className="text-base text-slate-400 font-bold leading-relaxed max-w-3xl">
- 배너 및 팝업 자산을 실시간으로 관리하십시오. 모든 변화는 시스템 전반에 즉시 동기화됩니다. <span className="text-primary font-black italic">Active Status</span>를 확인하여 사용자 경험의 일관성을 유지하십시오.
- </p>
- </div>
- <CheckCircle2 size={240} className="absolute right-[-60px] top-[-60px] opacity-[0.03] -rotate-12 group-hover:rotate-0 transition-all duration-1000" />
- </div>
+      <div className="responsive-card border-none bg-background/50 backdrop-blur-xl p-0">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
+          <div className="flex bg-muted/50 p-1.5 rounded-2xl gap-2 w-full md:w-auto">
+            <button
+              onClick={() => setTab('banner')}
+              className={cn(
+                "flex-1 md:flex-none px-10 py-4 rounded-xl font-black text-xs tracking-[0.2em] italic transition-all",
+                activeTab === 'banner' ? "bg-background shadow-xl text-primary" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              BANNERS
+            </button>
+            <button
+              onClick={() => setTab('popup')}
+              className={cn(
+                "flex-1 md:flex-none px-10 py-4 rounded-xl font-black text-xs tracking-[0.2em] italic transition-all",
+                activeTab === 'popup' ? "bg-background shadow-xl text-primary" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              POPUPS
+            </button>
+          </div>
 
- <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
- <SummaryCard
- title="활성 배너"
- value={banners.filter(b => b.reflctAt === 'Y').length}
- icon={<ImageIcon size={24} />}
- color="slate"
- />
- <SummaryCard
- title="활성 팝업"
- value={popups.filter(p => p.ntceAt === 'Y').length}
- icon={<LayoutPanelTop size={24} />}
- color="primary"
- />
- <SummaryCard
- title="총 자산"
- value={banners.length + popups.length}
- icon={<Layers size={24} />}
- color="indigo"
- />
- <SummaryCard
- title="시스템 상태"
- value="최적"
- icon={<Sparkles size={24} />}
- color="emerald"
- />
- </div>
+          <div className="flex items-center gap-4 text-muted-foreground italic">
+            <Sparkles size={16} className="animate-pulse" />
+            <span className="text-[10px] font-black tracking-widest uppercase">Promotion Engine v2.0</span>
+          </div>
+        </div>
 
- <div className="bg-white rounded-[4.5rem] p-6 shadow-2xl border border-slate-100 ring-1 ring-slate-50 relative">
- <UltimateDataGrid
- title={activeTab === 'banner' ? "배너 레지스트리 마스터" : "팝업 아키텍처 인벤토리"}
- columns={activeTab === 'banner' ? (bannerColumns as any) : (popupColumns as any)}
- data={activeTab === 'banner' ? (banners as any) : (popups as any)}
- keyField={activeTab === 'banner' ? "bannerId" : "popupId"}
- className="bg-slate-50/50 p-8 rounded-[3.5rem] border border-dashed border-slate-200"
- />
- </div>
+        <StandardDataTable
+          columns={activeTab === 'banner' ? bannerColumns : (popupColumns as any)}
+          data={activeTab === 'banner' ? banners : (popups as any[])}
+          emptyMessage={`등록된 ${activeTab === 'banner' ? '배너' : '팝업'}가 없습니다.`}
+          className="border-none bg-card/50 rounded-[2.5rem] p-1 shadow-sm"
+        />
+      </div>
 
- {/* Registration/Edit Modal */}
- <StandardModal
- isOpen={isModalOpen}
- onClose={() => setIsOpen(false)}
- title={activeTab === 'banner'
- ? (editingItem ? '배너 로직 수정' : '신규 배너 생성')
- : (editingItem ? '팝업 도메인 리팩토링' : '신규 팝업 노드 정의')}
- maxWidth="lg"
- >
- <form id="admin-form" onSubmit={handleSubmit} className="p-8 space-y-12">
- <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
- <div className="space-y-8">
- {activeTab === 'banner' ? (
- <>
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1">Banner Nomenclature</label>
- <input name="bannerNm" type="text" defaultValue={(editingItem as Banner)?.bannerNm} className="w-full h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all" required />
- </div>
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1">Hyperlink Endpoint</label>
- <input name="linkUrl" type="text" defaultValue={(editingItem as Banner)?.linkUrl} className="w-full h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all font-mono italic" />
- </div>
- <div className="grid grid-cols-2 gap-6">
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1">Priority 번호</label>
- <input name="sortOrdr" type="number" defaultValue={(editingItem as Banner)?.sortOrdr || 0} className="w-full h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner bg-slate-50/50" required />
- </div>
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1">Active Status</label>
- <select name="reflctAt" defaultValue={(editingItem as Banner)?.reflctAt || 'Y'} className="w-full h-16 rounded-2xl border-2 text-sm font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all bg-white shadow-xl appearance-none cursor-pointer italic tracking-tight">
- <option value="Y">--- ACTIVE ---</option>
- <option value="N">--- SUSPENDED ---</option>
- </select>
- </div>
- </div>
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1">Contextual Background</label>
- <textarea name="bannerDc" defaultValue={(editingItem as Banner)?.bannerDc} className="w-full min-h-[140px] p-8 rounded-[2.5rem] border-2 bg-slate-50/30 text-lg font-bold outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner" placeholder="Brief technical summary..." />
- </div>
- </>
- ) : (
- <>
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1">Popup Nomenclature</label>
- <input name="popupTitleNm" type="text" defaultValue={(editingItem as Popup)?.popupTitleNm} className="w-full h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all" required />
- </div>
- <div className="grid grid-cols-2 gap-6">
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1 flex items-center gap-2"><Calendar size={12} /> Origin Date</label>
- <input name="ntceBgnde" type="date" defaultValue={(editingItem as Popup)?.ntceBgnde} className="w-full h-16 rounded-2xl border-2 text-sm font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all bg-slate-50/50" required />
- </div>
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1 flex items-center gap-2"><Calendar size={12} /> Expiry Date</label>
- <input name="ntceEndde" type="date" defaultValue={(editingItem as Popup)?.ntceEndde} className="w-full h-16 rounded-2xl border-2 text-sm font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all bg-slate-50/50" required />
- </div>
- </div>
- <div className="grid grid-cols-2 gap-6">
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1 italic">Horizontal LCP</label>
- <input name="popupWlc" type="number" defaultValue={(editingItem as Popup)?.popupWlc || 0} className="w-full h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner" required />
- </div>
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1 italic">Vertical LCP</label>
- <input name="popupHlc" type="number" defaultValue={(editingItem as Popup)?.popupHlc || 0} className="w-full h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all shadow-inner" required />
- </div>
- </div>
- <div className="grid grid-cols-2 gap-6">
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1">Width (Px)</label>
- <input name="popupWSize" type="number" defaultValue={(editingItem as Popup)?.popupWSize || 400} className="w-full h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all" required />
- </div>
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1">Height (Px)</label>
- <input name="popupHSize" type="number" defaultValue={(editingItem as Popup)?.popupHSize || 300} className="w-full h-16 rounded-2xl border-2 text-lg font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all" required />
- </div>
- </div>
- </>
- )}
- </div>
- <div className="space-y-8">
- <div className="space-y-4">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1 flex items-center gap-2"><ImageIcon size={14} /> Asset Source Matrix</label>
- <div className="p-2 border-2 border-dashed border-slate-200 rounded-[2.5rem] bg-slate-50/50">
- <StandardFileUploader
- onFilesChange={(f) => setFormFiles(f)}
- maxFiles={1}
- />
- </div>
- {(editingItem as any)?.bannerImageFile && (
- <div className="p-8 rounded-[2rem] bg-slate-900/5 border border-slate-900/5 text-[10px] text-slate-400 italic font-bold relative overflow-hidden group/file">
- <Info size={40} className="absolute right-[-10px] top-[-10px] opacity-[0.05]" />
- <span className="relative z-10 block leading-relaxed tracking-tighter opacity-60 mb-2">Persistent Asset Identifier:</span>
- <span className="relative z-10 font-mono text-slate-900 flex items-center gap-2">
- <ExternalLink size={12} className="shrink-0" />
- <span className="truncate">{(editingItem as any).bannerImage || (editingItem as any).fileUrl}</span>
- </span>
- </div>
- )}
- </div>
+      <StandardModal
+        isOpen={isModalOpen}
+        onClose={() => setIsOpen(false)}
+        title={activeTab === 'banner' ? (editingItem ? '배너 정보 수정' : '신규 배너 등록') : (editingItem ? '팝업 정보 수정' : '신규 팝업 등록')}
+        maxWidth="2xl"
+        footer={
+          <div className="flex w-full gap-3">
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-xl font-bold">취소</Button>
+            <Button form="promotion-form" type="submit" className="flex-[2] h-11 rounded-xl font-bold italic">
+              {editingItem ? '수정 완료' : '등록 완료'}
+            </Button>
+          </div>
+        }
+      >
+        <form id="promotion-form" onSubmit={handleSubmit} className="space-y-6 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-5">
+              {activeTab === 'banner' ? (
+                <>
+                  <FormField label="배너 명칭" required>
+                    <Input name="bannerNm" type="text" defaultValue={(editingItem as Banner)?.bannerNm} className="h-10 text-sm font-semibold" placeholder="배너 이름 입력" required />
+                  </FormField>
+                  <FormField label="연결 URL (Hyperlink)" description="배너 클릭 시 이동할 경로">
+                    <Input name="linkUrl" type="text" defaultValue={(editingItem as Banner)?.linkUrl} className="h-10 text-sm font-mono" placeholder="예: /notices/1" />
+                  </FormField>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="표시 순서" required>
+                      <Input name="sortOrdr" type="number" defaultValue={(editingItem as Banner)?.sortOrdr || 0} className="h-10 text-sm" required />
+                    </FormField>
+                    <FormField label="사용 여부">
+                      <Select name="reflctAt" defaultValue={(editingItem as Banner)?.reflctAt || 'Y'}>
+                        <SelectTrigger className="h-10 text-xs font-bold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Y">--- 사용중 ---</SelectItem>
+                          <SelectItem value="N">--- 중지 ---</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormField>
+                  </div>
+                  <FormField label="상세 설명">
+                    <Textarea name="bannerDc" defaultValue={(editingItem as Banner)?.bannerDc} className="min-h-[100px] text-sm" placeholder="배너에 대한 간략한 설명" />
+                  </FormField>
+                </>
+              ) : (
+                <>
+                  <FormField label="팝업 타이틀" required>
+                    <Input name="popupTitleNm" type="text" defaultValue={(editingItem as Popup)?.popupTitleNm} className="h-10 text-sm font-semibold" placeholder="팝업 제목 입력" required />
+                  </FormField>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="게시 시작일" required>
+                      <Input name="ntceBgnde" type="date" defaultValue={(editingItem as Popup)?.ntceBgnde} className="h-10 text-sm" required />
+                    </FormField>
+                    <FormField label="게시 종료일" required>
+                      <Input name="ntceEndde" type="date" defaultValue={(editingItem as Popup)?.ntceEndde} className="h-10 text-sm" required />
+                    </FormField>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="가로 좌표 (Px)" description="좌상단 기준 X">
+                      <Input name="popupWlc" type="number" defaultValue={(editingItem as Popup)?.popupWlc || 0} className="h-10 text-sm" required />
+                    </FormField>
+                    <FormField label="세로 좌표 (Px)" description="좌상단 기준 Y">
+                      <Input name="popupHlc" type="number" defaultValue={(editingItem as Popup)?.popupHlc || 0} className="h-10 text-sm" required />
+                    </FormField>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="가로 크기 (Px)">
+                      <Input name="popupWSize" type="number" defaultValue={(editingItem as Popup)?.popupWSize || 400} className="h-10 text-sm" required />
+                    </FormField>
+                    <FormField label="세로 크기 (Px)">
+                      <Input name="popupHSize" type="number" defaultValue={(editingItem as Popup)?.popupHSize || 300} className="h-10 text-sm" required />
+                    </FormField>
+                  </div>
+                </>
+              )}
+            </div>
 
- {activeTab === 'popup' && (
- <div className="grid grid-cols-2 gap-6 pt-4">
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1 italic">Publication</label>
- <select name="ntceAt" defaultValue={(editingItem as Popup)?.ntceAt || 'Y'} className="w-full h-16 rounded-2xl border-2 text-[10px] font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all bg-white shadow-xl cursor-pointer italic">
- <option value="Y">LIVE</option>
- <option value="N">STAGING</option>
- </select>
- </div>
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight px-1 italic">Persist Filter</label>
- <select name="stopVewAt" defaultValue={(editingItem as Popup)?.stopVewAt || 'Y'} className="w-full h-16 rounded-2xl border-2 text-[10px] font-black px-6 focus:ring-4 focus:ring-primary/10 transition-all bg-white shadow-xl cursor-pointer italic">
- <option value="Y">ENABLED</option>
- <option value="N">DISABLED</option>
- </select>
- </div>
- </div>
- )}
- </div>
- </div>
- <div className="flex gap-4 pt-12 border-t border-slate-100">
- <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black text-[10px] tracking-tight border-2 hover:bg-slate-50 transition-all">트랜잭션 중단</Button>
- <Button type="submit" className="flex-[2] h-16 rounded-2xl font-black shadow-2xl shadow-primary/20 italic tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:-translate-y-1 transition-all">
- {editingItem ? '업데이트 프로토콜 실행' : '도메인 배포 완료'}
- </Button>
- </div>
- </form>
- </StandardModal>
- </div>
- );
+            <div className="space-y-6">
+              <FormField label="이미지 자산" required description="권장 사이즈를 준수하십시오.">
+                <div className="p-2 border-2 border-dashed border-muted rounded-2xl bg-muted/30">
+                  <StandardFileUploader
+                    onFilesChange={(f) => setFormFiles(f)}
+                    maxFiles={1}
+                  />
+                </div>
+              </FormField>
+
+              {(editingItem as any)?.bannerImageFile && (
+                <div className="p-4 rounded-xl bg-muted/50 border border-border text-[10px] text-muted-foreground italic flex flex-col gap-1">
+                  <span className="opacity-60">기존 이미지 ID:</span>
+                  <span className="font-mono text-foreground truncate">
+                    {(editingItem as any).bannerImage || (editingItem as any).fileUrl}
+                  </span>
+                </div>
+              )}
+
+              {activeTab === 'popup' && (
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <FormField label="게시 상태">
+                    <Select name="ntceAt" defaultValue={(editingItem as Popup)?.ntceAt || 'Y'}>
+                      <SelectTrigger className="h-10 text-xs font-bold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Y">LIVE (게시)</SelectItem>
+                        <SelectItem value="N">STAGING (중단)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField label="다시보기 중지">
+                    <Select name="stopVewAt" defaultValue={(editingItem as Popup)?.stopVewAt || 'Y'}>
+                      <SelectTrigger className="h-10 text-xs font-bold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Y">활성</SelectItem>
+                        <SelectItem value="N">비활성</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                </div>
+              )}
+            </div>
+          </div>
+        </form>
+      </StandardModal>
+    </div>
+  );
 }
 
 function SummaryCard({ title, value, icon, color }: any) {
- const colorMap: any = {
- slate: "bg-slate-900 text-white border-slate-800 shadow-slate-900/20",
- primary: "bg-white text-primary border-primary/20 shadow-primary/5",
- indigo: "bg-indigo-600 text-white border-indigo-700 shadow-indigo-600/20",
- emerald: "bg-emerald-50 text-emerald-900 border-emerald-100 shadow-emerald-200/50"
- };
+  const colorMap: any = {
+    slate: "bg-slate-900 text-white border-slate-800 shadow-slate-900/20 dark:bg-card dark:text-foreground dark:border-border",
+    primary: "bg-white text-primary border-primary/20 shadow-primary/5 dark:bg-card dark:text-primary dark:border-border",
+    indigo: "bg-indigo-600 text-white border-indigo-700 shadow-indigo-600/20",
+    emerald: "bg-emerald-50 text-emerald-900 border-emerald-100 shadow-emerald-200/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+  };
 
- const iconBgMap: any = {
- slate: "bg-white/10 text-white",
- primary: "bg-primary/10 text-primary",
- indigo: "bg-white/20 text-white",
- emerald: "bg-white text-emerald-600 shadow-sm"
- };
+  const iconBgMap: any = {
+    slate: "bg-white/10 text-white",
+    primary: "bg-primary/10 text-primary",
+    indigo: "bg-white/20 text-white",
+    emerald: "bg-white text-emerald-600 shadow-sm dark:bg-emerald-500/20 dark:text-emerald-400"
+  };
 
- return (
- <div className={cn(
- "p-8 rounded-[3rem] border-2 transition-all group overflow-hidden relative",
- colorMap[color]
- )}>
- <div className="flex justify-between items-start mb-6 relative z-10">
- <div className={cn("w-12 h-12 rounded-[1.25rem] flex items-center justify-center group-hover:rotate-6 transition-transform shadow-lg", iconBgMap[color])}>
- {icon}
- </div>
- </div>
- <div className="relative z-10 italic">
- <p className="text-[10px] font-black tracking-[0.3em] opacity-40 mb-1">{title}</p>
- <h4 className="text-4xl font-black tracking-tighter tabular-nums">{value}</h4>
- </div>
- <div className="absolute right-[-20%] bottom-[-20%] opacity-[0.03] group-hover:rotate-12 transition-all duration-700">
- {React.cloneElement(icon, { size: 160 })}
- </div>
- </div>
- );
+  return (
+    <div className={cn(
+      "p-6 rounded-3xl border transition-all group overflow-hidden relative",
+      colorMap[color]
+    )}>
+      <div className="flex justify-between items-start mb-4 relative z-10">
+        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform shadow-lg", iconBgMap[color])}>
+          {icon}
+        </div>
+      </div>
+      <div className="relative z-10 italic">
+        <p className="text-[10px] font-bold tracking-widest opacity-60 mb-1">{title}</p>
+        <h4 className="text-3xl font-black tracking-tighter tabular-nums">{value}</h4>
+      </div>
+      <div className="absolute right-[-15%] bottom-[-15%] opacity-[0.05] group-hover:rotate-12 transition-all duration-700">
+        {React.cloneElement(icon, { size: 120 })}
+      </div>
+    </div>
+  );
 }
