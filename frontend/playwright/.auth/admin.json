@@ -2,7 +2,7 @@
   "cookies": [
     {
       "name": "accessToken",
-      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDAyMDI4NywiZXhwIjoxNzc0MDIzODg3fQ.FpWHAHBlCPK3Lkin27vzyHL_JWK76oK9hWARNREwCYPYMLg420xrKNNQLsL9dYXyeamPJNiEVK7zlaX1ixfv0Q",
+      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDAyNTMxNSwiZXhwIjoxNzc0MDI4OTE1fQ.Nn5NBB9A2qu1nEKDlVeYnQQiBgnVakA4GTS2F2g3B7oJtOReClCujIWu-xRXmEkfMudk6PGkkTWusm-Yn0e8tw",
       "domain": "localhost",
       "path": "/",
       "expires": -1
@@ -21,7 +21,7 @@
       "localStorage": [
         {
           "name": "accessToken",
-          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDAyMDI4NywiZXhwIjoxNzc0MDIzODg3fQ.FpWHAHBlCPK3Lkin27vzyHL_JWK76oK9hWARNREwCYPYMLg420xrKNNQLsL9dYXyeamPJNiEVK7zlaX1ixfv0Q"
+          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDAyNTMxNSwiZXhwIjoxNzc0MDI4OTE1fQ.Nn5NBB9A2qu1nEKDlVeYnQQiBgnVakA4GTS2F2g3B7oJtOReClCujIWu-xRXmEkfMudk6PGkkTWusm-Yn0e8tw"
         }
       ]
     }

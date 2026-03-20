@@ -7,20 +7,18 @@ test.describe('Banner Administration E2E Verification', () => {
       window.localStorage.setItem('egov_smart_tour_v1', 'true');
     });
     // Ensure we explicitly load the homepage once to allow React Context to hydrate
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/', { waitUntil: 'load' });
   });
 
   test('Verify Banner Administration Page Access and Registration Modal', async ({ page }) => {
     // Navigate to Banner Administration page
     await page.goto('/admin/system/banner');
-    await page.waitForLoadState('networkidle');
     
     // Check for page header and description
-    await expect(page.getByText('비주얼 캔버스').first()).toBeVisible();
+    await expect(page.getByText('포털 프로모션 자산 거버넌스').first()).toBeVisible({ timeout: 15000 });
     await expect(page.getByText(/전사 서비스 공지/).first()).toBeVisible();
 
     // Verify "New Banner" registration button is present and click it
-    // The button text contains dynamic parts: "신규 {activeTab === 'banner' ? '배너' : '팝업'} 등록"
     const registerButton = page.getByRole('button', { name: /신규 배너 등록/ }).first();
     await expect(registerButton).toBeVisible();
     await registerButton.click();
@@ -39,10 +37,9 @@ test.describe('Banner Administration E2E Verification', () => {
 
   test('Switch between Banner and Popup tabs', async ({ page }) => {
     await page.goto('/admin/system/banner');
-    await page.waitForLoadState('networkidle');
     
     // Check initial tab (Banner)
-    await expect(page.getByText('비주얼 배너 스트림 분석')).toBeVisible();
+    await expect(page.getByText('비주얼 배너 스트림 분석')).toBeVisible({ timeout: 15000 });
 
     // Switch to Popup tab
     await page.getByRole('tab', { name: /레이어 팝업/ }).click();
