@@ -140,14 +140,17 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
 
   const navContent = (
     <div className={cn(
-      "flex items-center justify-between gap-3 px-3 py-2 text-sm font-semibold tracking-tight rounded-lg transition-all duration-200 w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+      "flex items-center justify-between gap-3 px-3 py-2 text-sm font-semibold tracking-tight rounded-lg transition-all duration-200 w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary relative",
       isActive
         ? "bg-primary/5 text-primary"
         : "text-muted-foreground hover:bg-accent hover:text-foreground",
-      depth > 0 && "pl-10"
+      depth === 1 && "pl-10",
+      depth === 2 && "pl-14",
+      depth >= 3 && "pl-16",
+      depth > 0 && "font-medium" // 하위 메뉴는 폰트 두께를 약간 조절
     )}>
       <div className="flex items-center gap-3">
-        {Icon && (
+        {Icon && depth === 0 && (
           <Icon
             size={18}
             className={cn(
@@ -156,7 +159,15 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
             )}
           />
         )}
-        <span className="truncate">{item.menuNm}</span>
+        {depth > 0 && (
+          <div className={cn(
+            "absolute left-4 w-1.5 h-1.5 rounded-full border border-current opacity-40 transition-transform duration-200",
+            isActive ? "bg-primary border-primary scale-110 opacity-100" : "group-hover:scale-110"
+          )} 
+          style={{ left: `${(depth * 12) + 12}px` }}
+          />
+        )}
+        <span className={cn("truncate", depth > 0 && "text-[13px]")}>{item.menuNm}</span>
       </div>
       {hasChildren && (
         <motion.div
@@ -178,7 +189,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
   );
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       <Link
         href={href}
         className="block w-full focus-visible:outline-none"
@@ -196,7 +207,10 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
             transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
             className="overflow-hidden"
           >
-            <div className="mt-1 space-y-0.5">
+            <div className={cn(
+              "mt-1 space-y-0.5 relative",
+              depth === 0 && "ml-5 border-l border-border/40" // 1단계 하위에만 가이드라인 추가
+            )}>
               {item.children?.map((child, idx) => (
                 <NavItem key={child.menuNo || `child-${idx}`} item={child} depth={depth + 1} />
               ))}
