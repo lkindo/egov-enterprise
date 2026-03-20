@@ -85,7 +85,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
  <div className="relative z-10 space-y-8 text-center md:text-left">
  <div className="flex flex-col md:flex-row items-center justify-between gap-6">
  <div className="space-y-2">
- <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter italic ">
+ <h1 className="text-3xl md:text-3xl font-black text-white tracking-tighter ">
  Global <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Intelligence</span>
  </h1>
  <p className="text-slate-400 font-medium text-lg">시스템 전체에서 필요한 정보를 정밀하게 찾아냅니다.</p>
@@ -133,7 +133,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
  <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
  <div className="absolute right-[-20px] top-[-20px] bg-primary/20 w-32 h-32 rounded-full blur-[60px]" />
  <div className="relative z-10 space-y-4">
- <h4 className="text-sm font-black italic tracking-tight text-primary">프로 팁</h4>
+ <h4 className="text-sm font-black tracking-tight text-primary">프로 팁</h4>
  <p className="text-sm text-slate-400 font-bold leading-relaxed">
  단축키 <kbd className="px-1.5 py-0.5 bg-white/10 rounded border border-white/10">Ctrl + K</kbd> 를 누르면 어디서든 커맨드 센터를 열 수 있습니다.
  </p>
@@ -224,7 +224,7 @@ function ResultSection({ title, count, children }: any) {
  return (
  <div className="space-y-6">
  <div className="flex items-center gap-4 px-2">
- <h3 className="text-xl font-black tracking-tight italic">{title}</h3>
+ <h3 className="text-xl font-black tracking-tight ">{title}</h3>
  <Badge variant="outline" className="rounded-lg border-primary/20 text-primary font-black">{count}</Badge>
  <div className="h-px bg-primary/10 flex-1" />
  </div>

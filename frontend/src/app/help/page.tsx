@@ -100,7 +100,7 @@ export default function HelpCenterPage() {
  <div className="space-y-4">
  {tab === 'faq' ? (
  faqs.length === 0 ? (
- <div className="text-center py-20 text-muted-foreground italic">자주 묻는 질문이 없습니다.</div>
+ <div className="text-center py-20 text-muted-foreground ">자주 묻는 질문이 없습니다.</div>
  ) : (
  faqs.map((faq) => (
  <div key={faq.faqId} className="bg-card border rounded-2xl overflow-hidden transition-all hover:border-primary/20">

@@ -53,7 +53,7 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
  </p>
  <p className="text-sm font-bold text-foreground">{step.user}</p>
  {step.date && (
- <p className="text-[10px] font-medium text-muted-foreground opacity-60 italic">{step.date}</p>
+ <p className="text-[10px] font-medium text-muted-foreground opacity-60 ">{step.date}</p>
  )}
  </div>
  </div>

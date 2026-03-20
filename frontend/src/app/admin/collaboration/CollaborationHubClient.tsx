@@ -6,30 +6,30 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
-  RefreshCcw,
-  Mail, 
-  Send, 
-  Inbox, 
-  Contact2, 
-  Bookmark, 
-  Search, 
-  Plus, 
-  MoreVertical, 
-  UserPlus, 
-  MessageSquare, 
-  Calendar, 
-  ChevronRight,
-  Filter,
-  ArrowUpRight,
-  Star,
-  Hash,
-  Paperclip,
-  ExternalLink,
-  Trash2,
-  Users,
-  Zap,
-  Share2,
-  CheckCircle2
+ RefreshCcw,
+ Mail, 
+ Send, 
+ Inbox, 
+ Contact2, 
+ Bookmark, 
+ Search, 
+ Plus, 
+ MoreVertical, 
+ UserPlus, 
+ MessageSquare, 
+ Calendar, 
+ ChevronRight,
+ Filter,
+ ArrowUpRight,
+ Star,
+ Hash,
+ Paperclip,
+ ExternalLink,
+ Trash2,
+ Users,
+ Zap,
+ Share2,
+ CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
@@ -106,7 +106,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  <Inbox size={20} />
  </div>
  <div className="space-y-1">
- <h4 className={cn("text-sm font-black italic", selectedItemId === note.noteId ? "text-white" : "text-slate-900 tracking-tight")}>{note.noteSj}</h4>
+ <h4 className={cn("text-sm font-black ", selectedItemId === note.noteId ? "text-white" : "text-slate-900 tracking-tight")}>{note.noteSj}</h4>
  <p className="text-[8px] font-black tracking-tight opacity-40">보낸 사람: {note.trnsmitterNm || note.trnsmitterId}</p>
  </div>
  </div>
@@ -129,11 +129,11 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  : "bg-white border-transparent hover:border-slate-50"
  )}
  >
- <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-black italic">
+ <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-black ">
  {address.adbkNm?.charAt(0)}
  </div>
  <div className="space-y-1">
- <h4 className="text-sm font-black italic tracking-tight">{address.adbkNm}</h4>
+ <h4 className="text-sm font-black tracking-tight">{address.adbkNm}</h4>
  <p className="text-[10px] opacity-40">{address.email || '이메일 없음'}</p>
  </div>
  </Card>
@@ -150,10 +150,10 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  <Share2 size={28} className="text-white" />
  </div>
  <div>
- <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none">
+ <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
  협업 통합 허브
  </h2>
- <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 italic">
+ <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
  통합 기업용 소셜 및 메시징 센터
  </p>
  </div>
@@ -183,7 +183,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  <Zap size={48} className="text-white/20 absolute -right-4 -top-4 rotate-12" />
  <div className="space-y-2 relative z-10">
  <h4 className="text-[10px] font-black tracking-tight opacity-60">응답률</h4>
- <p className="text-4xl font-black italic tracking-tighter">98.2%</p>
+ <p className="text-3xl font-black tracking-tighter">98.2%</p>
  </div>
  </Card>
  </div>
@@ -193,7 +193,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  <Card className="flex-1 rounded-[3.5rem] border-0 bg-white shadow-2xl overflow-hidden flex flex-col ring-1 ring-slate-100">
  <CardHeader className="bg-slate-50/50 border-b p-10 space-y-8">
  <div className="flex items-center justify-between">
- <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.4em] italic leading-tight">
+ <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.4em] leading-tight">
  {activeTab === 'MESSAGES' ? '보안 채널' : activeTab === 'ADDRESS_BOOK' ? '전체 주소록' : '스크랩 저장소'}
  </CardTitle>
  <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-8 text-[9px] font-black tracking-tight gap-2">
@@ -223,7 +223,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  {activeTab === 'MESSAGES' && renderMessageList()}
  {activeTab === 'ADDRESS_BOOK' && renderAddressList()}
  {activeTab === 'SCRAPS' && (
- <div className="p-10 text-center opacity-30 italic font-black tracking-[0.3em]">
+ <div className="p-10 text-center opacity-30 font-black tracking-[0.3em]">
  스크랩 서비스 노드 연결 중
  </div>
  )}
@@ -246,7 +246,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  >
  <Card className="flex-1 rounded-[3.5rem] border-0 bg-white shadow-2xl flex flex-col ring-1 ring-slate-100 overflow-hidden">
  <CardHeader className="bg-slate-50/50 p-10 border-b">
- <h2 className="text-2xl font-black text-slate-900 tracking-tighter italic leading-tight">
+ <h2 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight">
  상세 정보
  </h2>
  </CardHeader>
@@ -268,7 +268,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  ) : (
  <Card className="h-full rounded-[3.5rem] border-2 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center p-20 text-center grayscale opacity-30">
  <Share2 size={64} className="mb-8" />
- <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic leading-tight">
+ <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight">
  항목을 선택하세요
  </h3>
  <p className="text-[10px] mt-4 font-black tracking-tight">항목을 선택하여 내용을 확인하세요.</p>
@@ -300,7 +300,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
  )}>
  {icon}
  </div>
- <span className="text-[11px] font-black tracking-tight italic">{label}</span>
+ <span className="text-[11px] font-black tracking-tight ">{label}</span>
  </button>
  );
 }

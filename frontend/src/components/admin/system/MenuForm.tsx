@@ -115,7 +115,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  <div className="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
  {isEdit ? <Pencil size={28} /> : <Plus size={28} />}
  </div>
- <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter italic text-center">
+ <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter text-center">
  {isEdit ? '메뉴 프로토콜 수정' : '신규 메뉴 아키텍처 등록'}
  </DialogTitle>
  <DialogDescription className="text-center font-bold text-slate-400 text-sm">
@@ -131,7 +131,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  name="menuNo"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
+ <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
  <Hash size={12} className="text-primary" /> 메뉴 번호
  </FormLabel>
  <FormControl>
@@ -140,7 +140,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  placeholder="번호 입력" 
  {...(field as any)} 
  readOnly={isEdit} 
- className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-black text-sm italic focus:bg-white transition-all shadow-inner"
+ className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition-all shadow-inner"
  />
  </FormControl>
  <FormMessage />
@@ -152,7 +152,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  name="menuOrdr"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
+ <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
  <Layers size={12} className="text-primary" /> 출력 순서
  </FormLabel>
  <FormControl>
@@ -160,7 +160,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  inputMode="numeric" 
  placeholder="순서" 
  {...(field as any)} 
- className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-black text-sm italic focus:bg-white transition-all shadow-inner"
+ className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition-all shadow-inner"
  />
  </FormControl>
  <FormMessage />
@@ -174,14 +174,14 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  name="menuNm"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
+ <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
  <Type size={12} className="text-primary" /> 메뉴 명칭
  </FormLabel>
  <FormControl>
  <Input 
  placeholder="메뉴명을 입력하세요..." 
  {...field} 
- className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black italic focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
  />
  </FormControl>
  <FormMessage />
@@ -195,14 +195,14 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  name="progrmFileNm"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
+ <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
  <FileText size={12} className="text-primary" /> 연결 프로그램
  </FormLabel>
  <FormControl>
  <Input 
  placeholder="파일명..." 
  {...field} 
- className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm italic focus:bg-white transition-all shadow-inner"
+ className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
  </FormControl>
  <FormMessage />
@@ -214,7 +214,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  name="upperMenuId"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
+ <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
  <ChevronRight size={12} className="text-primary" /> 상위 노드 ID
  </FormLabel>
  <FormControl>
@@ -222,7 +222,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  inputMode="numeric" 
  placeholder="상위 ID" 
  {...(field as any)} 
- className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-black text-sm italic focus:bg-white transition-all shadow-inner"
+ className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition-all shadow-inner"
  />
  </FormControl>
  <FormMessage />
@@ -236,14 +236,14 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  name="menuDc"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
+ <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
  <Settings2 size={12} className="text-primary" /> 상세 설명
  </FormLabel>
  <FormControl>
  <Input 
  placeholder="메뉴에 대한 상세 설명을 입력하세요..." 
  {...field} 
- className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm italic focus:bg-white transition-all shadow-inner"
+ className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
  </FormControl>
  <FormMessage />
@@ -257,13 +257,13 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  type="button"
  variant="outline"
  onClick={() => onOpenChange(false)}
- className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight italic hover:bg-slate-50 transition-all flex-1"
+ className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all flex-1"
  >
  취소
  </Button>
  <Button 
  type="submit"
- className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic flex-[2]"
+ className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
  >
  <Save size={18} />
  데이터 저장

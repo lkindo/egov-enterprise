@@ -85,7 +85,7 @@ export default function TemplateAdminClient({
  {
  header: '템플릿 ID',
  accessor: (item: TmplatInfo) => (
- <span className="font-mono font-black text-slate-400 italic text-[10px] tracking-tight">{item.tmplatId}</span>
+ <span className="font-mono font-black text-slate-400 text-[10px] tracking-tight">{item.tmplatId}</span>
  )
  },
  {
@@ -95,14 +95,14 @@ export default function TemplateAdminClient({
  <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-md">
  <Layout size={14} />
  </div>
- <span className="font-black italic tracking-tighter text-slate-900">{item.tmplatNm}</span>
+ <span className="font-black tracking-tighter text-slate-900">{item.tmplatNm}</span>
  </div>
  )
  },
  {
  header: '구분',
  accessor: (item: TmplatInfo) => (
- <span className="text-[10px] font-black text-slate-500 tracking-tight bg-slate-100 px-2 py-1 rounded-md italic">
+ <span className="text-[10px] font-black text-slate-500 tracking-tight bg-slate-100 px-2 py-1 rounded-md ">
  {item.tmplatSeCode === 'TMPT01' ? '게시판' : item.tmplatSeCode === 'TMPT02' ? '커뮤니티' : '일반'}
  </span>
  )
@@ -110,7 +110,7 @@ export default function TemplateAdminClient({
  {
  header: '템플릿 경로',
  accessor: (item: TmplatInfo) => (
- <div className="flex items-center gap-2 text-slate-400 font-mono text-[11px] italic">
+ <div className="flex items-center gap-2 text-slate-400 font-mono text-[11px] ">
  <Code size={12} />
  {item.tmplatCours}
  </div>
@@ -124,7 +124,7 @@ export default function TemplateAdminClient({
  item.useAt === 'Y' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"
  )}>
  {item.useAt === 'Y' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
- <span className="text-[10px] font-black tracking-tight italic">{item.useAt === 'Y' ? '활성' : '비활성'}</span>
+ <span className="text-[10px] font-black tracking-tight ">{item.useAt === 'Y' ? '활성' : '비활성'}</span>
  </div>
  )
  }
@@ -146,7 +146,7 @@ export default function TemplateAdminClient({
  </Button>
  <Button
  onClick={() => setIsAddOpen(true)}
- className="h-14 px-8 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic"
+ className="h-14 px-8 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 "
  >
  <Plus size={18} />
  신규 블루프린트
@@ -162,7 +162,7 @@ export default function TemplateAdminClient({
  <FileCode size={24} />
  </div>
  <div>
- <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter italic">구조적 자산</h3>
+ <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">구조적 자산</h3>
  <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">등록된 시스템 템플릿</p>
  </div>
  </div>
@@ -185,7 +185,7 @@ export default function TemplateAdminClient({
  <div className="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
  <Plus size={28} />
  </div>
- <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter italic text-center">신규 블루프린트 등록</DialogTitle>
+ <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter text-center">신규 블루프린트 등록</DialogTitle>
  <DialogDescription className="text-center font-bold text-slate-400 text-sm">
  시스템에 새로운 UI/UX 구조를 정의합니다.
  </DialogDescription>
@@ -193,51 +193,51 @@ export default function TemplateAdminClient({
  
  <div className="space-y-8 py-8">
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2">템플릿 명칭</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">템플릿 명칭</label>
  <Input
  placeholder="템플릿 명..."
  value={newTemplate.tmplatNm}
  onChange={(e) => setNewTemplate(prev => ({ ...prev, tmplatNm: e.target.value }))}
- className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black italic focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
  />
  </div>
  
  <div className="grid grid-cols-2 gap-6">
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2">카테고리</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">카테고리</label>
  <Select 
  value={newTemplate.tmplatSeCode} 
  onValueChange={(v) => setNewTemplate(prev => ({ ...prev, tmplatSeCode: v }))}
  >
- <SelectTrigger className="h-16 rounded-3xl border-2 border-slate-100 bg-slate-50/50 font-black text-[10px] tracking-tight italic focus:bg-white">
+ <SelectTrigger className="h-16 rounded-3xl border-2 border-slate-100 bg-slate-50/50 font-black text-[10px] tracking-tight focus:bg-white">
  <SelectValue placeholder="카테고리 선택" />
  </SelectTrigger>
  <SelectContent className="rounded-2xl border-none shadow-2xl">
- <SelectItem value="TMPT01" className="font-black text-[10px] tracking-tight italic">게시판</SelectItem>
- <SelectItem value="TMPT02" className="font-black text-[10px] tracking-tight italic">커뮤니티</SelectItem>
- <SelectItem value="TMPT03" className="font-black text-[10px] tracking-tight italic">일반</SelectItem>
+ <SelectItem value="TMPT01" className="font-black text-[10px] tracking-tight ">게시판</SelectItem>
+ <SelectItem value="TMPT02" className="font-black text-[10px] tracking-tight ">커뮤니티</SelectItem>
+ <SelectItem value="TMPT03" className="font-black text-[10px] tracking-tight ">일반</SelectItem>
  </SelectContent>
  </Select>
  </div>
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2">상태</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">상태</label>
  <Select 
  value={newTemplate.useAt} 
  onValueChange={(v) => setNewTemplate(prev => ({ ...prev, useAt: v }))}
  >
- <SelectTrigger className="h-16 rounded-3xl border-2 border-slate-100 bg-slate-50/50 font-black text-[10px] tracking-tight italic focus:bg-white">
+ <SelectTrigger className="h-16 rounded-3xl border-2 border-slate-100 bg-slate-50/50 font-black text-[10px] tracking-tight focus:bg-white">
  <SelectValue placeholder="상태 선택" />
  </SelectTrigger>
  <SelectContent className="rounded-2xl border-none shadow-2xl">
- <SelectItem value="Y" className="font-black text-[10px] tracking-tight italic">활성</SelectItem>
- <SelectItem value="N" className="font-black text-[10px] tracking-tight italic">비활성</SelectItem>
+ <SelectItem value="Y" className="font-black text-[10px] tracking-tight ">활성</SelectItem>
+ <SelectItem value="N" className="font-black text-[10px] tracking-tight ">비활성</SelectItem>
  </SelectContent>
  </Select>
  </div>
  </div>
 
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2">소스 경로</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">소스 경로</label>
  <div className="relative">
  <Code className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
  <Input
@@ -254,14 +254,14 @@ export default function TemplateAdminClient({
  <Button
  variant="outline"
  onClick={() => setIsAddOpen(false)}
- className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight italic hover:bg-slate-50 transition-all"
+ className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all"
  >
  취소
  </Button>
  <Button
  onClick={handleAdd}
  disabled={loading}
- className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic flex-1"
+ className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
  >
  {loading ? <RefreshCcw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
  등록 승인

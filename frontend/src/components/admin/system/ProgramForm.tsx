@@ -102,7 +102,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  <div className="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
  {isEdit ? <Pencil size={28} /> : <Plus size={28} />}
  </div>
- <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter italic text-center">
+ <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter text-center">
  {isEdit ? '프로그램 로직 수정' : '신규 프로그램 에셋 등록'}
  </DialogTitle>
  <DialogDescription className="text-center font-bold text-slate-400 text-sm">
@@ -117,7 +117,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  name="progrmFileNm"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
+ <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
  <FileCode size={12} className="text-primary" /> 프로그램 파일명
  </FormLabel>
  <FormControl>
@@ -125,7 +125,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  placeholder="파일명.exe 또는 경로" 
  {...field} 
  readOnly={isEdit} 
- className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black italic focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
  />
  </FormControl>
  <FormMessage />
@@ -139,14 +139,14 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  name="progrmKoreanNm"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
+ <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
  <Type size={12} className="text-primary" /> 프로그램 실명
  </FormLabel>
  <FormControl>
  <Input 
  placeholder="검색용 명칭" 
  {...field} 
- className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm italic focus:bg-white transition-all shadow-inner"
+ className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
  </FormControl>
  <FormMessage />
@@ -158,7 +158,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  name="url"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
+ <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
  <LinkIcon size={12} className="text-primary" /> 액세스 엔드포인트
  </FormLabel>
  <FormControl>
@@ -179,7 +179,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  name="progrmStrePath"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
+ <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
  <FolderOpen size={12} className="text-primary" /> 물리적 저장 저장소
  </FormLabel>
  <FormControl>
@@ -199,14 +199,14 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  name="progrmDc"
  render={({ field }) => (
  <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
+ <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
  <Settings2 size={12} className="text-primary" /> 비즈니스 로직 설명
  </FormLabel>
  <FormControl>
  <Input 
  placeholder="프로그램의 역할과 기능을 기술하세요..." 
  {...field} 
- className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm italic focus:bg-white transition-all shadow-inner"
+ className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
  </FormControl>
  <FormMessage />
@@ -220,13 +220,13 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  type="button"
  variant="outline"
  onClick={() => onOpenChange(false)}
- className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight italic hover:bg-slate-50 transition-all flex-1"
+ className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all flex-1"
  >
  취소
  </Button>
  <Button 
  type="submit"
- className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic flex-[2]"
+ className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
  >
  <Save size={18} />
  시스템 동기화

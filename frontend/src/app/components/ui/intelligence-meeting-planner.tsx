@@ -33,7 +33,7 @@ export function IntelligenceMeetingPlanner() {
  </div>
  <div>
  <h3 className="text-xl font-black tracking-tight ">Smart Scheduling Canvas</h3>
- <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-60 italic">Real-time resource allocation engine</p>
+ <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-60 ">Real-time resource allocation engine</p>
  </div>
  </div>
  <div className="flex gap-2">
@@ -62,7 +62,7 @@ export function IntelligenceMeetingPlanner() {
  )}>
  <div className="flex items-center gap-8">
  <div className="text-center">
- <p className="text-sm font-black italic tracking-tighter tabular-nums">{m.time}</p>
+ <p className="text-sm font-black tracking-tighter tabular-nums">{m.time}</p>
  <div className="w-1 h-3 bg-primary/20 mx-auto rounded-full mt-1" />
  </div>
  <div>
@@ -94,10 +94,10 @@ export function IntelligenceMeetingPlanner() {
  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform">
  <Zap size={100} />
  </div>
- <h3 className="relative z-10 text-sm font-black tracking-[0.3em] opacity-50 mb-6 italic">Active Capacity</h3>
+ <h3 className="relative z-10 text-sm font-black tracking-[0.3em] opacity-50 mb-6 ">Active Capacity</h3>
  <div className="relative z-10 space-y-2">
  <div className="flex items-end justify-between">
- <p className="text-5xl font-black italic tracking-tighter tabular-nums">78%</p>
+ <p className="text-3xl font-black tracking-tighter tabular-nums">78%</p>
  <span className="text-[10px] font-black tracking-tight text-primary">+12% vs last week</span>
  </div>
  <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
@@ -108,7 +108,7 @@ export function IntelligenceMeetingPlanner() {
 
  <div className="p-8 bg-card border-2 border-primary/5 rounded-[3.5rem] shadow-xl space-y-6">
  <div className="flex items-center justify-between">
- <h4 className="text-sm font-black tracking-tight italic">Room Matrix</h4>
+ <h4 className="text-sm font-black tracking-tight ">Room Matrix</h4>
  <Sparkles size={16} className="text-primary opacity-40" />
  </div>
  <div className="space-y-4">
@@ -124,7 +124,7 @@ export function IntelligenceMeetingPlanner() {
  </div>
  <div className="flex items-center gap-2">
  <Users size={12} className="opacity-40" />
- <span className="text-[10px] font-bold tabular-nums italic text-muted-foreground">{room.capacity}</span>
+ <span className="text-[10px] font-bold tabular-nums text-muted-foreground">{room.capacity}</span>
  </div>
  </div>
  ))}

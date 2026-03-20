@@ -65,7 +65,7 @@ const InsertDeptJobPage = () => {
  <Activity className="w-3.5 h-3.5 text-primary-foreground animate-pulse" />
  <span className="text-[10px] font-black tracking-[0.25em] text-white/80">Workflow System 2.0</span>
  </div>
- <CardTitle className="text-5xl font-black tracking-tighter leading-none italic ">
+ <CardTitle className="text-3xl font-black tracking-tighter leading-none ">
  Dispatch New Task
  </CardTitle>
  <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed mx-auto md:mx-0">
@@ -139,7 +139,7 @@ const InsertDeptJobPage = () => {
  <CheckCircle className="w-10 h-10 text-primary-foreground" />
  </div>
  <div className="space-y-1">
- <p className="font-black text-2xl text-slate-900 tracking-tight italic ">Validation Required</p>
+ <p className="font-black text-2xl text-slate-900 tracking-tight ">Validation Required</p>
  <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[450px]">
  등록된 업무는 부서 전체 대시보드에 즉시 노출됩니다. 기입된 내용이 부서 운영 가이드라인을 준수하는지 확인해 주세요.
  </p>

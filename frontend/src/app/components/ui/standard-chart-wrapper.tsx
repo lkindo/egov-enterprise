@@ -153,7 +153,7 @@ export function StandardChartWrapper({
  ))}
  </LineChart>
  ) : (
- <div className="flex items-center justify-center h-full text-muted-foreground italic text-sm">
+ <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
  차트 유형이 지원되지 않습니다.
  </div>
  )}

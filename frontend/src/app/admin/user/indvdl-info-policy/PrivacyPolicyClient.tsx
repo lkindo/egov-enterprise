@@ -2,171 +2,209 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { policyAdminService, PolicyDto } from '@/services/admin/user/PolicyAdminService';
 import {
- ShieldCheck,
- Save,
- RefreshCcw,
- FileText,
- Lock,
- Eye,
- History,
- AlertCircle
+  ShieldCheck,
+  Save,
+  RefreshCcw,
+  FileText,
+  Lock,
+  Eye,
+  History,
+  AlertCircle,
+  Zap,
+  ShieldAlert,
+  Fingerprint,
+  FileCode,
+  Shield,
+  ArrowUpRight,
+  Gavel,
+  ClipboardCheck,
+  SearchCode
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PrivacyPolicyClient({ 
- initialPolicy 
+  initialPolicy 
 }: { 
- initialPolicy: PolicyDto 
+  initialPolicy: PolicyDto 
 }) {
- const [loading, setLoading] = useState(false);
- const [policy, setPolicy] = useState(initialPolicy);
- const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [policy, setPolicy] = useState(initialPolicy);
+  const [isEditing, setIsEditing] = useState(false);
 
- const handleSave = async () => {
- setLoading(true);
- try {
- await policyAdminService.updatePolicy('privacy', policy);
- toast.success('개인정보 처리 방침이 업데이트되었습니다.');
- setIsEditing(false);
- } catch (error) {
- toast.error('저장에 실패했습니다.');
- } finally {
- setLoading(false);
- }
- };
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      await policyAdminService.updatePolicy('privacy', policy);
+      toast.success('보안 정책 프레임워크가 성공적으로 커밋되었습니다.');
+      setIsEditing(false);
+    } catch (error) {
+      toast.error('데이터 정합성 오류로 최종 저장이 중단되었습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
- return (
- <div className="max-w-5xl mx-auto space-y-12 px-4 md:px-0 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
- <PageHeader
- title="보안 정책 거버넌스"
- breadcrumbs={[{ label: '시스템관리' }, { label: '보안관리' }, { label: '개인정보보호정책' }]}
- actions={
- <div className="flex items-center gap-4">
- {isEditing ? (
- <>
- <Button
- variant="outline"
- onClick={() => setIsEditing(false)}
- className="h-14 px-8 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight italic hover:bg-slate-50 transition-all"
- >
- 취소
- </Button>
- <Button
- onClick={handleSave}
- disabled={loading}
- className="h-14 px-10 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic"
- >
- {loading ? <RefreshCcw size={18} className="animate-spin" /> : <Save size={18} />}
- 변경 사항 적용 (Commit)
- </Button>
- </>
- ) : (
- <Button
- onClick={() => setIsEditing(true)}
- className="h-14 px-10 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic"
- >
- <FileText size={18} />
- 정책 수정
- </Button>
- )}
- </div>
- }
- />
+  return (
+    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+      <PageHeader
+        title="보안 정책 거버넌스"
+        breadcrumbs={[{ label: '시스템관리' }, { label: '보안관리' }, { label: '개인정보보호정책' }]}
+      />
 
- {/* Luxury Policy Header */}
- <div className="responsive-card p-10 md:p-16 border-2 border-slate-100 bg-white/50 backdrop-blur-xl relative overflow-hidden group">
- <div className="relative z-10 space-y-10">
- <div className="flex items-center gap-6">
- <div className="w-20 h-20 rounded-[2rem] bg-slate-900 text-white flex items-center justify-center shadow-2xl group-hover:rotate-6 transition-transform duration-500">
- <ShieldCheck size={40} />
- </div>
- <div>
- <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter italic">개인정보 처리 프레임워크</h2>
- <p className="text-[10px] font-black text-slate-400 tracking-[0.4em] mt-1 italic flex items-center gap-3">
- <span className="w-6 h-0.5 bg-primary/30" />
- 데이터 보호 프로토콜 v2.4
- </p>
- </div>
- </div>
+      <HubHeader 
+        title="Privacy" 
+        highlight="Compliance" 
+        subtitle="전사 데이터 보호 규정 및 개인정보 처리 방침의 실시간 거버넌스 관리 시스템" 
+        icon={ShieldCheck} 
+        actions={
+          <div className="flex gap-4 p-2 items-center">
+            {isEditing ? (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => setIsEditing(false)}
+                  className="h-14 px-8 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 font-black text-[10px] tracking-widest uppercase hover:text-rose-500 hover:bg-rose-50 transition-all shadow-xl active:scale-95 px-6"
+                >
+                  CANCEL_CHANGES
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                >
+                  {loading ? <RefreshCcw size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />} 
+                  COMMIT_SPECIFICATION
+                  <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={() => setIsEditing(true)}
+                className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+              >
+                <FileCode size={20} /> POLICY_SPEC_OVERRIDE
+              </Button>
+            )}
+          </div>
+        }
+      />
 
- <div className="space-y-6">
- <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
- <Lock size={12} className="text-primary" />
- 정책 명칭
- </label>
- {isEditing ? (
- <Input
- value={policy.title}
- onChange={(e) => setPolicy(prev => ({ ...prev, title: e.target.value }))}
- className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-white text-xl font-black italic focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
- />
- ) : (
- <h3 className="text-2xl font-black text-slate-800 italic px-2">{policy.title}</h3>
- )}
- </div>
+      <HubMetricGrid>
+        <HubMetricCard title="COMPLIANCE_STATUS" value="CERTIFIED" icon={ClipboardCheck} color="emerald" status="ONLINE" />
+        <HubMetricCard title="PRIVACY_LEVEL" value="TIER_1" icon={ShieldAlert} color="primary" />
+        <HubMetricCard title="AUDIT_PROBE" value="ACTIVE" icon={SearchCode} color="indigo" />
+        <HubMetricCard title="REGULATORY_SYNC" value="99.8%" icon={Gavel} color="amber" />
+      </HubMetricGrid>
 
- <div className="space-y-3 pt-4">
- <label className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2 flex items-center gap-2">
- <FileText size={12} className="text-primary" />
- 정책 내용 (Markdown/Text)
- </label>
- {isEditing ? (
- <Textarea
- value={policy.content}
- onChange={(e) => setPolicy(prev => ({ ...prev, content: e.target.value }))}
- className="min-h-[500px] p-10 rounded-[3rem] border-2 border-slate-100 bg-white text-base font-medium leading-relaxed italic outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
- />
- ) : (
- <div className="p-10 md:p-16 rounded-[3rem] bg-slate-50/50 border-2 border-slate-100/50 text-slate-600 leading-loose font-medium whitespace-pre-wrap italic shadow-inner">
- {policy.content}
- </div>
- )}
- </div>
- </div>
- </div>
+      <div className="grid grid-cols-12 gap-12">
+        {/* Statistics & Search Panel */}
+        <div className="col-span-12 lg:col-span-4 h-full">
+            <div className="rounded-[3.5rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
+                <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
+                    <Shield size={240} className="text-primary" />
+                </div>
+                <div className="relative z-10 space-y-12">
+                    <div className="space-y-3">
+                        <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
+                            <Fingerprint size={32} className="text-primary" />
+                        </div>
+                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">Privacy<br />Encryption Core</h4>
+                    </div>
 
- <div className="absolute right-[-5%] top-[-5%] opacity-[0.02] -rotate-12 group-hover:rotate-0 transition-all duration-1000">
- <ShieldCheck size={400} />
- </div>
- </div>
+                    <div className="space-y-8">
+                         <div className="space-y-3">
+                            <label className="text-[10px] font-black text-white/30 tracking-[0.4em] px-2 uppercase font-mono">Governance_Probing</label>
+                            <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">Last Commit</span>
+                                    <span className="text-[9px] font-black text-primary font-mono tracking-widest uppercase ">2026-03-18_1433</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">Legality Check</span>
+                                    <span className="text-[9px] font-black text-emerald-400 font-mono tracking-widest uppercase ">ISO_27001_OK</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">Visibility</span>
+                                    <span className="text-[9px] font-black text-indigo-400 font-mono tracking-widest uppercase ">PUBLIC_SYNC</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
- {/* Meta Information Cards */}
- <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
- <div className="p-8 rounded-[2.5rem] bg-white border-2 border-slate-100 flex items-center gap-6 group hover:border-primary/20 transition-all">
- <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
- <Eye size={24} />
- </div>
- <div>
- <p className="text-[9px] font-black text-slate-400 tracking-tight">가시성</p>
- <h4 className="text-sm font-black text-slate-900 italic">공개 프로토콜</h4>
- </div>
- </div>
- <div className="p-8 rounded-[2.5rem] bg-white border-2 border-slate-100 flex items-center gap-6 group hover:border-primary/20 transition-all">
- <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
- <History size={24} />
- </div>
- <div>
- <p className="text-[9px] font-black text-slate-400 tracking-tight">최종 수정일</p>
- <h4 className="text-sm font-black text-slate-900 italic">2026-03-18</h4>
- </div>
- </div>
- <div className="p-8 rounded-[2.5rem] bg-white border-2 border-slate-100 flex items-center gap-6 group hover:border-primary/20 transition-all">
- <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-rose-500 group-hover:text-white transition-all shadow-sm">
- <AlertCircle size={24} />
- </div>
- <div>
- <p className="text-[9px] font-black text-slate-400 tracking-tight">준거성</p>
- <h4 className="text-sm font-black text-slate-900 italic">GDPR 준수</h4>
- </div>
- </div>
- </div>
- </div>
- );
+                    <div className="pt-8 border-t border-white/5 space-y-4">
+                        <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60">
+                            * 본 정책 명세의 변경은 전사 서비스 및 계약 프로토콜에 즉각적인 법적 효력을 발휘합니다.
+                        </p>
+                        <HubStatusBadge status="ACTIVE" className="bg-emerald-500/10 text-emerald-500 border-none px-6 py-2 rounded-xl text-[9px] tracking-widest font-black" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* Policy Content Stream */}
+        <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
+            <HubSectionCard 
+                title="데이터 보호 프로토콜 명세" 
+                description="전사적으로 적용되는 개인정보 처리 및 보안 규정에 대한 상세 아키텍처 명세입니다." 
+                icon={FileCode}
+                className="flex-1"
+            >
+                <div className="space-y-12">
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3 px-2">
+                            <div className="w-2 h-2 rounded-full bg-primary" />
+                            <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono">Policy_Identifier_Title</label>
+                        </div>
+                        {isEditing ? (
+                            <Input
+                                value={policy.title}
+                                onChange={(e) => setPolicy(prev => ({ ...prev, title: e.target.value }))}
+                                className="h-16 px-10 rounded-2xl border-2 border-slate-100 bg-slate-50/50 text-xl font-black tracking-tight focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase"
+                                placeholder="프로토콜 명칭 정의"
+                            />
+                        ) : (
+                            <h3 className="text-4xl font-black text-slate-900 px-2 tracking-tighter leading-none uppercase">{policy.title}</h3>
+                        )}
+                    </div>
+
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                        <div className="flex items-center gap-3 px-2">
+                             <div className="w-2 h-2 rounded-full bg-primary" />
+                            <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono">Policy_Raw_Specification</label>
+                        </div>
+                        {isEditing ? (
+                            <Textarea
+                                value={policy.content}
+                                onChange={(e) => setPolicy(prev => ({ ...prev, content: e.target.value }))}
+                                className="min-h-[550px] p-12 rounded-[3.5rem] border-2 border-slate-100 bg-slate-50/50 text-base font-bold leading-[2] focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner custom-scrollbar"
+                                placeholder="데이터 보호 규정의 상세 명세를 입력하십시오..."
+                            />
+                        ) : (
+                            <div className="p-16 rounded-[4rem] bg-white border-2 border-slate-100/50 text-slate-600 leading-[2.2] font-semibold whitespace-pre-wrap shadow-2xl text-lg relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-12 opacity-[0.01] scale-[2] pointer-events-none group-hover:rotate-12 transition-transform duration-1000">
+                                    <Shield size={240} className="text-primary" />
+                                </div>
+                                <div className="relative z-10">
+                                    {policy.content}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </HubSectionCard>
+        </div>
+      </div>
+    </div>
+  );
 }

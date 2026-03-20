@@ -129,7 +129,7 @@ export default function SmsListPage() {
  </div>
  </div>
  <DialogFooter className="flex md:justify-between items-center sm:justify-end border-t border-slate-100 pt-6">
- <p className="text-[10px] text-slate-400 italic flex-1 hidden md:block">정보통신망법 준수를 권장합니다.</p>
+ <p className="text-[10px] text-slate-400 flex-1 hidden md:block">정보통신망법 준수를 권장합니다.</p>
  <div className="flex space-x-2">
  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="h-10 px-4">취소</Button>
  <Button type="submit" disabled={isSending} className="bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-6 font-medium">

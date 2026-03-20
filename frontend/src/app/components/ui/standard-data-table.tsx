@@ -4,7 +4,7 @@ import React, { useState, useMemo, memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { List, MoreHorizontal } from "lucide-react";
+import { List, Search, RefreshCw } from "lucide-react";
 
 export interface Column<T> {
   header: string;
@@ -29,9 +29,9 @@ interface StandardDataTableProps<T> {
   bulkActions?: BulkAction<T>[];
   keyField?: keyof T;
   className?: string;
+  isPremium?: boolean; // New prop for integrated container styling
 }
 
-// 1. Row 컴포넌트 메모이제이션으로 성능 최적화
 const DataRow = memo(function DataRow({
   item,
   columns,
@@ -43,25 +43,28 @@ const DataRow = memo(function DataRow({
   return (
     <tr
       className={cn(
-        "group transition-colors outline-none focus-within:bg-muted/30",
-        isSelected ? "bg-primary/5" : "hover:bg-muted/50",
+        "group transition-all duration-300 outline-none focus-within:bg-muted/30",
+        isSelected ? "bg-primary/5" : "hover:bg-muted/40",
         onRowClick && "cursor-pointer"
       )}
+      onClick={() => onRowClick?.(item)}
     >
       {enableSelection && (
-        <td className="px-4 py-3 text-center">
+        <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
-            aria-label="행 선택"
+            className="rounded-md border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all scale-110"
           />
         </td>
       )}
       {columns.map((column: any, colIdx: number) => (
         <td
           key={`row-cell-${colIdx}`}
-          className={cn("px-4 py-3 text-sm text-foreground/90 font-medium", column.className)}
-          onClick={() => onRowClick?.(item)}
+          className={cn(
+            "px-6 py-5 text-sm font-medium text-foreground/80 tracking-tight transition-colors group-hover:text-foreground", 
+            column.className
+          )}
         >
           <div className="outline-none">
             {typeof column.accessor === 'function'
@@ -74,7 +77,6 @@ const DataRow = memo(function DataRow({
   );
 });
 
-// 2. 모바일 카드 컴포넌트
 const MobileCard = memo(function MobileCard({
   item,
   columns,
@@ -86,36 +88,32 @@ const MobileCard = memo(function MobileCard({
   return (
     <div
       className={cn(
-        "p-5 rounded-xl border transition-all relative overflow-hidden",
-        isSelected ? "border-primary bg-primary/5 shadow-sm" : "border-border bg-card hover:border-primary/20"
+        "p-6 rounded-[var(--radius-hub-item)] border-2 transition-all relative overflow-hidden",
+        isSelected ? "border-primary bg-primary/5 shadow-lg scale-[1.02]" : "border-border bg-card hover:border-primary/30"
       )}
       onClick={() => onRowClick?.(item)}
     >
-      <div className="flex justify-between items-start mb-4">
-        {enableSelection && (
-          <div onClick={(e) => e.stopPropagation()} className="relative z-10">
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={onToggle}
-              className="w-5 h-5"
-            />
-          </div>
-        )}
-        <div className="flex flex-col gap-1 flex-1 ml-3 overflow-hidden">
-          <div className="text-[10px] font-bold text-primary/70 uppercase tracking-tighter">
-            {columns[0].header}
-          </div>
-          <div className="font-bold text-base text-foreground truncate">
-            {typeof columns[0].accessor === 'function' ? columns[0].accessor(item) : item[columns[0].accessor]}
+      <div className="flex justify-between items-start mb-5">
+        <div className="flex items-center gap-3 flex-1 overflow-hidden">
+           {enableSelection && (
+            <div onClick={(e) => e.stopPropagation()} className="relative z-10">
+              <Checkbox checked={isSelected} onCheckedChange={onToggle} className="w-6 h-6 rounded-lg" />
+            </div>
+          )}
+          <div className="flex flex-col gap-1 overflow-hidden">
+            <span className="text-[10px] font-black text-primary/60 uppercase tracking-[0.2em]">{columns[0].header}</span>
+            <div className="font-[number:var(--font-weight-hub-title)] text-lg text-foreground truncate tracking-tight">
+              {typeof columns[0].accessor === 'function' ? columns[0].accessor(item) : item[columns[0].accessor]}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-y-4 gap-x-4 pt-4 border-t border-border/50">
+      <div className="grid grid-cols-2 gap-y-5 gap-x-4 pt-5 border-t border-border/50">
         {columns.slice(1, 5).map((column: any, idx: number) => (
-          <div key={`mobile-col-${idx}`} className="space-y-0.5 overflow-hidden">
-            <p className="text-[10px] font-bold text-muted-foreground/60 tracking-tight">{column.header}</p>
-            <div className="text-sm font-semibold text-foreground/80 truncate">
+          <div key={`mobile-col-${idx}`} className="space-y-1 overflow-hidden">
+            <p className="hub-subtitle-label opacity-40">{column.header}</p>
+            <div className="text-sm font-bold text-foreground/80 truncate">
               {typeof column.accessor === 'function' ? column.accessor(item) : item[column.accessor]}
             </div>
           </div>
@@ -134,7 +132,8 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   enableSelection = false,
   bulkActions = [],
   keyField = 'id' as keyof T,
-  className
+  className,
+  isPremium = true
 }: StandardDataTableProps<T>) {
   const [selectedIds, setSelectedIds] = useState<Set<any>>(new Set());
 
@@ -144,10 +143,10 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   );
 
   const toggleAll = useCallback(() => {
-    if (selectedIds.size === data.length) {
+    if (selectedIds.size === data.length && data.length > 0) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(data.map(item => item[keyField])));
+      setSelectedIds(new Set(data.filter(item => item[keyField] !== undefined).map(item => item[keyField])));
     }
   }, [data, selectedIds.size, keyField]);
 
@@ -161,30 +160,30 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   }, []);
 
   return (
-    <div className={cn("space-y-4", className)}>
-      {/* Bulk Action Toolbar */}
+    <div className={cn("space-y-6", isPremium ? "animate-in fade-in slide-in-from-bottom-4 duration-700" : "", className)}>
+      {/* Bulk Action Toolbar - High Tech Style */}
       {enableSelection && selectedIds.size > 0 && (
         <div
-          className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-xl animate-in fade-in slide-in-from-top-2"
+          className="flex items-center justify-between p-4 bg-slate-900 dark:bg-primary text-white rounded-[var(--radius-hub-item)] shadow-xl animate-in fade-in zoom-in-95"
           role="toolbar"
-          aria-label="선택 항목 작업"
         >
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-bold text-primary" aria-live="polite">
-              {selectedIds.size}개 선택됨
-            </span>
-            <div className="h-4 w-px bg-primary/20 aria-hidden" />
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col">
+               <span className="text-[10px] font-black opacity-60 tracking-widest uppercase">선택 모드</span>
+               <span className="text-sm font-black">{selectedIds.size}개 항목 선택됨</span>
+            </div>
+            <div className="h-8 w-px bg-white/20" />
             <div className="flex gap-2">
               {bulkActions.map((action, idx) => (
                 <Button
                   key={`bulk-action-${idx}`}
                   size="sm"
-                  variant={action.variant || "outline"}
-                  className="h-8 px-3 rounded-lg font-bold gap-2"
+                  variant="secondary"
+                  className="h-9 px-4 rounded-xl font-black text-[10px] tracking-tight gap-2 shadow-lg"
                   onClick={() => action.onClick(selectedItems)}
                 >
                   {action.icon}
-                  {action.label}
+                  {action.label.toUpperCase()}
                 </Button>
               ))}
             </div>
@@ -193,43 +192,49 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             variant="ghost"
             size="sm"
             onClick={() => setSelectedIds(new Set())}
-            className="text-xs font-bold h-8 px-3"
+            className="text-xs font-black h-9 px-4 hover:bg-white/10 text-white/80"
           >
             선택 해제
           </Button>
         </div>
       )}
 
-      {/* 1. Desktop View (Table) */}
-      <div className="hidden md:block w-full overflow-hidden border border-border rounded-xl bg-card">
+      {/* 1. Desktop View - Glass Style Table */}
+      <div className={cn(
+        "hidden md:block w-full overflow-hidden border-2 border-border/60 bg-card shadow-sm transition-all",
+        isPremium ? "rounded-[var(--radius-hub-item)]" : "rounded-xl"
+      )}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left border-collapse">
             <thead>
-              <tr className="bg-muted/30 border-b border-border">
+              <tr className="bg-muted/40 border-b-2 border-border/80">
                 {enableSelection && (
-                  <th className="px-4 py-3 w-12 text-center" scope="col">
+                  <th className="px-6 py-5 w-16 text-center" scope="col">
                     <Checkbox
                       checked={data.length > 0 && selectedIds.size === data.length}
                       onCheckedChange={toggleAll}
-                      aria-label="전체 항목 선택"
+                      className="scale-110"
                     />
                   </th>
                 )}
                 {columns.map((column, idx) => (
-                  <th key={`header-${idx}`} className={cn("px-4 py-3 font-bold text-muted-foreground text-xs uppercase tracking-tight whitespace-nowrap", column.className)} scope="col">
+                  <th key={`header-${idx}`} className={cn(
+                    "px-6 py-5 font-black text-muted-foreground/60 text-[10px] uppercase tracking-[0.2em] whitespace-nowrap whitespace-nowrap", 
+                    column.className
+                  )} scope="col">
                     {column.header}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border/40">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`loading-row-${i}`} className="animate-pulse">
-                    {enableSelection ? <td className="px-4 py-3 text-center"><div className="w-5 h-5 bg-muted rounded m-auto" /></td> : null}
+                    {enableSelection ? <td className="px-6 py-5 text-center"><div className="w-5 h-5 bg-muted rounded m-auto opacity-50" /></td> : null}
                     {columns.map((_, j) => (
-                      <td key={`loading-cell-${j}`} className="px-4 py-3">
-                        <div className="h-4 bg-muted/60 rounded w-3/4" />
+                      <td key={`loading-cell-${j}`} className="px-6 py-5">
+                        <div className="h-4 bg-muted/40 rounded-full w-3/4" />
                       </td>
                     ))}
                   </tr>
@@ -258,18 +263,18 @@ export function StandardDataTable<T extends { [key: string]: any }>({
         </div>
       </div>
 
-      {/* 2. Mobile View (Cards) */}
-      <div className="md:hidden space-y-4 px-1">
+      {/* 2. Mobile View (Premium Cards) */}
+      <div className="md:hidden space-y-5 px-1">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={`loading-card-${i}`} className="h-48 bg-muted/40 animate-pulse rounded-xl" />
+            <div key={`loading-card-${i}`} className="h-56 bg-muted/20 animate-pulse rounded-[var(--radius-hub-item)]" />
           ))
         ) : data.length === 0 ? (
-          <div className="p-12 bg-card border border-dashed border-border rounded-2xl text-center shadow-sm">
+          <div className="p-16 bg-card border-2 border-dashed border-border/60 rounded-[var(--radius-hub-section)] text-center shadow-inner">
             <EmptyStateDisplay emptyMessage={emptyMessage} />
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-5">
             {data.map((item, idx) => (
               <MobileCard
                 key={item[keyField] !== undefined ? `card-${item[keyField]}` : `card-idx-${idx}`}
@@ -288,22 +293,29 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   );
 }
 
-// --- Internal Helper Components ---
-
 function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in zoom-in-95 duration-500 py-10">
-      <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-2">
-        <List size={32} className="text-muted-foreground/30" aria-hidden="true" />
+    <div className="flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in-95 duration-700 py-12">
+      <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-2 relative">
+         <Search size={40} className="text-muted-foreground/20" />
+         <div className="absolute -right-1 -bottom-1 w-8 h-8 bg-background border-2 border-border rounded-full flex items-center justify-center">
+            <List size={14} className="text-muted-foreground" />
+         </div>
       </div>
-      <div className="space-y-1">
-        <p className="text-lg font-bold text-foreground/80 tracking-tight">{emptyMessage}</p>
-        <p className="text-xs text-muted-foreground font-medium max-w-[280px] mx-auto leading-relaxed">
-          현재 표시할 수 있는 데이터가 없습니다. <br />검색 조건을 변경하거나 페이지를 새로고침 해보세요.
+      <div className="space-y-2">
+        <p className="text-xl font-black text-foreground tracking-tighter uppercase">{emptyMessage}</p>
+        <p className="text-xs text-muted-foreground font-black tracking-tight max-w-[320px] mx-auto leading-relaxed opacity-60">
+          시스템에서 데이터를 조회하지 못했습니다. <br />검색 조건을 조정하거나 다시 초기화해 보십시오.
         </p>
       </div>
-      <Button variant="outline" size="sm" className="mt-4 rounded-lg font-bold" onClick={() => window.location.reload()}>
-        새로고침
+      <Button 
+        variant="outline" 
+        size="lg" 
+        className="mt-6 rounded-2xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group" 
+        onClick={() => window.location.reload()}
+      >
+        <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
+        전체 새로고침
       </Button>
     </div>
   );

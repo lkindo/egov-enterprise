@@ -74,7 +74,7 @@ const InsertBBSContent = () => {
  <Edit3 className="w-4 h-4 text-primary animate-bounce" />
  <span className="text-[10px] font-black tracking-[0.3em] text-white">Create Article</span>
  </div>
- <CardTitle className="text-5xl md:text-6xl font-black tracking-tighter leading-tight italic ">
+ <CardTitle className="text-3xl md:text-3xl font-black tracking-tighter leading-tight ">
  Share your <br />
  <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Insight</span>
  </CardTitle>
@@ -162,7 +162,7 @@ const InsertBBSContent = () => {
  <CheckCircle2 className="w-8 h-8 text-primary" />
  </div>
  <div className="space-y-3 relative z-10 text-center md:text-left">
- <h4 className="text-2xl font-black text-white tracking-tight italic">Final Check</h4>
+ <h4 className="text-2xl font-black text-white tracking-tight ">Final Check</h4>
  <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xl">
  게시글을 등록하기 전에 오타나 민감한 정보가 포함되어 있는지 다시 한번 확인해주세요.
  등록된 글은 모든 사원들이 열람할 수 있습니다.

@@ -45,8 +45,8 @@ export default function WorkflowPage() {
  </div>
  <span className="text-sm font-black text-primary tracking-tight">Workflow Engine</span>
  </div>
- <h1 className="text-5xl font-black tracking-tighter text-foreground ">
- Process <span className="text-primary italic">Canvas</span>
+ <h1 className="text-3xl font-black tracking-tighter text-foreground ">
+ Process <span className="text-primary ">Canvas</span>
  </h1>
  <p className="text-muted-foreground font-bold text-sm max-w-lg">
  도메인 이벤트 기반의 워크플로우 엔진을 통해 비즈니스 프로세스를 설계하고 실시간 진행 상태를 시각화합니다.
@@ -70,7 +70,7 @@ export default function WorkflowPage() {
  <div className="flex items-center gap-6">
  <div className="flex items-center gap-2">
  <span className="text-sm font-black text-foreground">WORKFLOW:</span>
- <span className="text-sm font-bold text-muted-foreground italic">연차/휴가 결재 프로세스_v1.2</span>
+ <span className="text-sm font-bold text-muted-foreground ">연차/휴가 결재 프로세스_v1.2</span>
  </div>
  <div className="h-4 w-px bg-muted" />
  <div className="flex items-center gap-2">
@@ -118,7 +118,7 @@ export default function WorkflowPage() {
  <div className="space-y-2">
  <span className="text-[9px] font-black text-muted-foreground tracking-[0.2em]">현재 담당자</span>
  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl border border-white/5">
- <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-sm italic">
+ <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-sm ">
  {selectedNode.assignee?.charAt(0)}
  </div>
  <span className="text-sm font-black">{selectedNode.assignee || '미정'}</span>
@@ -131,12 +131,12 @@ export default function WorkflowPage() {
  <div className="relative">
  <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-background" />
  <p className="text-sm font-black">신청서 수신 완료</p>
- <p className="text-[10px] text-muted-foreground font-bold italic">2026-02-22 14:20:01</p>
+ <p className="text-[10px] text-muted-foreground font-bold ">2026-02-22 14:20:01</p>
  </div>
  <div className="relative opacity-50">
  <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-muted border-4 border-background" />
  <p className="text-sm font-black">팀장 내부 상신</p>
- <p className="text-[10px] text-muted-foreground font-bold italic">Waiting...</p>
+ <p className="text-[10px] text-muted-foreground font-bold ">Waiting...</p>
  </div>
  </div>
  </div>
@@ -147,7 +147,7 @@ export default function WorkflowPage() {
  </button>
  </div>
  ) : (
- <div className="py-20 text-center opacity-30 italic">
+ <div className="py-20 text-center opacity-30 ">
  <p className="text-sm font-bold">노드를 선택하여 상세 정보를 확인하세요.</p>
  </div>
  )}

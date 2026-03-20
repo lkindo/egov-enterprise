@@ -158,7 +158,7 @@ export function CommandPalette() {
  </div>
  <div>
  <p className="text-lg font-black text-foreground">결과가 없습니다.</p>
- <p className="text-sm text-muted-foreground font-bold italic">다른 키워드로 검색해 보세요.</p>
+ <p className="text-sm text-muted-foreground font-bold ">다른 키워드로 검색해 보세요.</p>
  </div>
  </div>
  )}

@@ -71,19 +71,18 @@ export default async function RootLayout({
  <Suspense fallback={null}>
  <ScrollToTop />
  </Suspense>
- <div className="relative flex min-h-screen flex-col">
- <Header initialMenus={initialMenus} />
- <div className="flex flex-1">
- <Sidebar initialMenus={initialMenus} />
- <main className="flex-1 lg:pl-72 pt-4 transition-all duration-300 min-w-0">
- <div className="container mx-auto p-4 md:p-6 min-h-[calc(100vh-10rem)]">
- {children}
- </div>
- <Footer />
- </main>
- </div>
-
- </div>
+        <div className="relative flex min-h-screen flex-col bg-background/50 selection:bg-primary/20 selection:text-primary transition-all duration-700">
+          <Header initialMenus={initialMenus} />
+          <div className="flex flex-1">
+            <Sidebar initialMenus={initialMenus} />
+            <main className="flex-1 lg:pl-72 pt-1 transition-all duration-500 min-w-0">
+              <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-14rem)] animate-in fade-in duration-1000">
+                {children}
+              </div>
+              <Footer className="border-t border-border/20 py-8 mb-4 px-6 opacity-30 hover:opacity-100 transition-opacity" />
+            </main>
+          </div>
+        </div>
  </Providers>
  </ThemeProvider>
  </body>

@@ -116,7 +116,7 @@ export function SmartOnboardingHub() {
  </div>
  <div className="absolute bottom-10 left-10 flex items-center gap-3">
  <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
-   <span className="text-[10px] font-black text-white/50 tracking-[0.4em]">기능 스포트라이트</span>
+ <span className="text-[10px] font-black text-white/50 tracking-[0.4em]">기능 스포트라이트</span>
  </div>
  </div>
 
@@ -134,9 +134,9 @@ export function SmartOnboardingHub() {
  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-700">
  <div className="flex items-center gap-2">
  <div className="h-px w-8 bg-primary" />
-   <span className="text-[10px] font-black text-primary tracking-[0.3em]">모듈 가이드</span>
+ <span className="text-[10px] font-black text-primary tracking-[0.3em]">모듈 가이드</span>
  </div>
- <h2 className="text-4xl font-black tracking-tighter text-white leading-[1.1]">
+ <h2 className="text-3xl font-black tracking-tighter text-white leading-[1.1]">
  {steps[currentStep].title}
  </h2>
  <p className="text-base text-white/60 font-medium leading-relaxed">
@@ -158,17 +158,17 @@ export function SmartOnboardingHub() {
 
  <div className="flex items-center justify-between gap-4 pt-10 border-t border-white/5">
  <Button variant="ghost" onClick={prevStep} className={cn("rounded-2xl font-black h-12 px-6 text-white/40 hover:text-white transition-all", currentStep === 0 && "invisible")}>
-   <ChevronLeft size={20} /> 이전
+ <ChevronLeft size={20} /> 이전
  </Button>
 
  <div className="flex gap-3">
  {currentStep < steps.length - 1 ? (
  <Button onClick={nextStep} className="rounded-2xl font-black h-14 px-10 bg-primary text-white shadow-[0_15px_30px_-5px_rgba(59,130,246,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
-   {currentStep === 0 ? "플랫폼 둘러보기" : "다음 기능"} <ArrowRight size={18} />
+ {currentStep === 0 ? "플랫폼 둘러보기" : "다음 기능"} <ArrowRight size={18} />
  </Button>
  ) : (
  <Button onClick={handleComplete} className="rounded-2xl font-black h-14 px-12 bg-emerald-500 text-white shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
-   시작하기 <CheckCircle2 size={18} />
+ 시작하기 <CheckCircle2 size={18} />
  </Button>
  )}
  </div>

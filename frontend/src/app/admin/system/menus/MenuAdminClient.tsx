@@ -17,16 +17,30 @@ import {
   Link as LinkIcon,
   CheckCircle2,
   ChevronsDownUp,
-  ChevronsUpDown
+  ChevronsUpDown,
+  Search,
+  SearchCode,
+  Activity,
+  Box,
+  Zap,
+  LayoutGrid,
+  ShieldCheck,
+  Network,
+  Database
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
-const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { FormField } from '@/app/components/ui/standard-form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { saveMenuAction, updateMenuOrdersAction, deleteMenuAction } from '@/app/actions/menuActions';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
 // Helper to build tree from flat list
 const buildMenuTree = (flatMenus: MenuInfo[]): MenuInfo[] => {
@@ -147,8 +161,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
   const handleDelete = async (id: number) => {
     const isConfirmed = await confirm({
-      title: '메뉴 삭제',
-      message: '이 메뉴와 하위 메뉴가 모두 삭제됩니다. 계속하시겠습니까?',
+      title: '메뉴 삭제 확인',
+      message: '해당 메뉴를 삭제하면 모든 하위 메뉴가 함께 삭제되며 복구할 수 없습니다. 계속하시겠습니까?',
       variant: 'destructive'
     });
     if (isConfirmed) {
@@ -293,16 +307,21 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         }}
         className={cn(
           "group select-none transition-all duration-300",
-          level > 0 && "ml-12 mt-4 border-l-2 border-border pl-8 pb-2",
+          level > 0 && "ml-16 mt-6 border-l-2 border-slate-100 pl-10 pb-2 relative",
           isDragged && "opacity-20 scale-95"
         )}
       >
+        {/* Connection Line Visualization */}
+        {level > 0 && (
+            <div className="absolute left-0 top-6 w-8 h-0.5 bg-slate-100 rounded-full" />
+        )}
+
         <div className={cn(
-          "flex items-center justify-between p-4 rounded-xl border transition-all",
-          level === 0 ? "bg-card border-border shadow-sm text-foreground" : "bg-muted/30 border-border/50",
-          "hover:border-primary/50 cursor-grab active:cursor-grabbing"
+          "flex items-center justify-between p-5 rounded-[1.5rem] border-2 transition-all relative overflow-hidden",
+          level === 0 ? "bg-white border-slate-100 shadow-sm" : "bg-slate-50/50 border-transparent",
+          "hover:border-primary/30 hover:shadow-xl cursor-grab active:cursor-grabbing bg-white/40 backdrop-blur-xl"
         )}>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5 relative z-10">
             <div className="flex items-center gap-2">
               {hasChildren && (
                 <button
@@ -310,75 +329,81 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                     e.stopPropagation();
                     toggleExpand(item.menuNo);
                   }}
-                  className="p-1 hover:bg-muted rounded-full transition-colors text-muted-foreground"
+                  className="p-1.5 hover:bg-slate-100 rounded-xl transition-colors text-muted-foreground mr-1"
                 >
-                  <ChevronRight size={16} className={cn("transition-transform duration-300", isExpanded && "rotate-90")} />
+                  <ChevronRight size={18} className={cn("transition-transform duration-300", isExpanded && "rotate-90")} />
                 </button>
               )}
-              {!hasChildren && level < 2 ? <div className="w-6" /> : null}
+              {!hasChildren && level < 2 ? <div className="w-8" /> : null}
 
               <div className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center shadow-sm transition-transform group-hover:rotate-3",
-                level === 0 ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : level === 1 ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-6 duration-500",
+                level === 0 ? "bg-slate-900 text-white shadow-slate-200" : level === 1 ? "bg-primary text-white shadow-primary/20" : "bg-white text-muted-foreground border border-slate-200 shadow-sm"
               )}>
-                {level === 0 ? <FolderTree size={18} /> : level === 1 ? <Layers size={16} /> : <FileCode size={14} />}
+                {level === 0 ? <FolderTree size={22} /> : level === 1 ? <Layers size={18} /> : <FileCode size={16} />}
               </div>
             </div>
 
             <div className="flex flex-col">
               <span className={cn(
-                "font-bold tracking-tight italic text-sm",
+                "font-black tracking-tighter text-md",
                 level === 0 ? "text-foreground" : "text-foreground/80"
               )}>
                 {item.menuNm}
               </span>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">
-                  #{item.menuNo}
+              <div className="flex items-center gap-3 mt-1.5">
+                <span className="text-[9px] font-black bg-slate-100 text-muted-foreground px-2 py-0.5 rounded-lg font-mono tracking-widest uppercase opacity-60">
+                  NODE_{item.menuNo}
                 </span>
                 {item.progrmFileNm && (
-                  <span className="text-[10px] flex items-center gap-1 text-primary/60 font-bold">
-                    <LinkIcon size={10} /> {item.progrmFileNm}
+                  <span className="text-[9px] flex items-center gap-1.5 text-primary font-black tracking-widest uppercase opacity-60">
+                    <LinkIcon size={12} /> {item.progrmFileNm}
                   </span>
                 )}
                 {item.modernRoute && (
-                  <span className="text-[10px] flex items-center gap-1 text-emerald-600/60 font-bold">
-                    <CheckCircle2 size={10} /> {item.modernRoute}
+                  <span className="text-[9px] flex items-center gap-1.5 text-emerald-600 font-black tracking-widest uppercase">
+                    <CheckCircle2 size={12} /> {item.modernRoute}
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all relative z-10">
             {level < 2 && (
               <Button
-                variant="ghost" size="icon"
+                variant="ghost" 
+                size="icon"
                 onClick={() => handleOpenCreate(item.menuNo)}
-                className="h-8 w-8 rounded-lg"
+                className="h-10 w-10 bg-slate-50 hover:bg-primary hover:text-white rounded-xl border border-slate-100 transition-all font-black"
               >
-                <Plus size={14} />
+                <Plus size={16} />
               </Button>
             )}
             <Button
-              variant="ghost" size="icon"
+              variant="ghost" 
+              size="icon"
               onClick={() => handleOpenEdit(item)}
-              className="h-8 w-8 rounded-lg"
+              className="h-10 w-10 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-100 transition-all"
             >
-              <Settings size={14} />
+              <Settings size={16} />
             </Button>
             <Button
-              variant="ghost" size="icon"
+              variant="ghost" 
+              size="icon"
               onClick={() => handleDelete(item.menuNo)}
-              className="h-8 w-8 text-rose-500 hover:text-rose-600 rounded-lg"
+              className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all"
             >
-              <Trash2 size={14} />
+              <Trash2 size={16} />
             </Button>
           </div>
+          
+          {/* Subtle decoration */}
+          <div className="absolute right-0 top-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
         </div>
 
         {hasChildren && isExpanded && (
-          <div className="space-y-4 overflow-hidden animate-in slide-in-from-top-4 duration-300 mt-4">
+          <div className="space-y-2 overflow-hidden animate-in slide-in-from-top-4 duration-500">
             {item.children!.map(child => (
               <MenuNode key={child.menuNo} item={child} level={level + 1} />
             ))}
@@ -389,142 +414,149 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="시스템 메뉴 아키텍처"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '메뉴관리' }]}
+        title="네비게이션 정보 아키텍처"
+        breadcrumbs={[{ label: '시스템관리' }, { label: '메뉴 관리' }]}
+      />
+
+      <HubHeader 
+        title="메뉴" 
+        highlight="아키텍처" 
+        subtitle="시스템 전반의 계층적 메뉴 구조 설계와 권한 기반 네비게이션 트리 관리" 
+        icon={FolderTree} 
         actions={
-          <div className="flex gap-4">
-            <div className="flex bg-muted/50 p-1.5 rounded-xl gap-1.5">
+          <div className="flex gap-4 p-2 items-center">
+            <div className="flex bg-slate-100/80 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/50 shadow-inner">
               <Button
                 variant="ghost"
                 onClick={handleExpandAll}
-                className="h-9 px-3 rounded-lg font-bold text-xs gap-2"
+                className="h-11 px-4 rounded-xl font-black text-[10px] tracking-widest uppercase hover:bg-white group transition-all"
               >
-                <ChevronsUpDown size={14} /> 펼치기
+                <ChevronsUpDown size={16} className="group-hover:scale-110" /> EXPAND_ALL
               </Button>
               <Button
                 variant="ghost"
                 onClick={handleCollapseAll}
-                className="h-9 px-3 rounded-lg font-bold text-xs gap-2"
+                className="h-11 px-4 rounded-xl font-black text-[10px] tracking-widest uppercase hover:bg-white group transition-all"
               >
-                <ChevronsDownUp size={14} /> 접기
+                <ChevronsDownUp size={16} className="group-hover:scale-110" /> COLLAPSE_ALL
               </Button>
             </div>
 
             {hasChanges && (
               <Button
                 onClick={handleSaveChanges}
-                className="bg-emerald-600 text-white hover:bg-emerald-700 h-12 px-6 rounded-xl font-bold gap-2 shadow-lg italic"
+                className="bg-emerald-600 text-white hover:bg-emerald-700 h-14 px-8 rounded-2xl font-black text-[11px] tracking-widest uppercase gap-3 shadow-2xl animate-pulse"
               >
-                <Save size={18} /> 순서 적용
+                <Save size={20} /> APPLY_LAYOUT
               </Button>
             )}
             <Button
               onClick={() => handleOpenCreate(0)}
-              className="h-12 px-6 rounded-xl font-bold gap-2 shadow-md italic"
+              size="lg"
+              className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
             >
-              <Plus size={18} /> 상위 메뉴 추가
+              <Plus size={20} /> 최상위 메뉴 추가
             </Button>
           </div>
         }
       />
 
-      <div className="bg-slate-900 text-white rounded-[3rem] p-10 shadow-2xl flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group">
-        <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/20">
-          <FolderTree size={32} className="text-primary-foreground" />
-        </div>
-        <div className="space-y-1.5 flex-1 text-center md:text-left">
-          <h4 className="text-2xl font-black italic tracking-tighter">계층적 메뉴 관리 시스템</h4>
-          <p className="text-sm text-slate-400 font-bold leading-relaxed max-w-2xl">
-            최대 3단계의 계층 구조를 지원합니다. 드래그 앤 드롭으로 메뉴 구조를 설계하고 순서 적용 버튼을 눌러 확정하십시오.
-          </p>
-        </div>
-      </div>
+      <HubMetricGrid>
+        <HubMetricCard title="REGISTERED_NODES" value={initialMenus.length} icon={Database} color="primary" />
+        <HubMetricCard title="HIERARCHY_DEPTH" value={3} icon={LayoutGrid} color="indigo" />
+        <HubMetricCard title="ACTIVE_ROUTES" value={initialMenus.filter(m => !!m.modernRoute).length} icon={Network} color="emerald" />
+        <HubMetricCard title="SYNC_INTEGRITY" value="OPTIMAL" icon={ShieldCheck} color="amber" />
+      </HubMetricGrid>
 
-      <div className="space-y-8">
-        {treeMenus.map(menu => (
-          <MenuNode key={menu.menuNo} item={menu} level={0} />
-        ))}
+      <HubSectionCard title="시스템 네비게이션 트리" description="최대 3단계의 계층 구조를 지원합니다. 드래그 앤 드롭으로 메뉴 구조를 설계하십시오." icon={SearchCode}>
+        <div className="space-y-6 px-4">
+          {treeMenus.map(menu => (
+            <MenuNode key={menu.menuNo} item={menu} level={0} />
+          ))}
 
-        {/* Root Drop Zone */}
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            e.currentTarget.classList.add('bg-primary/5', 'border-primary');
-          }}
-          onDragLeave={(e) => {
-            e.currentTarget.classList.remove('bg-primary/5', 'border-primary');
-          }}
-          onDrop={(e) => {
-            e.currentTarget.classList.remove('bg-primary/5', 'border-primary');
-            handleDrop(e, 0);
-          }}
-          className="border-2 border-dashed border-border rounded-2xl p-12 flex flex-col items-center justify-center gap-4 transition-all hover:border-primary/40 group mt-10"
-        >
-          <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
-            <Plus size={24} />
+          {/* Root Drop Zone Refined */}
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.currentTarget.classList.add('bg-primary/5', 'border-primary', 'scale-[1.01]');
+            }}
+            onDragLeave={(e) => {
+              e.currentTarget.classList.remove('bg-primary/5', 'border-primary', 'scale-[1.01]');
+            }}
+            onDrop={(e) => {
+              e.currentTarget.classList.remove('bg-primary/5', 'border-primary', 'scale-[1.01]');
+              handleDrop(e, 0);
+            }}
+            className="border-4 border-dashed border-slate-100 rounded-[2.5rem] p-16 flex flex-col items-center justify-center gap-6 transition-all hover:border-primary/30 group mt-16 bg-slate-50/30"
+          >
+            <div className="w-20 h-20 rounded-3xl bg-white flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:rotate-12 group-hover:scale-110 shadow-inner border border-slate-100 transition-all duration-500">
+              <Plus size={32} />
+            </div>
+            <div className="text-center space-y-2">
+                <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">Architecture Assembly</p>
+                <p className="text-sm font-black text-muted-foreground tracking-tight group-hover:text-foreground transition-colors uppercase">드래그한 요소를 여기에 놓으면 '최상위' 노드로 프로모션됩니다</p>
+            </div>
           </div>
-          <p className="text-xs font-bold text-muted-foreground tracking-tight">여기에 놓으면 최상위 메뉴로 이동합니다</p>
         </div>
-      </div>
+      </HubSectionCard>
 
       <StandardModal
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
-        title={mode === 'create' ? '신규 메뉴 등록' : '메뉴 정보 수정'}
+        title={mode === 'create' ? '신규 네비게이션 노드 설계' : '메뉴 노드 구성 속성 수정'}
         maxWidth="2xl"
         footer={
-          <div className="flex w-full gap-3">
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-xl font-bold">취소</Button>
+          <div className="flex w-full gap-4">
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">CANCEL</Button>
             <Button 
-              type="button" 
-              onClick={() => handleSave()} 
-              className="flex-[2] h-11 rounded-xl font-bold"
+                onClick={() => handleSave()} 
+                className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-xl"
             >
-              {mode === 'create' ? '등록 완료' : '수정 완료'}
+              {mode === 'create' ? 'ARCHITECT_NODE' : 'UPDATE_STRUCTURE'}
             </Button>
           </div>
         }
       >
-        <div className="space-y-5 pt-2">
-          <FormField label="메뉴 명칭" required>
+        <div className="space-y-8 pt-4">
+          <FormField label="메뉴 명칭" required description="사용자 인터페이스에 노출될 라벨입니다.">
             <Input
               value={formData.menuNm}
               onChange={(e) => setFormData({ ...formData, menuNm: e.target.value })}
-              className="h-10 text-sm font-semibold"
-              placeholder="메뉴 명칭 입력"
+              className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner"
+              placeholder="메뉴 이름 입력 (예: 사용자 관리)"
             />
           </FormField>
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="상위 메뉴 ID">
-              <div className="h-10 rounded-lg border flex items-center px-4 text-sm font-medium bg-muted/30 text-muted-foreground italic">
-                {formData.upperMenuId === 0 ? 'root (최상위)' : formData.upperMenuId}
+          <div className="grid grid-cols-2 gap-8">
+            <FormField label="상위 노드 식별자">
+              <div className="h-14 rounded-2xl border-2 border-slate-100 flex items-center px-6 text-[10px] font-black tracking-widest uppercase bg-slate-50/50 text-muted-foreground/60 italic overflow-hidden shadow-inner">
+                {formData.upperMenuId === 0 ? 'SYSTEM_ROOT (최상위)' : `PARENT_NODE_${formData.upperMenuId}`}
               </div>
             </FormField>
 
-            <FormField label="표시 순서" required>
+            <FormField label="표열 순서 (Priority)" required>
               <Input
                 type="number"
                 value={formData.menuOrdr}
                 onChange={(e) => setFormData({ ...formData, menuOrdr: Number(e.target.value) })}
-                className="h-10 text-sm"
+                className="h-14 rounded-2xl text-xs font-black shadow-inner"
               />
             </FormField>
           </div>
 
-          <FormField label="연동 프로그램 (자산)">
+          <FormField label="연동 소프트웨어 자산 (Target Module)">
             <Select
               value={formData.progrmFileNm || ''}
               onValueChange={(v) => setFormData({ ...formData, progrmFileNm: v })}
             >
-              <SelectTrigger className="h-10 text-sm">
-                <SelectValue placeholder="연동되지 않음" />
+              <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase focus:ring-4 focus:ring-primary/10 transition-all shadow-inner">
+                <SelectValue placeholder="--- UNLINKED (연동되지 않음) ---" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-2xl shadow-2xl p-2">
                 {programs.map(p => (
-                  <SelectItem key={p.progrmFileNm} value={p.progrmFileNm}>
+                  <SelectItem key={p.progrmFileNm} value={p.progrmFileNm} className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase">
                     {p.progrmNm} ({p.progrmFileNm})
                   </SelectItem>
                 ))}
@@ -532,12 +564,24 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
             </Select>
           </FormField>
 
-          <FormField label="연결 URL (모던 라우트)" description="프론트엔드 라우트 경로">
-            <Input
-              value={formData.modernRoute || ''}
-              onChange={(e) => setFormData({ ...formData, modernRoute: e.target.value })}
-              className="h-10 text-sm font-mono"
-              placeholder="예: /admin/system/codes"
+          <FormField label="라우팅 엔드포인트 (Route Path)" description="전자정부 표준 프레임워크 기반 프론트엔드 라우트 경로">
+            <div className="relative group/route">
+                <Network size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/route:opacity-100 transition-opacity" />
+                <Input
+                  value={formData.modernRoute || ''}
+                  onChange={(e) => setFormData({ ...formData, modernRoute: e.target.value })}
+                  className="h-14 pl-16 rounded-2xl text-xs font-mono font-black italic shadow-inner border-2 border-slate-100"
+                  placeholder="예: /admin/system/codes"
+                />
+            </div>
+          </FormField>
+          
+          <FormField label="노드 상세 메타데이터">
+            <textarea
+              value={formData.menuDc}
+              onChange={(e) => setFormData({ ...formData, menuDc: e.target.value })}
+              className="w-full min-h-[140px] p-6 rounded-2xl border-2 border-border bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
+              placeholder="메뉴에 대한 상세 설명 및 주석"
             />
           </FormField>
         </div>

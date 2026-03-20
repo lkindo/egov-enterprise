@@ -125,8 +125,8 @@ export default function ManualAdminClient({
  <BookOpen size={18} />
  </div>
  <div>
- <span className="font-black italic tracking-tighter text-slate-900 block">{item.onlineMnlNm}</span>
- <span className="text-[9px] font-bold text-slate-400 tracking-tight italic">{item.onlineMnlId}</span>
+ <span className="font-black tracking-tighter text-slate-900 block">{item.onlineMnlNm}</span>
+ <span className="text-[9px] font-bold text-slate-400 tracking-tight ">{item.onlineMnlId}</span>
  </div>
  </div>
  )
@@ -134,7 +134,7 @@ export default function ManualAdminClient({
  {
  header: '소스 경로',
  accessor: (item: ManualDto) => (
- <div className="flex items-center gap-2 text-slate-400 font-mono text-[11px] italic">
+ <div className="flex items-center gap-2 text-slate-400 font-mono text-[11px] ">
  <Code size={12} />
  {item.onlineMnlCours}
  </div>
@@ -143,7 +143,7 @@ export default function ManualAdminClient({
  {
  header: '설명',
  accessor: (item: ManualDto) => (
- <span className="text-[11px] font-bold text-slate-500 italic max-w-[200px] truncate block">
+ <span className="text-[11px] font-bold text-slate-500 max-w-[200px] truncate block">
  {item.onlineMnlDc || '설명이 없습니다.'}
  </span>
  )
@@ -189,7 +189,7 @@ export default function ManualAdminClient({
  </Button>
  <Button
  onClick={handleOpenAdd}
- className="h-14 px-8 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic"
+ className="h-14 px-8 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 "
  >
  <Plus size={18} />
  새 매뉴얼 등록
@@ -206,7 +206,7 @@ export default function ManualAdminClient({
  <BookOpen size={24} />
  </div>
  <div>
- <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter italic">지식 자산</h3>
+ <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">지식 자산</h3>
  <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">온라인 매뉴얼 관리</p>
  </div>
  </div>
@@ -222,7 +222,7 @@ export default function ManualAdminClient({
  </div>
  <Button
  onClick={handleRefresh}
- className="h-14 px-8 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-tight shadow-xl hover:bg-primary transition-all active:scale-95 italic"
+ className="h-14 px-8 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-tight shadow-xl hover:bg-primary transition-all active:scale-95 "
  >
  검색
  </Button>
@@ -247,7 +247,7 @@ export default function ManualAdminClient({
  <div className="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
  {selectedManual ? <Edit2 size={28} /> : <Plus size={28} />}
  </div>
- <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter italic text-center">
+ <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter text-center">
  {selectedManual ? '가이드 수정' : '가이드 등록'}
  </DialogTitle>
  <DialogDescription className="text-center font-bold text-slate-400 text-sm">
@@ -257,17 +257,17 @@ export default function ManualAdminClient({
  
  <div className="space-y-8 py-8">
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2">매뉴얼 명칭</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">매뉴얼 명칭</label>
  <Input
  placeholder="매뉴얼 명을 입력하세요..."
  value={form.onlineMnlNm}
  onChange={(e) => setForm(prev => ({ ...prev, onlineMnlNm: e.target.value }))}
- className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black italic focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
  />
  </div>
 
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2">리소스 경로</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">리소스 경로</label>
  <Input
  placeholder="/src/docs/manuals/..."
  value={form.onlineMnlCours}
@@ -277,12 +277,12 @@ export default function ManualAdminClient({
  </div>
  
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight italic ml-2">상세 설명</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">상세 설명</label>
  <Textarea
  placeholder="매뉴얼 설명을 입력하세요..."
  value={form.onlineMnlDc}
  onChange={(e) => setForm(prev => ({ ...prev, onlineMnlDc: e.target.value }))}
- className="min-h-[120px] p-8 rounded-[2rem] border-2 border-slate-100 bg-slate-50/50 text-sm font-bold italic outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
+ className="min-h-[120px] p-8 rounded-[2rem] border-2 border-slate-100 bg-slate-50/50 text-sm font-bold outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
  />
  </div>
  </div>
@@ -291,14 +291,14 @@ export default function ManualAdminClient({
  <Button
  variant="outline"
  onClick={() => setIsAddOpen(false)}
- className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight italic hover:bg-slate-50 transition-all"
+ className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all"
  >
  취소
  </Button>
  <Button
  onClick={handleSubmit}
  disabled={loading}
- className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic flex-1"
+ className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
  >
  {loading ? <RefreshCcw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
  저장

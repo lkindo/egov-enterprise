@@ -59,7 +59,7 @@ export default function NotificationsPage() {
  <ShieldCheck size={20} />
  <span className="text-sm font-black tracking-[0.3em] leading-none">Security Verified Channel</span>
  </div>
- <h3 className="text-4xl font-black tracking-tighter leading-none">
+ <h3 className="text-3xl font-black tracking-tighter leading-none">
  {view === 'hub' ? "Unified Notification Intelligence" : "Next-Gen AI Message Dispatcher"}
  </h3>
  <p className="text-sm text-slate-300 font-medium max-w-xl leading-relaxed">

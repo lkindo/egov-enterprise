@@ -1,186 +1,325 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
 import { codeAdminService, InstitutionCode, InstitutionCodeRecptn } from '@/services/admin/system/CodeAdminService';
 import { useToast } from '@/app/components/ui/toast';
-import { CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import { 
+  CheckCircle, 
+  Clock, 
+  RefreshCw, 
+  Database, 
+  Search, 
+  Plus, 
+  Filter, 
+  Layers, 
+  ArrowRight, 
+  ShieldCheck, 
+  Activity, 
+  Building2, 
+  History, 
+  Server,
+  Download,
+  FileCode,
+  Globe,
+  Zap,
+  ChevronRight,
+  MonitorCheck,
+  CheckCircle2,
+  XCircle,
+  Network
+} from 'lucide-react';
 import { PagePagination } from '@/components/common/PagePagination';
+import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
+import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function InstitutionCodeClient({ initialData }: { initialData: any }) {
- const [activeTab, setActiveTab] = useState<'list' | 'reception'>('list');
- const [data, setData] = useState<InstitutionCode[]>(initialData?.list || []);
- const [receptionData, setReceptionData] = useState<InstitutionCodeRecptn[]>([]);
- const [total, setTotal] = useState(initialData?.total || 0);
- const [loading, setLoading] = useState(false);
- const [page번호, setPage번호] = useState(1);
- const [searchWrd, setSearchWrd] = useState('');
- const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<'list' | 'reception'>('list');
+  const [data, setData] = useState<InstitutionCode[]>(initialData?.list || []);
+  const [receptionData, setReceptionData] = useState<InstitutionCodeRecptn[]>([]);
+  const [total, setTotal] = useState(initialData?.total || 0);
+  const [loading, setLoading] = useState(false);
+  const [pageNo, setPageNo] = useState(1);
+  const [searchWrd, setSearchWrd] = useState('');
+  const { toast } = useToast();
 
- const loadListData = async (wrd: string = searchWrd, page: number = page번호) => {
- try {
- setLoading(true);
- const res = await codeAdminService.getInstitutionCodeList({ searchWrd: wrd, page번호: page });
- setData(res.list || []);
- setTotal(res.total || 0);
- setPage번호(page);
- } catch (error) {
- toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
- } finally {
- setLoading(false);
- }
- };
+  const loadListData = async (wrd: string = searchWrd, page: number = pageNo) => {
+    try {
+      setLoading(true);
+      const res = await codeAdminService.getInstitutionCodeList({ searchWrd: wrd, page번호: page });
+      setData(res.list || []);
+      setTotal(res.total || 0);
+      setPageNo(page);
+    } catch (error) {
+      toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
- const loadReceptionData = async (wrd: string = searchWrd, page: number = page번호) => {
- try {
- setLoading(true);
- const res = await codeAdminService.getInstitutionCodeRecptnList({ searchWrd: wrd, page번호: page });
- setReceptionData(res.list || []);
- setTotal(res.total || 0);
- setPage번호(page);
- } catch (error) {
- toast('수신 내역을 불러오는 중 오류가 발생했습니다.', 'error');
- } finally {
- setLoading(false);
- }
- };
+  const loadReceptionData = async (wrd: string = searchWrd, page: number = pageNo) => {
+    try {
+      setLoading(true);
+      const res = await codeAdminService.getInstitutionCodeRecptnList({ searchWrd: wrd, page번호: page });
+      setReceptionData(res.list || []);
+      setTotal(res.total || 0);
+      setPageNo(page);
+    } catch (error) {
+      toast('수신 내역을 불러오는 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
- const handleProcess = async (item: InstitutionCodeRecptn) => {
- if (!confirm(`${item.allInsttNm} 코드를 반영하시겠습니까?`)) return;
- 
- try {
- await codeAdminService.processInstitutionCodeRecptn({
- occrrncDe: item.occrrncDe,
- insttCode: item.insttCode,
- opertSn: item.opertSn
- });
- toast('성공적으로 반영되었습니다.', 'success');
- loadReceptionData();
- } catch (error) {
- toast('반영 처리 중 오류가 발생했습니다.', 'error');
- }
- };
+  const handleProcess = async (item: InstitutionCodeRecptn) => {
+    if (!confirm(`${item.allInsttNm} 코드를 반영하시겠습니까?`)) return;
+    
+    try {
+      await codeAdminService.processInstitutionCodeRecptn({
+        occrrncDe: item.occrrncDe,
+        insttCode: item.insttCode,
+        opertSn: item.opertSn
+      });
+      toast('성공적으로 반영되었습니다.', 'success');
+      loadReceptionData();
+    } catch (error) {
+      toast('반영 처리 중 오류가 발생했습니다.', 'error');
+    }
+  };
 
- useEffect(() => {
- if (activeTab === 'list') {
- loadListData();
- } else {
- loadReceptionData();
- }
- }, [activeTab]);
+  useEffect(() => {
+    if (activeTab === 'list') {
+      loadListData(searchWrd, 1);
+    } else {
+      loadReceptionData(searchWrd, 1);
+    }
+  }, [activeTab]);
 
- const listColumns: Column<InstitutionCode>[] = [
- { header: '기관코드', accessor: 'insttCode', className: 'w-32' },
- { header: '전체기관명', accessor: 'allInsttNm' },
- { header: '최하위기관명', accessor: 'lowestInsttNm' },
- { header: '전화번호', accessor: 'telno', className: 'w-40' },
- { 
- header: '폐지여부', 
- accessor: (item: InstitutionCode) => (
- <span className={`px-2 py-1 rounded-full text-sm font-bold ${item.ablEnnc === '0' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'}`}>
- {item.ablEnnc === '0' ? '활성' : '폐지'}
- </span>
- ),
- className: 'w-24 text-center'
- },
- ];
+  const listColumns: Column<InstitutionCode>[] = [
+    { 
+      header: '기관 엔티티', 
+      accessor: (item: InstitutionCode) => (
+        <div className="flex items-center gap-4 py-3">
+          <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+            <Building2 size={20} />
+          </div>
+          <div>
+            <span className="font-black tracking-tighter text-foreground block text-lg uppercase leading-none">{item.insttCode}</span>
+            <span className="text-[9px] font-black text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-40">INSTITUTION_ID</span>
+          </div>
+        </div>
+      )
+    },
+    { 
+      header: '기관 명칭 (Profile)', 
+      accessor: (item: InstitutionCode) => (
+        <span className="font-black text-foreground text-sm tracking-tight">{item.allInsttNm}</span>
+      )
+    },
+    { 
+      header: '최하위 레벨', 
+      accessor: (item: InstitutionCode) => (
+        <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg w-fit">
+            <span className="text-[10px] font-black text-primary tracking-tight font-mono">{item.lowestInsttNm}</span>
+        </div>
+      ),
+      className: 'w-48'
+    },
+    { 
+      header: '네트워크 접점', 
+      accessor: (item: InstitutionCode) => (
+        <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tracking-tighter tabular-nums">
+            <Network size={12} className="opacity-30" />
+            {item.telno || '---'}
+        </div>
+      ),
+      className: 'w-40' 
+    },
+    { 
+      header: '상태', 
+      accessor: (item: InstitutionCode) => (
+        <div className={cn(
+          "flex items-center gap-2 px-4 py-1.5 rounded-full border w-fit shadow-sm",
+          item.ablEnnc === '0' 
+            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+            : "bg-slate-100 text-slate-400 border-border/50"
+        )}>
+          {item.ablEnnc === '0' ? <Activity size={12} className="animate-pulse" /> : <ShieldCheck size={12} className="opacity-40" />}
+          <span className="text-[9px] font-black tracking-[0.2em] uppercase">{item.ablEnnc === '0' ? 'ACTIVE' : 'DELETED'}</span>
+        </div>
+      ),
+      className: 'w-32 text-center'
+    },
+  ];
 
- const receptionColumns: Column<InstitutionCodeRecptn>[] = [
- { header: '발생일자', accessor: 'occrrncDe', className: 'w-24' },
- { header: '기관코드', accessor: 'insttCode', className: 'w-28' },
- { header: '기관명', accessor: 'allInsttNm' },
- { 
- header: '변경구분', 
- accessor: (item: InstitutionCodeRecptn) => (
- <span className="font-medium text-blue-600">{item.changeSeCode === '1' ? '신규' : item.changeSeCode === '2' ? '수정' : '폐기'}</span>
- ),
- className: 'w-20 text-center'
- },
- { 
- header: '처리상태', 
- accessor: (item: InstitutionCodeRecptn) => (
- <div className="flex items-center gap-1 justify-center">
- {item.processSe === '1' ? (
- <span className="text-green-600 flex items-center gap-1 font-bold"><CheckCircle size={14} /> 완료</span>
- ) : (
- <span className="text-amber-600 flex items-center gap-1 font-bold"><Clock size={14} /> 대기</span>
- )}
- </div>
- ),
- className: 'w-24 text-center'
- },
- {
- header: '작업',
- accessor: (item: InstitutionCodeRecptn) => (
- item.processSe !== '1' && (
- <button 
- onClick={() => handleProcess(item)}
- className="px-2 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 transition-colors font-bold"
- >
- 데이터 반영
- </button>
- )
- ),
- className: 'w-24 text-center'
- }
- ];
+  const receptionColumns: Column<InstitutionCodeRecptn>[] = [
+    { 
+      header: '수신 타임스탬프', 
+      accessor: (item: InstitutionCodeRecptn) => (
+        <div className="flex items-center gap-2 font-mono text-[11px] font-black text-muted-foreground/60 tracking-tighter italic">
+          <History size={14} className="text-primary opacity-40" />
+          {item.occrrncDe}
+        </div>
+      ),
+      className: 'w-48' 
+    },
+    { 
+        header: '대상 식별자', 
+        accessor: (item: InstitutionCodeRecptn) => (
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 shadow-inner">
+              <Database size={18} />
+            </div>
+            <span className="font-black tracking-tighter text-foreground uppercase">{item.insttCode}</span>
+          </div>
+        ),
+        className: 'w-40' 
+    },
+    { header: '기관 프로필', accessor: 'allInsttNm', className: 'font-black' },
+    { 
+      header: '동기화 구분', 
+      accessor: (item: InstitutionCodeRecptn) => {
+        const typeMap: any = {
+            '1': { label: 'NEW_RECORD', color: 'bg-primary/20 text-primary border-primary/20', icon: <Plus size={12} /> },
+            '2': { label: 'PATCH_UPDATE', color: 'bg-amber-500/20 text-amber-600 border-amber-500/20', icon: <RefreshCw size={12} /> },
+            '3': { label: 'DEEP_CLEAN', color: 'bg-rose-500/20 text-rose-600 border-rose-500/20', icon: <ShieldCheck size={12} /> }
+        };
+        const config = typeMap[item.changeSeCode] || typeMap['1'];
+        return (
+          <div className={cn("flex items-center gap-2 px-3 py-1 rounded-lg border w-fit font-black text-[9px] tracking-widest uppercase", config.color)}>
+            {config.icon}
+            {config.label}
+          </div>
+        );
+      },
+      className: 'w-40'
+    },
+    { 
+      header: '파이프라인 결과', 
+      accessor: (item: InstitutionCodeRecptn) => (
+        <div className={cn(
+            "flex items-center gap-2 px-4 py-1.5 rounded-full border w-fit shadow-sm",
+            item.processSe === '1' 
+              ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+              : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+          )}>
+            {item.processSe === '1' ? <CheckCircle2 size={12} /> : <Clock size={12} className="animate-spin duration-[3s]" />}
+            <span className="text-[9px] font-black tracking-[0.2em] uppercase">{item.processSe === '1' ? 'SYNCED' : 'PENDING'}</span>
+          </div>
+      ),
+      className: 'w-32'
+    },
+    {
+      header: 'ACTIONS',
+      accessor: (item: InstitutionCodeRecptn) => (
+        item.processSe !== '1' && (
+          <Button 
+            onClick={() => handleProcess(item)}
+            className="h-10 px-6 rounded-xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2"
+          >
+            <MonitorCheck size={14} /> 반영 적용
+          </Button>
+        )
+      ),
+      className: 'w-32 text-right'
+    }
+  ];
 
- return (
- <div className="space-y-6">
- <PageHeader
- title="기관코드 수신 및 관리"
- breadcrumbs={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '기관코드' }]}
- />
+  return (
+    <div className="space-y-12 animate-in fade-in duration-1000">
+      
+      {/* Sub-Hub Mode Switcher */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-slate-100 pb-10">
+        <div className="space-y-1">
+            <h4 className="text-3xl font-black tracking-tighter text-foreground uppercase">{activeTab === 'list' ? 'Institution Registry' : 'Synchronization Pipeline'}</h4>
+            <p className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">{activeTab === 'list' ? 'Active node inventory & identity management' : 'Real-time data ingestion & collision resolution'}</p>
+        </div>
+        <div className="flex bg-slate-100/80 backdrop-blur-md p-2 rounded-2xl border border-slate-200/50 shadow-inner">
+            <button 
+                onClick={() => setActiveTab('list')}
+                className={cn(
+                    "px-8 h-12 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
+                    activeTab === 'list' ? "bg-white text-slate-900 shadow-xl ring-1 ring-slate-100" : "text-muted-foreground hover:bg-white/50"
+                )}>
+                <Server size={14} /> 노드 인벤토리
+            </button>
+            <button 
+                onClick={() => setActiveTab('reception')}
+                className={cn(
+                    "px-8 h-12 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
+                    activeTab === 'reception' ? "bg-white text-slate-900 shadow-xl ring-1 ring-slate-100" : "text-muted-foreground hover:bg-white/50"
+                )}>
+                <History size={14} /> 수신 파이프라인
+            </button>
+        </div>
+      </div>
 
- <div className="flex border-b border-slate-200">
- <button 
- onClick={() => setActiveTab('list')}
- className={`px-6 py-3 font-bold transition-all border-b-2 ${activeTab === 'list' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
- >
- 기관코드 현황
- </button>
- <button 
- onClick={() => setActiveTab('reception')}
- className={`px-6 py-3 font-bold transition-all border-b-2 ${activeTab === 'reception' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
- >
- 수신 내역 관리
- </button>
- </div>
+      <HubMetricGrid>
+        <HubMetricCard title="ENTITY_COUNT" value={total} icon={Database} color="primary" />
+        <HubMetricCard title="ACTIVE_NODES" value={data.filter(i => i.ablEnnc === '0').length || 1} icon={ShieldCheck} color="emerald" />
+        <HubMetricCard title="PENDING_COMMITS" value={receptionData.filter(i => i.processSe !== '1').length || 0} icon={Clock} color="amber" status={receptionData.filter(i => i.processSe !== '1').length > 0 ? "ALERT" : "NOMINAL"} />
+        <HubMetricCard title="SYNC_THROUGHPUT" value="SECURE" icon={Zap} color="indigo" />
+      </HubMetricGrid>
 
- <StandardSearchFilter
- fields={[
- { name: 'searchWrd', label: '기관명', type: 'text', placeholder: '기관명 입력...' }
- ]}
- onSearch={(v) => {
- setSearchWrd(v.searchWrd);
- activeTab === 'list' ? loadListData(v.searchWrd, 1) : loadReceptionData(v.searchWrd, 1);
- }}
- />
+      <HubSectionCard
+        title={activeTab === 'list' ? "기관 인벤토리 라이브 스트림" : "데이터 수집 파이프라인 감사"}
+        description={activeTab === 'list' ? "시스템 전반에서 참조되는 모든 공공기관 노드 식별자의 활성 마스터 리스트입니다." : "외부 시스템 연동을 통해 지속적으로 유입되는 코드 변동 데이터의 수신 및 반영 이력입니다."}
+        icon={activeTab === 'list' ? Globe : Zap}
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
+          <div className="flex-1">
+            <div className="relative group/search max-w-xl">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
+                <Input
+                  placeholder="SEARCH ACTIVE NODES OR PIPELINE RECORDS..."
+                  value={searchWrd}
+                  onChange={(e) => setSearchWrd(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                        activeTab === 'list' ? loadListData(searchWrd, 1) : loadReceptionData(searchWrd, 1);
+                    }
+                  }}
+                  className="h-16 pl-16 pr-8 w-full bg-slate-50/50 border-none rounded-[1.25rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                />
+            </div>
+          </div>
+          <Button variant="outline" size="lg" className="h-16 px-10 rounded-[1.25rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2 hover:bg-slate-50 transition-all group">
+            <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> DATA_EXPORT
+          </Button>
+        </div>
 
- {activeTab === 'list' ? (
- <StandardDataTable
- columns={listColumns}
- data={data}
- loading={loading}
- emptyMessage="조회된 기관코드가 없습니다."
- />
- ) : (
- <StandardDataTable
- columns={receptionColumns}
- data={receptionData}
- loading={loading}
- emptyMessage="수신된 내역이 없습니다."
- />
- )}
+        <div className="overflow-hidden">
+          <StandardDataTable
+            columns={(activeTab === 'list' ? listColumns : receptionColumns) as any}
+            data={(activeTab === 'list' ? data : receptionData) as any}
+            loading={loading}
+            emptyMessage={activeTab === 'list' ? "데이터를 탐색할 수 없습니다." : "수신된 동기화 로그가 존재하지 않습니다."}
+            className="border-none bg-transparent"
+          />
+        </div>
 
- <PagePagination
- total={total}
- size={10}
- page={page번호}
- onPageChange={(p) => activeTab === 'list' ? loadListData(searchWrd, p) : loadReceptionData(searchWrd, p)}
- />
- </div>
- );
+        <AnimatePresence>
+            {total > 10 && (
+                <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-12 flex justify-center border-t border-slate-100 pt-10"
+                >
+                  <PagePagination
+                    total={total}
+                    size={10}
+                    page={pageNo}
+                    onPageChange={(p) => activeTab === 'list' ? loadListData(searchWrd, p) : loadReceptionData(searchWrd, p)}
+                  />
+                </motion.div>
+            )}
+        </AnimatePresence>
+      </HubSectionCard>
+    </div>
+  );
 }

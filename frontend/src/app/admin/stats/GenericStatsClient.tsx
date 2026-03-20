@@ -74,7 +74,7 @@ export default function GenericStatsClient({
  {
  header: '날짜',
  accessor: (item: StatsDto) => (
- <span className="font-mono font-black text-slate-900 tracking-tighter italic">
+ <span className="font-mono font-black text-slate-900 tracking-tighter ">
  {item.statsDate ? `${item.statsDate.substring(0, 4)}-${item.statsDate.substring(4, 6)}-${item.statsDate.substring(6, 8)}` : 'N/A'}
  </span>
  )
@@ -83,7 +83,7 @@ export default function GenericStatsClient({
  header: statsName,
  accessor: (item: StatsDto) => (
  <div className="flex items-center gap-3">
- <span className="font-mono font-black text-primary italic text-lg">{item.statsCo.toLocaleString()}</span>
+ <span className="font-mono font-black text-primary text-lg">{item.statsCo.toLocaleString()}</span>
  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[100px]">
  <div 
  className="h-full bg-primary/40" 
@@ -123,7 +123,7 @@ export default function GenericStatsClient({
  <div className="flex flex-col md:flex-row md:items-end gap-6 relative z-10">
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1">
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight italic ml-1">분석 시작</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-1">분석 시작</label>
  <div className="relative">
  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
  <Input
@@ -135,7 +135,7 @@ export default function GenericStatsClient({
  </div>
  </div>
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight italic ml-1">분석 종료</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-1">분석 종료</label>
  <div className="relative">
  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
  <Input
@@ -150,7 +150,7 @@ export default function GenericStatsClient({
  <Button
  onClick={handleSearch}
  disabled={loading}
- className="h-14 px-10 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic min-w-[160px]"
+ className="h-14 px-10 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 min-w-[160px]"
  >
  {loading ? <RefreshCcw size={16} className="animate-spin" /> : <Search size={16} />}
  동기화
@@ -168,7 +168,7 @@ export default function GenericStatsClient({
  <BarChart3 size={24} />
  </div>
  <div>
- <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter italic">{subtitle}</h3>
+ <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">{subtitle}</h3>
  <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">시간적 추이 분석</p>
  </div>
  </div>
@@ -189,7 +189,7 @@ export default function GenericStatsClient({
  <Database size={24} />
  </div>
  <div>
- <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter italic">데이터 무결성 매트릭스</h3>
+ <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">데이터 무결성 매트릭스</h3>
  <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">표 형식 데이터셋 뷰</p>
  </div>
  </div>

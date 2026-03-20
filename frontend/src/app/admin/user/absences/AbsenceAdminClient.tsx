@@ -2,202 +2,242 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { absenceAdminService, UserAbsenceDto } from '@/services/admin/user/AbsenceAdminService';
 import {
- UserX,
- UserCheck,
- Search,
- RefreshCcw,
- User,
- CheckCircle2,
- XCircle,
- Clock,
- ShieldAlert,
- Ghost
+  UserX,
+  UserCheck,
+  Search,
+  RefreshCcw,
+  User,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ShieldAlert,
+  Ghost,
+  Activity,
+  Zap,
+  Fingerprint,
+  Mail,
+  Phone,
+  Settings,
+  ShieldCheck,
+  SearchCode,
+  ArrowUpRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AbsenceAdminClient({ 
- initialUsers,
- initialAbsences 
+  initialUsers,
+  initialAbsences 
 }: { 
- initialUsers: any,
- initialAbsences: UserAbsenceDto[]
+  initialUsers: any,
+  initialAbsences: UserAbsenceDto[]
 }) {
- const [loading, setLoading] = useState(false);
- const [users, setUsers] = useState(initialUsers.list || []);
- const [absences, setAbsences] = useState(initialAbsences);
- const [searchKeyword, setSearchKeyword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState(initialUsers.list || []);
+  const [absences, setAbsences] = useState(initialAbsences);
+  const [searchKeyword, setSearchKeyword] = useState('');
 
- const getAbsenceStatus = (emplyrId: string) => {
- return absences.find(a => a.emplyrId === emplyrId)?.userAbsnceAt === 'Y';
- };
+  const getAbsenceStatus = (emplyrId: string) => {
+    return absences.find(a => a.emplyrId === emplyrId)?.userAbsnceAt === 'Y';
+  };
 
- const handleToggleAbsence = async (emplyrId: string, currentStatus: boolean) => {
- const newStatus = !currentStatus ? 'Y' : 'N';
- try {
- await absenceAdminService.updateAbsence(emplyrId, newStatus);
- // 로컬 상태 업데이트
- setAbsences(prev => {
- const existing = prev.find(a => a.emplyrId === emplyrId);
- if (existing) {
- return prev.map(a => a.emplyrId === emplyrId ? { ...a, userAbsnceAt: newStatus } : a);
- } else {
- return [...prev, { emplyrId, userAbsnceAt: newStatus }];
- }
- });
- toast.success(`${emplyrId} 사용자의 상태가 ${newStatus === 'Y' ? '부재' : '정상'}로 변경되었습니다.`);
- } catch (error) {
- toast.error('상태 변경에 실패했습니다.');
- }
- };
+  const handleToggleAbsence = async (emplyrId: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus ? 'Y' : 'N';
+    try {
+      await absenceAdminService.updateAbsence(emplyrId, newStatus);
+      // 로컬 상태 업데이트
+      setAbsences(prev => {
+        const existing = prev.find(a => a.emplyrId === emplyrId);
+        if (existing) {
+          return prev.map(a => a.emplyrId === emplyrId ? { ...a, userAbsnceAt: newStatus } : a);
+        } else {
+          return [...prev, { emplyrId, userAbsnceAt: newStatus }];
+        }
+      });
+      toast.success(`${emplyrId} 사용자의 프로토콜이 ${newStatus === 'Y' ? '부재 모드' : '활성 모드'}로 전환되었습니다.`);
+    } catch (error) {
+      toast.error('프로토콜 동기화 중 오류가 발생했습니다.');
+    }
+  };
 
- const columns = [
- {
- header: '사용자 정보',
- accessor: (item: any) => (
- <div className="flex items-center gap-3">
- <div className={cn(
- "w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-all",
- getAbsenceStatus(item.emplyrId) ? "bg-slate-400 rotate-12" : "bg-slate-900"
- )}>
- {getAbsenceStatus(item.emplyrId) ? <Ghost size={18} /> : <User size={18} />}
- </div>
- <div>
- <span className="font-black italic tracking-tighter text-slate-900 block">{item.userNm}</span>
- <span className="text-[9px] font-bold text-slate-400 tracking-tight italic">{item.emplyrId}</span>
- </div>
- </div>
- )
- },
- {
- header: '이메일 / 연락처',
- accessor: (item: any) => (
- <div className="space-y-1">
- <span className="text-[10px] font-bold text-slate-500 block italic">{item.emailAdres || 'N/A'}</span>
- <span className="text-[10px] font-bold text-slate-400 block tracking-tighter">{item.moblphonNo || item.offmTelno || 'N/A'}</span>
- </div>
- )
- },
- {
- header: '부재 상태 (Active Protocol)',
- accessor: (item: any) => {
- const isAbsent = getAbsenceStatus(item.emplyrId);
- return (
- <div className="flex items-center gap-4">
- <div className={cn(
- "flex items-center gap-2 px-3 py-1 rounded-full border transition-all min-w-[100px] justify-center",
- isAbsent ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"
- )}>
- {isAbsent ? <Clock size={12} className="animate-pulse" /> : <CheckCircle2 size={12} />}
- <span className="text-[9px] font-black tracking-tight italic">{isAbsent ? 'Absent' : 'Available'}</span>
- </div>
- <Switch 
- checked={isAbsent} 
- onCheckedChange={() => handleToggleAbsence(item.emplyrId, isAbsent)}
- className="data-[state=checked]:bg-rose-500"
- />
- </div>
- );
- }
- }
- ];
+  const columns: Column<any>[] = [
+    {
+      header: '아이덴티티 리소스',
+      accessor: (item: any) => {
+          const isAbsent = getAbsenceStatus(item.emplyrId);
+          return (
+            <div className="flex items-center gap-6 py-4">
+                <div className={cn(
+                    "w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl transition-all duration-700 relative overflow-hidden group-hover:scale-110",
+                    isAbsent ? "bg-slate-400 rotate-12" : "bg-slate-900 -rotate-3 group-hover:rotate-0"
+                )}>
+                    {isAbsent ? <Ghost size={24} className="text-white animate-pulse" /> : <User size={24} className="text-primary" />}
+                    {isAbsent && (
+                        <div className="absolute inset-0 bg-white/10 blur-xl animate-pulse" />
+                    )}
+                </div>
+                <div className="space-y-1">
+                    <span className="text-[9px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono italic">RES_UID: {item.emplyrId}</span>
+                    <h4 className="text-lg font-black tracking-tighter text-foreground uppercase leading-none">{item.userNm}</h4>
+                </div>
+            </div>
+          );
+      },
+      className: 'w-72'
+    },
+    {
+      header: '커뮤니케이션 엔드포인트',
+      accessor: (item: any) => (
+        <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+                <Mail size={12} className="text-muted-foreground/30" />
+                <span className="text-[10px] font-bold text-muted-foreground tracking-tight uppercase ">{item.emailAdres || 'NOT_DECLARED'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <Phone size={12} className="text-muted-foreground/30" />
+                <span className="text-[10px] font-black text-muted-foreground/60 tracking-tighter">{item.moblphonNo || item.offmTelno || 'PROBING...'}</span>
+            </div>
+        </div>
+      )
+    },
+    {
+        header: '가용성 프로토콜',
+        accessor: (item: any) => {
+          const isAbsent = getAbsenceStatus(item.emplyrId);
+          return (
+              <div className="flex items-center gap-6">
+                <div className={cn(
+                    "flex items-center gap-3 px-6 py-2.5 rounded-2xl border-2 transition-all min-w-[140px] justify-center shadow-sm",
+                    isAbsent ? "bg-rose-50 text-rose-600 border-rose-100/50" : "bg-emerald-50 text-emerald-600 border-emerald-100/50"
+                  )}>
+                    {isAbsent ? <Clock size={16} className="animate-pulse" /> : <CheckCircle2 size={16} />}
+                    <span className="text-[10px] font-black tracking-widest uppercase ">{isAbsent ? 'STANDBY' : 'ONLINE'}</span>
+                </div>
+                <Switch 
+                    checked={isAbsent} 
+                    onCheckedChange={() => handleToggleAbsence(item.emplyrId, isAbsent)}
+                    className="data-[state=checked]:bg-rose-500 scale-125"
+                />
+              </div>
+          );
+        }
+    }
+  ];
 
- return (
- <div className="max-w-6xl mx-auto space-y-12 px-4 md:px-0 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
- <PageHeader
- title="부재 관리 인텔리전스"
- breadcrumbs={[{ label: '시스템관리' }, { label: '사용자관리' }, { label: '부재관리' }]}
- actions={
- <Button
- variant="outline"
- className="h-14 w-14 rounded-2xl border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95"
- >
- <RefreshCcw size={18} />
- </Button>
- }
- />
+  const totalAbsents = absences.filter(a => a.userAbsnceAt === 'Y').length;
 
- {/* Luxury Stats Overview */}
- <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
- <div className="p-10 rounded-[3rem] bg-white border-2 border-slate-100 shadow-xl shadow-slate-900/5 group hover:scale-[1.02] transition-all cursor-default relative overflow-hidden">
- <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center mb-8 shadow-xl group-hover:rotate-12 transition-transform">
- <User size={24} />
- </div>
- <h4 className="text-4xl font-black tracking-tighter italic tabular-nums text-slate-900">{users.length.toLocaleString()}</h4>
- <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 italic flex items-center gap-2">
- <span className="w-4 h-0.5 bg-slate-200" />
- Total Resources
- </p>
- </div>
+  return (
+    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+      <PageHeader
+        title="부재 관리 오퍼레이션"
+        breadcrumbs={[{ label: '시스템관리' }, { label: '사용자관리' }, { label: '부재 관리' }]}
+      />
 
- <div className="p-10 rounded-[3rem] bg-emerald-50 border-2 border-emerald-100 shadow-xl shadow-emerald-900/5 group hover:scale-[1.02] transition-all cursor-default relative overflow-hidden">
- <div className="w-14 h-14 rounded-2xl bg-white text-emerald-600 flex items-center justify-center mb-8 shadow-sm group-hover:rotate-12 transition-transform">
- <UserCheck size={24} />
- </div>
- <h4 className="text-4xl font-black tracking-tighter italic tabular-nums text-emerald-600">
- {(users.length - absences.filter(a => a.userAbsnceAt === 'Y').length).toLocaleString()}
- </h4>
- <p className="text-[10px] font-black text-emerald-400 tracking-[0.3em] mt-2 italic flex items-center gap-2">
- <span className="w-4 h-0.5 bg-emerald-200" />
- Operational Units
- </p>
- </div>
+      <HubHeader 
+        title="Availability" 
+        highlight="Matrix" 
+        subtitle="전사 인적 리소스의 실시간 가용성 및 부재 프로토콜 통합 제어 시스템" 
+        icon={UserX} 
+        actions={
+          <div className="flex gap-4 p-2 items-center">
+            <Button
+                variant="ghost"
+                className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95"
+            >
+                <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
+            </Button>
+            <Button
+              size="lg"
+              className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+            >
+              <Zap size={20} className="group-hover:animate-pulse" /> 가용성 프로토콜 동기화
+              <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Button>
+          </div>
+        }
+      />
 
- <div className="p-10 rounded-[3rem] bg-rose-50 border-2 border-rose-100 shadow-xl shadow-rose-900/5 group hover:scale-[1.02] transition-all cursor-default relative overflow-hidden">
- <div className="w-14 h-14 rounded-2xl bg-white text-rose-600 flex items-center justify-center mb-8 shadow-sm group-hover:rotate-12 transition-transform">
- <UserX size={24} />
- </div>
- <h4 className="text-4xl font-black tracking-tighter italic tabular-nums text-rose-600">
- {absences.filter(a => a.userAbsnceAt === 'Y').length.toLocaleString()}
- </h4>
- <p className="text-[10px] font-black text-rose-400 tracking-[0.3em] mt-2 italic flex items-center gap-2">
- <span className="w-4 h-0.5 bg-rose-200" />
- Standby Protocols
- </p>
- </div>
- </div>
+      <HubMetricGrid>
+        <HubMetricCard title="TOTAL_RESOURCES" value={users.length} icon={User} color="primary" />
+        <HubMetricCard title="OPERATIONAL_UNITS" value={users.length - totalAbsents} icon={UserCheck} color="emerald" status="ONLINE" />
+        <HubMetricCard title="STANDBY_UNITS" value={totalAbsents} icon={Ghost} color="rose" status={totalAbsents > 0 ? "ALERT" : "STABLE"} />
+        <HubMetricCard title="SYSTEM_INTEGRITY" value="100%" icon={ShieldCheck} color="indigo" />
+      </HubMetricGrid>
 
- {/* Main Content Area */}
- <div className="responsive-card p-6 md:p-12 border-2 border-slate-100 bg-white/50 backdrop-blur-xl relative overflow-hidden group">
- <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-10">
- <div className="flex items-center gap-4">
- <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg">
- <ShieldAlert size={24} />
- </div>
- <div>
- <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter italic">Status Matrix</h3>
- <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">Resource Availability Control</p>
- </div>
- </div>
- <div className="flex items-center gap-4">
- <div className="relative">
- <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
- <Input
- placeholder="FILTER RESOURCES..."
- value={searchKeyword}
- onChange={(e) => setSearchKeyword(e.target.value)}
- className="h-14 pl-12 pr-6 w-full md:w-[300px] rounded-2xl border-2 border-slate-100 font-black text-[10px] tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-white"
- />
- </div>
- </div>
- </div>
+      <div className="grid grid-cols-12 gap-12">
+        {/* Statistics & Search Panel */}
+        <div className="col-span-12 lg:col-span-4 h-full">
+            <div className="rounded-[3.5rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
+                <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
+                    <Fingerprint size={240} className="text-primary" />
+                </div>
+                <div className="relative z-10 space-y-12">
+                    <div className="space-y-3">
+                        <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
+                            <Activity size={32} className="text-primary" />
+                        </div>
+                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary">Availability<br />Intelligence</h4>
+                    </div>
 
- <div className="px-2 overflow-x-auto relative z-10">
- <StandardDataTable
- columns={columns}
- data={users}
- loading={loading}
- emptyMessage="리소스 데이터를 분석 중입니다..."
- className="border-none bg-slate-50/50 rounded-[3rem] p-8"
- />
- </div>
- </div>
- </div>
- );
+                    <div className="space-y-8">
+                         <div className="space-y-3">
+                            <label className="text-[10px] font-black text-white/30 tracking-[0.4em] px-2 uppercase font-mono">Resource_Query_Probe</label>
+                            <div className="relative group/search">
+                                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within/search:text-primary transition-colors" size={20} />
+                                <input
+                                    onChange={(e) => setSearchKeyword(e.target.value)}
+                                    value={searchKeyword}
+                                    className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
+                                    placeholder="리소스 명칭 또는 UID 필터링"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pt-8 border-t border-white/5 flex items-center justify-between">
+                        <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 max-w-[200px]">
+                            * 모든 부재 프로토콜 변경사항은 협업 매트릭스에 즉시 동기화됩니다.
+                        </p>
+                        <Button 
+                            className="h-12 px-8 rounded-2xl bg-white text-slate-900 border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition-all hover:-translate-y-1"
+                        >
+                            SEARCH_RES
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* Resources Availability Matrix */}
+        <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
+            <HubSectionCard 
+                title="리소스 가용성 상태 매트릭스" 
+                description="인적 리소스의 실시간 활성/부재 상태를 실시간으로 모니터링하고 제어합니다." 
+                icon={SearchCode}
+            >
+                <div className="overflow-hidden">
+                    <StandardDataTable
+                        columns={columns}
+                        data={users.filter((u: any) => u.userNm.includes(searchKeyword) || u.emplyrId.includes(searchKeyword))}
+                        loading={loading}
+                        emptyMessage="현재 활성화된 리소스 스트림이 존재하지 않습니다."
+                        className="border-none bg-transparent"
+                    />
+                </div>
+            </HubSectionCard>
+        </div>
+      </div>
+    </div>
+  );
 }

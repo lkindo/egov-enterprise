@@ -29,7 +29,7 @@ export default function Error({
  </div>
 
  <div className="space-y-4">
- <h1 className="text-4xl font-black tracking-tighter text-foreground">시스템 오류가 발생했습니다</h1>
+ <h1 className="text-3xl font-black tracking-tighter text-foreground">시스템 오류가 발생했습니다</h1>
  <p className="text-muted-foreground font-medium leading-relaxed">
  일시적인 오류이거나 처리 중 문제가 발생했습니다.<br />
  페이지를 새로고침하거나 잠시 후 다시 시도해주세요.

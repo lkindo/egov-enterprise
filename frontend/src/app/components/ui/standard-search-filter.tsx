@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, RotateCcw, Calendar as CalendarIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, RotateCcw, Calendar as CalendarIcon, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,9 +24,10 @@ interface StandardSearchFilterProps {
   onSearch: (values: Record<string, any>) => void;
   onReset?: () => void;
   className?: string;
+  isPremium?: boolean;
 }
 
-export function SmartSearchPanel({ fields, onSearch, onReset, className }: StandardSearchFilterProps) {
+export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = true }: StandardSearchFilterProps) {
   const [values, setValues] = useState<Record<string, any>>({});
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -45,16 +46,20 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
   };
 
   return (
-    <div className={cn("p-5 border border-border rounded-xl bg-card shadow-sm mb-6 transition-all group", className)}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className={cn(
+      "border-2 border-border/60 bg-card shadow-sm mb-8 transition-all group overflow-hidden", 
+      isPremium ? "p-8 rounded-[var(--radius-hub-item)]" : "p-5 rounded-xl",
+      className
+    )}>
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-primary/10 rounded-xl text-primary transition-transform group-hover:scale-105 duration-300">
-              <Search size={18} />
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl text-primary flex items-center justify-center transition-transform group-hover:rotate-6 duration-500 shadow-sm border border-primary/5">
+              <SlidersHorizontal size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground tracking-tight leading-none">상세 검색</h3>
-              <p className="text-[10px] font-semibold text-muted-foreground mt-1">원하는 조건으로 데이터를 검색합니다.</p>
+              <h3 className="text-base font-black text-foreground tracking-tighter leading-none uppercase">검색 조건 설정</h3>
+              <p className="text-[10px] font-black text-muted-foreground/50 mt-1.5 uppercase tracking-widest">고급 필터링 시스템</p>
             </div>
           </div>
           <Button
@@ -62,19 +67,19 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
             variant="ghost"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="rounded-lg font-bold h-9 px-3 gap-2 hover:bg-muted"
+            className="rounded-xl font-black h-10 px-4 gap-2 hover:bg-muted transition-all text-muted-foreground"
           >
-            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            <span className="text-[10px] tracking-tight">{isExpanded ? '필터 접기' : '필터 펼치기'}</span>
+            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            <span className="text-[10px] tracking-widest font-black uppercase">필터 {isExpanded ? '접기' : '펼치기'}</span>
           </Button>
         </div>
 
         {isExpanded && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
             {fields.map((field) => (
-              <div key={field.name} className="space-y-1.5 focus-within:ring-2 focus-within:ring-primary/5 rounded-lg transition-all p-0.5">
-                <label className="text-[10px] font-bold text-muted-foreground/80 tracking-tight ml-1">
-                  {field.label}
+              <div key={field.name} className="space-y-2 group/field">
+                <label className="hub-subtitle-label opacity-40 ml-1 group-focus-within/field:opacity-100 transition-opacity">
+                  {field.label.toUpperCase()}
                 </label>
 
                 {field.type === 'select' ? (
@@ -82,15 +87,15 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                     value={values[field.name] === '' ? '__ALL__' : (values[field.name] || '')}
                     onValueChange={(v) => handleValueChange(field.name, v === '__ALL__' ? '' : v)}
                   >
-                    <SelectTrigger className="h-10 rounded-lg border border-input bg-background focus:ring-primary/20 hover:border-border transition-all font-medium text-sm ring-offset-background">
+                    <SelectTrigger className="h-12 rounded-xl border border-input bg-background focus:ring-4 focus:ring-primary/10 hover:border-primary/50 transition-all font-bold text-sm ring-offset-background shadow-sm">
                       <SelectValue placeholder={field.placeholder || "전체"} />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl shadow-xl border-border">
+                    <SelectContent className="rounded-2xl shadow-2xl border-border bg-background p-1">
                       {field.options?.map(opt => (
                         <SelectItem
                           key={opt.value || '__ALL__'}
                           value={opt.value === '' ? '__ALL__' : opt.value}
-                          className="text-sm font-medium rounded-lg m-1"
+                          className="text-sm font-bold rounded-lg m-1 cursor-pointer transition-colors"
                         >
                           {opt.label}
                         </SelectItem>
@@ -103,26 +108,26 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-10 justify-start text-left font-medium text-sm rounded-lg border border-input bg-background transition-all hover:border-border",
+                          "w-full h-12 justify-start text-left font-bold text-sm rounded-xl border border-input bg-background transition-all hover:border-primary/50 shadow-sm",
                           !values[field.name] && "text-muted-foreground/50"
                         )}
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                        <CalendarIcon className="mr-3 h-4 w-4 opacity-50 text-primary" />
                         {values[field.name]?.from ? (
                           values[field.name].to ? (
-                            <>
+                            <span className="tracking-tight">
                               {format(values[field.name].from, "LLL dd", { locale: ko })} -{" "}
                               {format(values[field.name].to, "LLL dd", { locale: ko })}
-                            </>
+                            </span>
                           ) : (
-                            format(values[field.name].from, "LLL dd", { locale: ko })
+                            <span className="tracking-tight">{format(values[field.name].from, "LLL dd", { locale: ko })}</span>
                           )
                         ) : (
-                          <span>날짜 범위 선택</span>
+                          <span className="tracking-tight uppercase text-[10px] font-black tracking-widest">날짜 범위 선택</span>
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 rounded-2xl border border-border shadow-2xl overflow-hidden" align="start">
+                    <PopoverContent className="w-auto p-2 rounded-[var(--radius-hub-item)] border-2 border-border shadow-2xl overflow-hidden bg-background" align="start">
                       <Calendar
                         initialFocus
                         mode="range"
@@ -140,39 +145,42 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className }: Stand
                     type="date"
                     value={values[field.name] || ''}
                     onChange={(e) => handleValueChange(field.name, e.target.value)}
-                    className="h-10 rounded-lg border border-input bg-background font-medium text-sm ring-offset-background transition-all hover:border-border focus-visible:ring-primary/20"
+                    className="h-12 rounded-xl border border-input bg-background font-bold text-sm ring-offset-background transition-all hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm"
                   />
                 ) : (
-                  <Input
-                    placeholder={field.placeholder}
-                    value={values[field.name] || ''}
-                    onChange={(e) => handleValueChange(field.name, e.target.value)}
-                    className="h-10 rounded-lg border border-input bg-background font-medium text-sm ring-offset-background transition-all hover:border-border focus-visible:ring-primary/20 shadow-sm"
-                  />
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30" size={16} />
+                    <Input
+                      placeholder={field.placeholder?.toUpperCase()}
+                      value={values[field.name] || ''}
+                      onChange={(e) => handleValueChange(field.name, e.target.value)}
+                      className="h-12 pl-11 rounded-xl border border-input bg-background font-bold text-sm ring-offset-background transition-all hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm placeholder:font-black placeholder:text-[10px] placeholder:tracking-widest"
+                    />
+                  </div>
                 )}
               </div>
             ))}
           </div>
         )}
 
-        <div className="flex justify-end items-center gap-3 pt-4 border-t border-border/50">
+        <div className="flex justify-end items-center gap-4 pt-6 border-t border-border/40">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={handleReset}
-            className="rounded-lg h-9 px-4 font-bold gap-2 text-xs text-muted-foreground hover:bg-muted"
+            className="rounded-xl h-11 px-5 font-black gap-2 text-[10px] tracking-widest text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-all uppercase"
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={16} />
             초기화
           </Button>
           <Button
             type="submit"
             size="sm"
-            className="rounded-lg h-9 px-6 font-bold gap-2 shadow-sm transition-all"
+            className="rounded-xl h-11 px-8 font-black gap-2 shadow-lg shadow-primary/20 transition-all hover:-translate-y-1 text-[10px] tracking-widest uppercase"
           >
-            <Search size={14} />
-            검색
+            <Search size={16} />
+            검색 실행
           </Button>
         </div>
       </form>

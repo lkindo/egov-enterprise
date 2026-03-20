@@ -1,6 +1,8 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css');
 @import "tailwindcss";
 
 @theme {
+  --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
@@ -78,6 +80,21 @@
     --radius: 0.5rem;
     --surface-sunken: 210 40% 98%;
     --surface-raised: 0 0% 100%;
+
+    /* --- Core Design Tokens (Project-wide) --- */
+    --font-size-hub-title: 1.875rem;    /* 3xl */
+    --font-size-hub-subtitle: 0.625rem; /* 10px */
+    --font-weight-hub-title: 900;       /* black */
+    --letter-spacing-hub: -0.05em;      /* tracking-tighter */
+    --letter-spacing-label: 0.3em;      /* wide label tracking */
+    
+    --radius-hub-section: 3.5rem;       /* Hub main section cards */
+    --radius-hub-widget: 2rem;          /* Hub mini widgets */
+    --radius-hub-item: 1.5rem;          /* Hub list items / Summaries */
+    
+    --shadow-hub-premium: 0 32px 64px -16px rgba(0, 0, 0, 0.3);
+    --color-premium-slate: 222.2 47.4% 11.2%; /* slate-900 equivalent */
+    --color-premium-emerald: 142.1 76.2% 36.3%; /* emerald-600 equivalent */
   }
 
   .dark {
@@ -118,6 +135,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-family: var(--font-sans);
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
   }
@@ -128,5 +146,30 @@
   .surface-raised { background-color: hsl(var(--surface-raised)); }
   .standard-glass {
     @apply bg-background/80 backdrop-blur-md border border-border/50 shadow-sm transition-all;
+  }
+
+  /* --- Hub Component Classes (Single Source of Truth) --- */
+  .hub-title-main {
+    @apply text-[length:var(--font-size-hub-title)] font-[number:var(--font-weight-hub-title)] tracking-[var(--letter-spacing-hub)] text-foreground leading-none;
+  }
+  
+  .hub-subtitle-label {
+    @apply text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-[0.4em] uppercase opacity-60;
+  }
+
+  .hub-card-section {
+    @apply bg-slate-900 text-white dark:bg-card dark:text-foreground p-12 rounded-[var(--radius-hub-section)] shadow-[var(--shadow-hub-premium)] relative overflow-hidden;
+  }
+
+  .hub-icon-box {
+    @apply w-16 h-16 bg-slate-900 rounded-[var(--radius-hub-widget)] flex items-center justify-center shadow-2xl skew-y-1 hover:rotate-6 transition-transform duration-500 dark:bg-slate-100 dark:text-slate-900;
+  }
+  
+  .hub-badge-status {
+    @apply flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-muted rounded-full text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-widest uppercase;
+  }
+
+  .hub-table-container {
+    @apply bg-card border-2 border-border p-4 lg:p-12 rounded-[var(--radius-hub-section)] shadow-sm relative overflow-hidden;
   }
 }

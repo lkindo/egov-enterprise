@@ -67,7 +67,7 @@ const CommunityListPage = () => {
  <Card className="border-none shadow-2xl overflow-hidden rounded-[2rem] ring-1 ring-slate-100">
  <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-br from-blue-600 to-indigo-700 pb-12 pt-12 px-10 text-white">
  <div className="space-y-2">
- <CardTitle className="text-4xl font-black tracking-tighter flex items-center gap-4">
+ <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-4">
  <Users className="w-10 h-10 text-blue-200" /> 커뮤니티 공간
  </CardTitle>
  <p className="text-blue-100/70 font-medium text-lg">워크스페이스 내의 다양한 소모임과 커뮤니티를 확인하세요.</p>
@@ -125,7 +125,7 @@ const CommunityListPage = () => {
  </Link>
  </TableCell>
  <TableCell className="py-6">
- <p className="text-base text-slate-500 font-medium line-clamp-1 leading-relaxed italic">
+ <p className="text-base text-slate-500 font-medium line-clamp-1 leading-relaxed ">
  "{item.cmmntyIntrcn || '등록된 소개 기능이 없습니다.'}"
  </p>
  </TableCell>

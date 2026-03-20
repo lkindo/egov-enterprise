@@ -76,10 +76,10 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  <BarChart3 size={28} className="text-white" />
  </div>
  <div>
- <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none">
- Intelligence <span className="text-primary italic">Hub</span>
+ <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
+ Intelligence <span className="text-primary ">Hub</span>
  </h2>
- <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 italic">
+ <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
  거버넌스 인사이트 및 데이터 분석
  </p>
  </div>
@@ -110,9 +110,9 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  <Card className="rounded-[3rem] border-0 bg-slate-900 text-white shadow-2xl p-10 space-y-8 relative overflow-hidden group">
  <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
  <div className="relative z-10 space-y-6">
- <h4 className="text-[10px] font-black text-white/40 tracking-tight italic leading-tight">예상 효율성</h4>
+ <h4 className="text-[10px] font-black text-white/40 tracking-tight leading-tight">예상 효율성</h4>
  <div className="flex items-center gap-4">
- <span className="text-6xl font-black italic tracking-tighter tabular-nums">+{userStats?.length || 24}%</span>
+ <span className="text-3xl font-black tracking-tighter tabular-nums">+{userStats?.length || 24}%</span>
  <Zap size={32} className="text-primary fill-primary" />
  </div>
  <p className="text-[11px] text-white/30 font-bold tracking-tight">인텔리전스 엔진 v4.2 최적화</p>
@@ -132,8 +132,8 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  <Card className="rounded-[3.5rem] border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100 min-h-[500px] flex flex-col">
  <CardHeader className="bg-slate-50/50 border-b p-10 flex flex-row items-center justify-between">
  <div className="space-y-1">
- <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] italic">심층 분석 뷰포트</h3>
- <CardTitle className="text-2xl font-black text-slate-900 tracking-tighter italic">
+ <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] ">심층 분석 뷰포트</h3>
+ <CardTitle className="text-2xl font-black text-slate-900 tracking-tighter ">
  {activeTab === 'DASHBOARD' ? '글로벌 개요' : 
  activeTab === 'USER_STATS' ? '사용자 통계' :
  activeTab === 'CONTENT_STATS' ? '콘텐츠 지표 분석' :
@@ -158,7 +158,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  >
  {activeTab === 'SURVEYS' ? (
  <div className="space-y-6">
- {isSurveyLoading && <div className="p-10 text-center opacity-40 italic">설문 저장소 동기화 중...</div>}
+ {isSurveyLoading && <div className="p-10 text-center opacity-40 ">설문 저장소 동기화 중...</div>}
  {surveys?.list?.map((s: any) => (
  <div key={s.qestnrId} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all">
  <div className="flex items-center gap-6">
@@ -166,7 +166,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  <Vote className="text-primary" />
  </div>
  <div className="space-y-1">
- <h4 className="text-base font-black italic text-slate-900 tracking-tighter ">
+ <h4 className="text-base font-black text-slate-900 tracking-tighter ">
  {s.qestnrSj}
  </h4>
  <p className="text-[10px] font-bold text-slate-400 tracking-tight">
@@ -187,7 +187,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  </div>
  </div>
  <div className="space-y-4">
- <h4 className="text-3xl font-black italic tracking-tighter text-slate-900">
+ <h4 className="text-3xl font-black tracking-tighter text-slate-900">
  {isUserLoading || isBbsLoading || isScreenLoading ? '인텔리전스 처리 중...' : '데이터셋 동기화 완료'}
  </h4>
  <p className="text-[10px] font-black text-slate-400 tracking-[0.5em]">
@@ -226,7 +226,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
  )}>
  {icon}
  </div>
- <span className="text-[11px] font-black tracking-tight italic">{label}</span>
+ <span className="text-[11px] font-black tracking-tight ">{label}</span>
  </button>
  );
 }
@@ -242,9 +242,9 @@ function StatSummaryCard({ icon, label, value, trend, color = 'slate' }: { icon:
  {icon}
  </div>
  <div className="space-y-2">
- <h5 className="text-[10px] font-black text-slate-400 tracking-tight italic leading-tight">{label}</h5>
+ <h5 className="text-[10px] font-black text-slate-400 tracking-tight leading-tight">{label}</h5>
  <div className="flex items-end justify-between">
- <span className="text-3xl font-black italic tracking-tighter text-slate-900 tabular-nums">{value}</span>
+ <span className="text-3xl font-black tracking-tighter text-slate-900 tabular-nums">{value}</span>
  <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-full">{trend}</span>
  </div>
  </div>

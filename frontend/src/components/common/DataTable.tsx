@@ -156,7 +156,7 @@ export function DataTable<T>({
  ))
  ) : (
  <TableRow>
- <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground italic">
+ <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground ">
  데이터가 없습니다.
  </TableCell>
  </TableRow>

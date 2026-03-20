@@ -60,10 +60,10 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <CheckSquare size={28} className="text-white" />
  </div>
  <div>
- <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none">
+ <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
  전자결재 및 워크플로우 허브
  </h2>
- <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 italic">
+ <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
  통합 결재 및 감사 관리 센터
  </p>
  </div>
@@ -79,7 +79,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <div className="col-span-12 lg:col-span-3 space-y-6">
  <Card className="rounded-[3rem] border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100">
  <CardHeader className="bg-slate-50/50 p-8 border-b">
- <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.3em] italic flex items-center gap-2">
+ <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-2">
  <Workflow size={14} className="text-primary" /> 코어 엔진 모듈 관리
  </CardTitle>
  </CardHeader>
@@ -100,7 +100,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <div className="w-2 h-2 rounded-full bg-emerald-400" /> Engine Healthy
  </div>
  <div className="space-y-1">
- <h4 className="text-2xl font-black italic tracking-tighter ">99.9% Uptime</h4>
+ <h4 className="text-2xl font-black tracking-tighter ">99.9% Uptime</h4>
  <p className="text-[10px] text-white/40 font-bold tracking-tight leading-relaxed">Cluster: SANCTN-NODE-01</p>
  </div>
  </div>
@@ -112,7 +112,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <Card className="h-full rounded-[3rem] border-0 bg-white shadow-2xl overflow-hidden flex flex-col ring-1 ring-slate-100">
  <CardHeader className="bg-slate-50/50 border-b p-8 space-y-6">
  <div className="flex items-center justify-between">
- <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.3em] italic">
+ <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.3em] ">
  결재 양식 인벤토리
  </CardTitle>
  <Button size="icon" className="w-10 h-10 bg-slate-900 rounded-xl"><Plus size={20} /></Button>
@@ -143,7 +143,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  )} />
  <span className={cn("text-[8px] font-black tracking-tight opacity-40")}>{form.status}</span>
  </div>
- <h4 className={cn("text-sm font-black truncate", selectedFormId === form.id ? "text-white" : "text-slate-900 italic")}>
+ <h4 className={cn("text-sm font-black truncate", selectedFormId === form.id ? "text-white" : "text-slate-900 ")}>
  {form.title}
  </h4>
  <p className={cn("text-[9px] font-bold opacity-40")}>ID: {form.id} • {form.version}</p>
@@ -174,10 +174,10 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <Card className="flex-1 rounded-[3rem] border-0 bg-white shadow-2xl flex flex-col ring-1 ring-slate-100 overflow-hidden relative">
  <CardHeader className="bg-slate-50/50 p-10 border-b flex flex-row items-center justify-between">
  <div className="space-y-1">
- <h3 className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-2 italic">
+ <h3 className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-2 ">
  <Layers size={14} className="text-primary" /> 시각적 로직 설계기 
  </h3>
- <h2 className="text-2xl font-black text-slate-900 tracking-tighter italic">{forms.find(f => f.id === selectedFormId)?.title}</h2>
+ <h2 className="text-2xl font-black text-slate-900 tracking-tighter ">{forms.find(f => f.id === selectedFormId)?.title}</h2>
  </div>
  <Button variant="ghost" size="icon" className="rounded-xl border border-slate-100"><MoreHorizontal size={20} /></Button>
  </CardHeader>
@@ -205,7 +205,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  ) : (
  <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none grayscale bg-white rounded-[3rem] border-2 border-dashed border-slate-200">
  <GitBranch size={64} className="mb-8 rotate-45" />
- <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic">활성화된 워크플로우 없음</h3>
+ <h3 className="text-2xl font-black text-slate-900 tracking-tighter ">활성화된 워크플로우 없음</h3>
  <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2">로직을 확인하려면 양식을 선택하세요</p>
  </div>
  )}
@@ -235,7 +235,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
  )}>
  {icon}
  </div>
- <span className="text-sm font-black tracking-tight italic">{label}</span>
+ <span className="text-sm font-black tracking-tight ">{label}</span>
  </button>
  );
 }
@@ -254,7 +254,7 @@ function WorkflowNode({ type, label, date, active = false }: any) {
  </div>
  <div className="flex-1">
  <p className="text-[8px] font-black text-slate-400 tracking-tight">{date}</p>
- <h5 className="text-sm font-black italic tracking-tight text-slate-900">{label}</h5>
+ <h5 className="text-sm font-black tracking-tight text-slate-900">{label}</h5>
  </div>
  {active && <div className="w-2 h-2 rounded-full bg-primary animate-ping" />}
  </div>

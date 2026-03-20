@@ -3,6 +3,9 @@
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { Program } from '@/types/program';
 import { PageResponse } from '@/types/system';
 import { programAdminService } from '@/services/admin/system/ProgramAdminService';
@@ -19,7 +22,15 @@ import {
   Terminal,
   Link as LinkIcon,
   Search,
-  Activity
+  RefreshCcw,
+  Activity,
+  Box,
+  Layers,
+  Zap,
+  CheckCircle2,
+  ShieldAlert,
+  SearchCode,
+  Database
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { FormField } from '@/app/components/ui/standard-form';
@@ -88,8 +99,8 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
   const handleDelete = async (name: string) => {
     const isConfirmed = await confirm({
-      title: '프로그램 삭제',
-      message: `[${name}] 프로그램을 삭제하시겠습니까? 관련 메뉴 연동이 해제될 수 있습니다.`,
+      title: '프로그램 삭제 확인',
+      message: `[${name}] 프로그램을 삭제하시겠습니까? 해당 프로그램과 연결된 모든 메뉴 연동이 해제될 수 있습니다.`,
       variant: 'destructive'
     });
     if (isConfirmed) {
@@ -105,41 +116,47 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
   const columns: Column<Program>[] = [
     {
-      header: '프로그램 한글명',
+      header: '프로그램 자산 명칭',
       accessor: (item: Program) => (
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center transition-transform group-hover:rotate-6 dark:bg-card">
-            <Cpu size={18} />
+        <div className="flex items-center gap-4 py-3">
+          <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+            <Cpu size={20} />
           </div>
-          <span className="font-bold text-foreground italic">{item.progrmNm}</span>
+          <div>
+            <span className="font-black tracking-tighter text-foreground block text-md uppercase leading-none">{item.progrmNm}</span>
+            <span className="text-[9px] font-black text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-40">SYSTEM_MODULE</span>
+          </div>
         </div>
       )
     },
     {
-      header: '파일명',
+      header: '식별 파일명',
       accessor: (item: Program) => (
-        <span className="font-mono text-xs font-black text-muted-foreground/60 tracking-tight">
-          {item.progrmFileNm}
-        </span>
-      )
+        <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg w-fit">
+            <span className="text-[10px] font-black text-primary tracking-tight font-mono">{item.progrmFileNm}</span>
+        </div>
+      ),
+      className: 'w-48'
     },
     {
-      header: 'URL Endpoint',
+      header: '엔드포인트 (API/URL)',
       accessor: (item: Program) => (
-        <div className="flex items-center gap-2 text-primary/70 font-bold text-xs italic">
-           <LinkIcon size={12} /> {item.url}
+        <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/70 tracking-tighter italic">
+            <LinkIcon size={12} className="text-primary opacity-40" />
+            {item.url}
         </div>
-      )
+      ),
+      className: 'w-64'
     },
     {
       header: '관리',
-      className: 'text-right',
+      className: 'text-right w-32',
       accessor: (item: Program) => (
-        <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" onClick={() => handleOpenEdit(item)}>
+        <div className="flex justify-end gap-2 pr-4">
+          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
             <Settings size={16} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9 text-rose-500 hover:text-rose-600 rounded-lg" onClick={() => handleDelete(item.progrmFileNm)}>
+          <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all rounded-xl" onClick={() => handleDelete(item.progrmFileNm)}>
             <Trash2 size={16} />
           </Button>
         </div>
@@ -148,165 +165,128 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="소프트웨어 자산 관리"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '프로그램관리' }]}
+        title="시스템 자산 거버넌스"
+        breadcrumbs={[{ label: '시스템관리' }, { label: '프로그램 관리' }]}
+      />
+
+      <HubHeader 
+        title="프로그램" 
+        highlight="자산 관리" 
+        subtitle="시스템을 구성하는 모든 논리적 프로그램 모듈 및 API 엔드포인트의 생명주기 관리" 
+        icon={Box} 
         actions={
           <Button
             onClick={handleOpenCreate}
-            className="h-14 px-10 rounded-2xl font-bold italic shadow-lg gap-3 hover:-translate-y-1 transition-all"
+            size="lg"
+            className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
           >
-            <Plus size={20} /> Deploy New Program
+            <Plus size={20} /> 신규 프로그램 배포
           </Button>
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <SummaryCard title="Live Modules" value={total} icon={<Globe />} color="indigo" />
-        <SummaryCard title="Integrity Check" value="Validated" icon={<ShieldCheck />} color="emerald" />
-        <SummaryCard title="System Portals" value="Active" icon={<Terminal size={20} />} color="slate" />
-        <SummaryCard title="Resource Load" value="Optimal" icon={<Activity />} color="primary" />
-      </div>
+      <HubMetricGrid>
+        <HubMetricCard title="ACTIVE_MODULES" value={total} icon={Layers} color="primary" />
+        <HubMetricCard title="SYSTEM_INTEGRITY" value="VALID" icon={ShieldCheck} color="emerald" status="VERIFIED" />
+        <HubMetricCard title="SERVICE_UPTIME" value="99.9%" icon={Zap} color="amber" />
+        <HubMetricCard title="REGISTRY_SYNC" value="REALTIME" icon={RefreshCcw} color="indigo" />
+      </HubMetricGrid>
 
-      <div className="bg-card border-2 border-border p-12 rounded-[3.5rem] shadow-sm relative overflow-hidden group">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12 relative z-10">
-          <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-xl flex items-center justify-center shadow-lg">
-                <FileCode size={24} />
-             </div>
-             <div>
-                <h3 className="text-2xl font-black text-foreground tracking-tighter italic">Software Repository</h3>
-                <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em]">Registered Program Assets</p>
-             </div>
-          </div>
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="relative flex-1 md:flex-none">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <Input
-                placeholder="PROCURING ASSETS..."
-                defaultValue={searchWrd}
-                onChange={(e) => setCurrentSearchWrd(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && loadData()}
-                className="h-14 pl-12 pr-6 w-full md:w-[350px] rounded-2xl border-2 border-border font-black text-[10px] tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-background"
-              />
+      <HubSectionCard title="소프트웨어 레포지토리" description="현재 시스템에 등록되어 동작 중인 모든 소프트웨어 자산의 명세 및 인터페이스 정보입니다." icon={SearchCode}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
+          <div className="flex-1 max-w-2xl">
+            <div className="relative group/search">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
+                <Input
+                  placeholder="프로그램명 또는 파일명을 입력하여 검색..."
+                  value={currentSearchWrd}
+                  onChange={(e) => setCurrentSearchWrd(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && loadData()}
+                  className="h-16 pl-16 pr-8 w-full bg-slate-50/50 border-none rounded-[1.25rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                />
             </div>
-            <Button onClick={() => loadData()} className="h-14 px-8 rounded-2xl font-black text-[10px] tracking-tight shadow-xl italic">
-              SEARCH
-            </Button>
           </div>
+          <Button onClick={() => loadData()} size="lg" className="h-16 px-10 rounded-[1.25rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2">
+            <Search size={18} /> 엔진 조회
+          </Button>
         </div>
 
-        <div className="px-2 overflow-x-auto relative z-10">
+        <div className="overflow-hidden">
           <StandardDataTable
             columns={columns}
             data={data}
             loading={loading}
-            emptyMessage="등록된 프로그램 정보가 없습니다."
-            className="border-none bg-muted/20 rounded-[3rem] p-8"
+            emptyMessage="시스템에 등록된 프로그램 자산이 존재하지 않습니다."
+            className="border-none bg-transparent"
           />
         </div>
-      </div>
+      </HubSectionCard>
 
       <StandardModal
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
-        title={mode === 'create' ? '새 프로그램 배포' : '프로그램 사양 수정'}
+        title={mode === 'create' ? '신규 소프트웨어 자산 배포' : '프로그램 사양 및 엔드포인트 수정'}
         maxWidth="2xl"
         footer={
-           <div className="flex w-full gap-3">
-             <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-xl font-bold">Cancel</Button>
-             <Button onClick={handleSave} className="flex-[2] h-11 rounded-xl font-bold italic">
-               {mode === 'create' ? 'DEPLOY ASSET' : 'UPDATE ASSET'}
-             </Button>
-           </div>
+          <div className="flex w-full gap-4">
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">CANCEL</Button>
+            <Button onClick={handleSave} className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-xl">
+              {mode === 'create' ? 'DEPLOY_ASSET' : 'UPDATE_SPECIFICATION'}
+            </Button>
+          </div>
         }
       >
-        <div className="space-y-5 pt-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <FormField label="시스템 프로그램 코드" required description="예: EgovMain">
+        <div className="space-y-8 pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField label="시스템 식별 파일명" required description="예: EgovMain (고유 키값)">
               <Input
                 value={formData.progrmFileNm}
                 onChange={(e) => setFormData({ ...formData, progrmFileNm: e.target.value })}
                 readOnly={mode === 'edit'}
-                className={cn("h-10 text-sm font-mono italic", mode === 'edit' && "bg-muted/50")}
-                placeholder="Unique ID"
+                className={cn("h-14 rounded-2xl text-xs font-mono font-black tracking-widest uppercase shadow-inner", mode === 'edit' && "bg-muted/50 border-none")}
+                placeholder="UNIQUE_ASSET_ID"
               />
             </FormField>
             <FormField label="프로그램 한글 명칭" required>
               <Input
                 value={formData.progrmNm}
                 onChange={(e) => setFormData({ ...formData, progrmNm: e.target.value })}
-                className="h-10 text-sm font-semibold"
-                placeholder="Asset Name"
+                className="h-14 rounded-2xl text-sm font-black tracking-tight"
+                placeholder="한국어 자산 명칭 입력"
               />
             </FormField>
           </div>
           
-          <FormField label="자산 URL (EndPoint)" required description="프론트엔드/백엔드 실제 접점">
+          <FormField label="인터페이스 엔드포인트 (URL)" required description="실제 서비스가 제공되는 웹 주소 또는 API 경로">
             <Input
               value={formData.url}
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-              className="h-10 text-sm font-mono italic"
-              placeholder="/api/v1/resource"
+              className="h-14 rounded-2xl text-xs font-mono font-black"
+              placeholder="/api/v1/..."
             />
           </FormField>
 
-          <FormField label="저장 경로" description="서버 내 물리적 경로 (Optional)">
+          <FormField label="물리적 저장 경로" description="서버 내 파일 저장소 논리 경로 (Optional)">
             <Input
               value={formData.progrmStrePath}
               onChange={(e) => setFormData({ ...formData, progrmStrePath: e.target.value })}
-              className="h-10 text-sm"
-              placeholder="/src/egov/main"
+              className="h-14 rounded-2xl text-xs font-medium bg-slate-50 border-none shadow-inner"
+              placeholder="/src/egov/main..."
             />
           </FormField>
 
-          <FormField label="상세 사양 설명">
-            <Input
+          <FormField label="상세 기능 명세">
+            <textarea
               value={formData.progrmDc}
               onChange={(e) => setFormData({ ...formData, progrmDc: e.target.value })}
-              className="h-10 text-sm font-medium"
-              placeholder="Module Purpose"
+              className="w-full min-h-[140px] p-6 rounded-2xl border-2 border-border bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
+              placeholder="프로그램의 역할 및 관련 모듈 설명"
             />
           </FormField>
         </div>
       </StandardModal>
-    </div>
-  );
-}
-
-function SummaryCard({ title, value, icon, color }: any) {
-  const colorMap: any = {
-    slate: "bg-slate-900 text-white border-slate-800 shadow-slate-900/20 dark:bg-card dark:text-foreground dark:border-border",
-    primary: "bg-white text-primary border-primary/20 shadow-primary/5 dark:bg-card dark:text-primary dark:border-border",
-    emerald: "bg-emerald-600 text-white border-emerald-700 shadow-emerald-600/20",
-    indigo: "bg-indigo-600 text-white border-indigo-700 shadow-indigo-600/20"
-  };
-
-  const iconBgMap: any = {
-    slate: "bg-white/10 text-white",
-    primary: "bg-primary/10 text-primary",
-    emerald: "bg-white/10 text-white",
-    indigo: "bg-white/10 text-white"
-  };
-
-  return (
-    <div className={cn(
-      "p-8 rounded-[2.5rem] border transition-all hover:scale-[1.05] group overflow-hidden relative",
-      colorMap[color]
-    )}>
-      <div className="flex justify-between items-start mb-6 relative z-10">
-        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform shadow-lg", iconBgMap[color])}>
-          {icon}
-        </div>
-      </div>
-      <div className="relative z-10 italic">
-        <p className="text-[10px] font-black tracking-widest opacity-60 mb-2 uppercase">{title}</p>
-        <h4 className="text-3xl font-black tracking-tighter tabular-nums">{value}</h4>
-      </div>
-      <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.05] group-hover:rotate-12 transition-all duration-700 text-foreground">
-        {React.cloneElement(icon, { size: 100 })}
-      </div>
     </div>
   );
 }

@@ -3,25 +3,25 @@
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { 
- Layers, 
- Globe, 
- Building2, 
- LayoutGrid, 
- Search, 
- RefreshCcw, 
- ArrowRightCircle, 
- Activity, 
- CheckCircle, 
- Clock, 
- MapPin, 
- Database, 
- FileCode,
- ChevronRight,
- SearchCode,
- Network
+  Building2, 
+  Database, 
+  FileCode,
+  MapPin,
+  ChevronRight,
+  ShieldCheck,
+  Zap,
+  Activity,
+  Server,
+  Network,
+  Code2,
+  Layers,
+  SearchCode,
+  Timer
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import CommonCodeClient from './CommonCodeClient';
 import AdministCodeClient from '../codes/administ/AdministCodeClient';
 import InstitutionCodeClient from '../codes/institution/InstitutionCodeClient';
@@ -30,122 +30,124 @@ import InstitutionCodeClient from '../codes/institution/InstitutionCodeClient';
 type CodeHubTab = 'STANDARD' | 'ADMINIST' | 'INSTITUTION';
 
 export default function CommonCodeHubClient({ 
- clCodes, 
- groups, 
- details, 
- selectedGroupId 
+  clCodes, 
+  groups, 
+  details, 
+  selectedGroupId 
 }: { 
- clCodes: any[]; 
- groups: any[]; 
- details: any[]; 
- selectedGroupId: string | null 
+  clCodes: any[]; 
+  groups: any[]; 
+  details: any[]; 
+  selectedGroupId: string | null 
 }) {
- const [activeTab, setActiveTab] = useState<CodeHubTab>('STANDARD');
+  const [activeTab, setActiveTab] = useState<CodeHubTab>('STANDARD');
 
- return (
- <div className="space-y-10 pb-24 animate-in fade-in duration-1000">
- {/* --- Premium Hub Header --- */}
- <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-6 gap-8">
- <div className="flex items-center gap-6">
- <div className="w-16 h-16 bg-slate-900 rounded-[2rem] flex items-center justify-center shadow-2xl skew-y-1 hover:rotate-6 transition-transform duration-500">
- <Database size={32} className="text-white" />
- </div>
- <div className="space-y-1">
- <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none">
- 코드 <span className="text-primary italic">통합 관리</span> Hub
- </h2>
- <p className="text-[10px] font-black text-slate-400 tracking-[0.4em] italic mt-2">
- 글로벌 메타데이터 및 행정 표준 관리
- </p>
- </div>
- </div>
+  return (
+    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+      <PageHeader title="마스터 데이터 거버넌스" breadcrumbs={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '통합 코드 허브' }]} />
 
- {/* --- Hub Tabs --- */}
- <div className="bg-slate-100 p-2 rounded-[2.5rem] flex gap-2 border shadow-inner">
- <HubTabButton 
- icon={<FileCode size={18} />} 
- label="표준코드" 
- active={activeTab === 'STANDARD'} 
- onClick={() => setActiveTab('STANDARD')} 
- />
- <HubTabButton 
- icon={<MapPin size={18} />} 
- label="행정코드" 
- active={activeTab === 'ADMINIST'} 
- onClick={() => setActiveTab('ADMINIST')} 
- />
- <HubTabButton 
- icon={<Building2 size={18} />} 
- label="기관코드" 
- active={activeTab === 'INSTITUTION'} 
- onClick={() => setActiveTab('INSTITUTION')} 
- />
- </div>
- </div>
+      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-10">
+        <HubHeader 
+          title="코드" 
+          highlight="통합 허브" 
+          subtitle="시스템 전반의 표준 코드, 행정 표준 및 기관 노드 식별 체계에 대한 통합 거버넌스 관리" 
+          icon={Database} 
+        />
 
- {/* --- Viewport Content --- */}
- <div className="px-2">
- <AnimatePresence mode="wait">
- <motion.div
- key={activeTab}
- initial={{ opacity: 0, y: 20 }}
- animate={{ opacity: 1, y: 0 }}
- exit={{ opacity: 0, y: -20 }}
- transition={{ duration: 0.4 }}
- >
- {activeTab === 'STANDARD' && (
- <CommonCodeClient 
- clCodes={clCodes} 
- groups={groups} 
- details={details} 
- selectedGroupId={selectedGroupId} 
- />
- )}
- {activeTab === 'ADMINIST' && (
- <div className="bg-white rounded-[3.5rem] p-4 lg:p-12 border shadow-2xl relative overflow-hidden group/administ ring-1 ring-slate-100">
- <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full blur-[80px] -mr-32 -mt-32 opacity-40" />
- <AdministCodeClient initialData={{ list: [], total: 0 }} />
- </div>
- )}
- {activeTab === 'INSTITUTION' && (
- <div className="bg-white rounded-[3.5rem] p-4 lg:p-12 border shadow-2xl relative overflow-hidden group/institution ring-1 ring-slate-100">
- <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -ml-32 -mt-32 opacity-40" />
- <InstitutionCodeClient initialData={{ list: [], total: 0 }} />
- </div>
- )}
- </motion.div>
- </AnimatePresence>
- </div>
- </div>
- );
+        {/* --- Multi-Level Hub Switcher --- */}
+        <div className="bg-slate-100/80 backdrop-blur-md p-2 rounded-[2.5rem] flex flex-wrap gap-2 border border-slate-200/50 shadow-inner">
+          <HubTabButton 
+            icon={FileCode} 
+            label="표준 코드" 
+            active={activeTab === 'STANDARD'} 
+            onClick={() => setActiveTab('STANDARD')} 
+          />
+          <HubTabButton 
+            icon={MapPin} 
+            label="행정 표준" 
+            active={activeTab === 'ADMINIST'} 
+            onClick={() => setActiveTab('ADMINIST')} 
+          />
+          <HubTabButton 
+            icon={Building2} 
+            label="기관 노드" 
+            active={activeTab === 'INSTITUTION'} 
+            onClick={() => setActiveTab('INSTITUTION')} 
+          />
+        </div>
+      </div>
+
+      {/* Code Metrics Section */}
+      <HubMetricGrid>
+        <HubMetricCard title="REGISTERED_CODES" value={groups.length + details.length} icon={Code2} color="primary" />
+        <HubMetricCard title="STANDARD_SYNON" value="ACTIVE" icon={ShieldCheck} color="emerald" status="SYNCED" />
+        <HubMetricCard title="METADATA_HEALTH" value="99.8%" icon={Zap} color="amber" />
+        <HubMetricCard title="NODE_SYNC_RATE" value="1.2s" icon={Timer} color="indigo" />
+      </HubMetricGrid>
+
+      {/* --- Viewport Content --- */}
+      <div className="px-2">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, scale: 0.98, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 1.02, y: -30 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            {activeTab === 'STANDARD' && (
+              <CommonCodeClient 
+                clCodes={clCodes} 
+                groups={groups} 
+                details={details} 
+                selectedGroupId={selectedGroupId} 
+              />
+            )}
+            {activeTab === 'ADMINIST' && (
+              <div className="hub-card-section p-4 lg:p-12 border ring-1 ring-slate-100 relative overflow-hidden bg-white/50 backdrop-blur-xl">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -mr-64 -mt-64 opacity-60 pointer-events-none" />
+                <AdministCodeClient initialData={{ list: [], total: 0 }} />
+              </div>
+            )}
+            {activeTab === 'INSTITUTION' && (
+              <div className="hub-card-section p-4 lg:p-12 border ring-1 ring-slate-100 relative overflow-hidden bg-white/50 backdrop-blur-xl">
+                <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] -ml-64 -mt-64 opacity-60 pointer-events-none" />
+                <InstitutionCodeClient initialData={{ list: [], total: 0 }} />
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
 }
 
 // --- Sub-components ---
 
-function HubTabButton({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
- return (
- <button 
- onClick={onClick}
- className={cn(
- "relative flex items-center gap-3 px-8 py-4 rounded-[2rem] text-[11px] font-black tracking-tight italic transition-all active:scale-95 overflow-hidden",
- active 
- ? "bg-white text-slate-900 shadow-xl" 
- : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
- )}
- >
- <div className={cn(
- "transition-transform duration-300",
- active ? "scale-110 rotate-3" : "opacity-40"
- )}>
- {icon}
- </div>
- <span>{label}</span>
- {active && (
- <motion.div 
- layoutId="activeHubIndicator"
- className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-primary rounded-full mb-1"
- />
- )}
- </button>
- );
+function HubTabButton({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={cn(
+        "relative flex items-center gap-3 px-10 py-4 rounded-[2rem] text-[11px] font-black tracking-tight transition-all active:scale-95 overflow-hidden group",
+        active 
+          ? "bg-white text-slate-900 shadow-2xl ring-1 ring-slate-200" 
+          : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+      )}
+    >
+      <div className={cn(
+        "transition-all duration-500 group-hover:rotate-12",
+        active ? "scale-110 text-primary" : "opacity-40"
+      )}>
+        <Icon size={18} />
+      </div>
+      <span className="relative z-10">{label}</span>
+      {active && (
+        <motion.div 
+          layoutId="activeHubIndicator"
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-primary rounded-full mb-1 opacity-80"
+        />
+      )}
+    </button>
+  );
 }

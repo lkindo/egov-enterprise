@@ -23,7 +23,7 @@ export default function NotFound() {
  </div>
 
  <div className="space-y-3">
- <h1 className="text-4xl font-black tracking-tighter text-foreground">길을 잃으셨나요?</h1>
+ <h1 className="text-3xl font-black tracking-tighter text-foreground">길을 잃으셨나요?</h1>
  <p className="text-muted-foreground font-medium leading-relaxed">
  요청하신 페이지를 찾을 수 없습니다.<br />
  주소가 정확한지 다시 한번 확인해주세요.

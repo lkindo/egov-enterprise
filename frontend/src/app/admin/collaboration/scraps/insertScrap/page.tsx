@@ -65,7 +65,7 @@ const InsertScrapPage = () => {
  <Bookmark className="w-8 h-8 text-white fill-white/20" />
  </div>
  <div className="space-y-1">
- <CardTitle className="text-4xl font-black tracking-tighter text-slate-900 ">
+ <CardTitle className="text-3xl font-black tracking-tighter text-slate-900 ">
  New Scrap Archive
  </CardTitle>
  <p className="text-sm font-bold text-slate-500 leading-relaxed tracking-tight">
