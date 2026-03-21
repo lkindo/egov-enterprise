@@ -26,7 +26,7 @@ export interface UserManage {
 }
 
 export interface UserSearchParams {
- page번호?: number;
+  pageIndex?: number;
  searchCondition?: string;
  searchKeyword?: string;
  sbscrbSttus?: string;

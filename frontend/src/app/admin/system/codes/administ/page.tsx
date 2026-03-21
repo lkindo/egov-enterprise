@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { codeAdminService } from '@/services/admin/system/CodeAdminService';
 import AdministCodeClient from './AdministCodeClient';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { Milestone } from 'lucide-react';
 
@@ -17,9 +18,12 @@ export default async function AdministCodePage() {
 
   let initialData: any = { list: [], total: 0 };
   try {
-    initialData = await codeAdminService.getAdministCodeList({ page번호: 1, pageUnit: 10 }, axiosConfig);
-  } catch (error) {
-    console.error('Failed to fetch initial administ codes:', error);
+   initialData = await codeAdminService.getAdministCodeList({ pageIndex: 1, pageUnit: 10 }, axiosConfig);
+  } catch (error: any) {
+   if (error.response?.status === 401) {
+    redirect('/login?expired=true&redirect=/admin/system/codes/administ');
+   }
+   console.error('Failed to fetch initial administ codes:', error);
   }
 
   return (

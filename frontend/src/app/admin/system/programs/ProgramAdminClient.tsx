@@ -63,7 +63,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
   const loadData = async (wrd: string = currentSearchWrd, page: number = 1) => {
     try {
       setLoading(true);
-      const res = await programAdminService.getProgramList({ page번호: page, size: 10, searchWrd: wrd });
+      const res = await programAdminService.getProgramList({ pageIndex: page, size: 10, searchWrd: wrd });
       setData(res.list || []);
       setTotal(res.total || 0);
     } catch (error) {
@@ -242,7 +242,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <FormField label="시스템 식별 파일명" required description="예: EgovMain (고유 키값)">
               <Input
-                value={formData.progrmFileNm}
+                value={formData.progrmFileNm || ''}
                 onChange={(e) => setFormData({ ...formData, progrmFileNm: e.target.value })}
                 readOnly={mode === 'edit'}
                 className={cn("h-14 rounded-2xl text-xs font-mono font-black tracking-widest uppercase shadow-inner", mode === 'edit' && "bg-muted/50 border-none")}
@@ -251,7 +251,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             </FormField>
             <FormField label="프로그램 한글 명칭" required>
               <Input
-                value={formData.progrmNm}
+                value={formData.progrmNm || ''}
                 onChange={(e) => setFormData({ ...formData, progrmNm: e.target.value })}
                 className="h-14 rounded-2xl text-sm font-black tracking-tight"
                 placeholder="한국어 자산 명칭 입력"
@@ -261,25 +261,25 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
           
           <FormField label="인터페이스 엔드포인트 (URL)" required description="실제 서비스가 제공되는 웹 주소 또는 API 경로">
             <Input
-              value={formData.url}
+              value={formData.url || ''}
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
               className="h-14 rounded-2xl text-xs font-mono font-black"
               placeholder="/api/v1/..."
             />
           </FormField>
-
+ 
           <FormField label="물리적 저장 경로" description="서버 내 파일 저장소 논리 경로 (Optional)">
             <Input
-              value={formData.progrmStrePath}
+              value={formData.progrmStrePath || ''}
               onChange={(e) => setFormData({ ...formData, progrmStrePath: e.target.value })}
               className="h-14 rounded-2xl text-xs font-medium bg-slate-50 border-none shadow-inner"
               placeholder="/src/egov/main..."
             />
           </FormField>
-
+ 
           <FormField label="상세 기능 명세">
             <textarea
-              value={formData.progrmDc}
+              value={formData.progrmDc || ''}
               onChange={(e) => setFormData({ ...formData, progrmDc: e.target.value })}
               className="w-full min-h-[140px] p-6 rounded-2xl border-2 border-border bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
               placeholder="프로그램의 역할 및 관련 모듈 설명"

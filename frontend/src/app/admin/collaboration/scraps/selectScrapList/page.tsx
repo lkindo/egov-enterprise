@@ -28,13 +28,13 @@ const ScrapListPage = () => {
  const [list, setList] = useState<Scrap[]>([]);
  const [totalCount, setTotalCount] = useState(0);
  const [totalPages, setTotalPages] = useState(0);
- const [page번호, setPage번호] = useState(1);
+ const [pageIndex, setPageIndex] = useState(1);
  const [loading, setLoading] = useState(false);
 
  const fetchList = async () => {
  setLoading(true);
  try {
- const params = { page번호, pageUnit: 10 };
+ const params = { pageIndex, pageUnit: 10 };
  const response = (await axios.get('/scrap', { params })) as any;
  setList(response.data.resultList || []);
  setTotalCount(response.data.totalCount || 0);
@@ -48,7 +48,7 @@ const ScrapListPage = () => {
 
  useEffect(() => {
  fetchList();
- }, [page번호]);
+ }, [pageIndex]);
 
  const handleDelete = async (id: string) => {
  if (!confirm('삭제하시겠습니까?')) return;
@@ -128,7 +128,7 @@ const ScrapListPage = () => {
  list.map((item, idx) => (
  <TableRow key={item.scrapId} className="hover:bg-muted/20 transition-colors group">
  <TableCell className="text-center text-muted-foreground font-medium">
- {totalCount - ((page번호 - 1) * 10) - idx}
+ {totalCount - ((pageIndex - 1) * 10) - idx}
  </TableCell>
  <TableCell>
  <Link href={`/admin/collaboration/scraps/selectScrapDetail/${item.scrapId}`} className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2">
@@ -170,22 +170,22 @@ const ScrapListPage = () => {
  <Button
  variant="outline"
  size="sm"
- onClick={() => setPage번호(p => Math.max(1, p - 1))}
- disabled={page번호 === 1}
+ onClick={() => setPageIndex(p => Math.max(1, p - 1))}
+ disabled={pageIndex === 1}
  className="px-6 font-bold shadow-sm"
  >
  이전
  </Button>
  <div className="flex items-center gap-2 px-6 py-2 bg-muted rounded-full">
- <span className="text-sm font-black text-primary">{page번호}</span>
+ <span className="text-sm font-black text-primary">{pageIndex}</span>
  <span className="text-sm font-bold text-muted-foreground">/</span>
  <span className="text-sm font-bold text-muted-foreground">{totalPages}</span>
  </div>
  <Button
  variant="outline"
  size="sm"
- onClick={() => setPage번호(p => Math.min(totalPages, p + 1))}
- disabled={page번호 === totalPages}
+ onClick={() => setPageIndex(p => Math.min(totalPages, p + 1))}
+ disabled={pageIndex === totalPages}
  className="px-6 font-bold shadow-sm"
  >
  다음

@@ -76,8 +76,8 @@ class OnlinePollServiceTest {
         OnlinePollManageDto result = onlinePollService.getPoll("P1");
         
         assertThat(result.getPollId()).isEqualTo("P1");
-        assertThat(result.getItems()).hasSize(1);
-        assertThat(result.getItems().get(0).getVoteCount()).isEqualTo(5L);
+        assertThat(result.getPollItems()).hasSize(1);
+        assertThat(result.getPollItems().get(0).getPollIemCo()).isEqualTo(5L);
     }
 
     @Test
@@ -131,7 +131,7 @@ class OnlinePollServiceTest {
 
         List<OnlinePollItemDto> result = onlinePollService.getPollItemList("P1");
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getVoteCount()).isEqualTo(10L);
+        assertThat(result.get(0).getPollIemCo()).isEqualTo(10L);
     }
 
     @Test

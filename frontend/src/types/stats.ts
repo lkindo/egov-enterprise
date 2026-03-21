@@ -1,4 +1,4 @@
-﻿export interface ConnectStats {
+export interface ConnectStats {
  date: string;
  count: number;
 }
@@ -36,7 +36,7 @@ export interface StatsSearchParams {
  statsKind?: string;
  fromDate?: string;
  toDate?: string;
- page번호?: number;
+  pageIndex?: number;
  size?: number;
 }
 

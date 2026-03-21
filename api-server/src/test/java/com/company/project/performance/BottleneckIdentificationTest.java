@@ -42,27 +42,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = "springdoc.api-docs.enabled=false")
 @AutoConfigureMockMvc
 @EnableWebMvc
-@ActiveProfiles("test")
+@ActiveProfiles({"test", "bottleneck-test"})
+@org.springframework.context.annotation.Import(com.company.project.config.CommonTestMocksConfig.class)
 class BottleneckIdentificationTest {
 
   @Autowired
   private MockMvc mockMvc;
 
-  @Autowired
+  @org.springframework.test.context.bean.override.mockito.MockitoBean
   private UserService userService;
 
   private ExecutorService executorService;
   private UserDto defaultUser;
 
-  // 기존 컨텍스트 충돌 방지용 명시적 Mock 생성
+  // 기존 컨텍스트 충돌 방지용 명시적 Mock 설정
   @TestConfiguration
+  @org.springframework.context.annotation.Profile("bottleneck-test")
   static class BottleneckTestConfig {
-    @Bean
-    @Primary
-    public UserService mockUserService() {
-      return Mockito.mock(UserService.class);
-    }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
       http.csrf(csrf -> csrf.disable())

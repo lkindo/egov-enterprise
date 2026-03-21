@@ -57,7 +57,7 @@ export default function RoleManagePage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [params, setParams] = useState<SearchParams>({
-    page번호: 1,
+    pageIndex: 1,
     searchKeyword: '',
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -105,7 +105,7 @@ export default function RoleManagePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setParams(prev => ({ ...prev, page번호: 1 }));
+    setParams(prev => ({ ...prev, pageIndex: 1 }));
   };
 
   const handleCreate = () => {
@@ -256,7 +256,7 @@ export default function RoleManagePage() {
                 <div className="mt-12 flex justify-center">
                     <PagePagination
                         pagination={pagination}
-                        onPageChange={(page) => setParams(prev => ({ ...prev, page번호: page }))}
+                        onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
                     />
                 </div>
             )}
@@ -277,7 +277,7 @@ export default function RoleManagePage() {
                         <Key size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                         <Input
                             id="roleCode"
-                            value={formData.roleCode}
+                            value={formData.roleCode || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, roleCode: e.target.value }))}
                             className="h-16 pl-16 rounded-2xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner"
                             placeholder="ROLE_IDENTIFIER"
@@ -289,7 +289,7 @@ export default function RoleManagePage() {
                         <Lock size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
                         <Input
                             id="roleNm"
-                            value={formData.roleNm}
+                            value={formData.roleNm || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, roleNm: e.target.value }))}
                             className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
                             placeholder="롤 명칭 입력"
@@ -297,25 +297,25 @@ export default function RoleManagePage() {
                     </div>
                 </FormField>
             </div>
-
+ 
             <FormField label="접근 패턴 (URL/Resource Pattern)" required description="보안 필터가 인터셉트할 리소스 경로 규칙">
                 <div className="relative group/ptn">
                     <Workflow size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/ptn:opacity-100 transition-opacity" />
                     <Input
                         id="rolePtn"
-                        value={formData.rolePtn}
+                        value={formData.rolePtn || ''}
                         onChange={(e) => setFormData(prev => ({ ...prev, rolePtn: e.target.value }))}
                         className="h-16 pl-16 rounded-2xl border-2 text-md font-mono font-black italic shadow-inner"
                         placeholder="/api/v1/resource/**"
                     />
                 </div>
             </FormField>
-
+ 
             <div className="grid grid-cols-2 gap-10">
                 <FormField label="롤 아키텍처 타입" description="보안 규칙이 적용될 기술적 레이어">
                     <select
                         id="roleTyp"
-                        value={formData.roleTyp}
+                        value={formData.roleTyp || ''}
                         onChange={(e) => setFormData(prev => ({ ...prev, roleTyp: e.target.value }))}
                         className="w-full h-16 px-8 rounded-2xl border-2 border-slate-100 bg-slate-50/50 text-[11px] font-black tracking-widest uppercase focus:ring-8 focus:ring-primary/5 outline-none transition-all shadow-inner cursor-pointer"
                     >
@@ -330,7 +330,7 @@ export default function RoleManagePage() {
                         <Input
                             id="roleSort"
                             type="number"
-                            value={formData.roleSort}
+                            value={formData.roleSort || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, roleSort: e.target.value }))}
                             className="h-16 pl-16 rounded-2xl border-2 text-md font-black italic shadow-inner"
                             placeholder="1"
@@ -338,13 +338,13 @@ export default function RoleManagePage() {
                     </div>
                 </FormField>
             </div>
-
+ 
             <FormField label="롤 정책 상세 명세" description="해당 보안 롤의 구체적인 정책 범위 및 비즈니스 요건">
                 <div className="relative group/dc">
                     <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
                     <Textarea
                         id="roleDc"
-                        value={formData.roleDc}
+                        value={formData.roleDc || ''}
                         onChange={(e) => setFormData(prev => ({ ...prev, roleDc: e.target.value }))}
                         className="min-h-[140px] pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
                         placeholder="상세 명세 입력..."

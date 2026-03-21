@@ -522,7 +522,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         <div className="space-y-8 pt-4">
           <FormField label="메뉴 명칭" required description="사용자 인터페이스에 노출될 라벨입니다.">
             <Input
-              value={formData.menuNm}
+              value={formData.menuNm || ''}
               onChange={(e) => setFormData({ ...formData, menuNm: e.target.value })}
               className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner"
               placeholder="메뉴 이름 입력 (예: 사용자 관리)"
@@ -578,7 +578,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
           
           <FormField label="노드 상세 메타데이터">
             <textarea
-              value={formData.menuDc}
+              value={formData.menuDc || ''}
               onChange={(e) => setFormData({ ...formData, menuDc: e.target.value })}
               className="w-full min-h-[140px] p-6 rounded-2xl border-2 border-border bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
               placeholder="메뉴에 대한 상세 설명 및 주석"

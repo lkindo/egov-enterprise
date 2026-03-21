@@ -10,7 +10,7 @@ export interface KnoManagementVO {
 }
 
 export interface KnoSearchParams {
- page번호?: number;
+ pageIndex?: number;
  searchKeyword?: string;
  searchCondition?: string;
 }

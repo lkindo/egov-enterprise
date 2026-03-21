@@ -141,45 +141,58 @@ axiosInstance.interceptors.response.use(
  originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
  console.log(`[API interceptor] Retrying original request: ${originalRequest.url}`);
  return axiosInstance(originalRequest);
- } catch (reissueError: any) {
- console.error('[API interceptor] Token reissue failed, redirecting to login.', reissueError.message);
- processQueue(reissueError, null);
- isRetrying = false;
+  } catch (reissueError: any) {
+   // [object Event] 방지: reissueError가 Error 객체가 아닐 수 있음 (예: ProgressEvent)
+   let finalReissueError = reissueError;
+   if (!(reissueError instanceof Error) && typeof reissueError === 'object' && reissueError !== null) {
+    finalReissueError = new Error((reissueError as any).message || 'Token reissue failed');
+    Object.assign(finalReissueError, reissueError);
+   }
 
- if (typeof window !== 'undefined') {
- // 단 한번의 재발급 실패로 바로 지우기 전에 401 응답인지 확인
- if (reissueError.response?.status === 401 || reissueError.response?.status === 403) {
- localStorage.removeItem('accessToken');
- localStorage.removeItem('role');
- document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+   console.error('[API interceptor] Token reissue failed, redirecting to login.', finalReissueError.message);
+   processQueue(finalReissueError, null);
+   isRetrying = false;
+
+   if (typeof window !== 'undefined') {
+    if (reissueError.response?.status === 401 || reissueError.response?.status === 403) {
+     localStorage.removeItem('accessToken');
+     localStorage.removeItem('role');
+     document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
  
- if (!window.location.pathname.includes('/login')) {
- console.warn('[API interceptor] Redirecting to login due to failed reissue');
- window.location.href = `/login?expired=true&redirect=${encodeURIComponent(window.location.pathname)}`;
- }
- }
- }
+     if (!window.location.pathname.includes('/login')) {
+      console.warn('[API interceptor] Redirecting to login due to failed reissue');
+      window.location.href = `/login?expired=true&redirect=${encodeURIComponent(window.location.pathname)}`;
+     }
+    }
+   }
 
- return Promise.reject(reissueError);
- }
+   return Promise.reject(finalReissueError);
+  }
  }
 
  // 에러 메시지 추출 및 이벤트 발생은 401 재시도 대상이 아닐 때만 수행 (선택 사항)
  const backendMessage = error.response?.data?.message;
- const message = backendMessage || error.message || '요청 처리 중 오류가 발생했습니다.';
+ let message = backendMessage || error.message || '요청 처리 중 오류가 발생했습니다.';
  
  if (typeof window !== 'undefined') {
- window.dispatchEvent(new CustomEvent('api-error', {
- detail: { message, status: error.response?.status }
- }));
+  window.dispatchEvent(new CustomEvent('api-error', {
+   detail: { message, status: error.response?.status }
+  }));
+ }
+
+ // [object Event] 방지: error가 실제 Error 객체가 아닌 경우 대응 (예: ProgressEvent)
+ let finalError = error;
+ if (!(error instanceof Error) && typeof error === 'object' && error !== null) {
+  finalError = new Error((error as any).message || backendMessage || 'Unknown Network/System Error');
+  Object.assign(finalError, error);
  }
 
  // 백엔드 메시지가 있는 경우 에러 객체의 메시지를 오버라이드하여 전달
  if (backendMessage) {
- error.message = backendMessage;
+  finalError.message = backendMessage;
  }
 
- return Promise.reject(error);
+ return Promise.reject(finalError);
  }
 );
 

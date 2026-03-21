@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import UserManageClient from '../UserManageClient';
 import * as userActions from '@/app/actions/userActions';
@@ -13,14 +13,6 @@ vi.mock('@/components/ui/button', () => ({
 vi.mock('@/components/ui/input', () => ({ 
  Input: (props: any) => <input {...props} /> 
 }));
-vi.mock('@/components/ui/dialog', () => ({
- Dialog: ({ children, open, onOpenChange }: any) => open ? <div data-testid="dialog">{children}<button onClick={() => onOpenChange(false)}>CloseModal</button></div> : null,
- DialogContent: ({ children }: any) => <div>{children}</div>,
- DialogHeader: ({ children }: any) => <div>{children}</div>,
- DialogTitle: ({ children }: any) => <h2>{children}</h2>,
- DialogFooter: ({ children }: any) => <div>{children}</div>,
-}));
-vi.mock('@/components/ui/label', () => ({ Label: ({ children, htmlFor }: any) => <label htmlFor={htmlFor}>{children}</label> }));
 vi.mock('@/components/ui/badge', () => ({ Badge: ({ children }: any) => <span>{children}</span> }));
 vi.mock('@/app/components/ui/toast', () => ({ 
  useToast: vi.fn(() => ({ toast: vi.fn() })) 
@@ -29,35 +21,68 @@ vi.mock('@/hooks/useMessage', () => ({
  useMessage: vi.fn(() => ({ t: (key: string) => key })) 
 }));
 
-// Mock StandardAdminLayout and its sub-components
-vi.mock('@/app/components/layout/StandardAdminLayout', () => ({ 
- StandardAdminLayout: ({ children, title, actionButton, data, columns }: any) => (
- <div>
- <h1>{title}</h1>
- {actionButton}
- <table data-testid="user-table">
- <tbody>
- {(data || []).map((item: any, i: number) => (
- <tr key={item.userId || i}>
- {columns.map((c: any) => (
- <td key={c.id}>
- {typeof c.accessor === 'function' ? c.accessor(item) : item[c.accessor]}
- </td>
- ))}
- </tr>
- ))}
- </tbody>
- </table>
- {children}
- </div>
- ) 
+vi.mock('lucide-react', () => ({
+ Pencil: () => <span>ICON_PENCIL</span>,
+ Trash2: () => <span>ICON_TRASH</span>,
+ Plus: () => <span>ICON_PLUS</span>,
+ Mail: () => <span>ICON_MAIL</span>,
+ Users: () => <span>ICON_USERS</span>,
+ ShieldCheck: () => <span>ICON_SHIELD_CHECK</span>,
+ Clock: () => <span>ICON_CLOCK</span>,
+ Search: () => <span>ICON_SEARCH</span>,
+ Settings2: () => <span>ICON_SETTINGS2</span>,
+ Filter: () => <span>ICON_FILTER</span>,
+ UserCheck: () => <span>ICON_USER_CHECK</span>,
+ UserX: () => <span>ICON_USER_X</span>,
+ UserPlus: () => <span>ICON_USER_PLUS</span>,
+ Fingerprint: () => <span>ICON_FINGERPRINT</span>,
+ Zap: () => <span>ICON_ZAP</span>,
+ LayoutGrid: () => <span>ICON_LAYOUT_GRID</span>,
+ SearchCode: () => <span>ICON_SEARCH_CODE</span>,
+ ShieldAlert: () => <span>ICON_SHIELD_ALERT</span>,
+ Settings: () => <span>ICON_SETTINGS</span>,
+ MoreHorizontal: () => <span>ICON_MORE_HORIZONTAL</span>,
+ Home: () => <span>ICON_HOME</span>,
+ ChevronRight: () => <span>ICON_CHEVRON_RIGHT</span>,
 }));
 
-vi.mock('lucide-react', () => ({
- Pencil: () => <span>P</span>,
- Trash2: () => <span>T</span>,
- Plus: () => <span>+</span>,
- Mail: () => <span>M</span>,
+vi.mock('@/app/components/ui/standard-modal', () => ({ 
+  StandardModal: ({ children, isOpen, title, onClose, footer }: any) => isOpen ? (
+    <div data-testid="dialog">
+      <h2>{title}</h2>
+      <button onClick={onClose}>CloseModal</button>
+      {children}
+      <div data-testid="modal-footer">{footer}</div>
+    </div>
+  ) : null 
+}));
+
+vi.mock('@/app/components/ui/standard-form', () => ({ 
+  FormField: ({ children, label }: any) => (
+    <div>
+      <label>
+        {label}
+        {children}
+      </label>
+    </div>
+  )
+}));
+
+vi.mock('@/app/components/ui/standard-data-table', () => ({ 
+  StandardDataTable: ({ data, columns }: any) => (
+    <table data-testid="data-table">
+      <thead>
+        <tr>{columns.map((c: any, i: number) => <th key={i}>{c.header}</th>)}</tr>
+      </thead>
+      <tbody>
+        {data.map((item: any, i: number) => (
+          <tr key={i}>
+            {columns.map((c: any, j: number) => <td key={j}>{c.accessor(item)}</td>)}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) 
 }));
 
 vi.mock('@/app/actions/userActions', () => ({ 
@@ -76,13 +101,13 @@ vi.mock('next/navigation', () => ({
 
 describe('UserManageClient Component', () => {
  const mockInitialData = {
- list: [ // Changed from resultList to list to match implementation
+ list: [
  { userId: 'user1', userNm: 'User One', email: 'user1@test.com', userSttusCode: 'A' },
  { userId: 'user2', userNm: 'User Two', email: 'user2@test.com', userSttusCode: 'P' },
  ],
  total: 2
  };
- const mockInitialParams = { searchKeyword: '', searchCondition: '0', sbscrbSttus: '', page번호: 1 };
+ const mockInitialParams = { searchKeyword: '', searchCondition: '0', sbscrbSttus: '', pageIndex: 1 };
 
  beforeEach(() => {
  vi.clearAllMocks();
@@ -91,32 +116,33 @@ describe('UserManageClient Component', () => {
 
  it('renders user list correctly', () => {
  render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
- expect(screen.getByText('user1')).toBeDefined();
- expect(screen.getByText('User Two')).toBeDefined();
+ expect(screen.getAllByText('user1').length).toBeGreaterThan(0);
+ expect(screen.getAllByText('User Two').length).toBeGreaterThan(0);
  });
 
- it('opens create dialog when newUser button is clicked', () => {
+ it('opens create dialog when newUser button is clicked', async () => {
  render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
- const createBtn = screen.getByText(/\+/).closest('button')!;
+ const createBtn = screen.getByText(/신규 멤버 프로비저닝/i);
  fireEvent.click(createBtn);
 
- expect(screen.getByTestId('dialog')).toBeDefined();
- const titles = screen.getAllByText('admin.user.newUser');
- expect(titles.length).toBeGreaterThan(0);
+ const dialog = await screen.findByTestId('dialog');
+ expect(dialog).toBeDefined();
+ expect(within(dialog).getByText('신규 아이덴티티 프로비저닝')).toBeDefined();
  });
 
- it('opens edit dialog with user data when pencil icon is clicked', () => {
+ it('opens edit dialog with user data when pencil icon is clicked', async () => {
  render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
  
- const editBtns = screen.getAllByText('P');
+ const editBtns = screen.getAllByText('ICON_SETTINGS');
  fireEvent.click(editBtns[0].closest('button')!);
 
- expect(screen.getByTestId('dialog')).toBeDefined();
- expect(screen.getByText('admin.user.updateUser')).toBeDefined();
+ const dialog = await screen.findByTestId('dialog');
+ expect(dialog).toBeDefined();
+ expect(within(dialog).getByText('사용자 아키텍트 명세 수정')).toBeDefined();
  
- const idInput = screen.getByLabelText('admin.user.id') as HTMLInputElement;
+ const idInput = within(dialog).getByLabelText(/사용자 고유 식별 명칭/i) as HTMLInputElement;
  expect(idInput.value).toBe('user1');
- expect(idInput.disabled).toBe(true);
+ expect(idInput.readOnly).toBe(true);
  });
 
  it('handles user deletion after confirmation', async () => {
@@ -124,12 +150,12 @@ describe('UserManageClient Component', () => {
 
  render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
  
- const deleteBtns = screen.getAllByText('T');
+ const deleteBtns = screen.getAllByText('ICON_TRASH');
  fireEvent.click(deleteBtns[0].closest('button')!);
 
- expect(window.confirm).toHaveBeenCalled();
+ // The confirm modal is called internally by useConfirm
  await waitFor(() => {
- expect(userActions.deleteUserAction).toHaveBeenCalledWith(null, 'user1');
+   expect(userActions.deleteUserAction).toHaveBeenCalledWith(null, 'user1');
  });
  });
 
@@ -139,15 +165,17 @@ describe('UserManageClient Component', () => {
  render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
  
  // Open dialog
- fireEvent.click(screen.getByText(/\+/).closest('button')!);
+ fireEvent.click(screen.getByText(/신규 멤버 프로비저닝/i));
+
+ const dialog = await screen.findByTestId('dialog');
 
  // Fill form
- fireEvent.change(screen.getByLabelText('admin.user.id'), { target: { value: 'newuser' } });
- fireEvent.change(screen.getByLabelText('admin.user.name'), { target: { value: 'New User' } });
- fireEvent.change(screen.getByLabelText('login.pwLabel'), { target: { value: 'password123' } });
+ fireEvent.change(within(dialog).getByLabelText(/사용자 고유 식별 명칭/i), { target: { value: 'newuser' } });
+ fireEvent.change(within(dialog).getByLabelText(/사용자 성명/i), { target: { value: 'New User' } });
+ fireEvent.change(within(dialog).getByLabelText(/인증 크리덴셜/i), { target: { value: 'password123' } });
 
  // Submit
- fireEvent.click(screen.getByText('common.confirm'));
+ fireEvent.click(within(dialog).getByText('PROVISION_MEMBER'));
 
  await waitFor(() => {
  expect(userActions.createUserAction).toHaveBeenCalled();

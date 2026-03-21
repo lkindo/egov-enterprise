@@ -54,7 +54,7 @@ export default function LayoutManagerClient() {
   // --- Queries ---
   const { data: banners = [], isLoading: isBannersLoading } = useQuery({
     queryKey: ['admin-banners'],
-    queryFn: () => bannerAdminService.getBannerList({ page번호: 1 }).then(res => res.list || []),
+    queryFn: () => bannerAdminService.getBannerList({ pageIndex: 1 }).then(res => res.list || []),
   });
 
   // --- Mutations ---

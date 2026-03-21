@@ -19,7 +19,7 @@ export interface Schedule {
 export interface ScheduleResponse {
  resultList: Schedule[];
  totalCount: number;
- page번호: number;
+ pageIndex: number;
  totalPages: number;
 }
 
@@ -39,7 +39,7 @@ export interface ScheduleSearchParams {
  schdulBgnde?: string;
  schdulEndde?: string;
  schdulNm?: string;
- page번호?: number;
+ pageIndex?: number;
  size?: number;
 }
 
@@ -61,6 +61,6 @@ export interface ReportSearchParams {
  reportNm?: string;
  writngBgnde?: string;
  writngEndde?: string;
- page번호?: number;
+ pageIndex?: number;
  size?: number;
 }

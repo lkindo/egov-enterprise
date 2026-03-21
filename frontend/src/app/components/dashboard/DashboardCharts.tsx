@@ -38,31 +38,41 @@ export function DashboardVisitorChart({ data }: ChartProps) {
  >
  <defs>
  <linearGradient id="colorVisitors" x1="0" y1="0" x2="0" y2="1">
- <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
- <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+ <stop offset="5%" stopColor="var(--color-hub-blue)" stopOpacity={0.2} />
+ <stop offset="100%" stopColor="var(--color-hub-blue)" stopOpacity={0} />
  </linearGradient>
  </defs>
- <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+ <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.3} />
  <XAxis
  dataKey="name"
  axisLine={false}
  tickLine={false}
- tick={{ fontSize: 12, fill: '#64748b' }}
+ tick={{ fontSize: 10, fill: 'var(--color-muted-foreground)', fontWeight: 700 }}
  dy={10}
  />
  <YAxis
  axisLine={false}
  tickLine={false}
- tick={{ fontSize: 12, fill: '#64748b' }}
+ tick={{ fontSize: 10, fill: 'var(--color-muted-foreground)', fontWeight: 700 }}
  />
  <Tooltip
- contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+ contentStyle={{ 
+ backgroundColor: 'var(--color-card)', 
+ borderRadius: '20px', 
+ border: '1px solid var(--color-border)', 
+ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+ padding: '12px 16px',
+ fontFamily: 'inherit',
+ fontSize: '12px',
+ fontWeight: '900',
+ textTransform: 'uppercase'
+ }}
  />
  <Area
  type="monotone"
  dataKey="visitors"
- stroke="#3b82f6"
- strokeWidth={3}
+ stroke="var(--color-hub-blue)"
+ strokeWidth={4}
  fillOpacity={1}
  fill="url(#colorVisitors)"
  />

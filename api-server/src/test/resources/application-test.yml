@@ -1,7 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=KEY,VALUE;INIT=CREATE SCHEMA IF NOT EXISTS EBT\;CREATE SCHEMA IF NOT EXISTS COM
-    jdbc-url: ${spring.datasource.url}
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;NON_KEYWORDS=KEY,VALUE
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -37,7 +36,7 @@ spring:
       fail-on-empty-beans: false
   # 순환 참조 허용 (테스트 환경)
   main:
-    allow-circular-references: true
+    allow-circular-references: false
     allow-bean-definition-overriding: true
   test:
     context:
@@ -65,8 +64,10 @@ jwt:
 logging:
   level:
     root: INFO
-    org.springframework.beans.factory: INFO
+    org.springframework.beans.factory: DEBUG
     org.springframework.security: INFO
-    org.hibernate.SQL: INFO
-    com.company.project: INFO
-    org.springframework.boot.autoconfigure: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.orm.model.mapping: DEBUG
+    com.company.project: DEBUG
+    org.springframework.boot.autoconfigure: DEBUG

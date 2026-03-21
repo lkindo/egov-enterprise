@@ -13,7 +13,7 @@ export interface CommunityVO {
 }
 
 export interface CommunitySearchParams {
- page번호?: number;
+ pageIndex?: number;
  searchCondition?: string;
  searchKeyword?: string;
 }

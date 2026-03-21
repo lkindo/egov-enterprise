@@ -61,7 +61,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  // 2. Address Book
  const { data: addressData, isLoading: isAddressLoading } = useQuery({
  queryKey: ['collab-addressbook', searchKeyword],
- queryFn: () => addressbookUserService.getAddressBooks({ page번호: 1, pageUnit: 50, searchWrd: searchKeyword }),
+ queryFn: () => addressbookUserService.getAddressBooks({ pageIndex: 1, pageUnit: 50, searchWrd: searchKeyword }),
  enabled: activeTab === 'ADDRESS_BOOK'
  });
  const addresses = addressData?.list || [];

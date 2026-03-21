@@ -50,7 +50,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
 
  const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd || '');
- const [page번호, setPage번호] = useState(initialParams.page번호 || 1);
+ const [pageIndex, setPageIndex] = useState(initialParams.pageIndex || 1);
  const [searchCnd, setSearchCnd] = useState(initialParams.searchCnd || '0');
  const [orderBy, setOrderBy] = useState(initialParams.orderBy || 'date');
  const [startDate, setStartDate] = useState<Date | undefined>(initialParams.startDate ? new Date(initialParams.startDate) : undefined);
@@ -58,7 +58,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
 
  const { data, isLoading: loading } = useBoardList({
  bbsId,
- page번호,
+ pageIndex,
  pageUnit: 10,
  searchWrd,
  searchCnd,
@@ -73,7 +73,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
 
  const handleSearch = (e: React.FormEvent) => {
  e.preventDefault();
- setPage번호(1);
+ setPageIndex(1);
  };
 
  return (
@@ -258,7 +258,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  list.map((item: Board, idx: number) => (
  <TableRow key={item.nttId} className="hover:bg-primary/[0.02] transition-all group border-b last:border-0">
  <TableCell className="text-center font-bold text-sm text-slate-400 py-8">
- {totalCount - ((page번호 - 1) * 10) - idx}
+ {totalCount - ((pageIndex - 1) * 10) - idx}
  </TableCell>
  <TableCell className="px-6 py-8">
  <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`} className="group/link flex flex-col gap-1">
@@ -302,21 +302,21 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  <div className="flex items-center justify-center gap-8 py-10">
  <Button
  variant="outline"
- onClick={() => setPage번호((p: number) => Math.max(1, p - 1))}
- disabled={page번호 === 1}
+ onClick={() => setPageIndex((p: number) => Math.max(1, p - 1))}
+ disabled={pageIndex === 1}
  className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
  >
  이전
  </Button>
  <div className="flex items-center gap-4 bg-slate-900 px-8 py-3 rounded-2xl shadow-xl">
- <span className="text-lg font-black text-white">{page번호}</span>
+ <span className="text-lg font-black text-white">{pageIndex}</span>
  <div className="h-4 w-px bg-white/20" />
  <span className="text-sm font-bold text-white/50">{totalPages}</span>
  </div>
  <Button
  variant="outline"
- onClick={() => setPage번호((p: number) => Math.min(totalPages, p + 1))}
- disabled={page번호 === totalPages}
+ onClick={() => setPageIndex((p: number) => Math.min(totalPages, p + 1))}
+ disabled={pageIndex === totalPages}
  className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
  >
  다음

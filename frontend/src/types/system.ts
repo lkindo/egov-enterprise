@@ -53,8 +53,8 @@ export interface PaginationResponse<T> {
 }
 
 export interface SearchParams {
- page번호?: number;
- page?: number;
+  pageIndex?: number;
+  page?: number;
  size?: number;
  searchCondition?: string;
  searchKeyword?: string;

@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { getInitialBoardData } from './BoardListServer';
 import { Skeleton } from "@/components/ui/skeleton";
+import { redirect } from 'next/navigation';
 
 // 클라이언트 컴포넌트를 지연 로딩하여 서버/클라이언트 경계를 명확히 함
 const BoardListClient = dynamic(() => import('./BoardListClient').then(mod => mod.BoardListClient), {
@@ -33,7 +34,7 @@ export default async function BoardListPage({ searchParams }: { searchParams: Pr
  // 파라미터 준비
  const params = {
  bbsId: (resolvedSearchParams.bbsId as string) || 'BBSMSTR_AAAAAAAAAAAA',
- page번호: Number(resolvedSearchParams.page번호) || 1,
+ pageIndex: Number(resolvedSearchParams.pageIndex) || 1,
  searchWrd: (resolvedSearchParams.searchWrd as string) || '',
  searchCnd: (resolvedSearchParams.searchCnd as string) || '0',
  orderBy: (resolvedSearchParams.orderBy as string) || 'date',
@@ -42,7 +43,15 @@ export default async function BoardListPage({ searchParams }: { searchParams: Pr
  };
 
  // 서버 전용 함수를 통해 데이터 페칭
- const initialData = await getInitialBoardData(params);
+ let initialData;
+ try {
+  initialData = await getInitialBoardData(params);
+ } catch (error: any) {
+  if (error.response?.status === 401) {
+   redirect(`/login?expired=true&redirect=/admin/community/boards/selectBoardList?bbsId=${params.bbsId}`);
+  }
+  initialData = { resultList: [], totalCount: 0, totalPages: 0 };
+ }
 
  return (
  <BoardListClient initialData={initialData} params={params} />

@@ -19,7 +19,7 @@ export interface DeptJobBxVO {
 }
 
 export interface DeptJobSearchParams {
- page번호?: number;
+ pageIndex?: number;
  searchCondition?: string;
  searchKeyword?: string;
  searchDeptJobBxId?: string; // 업무함 필터

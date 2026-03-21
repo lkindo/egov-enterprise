@@ -21,11 +21,12 @@ vi.mock('@/app/components/ui/confirm-modal', () => ({
   useConfirm: vi.fn(() => vi.fn()) 
 }));
 vi.mock('@/app/components/ui/standard-modal', () => ({ 
-  StandardModal: ({ children, isOpen, title, onClose }: any) => isOpen ? (
+  StandardModal: ({ children, isOpen, title, onClose, footer }: any) => isOpen ? (
     <div data-testid="modal">
       <h2 data-testid="modal-title">{title}</h2>
       <button onClick={onClose}>닫기</button>
       {children}
+      <div data-testid="modal-footer">{footer}</div>
     </div>
   ) : null 
 }));
@@ -79,6 +80,13 @@ vi.mock('lucide-react', () => ({
   Search: () => <span>S</span>,
   Settings: () => <span>ST</span>,
   ChevronRight: () => <span>{'>'}</span>,
+  RefreshCcw: () => <span>R</span>,
+  Box: () => <span>B</span>,
+  Zap: () => <span>Z</span>,
+  CheckCircle2: () => <span>V</span>,
+  ShieldAlert: () => <span>SA</span>,
+  SearchCode: () => <span>SC</span>,
+  Database: () => <span>DB</span>,
 }));
 
 vi.mock('@/app/actions/programActions', () => ({ 
@@ -111,23 +119,18 @@ describe('ProgramAdminClient Component', () => {
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
     expect(screen.getAllByText('PROG_1').length).toBeGreaterThan(0);
     expect(screen.getAllByText('PROG_2').length).toBeGreaterThan(0);
-    // Look for the count and unit together in the h4 heading
-    const countElements = screen.getAllByText((_content, element) => {
-      const hasText = (node: Element) => node.textContent?.replace(/\s+/g, ' ').trim() === '2 개';
-      return element?.tagName.toLowerCase() === 'h4' && hasText(element);
-    });
-    expect(countElements.length).toBeGreaterThan(0);
+    // Look for the count in the HubMetricCard
+    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('opens the registration modal when "신규 프로그램 등록" is clicked', async () => {
+  it('opens the registration modal when "신규 프로그램 배포" is clicked', async () => {
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
     
-    const header = screen.getByTestId('page-header');
-    const deployBtn = within(header).getByText(/신규 프로그램 등록/i);
+    const deployBtn = screen.getByText(/신규 프로그램 배포/i);
     fireEvent.click(deployBtn);
 
     const modal = await screen.findByTestId('modal');
-    expect(within(modal).getByText('신규 프로그램 등록')).toBeDefined();
+    expect(within(modal).getByText('신규 소프트웨어 자산 배포')).toBeDefined();
   });
 
   it('opens the edit modal with correct data when settings icon is clicked', async () => {
@@ -137,11 +140,11 @@ describe('ProgramAdminClient Component', () => {
     fireEvent.click(settingsBtns[0]);
 
     const modal = await screen.findByTestId('modal');
-    expect(within(modal).getByText('프로그램 정보 수정')).toBeDefined();
+    expect(within(modal).getByText('프로그램 사양 및 엔드포인트 수정')).toBeDefined();
     
-    const input = within(modal).getByPlaceholderText('예: SYSTEM_LOG_V1') as HTMLInputElement;
+    const input = within(modal).getByPlaceholderText('UNIQUE_ASSET_ID') as HTMLInputElement;
     expect(input.value).toBe('PROG_1');
-    expect(input.disabled).toBe(true);
+    expect(input.readOnly).toBe(true);
   });
 
   it('handles program deletion after confirmation', async () => {
@@ -165,15 +168,15 @@ describe('ProgramAdminClient Component', () => {
     
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
     
-    const header = screen.getByTestId('page-header');
-    fireEvent.click(within(header).getByText(/신규 프로그램 등록/i));
+    const deployBtn = screen.getByText(/신규 프로그램 배포/i);
+    fireEvent.click(deployBtn);
 
     const modal = await screen.findByTestId('modal');
 
-    const nameInput = within(modal).getByPlaceholderText('예: 감사 로그 관리');
+    const nameInput = within(modal).getByPlaceholderText('한국어 자산 명칭 입력');
     fireEvent.change(nameInput, { target: { value: 'New Program Name' } });
 
-    const submitBtn = within(modal).getByText('등록하기');
+    const submitBtn = within(modal).getByText('DEPLOY_ASSET');
     fireEvent.click(submitBtn);
 
     await waitFor(() => {

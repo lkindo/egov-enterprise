@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { codeAdminService } from '@/services/admin/system/CodeAdminService';
 import InstitutionCodeClient from './InstitutionCodeClient';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { Building2 } from 'lucide-react';
 
@@ -17,9 +18,12 @@ export default async function InstitutionCodePage() {
 
   let initialData: any = { list: [], total: 0 };
   try {
-    initialData = await codeAdminService.getInstitutionCodeList({ page번호: 1, pageUnit: 10 }, axiosConfig);
-  } catch (error) {
-    console.error('Failed to fetch initial institution codes:', error);
+   initialData = await codeAdminService.getInstitutionCodeList({ pageIndex: 1, pageUnit: 10 }, axiosConfig);
+  } catch (error: any) {
+   if (error.response?.status === 401) {
+    redirect('/login?expired=true&redirect=/admin/system/codes/institution');
+   }
+   console.error('Failed to fetch initial institution codes:', error);
   }
 
   return (

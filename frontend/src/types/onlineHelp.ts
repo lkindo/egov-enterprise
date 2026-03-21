@@ -14,7 +14,7 @@ export interface FaqVO {
 }
 
 export interface OnlineHelpSearchParams {
- page번호?: number;
+ pageIndex?: number;
  searchCondition?: string;
  searchKeyword?: string;
 }

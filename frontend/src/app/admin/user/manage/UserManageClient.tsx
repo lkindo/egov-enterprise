@@ -299,7 +299,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
               <div className="relative group/id">
                   <Fingerprint size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                   <Input 
-                    value={formData.userId} 
+                    value={formData.userId || ''} 
                     onChange={e => setFormData({...formData, userId: e.target.value})} 
                     readOnly={!!editingUser}
                     className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tighter shadow-inner bg-slate-50/50" 
@@ -311,7 +311,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
               <div className="relative group/name">
                   <UserPlus size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/name:opacity-100 transition-opacity" />
                   <Input 
-                    value={formData.userNm} 
+                    value={formData.userNm || ''} 
                     onChange={e => setFormData({...formData, userNm: e.target.value})} 
                     className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner" 
                     placeholder="Display Name"
@@ -319,27 +319,27 @@ export default function UserManageClient({ initialData, initialParams }: { initi
               </div>
             </FormField>
           </div>
-
+ 
           <FormField label="인증 크리덴셜 (Credential Phase)" required={!editingUser} description={editingUser ? "보안 강화를 위해 필요시에만 덮어쓰십시오." : "보안 강도가 높은 복합 비밀번호를 권장합니다."}>
             <div className="relative group/pw">
                <ShieldCheck size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/pw:opacity-100 transition-opacity" />
                <Input 
                   type="password" 
-                  value={formData.password} 
+                  value={formData.password || ''} 
                   onChange={e => setFormData({...formData, password: e.target.value})} 
                   className="h-16 pl-16 rounded-2xl border-2 text-sm font-black tracking-widest shadow-inner py-4" 
                   placeholder="••••••••••••••••"
                 />
             </div>
           </FormField>
-
+ 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <FormField label="커뮤니케이션 엔드포인트" required>
               <div className="relative group/email">
                 <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/email:opacity-100 transition-opacity" />
                 <Input 
                     type="email" 
-                    value={formData.email} 
+                    value={formData.email || ''} 
                     onChange={e => setFormData({...formData, email: e.target.value})} 
                     className="h-14 pl-14 rounded-2xl border-2 font-black tracking-tighter text-xs shadow-inner lowercase" 
                     placeholder="identity@endpoint.link"
@@ -348,7 +348,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
             </FormField>
             <FormField label="아이덴티티 로드 프로토콜">
                <select 
-                    value={formData.userSttusCode} 
+                    value={formData.userSttusCode || ''} 
                     onChange={e => setFormData({...formData, userSttusCode: e.target.value})}
                     className="w-full h-14 px-6 rounded-2xl border-2 bg-slate-50 font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/10 outline-none transition-all cursor-pointer shadow-inner"
                 >

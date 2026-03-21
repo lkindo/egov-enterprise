@@ -158,12 +158,12 @@ export default function OnlinePollAdminClient({
       accessor: (item: OnlinePollDto) => (
         <div className={cn(
           "flex items-center gap-2 px-4 py-1.5 rounded-full border w-fit shadow-sm transition-all",
-          item.useAt === 'Y' 
+          item.pollDsuseYn === 'N' 
             ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
             : "bg-slate-100 text-slate-400 border-border/50"
         )}>
-          {item.useAt === 'Y' ? <Zap size={14} className="animate-pulse" /> : <XCircle size={14} />}
-          <span className="text-[9px] font-black tracking-[0.2em] uppercase ">{item.useAt === 'Y' ? 'Live' : 'Terminated'}</span>
+          {item.pollDsuseYn === 'N' ? <Zap size={14} className="animate-pulse" /> : <XCircle size={14} />}
+          <span className="text-[9px] font-black tracking-[0.2em] uppercase ">{item.pollDsuseYn === 'N' ? 'Live' : 'Terminated'}</span>
         </div>
       )
     }
@@ -206,7 +206,7 @@ export default function OnlinePollAdminClient({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-2">
         <SummaryBlock 
           title="ACTIVE SESSIONS" 
-          value={polls.filter((p: OnlinePollDto) => p.useAt === 'Y').length} 
+          value={polls.filter((p: OnlinePollDto) => p.pollDsuseYn === 'N').length} 
           icon={<Activity size={26} />} 
           status="NOMINAL"
           color="text-emerald-500"

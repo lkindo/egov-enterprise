@@ -55,7 +55,7 @@ export default function GroupManagePage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [params, setParams] = useState<SearchParams>({
-    page번호: 1,
+    pageIndex: 1,
     searchKeyword: '',
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -110,7 +110,7 @@ export default function GroupManagePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setParams(prev => ({ ...prev, page번호: 1 }));
+    setParams(prev => ({ ...prev, pageIndex: 1 }));
   };
 
   const handleCreate = () => {
@@ -265,7 +265,7 @@ export default function GroupManagePage() {
                 <div className="mt-12 flex justify-center">
                     <PagePagination
                         pagination={pagination}
-                        onPageChange={(page) => setParams(prev => ({ ...prev, page번호: page }))}
+                        onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
                     />
                 </div>
             )}
@@ -286,7 +286,7 @@ export default function GroupManagePage() {
                         <Fingerprint size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                         <Input
                             id="groupId"
-                            value={formData.groupId}
+                            value={formData.groupId || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, groupId: e.target.value }))}
                             disabled={!!editingGroup}
                             className="h-16 pl-16 rounded-2xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner"
@@ -299,7 +299,7 @@ export default function GroupManagePage() {
                         <Users size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
                         <Input
                             id="groupNm"
-                            value={formData.groupNm}
+                            value={formData.groupNm || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, groupNm: e.target.value }))}
                             className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
                             placeholder="그룹 명칭 입력"
@@ -307,13 +307,13 @@ export default function GroupManagePage() {
                     </div>
                 </FormField>
             </div>
-
+ 
             <FormField label="그룹 정책 상세 명세" description="해당 보안 그룹의 비즈니스 목적 및 데이터 접근 범위 명세">
                 <div className="relative group/dc">
                     <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
                     <Textarea
                         id="groupDc"
-                        value={formData.groupDc}
+                        value={formData.groupDc || ''}
                         onChange={(e) => setFormData(prev => ({ ...prev, groupDc: e.target.value }))}
                         className="min-h-[160px] pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
                         placeholder="상세 명세 입력..."

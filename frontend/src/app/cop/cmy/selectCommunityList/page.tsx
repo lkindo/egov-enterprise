@@ -28,13 +28,13 @@ const CommunityListPage = () => {
  const [list, setList] = useState<Community[]>([]);
  const [totalCount, setTotalCount] = useState(0);
  const [totalPages, setTotalPages] = useState(0);
- const [page번호, setPage번호] = useState(1);
+ const [pageIndex, setPageIndex] = useState(1);
  const [loading, setLoading] = useState(false);
 
  const fetchList = async () => {
  setLoading(true);
  try {
- const params = { page번호, pageUnit: 10 };
+ const params = { pageIndex, pageUnit: 10 };
  const data = await getCommunityList(params);
  setList((data.resultList as any) || []);
  setTotalCount(data.totalCount || 0);
@@ -49,7 +49,7 @@ const CommunityListPage = () => {
 
  useEffect(() => {
  fetchList();
- }, [page번호]);
+ }, [pageIndex]);
 
  return (
  <div className="flex flex-col gap-6 p-6">
@@ -112,7 +112,7 @@ const CommunityListPage = () => {
  list.map((item, idx) => (
  <TableRow key={item.cmmntyId} className="hover:bg-blue-50/30 transition-all border-b last:border-0 group">
  <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
- {totalCount - ((page번호 - 1) * 10) - idx}
+ {totalCount - ((pageIndex - 1) * 10) - idx}
  </TableCell>
  <TableCell className="py-6">
  <Link href={`/admin/community/${item.cmmntyId}`} className="flex items-center gap-4 group/item">
@@ -152,22 +152,22 @@ const CommunityListPage = () => {
  <Button
  variant="ghost"
  size="lg"
- onClick={() => setPage번호(p => Math.max(1, p - 1))}
- disabled={page번호 === 1}
+ onClick={() => setPageIndex(p => Math.max(1, p - 1))}
+ disabled={pageIndex === 1}
  className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-blue-600 transition-all tracking-tight text-sm"
  >
  이전
  </Button>
  <div className="bg-slate-900 text-white px-10 py-4 rounded-[2rem] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex items-center gap-4 border-4 border-white ring-8 ring-slate-100">
- <span className="text-2xl font-black">{page번호}</span>
+ <span className="text-2xl font-black">{pageIndex}</span>
  <div className="h-6 w-px bg-white/20" />
  <span className="text-sm font-bold text-white/40">{totalPages}</span>
  </div>
  <Button
  variant="ghost"
  size="lg"
- onClick={() => setPage번호(p => Math.min(totalPages, p + 1))}
- disabled={page번호 === totalPages}
+ onClick={() => setPageIndex(p => Math.min(totalPages, p + 1))}
+ disabled={pageIndex === totalPages}
  className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-blue-600 transition-all tracking-tight text-sm"
  >
  다음

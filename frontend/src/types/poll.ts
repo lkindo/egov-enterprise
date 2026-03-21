@@ -27,7 +27,7 @@ export interface OnlinePollPartcptnVO {
 }
 
 export interface PollSearchParams {
- page번호?: number;
+  pageIndex?: number;
  searchCondition?: string;
  searchKeyword?: string;
 }

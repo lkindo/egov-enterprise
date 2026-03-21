@@ -36,7 +36,8 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
-@Profile({"default", "local", "prod", "security-test", "test & !mock-security-test & !minimal-test-security"})
+@Profile({"default", "local", "prod", "security-test", 
+    "test & !mock-security-test & !minimal-test-security & !stress-test & !security-vulnerability-test & !bottleneck-test"})
 @EnableWebSecurity
 @Slf4j
 public class ApiSecurityConfig {

@@ -29,13 +29,13 @@ const DeptJobListPage = () => {
  const [list, setList] = useState<DeptJob[]>([]);
  const [totalCount, setTotalCount] = useState(0);
  const [totalPages, setTotalPages] = useState(0);
- const [page번호, setPage번호] = useState(1);
+ const [pageIndex, setPageIndex] = useState(1);
  const [loading, setLoading] = useState(false);
 
  const fetchList = async () => {
  setLoading(true);
  try {
- const params = { page번호, pageUnit: 10 };
+ const params = { pageIndex, pageUnit: 10 };
  const response = (await axios.get('/deptjob', { params })) as any;
  setList(response.data.resultList || []);
  setTotalCount(response.data.totalCount || 0);
@@ -49,7 +49,7 @@ const DeptJobListPage = () => {
 
  useEffect(() => {
  fetchList();
- }, [page번호]);
+ }, [pageIndex]);
 
  const handleDelete = async (id: string) => {
  if (!confirm('삭제하시겠습니까?')) return;
@@ -141,7 +141,7 @@ const DeptJobListPage = () => {
  list.map((item, idx) => (
  <TableRow key={item.deptJobId} className="hover:bg-slate-50/50 transition-all border-b last:border-0 group">
  <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
- {totalCount - ((page번호 - 1) * 10) - idx}
+ {totalCount - ((pageIndex - 1) * 10) - idx}
  </TableCell>
  <TableCell className="text-center py-6">
  {getPriorityBadge(item.priort)}
@@ -187,22 +187,22 @@ const DeptJobListPage = () => {
  <Button
  variant="ghost"
  size="lg"
- onClick={() => setPage번호(p => Math.max(1, p - 1))}
- disabled={page번호 === 1}
+ onClick={() => setPageIndex(p => Math.max(1, p - 1))}
+ disabled={pageIndex === 1}
  className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
  >
  이전
  </Button>
  <div className="bg-slate-50 text-slate-900 border-2 border-white px-10 py-3 rounded-2xl shadow-xl flex items-center gap-4 ring-8 ring-slate-100/50">
- <span className="text-xl font-black">{page번호}</span>
+ <span className="text-xl font-black">{pageIndex}</span>
  <div className="h-4 w-px bg-slate-200" />
  <span className="text-sm font-bold text-slate-400">{totalPages}</span>
  </div>
  <Button
  variant="ghost"
  size="lg"
- onClick={() => setPage번호(p => Math.min(totalPages, p + 1))}
- disabled={page번호 === totalPages}
+ onClick={() => setPageIndex(p => Math.min(totalPages, p + 1))}
+ disabled={pageIndex === totalPages}
  className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
  >
  다음

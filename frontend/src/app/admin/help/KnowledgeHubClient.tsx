@@ -9,6 +9,7 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { PageHeader } from '@/app/components/layout/page-header';
+import { HubInsightBadge } from '@/components/ui/hub/HubInsightBadge';
 import { 
   Library, 
   BookOpen, 
@@ -18,7 +19,7 @@ import {
   Plus, 
   BookCheck, 
   TrendingUp, 
-  Clock, 
+  TrendingDown, 
   ArrowUpRight,
   Star,
   Layers,
@@ -36,6 +37,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 
 // --- Types ---
 type KnowledgeCategory = 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY';
@@ -64,20 +66,27 @@ export default function KnowledgeHubClient({ defaultTab = 'WIKI' }: { defaultTab
   ];
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="인텔리전스 센터"
-        breadcrumbs={[{ label: '헬프데스크' }, { label: '지식 허브' }]}
-      />
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={hubContainerVariants}
+      className="space-y-12 pb-24"
+    >
+      <motion.div variants={hubItemVariants}>
+        <PageHeader
+          title="인텔리전스 센터"
+          breadcrumbs={[{ label: '헬프데스크' }, { label: '지식 허브' }]}
+        />
+      </motion.div>
 
-      <div className="relative h-[320px] rounded-[4rem] bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border-none">
+      <motion.div variants={hubItemVariants} className="relative h-[320px] rounded-[4rem] bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border-none">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-rose-500/10 opacity-60 animate-pulse duration-[10s]" />
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 0)', backgroundSize: '32px 32px' }} />
         
         <div className="relative z-10 text-center w-full max-w-4xl space-y-12">
           <div className="space-y-4">
             <h1 className="text-5xl font-black text-white tracking-tighter leading-none uppercase">Knowledge Portal</h1>
-            <p className="hub-label-accent text-white/30 !opacity-30">Enterprise Collective Intelligence Archive</p>
+            <HubInsightBadge label="Enterprise Collective Intelligence Archive" className="text-white/30 !opacity-30" />
           </div>
           
           <div className="relative group max-w-2xl mx-auto w-full">
@@ -91,33 +100,35 @@ export default function KnowledgeHubClient({ defaultTab = 'WIKI' }: { defaultTab
             <div className="absolute right-6 top-1/2 -translate-y-1/2 px-4 py-2 bg-white/10 rounded-xl text-[10px] font-black text-white/40 tracking-widest border border-white/5 uppercase">Global Core</div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <HubHeader 
-        title="지식 자산" 
-        highlight="매트릭스" 
-        subtitle="전사적 지식 공유 및 기술 지원을 위한 통합 데이터 레이어" 
-        icon={Library} 
-        actions={
-          <div className="flex gap-4 p-2">
-            <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">
-              <History size={16} /> 최근 이력
-            </Button>
-            <Button size="lg" className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2">
-              <Plus size={18} /> 새 지식 등록
-            </Button>
-          </div>
-        }
-      />
+      <motion.div variants={hubItemVariants}>
+        <HubHeader 
+          title="지식 자산" 
+          highlight="매트릭스" 
+          subtitle="전사적 지식 공유 및 기술 지원을 위한 통합 데이터 레이어" 
+          icon={Library} 
+          actions={
+            <div className="flex gap-4 p-2">
+              <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">
+                <History size={16} /> 최근 이력
+              </Button>
+              <Button size="lg" className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2">
+                <Plus size={18} /> 새 지식 등록
+              </Button>
+            </div>
+          }
+        />
+      </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-2">
+      <motion.div variants={hubItemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-2">
         <CategoryCard title="Global Wiki" desc="기술 사양서" icon={<Library size={28} />} count={142} color="primary" active={activeCategory === 'WIKI'} onClick={() => setActiveCategory('WIKI')} />
         <CategoryCard title="Customer Help" desc="FAQ 가이드" icon={<BookOpen size={28} />} count={28} color="amber" active={activeCategory === 'FAQ'} onClick={() => setActiveCategory('FAQ')} />
         <CategoryCard title="Tech Forum" desc="Q&A 분석" icon={<MessageCircleQuestion size={28} />} count={567} color="rose" active={activeCategory === 'QNA'} onClick={() => setActiveCategory('QNA')} />
         <CategoryCard title="Community" desc="혁신 클러스터" icon={<Globe size={28} />} count={12} color="emerald" active={activeCategory === 'COMMUNITY'} onClick={() => setActiveCategory('COMMUNITY')} />
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-12 gap-10 px-2 mt-4">
+      <motion.div variants={hubItemVariants} className="grid grid-cols-12 gap-10 px-2 mt-4">
         <div className="col-span-12 lg:col-span-8 space-y-10">
           <HubSectionCard
             title="저장소 스트림"
@@ -203,7 +214,7 @@ export default function KnowledgeHubClient({ defaultTab = 'WIKI' }: { defaultTab
                  <Zap size={24} />
                </div>
                <div className="text-right">
-                 <p className="text-[9px] font-black text-muted-foreground opacity-30 uppercase tracking-[0.4em]">Active Pulse</p>
+                 <p className="hub-label-accent leading-none">Active Pulse</p>
                  <p className="text-sm font-black text-foreground tracking-tighter uppercase mt-1">Real-time Stream</p>
                </div>
              </div>
@@ -220,8 +231,8 @@ export default function KnowledgeHubClient({ defaultTab = 'WIKI' }: { defaultTab
              </div>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

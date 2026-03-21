@@ -25,14 +25,14 @@ const AddressBookListPage = () => {
  const [list, setList] = useState<AddressBook[]>([]);
  const [totalCount, setTotalCount] = useState(0);
  const [totalPages, setTotalPages] = useState(0);
- const [page번호, setPage번호] = useState(1);
+ const [pageIndex, setPageIndex] = useState(1);
  const [searchWrd, setSearchWrd] = useState('');
  const [loading, setLoading] = useState(false);
 
  const fetchList = async () => {
  setLoading(true);
  try {
- const params = { page번호, pageUnit: 10, searchWrd };
+ const params = { pageIndex, pageUnit: 10, searchWrd };
  const response = await addressbookUserService.getAddressBooks(params);
 
  // Spring Data Page 객체 구조에 맞게 매핑
@@ -48,11 +48,11 @@ const AddressBookListPage = () => {
 
  useEffect(() => {
  fetchList();
- }, [page번호]);
+ }, [pageIndex]);
 
  const handleSearch = (e: React.FormEvent) => {
  e.preventDefault();
- setPage번호(1);
+ setPageIndex(1);
  fetchList();
  };
 
@@ -148,7 +148,7 @@ const AddressBookListPage = () => {
  list.map((item, idx) => (
  <TableRow key={item.adbkId} className="hover:bg-muted/30 transition-colors group">
  <TableCell className="text-center font-medium text-muted-foreground">
- {totalCount - ((page번호 - 1) * 10) - idx}
+ {totalCount - ((pageIndex - 1) * 10) - idx}
  </TableCell>
  <TableCell>
  <Link href={`/admin/collaboration/address-book/selectAddressBookDetail/${item.adbkId}`} className="font-bold text-primary hover:underline underline-offset-4 decoration-2 decoration-primary/30 transition-all">
@@ -188,22 +188,22 @@ const AddressBookListPage = () => {
  <Button
  variant="outline"
  size="sm"
- onClick={() => setPage번호(p => Math.max(1, p - 1))}
- disabled={page번호 === 1}
+ onClick={() => setPageIndex(p => Math.max(1, p - 1))}
+ disabled={pageIndex === 1}
  className="px-4 shadow-sm"
  >
  이전
  </Button>
  <div className="flex items-center gap-2">
- <span className="text-sm font-bold text-primary">{page번호}</span>
+ <span className="text-sm font-bold text-primary">{pageIndex}</span>
  <span className="text-sm text-muted-foreground">/</span>
  <span className="text-sm font-medium">{totalPages}</span>
  </div>
  <Button
  variant="outline"
  size="sm"
- onClick={() => setPage번호(p => Math.min(totalPages, p + 1))}
- disabled={page번호 === totalPages}
+ onClick={() => setPageIndex(p => Math.min(totalPages, p + 1))}
+ disabled={pageIndex === totalPages}
  className="px-4 shadow-sm"
  >
  다음

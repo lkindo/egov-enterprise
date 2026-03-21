@@ -34,7 +34,7 @@ import { DeptSchedule, ScheduleSearchParams } from '@/types/schedule';
 export default function DeptSchedulePage() {
  const [schedules, setSchedules] = useState<DeptSchedule[]>([]);
  const [params, setParams] = useState<ScheduleSearchParams>({
- page번호: 1,
+ pageIndex: 1,
  schdulNm: '',
  });
  const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -68,7 +68,7 @@ export default function DeptSchedulePage() {
 
  const handleSearch = (e: React.FormEvent) => {
  e.preventDefault();
- setParams(prev => ({ ...prev, page번호: 1 }));
+ setParams(prev => ({ ...prev, pageIndex: 1 }));
  };
 
  const handleCreate = () => {

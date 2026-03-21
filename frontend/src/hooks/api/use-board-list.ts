@@ -3,7 +3,7 @@ import client from '@/lib/api/client';
 
 export interface BoardListParams {
  bbsId: string;
- page번호: number;
+ pageIndex: number;
  pageUnit: number;
  searchWrd: string;
  searchCnd: string;
@@ -17,9 +17,9 @@ export const useBoardList = (params: BoardListParams, initialData?: any) => {
  queryKey: ['boardList', params],
  initialData,
  queryFn: async () => {
- const { bbsId, page번호, pageUnit, ...restParams } = params;
+ const { bbsId, pageIndex, pageUnit, ...restParams } = params;
  const queryParams = {
- page: page번호 - 1,
+ page: pageIndex - 1,
  size: pageUnit || 10,
  ...restParams
  };

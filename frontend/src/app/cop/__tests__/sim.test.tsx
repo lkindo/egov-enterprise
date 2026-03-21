@@ -23,6 +23,6 @@ describe('ScheduleListPage', () => {
   <ScheduleListPage />
   </QueryClientProvider>
   );
-  expect(screen.getByText(/업무 및 프로젝트/i)).toBeInTheDocument();
+  expect(screen.getByText(/업무 및 인텔리전스/i)).toBeInTheDocument();
  });
 });

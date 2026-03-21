@@ -16,21 +16,21 @@ export interface HubSummaryCardProps {
 }
 
 const colorMap: Record<HubSummaryColor, string> = {
-  blue: "bg-blue-600/5 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 shadow-xl shadow-blue-500/5",
+  blue: "bg-hub-blue/5 dark:bg-hub-blue/10 text-hub-blue dark:text-hub-blue-foreground border-hub-blue/20 shadow-xl shadow-hub-blue/5",
   orange: "bg-slate-900 text-white border-slate-800 shadow-2xl shadow-slate-900/20",
   purple: "bg-white dark:bg-white/5 text-slate-900 dark:text-white border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none",
-  emerald: "bg-emerald-600/5 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 shadow-xl shadow-emerald-500/5",
-  rose: "bg-rose-600/5 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 shadow-xl shadow-rose-500/5",
-  amber: "bg-amber-600/5 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 shadow-xl shadow-amber-500/5"
+  emerald: "bg-hub-emerald/5 dark:bg-hub-emerald/10 text-hub-emerald dark:text-hub-emerald-foreground border-hub-emerald/20 shadow-xl shadow-hub-emerald/5",
+  rose: "bg-hub-rose/5 dark:bg-hub-rose/10 text-hub-rose dark:text-hub-rose-foreground border-hub-rose/20 shadow-xl shadow-hub-rose/5",
+  amber: "bg-hub-amber/5 dark:bg-hub-amber/10 text-hub-amber dark:text-hub-amber-foreground border-hub-amber/20 shadow-xl shadow-hub-amber/5"
 };
 
 const iconBgMap: Record<HubSummaryColor, string> = {
-  blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  blue: "bg-hub-blue/10 text-hub-blue dark:text-hub-blue-foreground",
   orange: "bg-primary/20 text-primary",
   purple: "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white",
-  emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  rose: "bg-rose-500/10 text-rose-600",
-  amber: "bg-amber-500/10 text-amber-600"
+  emerald: "bg-hub-emerald/10 text-hub-emerald dark:text-hub-emerald-foreground",
+  rose: "bg-hub-rose/10 text-hub-rose",
+  amber: "bg-hub-amber/10 text-hub-amber"
 };
 
 const cardVariants: Variants = {

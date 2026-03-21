@@ -16,7 +16,7 @@ export interface CnsltVO {
 }
 
 export interface CnsltSearchParams extends SearchParams {
- page번호?: number;
+ pageIndex?: number;
  searchCondition?: string;
  searchKeyword?: string;
 }

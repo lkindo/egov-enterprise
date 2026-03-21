@@ -38,27 +38,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @EnableWebMvc
 @ActiveProfiles({"test", "stress-test"})
+@org.springframework.context.annotation.Import(com.company.project.config.CommonTestMocksConfig.class)
 class StressTest {
 
   @Autowired
   private MockMvc mockMvc;
 
-  @Autowired
+  @org.springframework.test.context.bean.override.mockito.MockitoBean
   private UserService userService;
 
   private ExecutorService executorService;
   private UserDto defaultUser;
 
-  // 기존 컨텍스트 충돌 방지용 명시적 Mock 생성
+  // 기존 컨텍스트 충돌 방지용 명시적 Mock 설정
   @TestConfiguration
   @org.springframework.context.annotation.Profile("stress-test")
   static class StressTestConfig {
-    @Bean
-    @Primary
-    public UserService mockUserService() {
-      return Mockito.mock(UserService.class);
-    }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
       http.csrf(csrf -> csrf.disable())
