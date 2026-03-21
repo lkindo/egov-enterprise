@@ -25,6 +25,9 @@ public class SecurityHeadersTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private org.springframework.messaging.simp.SimpMessagingTemplate simpMessagingTemplate;
+
     @TestConfiguration
     @org.springframework.context.annotation.Profile("security-headers-test")
     static class SecurityTestConfig {

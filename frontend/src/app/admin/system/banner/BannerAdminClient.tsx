@@ -94,14 +94,19 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
     if (!ok) return;
 
-    const res = activeTab === 'banner'
-      ? await deleteBannerAction(null, id)
-      : await deletePopupAction(null, id);
+    try {
+      const res = activeTab === 'banner'
+        ? await deleteBannerAction(null, id)
+        : await deletePopupAction(null, id);
 
-    if (res.success) {
-      toast(res.message, 'success');
-    } else {
-      toast(res.message, 'error');
+      if (res.success) {
+        toast(res.message, 'success');
+      } else {
+        toast(res.message, 'error');
+      }
+    } catch (error) {
+      toast('자산 삭제 처리 중 예외가 발생했습니다.', 'error');
+      console.error('Promotion handleDelete error:', error);
     }
   };
 
@@ -205,11 +210,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
     },
     { 
         header: '게시 상태', 
-        accessor: (item: Banner) => <HubStatusBadge status={item.reflctAt === 'Y' ? 'PUBLISHED' : 'STAGED'} />,
+        accessor: (item: any) => <HubStatusBadge status={item.reflctAt === 'Y' || item.ntceAt === 'Y' ? '게시 중' : '대기 중'} />,
         className: 'w-32'
     },
     {
-      header: 'MANAGEMENT',
+      header: '관리',
       className: 'text-right w-32',
       accessor: (item: Banner) => (
         <div className="flex justify-end gap-2 pr-4">
@@ -261,11 +266,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
     },
     { 
         header: '게시 여부', 
-        accessor: (item: Popup) => <HubStatusBadge status={item.ntceAt === 'Y' ? 'PUBLISHED' : 'STAGED'} />,
+        accessor: (item: Popup) => <HubStatusBadge status={item.ntceAt === 'Y' ? '게시 중' : '대기 중'} />,
         className: 'w-32'
     },
     {
-      header: 'MANAGEMENT',
+      header: '관리',
       className: 'text-right w-32',
       accessor: (item: Popup) => (
         <div className="flex justify-end gap-2 pr-4">
@@ -283,14 +288,14 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="포털 프로모션 자산 거버넌스"
+        title="배너/팝업 관리"
         breadcrumbs={[{ label: '시스템관리' }, { label: '홍보 관리' }]}
       />
 
       <HubHeader 
-        title="Promotion" 
-        highlight="Engine" 
-        subtitle="전사 서비스 공지 및 마케팅 캠페인을 위한 비주얼 배너와 팝업 인터페이스 통합 제어" 
+        title="포털" 
+        highlight="배너 및 팝업 관리" 
+        subtitle="웹사이트에 노출되는 배너 자산과 공지 팝업을 등록하고 게시 상태를 제어합니다." 
         icon={Megaphone} 
         actions={
           <Button
@@ -304,10 +309,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="ACTIVE_BANNERS" value={banners.filter(b => b.reflctAt === 'Y').length} icon={ImageIcon} color="primary" />
-        <HubMetricCard title="LIVE_POPUPS" value={popups.filter(p => p.ntceAt === 'Y').length} icon={Monitor} color="emerald" status="ONLINE" />
-        <HubMetricCard title="SCHEDULED_TOTAL" value={popups.filter(p => new Date(p.ntceBgnde) > new Date()).length} icon={Calendar} color="amber" />
-        <HubMetricCard title="ENTITY_ASSETS" value={banners.length + popups.length} icon={Layers} color="indigo" />
+        <HubMetricCard title="활성 배너" value={banners.filter(b => b.reflctAt === 'Y').length} icon={ImageIcon} color="primary" />
+        <HubMetricCard title="활성 팝업" value={popups.filter(p => p.ntceAt === 'Y').length} icon={Monitor} color="emerald" status="게시 중" />
+        <HubMetricCard title="예약 자산" value={popups.filter(p => new Date(p.ntceBgnde) > new Date()).length} icon={Calendar} color="amber" />
+        <HubMetricCard title="전체 자산" value={banners.length + popups.length} icon={Layers} color="indigo" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
@@ -330,8 +335,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                         <ImageIcon size={22} />
                     </div>
                     <div className="flex flex-col text-left relative z-10">
-                        <span className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-40">Section_01</span>
-                        <span className="text-md font-black tracking-tighter uppercase leading-tight">Visual Banners</span>
+                        <span className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-40">영역 01</span>
+                        <span className="text-md font-black tracking-tighter uppercase leading-tight">배너 설정</span>
                     </div>
                     {activeTab === 'banner' && (
                         <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />
@@ -354,8 +359,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                         <Monitor size={22} />
                     </div>
                     <div className="flex flex-col text-left relative z-10">
-                        <span className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-40">Section_02</span>
-                        <span className="text-md font-black tracking-tighter uppercase leading-tight">Interaction Popups</span>
+                        <span className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-40">영역 02</span>
+                        <span className="text-md font-black tracking-tighter uppercase leading-tight">팝업 설정</span>
                     </div>
                     {activeTab === 'popup' && (
                         <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />
@@ -366,11 +371,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                     <div className="relative z-10 space-y-4">
                         <div className="flex items-center gap-3">
                             <Sparkles size={16} className="text-primary animate-pulse" />
-                            <span className="text-[10px] font-black tracking-widest uppercase text-white/40">Engine_Status</span>
+                            <span className="text-[10px] font-black tracking-widest uppercase text-white/40">시스템 상태</span>
                         </div>
-                        <h5 className="text-lg font-black tracking-tighter uppercase leading-none">Promotion Fabric v2.0</h5>
+                        <h5 className="text-lg font-black tracking-tighter uppercase leading-none">프로모션 관리</h5>
                         <p className="text-[9px] font-bold text-slate-400 leading-relaxed uppercase opacity-60">
-                            모든 자산은 컨텐츠 전송 네트워크(CDN)를 통해 무중단으로 서빙됩니다.
+                            등록된 모든 배너와 팝업 자산은 시스템에 즉시 반영됩니다.
                         </p>
                     </div>
                 </div>
@@ -388,8 +393,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                     transition={{ duration: 0.5 }}
                 >
                     <HubSectionCard 
-                        title={activeTab === 'banner' ? "비주얼 배너 스트림 분석" : "인터랙션 팝업 오케스트레이션"} 
-                        description={activeTab === 'banner' ? "사용자 포털 메인 및 서브 섹션에 노출되는 브랜딩 에셋 명세입니다." : "기간 한정 공지 및 타겟팅 캠페인을 위한 레이어 팝업 관리 도구입니다."} 
+                        title={activeTab === 'banner' ? "배너 목록" : "팝업 목록"} 
+                        description={activeTab === 'banner' ? "포털 메인 및 서브 섹션에 노출되는 배너 목록입니다." : "기간 한정 공지 및 안내를 위한 팝업 관리 목록입니다."} 
                         icon={activeTab === 'banner' ? ImageIcon : Monitor}
                     >
                         <div className="overflow-hidden">
@@ -413,9 +418,9 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
         maxWidth="3xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">CANCEL</Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
             <Button form="promotion-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
-              <Zap size={18} className="group-hover:animate-pulse" /> {editingItem ? 'PATCH_ASSET' : 'PUBLISH_TO_PROD'}
+              <Zap size={18} className="group-hover:animate-pulse" /> {editingItem ? '자산 수정' : '운영 배포'}
             </Button>
           </div>
         }
@@ -444,8 +449,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl shadow-2xl">
-                          <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase">--- ACTIVE_LIVE ---</SelectItem>
-                          <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">--- STANDBY_STAGED ---</SelectItem>
+                          <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase">--- 활성 (Live) ---</SelectItem>
+                          <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">--- 대기 (Staging) ---</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormField>
@@ -491,7 +496,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
               <FormField label="미디어 자산 업로드 (Visual Payload)" required description="시스템 표준 규격 이미지를 준수하십시오.">
                 <div className="p-4 border-4 border-dashed border-slate-100 rounded-[3rem] bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-inner relative group/upload">
                   <div className="absolute inset-x-0 -top-8 flex justify-center opacity-0 group-hover/upload:opacity-100 transition-opacity">
-                      <div className="px-4 py-2 bg-slate-900 text-white rounded-full text-[9px] font-black tracking-widest uppercase animate-bounce">Drop Zone Active</div>
+                      <div className="px-4 py-2 bg-slate-900 text-white rounded-full text-[9px] font-black tracking-widest uppercase animate-bounce">파일 업로드 활성</div>
                   </div>
                   <StandardFileUploader
                     onFilesChange={(f) => setFormFiles(f)}
@@ -499,14 +504,14 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                   />
                   <div className="mt-4 flex items-center justify-center gap-4 text-muted-foreground/30">
                       <UploadCloud size={24} />
-                      <span className="text-[10px] font-black tracking-widest">DRAG_AND_DROP_TO_COMMENCE</span>
+                      <span className="text-[10px] font-black tracking-widest">여기로 파일을 드래그하여 업로드</span>
                   </div>
                 </div>
               </FormField>
 
               {(editingItem as any)?.bannerImageFile && (
                 <div className="p-8 rounded-[2rem] bg-slate-900 text-white space-y-3 shadow-2xl relative overflow-hidden group">
-                  <span className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase uppercase">Existing_Identity_Probe</span>
+                  <span className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
                   <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform">
                         <SearchCode size={20} className="text-primary" />
@@ -522,7 +527,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
               {activeTab === 'popup' && (
                 <div className="grid grid-cols-1 gap-8 p-10 bg-indigo-50/30 border-2 border-indigo-100/50 rounded-[2.5rem] shadow-sm">
-                  <p className="text-[9px] font-black text-indigo-500/50 tracking-[0.4em] uppercase mb-1">State_Protocol</p>
+                  <p className="text-[9px] font-black text-indigo-500/50 tracking-[0.4em] uppercase mb-1">상태 프로토콜</p>
                   <div className="grid grid-cols-2 gap-6">
                     <FormField label="게시 스케줄링">
                         <Select name="ntceAt" defaultValue={(editingItem as Popup)?.ntceAt || 'Y'}>
@@ -530,19 +535,19 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl">
-                            <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">LIVE (동적 게시)</SelectItem>
-                            <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase text-rose-500">STAGING (게시 중단)</SelectItem>
+                            <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">게시 (LIVE)</SelectItem>
+                            <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase text-rose-500">대기 (STAGING)</SelectItem>
                         </SelectContent>
                         </Select>
                     </FormField>
-                    <FormField label="비동기 쿠키 제어">
+                    <FormField label="다시보지않기 처리">
                         <Select name="stopVewAt" defaultValue={(editingItem as Popup)?.stopVewAt || 'Y'}>
                         <SelectTrigger className="h-14 rounded-2xl border-2 border-indigo-100 bg-white font-black text-[10px] tracking-widest uppercase shadow-sm">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl">
-                            <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">ENABLE (다시보지않기)</SelectItem>
-                            <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase">DISABLE (항시노출)</SelectItem>
+                            <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">활성 (ENABLE)</SelectItem>
+                            <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase">비활성 (DISABLE)</SelectItem>
                         </SelectContent>
                         </Select>
                     </FormField>

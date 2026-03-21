@@ -79,10 +79,10 @@ export default function CommonCodeHubClient({
 
       {/* Code Metrics Section */}
       <HubMetricGrid>
-        <HubMetricCard title="REGISTERED_CODES" value={groups.length + details.length} icon={Code2} color="primary" />
-        <HubMetricCard title="STANDARD_SYNON" value="ACTIVE" icon={ShieldCheck} color="emerald" status="SYNCED" />
-        <HubMetricCard title="METADATA_HEALTH" value="99.8%" icon={Zap} color="amber" />
-        <HubMetricCard title="NODE_SYNC_RATE" value="1.2s" icon={Timer} color="indigo" />
+        <HubMetricCard title="현재 등록 코드" value={groups.length + details.length} icon={Code2} color="primary" />
+        <HubMetricCard title="표준 상태 가용성" value="ACTIVE" icon={ShieldCheck} color="emerald" status="SYNCED" />
+        <HubMetricCard title="메타데이터 건전성" value="99.8%" icon={Zap} color="amber" />
+        <HubMetricCard title="노드 연동 속도" value="1.2s" icon={Timer} color="indigo" />
       </HubMetricGrid>
 
       {/* --- Viewport Content --- */}

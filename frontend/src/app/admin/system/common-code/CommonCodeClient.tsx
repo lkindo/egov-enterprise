@@ -2,568 +2,372 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { exportToCsv } from '@/lib/utils/exportUtils';
-import { CmmnDetailCode as CommonCodeDetail } from '@/types/system';
-import { useToast } from '@/app/components/ui/toast';
-import {
-  Layers,
-  ChevronRight,
-  Plus,
-  Tag,
-  Edit,
-  Trash2,
-  Activity,
-  ShieldCheck,
-  Code2,
-  Clock,
-  ArrowRightCircle,
-  FileCode,
-  LayoutGrid,
-  Search,
-  RefreshCcw,
-  Zap,
-  Globe,
-  Database,
-  SearchCode,
-  ArrowUpRight,
-  ShieldAlert,
-  Fingerprint,
-  Monitor,
-  CheckCircle2,
-  Settings,
-  Pencil,
-  Box,
-  Binary
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import dynamic from 'next/dynamic';
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { FormField } from '@/app/components/ui/standard-form';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { 
-  saveCodeDetail, 
-  deleteCodeDetail, 
-  saveClCode, 
-  deleteClCode, 
-  saveCmmnCode, 
-  deleteCmmnCode 
-} from '@/app/actions/codeActions';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+    Plus, 
+    Settings, 
+    Trash2, 
+    Search, 
+    Database, 
+    LayoutGrid, 
+    Fingerprint, 
+    Key, 
+    Tag, 
+    FileJson, 
+    Cpu, 
+    Layers, 
+    Activity, 
+    Zap,
+    Box,
+    Hash,
+    Maximize2
+} from 'lucide-react';
+import { DomainCluster, GroupCode, CodeDetail } from '@/types/common-code';
+import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { cn } from '@/lib/utils';
+import {
+    saveCmmnCode as saveGroupCodeAction,
+    deleteCmmnCode as deleteGroupCodeAction,
+    saveCodeDetail as saveCodeDetailAction,
+    deleteCodeDetail as deleteCodeDetailAction
+} from '@/app/actions/codeActions';
 
-const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
+interface CommonCodeClientProps {
+    initialClusters: DomainCluster[];
+}
 
-export default function CommonCodeClient({ clCodes, groups, details, selectedGroupId }: { clCodes: any[]; groups: any[]; details: CommonCodeDetail[]; selectedGroupId: string | null }) {
-  const router = useRouter();
-  const { toast } = useToast();
-  const confirm = useConfirm();
+export default function CommonCodeClient({ initialClusters }: CommonCodeClientProps) {
+    const { toast } = useToast();
+    const confirm = useConfirm();
+    const [selectedCluster, setSelectedCluster] = useState<DomainCluster>(initialClusters[0]);
+    const [selectedGroup, setSelectedGroup] = useState<GroupCode | null>(null);
+    const [isModalOpen, setIsOpen] = useState(false);
+    const [editingDetail, setEditingDetail] = useState<CodeDetail | null>(null);
 
-  const [loading, setLoading] = useState(false);
-  
-  const [isModalOpen, setIsOpen] = useState(false);
-  const [mode, setMode] = useState<'create' | 'edit'>('create');
-  const [formData, setFormData] = useState<Partial<CommonCodeDetail>>({
-    codeId: '', code: '', codeNm: '', codeDc: '', useAt: 'Y'
-  });
+    const handleEditDetail = (detail: CodeDetail) => {
+        setEditingDetail(detail);
+        setIsOpen(true);
+    };
 
-  const [isClModalOpen, setIsClOpen] = useState(false);
-  const [clMode, setClMode] = useState<'create' | 'edit'>('create');
-  const [clFormData, setClFormData] = useState<Partial<any>>({ clCode: '', clCodeNm: '', clCodeDc: '', useAt: 'Y' });
+    const handleDeleteDetail = async (code: string) => {
+        if (!selectedGroup) return;
+        
+        const ok = await confirm({
+            title: '상세 코드 명세 삭제',
+            message: '이 코드 정보를 데이터베이스에서 영구히 삭제하시겠습니까? 시스템 운영에 직접적인 영향을 줄 수 있습니다.',
+            variant: 'destructive',
+            confirmText: '영구 삭제 승인'
+        });
 
-  const [isGroupModalOpen, setIsGroupOpen] = useState(false);
-  const [groupMode, setGroupMode] = useState<'create' | 'edit'>('create');
-  const [groupFormData, setGroupFormData] = useState<Partial<any>>({ codeId: '', codeIdNm: '', codeIdDc: '', clCode: '', useAt: 'Y' });
-
-  const [expandedCl, setExpandedCl] = useState<Record<string, boolean>>({});
-
-  const toggleCl = (clCode: string) => {
-    setExpandedCl(prev => ({ ...prev, [clCode]: !prev[clCode] }));
-  };
-
-  const currentGroup = groups.find(g => g.codeId === selectedGroupId);
-
-  const handleOpenCreate = () => {
-    if (!selectedGroupId) return;
-    setMode('create');
-    setFormData({ codeId: selectedGroupId, code: '', codeNm: '', codeDc: '', useAt: 'Y' }); 
-    setIsOpen(true);
-  };
-
-  const handleOpenEdit = (detail: CommonCodeDetail) => {
-    setMode('edit');
-    setFormData(detail);
-    setIsOpen(true);
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await saveCodeDetail(null, { ...formData, isNew: mode === 'create' } as any); 
-      if (res.success) {
-        toast('성공적으로 저장되었습니다.', 'success');
-        setIsOpen(false);
-        router.refresh();
-      } else {
-        toast(res.message || '저장 중 오류가 발생했습니다.', 'error');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string, code: string) => {
-    const ok = await confirm({
-      title: '삭제 확인',
-      message: '정말로 상세코드를 삭제하시겠습니까?',
-      variant: 'destructive'
-    });
-    if (!ok) return;
-    const res = await deleteCodeDetail(null, { codeId: id, code });
-    if (res.success) {
-      toast('성공적으로 삭제되었습니다.', 'success');
-      router.refresh();
-    } else {
-      toast(res.message || '삭제 중 오류가 발생했습니다.', 'error');
-    }
-  };
-
-  const handleOpenClCreate = () => {
-    setClMode('create');
-    setClFormData({ clCode: '', clCodeNm: '', clCodeDc: '', useAt: 'Y' });
-    setIsClOpen(true);
-  };
-
-  const handleOpenClEdit = (cl: any) => {
-    setClMode('edit');
-    setClFormData(cl);
-    setIsClOpen(true);
-  };
-
-  const handleSaveCl = async () => {
-    setLoading(true);
-    try {
-      const res = await saveClCode(null, { ...clFormData, isNew: clMode === 'create' });
-      if (res.success) {
-        toast('분류코드가 저장되었습니다.', 'success');
-        setIsClOpen(false);
-        router.refresh();
-      } else {
-        toast(res.message || '저장 중 오류가 발생했습니다.', 'error');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteCl = async (clCode: string) => {
-    const ok = await confirm({ title: '분류코드 삭제', message: '이 작업은 되돌릴 수 없습니다.', variant: 'destructive' });
-    if (!ok) return;
-    const res = await deleteClCode(null, clCode);
-    if (res.success) {
-      toast('성공적으로 삭제되었습니다.', 'success');
-      router.refresh();
-    } else {
-      toast(res.message || '삭제 중 오류가 발생했습니다.', 'error');
-    }
-  };
-
-  const handleOpenGroupCreate = (clCode: string) => {
-    setGroupMode('create');
-    setGroupFormData({ codeId: '', codeIdNm: '', codeIdDc: '', clCode, useAt: 'Y' });
-    setIsGroupOpen(true);
-  };
-
-  const handleOpenGroupEdit = (group: any) => {
-    setGroupMode('edit');
-    setGroupFormData(group);
-    setIsGroupOpen(true);
-  };
-
-  const handleSaveGroup = async () => {
-    setLoading(true);
-    try {
-      const res = await saveCmmnCode(null, { ...groupFormData, isNew: groupMode === 'create' });
-      if (res.success) {
-        toast('그룹 코드가 저장되었습니다.', 'success');
-        setIsGroupOpen(false);
-        router.refresh();
-      } else {
-        toast(res.message || '저장 중 오류가 발생했습니다.', 'error');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteGroup = async (codeId: string) => {
-    const ok = await confirm({ title: '공통코드 삭제', message: '그룹 코드를 삭제하시겠습니까?', variant: 'destructive' });
-    if (!ok) return;
-    const res = await deleteCmmnCode(null, codeId);
-    if (res.success) {
-      toast('성공적으로 삭제되었습니다.', 'success');
-      router.refresh();
-    } else {
-      toast(res.message || '삭제 중 오류가 발생했습니다.', 'error');
-    }
-  };
-
-  const columns: Column<CommonCodeDetail>[] = [
-    { 
-      header: '상세 코드 프로토콜', 
-      accessor: (item: CommonCodeDetail) => (
-        <div className="flex items-center gap-4 py-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xl transition-all group-hover:rotate-12 duration-500">
-                <Box size={18} className="text-primary" />
-            </div>
-            <div className="flex flex-col">
-                <span className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono italic">RES_UID: {item.code}</span>
-                <span className="font-black text-foreground tracking-tighter uppercase leading-none">{item.code}</span>
-            </div>
-        </div>
-      ),
-      className: 'w-64'
-    },
-    { 
-      header: '코드 명세 (Identity)', 
-      accessor: (item: CommonCodeDetail) => (
-        <div className="flex flex-col gap-1">
-            <span className="font-black text-foreground tracking-tight text-md uppercase">{item.codeNm}</span>
-            <span className="text-[9px] font-bold text-muted-foreground/60 truncate block max-w-[250px] italic leading-none">{item.codeDc || 'NO_SPECIFICATION_GIVEN'}</span>
-        </div>
-      )
-    },
-    { 
-      header: '활성 프로토콜', 
-      accessor: (item: CommonCodeDetail) => <HubStatusBadge status={item.useAt === 'Y' ? "ACTIVE" : "INACTIVE"} />,
-      className: 'w-32'
-    },
-    {
-      header: 'MANAGEMENT',
-      className: 'text-right w-32',
-      accessor: (item: CommonCodeDetail) => (
-        <div className="flex justify-end gap-2 pr-4">
-          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)} className="h-10 w-10 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-100 transition-all font-black shadow-sm">
-            <Settings size={16} />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(item.codeId, item.code)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all shadow-sm">
-            <Trash2 size={16} />
-          </Button>
-        </div>
-      )
-    }
-  ];
-
-  return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="공통 표준 코드 거버넌스"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '코드 관리' }]}
-      />
-
-      <HubHeader 
-        title="Master" 
-        highlight="Registry" 
-        subtitle="전사 비즈니스 프로세스에 적용되는 공통 표준 데이터 및 도메인 코드 통합 센터" 
-        icon={Binary} 
-        actions={
-          <div className="flex gap-4 p-2 items-center">
-            <Button
-                variant="ghost"
-                onClick={() => router.refresh()}
-                className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
-            >
-                <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
-            </Button>
-            <Button
-              onClick={handleOpenClCreate}
-              size="lg"
-              className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
-            >
-              <Plus size={20} /> 신규 분류 도메인 생성
-              <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-            </Button>
-          </div>
+        if (ok) {
+            try {
+                const res = await deleteCodeDetailAction(null, { codeId: selectedGroup.codeId, code });
+                if (res.success) {
+                    toast(res.message, 'success');
+                } else {
+                    toast(res.message, 'error');
+                }
+            } catch (error) {
+                toast('데이터베이스 프로세싱 중 네트워크 오류가 발생했습니다.', 'error');
+            }
         }
-      />
+    };
 
-      <HubMetricGrid>
-        <HubMetricCard title="DOMAIN_CLUSTERS" value={clCodes.length} icon={Layers} color="indigo" />
-        <HubMetricCard title="GROUP_NODES" value={groups.length} icon={LayoutGrid} color="primary" />
-        <HubMetricCard title="SPEC_ENTITIES" value={details.length} icon={Box} color="emerald" status="ONLINE" />
-        <HubMetricCard title="DATA_INTEGRITY" value="100%" icon={ShieldCheck} color="amber" />
-      </HubMetricGrid>
+    const handleCreateDetail = () => {
+        if (!selectedGroup) {
+            toast('코드 명세를 등록할 그룹 코드를 먼저 선택하십시오.', 'info');
+            return;
+        }
+        setEditingDetail(null);
+        setIsOpen(true);
+    };
 
-      <div className="grid grid-cols-12 gap-12 min-h-[850px]">
-        {/* Domain Hierarchy Explorer */}
-        <div className="col-span-12 lg:col-span-4 h-full flex flex-col gap-8">
-            <div className="rounded-[4rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group border-none">
-                <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
-                    <Database size={240} className="text-primary" />
+    const handleSubmitDetail = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const res = await saveCodeDetailAction(null, {
+                ...data,
+                codeId: selectedGroup?.codeId,
+                isNew: !editingDetail
+            } as any);
+
+            if (res.success) {
+                toast(res.message, 'success');
+                setIsOpen(false);
+            } else {
+                toast(res.message, 'error');
+            }
+        } catch (error) {
+            toast('데이터 정합성 검증에 실패했습니다.', 'error');
+        }
+    };
+
+    const columns = [
+        {
+            header: '코드 식별자',
+            accessor: (item: CodeDetail) => (
+                <div className="flex items-center gap-4 py-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                        <Hash size={18} />
+                    </div>
+                    <div>
+                        <span className="font-black tracking-tighter text-foreground block text-sm uppercase leading-none">{item.code}</span>
+                        <span className="text-[8px] font-black text-muted-foreground tracking-[0.3em] mt-1.5 uppercase opacity-40">SCHEMA_IDENTIFIER</span>
+                    </div>
                 </div>
-                <div className="relative z-10 space-y-12">
-                    <div className="space-y-3">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
-                            <Layers size={32} className="text-primary" />
+            )
+        },
+        {
+            header: '논리 명칭',
+            accessor: (item: CodeDetail) => (
+                <div className="flex flex-col gap-1 py-1">
+                    <span className="text-sm font-black text-foreground uppercase tracking-tight">{item.codeNm}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground/50 tracking-wide line-clamp-1">{item.codeDc}</span>
+                </div>
+            )
+        },
+        {
+            header: '운영 상태',
+            accessor: (item: CodeDetail) => <HubStatusBadge status={item.useAt === 'Y' ? '사용중' : '미사용'} />,
+            className: 'w-32'
+        },
+        {
+            header: '편집 콘솔',
+            className: 'text-right w-32',
+            accessor: (item: CodeDetail) => (
+                <div className="flex justify-end gap-2 pr-4">
+                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-200 transition-all font-black" onClick={() => handleEditDetail(item)}>
+                        <Settings size={16} />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all" onClick={() => handleDeleteDetail(item.code)}>
+                        <Trash2 size={16} />
+                    </Button>
+                </div>
+            )
+        }
+    ];
+
+    return (
+        <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+            <PageHeader title="엔터프라이즈 코드 거버넌스" breadcrumbs={[{ label: '시스템관리' }, { label: '공통코드 관리' }]} />
+
+            <HubHeader 
+                title="데이터" 
+                highlight="공통 코드 관리" 
+                subtitle="전사 도메인에서 공유되는 핵심 파라미터 및 코드북 데이터 레이어를 중앙 제축 관리합니다." 
+                icon={Database} 
+                actions={
+                    <Button onClick={handleCreateDetail} size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2">
+                        <Plus size={18} /> 코드 명세 등록
+                    </Button>
+                }
+            />
+
+            <HubMetricGrid>
+                <HubMetricCard title="도메인 클러스터" value={initialClusters.length} icon={Layers} color="primary" />
+                <HubMetricCard title="그룹 시퀀스" value={initialClusters.reduce((acc, c) => acc + c.groups.length, 0)} icon={LayoutGrid} color="emerald" status="활성" />
+                <HubMetricCard title="전체 엔트리" value={2842} icon={FileJson} color="indigo" />
+                <HubMetricCard title="시스템 정합성" value="99.9%" icon={Zap} color="amber" />
+            </HubMetricGrid>
+
+            <div className="grid grid-cols-12 gap-12">
+                {/* Cluster Navigation */}
+                <div className="col-span-12 lg:col-span-4 space-y-8">
+                    <div className="rounded-[3.5rem] bg-white border-2 border-slate-100 shadow-xl p-8 space-y-8">
+                        <div className="flex items-center justify-between px-2">
+                            <h3 className="text-lg font-black tracking-tighter uppercase flex items-center gap-3">
+                                <Box className="text-primary" size={20} />
+                                도메인 클러스터
+                            </h3>
+                            <span className="text-[10px] font-black tracking-widest text-slate-300 uppercase">Archive v2.0</span>
                         </div>
-                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase font-mono">Domain<br />Architecture</h4>
+                        
+                        <div className="grid grid-cols-1 gap-4">
+                            {initialClusters.map((cluster) => (
+                                <button
+                                    key={cluster.id}
+                                    onClick={() => {
+                                        setSelectedCluster(cluster);
+                                        setSelectedGroup(null);
+                                    }}
+                                    className={cn(
+                                        "group w-full p-6 h-28 rounded-[2rem] border-2 transition-all flex items-center gap-6 relative overflow-hidden",
+                                        selectedCluster.id === cluster.id 
+                                            ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02]" 
+                                            : "bg-slate-50 border-slate-50 hover:bg-white hover:border-slate-200 text-slate-400 hover:text-slate-900"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg",
+                                        selectedCluster.id === cluster.id ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white"
+                                    )}>
+                                        <Layers size={22} />
+                                    </div>
+                                    <div className="flex flex-col text-left">
+                                        <span className={cn(
+                                            "text-[9px] font-black tracking-widest uppercase mb-1",
+                                            selectedCluster.id === cluster.id ? "text-white/40" : "text-slate-300"
+                                        )}>Domain Stack</span>
+                                        <span className="text-md font-black tracking-tighter uppercase leading-tight">{cluster.name}</span>
+                                    </div>
+                                    <div className={cn(
+                                        "absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end",
+                                        selectedCluster.id === cluster.id ? "opacity-100" : "opacity-0 group-hover:opacity-40"
+                                    )}>
+                                        <span className="text-xs font-black font-mono tracking-widest">{cluster.groups.length}</span>
+                                        <span className="text-[7px] font-bold uppercase tracking-widest opacity-40">Groups</span>
+                                    </div>
+                                    {selectedCluster.id === cluster.id && (
+                                        <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="space-y-6 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar-white">
-                        {clCodes.map(cl => (
-                            <div key={cl.clCode} className="group/cl space-y-4">
-                                <div 
-                                    className={cn(
-                                        "flex items-center justify-between p-6 rounded-3xl transition-all cursor-pointer relative overflow-hidden border-2",
-                                        expandedCl[cl.clCode] ? "bg-white text-slate-900 border-white shadow-2xl scale-[1.02]" : "bg-white/5 border-white/5 hover:bg-white/10 text-white/70"
-                                    )}
-                                    onClick={() => toggleCl(cl.clCode)}
-                                >
-                                    <div className="flex items-center gap-5 relative z-10">
-                                        <ChevronRight size={20} className={cn("transition-transform duration-500", expandedCl[cl.clCode] && "rotate-90 text-primary")} />
-                                        <div className="flex flex-col">
-                                            <span className="font-black tracking-tight text-md uppercase leading-none mb-1">{cl.clCodeNm}</span>
-                                            <span className={cn("text-[9px] font-black tracking-[0.4em] font-mono", expandedCl[cl.clCode] ? "text-slate-400" : "text-white/20 uppercase")}>{cl.clCode}</span>
-                                        </div>
+                    <div className="rounded-[3.5rem] bg-slate-900 p-10 text-white relative overflow-hidden shadow-2xl group">
+                        <div className="relative z-10 space-y-6">
+                            <div className="flex items-center gap-3">
+                                <Cpu size={20} className="text-primary animate-pulse" />
+                                <span className="text-[10px] font-black tracking-widest uppercase text-white/40">데이터 패브릭 분석</span>
+                            </div>
+                            <h4 className="text-2xl font-black tracking-tighter uppercase leading-none italic">Codex Engine</h4>
+                            <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase opacity-60">
+                                모든 정보 시스템의 메타데이터 및 유효성 검증 프로토콜을 관장하는 데이터 전송 시퀀스 엔진입니다.
+                            </p>
+                            <div className="pt-4 flex items-center gap-6">
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black text-white/30 tracking-widest uppercase">Latency</span>
+                                    <span className="text-lg font-black font-mono">2.4ms</span>
+                                </div>
+                                <div className="w-px h-8 bg-white/10" />
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black text-white/30 tracking-widest uppercase">Throughput</span>
+                                    <span className="text-lg font-black font-mono text-emerald-400">92k/s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="absolute right-0 bottom-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-16 -mb-16 group-hover:scale-150 transition-transform duration-1000" />
+                    </div>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="col-span-12 lg:col-span-8 flex flex-col gap-12">
+                    {/* Group Selection */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {selectedCluster.groups.map((group) => (
+                            <button
+                                key={group.codeId}
+                                onClick={() => setSelectedGroup(group)}
+                                className={cn(
+                                    "p-8 rounded-[2.5rem] border-2 transition-all flex items-center justify-between relative group/item overflow-hidden",
+                                    selectedGroup?.codeId === group.codeId 
+                                        ? "bg-white border-primary shadow-2xl ring-4 ring-primary/5" 
+                                        : "bg-slate-50 border-transparent hover:bg-white hover:border-slate-100"
+                                )}
+                            >
+                                <div className="flex items-center gap-6 relative z-10">
+                                    <div className={cn(
+                                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all bg-white shadow-inner border-2",
+                                        selectedGroup?.codeId === group.codeId ? "border-primary/20 text-primary shadow-primary/5" : "border-slate-100 text-slate-300 group-hover/item:border-slate-200 group-hover/item:text-slate-900"
+                                    )}>
+                                        <Tag size={20} />
                                     </div>
-                                    <div className={cn("flex items-center gap-1 transition-opacity", expandedCl[cl.clCode] ? "opacity-100" : "opacity-0 group-hover/cl:opacity-100")}>
-                                        <button onClick={(e) => { e.stopPropagation(); handleOpenClEdit(cl); }} className="p-2.5 hover:bg-slate-100 text-slate-400 hover:text-emerald-500 rounded-xl transition-all border border-transparent hover:border-slate-200"><Settings size={14}/></button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleOpenGroupCreate(cl.clCode); }} className="p-2.5 hover:bg-slate-100 text-slate-400 hover:text-indigo-500 rounded-xl transition-all border border-transparent hover:border-slate-200"><Plus size={14}/></button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteCl(cl.clCode); }} className="p-2.5 hover:bg-rose-50 text-rose-400 rounded-xl transition-all border border-transparent hover:border-rose-100"><Trash2 size={14}/></button>
+                                    <div className="flex flex-col text-left">
+                                        <span className="text-sm font-black tracking-tight text-slate-900 uppercase">{group.codeIdNm}</span>
+                                        <span className="text-[9px] font-mono font-black text-slate-400 tracking-widest uppercase">ID: {group.codeId}</span>
                                     </div>
                                 </div>
-
-                                <AnimatePresence>
-                                    {expandedCl[cl.clCode] && (
-                                        <motion.div 
-                                            initial={{ height: 0, opacity: 0, x: -10 }}
-                                            animate={{ height: "auto", opacity: 1, x: 0 }}
-                                            exit={{ height: 0, opacity: 0, x: -10 }}
-                                            className="ml-10 space-y-3"
-                                        >
-                                            {groups.filter(g => g.clCode === cl.clCode).map(group => (
-                                                <div 
-                                                    key={group.codeId}
-                                                    onClick={() => router.push(`/admin/system/codes?groupId=${group.codeId}`)}
-                                                    className={cn(
-                                                        "group/item flex items-center justify-between p-5 rounded-2xl border-2 transition-all cursor-pointer relative overflow-hidden",
-                                                        selectedGroupId === group.codeId 
-                                                            ? "bg-primary text-white border-primary shadow-2xl scale-[1.05]" 
-                                                            : "bg-white/5 border-white/5 hover:bg-white/10 text-white/50"
-                                                    )}
-                                                >
-                                                    <div className="flex items-center gap-4 relative z-10">
-                                                        <div className={cn("w-2 h-2 rounded-full", selectedGroupId === group.codeId ? "bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)] animate-pulse" : "bg-white/20")} />
-                                                        <span className="text-[11px] font-black tracking-widest leading-none uppercase">{group.codeIdNm}</span>
-                                                    </div>
-                                                    <div className={cn("flex items-center gap-1 transition-all", selectedGroupId === group.codeId ? "opacity-100 scale-110" : "opacity-0 group-hover/item:opacity-100")}>
-                                                        <button onClick={(e) => { e.stopPropagation(); handleOpenGroupEdit(group); }} className="p-2 hover:bg-white/20 rounded-lg transition-colors"><Settings size={12} /></button>
-                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group.codeId); }} className="p-2 hover:bg-rose-500/20 text-rose-200 rounded-lg transition-colors"><Trash2 size={12} /></button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {groups.filter(g => g.clCode === cl.clCode).length === 0 && (
-                                                <p className="py-4 text-center text-[9px] font-black text-white/10 tracking-[0.4em] uppercase">EMPTY_DOMAIN_CLUSTER</p>
-                                            )}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
+                                <div className={cn(
+                                    "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                                    selectedGroup?.codeId === group.codeId ? "bg-primary text-white scale-110 shadow-lg" : "bg-slate-100 text-slate-300 opacity-0 group-hover/item:opacity-100"
+                                )}>
+                                    <Maximize2 size={16} />
+                                </div>
+                            </button>
                         ))}
                     </div>
 
-                    <div className="pt-8 border-t border-white/5 flex items-center justify-between">
-                        <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 max-w-[200px]">
-                            * 도메인 아키텍처의 변경은 전사 시스템 데이터 무결성에 영향을 미칩니다.
-                        </p>
-                    </div>
+                    {/* Code Detail Table */}
+                    {selectedGroup && (
+                        <HubSectionCard title="도메인 코드 명세" description={`[${selectedGroup.codeIdNm}] 그룹에 속한 시스템 파라미터 상세 구성 내역입니다.`} icon={Fingerprint}>
+                            <StandardDataTable columns={columns} data={selectedGroup.details} emptyMessage="정의된 코드 상세 내역이 데이터베이스에 존재하지 않습니다." className="border-none bg-transparent" />
+                        </HubSectionCard>
+                    )}
                 </div>
             </div>
-        </div>
 
-        {/* Code Specification Matrix */}
-        <div className="col-span-12 lg:col-span-8 flex flex-col gap-10 h-full">
-            <HubSectionCard 
-                title="상세 코드 아키텍처 매트릭스" 
-                description="선택된 비즈니스 도메인 내의 정적 데이터 매트릭스 및 실시간 상태 프로브입니다." 
-                icon={SearchCode}
-                action={
-                    <div className="flex gap-4 p-2 items-center">
-                        <Button 
-                            variant="ghost"
-                            onClick={() => exportToCsv(details, [], 'master-code-registry')}
-                            className="h-12 px-6 rounded-2xl bg-slate-50 border-2 border-slate-100 text-slate-400 font-black text-[10px] tracking-widest uppercase hover:text-primary hover:bg-primary/5 transition-all shadow-sm group"
-                        >
-                            EXPORT_SPEC
-                        </Button>
-                        <Button
-                            onClick={handleOpenCreate}
-                            disabled={!selectedGroupId}
-                            className="h-12 px-8 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 disabled:opacity-20"
-                        >
-                            <Plus size={18} /> REGISTER_SPEC
+            <StandardModal
+                isOpen={isModalOpen}
+                onClose={() => setIsOpen(false)}
+                title={editingDetail ? '코드 아키텍처 편집' : '신규 명세 등록'}
+                maxWidth="3xl"
+                footer={
+                    <div className="flex w-full gap-4">
+                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
+                        <Button form="code-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group">
+                            <Zap size={18} className="group-hover:animate-pulse" /> {editingDetail ? '명세 변경 사항 저장' : '데이터 레이어 배포'}
                         </Button>
                     </div>
                 }
             >
-                <div className="relative min-h-[600px] flex flex-col">
-                    <StandardDataTable
-                        columns={columns}
-                        data={details}
-                        loading={loading}
-                        emptyMessage="조회된 상세 코드 데이터가 존재하지 않습니다."
-                        className="border-none bg-transparent flex-1"
-                    />
-
-                    {!selectedGroupId && (
-                        <div className="absolute inset-0 bg-white/40 backdrop-blur-md rounded-[3rem] flex items-center justify-center z-20 animate-in fade-in duration-700">
-                             <div className="text-center space-y-8 max-w-sm">
-                                <div className="w-24 h-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100 flex items-center justify-center mx-auto shadow-2xl">
-                                    <Monitor size={48} className="text-slate-100" />
+                <form id="code-form" onSubmit={handleSubmitDetail} className="space-y-10 pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="space-y-8">
+                            <FormField label="상위 그룹 코드 (Group ID)">
+                                <Input value={selectedGroup?.codeId} disabled className="h-14 rounded-2xl bg-slate-100 border-none font-mono text-sm font-black shadow-inner" />
+                            </FormField>
+                            <FormField label="코드 식별자 (KEY)" required description="그룹 내에서 고유한 식별 대상을 지정하십시오.">
+                                <div className="relative group/id">
+                                    <Key size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
+                                    <Input 
+                                        name="code" 
+                                        defaultValue={editingDetail?.code} 
+                                        required 
+                                        readOnly={!!editingDetail}
+                                        className="h-14 pl-16 rounded-2xl font-mono text-xs font-black shadow-inner"
+                                        placeholder="UNIQUE_CODE_ID"
+                                    />
                                 </div>
-                                <div className="space-y-4">
-                                    <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Matrix_Locked</h3>
-                                    <p className="text-[12px] font-black text-slate-400 tracking-[0.5em] uppercase leading-relaxed font-mono">Select_Domain_from_Hierarchy_to_Initialize_Probe</p>
-                                </div>
-                             </div>
+                            </FormField>
+                            <FormField label="논리 명칭 (LABEL)" required>
+                                <Input name="codeNm" defaultValue={editingDetail?.codeNm} required className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner" placeholder="코드 이름 입력" />
+                            </FormField>
                         </div>
-                    )}
-                </div>
-            </HubSectionCard>
-        </div>
-      </div>
-
-      {/* Detail Code Specification Modal */}
-      <StandardModal
-        isOpen={isModalOpen}
-        onClose={() => setIsOpen(false)}
-        title={mode === 'create' ? '신규 상세 코드 프로비저닝' : '코드 명세 아키텍처 수정'}
-        maxWidth="xl"
-        footer={
-          <div className="flex w-full gap-4">
-             <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">CANCEL</Button>
-             <Button onClick={handleSave} disabled={loading} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
-              <Zap size={18} className="group-hover:animate-pulse" /> {mode === 'create' ? 'DEPLOY_SPECIFICATION' : 'PATCH_SPECIFICATION'}
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-10 pt-4">
-            <div className="grid grid-cols-2 gap-8">
-                <FormField label="상세 코드 식별자 (Node UID)" required description="도메인 내에서 유일한 고정 식별자">
-                    <div className="relative group/code">
-                        <Binary size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/code:opacity-100 transition-opacity" />
-                        <Input
-                            placeholder="CODE_IDENTIFIER"
-                            value={formData.code}
-                            onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
-                            className="h-16 pl-16 rounded-2xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner"
-                        />
+                        
+                        <div className="space-y-8">
+                            <FormField label="운영 상태 Protocol">
+                                <Select name="useAt" defaultValue={editingDetail?.useAt || 'Y'}>
+                                    <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase shadow-inner">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-2xl shadow-xl">
+                                        <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase italic">--- 활성 (ACTIVE) ---</SelectItem>
+                                        <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500 italic">--- 비활성 (INACTIVE) ---</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
+                            <FormField label="상세 메타데이터 설명">
+                                <textarea name="codeDc" defaultValue={editingDetail?.codeDc} className="w-full min-h-[160px] p-6 rounded-[2rem] border-2 border-slate-100 bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="코드의 용도 및 정의 설명..." />
+                            </FormField>
+                        </div>
                     </div>
-                </FormField>
-                <FormField label="시스템 사용 상태 (Protocol Status)" description="현재 코드의 운영 서버 실시간 활성화 여부">
-                    <select 
-                        value={formData.useAt} 
-                        onChange={(e) => setFormData(prev => ({ ...prev, useAt: e.target.value as 'Y' | 'N' }))}
-                        className="w-full h-16 px-8 rounded-2xl border-2 border-slate-100 bg-slate-50/50 text-[11px] font-black tracking-widest uppercase focus:ring-8 focus:ring-primary/5 outline-none transition-all shadow-inner cursor-pointer"
-                    >
-                        <option value="Y">ACTIVE_RUNNING</option>
-                        <option value="N">SYSTEM_SUSPENDED</option>
-                    </select>
-                </FormField>
-            </div>
-
-            <FormField label="코드 레이블 명칭" required description="사용자 인터페이스에 노출될 명문화된 이름">
-                <div className="relative group/nm">
-                    <Pencil size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
-                    <Input
-                        placeholder="코드 명칭 입력"
-                        value={formData.codeNm}
-                        onChange={(e) => setFormData(prev => ({ ...prev, codeNm: e.target.value }))}
-                        className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
-                    />
-                </div>
-            </FormField>
-
-            <FormField label="상세 메타데이터 프로파일" description="코드의 기술적 용도 및 비즈니스 로직 명세">
-                <div className="relative group/dc">
-                    <FileCode size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
-                    <Textarea
-                        placeholder="데이터 명세 입력"
-                        value={formData.codeDc}
-                        onChange={(e) => setFormData(prev => ({ ...prev, codeDc: e.target.value }))}
-                        className="min-h-[160px] pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
-                    />
-                </div>
-            </FormField>
+                </form>
+            </StandardModal>
         </div>
-      </StandardModal>
-
-      {/* CL Code Modal */}
-      <StandardModal
-        isOpen={isClModalOpen}
-        onClose={() => setIsClOpen(false)}
-        title="도메인 분류 코드 관리"
-        maxWidth="lg"
-        footer={
-          <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsClOpen(false)} className="flex-1 h-11 rounded-xl">취소</Button>
-            <Button onClick={handleSaveCl} disabled={loading} className="flex-1 h-11 rounded-xl shadow-lg">저장</Button>
-          </div>
-        }
-      >
-        <div className="space-y-6 pt-4">
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="분류 코드 ID" required>
-              <Input value={clFormData.clCode} onChange={e => setClFormData({...clFormData, clCode: e.target.value})} readOnly={clMode === 'edit'} className="h-11 rounded-xl font-black italic bg-muted/50" />
-            </FormField>
-            <FormField label="코드 명칭" required>
-              <Input value={clFormData.clCodeNm} onChange={e => setClFormData({...clFormData, clCodeNm: e.target.value})} className="h-11 rounded-xl font-bold" />
-            </FormField>
-          </div>
-          <FormField label="분류 설명">
-            <Input value={clFormData.clCodeDc} onChange={e => setClFormData({...clFormData, clCodeDc: e.target.value})} className="h-11 rounded-xl" />
-          </FormField>
-        </div>
-      </StandardModal>
-
-      {/* Group Code Modal */}
-      <StandardModal
-        isOpen={isGroupModalOpen}
-        onClose={() => setIsGroupOpen(false)}
-        title="비즈니스 그룹 코드 관리"
-        maxWidth="lg"
-        footer={
-          <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsGroupOpen(false)} className="flex-1 h-11 rounded-xl">취소</Button>
-            <Button onClick={handleSaveGroup} disabled={loading} className="flex-1 h-11 rounded-xl shadow-lg">저장</Button>
-          </div>
-        }
-      >
-        <div className="space-y-6 pt-4">
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="공통코드 ID" required>
-              <Input value={groupFormData.codeId} onChange={e => setGroupFormData({...groupFormData, codeId: e.target.value})} readOnly={groupMode === 'edit'} className="h-11 rounded-xl font-black italic bg-muted/50" />
-            </FormField>
-            <FormField label="부모 분류코드">
-              <Input value={groupFormData.clCode} readOnly className="h-11 rounded-xl bg-muted/50 font-mono text-xs" />
-            </FormField>
-          </div>
-          <FormField label="그룹 코드 명칭" required>
-            <Input value={groupFormData.codeIdNm} onChange={e => setGroupFormData({...groupFormData, codeIdNm: e.target.value})} className="h-11 rounded-xl font-bold" />
-          </FormField>
-          <FormField label="그룹 상세 설명">
-            <Input value={groupFormData.codeIdDc} onChange={e => setGroupFormData({...groupFormData, codeIdDc: e.target.value})} className="h-11 rounded-xl text-muted-foreground" />
-          </FormField>
-        </div>
-      </StandardModal>
-    </div>
-  );
+    );
 }

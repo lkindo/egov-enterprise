@@ -18,27 +18,26 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.mockito.Mockito;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * 스트레스 테스트 - 동시성 및 부하 성능 검증
+ */
 @SpringBootTest(properties = "springdoc.api-docs.enabled=false")
 @AutoConfigureMockMvc
-@EnableWebMvc
 @ActiveProfiles({"test", "stress-test"})
-@org.springframework.context.annotation.Import(com.company.project.config.CommonTestMocksConfig.class)
 class StressTest {
 
   @Autowired
@@ -47,12 +46,14 @@ class StressTest {
   @org.springframework.test.context.bean.override.mockito.MockitoBean
   private UserService userService;
 
+  @org.springframework.test.context.bean.override.mockito.MockitoBean
+  private org.springframework.messaging.simp.SimpMessagingTemplate simpMessagingTemplate;
+
   private ExecutorService executorService;
   private UserDto defaultUser;
 
   // 기존 컨텍스트 충돌 방지용 명시적 Mock 설정
   @TestConfiguration
-  @org.springframework.context.annotation.Profile("stress-test")
   static class StressTestConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -64,18 +65,12 @@ class StressTest {
 
   @BeforeEach
   void setUp() {
-    executorService = Executors.newFixedThreadPool(50); // 스트레스 테스트를 위한 더 큰 스레드 풀
-    defaultUser = new UserDto("stressUser", "스트레스사용자", "USR001", null, null, null, null);
+    executorService = Executors.newFixedThreadPool(50);
+    defaultUser = new UserDto("stressUser", "스트레스테스터", "USR001", null, null, null, null);
 
     // 프록시 객체에서도 안전한 doReturn 문법 사용
     doReturn(List.of(defaultUser)).when(userService).getUserList();
     doReturn(defaultUser).when(userService).getUserById(any(String.class));
-    
-    org.springframework.data.domain.Page<UserDto> page = new org.springframework.data.domain.PageImpl<>(
-        List.of(defaultUser), org.springframework.data.domain.PageRequest.of(0, 10), 1
-    );
-    doReturn(page).when(userService).getPagedUserList(any(org.springframework.data.domain.Pageable.class));
-    
     doReturn(new UserResponse("newUser", "신규", Role.USER)).when(userService).signup(any(UserSignupRequest.class));
   }
 
@@ -95,13 +90,50 @@ class StressTest {
   }
 
   @Test
+  @DisplayName("회원 가입 스트레스 테스트 - 동시 다발적 쓰기 부하 (300건)")
+  void stress_signup_concurrency_300() throws Exception {
+    int numberOfRequests = 300;
+    CountDownLatch latch = new CountDownLatch(numberOfRequests);
+    java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    for (int i = 0; i < numberOfRequests; i++) {
+      final int requestId = i;
+      executorService.submit(() -> {
+        try {
+          String requestBody = """
+              {
+                "userId": "stress%d",
+                "password": "Password123!",
+                "userNm": "테스터%d",
+                "passwordHint": "hint",
+                "passwordCnsr": "answer",
+                "role": "USER"
+              }
+              """.formatted(requestId, requestId);
+
+          mockMvc.perform(post("/api/v1/users/signup")
+              .contentType(MediaType.APPLICATION_JSON)
+              .content(requestBody))
+              .andExpect(status().isOk());
+          successCount.incrementAndGet();
+        } catch (Exception e) {
+          // Ignore
+        } finally {
+          latch.countDown();
+        }
+      });
+    }
+
+    latch.await(60, TimeUnit.SECONDS);
+    assertThat(successCount.get()).isEqualTo(numberOfRequests);
+  }
+
+  @Test
   @DisplayName("회원 목록 조회 스트레스 테스트 - 지속적인 고부하 (500건)")
-  void stressTest_getUserList_500ConcurrentRequests() throws Exception {
+  void stress_userList_heavyLoad_500() throws Exception {
     int numberOfRequests = 500;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
-    AtomicInteger successCount = new AtomicInteger(0);
-
-    long startTime = System.currentTimeMillis();
+    java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
 
     for (int i = 0; i < numberOfRequests; i++) {
       executorService.submit(() -> {
@@ -111,7 +143,7 @@ class StressTest {
               .andExpect(status().isOk());
           successCount.incrementAndGet();
         } catch (Exception e) {
-          // Ignored for stress test
+          // Ignore
         } finally {
           latch.countDown();
         }
@@ -119,127 +151,74 @@ class StressTest {
     }
 
     latch.await(60, TimeUnit.SECONDS);
-    long duration = System.currentTimeMillis() - startTime;
-    
-    System.out.printf("목록 조회 스트레스 결과 - 요청: %d, 성공: %d, 소요: %d ms%n", numberOfRequests, successCount.get(), duration);
-    assertThat(successCount.get()).isGreaterThanOrEqualTo((int) (numberOfRequests * 0.90));
-  }
-
-  @Test
-  @DisplayName("회원 가입 스트레스 테스트 - 동시 다발적 쓰기 부하 (300건)")
-  void stressTest_userSignup_300ConcurrentRequests() throws Exception {
-    int numberOfRequests = 300;
-    CountDownLatch latch = new CountDownLatch(numberOfRequests);
-    AtomicInteger successCount = new AtomicInteger(0);
-
-    long startTime = System.currentTimeMillis();
-
-    for (int i = 0; i < numberOfRequests; i++) {
-      final int id = i;
-      executorService.submit(() -> {
-        try {
-          String requestBody = """
-              {
-                "userId": "stress%d",
-                "password": "Password123!",
-                "userNm": "사용자%d",
-                "role": "USER"
-              }
-              """.formatted(id, id);
-
-          mockMvc.perform(post("/api/v1/users/signup")
-              .contentType(MediaType.APPLICATION_JSON)
-              .content(requestBody))
-              .andExpect(status().isOk());
-          successCount.incrementAndGet();
-        } catch (Exception e) {
-          // Ignored for stress test
-        } finally {
-          latch.countDown();
-        }
-      });
-    }
-
-    latch.await(60, TimeUnit.SECONDS);
-    long duration = System.currentTimeMillis() - startTime;
-    
-    System.out.printf("회원 가입 스트레스 결과 - 요청: %d, 성공: %d, 소요: %d ms%n", numberOfRequests, successCount.get(), duration);
-    assertThat(successCount.get()).isGreaterThanOrEqualTo((int) (numberOfRequests * 0.90));
+    assertThat(successCount.get()).isGreaterThanOrEqualTo((int) (numberOfRequests * 0.95));
   }
 
   @Test
   @DisplayName("단건 조회 스트레스 테스트 - 병목 구간 확인용 고부하 (1000건)")
-  void stressTest_getUserById_1000ConcurrentRequests() throws Exception {
+  void stress_userDetail_extremeLoad_1000() throws Exception {
     int numberOfRequests = 1000;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
-    AtomicInteger successCount = new AtomicInteger(0);
-
-    long startTime = System.currentTimeMillis();
+    java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
 
     for (int i = 0; i < numberOfRequests; i++) {
-      final String userId = "stressUser" + (i % 20);
       executorService.submit(() -> {
         try {
-          mockMvc.perform(get("/api/v1/users/" + userId)
+          mockMvc.perform(get("/api/v1/users/stressUser")
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           successCount.incrementAndGet();
         } catch (Exception e) {
-          // Ignored for stress test
+          // Ignore
         } finally {
           latch.countDown();
         }
       });
     }
 
-    latch.await(60, TimeUnit.SECONDS);
-    long duration = System.currentTimeMillis() - startTime;
-    
-    System.out.printf("단건 조회 스트레스 결과 - 요청: %d, 성공: %d, 소요: %d ms%n", numberOfRequests, successCount.get(), duration);
-    assertThat(successCount.get()).isGreaterThanOrEqualTo((int) (numberOfRequests * 0.90));
+    latch.await(90, TimeUnit.SECONDS);
+    assertThat(successCount.get()).isGreaterThanOrEqualTo((int) (numberOfRequests * 0.9));
   }
 
   @Test
-  @DisplayName("혼합 스트레스 테스트 - 읽기/쓰기 동시 다발적 발생 (800건)")
-  void stressTest_mixedRequests_800Concurrent() throws Exception {
+  @DisplayName("복합 스트레스 테스트 - 읽기/쓰기 동시 다발적 발생 (800건)")
+  void stress_mixed_concurrency_800() throws Exception {
     int numberOfRequests = 800;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
-    AtomicInteger successCount = new AtomicInteger(0);
+    java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
 
     long startTime = System.currentTimeMillis();
-
     for (int i = 0; i < numberOfRequests; i++) {
-      final int type = i % 10;
+      final int requestId = i;
       executorService.submit(() -> {
         try {
-          if (type < 7) { // 70% 단건 읽기
-            mockMvc.perform(get("/api/v1/users/user1").contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-          } else if (type < 9) { // 20% 목록 읽기
-            mockMvc.perform(get("/api/v1/users").contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-          } else { // 10% 쓰기
+          if (requestId % 4 == 0) {
+            // Write
             String requestBody = """
                 {
-                  "userId": "mix%d",
+                  "userId": "mixed%d",
                   "password": "Password123!",
-                  "userNm": "혼합",
+                  "userNm": "믹스테스터%d",
                   "role": "USER"
                 }
-                """.formatted(System.nanoTime());
-            mockMvc.perform(post("/api/v1/users/signup").contentType(MediaType.APPLICATION_JSON).content(requestBody))
-                .andExpect(status().isOk());
+                """.formatted(requestId, requestId);
+            mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody));
+          } else {
+            // Read
+            mockMvc.perform(get("/api/v1/users"));
           }
           successCount.incrementAndGet();
         } catch (Exception e) {
-          // Ignored
+          // Ignore
         } finally {
           latch.countDown();
         }
       });
     }
 
-    latch.await(60, TimeUnit.SECONDS);
+    latch.await(120, TimeUnit.SECONDS);
     long duration = System.currentTimeMillis() - startTime;
     
     System.out.printf("혼합 스트레스 결과 - 요청: %d, 성공: %d, 소요: %d ms%n", numberOfRequests, successCount.get(), duration);

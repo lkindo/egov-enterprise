@@ -18,7 +18,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.mockito.Mockito;
@@ -41,9 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest(properties = "springdoc.api-docs.enabled=false")
 @AutoConfigureMockMvc
-@EnableWebMvc
 @ActiveProfiles({"test", "bottleneck-test"})
-@org.springframework.context.annotation.Import(com.company.project.config.CommonTestMocksConfig.class)
 class BottleneckIdentificationTest {
 
   @Autowired
@@ -52,12 +49,14 @@ class BottleneckIdentificationTest {
   @org.springframework.test.context.bean.override.mockito.MockitoBean
   private UserService userService;
 
+  @org.springframework.test.context.bean.override.mockito.MockitoBean
+  private org.springframework.messaging.simp.SimpMessagingTemplate simpMessagingTemplate;
+
   private ExecutorService executorService;
   private UserDto defaultUser;
 
   // 기존 컨텍스트 충돌 방지용 명시적 Mock 설정
   @TestConfiguration
-  @org.springframework.context.annotation.Profile("bottleneck-test")
   static class BottleneckTestConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
