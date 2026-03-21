@@ -31,6 +31,11 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Link from 'next/link';
 import { useMessage } from '@/hooks/useMessage';
 
+// Hub Common Components
+import { HubSummaryCard } from '@/components/ui/hub/HubSummaryCard';
+import { HubInsightBadge } from '@/components/ui/hub/HubInsightBadge';
+import { HubListCard } from '@/components/ui/hub/HubListCard';
+
 const DashboardVisitorChart = dynamic(
  () => import('@/app/components/dashboard/DashboardCharts').then((mod) => mod.DashboardVisitorChart),
  {
@@ -275,149 +280,11 @@ export default function UnifiedDashboardClient({
  <div className="flex items-center justify-between mb-8">
  <h3 className="text-[12px] font-black text-muted-foreground tracking-[0.4em] flex items-center gap-3">
  <div className="w-2 h-2 bg-primary rounded-full animate-ping" />
- 시스템 활성 지표
- </h3>
- <div className="text-[10px] font-bold text-primary bg-primary/5 px-3 py-1 rounded-full">{t('dashboard.liveBadge')}</div>
- </div>
- <DashboardPostChart data={bbsStats} />
- </motion.div>
- </div>
- </div>
- </motion.div>
- );
+ 시스템 활성 지�  );
 }
 
-interface SummaryCardProps {
- title: string;
- value: string | number;
- description: string;
- icon: React.ReactNode;
- trend: number;
- color: 'blue' | 'orange' | 'purple' | 'emerald';
-}
-
-function SummaryCard({ title, value, description, icon, trend, color }: SummaryCardProps) {
- const colorMap: Record<string, string> = {
- blue: "bg-blue-600/5 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 shadow-xl shadow-blue-500/5",
- orange: "bg-slate-900 text-white border-slate-800 shadow-2xl shadow-slate-900/20",
- purple: "bg-white dark:bg-white/5 text-slate-900 dark:text-white border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none",
- emerald: "bg-emerald-600/5 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 shadow-xl shadow-emerald-500/5"
- };
-
- const iconBgMap: Record<string, string> = {
- blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
- orange: "bg-primary/20 text-primary",
- purple: "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white",
- emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
- };
-
- return (
- <motion.div
- variants={{
- hidden: { scale: 0.9, opacity: 0 },
- visible: { scale: 1, opacity: 1 }
- }}
- whileHover={{ y: -8, transition: { duration: 0.2 } }}
- className={cn(
- "p-10 rounded-[3.5rem] border transition-all flex flex-col justify-between h-[320px] relative overflow-hidden group",
- colorMap[color] || colorMap['blue']
- )}
- >
- <div className="flex justify-between items-start relative z-10">
- <div className={cn("p-5 rounded-[1.5rem] transition-transform duration-500 group-hover:rotate-12", iconBgMap[color] || iconBgMap['blue'])}>
- {icon}
- </div>
- {trend !== 0 && (
- <div className={cn(
- "flex items-center gap-1 text-[11px] font-black px-4 py-1.5 rounded-full backdrop-blur-md border tabular-nums",
- trend > 0 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "bg-red-500/10 border-red-500/20 text-red-600"
- )}>
- {trend > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
- <span>{Math.abs(trend)}%</span>
- </div>
- )}
- </div>
-
- <div className="space-y-2 relative z-10">
- <p className="text-[11px] font-black tracking-[0.3em] opacity-60 mb-2">{title}</p>
- <h4 className="text-3xl font-black tracking-tighter leading-none tabular-nums">{value}</h4>
- <div className="pt-6">
- <div className="text-[11px] opacity-40 font-bold leading-relaxed max-w-[180px]">
- {description}
- </div>
- </div>
- </div>
-
- <div className="absolute -bottom-6 -left-6 opacity-[0.03] group-hover:opacity-[0.08] group-hover:rotate-12 transition-all duration-700 pointer-events-none">
- {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 140 }) : null}
- </div>
- </motion.div>
- );
-}
-
-interface DashboardListCardProps {
- title: string;
- items: DashboardTask[];
- icon: React.ReactNode;
- moreHref?: string;
- color: 'blue' | 'emerald';
-}
-
-function DashboardListCard({ title, items, icon, moreHref, color }: DashboardListCardProps) {
- const itemColorMap: Record<string, string> = {
- blue: "group-hover/item:border-blue-500/30 group-hover/item:bg-blue-50/50 dark:group-hover/item:bg-blue-500/5",
- emerald: "group-hover/item:border-emerald-500/30 group-hover/item:bg-emerald-50/50 dark:group-hover/item:bg-emerald-500/5"
- };
-
- return (
- <motion.div
- variants={{
- hidden: { y: 20, opacity: 0 },
- visible: { y: 0, opacity: 1 }
- }}
- className="border border-primary/5 rounded-[4rem] bg-card shadow-2xl shadow-black/5 flex flex-col h-[480px] group overflow-hidden"
- >
- <div className="px-10 py-10 border-b border-primary/5 flex items-center justify-between bg-card">
- <h3 className="font-black text-2xl flex items-center gap-4 tracking-tight">
- <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center",
- color === 'blue' ? "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400" : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
- )}>
- {icon}
- </div>
- {title}
- </h3>
- <Link
- href={moreHref || '#'}
- className="w-12 h-12 bg-muted/30 rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
- aria-label={`${title} 더보기`}
- >
- <ArrowRight size={20} />
- </Link>
- </div>
- <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar">
- {items && items.length > 0 ? (
- items.slice(0, 6).map((item: DashboardTask, idx: number) => (
- <motion.div
- key={`list-item-${title}-${item.id || item.nttId || idx}`}
- whileHover={{ x: 5 }}
- className={cn(
- "flex flex-col gap-2 p-6 rounded-[2rem] border border-transparent transition-all cursor-pointer group/item",
- itemColorMap[color] || itemColorMap['blue']
- )}
- >
- <div className="flex items-center justify-between">
- <span className="text-[10px] font-black text-muted-foreground/40 tracking-tight tabular-nums">
- {item.frstRegisterPnttmStr?.split(' ')[0] || '2026.02.17'}
- </span>
- <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-white/10 group-hover/item:bg-primary transition-colors" />
- </div>
- <span className="text-[15px] font-black text-foreground line-clamp-1 tracking-tight">
- {item.nttSj}
- </span>
- </motion.div>
- ))
- ) : (
- <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-30 gap-4">
+function DashboardSkeleton() {
+ems-center justify-center text-muted-foreground opacity-30 gap-4">
  <AlertCircle size={40} />
  <p className="text-sm font-black tracking-tight">데이터가 없습니다…</p>
  </div>

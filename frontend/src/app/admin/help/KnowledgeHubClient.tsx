@@ -77,7 +77,7 @@ export default function KnowledgeHubClient({ defaultTab = 'WIKI' }: { defaultTab
         <div className="relative z-10 text-center w-full max-w-4xl space-y-12">
           <div className="space-y-4">
             <h1 className="text-5xl font-black text-white tracking-tighter leading-none uppercase">Knowledge Portal</h1>
-            <p className="text-[11px] font-black text-white/30 tracking-[0.6em] uppercase">Enterprise Collective Intelligence Archive</p>
+            <p className="hub-label-accent text-white/30 !opacity-30">Enterprise Collective Intelligence Archive</p>
           </div>
           
           <div className="relative group max-w-2xl mx-auto w-full">
@@ -179,7 +179,7 @@ export default function KnowledgeHubClient({ defaultTab = 'WIKI' }: { defaultTab
 
         {/* Sidebar Insights */}
         <div className="col-span-12 lg:col-span-4 space-y-10">
-          <div className="hub-table-container p-12 space-y-10 bg-slate-900 border-none text-white relative overflow-hidden group shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)]">
+          <div className="hub-card-premium p-12 space-y-10 bg-slate-900 border-none text-white shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)]">
             <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-primary/20 blur-[100px] rounded-full group-hover:scale-150 transition-transform duration-[2s]" />
             <div className="relative z-10 flex items-center justify-between">
               <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center text-primary border border-white/5 shadow-2xl">
@@ -188,7 +188,7 @@ export default function KnowledgeHubClient({ defaultTab = 'WIKI' }: { defaultTab
               <HubStatusBadge label="HIGH INTEGRITY" variant="success" className="bg-emerald-500/20 border-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-[0.2em] uppercase" />
             </div>
             <div className="relative z-10 space-y-2">
-              <h3 className="text-[11px] font-black text-white/30 tracking-[0.6em] uppercase leading-none">Intelligence Score</h3>
+              <h3 className="hub-label-accent text-white/30 !opacity-30 leading-none">Intelligence Score</h3>
               <h4 className="text-5xl font-black tracking-tighter text-white leading-none tabular-nums">98.4<span className="text-xl opacity-30">%</span></h4>
               <p className="text-[10px] font-bold text-white/40 tracking-tight leading-relaxed max-w-[200px] mt-4">시스템 인텔리전스 분석 결과, 기술 문서의 최신화 비율이 '매우 높음' 상태입니다.</p>
             </div>
@@ -197,7 +197,7 @@ export default function KnowledgeHubClient({ defaultTab = 'WIKI' }: { defaultTab
             </Button>
           </div>
 
-          <div className="hub-table-container p-12 space-y-8 bg-white dark:bg-muted/10 relative overflow-hidden group border-border/50">
+          <div className="hub-card-premium p-12 space-y-8 border-border/50">
              <div className="flex items-center justify-between">
                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
                  <Zap size={24} />
@@ -238,7 +238,7 @@ function CategoryCard({ title, desc, icon, count, color, active, onClick }: any)
   return (
     <div 
       className={cn(
-        "hub-table-container p-10 space-y-8 group transition-all cursor-pointer relative overflow-hidden bg-white border-border/50",
+        "hub-card-premium p-10 space-y-8 group transition-all cursor-pointer border-border/50",
         active ? "bg-slate-900 border-slate-900 text-white shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] scale-[1.05] z-10" : "hover:-translate-y-2 hover:shadow-2xl hover:border-primary/20"
       )}
       onClick={onClick}

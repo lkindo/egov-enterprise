@@ -138,10 +138,29 @@
     font-family: var(--font-sans);
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
+    scrollbar-gutter: stable;
   }
 }
 
 @layer utilities {
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.1) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-primary/20 rounded-full hover:bg-primary/40 transition-colors;
+  }
+
   .surface-sunken { background-color: hsl(var(--surface-sunken)); }
   .surface-raised { background-color: hsl(var(--surface-raised)); }
   .standard-glass {
@@ -172,4 +191,27 @@
   .hub-table-container {
     @apply bg-card border-2 border-border p-4 lg:p-12 rounded-[var(--radius-hub-section)] shadow-sm relative overflow-hidden;
   }
+
+  .hub-card-premium {
+    @apply border-2 border-primary/5 rounded-[4rem] bg-card shadow-2xl shadow-primary/5 relative overflow-hidden transition-all duration-500 hover:shadow-primary/10;
+  }
+
+  .hub-badge-insight {
+    @apply inline-flex items-center gap-2 text-primary font-black text-[11px] tracking-[0.3em] bg-primary/10 w-fit px-4 py-1.5 rounded-full border border-primary/20 shadow-sm animate-in fade-in zoom-in-95 duration-700;
+  }
+
+  /* --- Premium Animations --- */
+  .premium-hover {
+    @apply hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 ease-out;
+  }
+
+  .premium-glow {
+    @apply shadow-[0_0_30px_-10px_rgba(var(--primary),0.2)] hover:shadow-[0_0_50px_-10px_rgba(var(--primary),0.4)];
+  }
+
+  /* --- Hub Semantic Utilities --- */
+  .hub-label-accent {
+     @apply text-[length:var(--font-size-hub-subtitle)] font-black tracking-[0.4em] uppercase opacity-30 group-focus-within:opacity-100 transition-opacity;
+  }
 }
+
