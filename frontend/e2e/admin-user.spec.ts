@@ -1,40 +1,24 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/base-test';
 
-test.describe('Admin User Management', () => {
-    test.beforeEach(async ({ page }) => {
-        // Bypass onboarding tour
-        await page.addInitScript(() => {
-            window.localStorage.setItem('egov_smart_tour_v1', 'true');
-        });
+test.describe('Admin User Management - Optimized with POM', () => {
+    test.use({ storageState: 'playwright/.auth/admin.json' });
 
-        // Ensure we explicitly load the homepage to allow React Context (useAuth) to hydrate from cookies
-        await page.goto('/', { waitUntil: 'networkidle' });
-    });
-
-    test('should display user list in admin panel', async ({ page }) => {
-        // Navigate to User Management
-        await page.goto('/admin/user/manage');
-
-        // Verify page header
-        await expect(page.getByText('기업 조직 허브')).toBeVisible();
-
-        // Check if user list exists (using a more generic selector for the Cards)
-        await expect(page.getByText(/ID 저장소|사용자/).first()).toBeVisible();
+    test('Modern HUB List Access', async ({ userAdminPage }) => {
+        await userAdminPage.goto();
+        await userAdminPage.verifyHUB();
 
         // At least some user should be present
-        const userItem = page.getByText(/webmaster|관리자/i);
+        const userItem = userAdminPage.page.getByText(/webmaster|관리자/i);
         await expect(userItem.first()).toBeVisible();
     });
 
-    test('should search users by name', async ({ page }) => {
-        await page.goto('/admin/user/manage');
+    test('Modern HUB User Search Flow', async ({ userAdminPage }) => {
+        await userAdminPage.goto();
 
-        // Fill search input
-        const searchInput = page.getByPlaceholder(/목록 검색.../);
-        await expect(searchInput).toBeVisible();
-        await searchInput.fill('관리자');
+        // Perform search
+        await userAdminPage.search('관리자');
 
         // Verify results - looking for the text in the list
-        await expect(page.getByText('관리자').first()).toBeVisible({ timeout: 15000 });
+        await expect(userAdminPage.page.getByText('관리자').first()).toBeVisible({ timeout: 15000 });
     });
 });

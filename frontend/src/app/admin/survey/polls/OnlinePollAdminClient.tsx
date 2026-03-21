@@ -50,7 +50,7 @@ export default function OnlinePollAdminClient({
 }) {
   const [loading, setLoading] = useState(false);
   const [polls, setPolls] = useState(initialPolls.list || []);
-  const [totalCount, setTotalCount] = useState(initialPolls.pagination.totalItems || 0);
+  const [totalCount, setTotalCount] = useState(initialPolls.total || 0);
   const [searchKeyword, setSearchKeyword] = useState('');
   
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -59,7 +59,7 @@ export default function OnlinePollAdminClient({
     pollBeginDe: format(new Date(), 'yyyy-MM-dd'),
     pollEndDe: format(new Date(new Date().setDate(new Date().getDate() + 7)), 'yyyy-MM-dd'),
     pollKindCode: 'POLL01',
-    useAt: 'Y',
+    pollDsuseYn: 'N',
     pollItems: [{ pollIemNm: '' }, { pollIemNm: '' }]
   });
 
@@ -68,7 +68,7 @@ export default function OnlinePollAdminClient({
     try {
       const res = await onlinePollAdminService.getPollList({ keyword: searchKeyword });
       setPolls(res.list);
-      setTotalCount(res.pagination.totalItems);
+      setTotalCount(res.total);
     } catch (error) {
       toast.error('설문 목록을 불러오지 못했습니다.');
     } finally {

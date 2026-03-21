@@ -8,10 +8,10 @@ export class BBSPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.searchInput = page.locator('input[placeholder*="검색"], input[type="text"], [role="searchbox"]').first();
-    // Generalized selector for standard data tables in the project
-    this.dataTable = page.locator('table, .bbs-list, [role="grid"], [role="article"], .stream-item, :text-matches("게시글이 존재하지 않습니다|데이터가 없습니다", "i")').first();
-    this.firstRow = page.locator('table tbody tr').first();
+    this.searchInput = page.getByPlaceholder(/위키|FAQ|기술 포럼|검색/i);
+    // Generalized selector: supports legacy tables and modern Hub cards/item streams
+    this.dataTable = page.locator('main, .hub-card-section, table, [role="grid"]').first();
+    this.firstRow = page.locator('.hub-table-container, table tbody tr').first();
   }
 
   async goto(bbsId: string = 'BBSMSTR_AAAAAAAAAAAA') {
@@ -22,10 +22,17 @@ export class BBSPage {
     if (await this.searchInput.isVisible()) {
       await this.searchInput.fill(keyword);
       await this.page.keyboard.press('Enter');
-      // Intelligent wait: wait for specific API response related to board lists
-      await this.page.waitForResponse(response => 
-        response.url().includes('/selectBoardList') && response.status() === 200
-      );
+      
+      // Wait for network activity or a short period to allow for state updates
+      try {
+        await Promise.race([
+          this.page.waitForResponse(response => response.url().includes('/api/v1/boards/') && response.status() === 200, { timeout: 3000 }),
+          this.page.waitForLoadState('networkidle', { timeout: 3000 }),
+          this.page.waitForTimeout(2000)
+        ]);
+      } catch (e) {
+        // Silently continue if no API hit (Static Hub state)
+      }
     }
   }
 

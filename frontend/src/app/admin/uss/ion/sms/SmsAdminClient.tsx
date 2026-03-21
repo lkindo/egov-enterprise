@@ -48,7 +48,7 @@ export default function SmsAdminClient({
 }) {
   const [loading, setLoading] = useState(false);
   const [smsList, setSmsList] = useState(initialSmsList.list || []);
-  const [totalCount, setTotalCount] = useState(initialSmsList.pagination.totalItems || 0);
+  const [totalCount, setTotalCount] = useState(initialSmsList.total || 0);
   const [searchKeyword, setSearchKeyword] = useState('');
   
   // Send SMS State
@@ -64,7 +64,7 @@ export default function SmsAdminClient({
     try {
       const res = await smsAdminService.getSmsList({ searchKeyword });
       setSmsList(res.list);
-      setTotalCount(res.pagination.totalItems);
+      setTotalCount(res.total);
     } catch (error) {
       toast.error('발송 내역을 불러오지 못했습니다.');
     } finally {
