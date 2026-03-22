@@ -110,13 +110,13 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
           </div>
           <div>
             <span className="font-black tracking-tighter text-foreground block text-lg uppercase leading-none">{item.insttCode}</span>
-            <span className="text-[9px] font-black text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-40">INSTITUTION_ID</span>
+            <span className="text-[9px] font-black text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-40">기관 식별자</span>
           </div>
         </div>
       )
     },
     { 
-      header: '기관 명칭 (Profile)', 
+      header: '기관 명칭 (프로필)', 
       accessor: (item: InstitutionCode) => (
         <span className="font-black text-foreground text-sm tracking-tight">{item.allInsttNm}</span>
       )
@@ -150,7 +150,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             : "bg-slate-100 text-slate-400 border-border/50"
         )}>
           {item.ablEnnc === '0' ? <Activity size={12} className="animate-pulse" /> : <ShieldCheck size={12} className="opacity-40" />}
-          <span className="text-[9px] font-black tracking-[0.2em] uppercase">{item.ablEnnc === '0' ? 'ACTIVE' : 'DELETED'}</span>
+          <span className="text-[9px] font-black tracking-[0.2em] uppercase">{item.ablEnnc === '0' ? '활성' : '삭제됨'}</span>
         </div>
       ),
       className: 'w-32 text-center'
@@ -185,9 +185,9 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       header: '동기화 구분', 
       accessor: (item: InstitutionCodeRecptn) => {
         const typeMap: any = {
-            '1': { label: 'NEW_RECORD', color: 'bg-primary/20 text-primary border-primary/20', icon: <Plus size={12} /> },
-            '2': { label: 'PATCH_UPDATE', color: 'bg-amber-500/20 text-amber-600 border-amber-500/20', icon: <RefreshCw size={12} /> },
-            '3': { label: 'DEEP_CLEAN', color: 'bg-rose-500/20 text-rose-600 border-rose-500/20', icon: <ShieldCheck size={12} /> }
+            '1': { label: '신규 등록', color: 'bg-primary/20 text-primary border-primary/20', icon: <Plus size={12} /> },
+            '2': { label: '패치 업데이트', color: 'bg-amber-500/20 text-amber-600 border-amber-500/20', icon: <RefreshCw size={12} /> },
+            '3': { label: '데이터 정제', color: 'bg-rose-500/20 text-rose-600 border-rose-500/20', icon: <ShieldCheck size={12} /> }
         };
         const config = typeMap[item.changeSeCode] || typeMap['1'];
         return (
@@ -209,7 +209,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
               : "bg-amber-500/10 text-amber-600 border-amber-500/20"
           )}>
             {item.processSe === '1' ? <CheckCircle2 size={12} /> : <Clock size={12} className="animate-spin duration-[3s]" />}
-            <span className="text-[9px] font-black tracking-[0.2em] uppercase">{item.processSe === '1' ? 'SYNCED' : 'PENDING'}</span>
+            <span className="text-[9px] font-black tracking-[0.2em] uppercase">{item.processSe === '1' ? '동기화됨' : '대기 중'}</span>
           </div>
       ),
       className: 'w-32'
@@ -236,8 +236,8 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       {/* Sub-Hub Mode Switcher */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-slate-100 pb-10">
         <div className="space-y-1">
-            <h4 className="text-3xl font-black tracking-tighter text-foreground uppercase">{activeTab === 'list' ? 'Institution Registry' : 'Synchronization Pipeline'}</h4>
-            <p className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">{activeTab === 'list' ? 'Active node inventory & identity management' : 'Real-time data ingestion & collision resolution'}</p>
+            <h4 className="text-3xl font-black tracking-tighter text-foreground uppercase">{activeTab === 'list' ? '기관 레지스트리' : '동기화 파이프라인'}</h4>
+            <p className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">{activeTab === 'list' ? '활성 노드 인벤토리 및 식별 체계 관리' : '실시간 데이터 수집 및 충돌 해결'}</p>
         </div>
         <div className="flex bg-slate-100/80 backdrop-blur-md p-2 rounded-2xl border border-slate-200/50 shadow-inner">
             <button 
@@ -260,10 +260,10 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       </div>
 
       <HubMetricGrid>
-        <HubMetricCard title="ENTITY_COUNT" value={total} icon={Database} color="primary" />
-        <HubMetricCard title="ACTIVE_NODES" value={data.filter(i => i.ablEnnc === '0').length || 1} icon={ShieldCheck} color="emerald" />
-        <HubMetricCard title="PENDING_COMMITS" value={receptionData.filter(i => i.processSe !== '1').length || 0} icon={Clock} color="amber" status={receptionData.filter(i => i.processSe !== '1').length > 0 ? "ALERT" : "NOMINAL"} />
-        <HubMetricCard title="SYNC_THROUGHPUT" value="SECURE" icon={Zap} color="indigo" />
+        <HubMetricCard title="엔티티 총합" value={total} icon={Database} color="primary" />
+        <HubMetricCard title="활성 노드 수" value={data.filter(i => i.ablEnnc === '0').length || 1} icon={ShieldCheck} color="emerald" />
+        <HubMetricCard title="대기 중인 커밋" value={receptionData.filter(i => i.processSe !== '1').length || 0} icon={Clock} color="amber" status={receptionData.filter(i => i.processSe !== '1').length > 0 ? "주의" : "정상"} />
+        <HubMetricCard title="동기화 처리량" value="안전" icon={Zap} color="indigo" />
       </HubMetricGrid>
 
       <HubSectionCard
@@ -276,7 +276,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             <div className="relative group/search max-w-xl">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                 <Input
-                  placeholder="SEARCH ACTIVE NODES OR PIPELINE RECORDS..."
+                  placeholder="활성 노드 및 파이프라인 기록 검색..."
                   value={searchWrd}
                   onChange={(e) => setSearchWrd(e.target.value)}
                   onKeyDown={(e) => {
@@ -289,7 +289,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             </div>
           </div>
           <Button variant="outline" size="lg" className="h-16 px-10 rounded-[1.25rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2 hover:bg-slate-50 transition-all group">
-            <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> DATA_EXPORT
+            <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 데이터 내보내기
           </Button>
         </div>
 
