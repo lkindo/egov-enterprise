@@ -25,7 +25,7 @@ test.describe('Security & RBAC Enforcement', () => {
 
     test('Admin user should access /admin routes freely', async ({ page }) => {
         // Authenticated as admin via global storageState
-        await page.goto('/admin/user/manage', { waitUntil: 'networkidle' });
+        await page.goto('/admin/user/manage', { waitUntil: 'domcontentloaded' });
         
         // Log current URL for debugging
         console.log(`>>> Admin page URL: ${page.url()}`);

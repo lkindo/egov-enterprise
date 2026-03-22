@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Collaboration Modules', () => {
     test.beforeEach(async ({ page }) => {
         await page.addInitScript(() => { window.localStorage.setItem('egov_smart_tour_v1', 'true'); });
-        await page.goto('/', { waitUntil: 'networkidle' });
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
     });
 
     const routes = [
@@ -14,7 +14,7 @@ test.describe('Collaboration Modules', () => {
     test('should navigate through various modules', async ({ page }) => {
         for (const route of routes) {
             console.log(`>>> Testing route: ${route}`);
-            await page.goto(route, { waitUntil: 'networkidle' });
+            await page.goto(route, { waitUntil: 'domcontentloaded' });
             await expect(page.locator('main')).toBeVisible();
         }
     });

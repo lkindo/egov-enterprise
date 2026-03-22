@@ -6,7 +6,7 @@ test.describe('Advanced Dashboard & Stats Interaction', () => {
         await page.addInitScript(() => {
             window.localStorage.setItem('egov_smart_tour_v1', 'true');
         });
-        await page.goto('/admin/stats', { waitUntil: 'networkidle' });
+        await page.goto('/admin/stats', { waitUntil: 'domcontentloaded' });
     });
 
     test('should handle refresh action and show loading state', async ({ page }) => {

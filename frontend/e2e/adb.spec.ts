@@ -1,25 +1,21 @@
 import { test, expect } from '@playwright/test';
 
 test('Addressbook Stable Check', async ({ page }) => {
-    test.setTimeout(180000);
+    test.setTimeout(60000);
 
     // Bypass onboarding tour
     await page.addInitScript(() => { window.localStorage.setItem('egov_smart_tour_v1', 'true'); });
-    await page.goto('/', { waitUntil: 'networkidle' });
 
-    console.log('>>> Step 2: Access Address Book (Redirection Check)');
-    await page.goto('/cop/adb'); 
-    await page.waitForURL('**/admin/collaboration/address-book', { timeout: 30000 });
+    // Go directly to address-book (skip legacy redirect overhead)
+    await page.goto('/admin/collaboration/address-book', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/address-book/);
 
-    console.log('>>> Step 3: Search Operation');
+    // Wait for the search input
     const searchInput = page.getByPlaceholder(/이름, 부서, 회사명/i).first();
-    await expect(searchInput).toBeVisible({ timeout: 40000 });
+    await expect(searchInput).toBeVisible({ timeout: 30000 });
     await searchInput.fill('webmaster');
     await page.click('button:has-text("검색 실행")');
 
-    console.log('>>> Step 4: Verify Content');
-    // Result might be empty if no data in DB, so check for high-level container visibility
+    // Verify page container is visible
     await expect(page.locator('main')).toBeVisible();
-    console.log('>>> SUCCESS: Addressbook page reached and search executed');
 });

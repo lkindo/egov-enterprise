@@ -9,7 +9,7 @@ test.describe('Public Page Health Check', () => {
 
     for (const pageUrl of publicPages) {
         test(`should be able to access ${pageUrl}`, async ({ page }) => {
-            await page.goto(pageUrl, { waitUntil: 'networkidle' });
+            await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
             // Instead of status 200, we check for layout presence
             await expect(page.locator('body')).toBeVisible();
         });

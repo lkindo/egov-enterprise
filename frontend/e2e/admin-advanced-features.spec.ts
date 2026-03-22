@@ -7,7 +7,7 @@ test.describe('Admin Advanced Features E2E Verification', () => {
       window.localStorage.setItem('egov_smart_tour_v1', 'true');
     });
     // Ensure we explicitly load the homepage once to allow React Context to hydrate
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
   });
 
   test.describe('Statistical Intelligence', () => {

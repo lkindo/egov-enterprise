@@ -8,19 +8,19 @@ test.describe('Admin Common Code - Ultimate CRUD', () => {
         await page.addInitScript(() => {
             window.localStorage.setItem('egov_smart_tour_v1', 'true');
         });
-        await page.goto('/', { waitUntil: 'networkidle' });
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
     });
 
     test('Full Flow', async ({ page }) => {
         // 2. Navigate to Common Code
-        await page.goto('/admin/system/common-code', { waitUntil: 'networkidle' });
+        await page.goto('/admin/system/common-code', { waitUntil: 'domcontentloaded' });
         console.log('>>> Arrived at Common Code page');
 
         // 4. Click any classification button if available
         const taxonomyBtn = page.getByRole('button').filter({ hasText: /공통코드|전자정부|부류/ }).first();
         if (await taxonomyBtn.isVisible()) {
             await taxonomyBtn.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('domcontentloaded');
         }
 
         // 5. Verify basic page structure first

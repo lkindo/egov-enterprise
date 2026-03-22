@@ -17,7 +17,7 @@ export class UserAdminPage {
   }
 
   async goto() {
-    await this.page.goto('/admin/user/manage', { waitUntil: 'networkidle' });
+    await this.page.goto('/admin/user/manage', { waitUntil: 'domcontentloaded' });
   }
 
   async search(keyword: string) {
@@ -25,7 +25,7 @@ export class UserAdminPage {
       await this.searchInput.fill(keyword);
       // Wait for network refresh or short delay for local mock data
       await this.page.waitForTimeout(1000);
-      await this.page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {});
+      await this.page.waitForLoadState('domcontentloaded', { timeout: 3000 }).catch(() => {});
     }
   }
 

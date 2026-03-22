@@ -17,7 +17,7 @@ test.describe('Workspace Flow', () => {
         const content = 'This is an automated test content.';
 
         console.log('>>> Step 1: Navigate to BBS List');
-        await page.goto(`/cop/bbs?bbsId=${bbsId}`, { waitUntil: 'networkidle' });
+        await page.goto(`/cop/bbs?bbsId=${bbsId}`, { waitUntil: 'domcontentloaded' });
         await expect(page.locator('main')).toBeVisible();
 
         console.log('>>> Step 2: Click Create Button');
@@ -39,7 +39,7 @@ test.describe('Workspace Flow', () => {
         await page.click('button[type="submit"]:has-text("등록"), button:has-text("저장")', { force: true });
 
         console.log('>>> Step 5: Verify Post in List');
-        await page.goto(`/cop/bbs?bbsId=${bbsId}`, { waitUntil: 'networkidle' });
+        await page.goto(`/cop/bbs?bbsId=${bbsId}`, { waitUntil: 'domcontentloaded' });
         await expect(page.getByText(title)).toBeVisible({ timeout: 20000 });
 
         console.log('>>> Step 6: Delete Post');

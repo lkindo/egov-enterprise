@@ -6,7 +6,7 @@ test.describe('Mobile Viewport Verification', () => {
 
     test.beforeEach(async ({ page }) => {
         await page.addInitScript(() => { window.localStorage.setItem('egov_smart_tour_v1', 'true'); });
-        await page.goto('/', { waitUntil: 'networkidle' });
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
     });
 
     test('dashboard widgets should stack vertically on mobile', async ({ page }) => {

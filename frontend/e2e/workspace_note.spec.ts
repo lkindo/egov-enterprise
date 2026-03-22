@@ -6,7 +6,7 @@ test.describe('Workspace Note Management', () => {
         await page.addInitScript(() => {
             window.localStorage.setItem('egov_smart_tour_v1', 'true');
         });
-        await page.goto('/note', { waitUntil: 'networkidle' });
+        await page.goto('/note', { waitUntil: 'domcontentloaded' });
     });
 
     test('should validate note form before sending', async ({ page }) => {

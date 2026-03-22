@@ -15,7 +15,7 @@ export class BBSPage {
   }
 
   async goto(bbsId: string = 'BBSMSTR_AAAAAAAAAAAA') {
-    await this.page.goto(`/admin/community/boards?bbsId=${bbsId}`, { waitUntil: 'networkidle' });
+    await this.page.goto(`/admin/community/boards?bbsId=${bbsId}`, { waitUntil: 'domcontentloaded' });
   }
 
   async search(keyword: string) {
@@ -27,7 +27,7 @@ export class BBSPage {
       try {
         await Promise.race([
           this.page.waitForResponse(response => response.url().includes('/api/v1/boards/') && response.status() === 200, { timeout: 3000 }),
-          this.page.waitForLoadState('networkidle', { timeout: 3000 }),
+          this.page.waitForLoadState('domcontentloaded', { timeout: 3000 }),
           this.page.waitForTimeout(2000)
         ]);
       } catch (e) {
@@ -40,7 +40,7 @@ export class BBSPage {
     await expect(this.firstRow).toBeVisible({ timeout: 15000 });
     await this.firstRow.click();
     // Wait for detail view navigation
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('domcontentloaded');
   }
 
   async verifyPageStructure() {
