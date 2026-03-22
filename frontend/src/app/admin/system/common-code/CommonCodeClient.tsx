@@ -126,7 +126,7 @@ export default function CommonCodeClient({ initialClusters }: CommonCodeClientPr
                     </div>
                     <div>
                         <span className="font-black tracking-tighter text-foreground block text-sm uppercase leading-none">{item.code}</span>
-                        <span className="text-[8px] font-black text-muted-foreground tracking-[0.3em] mt-1.5 uppercase opacity-40">SCHEMA_IDENTIFIER</span>
+                        <span className="text-[8px] font-black text-muted-foreground tracking-[0.3em] mt-1.5 uppercase opacity-40">시스템 식별자</span>
                     </div>
                 </div>
             )
@@ -193,7 +193,7 @@ export default function CommonCodeClient({ initialClusters }: CommonCodeClientPr
                                 <Box className="text-primary" size={20} />
                                 도메인 클러스터
                             </h3>
-                            <span className="text-[10px] font-black tracking-widest text-slate-300 uppercase">Archive v2.0</span>
+                            <span className="text-[10px] font-black tracking-widest text-slate-300 uppercase">아카이브 v2.0</span>
                         </div>
                         
                         <div className="grid grid-cols-1 gap-4">
@@ -221,7 +221,7 @@ export default function CommonCodeClient({ initialClusters }: CommonCodeClientPr
                                         <span className={cn(
                                             "text-[9px] font-black tracking-widest uppercase mb-1",
                                             selectedCluster.id === cluster.id ? "text-white/40" : "text-slate-300"
-                                        )}>Domain Stack</span>
+                                        )}>도메인 스택</span>
                                         <span className="text-md font-black tracking-tighter uppercase leading-tight">{cluster.name}</span>
                                     </div>
                                     <div className={cn(
@@ -229,7 +229,7 @@ export default function CommonCodeClient({ initialClusters }: CommonCodeClientPr
                                         selectedCluster.id === cluster.id ? "opacity-100" : "opacity-0 group-hover:opacity-40"
                                     )}>
                                         <span className="text-xs font-black font-mono tracking-widest">{cluster.groups.length}</span>
-                                        <span className="text-[7px] font-bold uppercase tracking-widest opacity-40">Groups</span>
+                                        <span className="text-[7px] font-bold uppercase tracking-widest opacity-40">그룹</span>
                                     </div>
                                     {selectedCluster.id === cluster.id && (
                                         <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />
@@ -245,18 +245,18 @@ export default function CommonCodeClient({ initialClusters }: CommonCodeClientPr
                                 <Cpu size={20} className="text-primary animate-pulse" />
                                 <span className="text-[10px] font-black tracking-widest uppercase text-white/40">데이터 패브릭 분석</span>
                             </div>
-                            <h4 className="text-2xl font-black tracking-tighter uppercase leading-none italic">Codex Engine</h4>
+                            <h4 className="text-2xl font-black tracking-tighter uppercase leading-none italic">코덱스 엔진</h4>
                             <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase opacity-60">
                                 모든 정보 시스템의 메타데이터 및 유효성 검증 프로토콜을 관장하는 데이터 전송 시퀀스 엔진입니다.
                             </p>
                             <div className="pt-4 flex items-center gap-6">
                                 <div className="flex flex-col">
-                                    <span className="text-[8px] font-black text-white/30 tracking-widest uppercase">Latency</span>
+                                    <span className="text-[8px] font-black text-white/30 tracking-widest uppercase">지연 시간</span>
                                     <span className="text-lg font-black font-mono">2.4ms</span>
                                 </div>
                                 <div className="w-px h-8 bg-white/10" />
                                 <div className="flex flex-col">
-                                    <span className="text-[8px] font-black text-white/30 tracking-widest uppercase">Throughput</span>
+                                    <span className="text-[8px] font-black text-white/30 tracking-widest uppercase">처리량</span>
                                     <span className="text-lg font-black font-mono text-emerald-400">92k/s</span>
                                 </div>
                             </div>
@@ -289,7 +289,7 @@ export default function CommonCodeClient({ initialClusters }: CommonCodeClientPr
                                     </div>
                                     <div className="flex flex-col text-left">
                                         <span className="text-sm font-black tracking-tight text-slate-900 uppercase">{group.codeIdNm}</span>
-                                        <span className="text-[9px] font-mono font-black text-slate-400 tracking-widest uppercase">ID: {group.codeId}</span>
+                                        <span className="text-[9px] font-mono font-black text-slate-400 tracking-widest uppercase">식별자: {group.codeId}</span>
                                     </div>
                                 </div>
                                 <div className={cn(
@@ -328,10 +328,10 @@ export default function CommonCodeClient({ initialClusters }: CommonCodeClientPr
                 <form id="code-form" onSubmit={handleSubmitDetail} className="space-y-10 pt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="space-y-8">
-                            <FormField label="상위 그룹 코드 (Group ID)">
+                            <FormField label="상위 그룹 코드 (그룹 ID)">
                                 <Input value={selectedGroup?.codeId} disabled className="h-14 rounded-2xl bg-slate-100 border-none font-mono text-sm font-black shadow-inner" />
                             </FormField>
-                            <FormField label="코드 식별자 (KEY)" required description="그룹 내에서 고유한 식별 대상을 지정하십시오.">
+                            <FormField label="코드 식별자 (키)" required description="그룹 내에서 고유한 식별 대상을 지정하십시오.">
                                 <div className="relative group/id">
                                     <Key size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                                     <Input 
@@ -340,24 +340,24 @@ export default function CommonCodeClient({ initialClusters }: CommonCodeClientPr
                                         required 
                                         readOnly={!!editingDetail}
                                         className="h-14 pl-16 rounded-2xl font-mono text-xs font-black shadow-inner"
-                                        placeholder="UNIQUE_CODE_ID"
+                                        placeholder="고유 식별자 입력"
                                     />
                                 </div>
                             </FormField>
-                            <FormField label="논리 명칭 (LABEL)" required>
+                            <FormField label="논리 명칭 (레이블)" required>
                                 <Input name="codeNm" defaultValue={editingDetail?.codeNm} required className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner" placeholder="코드 이름 입력" />
                             </FormField>
                         </div>
                         
                         <div className="space-y-8">
-                            <FormField label="운영 상태 Protocol">
+                            <FormField label="운영 상태 프로토콜">
                                 <Select name="useAt" defaultValue={editingDetail?.useAt || 'Y'}>
                                     <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase shadow-inner">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-2xl shadow-xl">
-                                        <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase italic">--- 활성 (ACTIVE) ---</SelectItem>
-                                        <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500 italic">--- 비활성 (INACTIVE) ---</SelectItem>
+                                        <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase italic">--- 활성 ---</SelectItem>
+                                        <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500 italic">--- 비활성 ---</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </FormField>
