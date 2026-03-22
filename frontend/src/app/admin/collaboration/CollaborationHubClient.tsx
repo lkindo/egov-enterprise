@@ -205,7 +205,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
  <Input 
  className="pl-12 h-14 bg-white border-slate-100 rounded-2xl text-sm font-bold shadow-sm" 
- placeholder="목록 검색..." 
+ placeholder="이름, 부서, 회사명 검색..." 
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}
  />

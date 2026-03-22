@@ -14,6 +14,19 @@ export function middleware(request: NextRequest) {
 
  console.log(`[Middleware] Path: ${pathname} | hasToken: ${hasToken} | TokenPrefix: ${accessToken?.substring(0, 10)}... | Role: ${userRole}`);
 
+ // 0. 레거시 경로 리다이렉션 (하위 호환성 및 E2E 안정성)
+ const legacyMap: Record<string, string> = {
+ '/cop/adb': '/admin/collaboration/address-book',
+ '/cop/bbs': '/admin/community/boards',
+ '/cop/cmy': '/admin/community/clubs', // 필요 시 적절한 경로로 수정
+ '/cop/smt/sim': '/admin/work-hub',
+ };
+
+ const legacyTarget = Object.keys(legacyMap).find(key => pathname.startsWith(key));
+ if (legacyTarget) {
+ return NextResponse.redirect(new URL(legacyMap[legacyTarget], request.url));
+ }
+
  // 1. 로그인 여부 확인
  if (!hasToken) {
  const loginUrl = new URL('/login', request.url);

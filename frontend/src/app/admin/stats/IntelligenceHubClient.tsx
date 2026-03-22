@@ -76,11 +76,11 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  <BarChart3 size={28} className="text-white" />
  </div>
  <div>
- <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
- Intelligence <span className="text-primary ">Hub</span>
- </h2>
+  <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
+  Intelligence <span className="text-primary">Hub</span>
+  </h2>
  <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
- 거버넌스 인사이트 및 데이터 분석
+ 인텔리전스 허브 • 거버넌스 인사이트 및 데이터 분석
  </p>
  </div>
  </div>
