@@ -12,12 +12,15 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.springframework.context.annotation.Profile;
+
 /**
  * Enterprise Rate Limiting Filter
  * Limits requests per IP address to prevent brute-force and DoS attacks.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
+@Profile("!stress-test & !bottleneck-test")
 public class RateLimitFilter implements Filter {
 
     private static final int MAX_REQUESTS_PER_MINUTE = 200;

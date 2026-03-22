@@ -433,14 +433,14 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                 onClick={handleExpandAll}
                 className="h-11 px-4 rounded-xl font-black text-[10px] tracking-widest uppercase hover:bg-white group transition-all"
               >
-                <ChevronsUpDown size={16} className="group-hover:scale-110" /> EXPAND_ALL
+                <ChevronsUpDown size={16} className="group-hover:scale-110" /> 전체 펼치기
               </Button>
               <Button
                 variant="ghost"
                 onClick={handleCollapseAll}
                 className="h-11 px-4 rounded-xl font-black text-[10px] tracking-widest uppercase hover:bg-white group transition-all"
               >
-                <ChevronsDownUp size={16} className="group-hover:scale-110" /> COLLAPSE_ALL
+                <ChevronsDownUp size={16} className="group-hover:scale-110" /> 전체 접기
               </Button>
             </div>
 
@@ -449,7 +449,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                 onClick={handleSaveChanges}
                 className="bg-emerald-600 text-white hover:bg-emerald-700 h-14 px-8 rounded-2xl font-black text-[11px] tracking-widest uppercase gap-3 shadow-2xl animate-pulse"
               >
-                <Save size={20} /> APPLY_LAYOUT
+                <Save size={20} /> 레이아웃 적용
               </Button>
             )}
             <Button
@@ -464,10 +464,10 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="REGISTERED_NODES" value={initialMenus.length} icon={Database} color="primary" />
-        <HubMetricCard title="HIERARCHY_DEPTH" value={3} icon={LayoutGrid} color="indigo" />
-        <HubMetricCard title="ACTIVE_ROUTES" value={initialMenus.filter(m => !!m.modernRoute).length} icon={Network} color="emerald" />
-        <HubMetricCard title="SYNC_INTEGRITY" value="OPTIMAL" icon={ShieldCheck} color="amber" />
+        <HubMetricCard title="등록된_노드_수" value={initialMenus.length} icon={Database} color="primary" />
+        <HubMetricCard title="계층_깊이" value={3} icon={LayoutGrid} color="indigo" />
+        <HubMetricCard title="활성_경로_수" value={initialMenus.filter(m => !!m.modernRoute).length} icon={Network} color="emerald" />
+        <HubMetricCard title="동기화_무결성" value="최적" icon={ShieldCheck} color="amber" />
       </HubMetricGrid>
 
       <HubSectionCard title="시스템 네비게이션 트리" description="최대 3단계의 계층 구조를 지원합니다. 드래그 앤 드롭으로 메뉴 구조를 설계하십시오." icon={SearchCode}>
@@ -495,7 +495,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               <Plus size={32} />
             </div>
             <div className="text-center space-y-2">
-                <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">Architecture Assembly</p>
+                <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">아키텍처 어셈블리</p>
                 <p className="text-sm font-black text-muted-foreground tracking-tight group-hover:text-foreground transition-colors uppercase">드래그한 요소를 여기에 놓으면 '최상위' 노드로 프로모션됩니다</p>
             </div>
           </div>
@@ -509,12 +509,12 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">CANCEL</Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
             <Button 
                 onClick={() => handleSave()} 
                 className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-xl"
             >
-              {mode === 'create' ? 'ARCHITECT_NODE' : 'UPDATE_STRUCTURE'}
+              {mode === 'create' ? '노드 설계' : '구조 업데이트'}
             </Button>
           </div>
         }
@@ -536,7 +536,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               </div>
             </FormField>
 
-            <FormField label="표열 순서 (Priority)" required>
+            <FormField label="표열 순서 (우선순위)" required>
               <Input
                 type="number"
                 value={formData.menuOrdr}
@@ -546,7 +546,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
             </FormField>
           </div>
 
-          <FormField label="연동 소프트웨어 자산 (Target Module)">
+          <FormField label="연동 소프트웨어 자산 (대상 모듈)">
             <Select
               value={formData.progrmFileNm || ''}
               onValueChange={(v) => setFormData({ ...formData, progrmFileNm: v })}
@@ -564,7 +564,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
             </Select>
           </FormField>
 
-          <FormField label="라우팅 엔드포인트 (Route Path)" description="전자정부 표준 프레임워크 기반 프론트엔드 라우트 경로">
+          <FormField label="라우팅 엔드포인트 (경로)" description="전자정부 표준 프레임워크 기반 프론트엔드 라우트 경로">
             <div className="relative group/route">
                 <Network size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/route:opacity-100 transition-opacity" />
                 <Input

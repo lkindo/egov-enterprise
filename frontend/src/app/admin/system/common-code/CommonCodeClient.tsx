@@ -42,16 +42,55 @@ import {
     saveCodeDetail as saveCodeDetailAction,
     deleteCodeDetail as deleteCodeDetailAction
 } from '@/app/actions/codeActions';
+import { CmmnClCode, CmmnCode } from '@/types/system';
 
 interface CommonCodeClientProps {
-    initialClusters: DomainCluster[];
+    clCodes: any[];
+    groups: any[];
+    details: any[];
+    selectedGroupId: string | null;
 }
 
-export default function CommonCodeClient({ initialClusters }: CommonCodeClientProps) {
+export default function CommonCodeClient({ 
+    clCodes, 
+    groups, 
+    details, 
+    selectedGroupId 
+}: CommonCodeClientProps) {
     const { toast } = useToast();
     const confirm = useConfirm();
-    const [selectedCluster, setSelectedCluster] = useState<DomainCluster>(initialClusters[0]);
-    const [selectedGroup, setSelectedGroup] = useState<GroupCode | null>(null);
+
+    const initialClusters: DomainCluster[] = React.useMemo(() => {
+        return clCodes.map(cl => ({
+            ...(cl as CmmnClCode),
+            id: cl.clCode,
+            name: cl.clCodeNm,
+            icon: Layers,
+            groups: groups
+                .filter(g => g.clCode === cl.clCode)
+                .map(g => ({
+                    ...(g as CmmnCode),
+                    id: g.codeId,
+                    codeId: g.codeId,
+                    name: g.codeIdNm,
+                    icon: LayoutGrid,
+                    description: g.codeIdDc,
+                    details: g.codeId === selectedGroupId ? details : []
+                }))
+        }));
+    }, [clCodes, groups, details, selectedGroupId]);
+
+    const [selectedCluster, setSelectedCluster] = useState<DomainCluster>(
+        initialClusters[0] || { 
+            id: '', name: '전체', groups: [], 
+            clCode: '', clCodeNm: '', clCodeDc: '', useAt: 'N' 
+        }
+    );
+    const [selectedGroup, setSelectedGroup] = useState<GroupCode | null>(
+        selectedGroupId 
+            ? initialClusters.flatMap(c => c.groups).find(g => g.codeId === selectedGroupId) || null 
+            : null
+    );
     const [isModalOpen, setIsOpen] = useState(false);
     const [editingDetail, setEditingDetail] = useState<CodeDetail | null>(null);
 

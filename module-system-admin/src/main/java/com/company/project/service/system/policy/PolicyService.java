@@ -28,7 +28,7 @@ public class PolicyService {
      * 정책 조회 (현재는 미구현 상태이므로 빈 Optional 반환)
      */
     public Optional<Policy> getPolicy(String type) {
-        // TODO: 향후 DB 연동 시 각 정책 타입별 데이터 로드 구현 필요.
+        // TODO: PolicyRepository 연동 필요 (현재 LoginPolicy 외 일반 정책 테이블 미정의 상태)
         return Optional.empty();
     }
 
@@ -36,6 +36,6 @@ public class PolicyService {
      * 정책 수정 구현부 (현재는 로깅만 함)
      */
     public void updatePolicy(String type, String title, String content) {
-        // TODO: 향후 DB 수정 로직 구현 필요.
+        // TODO: DB 저장 로직 구현 (정책 타입별 유효성 검증 포함)
     }
 }

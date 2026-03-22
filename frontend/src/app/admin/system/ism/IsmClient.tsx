@@ -106,7 +106,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
       className: 'w-56'
     },
     {
-      header: '프로토콜 상태',
+      header: '결재 대기 (PENDING)',
       accessor: (item: InfrmlSanctn) => {
           let status: 'ACTIVE' | 'DISABLED' | 'INACTIVE' = 'INACTIVE';
           if (item.confmAt === 'Y') status = 'ACTIVE';
@@ -117,7 +117,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
       className: 'w-48'
     },
     {
-      header: 'MANAGEMENT',
+      header: '관리',
       className: 'text-right w-48',
       accessor: (item: InfrmlSanctn) => (
         <div className="flex justify-end gap-3 pr-4">
@@ -126,7 +126,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
               onClick={() => handleOpenConfirm(item)}
               className="h-10 px-6 bg-slate-900 text-white rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl shadow-slate-900/10 flex items-center gap-2 group"
             >
-              <ShieldCheck size={16} className="group-hover:rotate-12 transition-transform" /> EXECUTE_APPROVAL
+              <ShieldCheck size={16} className="group-hover:rotate-12 transition-transform" /> 승인 실행
             </Button>
           )}
           <Button
@@ -150,15 +150,15 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
       />
 
       <HubHeader 
-        title="Approval" 
-        highlight="Fabric" 
+        title="결재" 
+        highlight="패브릭" 
         subtitle="규격화되지 않은 비정형 결재 요청의 유연한 검증 및 전사 의사결정 시퀀스 통합 관리" 
         icon={ShieldCheck} 
         actions={
           <div className="flex gap-4 p-2 items-center">
             <div className="px-6 py-3 bg-emerald-50 border-2 border-emerald-100 rounded-2xl flex items-center gap-4 shadow-sm">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-[10px] font-black text-emerald-700 tracking-widest uppercase">Decision_Hub: Online</span>
+              <span className="text-[10px] font-black text-emerald-700 tracking-widest uppercase">의사결정_허브: 온라인</span>
             </div>
             <Button
                 variant="ghost"
@@ -172,10 +172,10 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="PENDING_SEQUENCES" value={ismList.filter(i => i.confmAt === 'N' || i.confmAt === 'A').length} icon={Clock} color="amber" status="ATTENTION" />
-        <HubMetricCard title="CONFIRMED_ASSETS" value={ismList.filter(i => i.confmAt === 'Y').length} icon={CheckCircle2} color="emerald" status="OPTIMAL" />
-        <HubMetricCard title="REJECTED_LOGS" value={ismList.filter(i => i.confmAt === 'R').length} icon={XCircle} color="rose" />
-        <HubMetricCard title="TOTAL_DECISIONS" value={ismList.length} icon={FileText} color="primary" />
+        <HubMetricCard title="결재_대기_시퀀스" value={ismList.filter(i => i.confmAt === 'N' || i.confmAt === 'A').length} icon={Clock} color="amber" status="주의" />
+        <HubMetricCard title="승인된_자산_수" value={ismList.filter(i => i.confmAt === 'Y').length} icon={CheckCircle2} color="emerald" status="최적" />
+        <HubMetricCard title="반려_로그_수" value={ismList.filter(i => i.confmAt === 'R').length} icon={XCircle} color="rose" />
+        <HubMetricCard title="전체_의사결정_수" value={ismList.length} icon={FileText} color="primary" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
@@ -190,7 +190,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
                         <div className="w-20 h-20 rounded-[2rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                             <Cpu size={36} className="text-primary" />
                         </div>
-                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">Immutable<br />Decision Ledger</h4>
+                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">불변<br />의결 원장</h4>
                     </div>
                     
                     <p className="text-sm text-slate-400 font-bold leading-relaxed italic border-l-4 border-primary pl-8">
@@ -199,11 +199,11 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
 
                     <div className="space-y-6 pt-12 border-t border-white/5">
                         <div className="flex items-center justify-between group/stat">
-                            <span className="text-[10px] font-black text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">Logic_Hub_Integrity</span>
-                            <span className="text-lg font-black font-mono tracking-tighter text-emerald-500">NOMINAL</span>
+                            <span className="text-[10px] font-black text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">로직_허브_무결성</span>
+                            <span className="text-lg font-black font-mono tracking-tighter text-emerald-500">정상</span>
                         </div>
                         <div className="flex items-center justify-between group/stat">
-                            <span className="text-[10px] font-black text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-amber-500 transition-colors">Security_Protocol</span>
+                            <span className="text-[10px] font-black text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-amber-500 transition-colors">보안_프로토콜</span>
                             <span className="text-lg font-black font-mono tracking-tighter">ENF_2.0</span>
                         </div>
                     </div>
@@ -234,18 +234,18 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">CANCEL_PROBE</Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">조사_취소</Button>
             <Button 
                 onClick={() => handleProcess('R')}
                 className="flex-1 h-16 bg-rose-50 text-rose-500 rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-rose-500 hover:text-white transition-all active:scale-95 border-2 border-rose-100 flex items-center justify-center gap-3"
             >
-              <XCircle size={18} strokeWidth={3} /> REJECT_SEQUENCE
+              <XCircle size={18} strokeWidth={3} /> 시퀀스 반려
             </Button>
             <Button
                 onClick={() => handleProcess('C')}
                 className="flex-[2] h-16 bg-slate-900 border-none text-white rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-2 hover:bg-primary transition-all active:scale-95 group"
             >
-              <CheckCircle2 size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> COMMIT_APPROVAL
+              <CheckCircle2 size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 승인
             </Button>
           </div>
         }

@@ -173,8 +173,8 @@ export default function MenuByAuthorityPage() {
       />
 
       <HubHeader 
-        title="Hierarchy" 
-        highlight="Audit" 
+        title="계층 구조" 
+        highlight="감사" 
         subtitle="특정 보안 역할(Role)에 할당된 기능적 노드 계층 구조 및 접근 경로 매트릭스 시각화" 
         icon={Workflow} 
         actions={
@@ -194,10 +194,10 @@ export default function MenuByAuthorityPage() {
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="ACTIVE_SCHEMAS" value={authorities.length} icon={Database} color="primary" />
-        <HubMetricCard title="NODES_IN_SCOPE" value={rawMenus.length} icon={LayoutGrid} color="amber" />
-        <HubMetricCard title="HIERARCHY_DEPTH" value={selectedAuthority ? "SECTOR_READY" : "IDLE"} icon={Compass} color="indigo" />
-        <HubMetricCard title="SECURITY_STATE" value="OPTIMAL" icon={Lock} color="emerald" status="SYNCED" />
+        <HubMetricCard title="활성_스키마_수" value={authorities.length} icon={Database} color="primary" />
+        <HubMetricCard title="범위_내_노드_수" value={rawMenus.length} icon={LayoutGrid} color="amber" />
+        <HubMetricCard title="계층_깊이" value={selectedAuthority ? "섹터_준비" : "대기"} icon={Compass} color="indigo" />
+        <HubMetricCard title="보안_상태" value="최적" icon={Lock} color="emerald" status="동기화됨" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
@@ -206,7 +206,7 @@ export default function MenuByAuthorityPage() {
             <HubSectionCard title="역할 식별 데이터 선택" description="분석할 보안 컨텍스트 또는 시스템 그룹 권한을 식별하세요." icon={Lock}>
                 <div className="space-y-8">
                     <div className="space-y-4 pt-4">
-                        <label className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase ml-2">Access Role Specification</label>
+                        <label className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase ml-2">보안 역할 사양 (Access Role)</label>
                         <Select value={selectedAuthority} onValueChange={setSelectedAuthority}>
                             <SelectTrigger className="h-16 px-8 rounded-2xl bg-slate-50/50 border-none shadow-inner text-sm font-black tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
                                 <div className="flex items-center gap-4">
@@ -237,17 +237,17 @@ export default function MenuByAuthorityPage() {
                                 <Activity size={28} className="text-primary" />
                             </div>
                             <div className="space-y-3">
-                                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase">Topology<br />Intelligence</h4>
-                                <p className="text-[9px] text-white/40 font-black tracking-[0.3em] uppercase leading-relaxed font-mono">Real-time Authorization<br />Stream Active ✓</p>
+                                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase">토폴로지<br />인텔리전스</h4>
+                                <p className="text-[9px] text-white/40 font-black tracking-[0.3em] uppercase leading-relaxed font-mono">실시간 권한 스트림 활성화 ✓</p>
                             </div>
                             {selectedAuthority && (
                                 <div className="pt-6 border-t border-white/5 space-y-4">
                                     <div className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase text-white/30">
-                                        <span>SELECTED_ID</span>
+                                        <span>선택된_ID</span>
                                         <span className="text-primary">{selectedAuthority}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase text-white/30">
-                                        <span>CLUSTER_NODES</span>
+                                        <span>클러스터_노드_수</span>
                                         <span className="text-white">{rawMenus.length}</span>
                                     </div>
                                 </div>
@@ -268,12 +268,12 @@ export default function MenuByAuthorityPage() {
                 <div className="space-y-8">
                     <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-8">
                         <div>
-                            <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">Functional Node Tree Stream</span>
+                            <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">기능 노드 트리 스트림 (Functional Node Tree)</span>
                         </div>
                         <div className="flex items-center gap-4">
                              {isMenuLoading && <Loader2 className="h-6 w-6 animate-spin text-primary opacity-40" />}
                              <Button variant="ghost" size="sm" className="h-12 rounded-2xl px-6 text-[10px] font-black tracking-widest gap-2 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
-                                <SearchCode size={16} className="group-hover:rotate-12 transition-transform" /> ANALYZE_NODES
+                                 <SearchCode size={16} className="group-hover:rotate-12 transition-transform" /> 노드 분석
                             </Button>
                         </div>
                     </div>
@@ -289,8 +289,8 @@ export default function MenuByAuthorityPage() {
                                     <div className="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200 shadow-inner mb-8 group-hover:scale-110 transition-transform duration-1000">
                                         <Milestone size={48} className="opacity-20" />
                                     </div>
-                                    <h3 className="text-2xl font-black text-slate-300 tracking-tighter uppercase mb-4">PENDING_SELECTION</h3>
-                                    <p className="text-[10px] font-black text-slate-200 tracking-[0.5em] uppercase max-w-[240px] leading-relaxed">역할을 식별하여 시스템 위계 데이터의 시각적 프로드를 실장하십시오.</p>
+                                    <h3 className="text-2xl font-black text-slate-300 tracking-tighter uppercase mb-4">역할 미선택</h3>
+                                    <p className="text-[10px] font-black text-slate-200 tracking-[0.5em] uppercase max-w-[240px] leading-relaxed">역할을 식별하여 시스템 위계 데이터의 시각적 분석을 시작하십시오.</p>
                                 </motion.div>
                             ) : isMenuLoading ? (
                                 <motion.div 
@@ -299,7 +299,7 @@ export default function MenuByAuthorityPage() {
                                     className="absolute inset-0 flex flex-col items-center justify-center gap-6"
                                 >
                                     <Loader2 size={48} className="text-primary animate-spin opacity-40" />
-                                    <span className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">MAPPING_TOPOLOGY...</span>
+                                    <span className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">토폴로지 매핑 중...</span>
                                 </motion.div>
                             ) : menuTree.length === 0 ? (
                                 <motion.div 
@@ -309,7 +309,7 @@ export default function MenuByAuthorityPage() {
                                 >
                                     <ShieldAlert size={64} className="text-rose-500/20" />
                                     <div className="space-y-2 text-center">
-                                        <h4 className="text-lg font-black tracking-tighter text-slate-400 uppercase">NO_ACTIVE_NODES</h4>
+                                        <h4 className="text-lg font-black tracking-tighter text-slate-400 uppercase">활성 노드 없음</h4>
                                         <p className="text-[9px] font-black text-slate-300 tracking-[0.3em] uppercase">해당 권한에 할당된 기능적 엔드포인트가 식별되지 않았습니다.</p>
                                     </div>
                                 </motion.div>

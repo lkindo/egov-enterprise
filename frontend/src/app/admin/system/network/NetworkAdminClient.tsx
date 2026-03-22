@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
     Plus, 
-    Network, 
+    Network as NetworkIcon, 
     Server, 
     Activity, 
     Shield, 
@@ -28,7 +28,7 @@ import {
     Database,
     Radio
 } from 'lucide-react';
-import { NetworkNode } from '@/types/network';
+import type { Network } from '@/services/admin/system/NetworkAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { 
@@ -37,19 +37,19 @@ import {
 } from '@/app/actions/networkActions';
 
 interface NetworkAdminClientProps {
-    initialNodes: NetworkNode[];
+    initialNetworks: Network[];
 }
 
-export default function NetworkAdminClient({ initialNodes }: NetworkAdminClientProps) {
+export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClientProps) {
     const { toast } = useToast();
     const confirm = useConfirm();
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsOpen] = useState(false);
-    const [editingNode, setEditingNode] = useState<NetworkNode | null>(null);
+    const [editingNode, setEditingNode] = useState<Network | null>(null);
 
-    const filteredNodes = initialNodes.filter(node => 
-        node.ntworkNm.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        node.ntworkId.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredNodes = initialNetworks.filter(node => 
+        (node.manageIem?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (node.ntwrkId?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
 
     const handleCreate = () => {
@@ -57,7 +57,7 @@ export default function NetworkAdminClient({ initialNodes }: NetworkAdminClientP
         setIsOpen(true);
     };
 
-    const handleEdit = (node: NetworkNode) => {
+    const handleEdit = (node: Network) => {
         setEditingNode(node);
         setIsOpen(true);
     };
@@ -72,7 +72,7 @@ export default function NetworkAdminClient({ initialNodes }: NetworkAdminClientP
 
         if (ok) {
             try {
-                const res = await deleteNetworkNodeAction(null, id);
+                const res = await deleteNetworkNodeAction(id);
                 if (res.success) {
                     toast(res.message, 'success');
                 } else {
@@ -87,14 +87,9 @@ export default function NetworkAdminClient({ initialNodes }: NetworkAdminClientP
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        const data = Object.fromEntries(formData.entries());
 
         try {
-            const res = await saveNetworkNodeAction(null, {
-                mode: editingNode ? 'edit' : 'create',
-                data: data as any,
-                id: editingNode?.ntworkId
-            });
+            const res = await saveNetworkNodeAction(null, formData);
 
             if (res.success) {
                 toast(res.message, 'success');
@@ -110,13 +105,13 @@ export default function NetworkAdminClient({ initialNodes }: NetworkAdminClientP
     const columns = [
         {
             header: '인프라 노드 ID',
-            accessor: (item: NetworkNode) => (
+            accessor: (item: Network) => (
                 <div className="flex items-center gap-4 py-3">
                     <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                         <Cpu size={18} />
                     </div>
                     <div>
-                        <span className="font-black tracking-tighter text-foreground block text-sm uppercase leading-none">{item.ntworkId}</span>
+                        <span className="font-black tracking-tighter text-foreground block text-sm uppercase leading-none">{item.ntwrkId}</span>
                         <span className="text-[8px] font-black text-muted-foreground tracking-[0.3em] mt-1.5 uppercase opacity-40">INFRA_NODE_UUID</span>
                     </div>
                 </div>
@@ -124,30 +119,30 @@ export default function NetworkAdminClient({ initialNodes }: NetworkAdminClientP
         },
         {
             header: '네트워크 자산 정보',
-            accessor: (item: NetworkNode) => (
+            accessor: (item: Network) => (
                 <div className="space-y-1">
-                    <span className="text-sm font-black text-foreground uppercase tracking-tight">{item.ntworkNm}</span>
+                    <span className="text-sm font-black text-foreground uppercase tracking-tight">{item.manageIem}</span>
                     <div className="flex items-center gap-2">
                         <Globe size={10} className="text-primary opacity-40" />
-                        <span className="text-[10px] font-bold text-muted-foreground/60 tabular-nums lowercase">{item.ntworkIp}</span>
+                        <span className="text-[10px] font-bold text-muted-foreground/60 tabular-nums lowercase">{item.ntwrkIp}</span>
                     </div>
                 </div>
             )
         },
         {
             header: '운영 상태',
-            accessor: (item: NetworkNode) => <HubStatusBadge status={item.useAt === 'Y' ? '정상 운영' : '운영 중지'} />,
+            accessor: (item: Network) => <HubStatusBadge status={item.useAt === 'Y' ? '정상 운영' : '운영 중지'} />,
             className: 'w-32'
         },
         {
             header: '관리 전용',
             className: 'text-right w-32',
-            accessor: (item: NetworkNode) => (
+            accessor: (item: Network) => (
                 <div className="flex justify-end gap-2 pr-4">
                     <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-200 transition-all font-black" onClick={() => handleEdit(item)}>
                         <Settings size={16} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all" onClick={() => handleDelete(item.ntworkId)}>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all" onClick={() => handleDelete(item.ntwrkId)}>
                         <Trash2 size={16} />
                     </Button>
                 </div>
@@ -163,7 +158,7 @@ export default function NetworkAdminClient({ initialNodes }: NetworkAdminClientP
                 title="인프라" 
                 highlight="네트워크 노드 관리" 
                 subtitle="전사 서비스 노드의 IP 할당 정책, 게이트웨이 및 서브넷 구성을 물리적으로 매핑하여 관리합니다." 
-                icon={Network} 
+                icon={NetworkIcon} 
                 actions={
                     <Button onClick={handleCreate} size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2">
                         <Plus size={18} /> 신규 노드 등록
@@ -172,8 +167,8 @@ export default function NetworkAdminClient({ initialNodes }: NetworkAdminClientP
             />
 
             <HubMetricGrid>
-                <HubMetricCard title="관리 대상 노드" value={initialNodes.length} icon={Server} color="primary" />
-                <HubMetricCard title="할당 고정 IP" value={initialNodes.filter(n => n.ntwrkIp).length} icon={Database} color="emerald" status="안전" />
+                <HubMetricCard title="관리 대상 노드" value={initialNetworks.length} icon={Server} color="primary" />
+                <HubMetricCard title="할당 고정 IP" value={initialNetworks.filter(n => n.ntwrkIp).length} icon={Database} color="emerald" status="안전" />
                 <HubMetricCard title="네트워크 가용성" value="99.9%" icon={Activity} color="amber" />
                 <HubMetricCard title="평균 응답 속도" value="4ms" icon={Zap} color="indigo" />
             </HubMetricGrid>
@@ -215,8 +210,8 @@ export default function NetworkAdminClient({ initialNodes }: NetworkAdminClientP
                         <div className="space-y-8">
                             <FormField label="인프라 노드 식별자 (NODE_ID)" required description="시스템에서 고유하게 인식되는 ID입니다.">
                                 <Input 
-                                    name="ntworkId" 
-                                    defaultValue={editingNode?.ntworkId} 
+                                    name="ntwrkId" 
+                                    defaultValue={editingNode?.ntwrkId} 
                                     required 
                                     readOnly={!!editingNode}
                                     className="h-14 rounded-2xl bg-slate-50 border-2 border-slate-100 font-mono text-sm font-black shadow-inner"
@@ -225,8 +220,8 @@ export default function NetworkAdminClient({ initialNodes }: NetworkAdminClientP
                             </FormField>
                             <FormField label="노드 자산 별칭 (Alias)" required>
                                 <Input 
-                                    name="ntworkNm" 
-                                    defaultValue={editingNode?.ntworkNm} 
+                                    name="manageIem" 
+                                    defaultValue={editingNode?.manageIem} 
                                     required 
                                     className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner"
                                     placeholder="네트워크 노드 이름 입력"
@@ -236,8 +231,8 @@ export default function NetworkAdminClient({ initialNodes }: NetworkAdminClientP
                                 <div className="relative group/ip">
                                     <Globe size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/ip:opacity-100 transition-opacity" />
                                     <Input 
-                                        name="ntworkIp" 
-                                        defaultValue={editingNode?.ntworkIp} 
+                                        name="ntwrkIp" 
+                                        defaultValue={editingNode?.ntwrkIp} 
                                         required 
                                         className="h-14 pl-16 rounded-2xl font-mono text-xs font-black shadow-inner"
                                         placeholder="0.0.0.0"

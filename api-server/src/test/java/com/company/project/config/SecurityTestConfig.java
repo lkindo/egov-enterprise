@@ -2,11 +2,6 @@ package com.company.project.config;
 
 import com.company.project.security.jwt.JwtAuthenticationFilter;
 import com.company.project.security.jwt.JwtTokenProvider;
-import org.mockito.Mockito;
-import org.springframework.security.authentication.AuthenticationManager;
-import com.company.project.security.service.EgovPasswordEncoder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -52,18 +47,4 @@ public class SecurityTestConfig {
                 return http.build();
         }
 
-        @Bean
-        public PasswordEncoder passwordEncoder() {
-                return new BCryptPasswordEncoder();
-        }
-
-        @Bean
-        public AuthenticationManager authenticationManager() {
-                return Mockito.mock(AuthenticationManager.class);
-        }
-
-        @Bean
-        public EgovPasswordEncoder egovPasswordEncoder() {
-                return new EgovPasswordEncoder();
-        }
 }

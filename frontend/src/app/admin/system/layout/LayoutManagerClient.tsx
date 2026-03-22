@@ -100,7 +100,6 @@ export default function LayoutManagerClient() {
       />
 
       <div className="grid grid-cols-12 gap-10 px-2 min-h-[850px]">
-        
         {/* --- Navigation --- */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
           <div className="hub-table-container p-6 bg-slate-50 shadow-inner">
@@ -108,21 +107,21 @@ export default function LayoutManagerClient() {
               icon={<ImageIcon size={20} />} 
               label="프로모션 배너 마스터" 
               active={activeTab === 'BANNERS'} 
-              onClick={() => { setActiveTab('BANNERS'); }} 
+              onClick={() => setActiveTab('BANNERS')} 
             />
             <div className="h-4" />
             <NavButton 
               icon={<Layers size={20} />} 
               label="퀵메뉴 및 위젯 자산" 
               active={activeTab === 'QUICKLINKS'} 
-              onClick={() => { setActiveTab('QUICKLINKS'); }} 
+              onClick={() => setActiveTab('QUICKLINKS')} 
             />
             <div className="h-4" />
             <NavButton 
               icon={<Palette size={20} />} 
               label="디자인 토큰 세팅" 
               active={activeTab === 'THEMES'} 
-              onClick={() => { setActiveTab('THEMES'); }} 
+              onClick={() => setActiveTab('THEMES')} 
             />
           </div>
 
@@ -130,8 +129,8 @@ export default function LayoutManagerClient() {
             <div className="w-16 h-16 bg-white/10 rounded-[var(--radius-hub-widget)] flex items-center justify-center mx-auto mb-4 border border-white/5 shadow-xl transition-all group-hover:scale-110">
               <Sparkles size={32} className="text-primary" />
             </div>
-            <h4 className="text-lg font-black tracking-tighter leading-tight uppercase">Brand Identity</h4>
-            <p className="text-[10px] text-white/30 font-black tracking-[0.2em] uppercase">Visual DNA Syncing</p>
+            <h4 className="text-lg font-black tracking-tighter leading-tight uppercase">브랜드 아이덴티티</h4>
+            <p className="text-[10px] text-white/30 font-black tracking-[0.2em] uppercase">시각적 DNA 동기화</p>
             <div className="flex justify-center gap-1.5 opacity-20 mt-4">
               <div className="w-8 h-1 bg-white rounded-full" />
               <div className="w-4 h-1 bg-white rounded-full opacity-50" />
@@ -155,8 +154,8 @@ export default function LayoutManagerClient() {
                     <Plus size={32} />
                   </div>
                   <div className="text-center">
-                    <p className="text-base font-black text-foreground uppercase tracking-widest ">New Promotion</p>
-                    <p className="text-[10px] font-bold text-muted-foreground tracking-tight mt-3 uppercase opacity-50">Upload Vector / Raster • Max 10MB</p>
+                    <p className="text-base font-black text-foreground uppercase tracking-widest ">신규 프로모션</p>
+                    <p className="text-[10px] font-bold text-muted-foreground tracking-tight mt-3 uppercase opacity-50">벡터 / 래스터 업로드 • 최대 10MB</p>
                   </div>
                 </div>
 
@@ -168,15 +167,15 @@ export default function LayoutManagerClient() {
                     <div className="p-8 space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="bg-primary/10 text-primary text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-sm border border-primary/5">
-                          SORT ORDER: {banner.bannerNm.split(' ')[1] || 'DEFAULT'}
+                          정렬 순서: {banner.bannerNm.split(' ')[1] || '기본'}
                         </span>
                         <div className="flex items-center gap-1.5 text-[9px] font-black tracking-widest uppercase opacity-40">
-                          <Clock size={12} /> {banner.reflctAt === 'Y' ? 'PUBLISHED' : 'DRAFT'}
+                          <Clock size={12} /> {banner.reflctAt === 'Y' ? '게시됨' : '초안'}
                         </div>
                       </div>
                       <div>
                         <h4 className="text-lg font-black text-foreground tracking-tighter truncate leading-none uppercase">{banner.bannerNm}</h4>
-                        <p className="text-[10px] text-muted-foreground font-bold truncate mt-2 leading-none uppercase tracking-widest opacity-60">LINK: {banner.linkSvcNm}</p>
+                        <p className="text-[10px] text-muted-foreground font-bold truncate mt-2 leading-none uppercase tracking-widest opacity-60">링크: {banner.linkSvcNm}</p>
                       </div>
                     </div>
                     <div className="absolute top-6 right-6 flex gap-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-500">
@@ -204,14 +203,14 @@ export default function LayoutManagerClient() {
                           <Settings2 size={24} />
                         </div>
                         <div>
-                          <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">Global Token Rules</h3>
-                          <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2">Design System Calibration</p>
+                          <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">글로벌 토큰 규칙</h3>
+                          <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2">디자인 시스템 캘리브레이션</p>
                         </div>
                       </div>
                       
                       <div className="space-y-10">
                         <div className="space-y-4">
-                          <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">Primary Tone Mapping</label>
+                          <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">프라이머리 톤 매핑</label>
                           <div className="flex gap-6">
                             <input 
                               type="color" 
@@ -225,13 +224,13 @@ export default function LayoutManagerClient() {
                                 value={themeConfig.primaryColor}
                                 onChange={(e) => setThemeConfig({...themeConfig, primaryColor: e.target.value})}
                               />
-                              <p className="text-[10px] font-bold text-slate-400 px-2 tracking-tight">BRAND CORE HEX CODE</p>
+                              <p className="text-[10px] font-bold text-slate-400 px-2 tracking-tight">브랜드 코어 헥스 코드</p>
                             </div>
                           </div>
                         </div>
 
                         <div className="space-y-5">
-                          <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">Edge Curvature Control</label>
+                          <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">에지 곡률 제어</label>
                           <div className="grid grid-cols-4 gap-6">
                             <RadiusOption label="XS" value="4px" active={themeConfig.borderRadius === '4px'} onClick={() => setThemeConfig({...themeConfig, borderRadius: '4px'})} />
                             <RadiusOption label="MD" value="8px" active={themeConfig.borderRadius === '8px'} onClick={() => setThemeConfig({...themeConfig, borderRadius: '8px'})} />
@@ -241,7 +240,7 @@ export default function LayoutManagerClient() {
                         </div>
 
                         <div className="space-y-5">
-                          <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">Typography Architecture</label>
+                          <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">타이포그래피 아키텍처</label>
                           <div className="relative group">
                             <Type className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/40 group-focus-within:text-primary transition-colors" size={20} />
                             <select 
@@ -249,9 +248,9 @@ export default function LayoutManagerClient() {
                               value={themeConfig.fontFamily}
                               onChange={(e) => setThemeConfig({...themeConfig, fontFamily: e.target.value})}
                             >
-                              <option value="Pretendard">Pretendard (K-UX Standard)</option>
-                              <option value="Inter">Inter (Global Minimal)</option>
-                              <option value="Outfit">Outfit (Display Branding)</option>
+                              <option value="Pretendard">Pretendard (K-UX 표준)</option>
+                              <option value="Inter">Inter (글로벌 미니멀)</option>
+                              <option value="Outfit">Outfit (디스플레이 브랜딩)</option>
                             </select>
                             <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none rotate-90" size={16} />
                           </div>
@@ -265,8 +264,8 @@ export default function LayoutManagerClient() {
                           <Monitor size={22} />
                         </div>
                         <div>
-                          <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">Real-time Simulation</h3>
-                          <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2">Interface Behavioral Protocol</p>
+                          <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">실시간 시뮬레이션</h3>
+                          <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2">인터페이스 동작 프로토콜</p>
                         </div>
                       </div>
 
@@ -287,7 +286,7 @@ export default function LayoutManagerClient() {
                           className="mt-auto h-16 w-full bg-slate-900 text-white font-black tracking-[0.3em] shadow-2xl uppercase transition-all"
                           style={{ backgroundColor: themeConfig.primaryColor, borderRadius: themeConfig.borderRadius, fontFamily: themeConfig.fontFamily }}
                         >
-                          Execute Component
+                          컴포넌트 실행
                         </Button>
 
                         {/* Designer's Guide Lines */}

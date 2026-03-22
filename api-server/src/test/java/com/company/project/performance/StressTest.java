@@ -14,15 +14,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.mockito.Mockito;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -32,12 +29,16 @@ import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.company.project.config.TestInfrastructureConfig;
+import org.springframework.context.annotation.Import;
+
 /**
  * 스트레스 테스트 - 동시성 및 부하 성능 검증
  */
 @SpringBootTest(properties = "springdoc.api-docs.enabled=false")
 @AutoConfigureMockMvc
 @ActiveProfiles({"test", "stress-test"})
+@Import(TestInfrastructureConfig.class)
 class StressTest {
 
   @Autowired

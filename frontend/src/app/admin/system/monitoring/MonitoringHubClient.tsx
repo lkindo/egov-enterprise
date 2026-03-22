@@ -189,10 +189,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const renderObservability = () => (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="grid grid-cols-2 gap-6">
-        <HubMetricCard title="CPU_LOAD" value="12.4%" icon={Cpu} color="emerald" status="OPTIMAL" />
-        <HubMetricCard title="MEMORY_ALLOC" value="54.8GB" icon={HardDrive} color="primary" status="NOMINAL" />
-        <HubMetricCard title="TRAFFIC_THROUGHPUT" value="240 r/s" icon={Zap} color="amber" />
-        <HubMetricCard title="DB_LATENCY" value="15.2ms" icon={Database} color="indigo" status="STABLE" />
+        <HubMetricCard title="CPU_부하" value="12.4%" icon={Cpu} color="emerald" status="최적" />
+        <HubMetricCard title="메모리_할당" value="54.8GB" icon={HardDrive} color="primary" status="정상" />
+        <HubMetricCard title="트래픽_처리량" value="240 r/s" icon={Zap} color="amber" />
+        <HubMetricCard title="DB_지연시간" value="15.2ms" icon={Database} color="indigo" status="안정" />
       </div>
 
       <div className="rounded-[3rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group border-none">
@@ -202,12 +202,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="relative z-10 space-y-12">
           <div className="flex items-center gap-6">
             <div className="w-5 h-5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_20px_rgba(16,185,129,0.8)]" />
-            <h3 className="text-3xl font-black tracking-tighter uppercase leading-none">Core_Engine: Operational</h3>
+            <h3 className="text-3xl font-black tracking-tighter uppercase leading-none">코어 엔진: 정상 가동 중</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <StatusIndicator label="API Microservices" status="ONLINE" icon={Network} />
-            <StatusIndicator label="PostgreSQL Cluster" status="SYNCED" icon={Database} />
-            <StatusIndicator label="Redis Cache Fabric" status="STABLE" icon={CheckCircle2} />
+            <StatusIndicator label="API Microservices" status="온라인" icon={Network} />
+            <StatusIndicator label="PostgreSQL Cluster" status="동기화됨" icon={Database} />
+            <StatusIndicator label="Redis Cache Fabric" status="안정" icon={CheckCircle2} />
           </div>
         </div>
       </div>
@@ -222,17 +222,17 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       />
 
       <HubHeader 
-        title="Sentinel" 
-        highlight="Intelligence" 
+        title="센티넬" 
+        highlight="인텔리전스" 
         subtitle="전사 인프라 로깅 프로토콜 및 실시간 데이터 무결성 관찰 시스템" 
         icon={Activity} 
         actions={
           <div className="flex gap-4 p-2">
             <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest uppercase gap-3 hover:bg-slate-50 transition-all">
-              <Download size={18} /> REPORT_SNAPSHOT
+              <Download size={18} /> 리포트 스냅샷
             </Button>
             <Button size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
-              <Bell size={20} /> ALERT_POLICIES
+              <Bell size={20} /> 알림 정책
             </Button>
           </div>
         }
@@ -254,8 +254,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               <ShieldCheck size={40} className="text-primary" />
             </div>
             <div className="space-y-2">
-                <h4 className="text-xl font-black tracking-tighter uppercase">Audit Protocol</h4>
-                <p className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">Security Level: Maximum</p>
+                <h4 className="text-xl font-black tracking-tighter uppercase">감사 프로토콜</h4>
+                <p className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">보안 수준: 최상</p>
             </div>
             <div className="flex justify-center gap-2 opacity-20 mt-2">
               {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="w-1.5 h-6 bg-white rounded-full animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />)}
@@ -268,7 +268,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="rounded-[3.5rem] bg-white border-2 border-slate-100 shadow-2xl flex-1 flex flex-col p-12 space-y-10 relative overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-100 pb-8 relative z-10">
               <div className="space-y-1">
-                <h3 className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">Sentinel Stream</h3>
+                <h3 className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">센티넬 스트림</h3>
                 <p className="text-2xl font-black tracking-tighter text-foreground uppercase">데이터 인베스티게이션</p>
               </div>
               <Button 
@@ -286,7 +286,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                 <Input 
                   className="pl-16 h-16 bg-slate-50 border-none rounded-[1.25rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/30" 
-                  placeholder="FILTERING_LOG_OBJECTS..." 
+                  placeholder="로그 객체 필터링..." 
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
                 />
@@ -332,12 +332,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   <div className="border-b border-slate-100 pb-12 relative z-10">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/40" />
-                        <h3 className="text-[10px] font-black text-muted-foreground/40 tracking-[0.5em] uppercase">Instance_Metadata</h3>
+                        <h3 className="text-[10px] font-black text-muted-foreground/40 tracking-[0.5em] uppercase">인스턴스 메타데이터</h3>
                     </div>
                     <h2 className="text-4xl font-black text-foreground tracking-tighter leading-none mb-4 uppercase">
                         객체 상세 분석
                     </h2>
-                    <p className="text-xs font-mono font-black text-primary/60 tracking-widest uppercase">LOG_UID: {selectedItemId}</p>
+                    <p className="text-xs font-mono font-black text-primary/60 tracking-widest uppercase">로그 고유 식별자: {selectedItemId}</p>
                   </div>
                   
                   <div className="flex-1 space-y-8 overflow-y-auto pr-4 custom-scrollbar relative z-10">
@@ -351,12 +351,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
                   <div className="pt-12 mt-auto border-t border-slate-100 space-y-8 relative z-10">
                     <div className="flex items-center justify-between px-6">
-                       <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase">Decision Matrix</span>
+                       <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase">결정 매트릭스</span>
                        <Activity size={20} className="text-primary animate-pulse" />
                     </div>
                     <Button className="w-full h-18 bg-slate-900 text-white rounded-[1.5rem] font-black tracking-[0.4em] text-[11px] shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 uppercase group overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                      EXECUTE_MAINTENANCE_PIPELINE
+                      유지보수 파이프라인 실행
                     </Button>
                   </div>
                   
@@ -368,7 +368,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 <div className="w-24 h-24 rounded-3xl bg-white border-2 border-slate-100 flex items-center justify-center mb-10 shadow-xl group-hover:rotate-12 transition-transform duration-700">
                     <Activity size={100} className="text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all" />
                 </div>
-                <h3 className="text-4xl font-black text-foreground tracking-tighter uppercase mb-4">Intelligence Idle</h3>
+                <h3 className="text-4xl font-black text-foreground tracking-tighter uppercase mb-4">인텔리전스 대기 중</h3>
                 <p className="text-[10px] font-black text-muted-foreground/30 tracking-[0.6em] uppercase leading-relaxed max-w-xs">분석할 로그 객체를 스트림에서 캡처하십시오</p>
               </div>
             )}
