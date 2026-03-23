@@ -43,9 +43,9 @@ class SmsApiControllerTest {
     @DisplayName("SMS 목록 조회 테스트")
     @WithMockUser
     void getSmsListTest() throws Exception {
-        given(smsService.getSmsList(anyString(), anyString(), any())).willReturn(new PageImpl<>(List.of()));
+        given(smsService.getSmsList(any(), any(), any())).willReturn(new PageImpl<>(List.of()));
 
-        mockMvc.perform(get("/api/v1/sms")
+        mockMvc.perform(get("/api/v1/admin/operation/sms")
                         .param("searchCondition", "1")
                         .param("searchKeyword", "Test"))
                 .andExpect(status().isOk());
@@ -57,7 +57,7 @@ class SmsApiControllerTest {
     void getSmsTest() throws Exception {
         given(smsService.getSms("SMS_1")).willReturn(SmsDto.builder().smsId("SMS_1").build());
 
-        mockMvc.perform(get("/api/v1/sms/SMS_1"))
+        mockMvc.perform(get("/api/v1/admin/operation/sms/SMS_1"))
                 .andExpect(status().isOk());
     }
 
@@ -66,9 +66,9 @@ class SmsApiControllerTest {
     @WithMockUser(username = "user01")
     void sendSmsTest() throws Exception {
         SmsDto dto = SmsDto.builder().trnsmitTelno("01012345678").trnsmitCn("Test Message").build();
-        given(smsService.sendSms(anyString(), any(SmsDto.class))).willReturn("SMS_1");
+        given(smsService.sendSms(any(), any(SmsDto.class))).willReturn("SMS_1");
 
-        mockMvc.perform(post("/api/v1/sms")
+        mockMvc.perform(post("/api/v1/admin/operation/sms")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -81,7 +81,7 @@ class SmsApiControllerTest {
     void getSmsRecipientsTest() throws Exception {
         given(smsService.getSmsRecipients("SMS_1")).willReturn(List.of());
 
-        mockMvc.perform(get("/api/v1/sms/SMS_1/recipients"))
+        mockMvc.perform(get("/api/v1/admin/operation/sms/SMS_1/recipients"))
                 .andExpect(status().isOk());
     }
 }

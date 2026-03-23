@@ -56,14 +56,6 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
   ) 
 }));
 
-vi.mock('@/app/components/ui/standard-search-filter', () => ({ 
-  StandardSearchFilter: ({ onSearch }: any) => (
-    <div data-testid="search-filter">
-      <button onClick={() => onSearch({ searchWrd: 'test' })}>검색</button>
-    </div>
-  )
-}));
-
 vi.mock('lucide-react', () => ({
   Plus: () => <span>+</span>,
   Code: () => <span>C</span>,
@@ -100,13 +92,16 @@ vi.mock('next/navigation', () => ({
     replace: vi.fn(),
     prefetch: vi.fn(),
   }),
+  useSearchParams: () => ({
+    get: vi.fn(),
+  }),
 }));
 
 describe('ProgramAdminClient Component', () => {
   const mockInitialData = {
     list: [
-      { progrmFileNm: 'PROG_1', progrmNm: 'Program One', url: '/url/1', progrmStrePath: '/path/1', progrmDc: 'Desc 1' },
-      { progrmFileNm: 'PROG_2', progrmNm: 'Program Two', url: '/url/2', progrmStrePath: '/path/2', progrmDc: 'Desc 2' },
+      { progrmFileNm: 'PROG_1', progrmKoreanNm: 'Program One', url: '/url/1', progrmStrePath: '/path/1', progrmDc: 'Desc 1' },
+      { progrmFileNm: 'PROG_2', progrmKoreanNm: 'Program Two', url: '/url/2', progrmStrePath: '/path/2', progrmDc: 'Desc 2' },
     ],
     total: 2
   } as any;
@@ -123,14 +118,14 @@ describe('ProgramAdminClient Component', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('opens the registration modal when "신규 프로그램 배포" is clicked', async () => {
+  it('opens the registration modal when "신규 등록" is clicked', async () => {
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
     
-    const deployBtn = screen.getByText(/신규 프로그램 배포/i);
+    const deployBtn = screen.getByText(/신규 등록/i);
     fireEvent.click(deployBtn);
 
     const modal = await screen.findByTestId('modal');
-    expect(within(modal).getByText('신규 소프트웨어 자산 배포')).toBeDefined();
+    expect(within(modal).getByText('신규 프로그램 등록')).toBeDefined();
   });
 
   it('opens the edit modal with correct data when settings icon is clicked', async () => {
@@ -140,10 +135,10 @@ describe('ProgramAdminClient Component', () => {
     fireEvent.click(settingsBtns[0]);
 
     const modal = await screen.findByTestId('modal');
-    expect(within(modal).getByText('프로그램 사양 및 엔드포인트 수정')).toBeDefined();
+    expect(within(modal).getByText('프로그램 정보 수정')).toBeDefined();
     
-    const input = within(modal).getByPlaceholderText('UNIQUE_ASSET_ID') as HTMLInputElement;
-    expect(input.value).toBe('PROG_1');
+    const input = within(modal).getByDisplayValue('PROG_1') as HTMLInputElement;
+    expect(input).toBeDefined();
     expect(input.readOnly).toBe(true);
   });
 
@@ -168,7 +163,7 @@ describe('ProgramAdminClient Component', () => {
     
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
     
-    const deployBtn = screen.getByText(/신규 프로그램 배포/i);
+    const deployBtn = screen.getByText(/신규 등록/i);
     fireEvent.click(deployBtn);
 
     const modal = await screen.findByTestId('modal');
@@ -176,7 +171,7 @@ describe('ProgramAdminClient Component', () => {
     const nameInput = within(modal).getByPlaceholderText('한국어 자산 명칭 입력');
     fireEvent.change(nameInput, { target: { value: 'New Program Name' } });
 
-    const submitBtn = within(modal).getByText('DEPLOY_ASSET');
+    const submitBtn = within(modal).getByText('신규 등록');
     fireEvent.click(submitBtn);
 
     await waitFor(() => {

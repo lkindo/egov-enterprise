@@ -48,7 +48,7 @@ class BbsApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.list[0].id").value(1));
+                .andExpect(jsonPath("$.data.list[0].id").value(1));
     }
 
     @Test
@@ -79,6 +79,6 @@ class BbsApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.nttId").value(1));
+                .andExpect(jsonPath("$.data").value(1));
     }
 }

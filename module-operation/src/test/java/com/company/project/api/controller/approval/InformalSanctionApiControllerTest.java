@@ -42,6 +42,7 @@ class InformalSanctionApiControllerTest {
     @DisplayName("비정형 결재 목록 조회 테스트")
     @WithMockUser(username = "user01")
     void getInformalSanctionListTest() throws Exception {
+        org.mockito.BDDMockito.given(informalSanctionService.getInformalSanctionList(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).willReturn(new org.springframework.data.domain.PageImpl<>(java.util.Collections.emptyList()));
         mockMvc.perform(get("/api/v1/informal-sanctions"))
                 .andExpect(status().isOk());
     }
@@ -50,6 +51,7 @@ class InformalSanctionApiControllerTest {
     @DisplayName("수신된 비정형 결재 목록 조회 테스트")
     @WithMockUser(username = "user01")
     void getReceivedInformalSanctionListTest() throws Exception {
+        org.mockito.BDDMockito.given(informalSanctionService.getReceivedInformalSanctionList(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).willReturn(new org.springframework.data.domain.PageImpl<>(java.util.Collections.emptyList()));
         mockMvc.perform(get("/api/v1/informal-sanctions").param("type", "received"))
                 .andExpect(status().isOk());
     }

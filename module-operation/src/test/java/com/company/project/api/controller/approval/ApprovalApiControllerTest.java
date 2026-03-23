@@ -38,6 +38,8 @@ class ApprovalApiControllerTest {
     @DisplayName("대기 중인 결재 목록 조회 테스트")
     @WithMockUser(username = "user01")
     void getPendingApprovalsTest() throws Exception {
+        org.mockito.BDDMockito.given(approvalService.getReceivedInformalSanctionList(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).willReturn(new org.springframework.data.domain.PageImpl<>(java.util.Collections.emptyList()));
+
         mockMvc.perform(get("/api/v1/approvals/pending"))
                 .andExpect(status().isOk());
     }
@@ -46,6 +48,8 @@ class ApprovalApiControllerTest {
     @DisplayName("나의 결재 이력 조회 테스트")
     @WithMockUser(username = "user01")
     void getMyApprovalHistoryTest() throws Exception {
+        org.mockito.BDDMockito.given(approvalService.getInformalSanctionList(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).willReturn(new org.springframework.data.domain.PageImpl<>(java.util.Collections.emptyList()));
+
         mockMvc.perform(get("/api/v1/approvals/my"))
                 .andExpect(status().isOk());
     }

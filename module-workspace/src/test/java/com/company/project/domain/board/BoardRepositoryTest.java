@@ -134,7 +134,7 @@ class BoardRepositoryTest {
 
     @Test
     @DisplayName("정렬 조건 검색 테스트 (views, comments, date)")
-    void searchWithOrderTest() {
+    void searchWithOrderTest() throws InterruptedException {
         // Given
         Board articleLow = Board.builder()
                 .bbsId(testMaster.getBbsId())
@@ -143,6 +143,10 @@ class BoardRepositoryTest {
                 .commentCo(1)
                 .useAt("Y")
                 .build();
+        boardRepository.save(articleLow);
+        
+        Thread.sleep(10);
+        
         Board articleHigh = Board.builder()
                 .bbsId(testMaster.getBbsId())
                 .nttSj("High")
@@ -150,7 +154,6 @@ class BoardRepositoryTest {
                 .commentCo(10)
                 .useAt("Y")
                 .build();
-        boardRepository.save(articleLow);
         boardRepository.save(articleHigh);
         em.flush();
         em.clear();
