@@ -22,12 +22,24 @@ async function authenticate(request: any, id: string, authFilePath: string) {
     const storageState = {
         cookies: [
             { name: 'accessToken', value: token, domain: 'localhost', path: '/', expires: -1 },  
-            { name: 'userRole', value: role, domain: 'localhost', path: '/', expires: -1 }       
+            { name: 'userRole', value: role, domain: 'localhost', path: '/', expires: -1 },
+            { name: 'accessToken', value: token, domain: '127.0.0.1', path: '/', expires: -1 },  
+            { name: 'userRole', value: role, domain: '127.0.0.1', path: '/', expires: -1 }       
         ],
         origins: [
             {
                 origin: 'http://localhost:3001',
-                localStorage: [{ name: 'accessToken', value: token }]
+                localStorage: [
+                    { name: 'accessToken', value: token },
+                    { name: 'egov_smart_tour_v1', value: 'true' }
+                ]
+            },
+            {
+                origin: 'http://127.0.0.1:3001',
+                localStorage: [
+                    { name: 'accessToken', value: token },
+                    { name: 'egov_smart_tour_v1', value: 'true' }
+                ]
             }
         ]
     };

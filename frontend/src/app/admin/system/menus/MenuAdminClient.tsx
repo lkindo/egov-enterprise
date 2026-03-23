@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { MenuInfo } from '@/types/menu';
 import { useToast } from '@/app/components/ui/toast';
@@ -73,10 +74,16 @@ const buildMenuTree = (flatMenus: MenuInfo[]): MenuInfo[] => {
 };
 
 export default function MenuAdminClient({ initialMenus, programs }: { initialMenus: MenuInfo[]; programs: any[] }) {
+  const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
   const [treeMenus, setTreeMenus] = useState<MenuInfo[]>(() => buildMenuTree(initialMenus));
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Sync treeMenus when initialMenus changes from server (router.refresh())
+  useEffect(() => {
+    setTreeMenus(buildMenuTree(initialMenus));
+  }, [initialMenus]);
 
   const [isModalOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
@@ -123,10 +130,12 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       upperMenuNo: formData.upperMenuId,
     };
     const res = await saveMenuAction(null, { mode, data: submitData as any });
+    console.log('handleSave Res:', res);
     if (res.success) {
       toast(res.message, 'success');
       setIsOpen(false);
-      window.location.reload();
+      // Wait a tiny bit for the server-side state to settle
+      setTimeout(() => router.refresh(), 100);
     } else {
       toast(res.message, 'error');
     }
@@ -169,7 +178,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       const res = await deleteMenuAction(null, id);
       if (res.success) {
         toast(res.message, 'success');
-        window.location.reload();
+        router.refresh();
       } else {
         toast(res.message, 'error');
       }

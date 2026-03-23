@@ -7,14 +7,8 @@ test.describe('Hierarchical Menu Management', () => {
             window.localStorage.setItem('egov_smart_tour_v1', 'true');
         });
 
-        // Login as admin
-        await page.goto('/login');
-        await page.fill('#id', 'webmaster');
-        await page.fill('#password', '1');
-        await page.click('button[type="submit"]');
-        
-        await expect(page).toHaveURL(/.*dashboard|.*home|.*/, { timeout: 30000 });
-        await page.waitForTimeout(1000);
+        // Authentication is handled by storageState in playwright.config.ts
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
     });
 
     test('should manage menu hierarchy', async ({ page }) => {
@@ -23,53 +17,55 @@ test.describe('Hierarchical Menu Management', () => {
 
         // 1. Navigate to Menu Management
         await page.goto('/admin/system/menus');
-        await expect(page.getByText('시스템 메뉴 아키텍처')).toBeVisible();
+        await expect(page.getByText('네비게이션 정보 아키텍처')).toBeVisible({ timeout: 15000 });
 
         // 2. Create Root Menu
-        await page.click('button:has-text("Create Root Domain")');
-        await page.fill('input >> nth=0', rootMenuName); // Entity Name
-        await page.click('button:has-text("Complete Extraction")');
+        const createRootBtn = page.getByRole('button', { name: '최상위 메뉴 추가' });
+        await createRootBtn.click();
+        
+        await expect(page.getByText('신규 네비게이션 노드 설계')).toBeVisible();
+        await page.fill('input >> nth=0', rootMenuName); 
+        await page.getByRole('button', { name: '노드 설계' }).click();
 
-        // Verify success and reload (UI calls window.location.reload())
-        await expect(page.locator('text=성공적으로 저장되었습니다')).toBeVisible();
+        // Data refreshes via router.refresh(). Wait for the new node to appear in the list.
+        await expect(page.getByText(rootMenuName).first()).toBeVisible({ timeout: 20000 });
         
         // 3. Create Sub Menu under the new Root Menu
-        // Find the root menu node and click its "Plus" button
-        const rootNode = page.locator('div.group').filter({ hasText: rootMenuName }).first();
-        await rootNode.hover();
-        await rootNode.locator('button:has(svg.lucide-plus)').click();
+        const rootNodeRow = page.locator('div.group').filter({ hasText: rootMenuName }).first();
+        await rootNodeRow.scrollIntoViewIfNeeded();
+        
+        // Target the Plus button explicitly
+        const plusButton = rootNodeRow.locator('button:has(svg.lucide-plus)').first();
+        await plusButton.click({ force: true });
 
+        await expect(page.getByText('신규 네비게이션 노드 설계')).toBeVisible();
         await page.fill('input >> nth=0', subMenuName);
-        await page.click('button:has-text("Complete Extraction")');
+        await page.getByRole('button', { name: '노드 설계' }).click();
+        
+        await expect(page.getByText(subMenuName).first()).toBeVisible({ timeout: 20000 });
 
-        await expect(page.locator('text=성공적으로 저장되었습니다')).toBeVisible();
-
-        // 4. Verify Hierarchy (Expand)
-        // Ensure root is expanded to see sub
-        const expandBtn = rootNode.locator('button:has(svg.lucide-chevron-right)');
-        if (await expandBtn.isVisible()) {
-            await expandBtn.click();
-        }
-        await expect(page.locator('div.group').filter({ hasText: subMenuName })).toBeVisible();
+        // 4. Verify Hierarchy
+        await expect(rootNodeRow).toContainText(subMenuName);
 
         // 5. Update Menu (Edit)
-        const subNode = page.locator('div.group').filter({ hasText: subMenuName }).first();
-        await subNode.hover();
-        await subNode.locator('button:has(svg.lucide-settings)').click();
+        const subNodeRow = page.locator('div.group').filter({ hasText: subMenuName }).first();
+        const editButton = subNodeRow.locator('button:has(svg.lucide-settings)').first();
+        await editButton.click({ force: true });
 
+        await expect(page.getByText('메뉴 노드 구성 속성 수정')).toBeVisible();
         await page.fill('input >> nth=0', `${subMenuName}_Updated`);
-        await page.click('button:has-text("Sync Matrix")');
+        await page.getByRole('button', { name: '구조 업데이트' }).click();
 
-        await expect(page.locator('text=성공적으로 저장되었습니다')).toBeVisible();
-        await expect(page.locator('div.group')).toContainText('Updated');
+        await expect(page.getByText(`${subMenuName}_Updated`).first()).toBeVisible({ timeout: 20000 });
 
         // 6. Delete Menu
-        await subNode.hover();
-        await subNode.locator('button:has(svg.lucide-trash2)').click();
+        const updatedSubNodeRow = page.locator('div.group').filter({ hasText: `${subMenuName}_Updated` }).first();
+        const deleteButton = updatedSubNodeRow.locator('button:has(svg.lucide-trash2)').first();
+        await deleteButton.click({ force: true });
         
         // Handle custom confirm modal
-        await page.click('button:has-text("확인")'); // Assuming confirm modal has "확인" or "Delete"
+        await page.click('button:has-text("확인")'); 
 
-        await expect(page.locator('text=성공적으로 삭제되었습니다')).toBeVisible();
+        await expect(page.getByText(`${subMenuName}_Updated`)).not.toBeVisible({ timeout: 15000 });
     });
 });

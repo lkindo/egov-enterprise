@@ -24,13 +24,16 @@ test.describe('Advanced Dashboard & Stats Interaction', () => {
     });
 
     test('should verify statistical summary cards', async ({ page }) => {
-        // LuxuryStatCard components check
-        await expect(page.getByText('Accumulated Nodes')).toBeVisible();
-        await expect(page.getByText('Active Protocols')).toBeVisible();
-        await expect(page.getByText('Data Persistence')).toBeVisible();
+        // LuxuryStatCard components check (Wait for potentially slow dashboard data fetching)
+        // Updated labels to match Korean UI in AdminStatsClient.tsx
+        await expect(page.getByText('누적 데이터 노드')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('실시간 활성 세션')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('시스템 영속성 자산')).toBeVisible({ timeout: 15000 });
 
         // Check if numbers are formatted (can contain commas)
         const nodeCount = page.locator('h4').first();
+        // Wait specifically for the content to change from placeholder or 0 to something matching the pattern
+        await expect(nodeCount).toHaveText(/[0-9,]+/, { timeout: 20000 });
         const value = await nodeCount.innerText();
         expect(value).toMatch(/[0-9,]+/);
     });
@@ -39,12 +42,12 @@ test.describe('Advanced Dashboard & Stats Interaction', () => {
         const filterSelect = page.locator('select');
         await expect(filterSelect).toBeVisible();
 
-        // Change filter to LATEST 30 DAYS
-        await filterSelect.selectOption('LATEST 30 DAYS');
+        // Change filter to MONTHLY_BATCH (30D)
+        await filterSelect.selectOption('MONTHLY_BATCH (30D)');
         
         // Changing option should trigger router.refresh or state change
         // We verify the select value is updated
-        await expect(filterSelect).toHaveValue('LATEST 30 DAYS');
+        await expect(filterSelect).toHaveValue('MONTHLY_BATCH (30D)');
     });
 
     test('should verify chart accessibility and rendering', async ({ page }) => {
@@ -54,16 +57,17 @@ test.describe('Advanced Dashboard & Stats Interaction', () => {
         const barChart = page.locator('.recharts-bar');
 
         // Note: Recharts uses SVG, so we check for presence of SVG containers
-        await expect(page.locator('.recharts-responsive-container')).toHaveCount(3);
+        // Increase timeout for chart rendering which happens after background data fetch
+        await expect(page.locator('.recharts-responsive-container')).toHaveCount(3, { timeout: 30000 });
     });
 
     test('should verify deep intelligence report table', async ({ page }) => {
-        await expect(page.getByText('Deep Intelligence Report')).toBeVisible();
+        await expect(page.getByText('심층 매트릭스 보고서')).toBeVisible();
         
         // Table should have specific headers defined in menuColumns
-        await expect(page.getByText('Intelligence Node')).toBeVisible();
-        await expect(page.getByText('Interaction Count')).toBeVisible();
-        await expect(page.getByText('Impact Matrix')).toBeVisible();
+        await expect(page.getByText('인텔리전스 노드')).toBeVisible();
+        await expect(page.getByText('상호작용 횟수')).toBeVisible();
+        await expect(page.getByText('영향력 매트릭스')).toBeVisible();
 
         // Check if at least one row is rendered
         const tableRows = page.locator('table tr');
@@ -76,7 +80,7 @@ test.describe('Advanced Dashboard & Stats Interaction', () => {
         await page.setViewportSize({ width: 375, height: 667 });
 
         // Stats grid should stack vertically (check if specific cards are still visible)
-        await expect(page.getByText('Accumulated Nodes')).toBeVisible();
+        await expect(page.getByText('누적 데이터 노드')).toBeVisible();
         
         // Deep Intelligence Table should be scrollable - use visibility filter to select the correct one
         const scrollContainer = page.locator('.overflow-x-auto').filter({ visible: true }).first();

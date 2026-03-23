@@ -2,7 +2,7 @@
   "cookies": [
     {
       "name": "accessToken",
-      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDE4NTYwMCwiZXhwIjoxNzc0MTg5MjAwfQ.nRY2lWPSaPxQqejVsO-11qStCey97-JHJcKinzH7DD7241sVM6u1LJEKhsUGarjn-h8FxDZikAfZNdtaPdT1SQ",
+      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDIzNTA2OSwiZXhwIjoxNzc0MjM4NjY5fQ.D3vYeqNEI-cLsP7My2Kh8kSwl3ZjRzlObrnldsgAuVLt-adbIFPlGiMGEe1jwDIQ7xb-ecD_FzRzOMD0RBn1Vw",
       "domain": "localhost",
       "path": "/",
       "expires": -1
@@ -13,6 +13,20 @@
       "domain": "localhost",
       "path": "/",
       "expires": -1
+    },
+    {
+      "name": "accessToken",
+      "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDIzNTA2OSwiZXhwIjoxNzc0MjM4NjY5fQ.D3vYeqNEI-cLsP7My2Kh8kSwl3ZjRzlObrnldsgAuVLt-adbIFPlGiMGEe1jwDIQ7xb-ecD_FzRzOMD0RBn1Vw",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": -1
+    },
+    {
+      "name": "userRole",
+      "value": "ROLE_ADMIN",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": -1
     }
   ],
   "origins": [
@@ -21,7 +35,24 @@
       "localStorage": [
         {
           "name": "accessToken",
-          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDE4NTYwMCwiZXhwIjoxNzc0MTg5MjAwfQ.nRY2lWPSaPxQqejVsO-11qStCey97-JHJcKinzH7DD7241sVM6u1LJEKhsUGarjn-h8FxDZikAfZNdtaPdT1SQ"
+          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDIzNTA2OSwiZXhwIjoxNzc0MjM4NjY5fQ.D3vYeqNEI-cLsP7My2Kh8kSwl3ZjRzlObrnldsgAuVLt-adbIFPlGiMGEe1jwDIQ7xb-ecD_FzRzOMD0RBn1Vw"
+        },
+        {
+          "name": "egov_smart_tour_v1",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "origin": "http://127.0.0.1:3001",
+      "localStorage": [
+        {
+          "name": "accessToken",
+          "value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWJtYXN0ZXIiLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3NDIzNTA2OSwiZXhwIjoxNzc0MjM4NjY5fQ.D3vYeqNEI-cLsP7My2Kh8kSwl3ZjRzlObrnldsgAuVLt-adbIFPlGiMGEe1jwDIQ7xb-ecD_FzRzOMD0RBn1Vw"
+        },
+        {
+          "name": "egov_smart_tour_v1",
+          "value": "true"
         }
       ]
     }

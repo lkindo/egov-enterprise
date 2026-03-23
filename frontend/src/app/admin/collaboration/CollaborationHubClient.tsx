@@ -80,7 +80,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
     if (activeTab === 'MESSAGES') return notes.find(n => n.noteId === selectedItemId);
     if (activeTab === 'ADDRESS_BOOK') return addresses.find((a: any) => a.adbkId === selectedItemId);
     if (activeTab === 'SCRAPS') return scraps.find((s: any) => s.scrapId === selectedItemId);
-    returns null;
+    return null;
   }, [selectedItemId, activeTab, notes, addresses, scraps]);
 
   // --- Renderers ---

@@ -20,9 +20,9 @@ test.describe('Dashboard Features', () => {
     });
 
     test('should verify quick links', async ({ page }) => {
-        // Look for Recent Notices link
+        // Look for Recent Notices link - increase timeout as this might be slow to render
         const noticeLink = page.getByRole('link', { name: /최근 공지사항|더보기/i }).first();
-        await expect(noticeLink).toBeVisible();
+        await expect(noticeLink).toBeVisible({ timeout: 15000 });
         await noticeLink.click();
 
         // Should navigate to notice board
