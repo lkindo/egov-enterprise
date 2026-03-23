@@ -58,10 +58,11 @@ class MenuAdminService extends AdminService {
  return this.put(`/${menuNo}`, data, config);
  }
 
- /** 메뉴 순서 일괄 수정 */
- async updateMenuOrder(data: any[], config?: AxiosRequestConfig): Promise<void> {
- return this.put('/order', data, config);
- }
+  /** 메뉴 순서 일괄 수정 - API 명세에 따른 경로 수정 (/batch-order) */
+  async updateMenuOrder(data: any[], config?: AxiosRequestConfig): Promise<void> {
+    // 80여개의 메뉴 업데이트 부하를 고려하여 타임아웃 120초로 대폭 연장
+    return this.put('/batch-order', data, { ...config, timeout: 120000 });
+  }
 
  /** 메뉴 삭제 */
  async deleteMenu(menuNo: number, config?: AxiosRequestConfig): Promise<void> {

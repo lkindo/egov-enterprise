@@ -1,7 +1,7 @@
 export interface Program {
  progrmFileNm: string;
  progrmStrePath: string;
- progrmNm: string;
+ progrmKoreanNm: string;
  url: string;
  progrmDc?: string;
 }

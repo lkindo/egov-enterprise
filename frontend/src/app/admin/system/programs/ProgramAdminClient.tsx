@@ -50,22 +50,30 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
   const [formData, setFormData] = useState<Program>({
     progrmFileNm: '',
     progrmStrePath: '',
-    progrmNm: '',
+    progrmKoreanNm: '',
     url: '',
     progrmDc: ''
   });
 
-  const [data, setData] = useState(initialData?.list || []);
-  const [total, setTotal] = useState(initialData?.total || 0);
+   const [data, setData] = useState<Program[]>(() => {
+    return initialData?.list || initialData?.content || initialData?.resultList || [];
+  });
+  const [total, setTotal] = useState(() => {
+    return initialData?.total || initialData?.totalElements || initialData?.totalRecordCount || 0;
+  });
   const [loading, setLoading] = useState(false);
   const [currentSearchWrd, setCurrentSearchWrd] = useState(searchWrd);
 
-  const loadData = async (wrd: string = currentSearchWrd, page: number = 1) => {
+   const loadData = async (wrd: string = currentSearchWrd, page: number = 1) => {
     try {
       setLoading(true);
-      const res = await programAdminService.getProgramList({ pageIndex: page, size: 10, searchWrd: wrd });
-      setData(res.list || []);
-      setTotal(res.total || 0);
+      const res: any = await programAdminService.getProgramList({ pageIndex: page, size: 10, searchWrd: wrd });
+      
+      const list = res.list || res.content || res.resultList || [];
+      const totalCount = res.total || res.totalElements || res.totalRecordCount || 0;
+      
+      setData(list);
+      setTotal(totalCount);
     } catch (error) {
       toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
     } finally {
@@ -75,7 +83,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
   const handleOpenCreate = () => {
     setMode('create');
-    setFormData({ progrmFileNm: '', progrmStrePath: '', progrmNm: '', url: '', progrmDc: '' });
+    setFormData({ progrmFileNm: '', progrmStrePath: '', progrmKoreanNm: '', url: '', progrmDc: '' });
     setIsOpen(true);
   };
 
@@ -123,7 +131,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             <Cpu size={20} />
           </div>
           <div>
-            <span className="font-black tracking-tighter text-foreground block text-md uppercase leading-none">{item.progrmNm}</span>
+            <span className="font-black tracking-tighter text-foreground block text-md uppercase leading-none">{item.progrmKoreanNm}</span>
             <span className="text-[9px] font-black text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-40">SYSTEM_MODULE</span>
           </div>
         </div>
@@ -182,16 +190,16 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             size="lg"
             className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
           >
-            <Plus size={20} /> 신규 프로그램 배포
+            <Plus size={20} /> 신규 등록
           </Button>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="ACTIVE_MODULES" value={total} icon={Layers} color="primary" />
-        <HubMetricCard title="SYSTEM_INTEGRITY" value="VALID" icon={ShieldCheck} color="emerald" status="VERIFIED" />
-        <HubMetricCard title="SERVICE_UPTIME" value="99.9%" icon={Zap} color="amber" />
-        <HubMetricCard title="REGISTRY_SYNC" value="REALTIME" icon={RefreshCcw} color="indigo" />
+        <HubMetricCard title="활성_프로그램_수" value={total} icon={Layers} color="primary" />
+        <HubMetricCard title="시스템_무결성" value="정상" icon={ShieldCheck} color="emerald" status="VERIFIED" />
+        <HubMetricCard title="서비스_가동시간" value="99.9%" icon={Zap} color="amber" />
+        <HubMetricCard title="레지스트리_동기화" value="실시간" icon={RefreshCcw} color="indigo" />
       </HubMetricGrid>
 
       <HubSectionCard title="소프트웨어 레포지토리" description="현재 시스템에 등록되어 동작 중인 모든 소프트웨어 자산의 명세 및 인터페이스 정보입니다." icon={SearchCode}>
@@ -209,7 +217,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             </div>
           </div>
           <Button onClick={() => loadData()} size="lg" className="h-16 px-10 rounded-[1.25rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2">
-            <Search size={18} /> 엔진 조회
+            <Search size={18} /> 검색
           </Button>
         </div>
 
@@ -227,13 +235,13 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       <StandardModal
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
-        title={mode === 'create' ? '신규 소프트웨어 자산 배포' : '프로그램 사양 및 엔드포인트 수정'}
+        title={mode === 'create' ? '신규 프로그램 등록' : '프로그램 정보 수정'}
         maxWidth="2xl"
-        footer={
+         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">CANCEL</Button>
-            <Button onClick={handleSave} className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-xl">
-              {mode === 'create' ? 'DEPLOY_ASSET' : 'UPDATE_SPECIFICATION'}
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2 uppercase">취소</Button>
+            <Button onClick={handleSave} className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest shadow-xl uppercase">
+              {mode === 'create' ? '신규 등록' : '저장'}
             </Button>
           </div>
         }
@@ -251,8 +259,8 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             </FormField>
             <FormField label="프로그램 한글 명칭" required>
               <Input
-                value={formData.progrmNm || ''}
-                onChange={(e) => setFormData({ ...formData, progrmNm: e.target.value })}
+                value={formData.progrmKoreanNm || ''}
+                onChange={(e) => setFormData({ ...formData, progrmKoreanNm: e.target.value })}
                 className="h-14 rounded-2xl text-sm font-black tracking-tight"
                 placeholder="한국어 자산 명칭 입력"
               />

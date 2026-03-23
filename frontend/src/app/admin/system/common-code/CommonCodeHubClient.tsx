@@ -127,7 +127,11 @@ export default function CommonCodeHubClient({
 function HubTabButton({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
   return (
     <button 
-      onClick={onClick}
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        onClick();
+      }}
       className={cn(
         "relative flex items-center gap-3 px-10 py-4 rounded-[2rem] text-[11px] font-black tracking-tight transition-all active:scale-95 overflow-hidden group",
         active 

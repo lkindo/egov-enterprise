@@ -38,12 +38,12 @@ export function HubStatusBadge({
 
   return (
     <div className={cn(
-      "hub-badge-status border border-border/10",
+      "hub-badge-status border border-border/10 whitespace-nowrap w-fit",
       variantStyles[activeVariant],
       className
     )}>
       {Icon && <Icon size={12} />}
-      <span>{displayLabel}</span>
+      <span className="leading-none">{displayLabel}</span>
     </div>
   );
 }

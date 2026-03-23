@@ -7,8 +7,9 @@ export function ApiErrorNotifier() {
  const { toast } = useToast();
 
  useEffect(() => {
- const handleApiError = (event: any) => {
- const { message, status } = event.detail;
+  const handleApiError = (event: any) => {
+    if (!event.detail) return;
+    const { message, status } = event.detail;
  
  // Don't show toast for 401 as it's handled by redirection or reissue
  if (status === 401) return;

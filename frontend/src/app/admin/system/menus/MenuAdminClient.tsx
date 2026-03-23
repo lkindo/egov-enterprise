@@ -43,32 +43,51 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
-// Helper to build tree from flat list
-const buildMenuTree = (flatMenus: MenuInfo[]): MenuInfo[] => {
+// Helper to build tree from flat list - Hardened against null/undefined
+const buildMenuTree = (flatMenus: MenuInfo[] | null | undefined): MenuInfo[] => {
+  if (!flatMenus || !Array.isArray(flatMenus)) return [];
+  
   const map: Record<number, MenuInfo> = {};
   const roots: MenuInfo[] = [];
 
-  flatMenus.forEach(m => {
-    map[m.menuNo] = { ...m, upperMenuId: m.upperMenuNo ?? m.upperMenuId ?? 0, children: [] };
-  });
+  try {
+    flatMenus.forEach(m => {
+      if (m && m.menuNo) {
+        map[m.menuNo] = { ...m, upperMenuId: m.upperMenuNo ?? m.upperMenuId ?? 0, children: [] };
+      }
+    });
 
-  flatMenus.forEach(m => {
-    const item = map[m.menuNo];
-    const parentId = m.upperMenuNo ?? m.upperMenuId ?? 0;
-    if (parentId === 0 || !map[parentId]) {
-      roots.push(item);
-    } else {
-      map[parentId].children?.push(item);
-    }
-  });
+    flatMenus.forEach(m => {
+      if (!m || !m.menuNo) return;
+      const item = map[m.menuNo];
+      const parentId = m.upperMenuNo ?? m.upperMenuId ?? 0;
+      
+      if (parentId === 0 || !map[parentId]) {
+        roots.push(item);
+      } else {
+        const parent = map[parentId];
+        if (parent) {
+          parent.children = parent.children || [];
+          parent.children.push(item);
+        }
+      }
+    });
 
-  // Sort by menuOrdr
-  const sortByOrder = (a: MenuInfo, b: MenuInfo) => (a.menuOrdr || 0) - (b.menuOrdr || 0);
-  roots.sort(sortByOrder);
-  roots.forEach(r => {
-    r.children?.sort(sortByOrder);
-    r.children?.forEach(c => c.children?.sort(sortByOrder));
-  });
+    // Sort by menuOrdr
+    const sortByOrder = (a: MenuInfo, b: MenuInfo) => (a.menuOrdr || 0) - (b.menuOrdr || 0);
+    roots.sort(sortByOrder);
+    roots.forEach(r => {
+      if (r.children) {
+        r.children.sort(sortByOrder);
+        r.children.forEach(c => {
+          if (c.children) c.children.sort(sortByOrder);
+        });
+      }
+    });
+  } catch (e) {
+    console.error('Error in buildMenuTree:', e);
+    return [];
+  }
 
   return roots;
 };
@@ -77,13 +96,20 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
+   const [isSaving, setIsSaving] = useState(false);
   const [treeMenus, setTreeMenus] = useState<MenuInfo[]>(() => buildMenuTree(initialMenus));
   const [hasChanges, setHasChanges] = useState(false);
+  const [draggedMenuId, setDraggedMenuId] = useState<number | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<number | null>(null);
+  const [dropPosition, setDropPosition] = useState<'before' | 'inside' | 'after' | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
-  // Sync treeMenus when initialMenus changes from server (router.refresh())
+  // 서버 데이터(initialMenus) 동기화 - 사용자의 현재 작업이 없거나 드래그 중이 아닐 때만 업데이트
   useEffect(() => {
-    setTreeMenus(buildMenuTree(initialMenus));
-  }, [initialMenus]);
+    if (!hasChanges && !isSaving && !draggedMenuId) {
+      setTreeMenus(buildMenuTree(initialMenus));
+    }
+  }, [initialMenus, hasChanges, isSaving, draggedMenuId]);
 
   const [isModalOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
@@ -143,28 +169,52 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
   const handleSaveChanges = async () => {
     const flat: any[] = [];
-    const traverse = (items: MenuInfo[], parentId: number) => {
+    const traverse = (items: MenuInfo[] | undefined, parentId: number) => {
+      if (!items || !Array.isArray(items)) return;
+      
       items.forEach((item, idx) => {
+        // 성공 이력이 확인된 규격으로 전송 (null 방식)
+        const parentNo = parentId === 0 ? null : parentId;
+
+        // 서버 부하와 로직 충돌 방지를 위해 핵심 필드만 정제 (Payload Sanitization)
         flat.push({
-          ...item,
+          id: item.menuNo, // id 필드 대응
+          menuNo: item.menuNo,
           menuOrdr: idx + 1,
-          upperMenuNo: parentId,
-          upperMenuId: parentId,
-          children: undefined
+          upperMenuNo: parentNo,
+          upperMenuId: parentNo,
+          menuNm: item.menuNm,
+          progrmFileNm: item.progrmFileNm || '',
+          modernRoute: item.modernRoute || '',
+          menuDc: item.menuDc || ''
         });
-        if (item.children && item.children.length > 0) {
+        
+        if (item.children && Array.isArray(item.children) && item.children.length > 0) {
           traverse(item.children, item.menuNo);
         }
       });
     };
-    traverse(treeMenus, 0);
 
-    const res = await updateMenuOrdersAction(null, flat);
-    if (res.success) {
-      toast(res.message, 'success');
-      setHasChanges(false);
-    } else {
-      toast(res.message, 'error');
+    try {
+      setIsSaving(true);
+      traverse(treeMenus, 0);
+
+      const res = await updateMenuOrdersAction(flat);
+      if (res.success) {
+        toast(res.message, 'success');
+        setHasChanges(false);
+        // 부드러운 배경 갱신을 위해 startTransition 사용
+        React.startTransition(() => {
+          router.refresh();
+        });
+      } else {
+        toast(res.message, 'error');
+      }
+    } catch (err: any) {
+      console.error('Critical Error in handleSaveChanges:', err);
+      toast('순서 변환 중 예기치 않은 오류가 발생했습니다.', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -185,13 +235,13 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     }
   };
 
-  const [draggedMenuId, setDraggedMenuId] = useState<number | null>(null);
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+
+
 
   // Initialize all nodes as expanded on first load
   useEffect(() => {
     const idsWithChildren = initialMenus
-      .filter(m => initialMenus.some(child => child.upperMenuNo === m.menuNo))
+      .filter(m => initialMenus.some(child => (child.upperMenuNo ?? child.upperMenuId) === m.menuNo))
       .map(m => m.menuNo);
     setExpandedIds(new Set(idsWithChildren));
   }, [initialMenus]);
@@ -207,8 +257,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
   const handleExpandAll = () => {
     const idsWithChildren = initialMenus
-      .filter(m => initialMenus.some(child => (child.upperMenuNo ?? child.upperMenuId) === m.menuNo))
-      .map(m => m.menuNo);
+        .filter(m => initialMenus.some(child => (child.upperMenuNo ?? child.upperMenuId) === m.menuNo))
+        .map(m => m.menuNo);
     setExpandedIds(new Set(idsWithChildren));
   };
 
@@ -217,47 +267,69 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   };
 
   const handleDragStart = (e: React.DragEvent, id: number) => {
-    setDraggedMenuId(id);
     e.dataTransfer.setData('menuId', String(id));
     e.dataTransfer.effectAllowed = 'move';
+    
+    // 브라우저가 드래그 세션을 완전히 생성한 '직후'에 상태를 업데이트 (0ms 지연)
+    // 드래그 시작 즉시 DOM이 변하면 브라우저가 드래그를 강제 취소하는 버그 대응
+    setTimeout(() => {
+      setDraggedMenuId(id);
+    }, 0);
   };
 
-  const handleDrop = (e: React.DragEvent, targetParentId: number) => {
-    e.preventDefault();
+  const handleDragEnd = () => {
+    setDraggedMenuId(null);
+    setDropTargetId(null);
+    setDropPosition(null);
+  };
 
-    const sourceId = Number(e.dataTransfer.getData('menuId'));
-    if (sourceId === targetParentId) return;
+  const handleDragEnter = (e: React.DragEvent, targetId: number) => {
+    e.preventDefault();
+    if (draggedMenuId === targetId) return;
+    setDropTargetId(targetId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedMenuId === targetId) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const relativeY = e.clientY - rect.top;
+    const threshold = rect.height / 3;
+
+    let position: 'before' | 'inside' | 'after' = 'inside';
+    if (relativeY < threshold) position = 'before';
+    else if (relativeY > threshold * 2) position = 'after';
+
+    setDropTargetId(targetId);
+    setDropPosition(position);
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: number, forcedPosition?: 'before' | 'inside' | 'after') => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 어떤 상황에서도 잔상이 남지 않도록 클린업 보장
+    const cleanup = () => {
+        setDraggedMenuId(null);
+        setDropTargetId(null);
+        setDropPosition(null);
+    };
+
+    const sourceId = draggedMenuId || Number(e.dataTransfer.getData('menuId'));
+    const position = forcedPosition || dropPosition;
+
+    if (!sourceId || sourceId === targetId) {
+        cleanup();
+        return;
+    }
 
     const newTree = JSON.parse(JSON.stringify(treeMenus));
 
-    const getItemWithMetadata = (items: MenuInfo[], id: number, currentLevel: number = 0): { item: MenuInfo, level: number } | null => {
-      for (const item of items) {
-        if (item.menuNo === id) return { item, level: currentLevel };
-        if (item.children) {
-          const found = getItemWithMetadata(item.children, id, currentLevel + 1);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
-    const sourceData = getItemWithMetadata(newTree, sourceId);
-    if (!sourceData) return;
-
-    const getMaxDepth = (item: MenuInfo): number => {
-      if (!item.children || item.children.length === 0) return 0;
-      return 1 + Math.max(...item.children.map(getMaxDepth));
-    };
-
-    const targetLevel = (targetParentId === 0) ? 0 : (getItemWithMetadata(newTree, targetParentId)?.level ?? 0) + 1;
-    const movingSubTreeDepth = getMaxDepth(sourceData.item);
-
-    if (targetLevel + movingSubTreeDepth >= 3) {
-      toast('최대 3단계 계층까지만 지원합니다.', 'error');
-      setDraggedMenuId(null);
-      return;
-    }
-
+    // Find and remove the dragged item
+    let draggedItem: MenuInfo | null = null;
     const findAndRemove = (items: MenuInfo[], id: number): MenuInfo | null => {
       for (let i = 0; i < items.length; i++) {
         if (items[i].menuNo === id) return items.splice(i, 1)[0];
@@ -269,57 +341,91 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       return null;
     };
 
-    const draggedItem = findAndRemove(newTree, sourceId);
-    if (draggedItem) {
-      if (targetParentId === 0) {
-        newTree.push({ ...draggedItem, upperMenuId: 0 });
-      } else {
-        const findTarget = (items: MenuInfo[], id: number): MenuInfo | null => {
-          for (const item of items) {
-            if (item.menuNo === id) return item;
-            if (item.children) {
-              const found = findTarget(item.children, id);
-              if (found) return found;
-            }
-          }
-          return null;
-        };
-        const target = findTarget(newTree, targetParentId);
-        if (target) {
-          target.children = target.children || [];
-          target.children.push({ ...draggedItem, upperMenuId: targetParentId });
-        }
-      }
-      setTreeMenus(newTree);
-      setHasChanges(true);
-      toast('메뉴 구조가 임시 변경되었습니다. [순서 적용] 버튼을 눌러 확정하세요.', 'success');
+    draggedItem = findAndRemove(newTree, sourceId);
+    if (!draggedItem) {
+        cleanup();
+        return;
     }
+
+    // Helper to find parent array and index of target
+    const findParentAndIndex = (items: MenuInfo[], id: number): { parent: MenuInfo[], index: number, parentItem: MenuInfo | null } | null => {
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].menuNo === id) return { parent: items, index: i, parentItem: null };
+            if (items[i].children) {
+                const found = findParentAndIndex(items[i].children!, id);
+                if (found) {
+                    if (found.parentItem === null) {
+                        return { ...found, parentItem: items[i] };
+                    }
+                    return found;
+                }
+            }
+        }
+        return null;
+    };
+
+    if (targetId === 0) {
+        // Drop into standard promotion area
+        newTree.push({ ...draggedItem, upperMenuId: 0, upperMenuNo: 0 });
+    } else {
+        const targetInfo = findParentAndIndex(newTree, targetId);
+        if (targetInfo) {
+            const { parent, index, parentItem } = targetInfo;
+            const parentId = parentItem ? parentItem.menuNo : 0;
+
+            if (position === 'inside') {
+                const targetNode = parent[index];
+                targetNode.children = targetNode.children || [];
+                targetNode.children.push({ ...draggedItem, upperMenuId: targetId, upperMenuNo: targetId });
+            } else if (position === 'before') {
+                parent.splice(index, 0, { ...draggedItem, upperMenuId: parentId, upperMenuNo: parentId });
+            } else if (position === 'after') {
+                parent.splice(index + 1, 0, { ...draggedItem, upperMenuId: parentId, upperMenuNo: parentId });
+            }
+        }
+    }
+
+    setTreeMenus(newTree);
+    setHasChanges(true);
     setDraggedMenuId(null);
+    setDropTargetId(null);
+    setDropPosition(null);
+    toast('메뉴 구조가 변경되었습니다. 트리 섹션 상단의 [레이아웃 적용] 버튼을 클릭하여 저장해 주세요.', 'info');
   };
 
   const MenuNode = ({ item, level = 0 }: { item: MenuInfo; level: number }) => {
     const isDragged = draggedMenuId === item.menuNo;
+    const isDropTarget = dropTargetId === item.menuNo;
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedIds.has(item.menuNo);
 
-    return (
+     return (
       <div
-        draggable
-        onDragStart={(e) => handleDragStart(e, item.menuNo)}
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
+        draggable={!isSaving}
+        onDragStart={(e) => {
+          if (isSaving) return;
+          handleDragStart(e, item.menuNo);
         }}
-        onDrop={(e) => {
-          e.stopPropagation();
-          handleDrop(e, item.menuNo);
+        onDragEnter={(e) => handleDragEnter(e, item.menuNo)}
+        onDragOver={(e) => handleDragOver(e, item.menuNo)}
+        onDragEnd={() => {
+          handleDragEnd();
         }}
+        onDrop={(e) => handleDrop(e, item.menuNo)}
         className={cn(
-          "group select-none transition-all duration-300",
-          level > 0 && "ml-16 mt-6 border-l-2 border-slate-100 pl-10 pb-2 relative",
+          "group select-none transition-all duration-300 relative",
+          level > 0 && "ml-16 mt-6 border-l-2 border-slate-100 pl-10 pb-2",
           isDragged && "opacity-20 scale-95"
         )}
       >
+        {/* Drop Indicators */}
+        {isDropTarget && dropPosition === 'before' && (
+          <div className="absolute -top-3 left-0 right-0 h-1 bg-primary rounded-full z-50 animate-pulse" />
+        )}
+        {isDropTarget && dropPosition === 'after' && (
+          <div className="absolute -bottom-3 left-0 right-0 h-1 bg-primary rounded-full z-50 animate-pulse" />
+        )}
+
         {/* Connection Line Visualization */}
         {level > 0 && (
             <div className="absolute left-0 top-6 w-8 h-0.5 bg-slate-100 rounded-full" />
@@ -328,7 +434,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         <div className={cn(
           "flex items-center justify-between p-5 rounded-[1.5rem] border-2 transition-all relative overflow-hidden",
           level === 0 ? "bg-white border-slate-100 shadow-sm" : "bg-slate-50/50 border-transparent",
-          "hover:border-primary/30 hover:shadow-xl cursor-grab active:cursor-grabbing bg-white/40 backdrop-blur-xl"
+          isDropTarget && dropPosition === 'inside' ? "border-primary bg-primary/5 scale-[1.02]" : "hover:border-primary/30",
+          "cursor-grab active:cursor-grabbing bg-white/40 backdrop-blur-xl"
         )}>
           <div className="flex items-center gap-5 relative z-10">
             <div className="flex items-center gap-2">
@@ -436,31 +543,6 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         icon={FolderTree} 
         actions={
           <div className="flex gap-4 p-2 items-center">
-            <div className="flex bg-slate-100/80 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/50 shadow-inner">
-              <Button
-                variant="ghost"
-                onClick={handleExpandAll}
-                className="h-11 px-4 rounded-xl font-black text-[10px] tracking-widest uppercase hover:bg-white group transition-all"
-              >
-                <ChevronsUpDown size={16} className="group-hover:scale-110" /> 전체 펼치기
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={handleCollapseAll}
-                className="h-11 px-4 rounded-xl font-black text-[10px] tracking-widest uppercase hover:bg-white group transition-all"
-              >
-                <ChevronsDownUp size={16} className="group-hover:scale-110" /> 전체 접기
-              </Button>
-            </div>
-
-            {hasChanges && (
-              <Button
-                onClick={handleSaveChanges}
-                className="bg-emerald-600 text-white hover:bg-emerald-700 h-14 px-8 rounded-2xl font-black text-[11px] tracking-widest uppercase gap-3 shadow-2xl animate-pulse"
-              >
-                <Save size={20} /> 레이아웃 적용
-              </Button>
-            )}
             <Button
               onClick={() => handleOpenCreate(0)}
               size="lg"
@@ -473,13 +555,52 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="등록된_노드_수" value={initialMenus.length} icon={Database} color="primary" />
+        <HubMetricCard title="등록된_노드_수" value={(initialMenus || []).length} icon={Database} color="primary" />
         <HubMetricCard title="계층_깊이" value={3} icon={LayoutGrid} color="indigo" />
-        <HubMetricCard title="활성_경로_수" value={initialMenus.filter(m => !!m.modernRoute).length} icon={Network} color="emerald" />
+        <HubMetricCard title="활성_경로_수" value={(initialMenus || []).filter(m => !!m?.modernRoute).length} icon={Network} color="emerald" />
         <HubMetricCard title="동기화_무결성" value="최적" icon={ShieldCheck} color="amber" />
       </HubMetricGrid>
 
-      <HubSectionCard title="시스템 네비게이션 트리" description="최대 3단계의 계층 구조를 지원합니다. 드래그 앤 드롭으로 메뉴 구조를 설계하십시오." icon={SearchCode}>
+      <HubSectionCard 
+        title="시스템 네비게이션 트리" 
+        description="최대 3단계의 계층 구조를 지원합니다. 드래그 앤 드롭으로 메뉴 구조를 설계하십시오." 
+        icon={SearchCode}
+        action={
+          <div className="flex gap-4 items-center">
+            <div className="flex bg-white/10 backdrop-blur-md p-1 rounded-xl border border-white/10">
+              <Button
+                variant="ghost"
+                onClick={handleExpandAll}
+                className="h-10 px-3 text-[10px] font-black tracking-widest uppercase hover:bg-white/20 text-white/70 hover:text-white"
+              >
+                <ChevronsUpDown size={14} className="mr-2" /> 펼치기
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleCollapseAll}
+                className="h-10 px-3 text-[10px] font-black tracking-widest uppercase hover:bg-white/20 text-white/70 hover:text-white"
+              >
+                <ChevronsDownUp size={14} className="mr-2" /> 접기
+              </Button>
+            </div>
+
+            {hasChanges && (
+              <Button
+                onClick={handleSaveChanges}
+                disabled={isSaving}
+                className="bg-emerald-500 text-white hover:bg-emerald-600 h-10 px-6 rounded-xl font-black text-[10px] tracking-widest uppercase gap-2 shadow-lg animate-in fade-in zoom-in duration-300 disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Save size={16} />
+                )}
+                {isSaving ? '처리 중...' : '레이아웃 적용'}
+              </Button>
+            )}
+          </div>
+        }
+      >
         <div className="space-y-6 px-4">
           {treeMenus.map(menu => (
             <MenuNode key={menu.menuNo} item={menu} level={0} />
@@ -496,7 +617,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
             }}
             onDrop={(e) => {
               e.currentTarget.classList.remove('bg-primary/5', 'border-primary', 'scale-[1.01]');
-              handleDrop(e, 0);
+              handleDrop(e, 0, 'inside'); // root Drop
             }}
             className="border-4 border-dashed border-slate-100 rounded-[2.5rem] p-16 flex flex-col items-center justify-center gap-6 transition-all hover:border-primary/30 group mt-16 bg-slate-50/30"
           >
@@ -564,9 +685,9 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                 <SelectValue placeholder="--- UNLINKED (연동되지 않음) ---" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl shadow-2xl p-2">
-                {programs.map(p => (
-                  <SelectItem key={p.progrmFileNm} value={p.progrmFileNm} className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase">
-                    {p.progrmNm} ({p.progrmFileNm})
+                {programs.map((p) => (
+                  <SelectItem key={p.progrmFileNm} value={p.progrmFileNm} className="text-xs font-bold">
+                    {p.progrmKoreanNm} ({p.progrmFileNm})
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -27,8 +27,14 @@ export default async function BannerAdminPage() {
 
  initialBanners = (bannersRes as any)?.content || [];
  initialPopups = (popupsRes as any)?.content || [];
- } catch (error) {
+ } catch (error: any) {
  console.error('Server-side fetch banners/popups failed:', error);
+    
+    // 만약 401 에러(인증 만료)라면 로그인 페이지로 리다이렉트
+    if (error.response?.status === 401) {
+      const { redirect } = await import('next/navigation');
+      redirect('/login?expired=true&redirect=/admin/system/banner');
+    }
  }
 
  return (
