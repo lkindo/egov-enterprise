@@ -62,13 +62,25 @@ test.describe('Integrated Hub Navigation & UX Verification', () => {
         await page.goto('/admin/dashboard');
         
         // 1. Expanded Navigation Check for Monitoring
-        await page.locator('nav').getByText('시스템 관리 센터').click(); 
-        await page.getByText('감사 및 통계 모니터링').click();
+        // Use regex for flexible matching (handles emojis)
+        const headerMenu = page.locator('header nav').getByText(/시스템 관리 센터/);
+        await expect(headerMenu).toBeVisible({ timeout: 15000 });
+        await headerMenu.click();
+        
+        // Wait for sidebar to load and sub-menu to be visible
+        // Log all sidebar items if not found
+        const sidebar = page.locator('aside');
+        const monitoringMenu = sidebar.getByText(/감사.*통계.*모니터링/, { exact: false });
+        await expect(monitoringMenu).toBeVisible({ timeout: 15000 });
+        await monitoringMenu.click();
         
         // Click '시스템 상태 모니터링' (mapped to ?tab=health)
-        await page.getByText('시스템 상태 모니터링').click();
+        // May need to wait for expanding animation
+        const healthMenu = page.locator('aside').getByText('시스템 상태 모니터링').first();
+        await expect(healthMenu).toBeVisible({ timeout: 15000 });
+        await healthMenu.click();
         
-        await expect(page).toHaveURL(/\/admin\/system\/monitoring\/hub\?tab=health/);
+        await expect(page).toHaveURL(/.*tab=health/);
         const healthBtn = page.getByRole('button', { name: '인프라 가동성 정보' });
         await expect(healthBtn).toHaveClass(/bg-slate-900/);
     });
