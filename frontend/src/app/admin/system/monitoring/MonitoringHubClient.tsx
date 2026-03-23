@@ -42,14 +42,33 @@ import { commentAdminService } from '@/services/admin/system/CommentAdminService
 import { systemLogAdminService } from '@/services/admin/system/SystemLogAdminService';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { useRouter, useSearchParams } from 'next/navigation';
+
 type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS';
 
 export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defaultTab?: MonitoringTab }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<MonitoringTab>(defaultTab);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // URL 쿼리 파라미터에서 탭 정보를 가져오거나 기본값을 사용합니다. (매핑 보강)
+  const rawTab = searchParams.get('tab')?.toUpperCase();
+  const queryTab = (rawTab === 'HEALTH' ? 'OBSERVABILITY' : rawTab === 'POLICY' ? 'LOGIN' : rawTab) as MonitoringTab;
+  
+  const activeTab = (queryTab && ['SECURITY', 'SYSTEM', 'LOGIN', 'OBSERVABILITY', 'COMMENTS'].includes(queryTab)) 
+    ? queryTab 
+    : defaultTab;
+
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
+
+  const setActiveTab = (tab: MonitoringTab) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', tab.toLowerCase());
+    router.push(`/admin/system/monitoring/hub?${params.toString()}`, { scroll: false });
+    setSelectedItemId(null);
+  };
 
   const { data: auditData } = useQuery({
     queryKey: ['admin-audit-logs', searchKeyword],

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Briefcase, 
   Search, 
@@ -29,14 +30,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface WorkHubClientProps {
   jobs?: any[];
   reports?: any[];
-  defaultTab?: 'job' | 'report' | string;
+  defaultTab?: 'job' | 'report' | 'calendar' | string;
 }
 
 export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'job' }: WorkHubClientProps) {
-  const initialTab = (defaultTab.toLowerCase().includes('job') ? 'job' : 
-  defaultTab.toLowerCase().includes('report') ? 'report' : 'job') as 'job' | 'report';
-  const [activeTab, setTab] = useState<'job' | 'report'>(initialTab);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const queryTab = searchParams.get('tab');
+  const initialTab = (queryTab === 'calendar' ? 'calendar' : 
+                      queryTab === 'report' ? 'report' : 
+                      defaultTab.toLowerCase().includes('report') ? 'report' : 
+                      defaultTab.toLowerCase().includes('calendar') ? 'calendar' : 'job') as 'job' | 'report' | 'calendar';
+  
+  const [activeTab, setTabState] = useState<'job' | 'report' | 'calendar'>(initialTab);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+  const setTab = (tab: 'job' | 'report' | 'calendar') => {
+    setTabState(tab);
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', tab);
+    router.push(`/admin/work-hub?${params.toString()}`, { scroll: false });
+    setSelectedItemId(null);
+  };
 
   const WorkListItem = ({ title, subtitle, icon, selected, onClick }: any) => (
     <div 
@@ -115,6 +131,27 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
     </div>
   );
 
+  const renderCalendar = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="p-8 rounded-[2rem] bg-white border-2 border-slate-100 shadow-xl space-y-8">
+        <div className="flex items-center justify-between">
+           <h3 className="text-xl font-black tracking-tighter uppercase">통합 스마트 캘린더</h3>
+           <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="rounded-full text-[9px] font-black">개인 일정</Button>
+              <Button size="sm" variant="default" className="rounded-full text-[9px] font-black bg-slate-900 text-white">부서 일정</Button>
+           </div>
+        </div>
+        <div className="aspect-[4/3] bg-slate-50 rounded-[2.5rem] flex flex-col items-center justify-center border-2 border-dashed border-slate-100 p-12 space-y-4">
+           <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center text-primary mb-2">
+            <Calendar size={32} />
+           </div>
+           <p className="text-sm font-black text-slate-900 tracking-tighter uppercase">Interactive Scheduling System</p>
+           <p className="text-[10px] font-bold text-slate-400 max-w-[200px] text-center leading-relaxed">준비된 캘린더 엔진이 비즈니스 일정을 실시간으로 동기화합니다.</p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
@@ -132,7 +169,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
             <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">
               <Filter size={16} /> 뷰포트 필터
             </Button>
-            <Button size="lg" className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2">
+            <Button size="lg" className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest air-shadow-primary hover:-translate-y-1 transition-all gap-2 bg-slate-900 text-white border-none">
               <Plus size={18} /> 새 업무 생성
             </Button>
           </div>
@@ -145,26 +182,37 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
           <div className="hub-table-container flex-1 flex flex-col p-10 space-y-8">
             <div className="bg-slate-50 dark:bg-muted/30 p-2 rounded-2xl flex gap-1 shadow-inner border border-border/20">
               <button 
-                onClick={() => { setTab('job'); setSelectedItemId(null); }}
+                onClick={() => setTab('job')}
                 className={cn(
-                  "flex-1 px-6 py-3 rounded-xl font-black text-[11px] tracking-widest uppercase transition-all duration-300",
+                  "flex-1 px-4 py-3 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all duration-300",
                   activeTab === 'job' 
                     ? "bg-white dark:bg-slate-900 shadow-xl text-primary scale-[1.02] border border-border/50" 
                     : "text-muted-foreground hover:text-foreground hover:bg-white/50"
                 )}
               >
-                WORKFLOW UNITS
+                WORKFLOW
               </button>
               <button 
-                onClick={() => { setTab('report'); setSelectedItemId(null); }}
+                onClick={() => setTab('report')}
                 className={cn(
-                  "flex-1 px-6 py-3 rounded-xl font-black text-[11px] tracking-widest uppercase transition-all duration-300",
+                  "flex-1 px-4 py-3 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all duration-300",
                   activeTab === 'report' 
                     ? "bg-white dark:bg-slate-900 shadow-xl text-primary scale-[1.02] border border-border/50" 
                     : "text-muted-foreground hover:text-foreground hover:bg-white/50"
                 )}
               >
-                INTELLIGENCE ASSETS
+                ASSETS
+              </button>
+              <button 
+                onClick={() => setTab('calendar')}
+                className={cn(
+                  "flex-1 px-4 py-3 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all duration-300",
+                  activeTab === 'calendar' 
+                    ? "bg-white dark:bg-slate-900 shadow-xl text-primary scale-[1.02] border border-border/50" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/50"
+                )}
+              >
+                CALENDAR
               </button>
             </div>
 
@@ -185,7 +233,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.4 }}
                 >
-                  {activeTab === 'job' ? renderJobList() : renderReportList()}
+                  {activeTab === 'job' ? renderJobList() : activeTab === 'report' ? renderReportList() : renderCalendar()}
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -195,11 +243,12 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
         {/* --- Detail/Dashboard Column --- */}
         <div className="col-span-12 lg:col-span-7 space-y-10">
           <HubSectionCard
-            title={selectedItemId ? "ASSET DEEP ANALYSIS" : "WAITING FOR FOCUS"}
+            title={selectedItemId ? "ASSET DEEP ANALYSIS" : activeTab === 'calendar' ? "SCHEDULE INTELLIGENCE" : "WAITING FOR FOCUS"}
             description={selectedItemId 
               ? `선출된 엔티티(#${selectedItemId})에 대한 실시간 연동 및 비즈니스 로직 분석이 활성화되었습니다.`
+              : activeTab === 'calendar' ? "전사 및 개인 일정을 통합하여 비즈니스 가용성을 한눈에 파악합니다."
               : "왼쪽 리스트에서 분석할 업무 개체 또는 보고 자료를 선택하여 데이터 요약을 시작하십시오."}
-            icon={selectedItemId ? Sparkles : Activity}
+            icon={selectedItemId ? Sparkles : activeTab === 'calendar' ? Calendar : Activity}
             statusBadges={
               <>
                 <HubStatusBadge label="INTEGRITY SYSTEM OK" icon={CheckCircle2} variant="success" className="text-[9px] font-black tracking-widest" />
@@ -234,9 +283,9 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
                     <Briefcase size={48} />
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">System Idle</h3>
+                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">{activeTab === 'calendar' ? 'Ready to Sync' : 'System Idle'}</h3>
                     <p className="text-[11px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed">
-                      Select Object to Capture Stream
+                      {activeTab === 'calendar' ? 'Connect Calendar Service for Insights' : 'Select Object to Capture Stream'}
                     </p>
                   </div>
                 </div>
