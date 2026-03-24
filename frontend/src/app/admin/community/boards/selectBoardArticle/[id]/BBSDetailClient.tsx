@@ -4,7 +4,7 @@ import React, { useState, Suspense, useActionState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { createBoardArticle } from '@/app/actions/boardActions';
+import { saveBoardArticle } from '@/app/actions/boardActions';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ const InsertBBSContent = () => {
  const searchParams = useSearchParams();
  const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
 
- const [state, formAction, isPending] = useActionState(createBoardArticle, null);
+ const [state, formAction, isPending] = useActionState(saveBoardArticle, null);
 
  useEffect(() => {
  if (state?.success) {

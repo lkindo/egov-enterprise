@@ -13,7 +13,7 @@ public interface EgovBoardMasterService {
 
     Page<BoardMasterDto> getBoardMasterList(String searchCnd, String searchWrd, @NonNull Pageable pageable);
 
-    void createBoardMaster(BoardMasterDto dto);
+    String createBoardMaster(BoardMasterDto dto);
 
     void updateBoardMaster(BoardMasterDto dto);
 

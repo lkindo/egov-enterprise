@@ -11,6 +11,7 @@ export interface Menu {
  menuDc: string;
  relateImagePath: string;
  relateImageNm: string;
+ modernRoute?: string;
 }
 
 export interface MenuCreate {

@@ -9,7 +9,7 @@ import {
   TrendingUp, Users, ArrowRight, Layers, Trash2, Award, Zap, History,
   Filter, Calendar, ChevronDown, Check, HelpCircle, CornerDownRight,
   Monitor, Star, Sparkles, Hash, MessageSquare, ChevronRight, Quote,
-  User, Eye, ShieldAlert, Lock
+  User, Eye, ShieldAlert, Lock, Settings2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -111,6 +111,15 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
           <h2 className="text-2xl md:text-4xl font-black text-foreground tracking-tighter uppercase italic leading-none">Enterprise Knowledge</h2>
         </div>
         <div className="flex items-center gap-3 md:gap-4 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+           {isAdmin && (
+             <Button 
+               onClick={() => router.push('/admin/community/boards/master')}
+               variant="outline"
+               className="h-12 md:h-16 px-4 md:px-8 rounded-xl md:rounded-2xl border-2 border-slate-200 bg-white text-slate-900 font-black tracking-widest text-[9px] md:text-[11px] uppercase hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
+             >
+               <Settings2 className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-180 transition-transform text-primary" /> Master Console
+             </Button>
+           )}
            <Button 
              onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${currentBbsId}`)}
              className="h-12 md:h-16 px-4 md:px-8 rounded-xl md:rounded-2xl bg-slate-900 text-white font-black tracking-widest text-[9px] md:text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"

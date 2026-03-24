@@ -38,16 +38,19 @@ export abstract class ApiService {
  * 사용자 전용 서비스 클래스
  */
 export abstract class UserService extends ApiService {
- constructor(domainPath: string) {
- super(`${domainPath}`);
- }
+  constructor(domainPath: string) {
+    // baseURL에 이어지는 상대 경로로 변경 (슬래시 제거)
+    super(`${domainPath.replace(/^\//, '')}`);
+  }
 }
 
 /**
  * 관리자 전용 서비스 클래스
  */
 export abstract class AdminService extends ApiService {
- constructor(domainPath: string) {
- super(`/admin/system${domainPath}`);
- }
+  constructor(domainPath: string) {
+    // baseURL에 이어지는 상대 경로로 변경 (슬래시 제거)
+    // /admin/system 대신 admin/system 사용
+    super(`admin/system${domainPath}`);
+  }
 }

@@ -27,8 +27,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Home, ChevronRight, MessageSquare, User, Calendar as CalendarIcon, Eye, Plus, Search, ArrowUpDown, X } from "lucide-react";
+import { Home, ChevronRight, MessageSquare, User, Calendar as CalendarIcon, Eye, Plus, Search, ArrowUpDown, X, Settings2 } from "lucide-react";
 import dynamic from 'next/dynamic';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from "@/lib/utils";
 
 const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardStats), {
@@ -46,10 +47,12 @@ interface Board {
 }
 
 export const BoardListClient = ({ initialData, params: initialParams }: { initialData: any; params: any }) => {
- const searchParams = useSearchParams();
- const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
+  const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
 
- const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd || '');
+  const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd || '');
  const [pageIndex, setPageIndex] = useState(initialParams.pageIndex || 1);
  const [searchCnd, setSearchCnd] = useState(initialParams.searchCnd || '0');
  const [orderBy, setOrderBy] = useState(initialParams.orderBy || 'date');
@@ -108,12 +111,19 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  </CardTitle>
  <p className="text-slate-400 font-bold text-sm">총 <span className="text-white">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
  </div>
- <CardAction className="relative z-10">
- <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
- <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-2xl">
- <Plus className="w-6 h-6" /> 게시글 작성하기
- </Button>
- </Link>
+ <CardAction className="relative z-10 flex items-center gap-3">
+  {isAdmin && (
+  <Link href="/admin/community/boards/master">
+  <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-white/20 bg-white/10 text-white hover:bg-white hover:text-slate-900 font-black shadow-xl transition-all rounded-2xl backdrop-blur-md">
+  <Settings2 className="w-6 h-6" /> 마스터 콘솔
+  </Button>
+  </Link>
+  )}
+  <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
+  <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-2xl">
+  <Plus className="w-6 h-6" /> 게시글 작성하기
+  </Button>
+  </Link>
  </CardAction>
  <div className="absolute right-[-5%] top-[-20%] opacity-10 scale-[2]">
  <MessageSquare size={200} />

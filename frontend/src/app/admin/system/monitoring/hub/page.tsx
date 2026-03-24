@@ -7,7 +7,7 @@ import { TableSkeleton } from '@/components/common/TableSkeleton';
 export default function MonitoringHubPage() {
   return (
     <div className="space-y-12 pb-24">
-      <Suspense fallback={<TableSkeleton />}>
+      <Suspense fallback={<TableSkeleton columnCount={5} />}>
         <MonitoringHubClient />
       </Suspense>
     </div>

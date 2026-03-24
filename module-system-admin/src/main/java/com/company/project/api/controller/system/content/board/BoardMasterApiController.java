@@ -42,9 +42,9 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 생성", description = "새로운 게시판 마스터를 생성합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createBoardMaster(@RequestBody BoardMasterDto dto) {
-        boardMasterService.createBoardMaster(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<String>> createBoardMaster(@RequestBody BoardMasterDto dto) {
+        String bbsId = boardMasterService.createBoardMaster(dto);
+        return ResponseEntity.ok(ApiResponse.success(bbsId));
     }
 
     @Operation(summary = "게시판 설정 수정", description = "기존 게시판 마스터 설정을 수정합니다.")

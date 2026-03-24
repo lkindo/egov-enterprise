@@ -69,7 +69,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
 
     @Override
     @Transactional
-    public void createBoardMaster(BoardMasterDto dto) {
+    public String createBoardMaster(BoardMasterDto dto) {
         String bbsId;
         try {
             bbsId = idgenService.getNextStringId();
@@ -99,6 +99,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .build();
 
         boardMasterRepository.save(Objects.requireNonNull(entity));
+        return bbsId;
     }
 
     @Override

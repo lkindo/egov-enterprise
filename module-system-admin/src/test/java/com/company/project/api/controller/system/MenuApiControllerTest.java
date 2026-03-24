@@ -76,4 +76,22 @@ class MenuApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("현대화된 라우트 포함 메뉴 등록 API 테스트")
+    void createMenuWithModernRoute_Success() throws Exception {
+        MenuDto dto = MenuDto.builder()
+                .menuNo(3L)
+                .menuNm("Modern Board")
+                .modernRoute("/community/boards/list?bbsId=BBSMSTR_WIKI")
+                .build();
+
+        mockMvc.perform(post(BASE_URL)
+                        .with(csrf())
+                        .content(objectMapper.writeValueAsString(dto))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
 }

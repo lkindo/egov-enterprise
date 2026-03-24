@@ -20,14 +20,14 @@ export interface BoardMaster {
 }
 
 /**
- * 게시판 마스터 관리 서비스 (Admin)
+ * 寃뚯떆??留덉뒪??愿由??쒕퉬??(Admin)
  */
 class BoardAdminService extends AdminService {
  constructor() {
- super('/boards');
+ super('/board-masters');
  }
 
- /** 게시판 목록 조회 */
+ /** 寃뚯떆??紐⑸줉 議고쉶 */
  async getBoardMasterList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<BoardMaster>> {
  return this.get<PageResponse<BoardMaster>>('', {
  ...config,
@@ -39,22 +39,22 @@ class BoardAdminService extends AdminService {
  });
  }
 
- /** 게시판 상세 조회 */
+ /** 寃뚯떆???곸꽭 議고쉶 */
  async getBoardMaster(id: string, config?: AxiosRequestConfig): Promise<BoardMaster> {
  return this.get<BoardMaster>(`/${id}`, config);
  }
 
- /** 게시판 등록 */
- async createBoardMaster(data: Partial<BoardMaster>, config?: AxiosRequestConfig): Promise<void> {
+ /** 寃뚯떆???깅줉 */
+ async createBoardMaster(data: Partial<BoardMaster>, config?: AxiosRequestConfig): Promise<string> {
  return this.post('', data, config);
  }
 
- /** 게시판 수정 */
+ /** 寃뚯떆???섏젙 */
  async updateBoardMaster(id: string, data: Partial<BoardMaster>, config?: AxiosRequestConfig): Promise<void> {
  return this.put(`/${id}`, data, config);
  }
 
- /** 게시판 삭제 */
+ /** 寃뚯떆????젣 */
  async deleteBoardMaster(id: string, userId: string, config?: AxiosRequestConfig): Promise<void> {
  return this.delete(`/${id}`, { ...config, params: { userId } });
  }
