@@ -36,7 +36,7 @@ test.describe('Workspace Flow', () => {
         }
 
         console.log('>>> Step 4: Submit Form');
-        await page.click('button[type="submit"]:has-text("등록"), button:has-text("저장")', { force: true });
+        await page.click('button[type="submit"]:has-text("등록"), button:has-text("저장"), button:has-text("Publish")', { force: true });
 
         console.log('>>> Step 5: Verify Post in List');
         await page.goto(`/cop/bbs?bbsId=${bbsId}`, { waitUntil: 'domcontentloaded' });

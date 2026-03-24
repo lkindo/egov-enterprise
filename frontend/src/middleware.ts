@@ -34,13 +34,20 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 2. 관리자 권한 확인 (/admin 경로 보호)
+  // 2. 관리자/사용자 경로 관리 (/admin 경로 보호)
   if (pathname.startsWith('/admin')) {
     const normalizedRole = userRole?.toUpperCase() || '';
     const isAdmin = normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN';
+    
+    // 시스템/사용자/보안 등 민감한 관리 경로
+    const isSensitivePath = pathname.startsWith('/admin/system') || 
+                           pathname.startsWith('/admin/user') || 
+                           pathname.startsWith('/admin/security') ||
+                           pathname.startsWith('/admin/stats') ||
+                           pathname.startsWith('/admin/workflow');
 
-    if (!isAdmin) {
-      console.warn(`[Middleware] Unauthorized Admin Access Attempt by ${userRole}`);
+    if (isSensitivePath && !isAdmin) {
+      console.warn(`[Middleware] Sensitive Admin Access Attempt Refused for ${userRole} from ${pathname}`);
       const fallbackUrl = new URL('/', request.url);
       fallbackUrl.searchParams.set('auth_error', 'unauthorized');
       return NextResponse.redirect(fallbackUrl);

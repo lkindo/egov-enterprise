@@ -4,7 +4,7 @@ import React, { useState, Suspense, useActionState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { createBoardArticle } from '@/app/actions/boardActions';
+import { saveBoardArticle } from '@/app/actions/boardActions';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ const InsertBBSContent = () => {
  const searchParams = useSearchParams();
  const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
 
- const [state, formAction, isPending] = useActionState(createBoardArticle, null);
+ const [state, formAction, isPending] = useActionState(saveBoardArticle as any, null as any);
 
  useEffect(() => {
  if (state?.success) {
@@ -110,7 +110,7 @@ const InsertBBSContent = () => {
  placeholder="매력적이고 명확한 제목을 입력하세요"
  className={cn(
  "h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[1.75rem] px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
- state?.field === 'nttSj' && "border-rose-500 bg-rose-50"
+ (state as any)?.field === 'nttSj' && "border-rose-500 bg-rose-50"
  )}
  required
  />
@@ -131,7 +131,7 @@ const InsertBBSContent = () => {
  placeholder="전달하고자 하는 내용을 상세히 작성하세요..."
  className={cn(
  "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[2.5rem] bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
- state?.field === 'nttCn' && "border-rose-500 bg-rose-50"
+ (state as any)?.field === 'nttCn' && "border-rose-500 bg-rose-50"
  )}
  required
  />
