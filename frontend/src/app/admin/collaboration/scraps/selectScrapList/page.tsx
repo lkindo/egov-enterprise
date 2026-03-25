@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bookmark, Plus, Trash2, Home, ChevronRight, ExternalLink, FileText } from "lucide-react";
+import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 interface Scrap {
  scrapId: string;
@@ -28,13 +29,13 @@ const ScrapListPage = () => {
  const [list, setList] = useState<Scrap[]>([]);
  const [totalCount, setTotalCount] = useState(0);
  const [totalPages, setTotalPages] = useState(0);
- const [pageIndex, setPageIndex] = useState(1);
+ const [page번호, setPage번호] = useState(1);
  const [loading, setLoading] = useState(false);
 
  const fetchList = async () => {
  setLoading(true);
  try {
- const params = { pageIndex, pageUnit: 10 };
+ const params = { page번호, pageUnit: 10 };
  const response = (await axios.get('/scrap', { params })) as any;
  setList(response.data.resultList || []);
  setTotalCount(response.data.totalCount || 0);
@@ -48,7 +49,7 @@ const ScrapListPage = () => {
 
  useEffect(() => {
  fetchList();
- }, [pageIndex]);
+ }, [page번호]);
 
  const handleDelete = async (id: string) => {
  if (!confirm('삭제하시겠습니까?')) return;
@@ -62,16 +63,7 @@ const ScrapListPage = () => {
 
  return (
  <div className="flex flex-col gap-6 p-6">
- {/* Breadcrumb */}
- <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
- <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
- <Home className="w-4 h-4" /> 홈
- </Link>
- <ChevronRight className="w-4 h-4" />
- <span>협업</span>
- <ChevronRight className="w-4 h-4" />
- <span className="text-foreground font-medium">스크랩관리</span>
- </div>
+  <DynamicBreadcrumb />
 
  <Card className="border-none shadow-md overflow-hidden">
  <CardHeader className="flex flex-row items-center justify-between pb-6 bg-gradient-to-r from-muted/50 to-transparent border-b">
@@ -128,7 +120,7 @@ const ScrapListPage = () => {
  list.map((item, idx) => (
  <TableRow key={item.scrapId} className="hover:bg-muted/20 transition-colors group">
  <TableCell className="text-center text-muted-foreground font-medium">
- {totalCount - ((pageIndex - 1) * 10) - idx}
+ {totalCount - ((page번호 - 1) * 10) - idx}
  </TableCell>
  <TableCell>
  <Link href={`/admin/collaboration/scraps/selectScrapDetail/${item.scrapId}`} className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2">
@@ -170,22 +162,22 @@ const ScrapListPage = () => {
  <Button
  variant="outline"
  size="sm"
- onClick={() => setPageIndex(p => Math.max(1, p - 1))}
- disabled={pageIndex === 1}
+ onClick={() => setPage번호(p => Math.max(1, p - 1))}
+ disabled={page번호 === 1}
  className="px-6 font-bold shadow-sm"
  >
  이전
  </Button>
  <div className="flex items-center gap-2 px-6 py-2 bg-muted rounded-full">
- <span className="text-sm font-black text-primary">{pageIndex}</span>
+ <span className="text-sm font-black text-primary">{page번호}</span>
  <span className="text-sm font-bold text-muted-foreground">/</span>
  <span className="text-sm font-bold text-muted-foreground">{totalPages}</span>
  </div>
  <Button
  variant="outline"
  size="sm"
- onClick={() => setPageIndex(p => Math.min(totalPages, p + 1))}
- disabled={pageIndex === totalPages}
+ onClick={() => setPage번호(p => Math.min(totalPages, p + 1))}
+ disabled={page번호 === totalPages}
  className="px-6 font-bold shadow-sm"
  >
  다음

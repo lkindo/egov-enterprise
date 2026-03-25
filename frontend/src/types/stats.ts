@@ -36,7 +36,7 @@ export interface StatsSearchParams {
  statsKind?: string;
  fromDate?: string;
  toDate?: string;
-  pageIndex?: number;
+  page번호?: number;
  size?: number;
 }
 

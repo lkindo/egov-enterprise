@@ -333,7 +333,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
             </div>
           </HubSectionCard>
 
-          <HubSectionCard title="Active Stream" description="실시간 지식 네트워크 활동" icon={History} className="bg-slate-900 border-none text-white shadow-2xl overflow-hidden relative">
+          <HubSectionCard title="활성 " description="실시간 지식 네트워크 활동" icon={History} className="bg-slate-900 border-none text-white shadow-2xl overflow-hidden relative">
             <div className="absolute top-0 right-0 p-8 opacity-[0.05] pointer-events-none grayscale rotate-12">
                <History size={120} />
             </div>

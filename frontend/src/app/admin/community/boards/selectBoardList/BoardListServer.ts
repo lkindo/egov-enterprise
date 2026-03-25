@@ -6,7 +6,7 @@ import client from '../../../../../lib/api/client';
  */
 export async function getInitialBoardData(params: {
  bbsId: string;
- pageIndex: number;
+ page번호: number;
  searchWrd: string;
  searchCnd: string;
  orderBy: string;
@@ -25,22 +25,26 @@ export async function getInitialBoardData(params: {
 
  try {
   // 백엔드 BoardController 매핑에 맞춰 경로 변경: /api/v1/boards/{bbsId}
-  const { bbsId, pageIndex, ...restParams } = params;
+  const { bbsId, page번호, ...restParams } = params;
   const queryParams = {
-   page: pageIndex - 1, // Spring Data Pageable은 0부터 시작
+   page: page번호 - 1, // Spring Data Pageable은 0부터 시작
    size: 10,
    ...restParams
   };
 
-  const response: any = await client.get(`/boards/${bbsId}`, { ...axiosConfig, params: queryParams });
-
-  // Spring Data Page 객체 구조에 맞춰 데이터 추출 (content, totalElements, totalPages)
-  return {
-   resultList: response.content || [],
-   totalCount: response.totalElements || 0,
-   totalPages: response.totalPages || 0
-  };
- } catch (error: any) {
+   const [listResponse, masterResponse]: any = await Promise.all([
+    client.get(`/boards/${bbsId}`, { ...axiosConfig, params: queryParams }),
+    client.get(`/admin/system/board-masters/${bbsId}`, axiosConfig)
+   ]);
+ 
+   // Spring Data Page 객체 구조에 맞춰 데이터 추출 (content, totalElements, totalPages)
+   return {
+    resultList: listResponse.content || [],
+    totalCount: listResponse.totalElements || 0,
+    totalPages: listResponse.totalPages || 0,
+    masterInfo: masterResponse || null
+   };
+  } catch (error: any) {
   // 401 오류는 인증이 필요한 상태이므로 호출자에서 redirect 시킬 수 있도록 다시 던짐
   if (error.response?.status === 401) {
    throw error;

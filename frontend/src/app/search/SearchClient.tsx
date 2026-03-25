@@ -86,7 +86,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
  <div className="flex flex-col md:flex-row items-center justify-between gap-6">
  <div className="space-y-2">
  <h1 className="text-3xl md:text-3xl font-black text-white tracking-tighter ">
- Global <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Intelligence</span>
+ Global <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">인텔리전스</span>
  </h1>
  <p className="text-slate-400 font-medium text-lg">시스템 전체에서 필요한 정보를 정밀하게 찾아냅니다.</p>
  </div>
@@ -274,7 +274,7 @@ function UserResultItem({ item }: any) {
  <h4 className="font-black text-lg tracking-tight truncate">{item.userNm}</h4>
  <p className="text-sm text-muted-foreground font-bold">{item.userId}</p>
  </div>
- <Badge variant="secondary" className="rounded-lg font-black text-[10px] ">Staff</Badge>
+ <Badge variant="secondary" className="rounded-lg font-black text-[10px] ">직원</Badge>
  </div>
  );
 }

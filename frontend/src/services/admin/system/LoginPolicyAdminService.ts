@@ -25,7 +25,7 @@ class LoginPolicyAdminService extends AdminService {
  ...config,
  params: {
  ...params,
- pageIndex: params?.pageIndex || (params?.page ? params.page + 1 : 1),
+ page번호: params?.page번호 || (params?.page ? params.page + 1 : 1),
  searchKeyword: params?.searchKeyword || params?.searchWrd || '',
  },
  });

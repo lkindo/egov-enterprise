@@ -29,13 +29,13 @@ const DeptJobListPage = () => {
  const [list, setList] = useState<DeptJob[]>([]);
  const [totalCount, setTotalCount] = useState(0);
  const [totalPages, setTotalPages] = useState(0);
- const [pageIndex, setPageIndex] = useState(1);
+ const [page번호, setPage번호] = useState(1);
  const [loading, setLoading] = useState(false);
 
  const fetchList = async () => {
  setLoading(true);
  try {
- const params = { pageIndex, pageUnit: 10 };
+ const params = { page번호, pageUnit: 10 };
  const response = (await axios.get('/deptjob', { params })) as any;
  setList(response.data.resultList || []);
  setTotalCount(response.data.totalCount || 0);
@@ -49,7 +49,7 @@ const DeptJobListPage = () => {
 
  useEffect(() => {
  fetchList();
- }, [pageIndex]);
+ }, [page번호]);
 
  const handleDelete = async (id: string) => {
  if (!confirm('삭제하시겠습니까?')) return;
@@ -63,9 +63,9 @@ const DeptJobListPage = () => {
 
  const getPriorityBadge = (priority: string) => {
  switch (priority) {
- case '1': return <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-black rounded-md border border-rose-200">High</span>;
- case '2': return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-md border border-amber-200">Medium</span>;
- default: return <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-md border border-slate-200">Low</span>;
+ case '1': return <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-black rounded-md border border-rose-200">높음</span>;
+ case '2': return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-md border border-amber-200">중간</span>;
+ default: return <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-md border border-slate-200">낮음</span>;
  }
  };
 
@@ -111,10 +111,10 @@ const DeptJobListPage = () => {
  <Table>
  <TableHeader className="bg-slate-50/50">
  <TableRow>
- <TableHead className="w-[80px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">Rank</TableHead>
- <TableHead className="w-[120px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">Priority</TableHead>
- <TableHead className="font-black text-slate-900 text-[10px] py-6 tracking-[0.2em] px-4">Task Name</TableHead>
- <TableHead className="w-[150px] font-black text-slate-400 text-[10px] py-6 text-center tracking-[0.2em]">Owner</TableHead>
+ <TableHead className="w-[80px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">순위</TableHead>
+ <TableHead className="w-[120px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">우선순위</TableHead>
+ <TableHead className="font-black text-slate-900 text-[10px] py-6 tracking-[0.2em] px-4">작업명</TableHead>
+ <TableHead className="w-[150px] font-black text-slate-400 text-[10px] py-6 text-center tracking-[0.2em]">담당자</TableHead>
  <TableHead className="w-[150px] font-black text-slate-400 text-[10px] py-6 text-center tracking-[0.2em]">날짜</TableHead>
  <TableHead className="w-[100px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">작업</TableHead>
  </TableRow>
@@ -141,7 +141,7 @@ const DeptJobListPage = () => {
  list.map((item, idx) => (
  <TableRow key={item.deptJobId} className="hover:bg-slate-50/50 transition-all border-b last:border-0 group">
  <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
- {totalCount - ((pageIndex - 1) * 10) - idx}
+ {totalCount - ((page번호 - 1) * 10) - idx}
  </TableCell>
  <TableCell className="text-center py-6">
  {getPriorityBadge(item.priort)}
@@ -187,22 +187,22 @@ const DeptJobListPage = () => {
  <Button
  variant="ghost"
  size="lg"
- onClick={() => setPageIndex(p => Math.max(1, p - 1))}
- disabled={pageIndex === 1}
+ onClick={() => setPage번호(p => Math.max(1, p - 1))}
+ disabled={page번호 === 1}
  className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
  >
  이전
  </Button>
  <div className="bg-slate-50 text-slate-900 border-2 border-white px-10 py-3 rounded-2xl shadow-xl flex items-center gap-4 ring-8 ring-slate-100/50">
- <span className="text-xl font-black">{pageIndex}</span>
+ <span className="text-xl font-black">{page번호}</span>
  <div className="h-4 w-px bg-slate-200" />
  <span className="text-sm font-bold text-slate-400">{totalPages}</span>
  </div>
  <Button
  variant="ghost"
  size="lg"
- onClick={() => setPageIndex(p => Math.min(totalPages, p + 1))}
- disabled={pageIndex === totalPages}
+ onClick={() => setPage번호(p => Math.min(totalPages, p + 1))}
+ disabled={page번호 === totalPages}
  className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
  >
  다음

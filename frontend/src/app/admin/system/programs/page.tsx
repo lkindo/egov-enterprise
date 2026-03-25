@@ -24,7 +24,7 @@ export default async function ProgramAdminPage({
 
  let initialData: any = { list: [], total: 0 };
  try {
-  initialData = await programAdminService.getProgramList({ pageIndex: 1, size: 10, searchWrd }, axiosConfig);
+  initialData = await programAdminService.getProgramList({ page번호: 1, size: 10, searchWrd }, axiosConfig);
  } catch (error: any) {
   if (error.response?.status === 401) {
    redirect('/login?expired=true&redirect=/admin/system/programs');

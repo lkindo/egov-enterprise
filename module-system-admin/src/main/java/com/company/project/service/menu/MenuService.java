@@ -257,17 +257,32 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void insertMenuManage(@NonNull MenuDto vo) {
-        Menu menu = Menu.builder()
-                .id(vo.getMenuNo())
-                .menuNm(vo.getMenuNm())
-                .progrmFileNm(vo.getProgrmFileNm())
-                .upperMenuNo(vo.getUpperMenuNo())
-                .menuOrdr(vo.getMenuOrdr())
-                .menuDc(vo.getMenuDc())
-                .modernRoute(vo.getModernRoute())
-                .relateImagePath(vo.getRelateImagePath())
-                .relateImageNm(vo.getRelateImageNm())
-                .build();
+        // FK 제약 방지를 위해 프로그램이 없으면 자동 등록
+        if (vo.getProgrmFileNm() != null && !programRepository.existsById(vo.getProgrmFileNm())) {
+            com.company.project.domain.program.Program p = com.company.project.domain.program.Program.builder()
+                    .progrmFileNm(vo.getProgrmFileNm())
+                    .progrmKoreanNm("자동생성메뉴(" + vo.getMenuNm() + ")")
+                    .url(vo.getModernRoute())
+                    .progrmStrePath("/auto-generated")
+                    .build();
+            programRepository.save(p);
+        }
+
+        Menu menu = new Menu(
+                vo.getMenuNo(),
+                vo.getMenuNm(),
+                vo.getProgrmFileNm(),
+                vo.getUpperMenuNo(),
+                vo.getMenuOrdr(),
+                vo.getMenuDc(),
+                vo.getRelateImagePath(),
+                vo.getRelateImageNm(),
+                vo.getModernRoute(),
+                "webmaster",
+                java.time.LocalDateTime.now(),
+                "webmaster",
+                java.time.LocalDateTime.now()
+        );
         menuRepository.save(Objects.requireNonNull(menu));
     }
 
@@ -397,7 +412,7 @@ public class MenuService {
         Menu menu = menuRepository.findById(Objects.requireNonNull(menuNo))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
 
-        String url = calculateUrl(menu, null);
+        String url = calculateUrl(menu, null); // 상세 조회는 단건이므로 null 허용
 
         return MenuDto.builder()
                 .id(menu.getId())

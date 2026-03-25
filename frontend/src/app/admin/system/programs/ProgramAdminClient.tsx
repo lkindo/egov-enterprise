@@ -67,7 +67,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
    const loadData = async (wrd: string = currentSearchWrd, page: number = 1) => {
     try {
       setLoading(true);
-      const res: any = await programAdminService.getProgramList({ pageIndex: page, size: 10, searchWrd: wrd });
+      const res: any = await programAdminService.getProgramList({ page번호: page, size: 10, searchWrd: wrd });
       
       const list = res.list || res.content || res.resultList || [];
       const totalCount = res.total || res.totalElements || res.totalRecordCount || 0;

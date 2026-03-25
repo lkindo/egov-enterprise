@@ -70,13 +70,13 @@ const Sidebar = () => {
  <ul className="space-y-1">
  {group.children?.map((item) => (
  <li key={item.menuNo}>
- <Link
- href={item.chkURL || '#'}
- className={`block px-3 py-2 rounded-lg text-sm transition-all ${isActive(item.chkURL || '')
- ? 'bg-primary text-white font-bold shadow-md shadow-primary/20'
- : 'text-slate-600 hover:bg-slate-100'
- }`}
- >
+  <Link
+  href={item.modernRoute || item.chkURL || '#'}
+  className={`block px-3 py-2 rounded-lg text-sm transition-all ${isActive(item.modernRoute || item.chkURL || '')
+  ? 'bg-primary text-white font-bold shadow-md shadow-primary/20'
+  : 'text-slate-600 hover:bg-slate-100'
+  }`}
+  >
  {item.menuNm}
  </Link>
  </li>

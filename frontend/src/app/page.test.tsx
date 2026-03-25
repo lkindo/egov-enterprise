@@ -62,7 +62,7 @@ vi.mock('@/app/components/dashboard/BannerSlider', () => ({
 }));
 
 // Mock Popup관리자
-vi.mock('@/app/components/dashboard/PopupManager', () => ({
+vi.mock('@/app/components/dashboard/Popup관리자', () => ({
  Popup관리자: () => null,
 }));
 

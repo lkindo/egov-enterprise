@@ -96,6 +96,10 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .blogAt(dto.getBlogAt() != null ? dto.getBlogAt() : "N") // Ensure default
                 .commentAt(dto.getCommentAt() != null ? dto.getCommentAt() : "N") // Ensure default
                 .stsfdgAt(dto.getStsfdgAt() != null ? dto.getStsfdgAt() : "N") // Ensure default
+                .optnFrstRegisterId(dto.getFrstRegisterId())
+                .optnFrstRegistPnttm(java.time.LocalDateTime.now())
+                .optnLastUpdusrId(dto.getFrstRegisterId())
+                .optnLastUpdtPnttm(java.time.LocalDateTime.now())
                 .build();
 
         boardMasterRepository.save(Objects.requireNonNull(entity));
@@ -147,7 +151,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
     @Override
     @Transactional(readOnly = true)
     public Page<BlogDto> getBlogList(String searchCnd, String searchWrd, @NonNull Pageable pageable) {
-        // QueryDSL 湲곕?寃??씠 ?꾩슂??????쑝????떒 findAll?泥섎??(?꾩슂??Custom Repository???붽?)
+        // QueryDSL 기반 검색이 필요할 수 있으나 현재는 단순 findAll로 처리 (필요시 Custom Repository 추가)
         return blogRepository.findAll(Objects.requireNonNull(pageable)).map(BlogDto::from);
     }
 

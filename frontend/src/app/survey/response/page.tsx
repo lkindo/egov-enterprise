@@ -34,13 +34,13 @@ import {
 } from 'lucide-react';
 
 export default function SurveyResponseListPage() {
- const [pageIndex, setPageIndex] = useState(1);
+ const [page번호, setPage번호] = useState(1);
  const [searchKeyword, setSearchKeyword] = useState('');
  const queryClient = useQueryClient();
 
  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
- queryKey: ['survey-responses', pageIndex, searchKeyword],
- queryFn: () => getQustnrRespondInfoList({ page: pageIndex, size: 10, keyword: searchKeyword }),
+ queryKey: ['survey-responses', page번호, searchKeyword],
+ queryFn: () => getQustnrRespondInfoList({ page: page번호, size: 10, keyword: searchKeyword }),
  retry: false,
  }) as any;
 
@@ -57,7 +57,7 @@ export default function SurveyResponseListPage() {
 
  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
  setSearchKeyword(e.target.value);
- setPageIndex(1);
+ setPage번호(1);
  };
 
  const handleDelete = (id: string, name: string) => {
@@ -183,14 +183,14 @@ export default function SurveyResponseListPage() {
  {/* Pagination */}
  <div className="mt-4 flex items-center justify-between">
  <p className="text-sm text-muted-foreground">
- 현재 {pageIndex}페이지
+ 현재 {page번호}페이지
  </p>
  <div className="flex items-center space-x-2">
  <Button
  variant="outline"
  size="sm"
- disabled={pageIndex === 1 || isFetching}
- onClick={() => setPageIndex(p => Math.max(1, p - 1))}
+ disabled={page번호 === 1 || isFetching}
+ onClick={() => setPage번호(p => Math.max(1, p - 1))}
  >
  <ChevronLeft className="h-4 w-4 mr-1" /> 이전
  </Button>
@@ -198,7 +198,7 @@ export default function SurveyResponseListPage() {
  variant="outline"
  size="sm"
  disabled={data?.content?.length < 10 || isFetching}
- onClick={() => setPageIndex(p => p + 1)}
+ onClick={() => setPage번호(p => p + 1)}
  >
  다음 <ChevronRight className="h-4 w-4 ml-1" />
  </Button>

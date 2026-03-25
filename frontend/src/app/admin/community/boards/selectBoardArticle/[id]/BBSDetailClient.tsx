@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, Suspense, useActionState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { saveBoardArticle } from '@/app/actions/boardActions';
@@ -27,9 +27,11 @@ import {
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
 import { StandardForm, FormField } from '@/app/components/ui/standard-form';
 import { useToast } from '@/app/components/ui/toast';
+import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 const InsertBBSContent = () => {
  const router = useRouter();
+ const pathname = usePathname();
  const { toast } = useToast();
  const searchParams = useSearchParams();
  const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
@@ -51,16 +53,14 @@ const InsertBBSContent = () => {
 
  return (
  <div className="flex flex-col gap-8 p-6 max-w-5xl mx-auto w-full pb-32 animate-in fade-in duration-700">
- {/* Breadcrumb */}
- <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-3 px-5 rounded-full w-fit border border-primary/5 shadow-sm">
- <Link href="/" className="hover:text-foreground flex items-center gap-1.5 transition-colors">
- <Home className="w-4 h-4" /> 홈
- </Link>
- <ChevronRight className="w-4 h-4 opacity-30" />
- <Link href={`/admin/community/boards?bbsId=${bbsId}`} className="hover:text-primary transition-colors font-bold">커뮤니티</Link>
- <ChevronRight className="w-4 h-4 opacity-30" />
- <span className="text-foreground font-black">글쓰기</span>
- </div>
+  {/* Breadcrumb - 동적 메뉴 관리 적용 */}
+  <DynamicBreadcrumb 
+    customItems={[
+      { name: pathname.includes('/admin/system') ? '시스템 관리' : '커뮤니티 및 콘텐츠' },
+      { name: '게시판 상세' },
+      { name: '작성' }
+    ]}
+  />
 
  <Card className="shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] border-none overflow-hidden rounded-[3.5rem] bg-card ring-1 ring-primary/5">
  <CardHeader className="border-b bg-slate-950 pb-20 pt-20 px-12 md:px-20 text-white relative overflow-hidden">
@@ -72,15 +72,20 @@ const InsertBBSContent = () => {
  <div className="space-y-6 text-center md:text-left">
  <div className="flex items-center gap-3 px-5 py-2 bg-white/10 w-fit rounded-full border border-white/10 backdrop-blur-xl mx-auto md:mx-0">
  <Edit3 className="w-4 h-4 text-primary animate-bounce" />
- <span className="text-[10px] font-black tracking-[0.3em] text-white">게시글 작성</span>
+ <span className="text-[10px] font-black tracking-[0.3em] text-white">
+    {pathname.includes('insertBoardArticle') ? 'NEW POST : ' : 'VIEW : '} {bbsId.includes('NOTICE') ? 'NOTICE' : 'BOARD'}
+  </span>
  </div>
  <CardTitle className="text-3xl md:text-3xl font-black tracking-tighter leading-tight ">
- 당선된 인사이트를 <br />
- <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">공유하세요</span>
- </CardTitle>
+    {pathname.includes('insertBoardArticle') ? (
+      <>새로운 소식을 <br /><span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">기록하세요</span></>
+    ) : (
+      <>게시글 내용을 <br /><span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">확인하세요</span></>
+    )}
+  </CardTitle>
  <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed">
- 새로운 아이디어와 소식을 공유하여 <br className="hidden md:block" />팀의 소통을 더 가치 있게 만드세요.
- </p>
+    팀과 공유할 가치 있는 정보를 정성스럽게 작성하여 <br className="hidden md:block" />소통의 폭을 넓혀보세요.
+  </p>
  </div>
  <div className="hidden lg:block relative">
  <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-primary/20 to-transparent border-2 border-white/10 flex items-center justify-center rotate-12 hover:rotate-0 transition-all duration-700 shadow-2xl">
@@ -99,9 +104,9 @@ const InsertBBSContent = () => {
  {/* Title Input */}
  <div className="space-y-6 group">
  <div className="flex items-center justify-between">
- <Label htmlFor="nttSj" className="text-[11px] font-black tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3">
- <Type className="w-4 h-4" /> 01. 게시글 제목
- </Label>
+  <Label htmlFor="nttSj" className="text-[10px] font-black tracking-[0.3em] text-slate-400 group-focus-within:text-primary transition-all flex items-center gap-3 uppercase">
+  <span className="w-2 h-2 rounded-full bg-primary" /> 게시글 제목 (Title)
+  </Label>
  <span className="text-[10px] font-bold text-primary/40 tracking-tight">필수</span>
  </div>
  <Input
@@ -162,40 +167,39 @@ const InsertBBSContent = () => {
  <CheckCircle2 className="w-8 h-8 text-primary" />
  </div>
  <div className="space-y-3 relative z-10 text-center md:text-left">
- <h4 className="text-2xl font-black text-white tracking-tight ">최종 확인</h4>
- <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xl">
- 게시글을 등록하기 전에 오타나 민감한 정보가 포함되어 있는지 다시 한번 확인해주세요.
- 등록된 글은 모든 사원들이 열람할 수 있습니다.
- </p>
+  <p className="font-black text-2xl text-slate-900 tracking-tight ">보안 준수 사항</p>
+  <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[450px]">
+  작성하신 정보는 프로젝트 자산으로 등록됩니다. <br />민감한 개인정보나 기밀이 포함되지 않도록 주의해 주세요.
+  </p>
  </div>
  </div>
  </CardContent>
 
- <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-20 border-t border-primary/5 bg-muted/5 px-12 md:px-20 rounded-b-[3.5rem]">
- <Button
- type="button"
- variant="ghost"
- onClick={() => router.back()}
- className="h-20 px-16 font-black tracking-[0.3em] text-sm text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition-all rounded-2xl active:scale-95 border-2 border-transparent"
- >
- <ArrowLeft className="w-5 h-5 mr-4" /> 취소 및 돌아가기
- </Button>
- <Button
- type="submit"
- className="h-20 px-24 gap-4 font-black tracking-[0.3em] text-sm shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95 ring-[12px] ring-primary/5 rounded-2xl"
- disabled={isPending}
- >
- {isPending ? (
- <span className="flex items-center gap-3 animate-pulse">
- <div className="w-3 h-3 bg-white rounded-full" /> 게시 중...
- </span>
- ) : (
- <>
- <Send className="w-5 h-5" /> 게시글 등록하기
- </>
- )}
- </Button>
- </CardFooter>
+  <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-20 border-t border-primary/5 bg-muted/5 px-12 md:px-20 rounded-b-[3.5rem]">
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={() => router.back()}
+      className="h-20 px-16 font-black tracking-[0.3em] text-sm text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition-all rounded-2xl active:scale-95 border-2 border-transparent"
+    >
+      <ArrowLeft className="w-5 h-5 mr-4" /> 취소 및 돌아가기
+    </Button>
+    <Button
+      type="submit"
+      className="h-20 px-24 gap-4 font-black tracking-[0.3em] text-sm shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95 ring-[12px] ring-primary/5 rounded-2xl"
+      disabled={isPending}
+    >
+      {isPending ? (
+        <span className="flex items-center gap-3 animate-pulse">
+          <div className="w-3 h-3 bg-white rounded-full" /> 게시 중...
+        </span>
+      ) : (
+        <>
+          <Send className="w-5 h-5" /> 게시글 등록하기
+        </>
+      )}
+    </Button>
+  </CardFooter>
  </StandardForm>
  </Card>
  </div>

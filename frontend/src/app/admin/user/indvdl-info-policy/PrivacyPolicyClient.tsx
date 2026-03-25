@@ -63,7 +63,7 @@ export default function PrivacyPolicyClient({
       />
 
       <HubHeader 
-        title="Privacy" 
+        title="프라이버시" 
         highlight="Compliance" 
         subtitle="전사 데이터 보호 규정 및 개인정보 처리 방침의 실시간 거버넌스 관리 시스템" 
         icon={ShieldCheck} 
@@ -119,7 +119,7 @@ export default function PrivacyPolicyClient({
                         <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                             <Fingerprint size={32} className="text-primary" />
                         </div>
-                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">Privacy<br />Encryption Core</h4>
+                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">프라이버시<br />암호화 코어</h4>
                     </div>
 
                     <div className="space-y-8">
@@ -127,15 +127,15 @@ export default function PrivacyPolicyClient({
                             <label className="text-[10px] font-black text-white/30 tracking-[0.4em] px-2 uppercase font-mono">Governance_Probing</label>
                             <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">Last Commit</span>
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">마지막 커밋</span>
                                     <span className="text-[9px] font-black text-primary font-mono tracking-widest uppercase ">2026-03-18_1433</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">Legality Check</span>
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">합법성 검사</span>
                                     <span className="text-[9px] font-black text-emerald-400 font-mono tracking-widest uppercase ">ISO_27001_OK</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">Visibility</span>
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">가시성</span>
                                     <span className="text-[9px] font-black text-indigo-400 font-mono tracking-widest uppercase ">PUBLIC_SYNC</span>
                                 </div>
                             </div>

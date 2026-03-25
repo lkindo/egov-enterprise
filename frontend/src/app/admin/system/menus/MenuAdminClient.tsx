@@ -348,11 +348,11 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     }
 
     // Helper to find parent array and index of target
-    const findParentAndIndex = (items: MenuInfo[], id: number): { parent: MenuInfo[], index: number, parentItem: MenuInfo | null } | null => {
+    const findParentAnd번호 = (items: MenuInfo[], id: number): { parent: MenuInfo[], index: number, parentItem: MenuInfo | null } | null => {
         for (let i = 0; i < items.length; i++) {
             if (items[i].menuNo === id) return { parent: items, index: i, parentItem: null };
             if (items[i].children) {
-                const found = findParentAndIndex(items[i].children!, id);
+                const found = findParentAnd번호(items[i].children!, id);
                 if (found) {
                     if (found.parentItem === null) {
                         return { ...found, parentItem: items[i] };
@@ -368,7 +368,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         // Drop into standard promotion area
         newTree.push({ ...draggedItem, upperMenuId: 0, upperMenuNo: 0 });
     } else {
-        const targetInfo = findParentAndIndex(newTree, targetId);
+        const targetInfo = findParentAnd번호(newTree, targetId);
         if (targetInfo) {
             const { parent, index, parentItem } = targetInfo;
             const parentId = parentItem ? parentItem.menuNo : 0;

@@ -295,7 +295,7 @@ export function GlobalCommandCenter() {
    <span className="text-[10px] font-black text-muted-foreground opacity-60">이동</span>
  </div>
  <div className="flex items-center gap-2">
- <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">ENTER</kbd>
+ <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">입력</kbd>
  <span className="text-[10px] font-black text-muted-foreground opacity-60">선택</span>
  </div>
  </div>

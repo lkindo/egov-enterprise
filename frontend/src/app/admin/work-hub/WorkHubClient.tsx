@@ -145,7 +145,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
            <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center text-primary mb-2">
             <Calendar size={32} />
            </div>
-           <p className="text-sm font-black text-slate-900 tracking-tighter uppercase">Interactive Scheduling System</p>
+           <p className="text-sm font-black text-slate-900 tracking-tighter uppercase">대화형 스케줄링 시스템</p>
            <p className="text-[10px] font-bold text-slate-400 max-w-[200px] text-center leading-relaxed">준비된 캘린더 엔진이 비즈니스 일정을 실시간으로 동기화합니다.</p>
         </div>
       </div>
@@ -270,7 +270,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
                     <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center shadow-xl border border-border/20 mb-6 relative z-10 transition-transform group-hover:rotate-12">
                       <Database size={32} className="text-primary" />
                     </div>
-                    <p className="text-xs font-black text-muted-foreground tracking-[0.4em] uppercase relative z-10">Intelligence Engine Visualization</p>
+                    <p className="text-xs font-black text-muted-foreground tracking-[0.4em] uppercase relative z-10">인텔리전스 엔진 시각화</p>
                     <p className="text-xl font-black text-foreground tracking-tighter mt-4 max-w-sm relative z-10">데이터 구조 분석 및 워크플로우 시각화 컴포넌트 준비됨</p>
                   </div>
                   <Button className="w-full h-18 text-base rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-black tracking-[0.4em] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all uppercase">

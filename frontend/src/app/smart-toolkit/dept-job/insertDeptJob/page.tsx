@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Briefcase, Send, ArrowLeft, Home, ChevronRight, Activity, AlertCircle, FileText, CheckCircle } from "lucide-react";
+import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 const InsertDeptJobPage = () => {
  const router = useRouter();
@@ -43,16 +44,7 @@ const InsertDeptJobPage = () => {
 
  return (
  <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
- {/* Breadcrumb */}
- <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-2xl w-fit border border-slate-100">
- <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
- <Home className="w-4 h-4" /> 홈
- </Link>
- <ChevronRight className="w-4 h-4" />
- <Link href="/smart-toolkit/dept-job/selectDeptJobList" className="hover:text-foreground transition-colors font-bold">부서업무 관리</Link>
- <ChevronRight className="w-4 h-4" />
- <span className="text-foreground font-black">새 업무 등록</span>
- </div>
+  <DynamicBreadcrumb />
 
  <Card className="shadow-[0_64px_128px_-32px_rgba(0,0,0,0.15)] border-none overflow-hidden rounded-[3.5rem] bg-white ring-1 ring-slate-100">
  <CardHeader className="border-b bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 pb-20 pt-20 px-12 text-white text-center md:text-left">
@@ -63,7 +55,7 @@ const InsertDeptJobPage = () => {
  <div className="space-y-4">
  <div className="flex items-center justify-center md:justify-start gap-3 px-4 py-1.5 bg-white/10 w-fit rounded-full border border-white/10 mx-auto md:mx-0">
  <Activity className="w-3.5 h-3.5 text-primary-foreground animate-pulse" />
- <span className="text-[10px] font-black tracking-[0.25em] text-white/80">Workflow System 2.0</span>
+ <span className="text-[10px] font-black tracking-[0.25em] text-white/80">워크플로우 시스템 2.0</span>
  </div>
  <CardTitle className="text-3xl font-black tracking-tighter leading-none ">
  Dispatch New Task
@@ -139,7 +131,7 @@ const InsertDeptJobPage = () => {
  <CheckCircle className="w-10 h-10 text-primary-foreground" />
  </div>
  <div className="space-y-1">
- <p className="font-black text-2xl text-slate-900 tracking-tight ">Validation Required</p>
+ <p className="font-black text-2xl text-slate-900 tracking-tight ">유효성 검사 필요</p>
  <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[450px]">
  등록된 업무는 부서 전체 대시보드에 즉시 노출됩니다. 기입된 내용이 부서 운영 가이드라인을 준수하는지 확인해 주세요.
  </p>

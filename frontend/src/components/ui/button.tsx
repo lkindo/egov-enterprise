@@ -1,4 +1,4 @@
-import * as React from "react"
+﻿import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 import { Loader2 } from "lucide-react"
@@ -62,10 +62,10 @@ const Button = React.forwardRef<
  {asChild ? (
  children
  ) : (
- <>
+ <span className="flex items-center gap-2">
  {isLoading ? <Loader2 className="animate-spin" /> : null}
  {children}
- </>
+ </span>
  )}
  </Comp>
  )

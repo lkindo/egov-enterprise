@@ -37,7 +37,7 @@ const IntegratedSearchPage = async ({ searchParams }: { searchParams: Promise<{ 
  <Suspense fallback={
  <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
  <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
- <p className="font-black text-muted-foreground animate-pulse">Analyzing Information...</p>
+ <p className="font-black text-muted-foreground animate-pulse">정보 분석 중...</p>
  </div>
  }>
  <SearchResultsContent initialResults={initialResults} query={q} />

@@ -10,7 +10,7 @@ class ScheduleService extends ApiService {
  /**
  * 전체 일정 목록 조회 (페이징)
  */
- async getScheduleList(params: { pageIndex?: number; pageUnit?: number }): Promise<PageResponse<Schedule>> {
+ async getScheduleList(params: { page번호?: number; pageUnit?: number }): Promise<PageResponse<Schedule>> {
  return this.get<PageResponse<Schedule>>('', { params });
  }
 

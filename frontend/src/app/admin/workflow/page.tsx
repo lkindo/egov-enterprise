@@ -43,10 +43,10 @@ export default function WorkflowPage() {
  <div className="p-2 bg-primary/10 rounded-xl text-primary">
  <GitBranch size={18} />
  </div>
- <span className="text-sm font-black text-primary tracking-tight">Workflow Engine</span>
+ <span className="text-sm font-black text-primary tracking-tight">워크플로우 엔진</span>
  </div>
  <h1 className="text-3xl font-black tracking-tighter text-foreground ">
- Process <span className="text-primary ">Canvas</span>
+ Process <span className="text-primary ">캔버스</span>
  </h1>
  <p className="text-muted-foreground font-bold text-sm max-w-lg">
  도메인 이벤트 기반의 워크플로우 엔진을 통해 비즈니스 프로세스를 설계하고 실시간 진행 상태를 시각화합니다.
@@ -95,7 +95,7 @@ export default function WorkflowPage() {
  <div className="space-y-6">
  <div className="p-8 border rounded-[3rem] bg-card shadow-lg space-y-8">
  <div className="flex items-center justify-between">
- <h3 className="text-sm font-black text-foreground tracking-tight">Step Details</h3>
+ <h3 className="text-sm font-black text-foreground tracking-tight">단계 상세</h3>
  <button className="p-2 hover:bg-muted rounded-full"><MoreHorizontal size={14} /></button>
  </div>
 
@@ -136,7 +136,7 @@ export default function WorkflowPage() {
  <div className="relative opacity-50">
  <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-muted border-4 border-background" />
  <p className="text-sm font-black">팀장 내부 상신</p>
- <p className="text-[10px] text-muted-foreground font-bold ">Waiting...</p>
+ <p className="text-[10px] text-muted-foreground font-bold ">대기중...</p>
  </div>
  </div>
  </div>

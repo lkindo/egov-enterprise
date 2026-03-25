@@ -9,7 +9,7 @@ export const getCnsltList = async (params: CnsltSearchParams): Promise<Paginatio
  params: {
  ...params,
  keyword: params.searchKeyword || params.searchWrd || '',
- page: (params.pageIndex || 1) - 1,
+ page: (params.page번호 || 1) - 1,
  size: params.pageUnit || 10
  }
  });

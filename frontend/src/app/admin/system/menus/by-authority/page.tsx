@@ -76,7 +76,7 @@ export default function MenuByAuthorityPage() {
 
   const { data: authorData } = useQuery({
     queryKey: ['admin-authorities-all'],
-    queryFn: () => authorAdminService.getAuthorList({ pageIndex: 1, searchCondition: '1', searchKeyword: '' } as any),
+    queryFn: () => authorAdminService.getAuthorList({ page번호: 1, searchCondition: '1', searchKeyword: '' } as any),
     staleTime: 5 * 60 * 1000,
   });
 

@@ -84,7 +84,7 @@ export default function SecurityHubClient() {
 
   const { data: authorsData, isLoading: isAuthorsLoading } = useQuery({
     queryKey: ['admin-authorities', roleSearchKeyword],
-    queryFn: () => authorAdminService.getAuthorList({ pageIndex: 1, searchKeyword: roleSearchKeyword }),
+    queryFn: () => authorAdminService.getAuthorList({ page번호: 1, searchKeyword: roleSearchKeyword }),
   });
   const authorities = authorsData?.list || [];
 
@@ -378,7 +378,7 @@ export default function SecurityHubClient() {
         {/* Center: Identity Matrix */}
         <div className="col-span-12 lg:col-span-4 space-y-8 h-full">
             <HubSectionCard 
-                title="ID 엔티티 매핑" 
+                title="아이디 " 
                 description="선택된 역할에 할당된 개별 식별자들의 실시간 할당 상태입니다." 
                 icon={Users}
                 action={
@@ -562,7 +562,7 @@ export default function SecurityHubClient() {
             </FormField>
 
             <div className="flex gap-6 pt-4">
-                <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">CANCEL</Button>
+                <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
                 <Button onClick={() => saveAuthorMutation.mutate(authorFormData)} disabled={saveAuthorMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
                     <Zap size={18} className="group-hover:animate-pulse" /> {authorMode === 'create' ? 'DEPLOY_AUTHORITY' : 'PATCH_AUTHORITY'}
                 </Button>

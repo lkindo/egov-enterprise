@@ -99,9 +99,11 @@ const formSchema = z.object({
   bbsIntrcn: z.string(),
   replyPosblAt: z.boolean(),
   fileAtchPosblAt: z.boolean(),
-  posblAtchFileNumber: z.number(),
+  atchPosblFileNumber: z.number(),
+  atchPosblFileSize: z.number(),
   bbsTyCode: z.string(),
   tmplatId: z.string(),
+  cmmntyId: z.string().optional(),
   permissions: z.record(z.string(), z.array(z.string())),
   menuNm: z.string(), // Step 1-3 transition validation fix
   upperMenuNo: z.string(),
@@ -118,16 +120,18 @@ export function BoardMakerWizard() {
   const [status, setStatus] = useState('');
   const queryClient = useQueryClient();
 
-  const form = useForm<FormValues>({
+  const { register, handleSubmit, control, formState: { errors }, watch, setValue } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       bbsNm: '',
       bbsIntrcn: '',
-      replyPosblAt: true,
+      replyPosblAt: false,
       fileAtchPosblAt: true,
-      posblAtchFileNumber: 3,
+      atchPosblFileNumber: 3,
+      atchPosblFileSize: 5242880, // 5MB
       bbsTyCode: 'BBST01',
       tmplatId: 'TMPLT_HUB',
+      cmmntyId: '',
       permissions: {
         'ROLE_ADMIN': ['list', 'read', 'write', 'comment'],
         'ROLE_USER': ['list', 'read', 'write', 'comment'],
@@ -138,8 +142,6 @@ export function BoardMakerWizard() {
       menuOrdr: 1,
     }
   });
-
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = form;
 
   const selectedTemplate = watch('tmplatId');
   const permissions = watch('permissions');
@@ -182,23 +184,26 @@ export function BoardMakerWizard() {
         bbsTyCode: data.bbsTyCode,
         replyPosblAt: data.replyPosblAt ? 'Y' : 'N',
         fileAtchPosblAt: data.fileAtchPosblAt ? 'Y' : 'N',
-        posblAtchFileNumber: Number(data.posblAtchFileNumber),
+        atchPosblFileNumber: Number(data.atchPosblFileNumber),
+        atchPosblFileSize: Number(data.atchPosblFileSize),
         tmplatId: data.tmplatId,
-        useAt: 'Y'
+        cmmntyId: data.cmmntyId,
+        blogAt: 'N', // Default
+        commentAt: 'N', // Default
+        stsfdgAt: 'N', // Default
+        useAt: 'Y',
+        frstRegisterId: 'webmaster' // 실제 인증 ID로 변경 (기존 admin은 FK 에러 가능성)
       });
 
-      setStatus(`Board ${bbsId} Created. Deploying Menu...`);
-
-      // 2. Create Menu mapping
-      const generatedMenuNo = 9000000 + Math.floor(Math.random() * 900000);
+      const generatedMenuNo = 8000000 + Math.floor(Math.random() * 900000); // 9999999 미만으로 유지
       
       await menuAdminService.createMenu({
         menuNo: generatedMenuNo,
         menuNm: data.menuNm || data.bbsNm,
         upperMenuNo: Number(data.upperMenuNo),
         menuOrdr: data.menuOrdr,
-        progrmFileNm: 'AUTO_BOARD_DISPATCHER',
-        modernRoute: `/community/boards/list?bbsId=${bbsId}`,
+        progrmFileNm: 'EgovBBSMaster', // DB 제약조건(FK)을 위해 실제 존재할 법한 파일명 사용
+        modernRoute: `/admin/community/boards/selectBoardList?bbsId=${bbsId}`,
         menuDc: `Auto-generated menu for board ${data.bbsNm}`
       });
 
@@ -303,266 +308,250 @@ export function BoardMakerWizard() {
           
           <CardContent className="p-12 min-h-[550px]">
             <AnimatePresence mode="wait">
-              {currentStep === 1 && (
-                <motion.div 
-                  key="step1"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-10"
-                >
-                  <div className="space-y-4">
-                    <Label htmlFor="bbsNm" className="text-xl font-black text-slate-800 flex items-center gap-2">
-                      <span className="w-1.5 h-6 bg-primary rounded-full inline-block" />
-                      게시판 명칭
-                    </Label>
-                    <Input 
-                      id="bbsNm" 
-                      placeholder="예: 사내 소식 공유 게시판" 
-                      className={cn(
-                        "h-16 text-xl rounded-2xl border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm",
-                        errors.bbsNm ? "border-red-500 bg-red-50/10" : "border-slate-100 bg-slate-50/50"
-                      )}
-                      {...register('bbsNm')} 
-                    />
-                    {errors.bbsNm && <p className="text-red-500 text-sm font-bold ml-2">{errors.bbsNm.message}</p>}
-                  </div>
-
-                  <div className="space-y-4">
-                    <Label htmlFor="bbsIntrcn" className="text-xl font-black text-slate-800 flex items-center gap-2">
-                      <span className="w-1.5 h-6 bg-slate-300 rounded-full inline-block" />
-                      게시판 소개
-                    </Label>
-                    <Textarea 
-                      id="bbsIntrcn" 
-                      placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요." 
-                      className="min-h-[140px] text-lg rounded-3xl border-2 border-slate-100 bg-slate-50/50 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm"
-                      {...register('bbsIntrcn')}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-                    <div className="flex items-center justify-between p-8 rounded-[2rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all">
-                      <div className="space-y-1">
-                        <Label className="text-lg font-black text-slate-800 flex items-center gap-2">
-                          댓글 사용 여부
-                          <Info className="w-4 h-4 text-slate-300" />
-                        </Label>
-                        <p className="text-sm text-slate-400 font-medium whitespace-nowrap">게시글에 댓글을 작성할 수 있습니다.</p>
-                      </div>
-                      <Switch 
-                        checked={watch('replyPosblAt')}
-                        onCheckedChange={(checked) => setValue('replyPosblAt', checked)}
-                        className="data-[state=checked]:bg-primary scale-125"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-8 rounded-[2rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all">
-                      <div className="space-y-1">
-                        <Label className="text-lg font-black text-slate-800 flex items-center gap-2">
-                          파일 첨부 여부
-                          <Info className="w-4 h-4 text-slate-300" />
-                        </Label>
-                        <p className="text-sm text-slate-400 font-medium whitespace-nowrap">문서나 이미지를 첨부할 수 있습니다.</p>
-                      </div>
-                      <Switch 
-                        checked={watch('fileAtchPosblAt')}
-                        onCheckedChange={(checked) => setValue('fileAtchPosblAt', checked)}
-                        className="data-[state=checked]:bg-primary scale-125"
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {currentStep === 2 && (
-                <motion.div 
-                  key="step2"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="grid grid-cols-1 lg:grid-cols-3 gap-8"
-                >
-                  {TEMPLATES.map((tpl) => {
-                    const Icon = tpl.icon;
-                    const isSelected = selectedTemplate === tpl.id;
-
-                    return (
-                      <div 
-                        key={tpl.id}
-                        onClick={() => {
-                          setValue('tmplatId', tpl.id);
-                          setValue('bbsTyCode', tpl.typeCode);
-                        }}
+              <motion.div 
+                key={currentStep}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                {currentStep === 1 && (
+                  <div className="space-y-10">
+                    <div className="space-y-4">
+                      <Label htmlFor="bbsNm" className="text-xl font-black text-slate-800 flex items-center gap-2">
+                        <span className="w-1.5 h-6 bg-primary rounded-full inline-block" />
+                        게시판 명칭
+                      </Label>
+                      <Input 
+                        id="bbsNm" 
+                        placeholder="예: 사내 소식 공유 게시판" 
                         className={cn(
-                          "group relative p-8 rounded-[2.5rem] border-2 transition-all duration-500 cursor-pointer flex flex-col gap-6",
-                          isSelected ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-2xl scale-[1.02]" : "border-slate-50 bg-slate-50/30 hover:border-slate-200"
+                          "h-16 text-xl rounded-2xl border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm",
+                          errors.bbsNm ? "border-red-500 bg-red-50/10" : "border-slate-100 bg-slate-50/50"
                         )}
-                      >
-                        <div className={cn(
-                          "w-20 h-20 rounded-3xl flex items-center justify-center text-white transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg",
-                          tpl.color
-                        )}>
-                          <Icon size={40} />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <h4 className="text-2xl font-black text-slate-800 tracking-tight">
-                            {tpl.name}
-                          </h4>
-                          <p className="text-sm text-slate-500 font-bold leading-relaxed">
-                            {tpl.description}
-                          </p>
-                        </div>
+                        {...register('bbsNm')} 
+                      />
+                      {errors.bbsNm && <p className="text-red-500 text-sm font-bold ml-2">{errors.bbsNm.message}</p>}
+                    </div>
 
-                        <div className="mt-auto pt-6 flex items-center justify-between">
-                          <span className="text-[10px] font-black tracking-widest text-slate-300 uppercase">
-                            ID: {tpl.id}
-                          </span>
+                    <div className="space-y-4">
+                      <Label htmlFor="bbsIntrcn" className="text-xl font-black text-slate-800 flex items-center gap-2">
+                        <span className="w-1.5 h-6 bg-slate-300 rounded-full inline-block" />
+                        게시판 소개
+                      </Label>
+                      <Textarea 
+                        id="bbsIntrcn" 
+                        placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요." 
+                        className="min-h-[140px] text-lg rounded-3xl border-2 border-slate-100 bg-slate-50/50 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm"
+                        {...register('bbsIntrcn')}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                      <div className="flex items-center justify-between p-8 rounded-[2rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all">
+                        <div className="space-y-1">
+                          <Label className="text-lg font-black text-slate-800 flex items-center gap-2">
+                            댓글 사용 여부
+                            <Info className="w-4 h-4 text-slate-300" />
+                          </Label>
+                          <p className="text-sm text-slate-400 font-medium whitespace-nowrap">게시글에 댓글을 작성할 수 있습니다.</p>
+                        </div>
+                        <Switch 
+                          checked={watch('replyPosblAt')}
+                          onCheckedChange={(checked) => setValue('replyPosblAt', checked)}
+                          className="data-[state=checked]:bg-primary scale-125"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-8 rounded-[2rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all">
+                        <div className="space-y-1">
+                          <Label className="text-lg font-black text-slate-800 flex items-center gap-2">
+                            파일 첨부 여부
+                            <Info className="w-4 h-4 text-slate-300" />
+                          </Label>
+                          <p className="text-sm text-slate-400 font-medium whitespace-nowrap">문서나 이미지를 첨부할 수 있습니다.</p>
+                        </div>
+                        <Switch 
+                          checked={watch('fileAtchPosblAt')}
+                          onCheckedChange={(checked) => setValue('fileAtchPosblAt', checked)}
+                          className="data-[state=checked]:bg-primary scale-125"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 2 && (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {TEMPLATES.map((tpl) => {
+                      const Icon = tpl.icon;
+                      const isSelected = selectedTemplate === tpl.id;
+
+                      return (
+                        <div 
+                          key={tpl.id}
+                          onClick={() => {
+                            setValue('tmplatId', tpl.id);
+                            setValue('bbsTyCode', tpl.typeCode);
+                          }}
+                          className={cn(
+                            "group relative p-8 rounded-[2.5rem] border-2 transition-all duration-500 cursor-pointer flex flex-col gap-6",
+                            isSelected ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-2xl scale-[1.02]" : "border-slate-50 bg-slate-50/30 hover:border-slate-200"
+                          )}
+                        >
                           <div className={cn(
-                            "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
-                            isSelected ? "bg-primary border-primary text-white" : "border-slate-200 text-transparent"
+                            "w-20 h-20 rounded-3xl flex items-center justify-center text-white transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg",
+                            tpl.color
                           )}>
-                            <Check size={16} strokeWidth={4} />
+                            <Icon size={40} />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <h4 className="text-2xl font-black text-slate-800 tracking-tight">
+                              {tpl.name}
+                            </h4>
+                            <p className="text-sm text-slate-500 font-bold leading-relaxed">
+                              {tpl.description}
+                            </p>
+                          </div>
+
+                          <div className="mt-auto pt-6 flex items-center justify-between">
+                            <span className="text-[10px] font-black tracking-widest text-slate-300 uppercase">
+                              ID: {tpl.id}
+                            </span>
+                            <div className={cn(
+                              "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
+                              isSelected ? "bg-primary border-primary text-white" : "border-slate-200 text-transparent"
+                            )}>
+                              <Check size={16} strokeWidth={4} />
+                            </div>
                           </div>
                         </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {currentStep === 3 && (
+                  <div className="space-y-8">
+                    <div className="rounded-[2.5rem] border-2 border-slate-50 overflow-hidden shadow-inner bg-slate-50/30">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-slate-900/5 border-b">
+                            <th className="p-8 text-left font-black text-slate-400 text-sm tracking-widest uppercase">대상 그룹 (Roles)</th>
+                            {PERMISSIONS.map(p => (
+                              <th key={p.id} className="p-8 text-center font-black text-slate-400 text-sm tracking-widest uppercase">{p.name}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {ROLES.map(role => {
+                            const RoleIcon = role.icon;
+                            const rolePerms = (permissions[role.id] as string[]) || [];
+                            
+                            return (
+                              <tr key={role.id} className="group hover:bg-white transition-colors">
+                                <td className="p-8">
+                                  <div className="flex items-center gap-4">
+                                    <div className={cn("p-3 rounded-2xl bg-white shadow-sm border border-slate-100 shadow-inner-sm", role.color)}>
+                                      <RoleIcon size={24} />
+                                    </div>
+                                    <div>
+                                      <p className="font-black text-slate-800 text-lg">{role.name}</p>
+                                      <p className="text-xs text-slate-400 font-bold uppercase">{role.id}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                {PERMISSIONS.map(perm => {
+                                  const isChecked = rolePerms.includes(perm.id);
+                                  return (
+                                    <td key={perm.id} className="p-8 text-center">
+                                      <Checkbox 
+                                        checked={isChecked}
+                                        onCheckedChange={() => togglePermission(role.id, perm.id)}
+                                        className={cn(
+                                          "w-8 h-8 rounded-lg transition-all border-2",
+                                          isChecked ? "bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/20" : "bg-white border-slate-200"
+                                        )}
+                                      />
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    <div className="p-8 bg-amber-50 rounded-[2rem] border-2 border-amber-100 flex items-start gap-4 shadow-sm">
+                      <Info className="w-8 h-8 text-amber-500 shrink-0" />
+                      <div>
+                        <p className="font-black text-amber-900 text-lg">보안 정책 안내</p>
+                        <p className="text-slate-600 font-medium">관리자 그룹은 모든 권한이 기본적으로 부여됩니다. '익명 사용자'에게 쓰기 권한을 부여할 경우 스팸 게시물에 주의가 필요합니다.</p>
                       </div>
-                    );
-                  })}
-                </motion.div>
-              )}
-
-              {currentStep === 3 && (
-                <motion.div 
-                  key="step3"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-8"
-                >
-                  <div className="rounded-[2.5rem] border-2 border-slate-50 overflow-hidden shadow-inner bg-slate-50/30">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-slate-900/5 border-b">
-                          <th className="p-8 text-left font-black text-slate-400 text-sm tracking-widest uppercase">대상 그룹 (Roles)</th>
-                          {PERMISSIONS.map(p => (
-                            <th key={p.id} className="p-8 text-center font-black text-slate-400 text-sm tracking-widest uppercase">{p.name}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {ROLES.map(role => {
-                          const RoleIcon = role.icon;
-                          const rolePerms = (permissions[role.id] as string[]) || [];
-                          
-                          return (
-                            <tr key={role.id} className="group hover:bg-white transition-colors">
-                              <td className="p-8">
-                                <div className="flex items-center gap-4">
-                                  <div className={cn("p-3 rounded-2xl bg-white shadow-sm border border-slate-100 shadow-inner-sm", role.color)}>
-                                    <RoleIcon size={24} />
-                                  </div>
-                                  <div>
-                                    <p className="font-black text-slate-800 text-lg">{role.name}</p>
-                                    <p className="text-xs text-slate-400 font-bold uppercase">{role.id}</p>
-                                  </div>
-                                </div>
-                              </td>
-                              {PERMISSIONS.map(perm => {
-                                const isChecked = rolePerms.includes(perm.id);
-                                return (
-                                  <td key={perm.id} className="p-8 text-center">
-                                    <Checkbox 
-                                      checked={isChecked}
-                                      onCheckedChange={() => togglePermission(role.id, perm.id)}
-                                      className={cn(
-                                        "w-8 h-8 rounded-lg transition-all border-2",
-                                        isChecked ? "bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/20" : "bg-white border-slate-200"
-                                      )}
-                                    />
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  <div className="p-8 bg-amber-50 rounded-[2rem] border-2 border-amber-100 flex items-start gap-4 shadow-sm">
-                    <Info className="w-8 h-8 text-amber-500 shrink-0" />
-                    <div>
-                      <p className="font-black text-amber-900 text-lg">보안 정책 안내</p>
-                      <p className="text-slate-600 font-medium">관리자 그룹은 모든 권한이 기본적으로 부여됩니다. '익명 사용자'에게 쓰기 권한을 부여할 경우 스팸 게시물에 주의가 필요합니다.</p>
                     </div>
                   </div>
-                </motion.div>
-              )}
+                )}
 
-              {currentStep === 4 && (
-                <motion.div 
-                  key="step4"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-12"
-                >
-                  <div className="space-y-6">
-                    <Label className="text-xl font-black text-slate-800 flex items-center gap-2">
-                      <span className="w-1.5 h-6 bg-primary rounded-full inline-block" />
-                      상위 메뉴 선택
-                    </Label>
-                    <Select value={watch('upperMenuNo')} onValueChange={(val) => setValue('upperMenuNo', val)}>
-                      <SelectTrigger className="h-20 rounded-3xl border-2 border-slate-100 bg-slate-50/50 px-8 text-xl font-black shadow-inner-sm">
-                        <SelectValue placeholder="상위 메뉴를 선택하세요" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl border-none shadow-2xl">
-                        <SelectItem value="2000000" className="py-4 text-lg font-bold">💬 커뮤니티 및 콘텐츠</SelectItem>
-                        <SelectItem value="2030000" className="py-4 text-lg font-bold">🙋‍♂️ 사용자지원</SelectItem>
-                        <SelectItem value="0" className="py-4 text-lg font-bold">ROOT (최상위 메뉴)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
+                {currentStep === 4 && (
+                  <div className="space-y-12">
+                    <div className="space-y-6">
                       <Label className="text-xl font-black text-slate-800 flex items-center gap-2">
-                        메뉴 명칭
+                        <span className="w-1.5 h-6 bg-primary rounded-full inline-block" />
+                        상위 메뉴 선택
                       </Label>
-                      <Input 
-                        placeholder="메뉴에 표시될 이름을 입력하세요" 
-                        className="h-16 text-lg rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm"
-                        {...register('menuNm')}
-                      />
+                      <Select value={watch('upperMenuNo')} onValueChange={(val) => setValue('upperMenuNo', val)}>
+                        <SelectTrigger className="h-20 rounded-3xl border-2 border-slate-100 bg-slate-50/50 px-8 text-xl font-black shadow-inner-sm">
+                          <SelectValue placeholder="상위 메뉴를 선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-none shadow-2xl">
+                          <SelectItem value="2000000" className="py-4 text-lg font-bold">💬 커뮤니티 및 콘텐츠</SelectItem>
+                          <SelectItem value="2030000" className="py-4 text-lg font-bold">🙋‍♂️ 사용자지원</SelectItem>
+                          <SelectItem value="0" className="py-4 text-lg font-bold">ROOT (최상위 메뉴)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="space-y-4">
-                      <Label className="text-xl font-black text-slate-800 flex items-center gap-2">
-                        메뉴 순서
-                      </Label>
-                      <Input 
-                        type="number"
-                        className="h-16 text-lg rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm"
-                        {...register('menuOrdr', { valueAsNumber: true })}
-                      />
-                    </div>
-                  </div>
 
-                  <div className="p-10 rounded-[3rem] bg-slate-900 text-white flex items-center justify-between group overflow-hidden relative">
-                    <div className="space-y-2 relative z-10">
-                      <p className="text-primary font-black tracking-widest text-xs uppercase">Generated Path</p>
-                      <h5 className="text-2xl font-black tracking-tight flex items-center gap-3">
-                        /community/boards/list?bbsId=AUTO_GEN
-                        <ExternalLink size={20} className="text-slate-600" />
-                      </h5>
-                      <p className="text-slate-400 text-sm font-medium italic">생성 즉시 메뉴 시스템에 활성화됩니다.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-4">
+                        <Label className="text-xl font-black text-slate-800 flex items-center gap-2">
+                          메뉴 명칭
+                        </Label>
+                        <Input 
+                          placeholder="메뉴에 표시될 이름을 입력하세요" 
+                          className="h-16 text-lg rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm"
+                          {...register('menuNm')}
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <Label className="text-xl font-black text-slate-800 flex items-center gap-2">
+                          메뉴 순서
+                        </Label>
+                        <Input 
+                          type="number"
+                          className="h-16 text-lg rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm"
+                          {...register('menuOrdr', { valueAsNumber: true })}
+                        />
+                      </div>
                     </div>
-                    <div className="absolute right-[-20px] top-[-20px] opacity-10 group-hover:scale-110 transition-transform duration-700">
-                      <Rocket size={200} />
+
+                    <div className="p-10 rounded-[3rem] bg-slate-900 text-white flex items-center justify-between group overflow-hidden relative">
+                      <div className="space-y-2 relative z-10">
+                        <p className="text-primary font-black tracking-widest text-xs uppercase">Generated Path</p>
+                        <h5 className="text-2xl font-black tracking-tight flex items-center gap-3">
+                          /admin/community/boards/selectBoardList?bbsId=AUTO_GEN
+                          <ExternalLink size={20} className="text-slate-600" />
+                        </h5>
+                        <p className="text-slate-400 text-sm font-medium italic">생성 즉시 메뉴 시스템에 활성화됩니다.</p>
+                      </div>
+                      <div className="absolute right-[-20px] top-[-20px] opacity-10 group-hover:scale-110 transition-transform duration-700">
+                        <Rocket size={200} />
+                      </div>
                     </div>
                   </div>
-                </motion.div>
-              )}
+                )}
+              </motion.div>
             </AnimatePresence>
           </CardContent>
 
@@ -593,10 +582,10 @@ export function BoardMakerWizard() {
                     {status || '처리 중...'}
                 </div>
               ) : (
-                <>
+                <span className="flex items-center gap-2">
                   {currentStep === STEPS.length ? '게시판 생성 및 메뉴 배포' : '다음 단계로'}
                   <ChevronRight className="ml-2 w-5 h-5" />
-                </>
+                </span>
               )}
             </Button>
           </CardFooter>

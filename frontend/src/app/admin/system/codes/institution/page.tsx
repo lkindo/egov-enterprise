@@ -18,7 +18,7 @@ export default async function InstitutionCodePage() {
 
   let initialData: any = { list: [], total: 0 };
   try {
-   initialData = await codeAdminService.getInstitutionCodeList({ pageIndex: 1, pageUnit: 10 }, axiosConfig);
+   initialData = await codeAdminService.getInstitutionCodeList({ page번호: 1, pageUnit: 10 }, axiosConfig);
   } catch (error: any) {
    if (error.response?.status === 401) {
     redirect('/login?expired=true&redirect=/admin/system/codes/institution');

@@ -11,6 +11,6 @@ export interface FileVO {
 }
 
 export interface FileSearchParams {
- pageIndex?: number;
+ page번호?: number;
  searchKeyword?: string;
 }

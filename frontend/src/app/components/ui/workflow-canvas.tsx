@@ -159,7 +159,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
 
  {/* Canvas UI Overlays */}
  <div className="absolute bottom-8 left-8 p-6 bg-card border shadow-2xl space-y-4">
- <h4 className="text-sm font-black tracking-tight text-foreground">Workflow Intelligence</h4>
+ <h4 className="text-sm font-black tracking-tight text-foreground">워크플로우 인텔리전스</h4>
  <div className="flex flex-col gap-2">
  <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground">
  <div className="w-2 h-2 rounded-full bg-emerald-500" /> Completed

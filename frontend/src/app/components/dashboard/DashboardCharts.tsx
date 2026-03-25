@@ -88,7 +88,7 @@ export function DashboardPostChart({ data }: ChartProps) {
  posts: (item.creatCo || 0) + (item.inqireCo || 0)
  }));
 
- if (!chartData.length) return <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm font-bold tracking-tight opacity-30">Pulse Inactive</div>;
+ if (!chartData.length) return <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm font-bold tracking-tight opacity-30">펄스 비활성</div>;
 
  return (
  <div className="h-[200px] w-full">

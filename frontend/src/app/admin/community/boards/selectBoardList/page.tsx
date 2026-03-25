@@ -34,7 +34,7 @@ export default async function BoardListPage({ searchParams }: { searchParams: Pr
  // 파라미터 준비
  const params = {
  bbsId: (resolvedSearchParams.bbsId as string) || 'BBSMSTR_AAAAAAAAAAAA',
- pageIndex: Number(resolvedSearchParams.pageIndex) || 1,
+ page번호: Number(resolvedSearchParams.page번호) || 1,
  searchWrd: (resolvedSearchParams.searchWrd as string) || '',
  searchCnd: (resolvedSearchParams.searchCnd as string) || '0',
  orderBy: (resolvedSearchParams.orderBy as string) || 'date',

@@ -10,7 +10,7 @@ export function useObservability() {
  activeThreads: 0,
  healthScore: 0,
  radarData: [
- { subject: 'Availability', A: 98 },
+ { subject: '가용성', A: 98 },
  { subject: 'Security', A: 95 },
  { subject: 'Performance', A: 88 },
  { subject: 'Stability', A: 92 },

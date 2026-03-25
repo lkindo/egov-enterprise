@@ -1,4 +1,6 @@
 package com.company.project.domain.board;
+
+import java.time.LocalDateTime;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -76,6 +78,37 @@ public class BoardMaster extends BaseEntity {
     @Column(table = "NBBSMASTEROPTN", name = "STSFDG_AT", length = 1)
     @Builder.Default
     private String stsfdgAt = "N";
+
+    // NBBSMASTEROPTN 테이블의 NOT NULL 제약조건 해결을 위한 매핑 (Auditing 필드 중복 활용용)
+    @Column(table = "NBBSMASTEROPTN", name = "FRST_REGISTER_ID", length = 20, updatable = false)
+    private String optnFrstRegisterId;
+
+    @Column(table = "NBBSMASTEROPTN", name = "FRST_REGIST_PNTTM", updatable = false)
+    private LocalDateTime optnFrstRegistPnttm;
+
+    @Column(table = "NBBSMASTEROPTN", name = "LAST_UPDUSR_ID", length = 20)
+    private String optnLastUpdusrId;
+
+    @Column(table = "NBBSMASTEROPTN", name = "LAST_UPDT_PNTTM")
+    private LocalDateTime optnLastUpdtPnttm;
+
+    @PrePersist
+    protected void onPrePersist() {
+        if (this.optnFrstRegisterId == null) {
+            this.optnFrstRegisterId = "webmaster";
+        }
+        if (this.optnFrstRegistPnttm == null) {
+            this.optnFrstRegistPnttm = LocalDateTime.now();
+        }
+        if (this.optnLastUpdtPnttm == null) {
+            this.optnLastUpdtPnttm = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    protected void onPreUpdate() {
+        this.optnLastUpdtPnttm = LocalDateTime.now();
+    }
 
     public void update(String bbsNm, String bbsIntrcn, String replyPosblAt, String fileAtchPosblAt,
             Integer atchPosblFileNumber, Long atchPosblFileSize, String tmplatId, String useAt,

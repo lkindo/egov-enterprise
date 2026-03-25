@@ -46,7 +46,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
   const loadData = async (wrd: string = searchWrd, page: number = pageNumber) => {
     try {
       setLoading(true);
-      const res = await codeAdminService.getAdministCodeList({ searchWrd: wrd, pageIndex: page });
+      const res = await codeAdminService.getAdministCodeList({ searchWrd: wrd, page번호: page });
       setData(res.list || []);
       setTotal(res.total || 0);
       setPageNumber(page);

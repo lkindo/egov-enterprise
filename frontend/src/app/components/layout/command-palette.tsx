@@ -90,7 +90,7 @@ export function CommandPalette() {
  }}
  />
  <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
- <span className="text-[10px] font-black text-muted-foreground">ESC</span>
+ <span className="text-[10px] font-black text-muted-foreground">취소</span>
  </div>
  <button onClick={handleClose} className="p-1 hover:bg-muted rounded-full text-muted-foreground">
  <X size={18} />
@@ -176,7 +176,7 @@ export function CommandPalette() {
  </div>
  <div className="flex items-center gap-2">
  <Command size={12} className="text-muted-foreground" />
- <span className="text-[10px] font-bold text-muted-foreground ">EGov Enterprise Intelligence</span>
+ <span className="text-[10px] font-bold text-muted-foreground ">EGov 엔터프라이즈 인텔리전스</span>
  </div>
  </div>
  </div>

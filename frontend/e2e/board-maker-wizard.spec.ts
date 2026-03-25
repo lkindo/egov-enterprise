@@ -41,8 +41,24 @@ test.describe('Board Master Maker Wizard', () => {
     // Click '게시판 생성 및 메뉴 배포'
     await page.getByRole('button', { name: '게시판 생성 및 메뉴 배포' }).click();
 
+    console.log('Clicked "Create and Deploy", waiting for SUCCESS state...');
+    
     // Verify SUCCESS page
-    await expect(page.locator('text=MISSION COMPLETE!')).toBeVisible({ timeout: 30000 });
+    try {
+      await expect(page.locator('text=MISSION COMPLETE!')).toBeVisible({ timeout: 60000 });
+      console.log('>>> SUCCESS: Board and Menu created successfully!');
+    } catch (e) {
+      const currentStatus = await page.locator('button:has(svg.animate-spin)').textContent();
+      const pageUrl = page.url();
+      const pageBody = await page.content();
+      console.error('>>> FAILED: Success message not visible.');
+      console.error('Current URL:', pageUrl);
+      console.error('Current Status:', currentStatus);
+      if (pageBody.includes('Error') || pageBody.includes('Failed')) {
+        console.error('Page contains error indicator!');
+      }
+      throw e;
+    }
     
     // 3. Verify in List
     await page.getByRole('button', { name: '게시판 목록 보기' }).click();

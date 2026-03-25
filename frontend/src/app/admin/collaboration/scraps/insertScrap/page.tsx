@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Bookmark, Globe, FileText, ArrowLeft, Send, Home, ChevronRight, Info } from "lucide-react";
+import { Bookmark, Send, ArrowLeft, Home, ChevronRight, Activity, FileText, CheckCircle, Globe, Layout, Info } from "lucide-react";
+import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 const InsertScrapPage = () => {
  const router = useRouter();
@@ -47,16 +48,7 @@ const InsertScrapPage = () => {
 
  return (
  <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
- {/* Breadcrumb */}
- <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg w-fit">
- <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
- <Home className="w-4 h-4" /> 홈
- </Link>
- <ChevronRight className="w-4 h-4" />
- <Link href="/admin/collaboration/scraps/selectScrapList" className="hover:text-foreground transition-colors font-medium">스크랩관리</Link>
- <ChevronRight className="w-4 h-4" />
- <span className="text-foreground font-semibold">새 스크랩 등록</span>
- </div>
+  <DynamicBreadcrumb />
 
  <Card className="shadow-2xl border-none overflow-hidden rounded-[2.5rem] bg-white ring-1 ring-slate-100">
  <CardHeader className="border-b bg-gradient-to-tr from-indigo-50 via-slate-50 to-white pb-12 pt-12 px-10">

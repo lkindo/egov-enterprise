@@ -178,7 +178,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
       />
 
       <HubHeader 
-        title="Identity" 
+        title="아이덴티티" 
         highlight="Fabric" 
         subtitle="전사 사용자 계정 자격 증명 및 통합 디렉토리 동기화 프로토콜 제어" 
         icon={Users} 
@@ -220,7 +220,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                         <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                             <Zap size={32} className="text-primary" />
                         </div>
-                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">Authentication<br />Core Protocol</h4>
+                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">인증<br />코어 프로토콜</h4>
                     </div>
 
                     <div className="space-y-8">
@@ -286,7 +286,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">CANCEL</Button>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
             <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group">
               <Zap size={18} className="group-hover:animate-pulse" /> {editingUser ? 'UPDATE_IDENTITY_SPEC' : 'PROVISION_MEMBER'}
             </Button>

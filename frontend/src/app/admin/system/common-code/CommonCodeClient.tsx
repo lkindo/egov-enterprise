@@ -46,6 +46,7 @@ import {
     saveCodeDetail as saveCodeDetailAction,
     deleteCodeDetail as deleteCodeDetailAction
 } from '@/app/actions/codeActions';
+import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import { CmmnClCode, CmmnCode } from '@/types/system';
 
 interface CommonCodeClientProps {
@@ -274,7 +275,8 @@ export default function CommonCodeClient({
     ];
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 p-6">
+            <DynamicBreadcrumb />
             {/* Master-Detail Layout Wrapper */}
             <div className="flex flex-col lg:flex-row gap-8 min-h-[700px]">
                 
@@ -369,10 +371,12 @@ export default function CommonCodeClient({
                 <main className="flex-1 space-y-6">
                     {selectedGroup ? (
                         <div className="space-y-6">
-                            {/* Breadcrumb Path */}
-                            <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                            {/* Breadcrumb Path - 내부 상세 추적은 유지하되 상단 통합 Breadcrumb과 조화 */}
+                            <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase bg-slate-50 px-4 py-2 rounded-full w-fit border border-slate-100 shadow-sm mb-4">
+                                <span className="opacity-50">시스템 관리</span>
+                                <ChevronRight size={10} className="opacity-30" />
                                 <span>{selectedCluster.name}</span>
-                                <ChevronRight size={10} />
+                                <ChevronRight size={10} className="opacity-30" />
                                 <span className="text-primary">{selectedGroup.codeIdNm}</span>
                             </div>
 

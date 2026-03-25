@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { statsAdminService, StatsDto } from '@/services/admin/system/StatsAdminService';
 import { BannerSlider } from '@/app/components/dashboard/BannerSlider';
-import { Popup관리자 } from '@/app/components/dashboard/PopupManager';
+import { Popup관리자 } from '@/app/components/dashboard/Popup관리자';
 import { ActivityFeed } from '@/app/components/dashboard/ActivityFeed';
 import { RealTimeDashboard } from '@/components/features/dashboard/RealTimeDashboard';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -232,7 +232,7 @@ export default function UnifiedDashboardClient({
             <div className="space-y-8">
                <div className="space-y-2">
                  <div className="flex justify-between text-sm font-black">
-                   <span className="opacity-40">CPU USE</span>
+                   <span className="opacity-40">CPU 사용량</span>
                    <span className="text-primary">24%</span>
                  </div>
                  <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
@@ -245,7 +245,7 @@ export default function UnifiedDashboardClient({
                </div>
                <div className="space-y-2">
                  <div className="flex justify-between text-sm font-black">
-                   <span className="opacity-40">MEMORY</span>
+                   <span className="opacity-40">메모리</span>
                    <span className="text-emerald-500">42%</span>
                  </div>
                  <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import {
@@ -27,10 +27,10 @@ const trafficData = [
 ];
 
 const authorData = [
- { name: '관리자', value: 400 },
- { name: '사용자A', value: 300 },
- { name: '사용자B', value: 200 },
- { name: '기타', value: 100 },
+ { name: '愿由ъ옄', value: 400 },
+ { name: '?ъ슜?륚', value: 300 },
+ { name: '?ъ슜?륛', value: 200 },
+ { name: '湲고?', value: 100 },
 ];
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1'];
@@ -38,19 +38,19 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1'];
 export function BoardStats() {
  return (
  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
- {/* 트래픽 추이 */}
+ {/* ?몃옒??異붿씠 */}
  <Card className="lg:col-span-2 border-none shadow-lg rounded-[2rem] overflow-hidden ring-1 ring-slate-100">
  <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-8">
  <CardTitle className="text-lg font-black flex items-center gap-2">
  <TrendingUp size={18} className="text-primary" />
- 최근 7일 트래픽 추이
+ 理쒓렐 7???몃옒??異붿씠
  </CardTitle>
  <span className="text-[10px] font-bold text-muted-foreground tracking-tight bg-muted px-2 py-1 rounded-md">Real-time</span>
  </CardHeader>
  <CardContent className="px-6 pb-6">
  <div className="h-[200px] w-full">
  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
- <AreaChart data={trafficData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+ <div style={{ width: '100%', height: '100%' }}><AreaChart data={trafficData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
  <defs>
  <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
@@ -62,24 +62,24 @@ export function BoardStats() {
  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
  <Area type="monotone" dataKey="views" stroke="#3b82f6" strokeWidth={3} fill="url(#colorViews)" />
- </AreaChart>
+ </AreaChart></div>
  </ResponsiveContainer>
  </div>
  </CardContent>
  </Card>
 
- {/* 작성자 분포 */}
+ {/* ?묒꽦??遺꾪룷 */}
  <Card className="border-none shadow-lg rounded-[2rem] overflow-hidden ring-1 ring-slate-100">
  <CardHeader className="pb-2 pt-6 px-8">
  <CardTitle className="text-lg font-black flex items-center gap-2">
  <Users size={18} className="text-primary" />
- 작성자 분포
+ ?묒꽦??遺꾪룷
  </CardTitle>
  </CardHeader>
  <CardContent className="px-6 pb-6 flex flex-col items-center">
  <div className="h-[180px] w-full">
  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
- <PieChart>
+ <div style={{ width: '100%', height: '100%' }}><PieChart>
  <Pie
  data={authorData}
  cx="50%"
@@ -94,7 +94,7 @@ export function BoardStats() {
  ))}
  </Pie>
  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
- </PieChart>
+ </PieChart></div>
  </ResponsiveContainer>
  </div>
  <div className="grid grid-cols-2 gap-3 w-full mt-2">

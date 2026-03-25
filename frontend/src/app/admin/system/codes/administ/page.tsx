@@ -18,7 +18,7 @@ export default async function AdministCodePage() {
 
   let initialData: any = { list: [], total: 0 };
   try {
-   initialData = await codeAdminService.getAdministCodeList({ pageIndex: 1, pageUnit: 10 }, axiosConfig);
+   initialData = await codeAdminService.getAdministCodeList({ page번호: 1, pageUnit: 10 }, axiosConfig);
   } catch (error: any) {
    if (error.response?.status === 401) {
     redirect('/login?expired=true&redirect=/admin/system/codes/administ');

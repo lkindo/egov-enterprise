@@ -35,11 +35,11 @@ class AddressbookUserService extends UserService {
  /**
  * 주소록 목록 조회
  */
- async getAddressBooks(params: { pageIndex?: number; pageUnit?: number; searchWrd?: string; searchCnd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<AddressBook>> {
+ async getAddressBooks(params: { page번호?: number; pageUnit?: number; searchWrd?: string; searchCnd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<AddressBook>> {
  return this.get<PageResponse<AddressBook>>('', {
  ...config,
  params: {
- page: (params.pageIndex || 1) - 1,
+ page: (params.page번호 || 1) - 1,
  size: params.pageUnit || 10,
  searchWrd: params.searchWrd,
  searchCnd: params.searchCnd

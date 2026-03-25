@@ -38,7 +38,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // --- Types ---
 type LayoutTab = 'BANNERS' | 'QUICKLINKS' | 'THEMES';
 
-export default function LayoutManagerClient() {
+export default function Layout관리자Client() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -54,7 +54,7 @@ export default function LayoutManagerClient() {
   // --- Queries ---
   const { data: banners = [], isLoading: isBannersLoading } = useQuery({
     queryKey: ['admin-banners'],
-    queryFn: () => bannerAdminService.getBannerList({ pageIndex: 1 }).then(res => res.list || []),
+    queryFn: () => bannerAdminService.getBannerList({ page번호: 1 }).then(res => res.list || []),
   });
 
   // --- Mutations ---

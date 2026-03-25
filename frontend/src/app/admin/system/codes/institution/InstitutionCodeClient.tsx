@@ -51,7 +51,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
   const loadListData = async (wrd: string = searchWrd, page: number = pageNo) => {
     try {
       setLoading(true);
-      const res = await codeAdminService.getInstitutionCodeList({ searchWrd: wrd, pageIndex: page });
+      const res = await codeAdminService.getInstitutionCodeList({ searchWrd: wrd, page번호: page });
       setData(res.list || []);
       setTotal(res.total || 0);
       setPageNo(page);
@@ -65,7 +65,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
   const loadReceptionData = async (wrd: string = searchWrd, page: number = pageNo) => {
     try {
       setLoading(true);
-      const res = await codeAdminService.getInstitutionCodeRecptnList({ searchWrd: wrd, pageIndex: page });
+      const res = await codeAdminService.getInstitutionCodeRecptnList({ searchWrd: wrd, page번호: page });
       setReceptionData(res.list || []);
       setTotal(res.total || 0);
       setPageNo(page);

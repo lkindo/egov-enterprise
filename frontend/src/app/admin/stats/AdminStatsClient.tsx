@@ -258,7 +258,7 @@ export default function AdminStatsClient({
                   <h2 className="text-[11px] font-black tracking-[0.6em] text-white/30 uppercase leading-none">System Integrity Summary</h2>
                   <h3 className="text-5xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] uppercase tabular-nums">
                     Optimized <br />
-                    <span className="text-primary italic">Intelligence</span> Core
+                    <span className="text-primary italic">인텔리전스</span> Core
                   </h3>
                </div>
                <p className="text-lg lg:text-xl text-white/40 font-bold max-w-3xl leading-relaxed tracking-tight">

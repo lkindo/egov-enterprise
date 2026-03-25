@@ -41,7 +41,7 @@ describe('DeptJobListPage', () => {
 
  await waitFor(() => {
  expect(screen.getByText('주간 보고 작성')).toBeDefined();
- expect(screen.getByText('High')).toBeDefined();
+ expect(screen.getByText('높음')).toBeDefined();
  });
  });
 });

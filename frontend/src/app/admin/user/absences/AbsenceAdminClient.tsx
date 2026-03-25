@@ -145,7 +145,7 @@ export default function AbsenceAdminClient({
       />
 
       <HubHeader 
-        title="Availability" 
+        title="가용성" 
         highlight="Matrix" 
         subtitle="전사 인적 리소스의 실시간 가용성 및 부재 프로토콜 통합 제어 시스템" 
         icon={UserX} 
@@ -187,7 +187,7 @@ export default function AbsenceAdminClient({
                         <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                             <Activity size={32} className="text-primary" />
                         </div>
-                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary">Availability<br />Intelligence</h4>
+                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary">가용성<br />인텔리전스</h4>
                     </div>
 
                     <div className="space-y-8">

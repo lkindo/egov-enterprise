@@ -107,7 +107,7 @@ describe('UserManageClient Component', () => {
  ],
  total: 2
  };
- const mockInitialParams = { searchKeyword: '', searchCondition: '0', sbscrbSttus: '', pageIndex: 1 };
+ const mockInitialParams = { searchKeyword: '', searchCondition: '0', sbscrbSttus: '', page번호: 1 };
 
  beforeEach(() => {
  vi.clearAllMocks();

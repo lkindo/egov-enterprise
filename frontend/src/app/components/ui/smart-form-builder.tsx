@@ -94,7 +94,7 @@ export function SmartFormBuilder() {
  </div>
  <div>
  <h2 className="text-xl font-black tracking-tight text-foreground ">{schema.title}</h2>
- <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">Visual Form Engine v1.0</p>
+ <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">비주얼 폼 엔진 v1.0</p>
  </div>
  </div>
 
@@ -217,13 +217,13 @@ export function SmartFormBuilder() {
  <div className="w-80 bg-white dark:bg-slate-900 border border-primary/5 rounded-[3.5rem] p-8 flex flex-col gap-6 shadow-2xl">
  <div className="flex items-center gap-3 mb-4">
  <div className="p-2.5 bg-primary/10 rounded-xl text-primary"><Settings size={18} /></div>
- <h3 className="text-sm font-black tracking-tight">Properties</h3>
+ <h3 className="text-sm font-black tracking-tight">속성</h3>
  </div>
 
  {activeField ? (
  <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">Label Name</label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">라벨 이름</label>
  <Input
  value={activeField.label}
  onChange={(e) => updateField(activeField.id, { label: e.target.value })}
@@ -231,7 +231,7 @@ export function SmartFormBuilder() {
  />
  </div>
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">Placeholder</label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">플레이스홀더</label>
  <Input
  value={activeField.placeholder || ''}
  onChange={(e) => updateField(activeField.id, { placeholder: e.target.value })}
@@ -241,16 +241,16 @@ export function SmartFormBuilder() {
 
  <div className="grid grid-cols-2 gap-4">
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">Width</label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">너비</label>
  <div className="bg-muted/50 p-1 rounded-xl flex gap-1 border border-primary/5">
  <button
  onClick={() => updateField(activeField.id, { width: 'half' })}
  className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all", activeField.width === 'half' ? "bg-background shadow-sm text-primary" : "text-muted-foreground")}
- >HALF</button>
+ >절반</button>
  <button
  onClick={() => updateField(activeField.id, { width: 'full' })}
  className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all", activeField.width === 'full' ? "bg-background shadow-sm text-primary" : "text-muted-foreground")}
- >FULL</button>
+ >전체</button>
  </div>
  </div>
  <div className="space-y-2">
@@ -302,7 +302,7 @@ export function SmartFormBuilder() {
  <div className="w-16 h-16 bg-muted rounded-3xl flex items-center justify-center text-muted-foreground mb-4">
  <Info size={24} />
  </div>
- <h4 className="text-sm font-black tracking-tight text-muted-foreground/60 mb-2">No Field Selected</h4>
+ <h4 className="text-sm font-black tracking-tight text-muted-foreground/60 mb-2">선택된 필드 없음</h4>
  <p className="text-[10px] font-medium text-muted-foreground/40 leading-relaxed">
  캔버스의 필드를 선택하여 상세 속성을 편집하세요.
  </p>

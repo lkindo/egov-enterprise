@@ -45,7 +45,7 @@ export interface QustnrRespondInfo {
 export interface QustnrRespondInfoVO {
  qustnrRespondInfo: QustnrRespondInfo;
  answers: SurveyAnswer[];
-  pageIndex?: number;
+  page번호?: number;
  size?: number;
  respondNm?: string;
 }

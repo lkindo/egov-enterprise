@@ -88,17 +88,17 @@ const Header = () => {
 
  <div className="gnb">
  <ul>
- {menus.map((menu) => (
- <li key={menu.menuNo}>
- <Link
- href={menu.chkURL || '#'}
- className={`${activeMenuNo === menu.menuNo ? 'on' : ''}`}
- onClick={() => setActiveMenuNo(menu.menuNo)}
- >
- {menu.menuNm}
- </Link>
- </li>
- ))}
+  {menus.map((menu) => (
+  <li key={menu.menuNo}>
+  <Link
+  href={menu.modernRoute || menu.chkURL || '#'}
+  className={`${activeMenuNo === menu.menuNo ? 'on' : ''}`}
+  onClick={() => setActiveMenuNo(menu.menuNo)}
+  >
+  {menu.menuNm}
+  </Link>
+  </li>
+  ))}
  </ul>
  </div>
 

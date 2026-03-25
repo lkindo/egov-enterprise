@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import LayoutManagerClient from './LayoutManagerClient';
+import Layout관리자Client from './Layout관리자Client';
 
 export default function DesignLayoutHubPage() {
  return (
  <div className="space-y-6">
- <LayoutManagerClient />
+ <Layout관리자Client />
  </div>
  );
 }

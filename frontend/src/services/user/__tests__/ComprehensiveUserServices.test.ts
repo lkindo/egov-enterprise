@@ -18,7 +18,7 @@ describe('Comprehensive User Services', () => {
 
  it('addressbookUserService calls correct endpoints', async () => {
  (client.get as any).mockResolvedValue({ result: { content: [] } });
- await addressbookUserService.getAddressBooks({ pageIndex: 1 });
+ await addressbookUserService.getAddressBooks({ page번호: 1 });
  expect(client.get).toHaveBeenCalledWith('/address-books', expect.any(Object));
  });
 

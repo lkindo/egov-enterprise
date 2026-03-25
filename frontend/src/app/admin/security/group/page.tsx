@@ -55,7 +55,7 @@ export default function GroupManagePage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [params, setParams] = useState<SearchParams>({
-    pageIndex: 1,
+    page번호: 1,
     searchKeyword: '',
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -110,7 +110,7 @@ export default function GroupManagePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setParams(prev => ({ ...prev, pageIndex: 1 }));
+    setParams(prev => ({ ...prev, page번호: 1 }));
   };
 
   const handleCreate = () => {
@@ -265,7 +265,7 @@ export default function GroupManagePage() {
                 <div className="mt-12 flex justify-center">
                     <PagePagination
                         pagination={pagination}
-                        onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
+                        onPageChange={(page) => setParams(prev => ({ ...prev, page번호: page }))}
                     />
                 </div>
             )}
@@ -322,7 +322,7 @@ export default function GroupManagePage() {
             </FormField>
 
             <div className="flex gap-6 pt-4">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">CANCEL</Button>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
                 <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
                     {(createMutation.isPending || updateMutation.isPending) ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />} 
                     <span className="ml-2">{editingGroup ? 'PATCH_GROUP_ARCHITECTURE' : 'DEPLOY_NEW_DOMAIN_GROUP'}</span>

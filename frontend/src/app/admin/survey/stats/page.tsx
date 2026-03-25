@@ -23,7 +23,7 @@ import { PagePagination } from "@/components/common/PagePagination";
 export default function SurveyStatsPage() {
  const router = useRouter();
  const [params, setParams] = useState<PollSearchParams>({
- pageIndex: 1,
+ page번호: 1,
  searchKeyword: '',
  });
 
@@ -37,7 +37,7 @@ export default function SurveyStatsPage() {
 
  const handleSearch = (e: React.FormEvent) => {
  e.preventDefault();
- setParams(prev => ({ ...prev, pageIndex: 1 }));
+ setParams(prev => ({ ...prev, page번호: 1 }));
  };
 
  return (
@@ -83,7 +83,7 @@ export default function SurveyStatsPage() {
  ) : (
  polls.map((poll, index) => (
  <TableRow key={poll.pollId}>
- <TableCell>{index + 1 + ((params.pageIndex || 1) - 1) * 10}</TableCell>
+ <TableCell>{index + 1 + ((params.page번호 || 1) - 1) * 10}</TableCell>
  <TableCell className="font-medium">{poll.pollNm}</TableCell>
  <TableCell>0</TableCell>
  <TableCell>{poll.pollBeginDe} ~ {poll.pollEndDe}</TableCell>
@@ -106,7 +106,7 @@ export default function SurveyStatsPage() {
  {pagination && (
  <PagePagination
  pagination={pagination}
- onPageChange={(page) => setParams(prev => ({ ...prev, pageIndex: page }))}
+ onPageChange={(page) => setParams(prev => ({ ...prev, page번호: page }))}
  />
  )}
  </div>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { useBoardList } from '@/hooks/api/use-board-list';
 import {
  Table,
@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
  Select,
  SelectContent,
@@ -27,10 +28,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Home, ChevronRight, MessageSquare, User, Calendar as CalendarIcon, Eye, Plus, Search, ArrowUpDown, X, Settings2 } from "lucide-react";
+import { Home, ChevronRight, MessageSquare, User, Calendar as CalendarIcon, Eye, Plus, Search, ArrowUpDown, X, Settings2, BookOpen } from "lucide-react";
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from "@/lib/utils";
+import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardStats), {
  ssr: false,
@@ -48,20 +50,28 @@ interface Board {
 
 export const BoardListClient = ({ initialData, params: initialParams }: { initialData: any; params: any }) => {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
   const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
 
   const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd || '');
- const [pageIndex, setPageIndex] = useState(initialParams.pageIndex || 1);
+ const [page번호, setPage번호] = useState(initialParams.page번호 || 1);
  const [searchCnd, setSearchCnd] = useState(initialParams.searchCnd || '0');
  const [orderBy, setOrderBy] = useState(initialParams.orderBy || 'date');
- const [startDate, setStartDate] = useState<Date | undefined>(initialParams.startDate ? new Date(initialParams.startDate) : undefined);
- const [endDate, setEndDate] = useState<Date | undefined>(initialParams.endDate ? new Date(initialParams.endDate) : undefined);
+  const [startDate, setStartDate] = useState<Date | undefined>(initialParams.startDate ? new Date(initialParams.startDate) : undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(initialParams.endDate ? new Date(initialParams.endDate) : undefined);
+  
+  // 마스터 정보 및 템플릿 확인
+  const masterInfo = initialData.masterInfo || null;
+  const tmplatId = masterInfo?.tmplatId || 'TMPLT_LIST';
+  // 메뉴를 통한 진입 여부 (관리자 대시보드용이 아닌 실제 서비스용인지 확인)
+  // 관리자 권한이 있어도 일반 게시판 서비스 위치일 경우 통계를 숨김
+  const isManagementView = pathname.includes('/admin/system/board-masters') || !bbsId.startsWith('BBSMSTR_');
 
  const { data, isLoading: loading } = useBoardList({
  bbsId,
- pageIndex,
+ page번호,
  pageUnit: 10,
  searchWrd,
  searchCnd,
@@ -76,41 +86,45 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
 
  const handleSearch = (e: React.FormEvent) => {
  e.preventDefault();
- setPageIndex(1);
+ setPage번호(1);
  };
 
  return (
  <div className="flex flex-col gap-6 p-6 pb-20">
- {/* Breadcrumb */}
- <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-3 px-5 rounded-full w-fit mb-2">
- <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
- <Home className="w-4 h-4" /> 홈
- </Link>
- <ChevronRight className="w-4 h-4 opacity-30" />
- <span>커뮤니티</span>
- <ChevronRight className="w-4 h-4 opacity-30" />
- <span className="text-foreground font-black">게시판 목록</span>
- </div>
+  {/* Breadcrumb - 동적 메뉴 시스템 연동 */}
+  <DynamicBreadcrumb 
+    customItems={[
+      { name: pathname.includes('/admin/system') ? '시스템 관리' : '커뮤니티 및 콘텐츠' },
+      { name: masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공지사항' : '게시판') }
+    ]}
+  />
 
- <div className="flex flex-col gap-4 mb-4">
- <div className="flex items-center gap-3">
- <div className="w-1.5 h-8 bg-primary rounded-full" />
- <h2 className="text-3xl font-black tracking-tight">게시판 통계 리포트</h2>
- </div>
- <p className="text-muted-foreground font-medium ml-4">이 게시판의 활동량과 트래픽 정보를 한눈에 파악하세요.</p>
- </div>
+  {/* 템플릿에 따른 차별화된 상단 헤더 */}
+  <div className="flex flex-col gap-4 mb-4">
+    <div className="flex items-center gap-3">
+      <div className={cn("w-1.5 h-8 rounded-full", tmplatId === 'TMPLT_HUB' ? "bg-indigo-500" : "bg-primary")} />
+      <h2 className="text-3xl font-black tracking-tight">
+        {masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공지사항' : '게시판')}
+      </h2>
+      {tmplatId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2">Knowledge Hub</Badge>}
+    </div>
+    <p className="text-muted-foreground font-medium ml-4">
+      {masterInfo?.bbsIntrcn || '이 게시판의 활동량과 최신 소식을 확인하세요.'}
+    </p>
+  </div>
 
- <BoardStats />
+  {/* 관리자 뷰에서만 통계 리포트 노출 */}
+  {isAdmin && isManagementView && <BoardStats />}
 
  <Card className="border-none shadow-2xl overflow-hidden rounded-[2.5rem] ring-1 ring-slate-200 bg-white">
  <CardHeader className="flex flex-row items-center justify-between bg-slate-900 pb-12 pt-12 px-10 text-white relative overflow-hidden">
- <div className="space-y-2 relative z-10">
- <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
- <MessageSquare className="w-8 h-8 text-primary" />
- {bbsId.includes('NOTICE') ? '공지사항' : '자유 게시판'}
- </CardTitle>
- <p className="text-slate-400 font-bold text-sm">총 <span className="text-white">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
- </div>
+  <div className="space-y-2 relative z-10">
+  <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
+  {tmplatId === 'TMPLT_HUB' ? <BookOpen className="w-8 h-8 text-primary" /> : <MessageSquare className="w-8 h-8 text-primary" />}
+  <span>{masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공지사항' : '자유 게시판')}</span>
+  </CardTitle>
+  <p className="text-slate-400 font-bold text-sm">총 <span className="text-white">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
+  </div>
  <CardAction className="relative z-10 flex items-center gap-3">
   {isAdmin && (
   <Link href="/admin/community/boards/master">
@@ -121,7 +135,9 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
   )}
   <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
   <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-2xl">
+  <div className="flex items-center gap-2">
   <Plus className="w-6 h-6" /> 게시글 작성하기
+  </div>
   </Button>
   </Link>
  </CardAction>
@@ -167,17 +183,17 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  )}
  >
  <CalendarIcon className="mr-3 h-5 w-5 text-primary opacity-50" />
- {startDate ? (
- endDate ? (
- <>
- {format(startDate, "yyyy.MM.dd")} - {format(endDate, "yyyy.MM.dd")}
- </>
- ) : (
- format(startDate, "yyyy.MM.dd")
- )
- ) : (
- <span>기간 선택</span>
- )}
+  {startDate ? (
+  endDate ? (
+  <span>
+  {format(startDate, "yyyy.MM.dd")} - {format(endDate, "yyyy.MM.dd")}
+  </span>
+  ) : (
+  format(startDate, "yyyy.MM.dd")
+  )
+  ) : (
+  <span>기간 선택</span>
+  )}
  </Button>
  </PopoverTrigger>
  <PopoverContent className="w-auto p-0 rounded-3xl overflow-hidden border-none shadow-2xl" align="start">
@@ -233,100 +249,132 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  </form>
  </div>
 
- <div className="rounded-[2.5rem] border-2 border-slate-50 overflow-hidden shadow-2xl bg-white mb-10">
- <Table>
- <TableHeader className="bg-slate-50/80">
- <TableRow className="hover:bg-transparent border-b-2">
- <TableHead className="w-[80px] text-center font-black text-slate-400 tracking-tight text-[11px] py-8">번호</TableHead>
- <TableHead className="font-black text-slate-900 tracking-tight text-[11px] py-8 px-6">제목</TableHead>
- <TableHead className="w-[150px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">작성자</TableHead>
- <TableHead className="w-[140px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">등록일</TableHead>
- <TableHead className="w-[180px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">참여도</TableHead>
- </TableRow>
- </TableHeader>
- <TableBody>
- {loading ? (
- Array.from({ length: 5 }).map((_, i) => (
- <TableRow key={`board-loading-${i}`} className="border-b last:border-0">
- <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
- <TableCell className="py-8 px-6"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
- <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
- <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
- <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
- </TableRow>
- ))
- ) : list.length === 0 ? (
- <TableRow>
- <TableCell colSpan={5} className="h-80 text-center">
- <div className="flex flex-col items-center justify-center gap-4 text-slate-300">
- <div className="p-10 bg-slate-50 rounded-full"><MessageSquare className="w-16 h-16 opacity-10" /></div>
- <p className="text-xl font-black">결과가 없습니다.</p>
- </div>
- </TableCell>
- </TableRow>
- ) : (
- list.map((item: Board, idx: number) => (
- <TableRow key={item.nttId} className="hover:bg-primary/[0.02] transition-all group border-b last:border-0">
- <TableCell className="text-center font-bold text-sm text-slate-400 py-8">
- {totalCount - ((pageIndex - 1) * 10) - idx}
- </TableCell>
- <TableCell className="px-6 py-8">
- <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`} className="group/link flex flex-col gap-1">
- <span className="text-xl font-black text-slate-800 group-hover/link:text-primary transition-colors line-clamp-1">
- {item.nttSj}
- </span>
- </Link>
- </TableCell>
- <TableCell className="text-center py-8">
- <div className="font-bold text-slate-600 bg-slate-100/50 mx-auto w-fit px-5 py-2 rounded-xl border border-slate-100 flex items-center gap-2">
- <User size={14} className="opacity-30" />
- {item.frstRegisterNm}
- </div>
- </TableCell>
- <TableCell className="text-center py-8">
- <div className="font-bold text-slate-400 flex items-center justify-center gap-2">
- <CalendarIcon size={14} className="opacity-30" />
- {item.frstRegisterPnttm ? String(item.frstRegisterPnttm).substring(0, 10) : '-'}
- </div>
- </TableCell>
- <TableCell className="text-center py-8">
- <div className="flex flex-col items-center gap-2">
- <div className="font-black text-primary/60 bg-primary/5 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-primary/10 w-24 justify-center">
- <Eye size={14} className="opacity-40" />
- {item.inqireCo}
- </div>
- <div className="font-black text-slate-400 bg-slate-50 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-slate-100 w-24 justify-center group-hover:bg-white transition-colors">
- <MessageSquare size={14} className="opacity-30" />
- {item.commentCo || 0}
- </div>
- </div>
- </TableCell>
- </TableRow>
- ))
- )}
- </TableBody>
- </Table>
- </div>
+  <div className="rounded-[2.5rem] border-2 border-slate-50 overflow-hidden shadow-2xl bg-white mb-10">
+    {loading ? (
+      <Table>
+        <TableBody>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <TableRow key={`board-loading-${i}`} className="border-b last:border-0">
+              <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
+              <TableCell className="py-8 px-6"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
+              <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
+              <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
+              <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    ) : (tmplatId === 'TMPLT_GALLERY' || tmplatId === 'TMPLT_HUB') && list.length > 0 ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-10">
+        {list.map((item: Board, idx: number) => (
+          <Card key={item.nttId} className="group overflow-hidden rounded-[2.5rem] border-2 border-slate-50 hover:border-primary/20 hover:shadow-2xl transition-all cursor-pointer">
+            <div className="h-56 bg-slate-100 relative overflow-hidden">
+               <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:scale-125 transition-transform duration-700">
+                 <BookOpen size={100} />
+               </div>
+               <Badge className="absolute top-6 left-6 bg-white/90 text-slate-900 border-none font-black backdrop-blur-md">
+                 번호. {totalCount - ((page번호 - 1) * 10) - idx}
+               </Badge>
+            </div>
+            <CardContent className="p-8 space-y-4 bg-white relative z-10">
+              <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`}>
+                <h3 className="text-2xl font-black text-slate-800 line-clamp-2 group-hover:text-primary transition-colors">{item.nttSj}</h3>
+              </Link>
+              <div className="flex items-center justify-between pt-4 border-t border-slate-50 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                    <User size={14} />
+                  </div>
+                  <span className="text-sm font-bold text-slate-600">{item.frstRegisterNm}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><Eye size={12} /> {item.inqireCo}회</span>
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><MessageSquare size={12} /> {item.commentCo || 0}개</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    ) : list.length === 0 ? (
+      <div className="flex flex-col items-center justify-center h-80 gap-4 text-slate-300">
+        <div className="p-10 bg-slate-50 rounded-full"><MessageSquare className="w-16 h-16 opacity-10" /></div>
+        <p className="text-xl font-black">게시글이 아직 없습니다.</p>
+      </div>
+    ) : (
+      <Table>
+        <TableHeader className="bg-slate-50/80">
+          <TableRow className="hover:bg-transparent border-b-2">
+            <TableHead className="w-[80px] text-center font-black text-slate-400 tracking-tight text-[11px] py-8">번호</TableHead>
+            <TableHead className="font-black text-slate-900 tracking-tight text-[11px] py-8 px-6">제목</TableHead>
+            <TableHead className="w-[150px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">작성자</TableHead>
+            <TableHead className="w-[140px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">등록일</TableHead>
+            <TableHead className="w-[180px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">참여도</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {list.map((item: Board, idx: number) => (
+            <TableRow key={item.nttId} className="hover:bg-primary/[0.02] transition-all group border-b last:border-0">
+              <TableCell className="text-center font-bold text-sm text-slate-400 py-8">
+                {totalCount - ((page번호 - 1) * 10) - idx}
+              </TableCell>
+              <TableCell className="px-6 py-8">
+                <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`} className="group/link flex flex-col gap-1">
+                  <div className="text-xl font-black text-slate-800 group-hover/link:text-primary transition-colors line-clamp-1">
+                    {item.nttSj}
+                  </div>
+                </Link>
+              </TableCell>
+              <TableCell className="text-center py-8">
+                <div className="font-bold text-slate-600 bg-slate-100/50 mx-auto w-fit px-5 py-2 rounded-xl border border-slate-100 flex items-center gap-2">
+                  <User size={14} className="opacity-30" />
+                  {item.frstRegisterNm}
+                </div>
+              </TableCell>
+              <TableCell className="text-center py-8">
+                <div className="font-bold text-slate-400 flex items-center justify-center gap-2">
+                  <CalendarIcon size={14} className="opacity-30" />
+                  {item.frstRegisterPnttm ? String(item.frstRegisterPnttm).substring(0, 10) : '-'}
+                </div>
+              </TableCell>
+              <TableCell className="text-center py-8">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="font-black text-primary/60 bg-primary/5 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-primary/10 w-24 justify-center">
+                    <Eye size={14} className="opacity-40" />
+                    {item.inqireCo}
+                  </div>
+                  <div className="font-black text-slate-400 bg-slate-50 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-slate-100 w-24 justify-center group-hover:bg-white transition-colors">
+                    <MessageSquare size={14} className="opacity-30" />
+                    {item.commentCo || 0}
+                  </div>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    )}
+  </div>
 
  {totalPages > 1 ? (
  <div className="flex items-center justify-center gap-8 py-10">
  <Button
  variant="outline"
- onClick={() => setPageIndex((p: number) => Math.max(1, p - 1))}
- disabled={pageIndex === 1}
+ onClick={() => setPage번호((p: number) => Math.max(1, p - 1))}
+ disabled={page번호 === 1}
  className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
  >
  이전
  </Button>
  <div className="flex items-center gap-4 bg-slate-900 px-8 py-3 rounded-2xl shadow-xl">
- <span className="text-lg font-black text-white">{pageIndex}</span>
+ <span className="text-lg font-black text-white">{page번호}</span>
  <div className="h-4 w-px bg-white/20" />
  <span className="text-sm font-bold text-white/50">{totalPages}</span>
  </div>
  <Button
  variant="outline"
- onClick={() => setPageIndex((p: number) => Math.min(totalPages, p + 1))}
- disabled={pageIndex === totalPages}
+ onClick={() => setPage번호((p: number) => Math.min(totalPages, p + 1))}
+ disabled={page번호 === totalPages}
  className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
  >
  다음

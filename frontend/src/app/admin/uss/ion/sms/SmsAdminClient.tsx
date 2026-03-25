@@ -132,7 +132,7 @@ export default function SmsAdminClient({
       accessor: () => (
         <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-full border border-emerald-500/20 w-fit shadow-sm">
           <ShieldCheck size={14} />
-          <span className="text-[9px] font-black tracking-widest uppercase ">Delivered</span>
+          <span className="text-[9px] font-black tracking-widest uppercase ">전달됨</span>
         </div>
       )
     }
@@ -205,8 +205,8 @@ export default function SmsAdminClient({
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
           <div>
-            <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">Transmission Log</h3>
-            <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2 opacity-50">Global Output Monitoring</p>
+            <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">전송 로그</h3>
+            <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2 opacity-50">글로벌 출력 모니터링</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative group/search flex-1 md:flex-none">
@@ -243,7 +243,7 @@ export default function SmsAdminClient({
               <Send size={32} />
             </div>
             <div className="text-center space-y-2">
-              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">Compose Stream</DialogTitle>
+              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">스트림 작성</DialogTitle>
               <DialogDescription className="text-[10px] font-black tracking-[0.4em] uppercase opacity-40">
                 Outbound Message Configuration
               </DialogDescription>

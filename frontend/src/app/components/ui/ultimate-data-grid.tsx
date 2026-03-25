@@ -142,7 +142,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
  </div>
  <div>
  <h3 className="text-lg font-black tracking-tight text-foreground ">{title}</h3>
- <p className="text-[10px] font-bold text-muted-foreground tracking-tight leading-none">High-performance intelligence grid</p>
+ <p className="text-[10px] font-bold text-muted-foreground tracking-tight leading-none">고성능 인텔리전스 그리드</p>
  </div>
  </div>
 
@@ -279,7 +279,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
  <div className="flex items-center gap-4">
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
- <span className="text-[10px] font-black text-muted-foreground tracking-tight">Live Engine Active</span>
+ <span className="text-[10px] font-black text-muted-foreground tracking-tight">라이브 엔진 활성화</span>
  </div>
  <div className="h-4 w-px bg-muted" />
  <span className="text-[10px] font-black text-muted-foreground opacity-50 underline decoration-primary/30 underline-offset-4">

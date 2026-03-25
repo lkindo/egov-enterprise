@@ -178,7 +178,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
  <Card className="relative border-none shadow-2xl rounded-[2.5rem] bg-white ring-1 ring-slate-100 overflow-hidden">
  <CardContent className="p-8 space-y-4">
  <div className="flex items-center gap-2 mb-2">
- <Badge variant="secondary" className="px-3 py-1 rounded-lg bg-slate-900 text-white font-black hover:bg-slate-900">NEW COMMENT</Badge>
+ <Badge variant="secondary" className="px-3 py-1 rounded-lg bg-slate-900 text-white font-black hover:bg-slate-900">새 댓글</Badge>
  </div>
  <Textarea
  placeholder="메시지를 입력하세요..."

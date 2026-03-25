@@ -101,9 +101,9 @@ export default function BoardMasterListPage() {
         animate="show"
         className="grid grid-cols-1 md:grid-cols-4 gap-8"
       >
-        <InsightCard label="Total Units" value="32" desc="Active Board Masters" icon={Layers} color="text-indigo-500" />
-        <InsightCard label="Total Impact" value="1.2k" desc="Engagement Traffic" icon={TrendingUp} color="text-rose-500" />
-        <InsightCard label="System Load" value="Optimal" desc="Storage & Network Status" icon={Zap} color="text-emerald-500" />
+        <InsightCard label="총 " value="32" desc="Active Board Masters" icon={Layers} color="text-indigo-500" />
+        <InsightCard label="총 " value="1.2k" desc="Engagement Traffic" icon={TrendingUp} color="text-rose-500" />
+        <InsightCard label="시스템 " value="Optimal" desc="Storage & Network Status" icon={Zap} color="text-emerald-500" />
         <InsightCard label="Security" value="L4" desc="Encrypted Node Access" icon={ShieldCheck} color="text-amber-500" />
       </motion.div>
 
@@ -130,7 +130,7 @@ export default function BoardMasterListPage() {
               <TableRow className="border-none">
                 <TableHead className="py-10 px-10 text-xs font-black text-slate-400 uppercase tracking-widest">Master Identity</TableHead>
                 <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest">Metadata</TableHead>
-                <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest text-center">Status</TableHead>
+                <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest text-center">상태</TableHead>
                 <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest text-center">Capacity</TableHead>
                 <TableHead className="pr-10 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Operations</TableHead>
               </TableRow>

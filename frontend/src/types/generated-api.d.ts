@@ -4106,7 +4106,7 @@ export interface components {
  searchKeyword?: string;
  searchUseYn?: string;
  /** Format: int32 */
- pageIndex?: number;
+ page번호?: number;
  /** Format: int32 */
  pageUnit?: number;
  /** Format: int32 */
@@ -5309,7 +5309,7 @@ export interface components {
  searchKeyword?: string;
  searchUseYn?: string;
  /** Format: int32 */
- pageIndex?: number;
+ page번호?: number;
  /** Format: int32 */
  pageUnit?: number;
  /** Format: int32 */
@@ -5963,7 +5963,7 @@ export interface components {
  searchKeyword?: string;
  searchUseYn?: string;
  /** Format: int32 */
- pageIndex?: number;
+ page번호?: number;
  /** Format: int32 */
  pageUnit?: number;
  /** Format: int32 */
@@ -9590,7 +9590,7 @@ export interface operations {
  getMyScrapList: {
  parameters: {
  query?: {
- pageIndex?: number;
+ page번호?: number;
  pageUnit?: number;
  };
  header?: never;
@@ -9641,7 +9641,7 @@ export interface operations {
  getScheduleList: {
  parameters: {
  query?: {
- pageIndex?: number;
+ page번호?: number;
  pageUnit?: number;
  };
  header?: never;
@@ -10380,7 +10380,7 @@ export interface operations {
  query?: {
  searchWrd?: string;
  deptId?: string;
- pageIndex?: number;
+ page번호?: number;
  pageUnit?: number;
  };
  header?: never;
@@ -10908,7 +10908,7 @@ export interface operations {
  getRoles: {
  parameters: {
  query?: {
- pageIndex?: number;
+ page번호?: number;
  searchKeyword?: string;
  };
  header?: never;
@@ -11143,7 +11143,7 @@ export interface operations {
  getGroups: {
  parameters: {
  query?: {
- pageIndex?: number;
+ page번호?: number;
  searchKeyword?: string;
  };
  header?: never;
@@ -11284,7 +11284,7 @@ export interface operations {
  getAuthors: {
  parameters: {
  query?: {
- pageIndex?: number;
+ page번호?: number;
  searchKeyword?: string;
  };
  header?: never;
@@ -11562,7 +11562,7 @@ export interface operations {
  parameters: {
  query?: {
  searchWrd?: string;
- pageIndex?: number;
+ page번호?: number;
  pageUnit?: number;
  };
  header?: never;
@@ -13118,7 +13118,7 @@ export interface operations {
  parameters: {
  query?: {
  searchWrd?: string;
- pageIndex?: number;
+ page번호?: number;
  pageUnit?: number;
  };
  header?: never;
