@@ -6,7 +6,7 @@ import { popupService } from '@/services/user/PopupService';
 import { Popup } from '@/types/banner';
 import Image from 'next/image';
 
-export function Popup관리자() {
+export function PopupManager() {
  const [activePopups, setActivePopups] = useState<Popup[]>([]);
  const [visiblePopupIds, setVisiblePopupIds] = useState<string[]>([]);
 

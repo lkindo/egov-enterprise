@@ -16,7 +16,7 @@ describe('Board Comment Service', () => {
 
  it('getComments calls correct endpoint', async () => {
  await commentService.getComments({ nttId: 1, bbsId: 'BBS01' });
- expect(client.get).toHaveBeenCalledWith('/comments', expect.objectContaining({
+ expect(client.get).toHaveBeenCalledWith('comments', expect.objectContaining({
  params: expect.objectContaining({ nttId: 1, bbsId: 'BBS01' })
  }));
  });
@@ -24,6 +24,6 @@ describe('Board Comment Service', () => {
  it('createComment calls post with data', async () => {
  const data = { commentCn: 'Test comment', nttId: 1 };
  await commentService.createComment(data as any);
- expect(client.post).toHaveBeenCalledWith('/comments', data, undefined);
+ expect(client.post).toHaveBeenCalledWith('comments', data, undefined);
  });
 });

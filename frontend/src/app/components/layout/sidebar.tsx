@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { menuService } from '@/services/user/MenuService';
 import { useLayout } from '@/contexts/LayoutContext';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -91,6 +92,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
   const { setSidebarOpen } = useLayout();
   const hasChildren = item.children && item.children.length > 0;
   const [isOpen, setIsOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const Icon = ICON_MAP[item.menuNm] || ICON_MAP['기본'];
 
   // URL normalization and mapping
@@ -121,6 +123,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
   }, [pathname, href, hasChildren, item.children]);
 
   useEffect(() => {
+    setIsMounted(true);
     if (isActive && hasChildren) {
       setIsOpen(true);
     }
@@ -187,6 +190,8 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
       )}
     </div>
   );
+
+  if (!isMounted) return null;
 
   return (
     <div className="w-full relative">
@@ -296,43 +301,41 @@ const MobileDomainNode = ({
 };
 
 export function Sidebar({ initialMenus = [] }: { initialMenus?: any[] }) {
-  const [menus, setMenus] = useState<MenuItem[]>([]);
-  const [topMenus, setTopMenus] = useState<any[]>(initialMenus);
-  const [loading, setLoading] = useState(false);
   const { isSidebarOpen, setSidebarOpen, activeMenuNo, setActiveMenuNo } = useLayout();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    menuService.getHeadMenus().then(res => setTopMenus(res || []));
-  }, []);
+  // Head Menus (Top Domains) Query
+  const { data: topMenus = initialMenus } = useQuery({
+    queryKey: ['menus', 'head'],
+    queryFn: () => menuService.getHeadMenus(),
+    initialData: initialMenus,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
 
+  // Default activeMenuNo setting
   useEffect(() => {
     if (!activeMenuNo && topMenus.length > 0) {
       setActiveMenuNo(topMenus[0].menuNo);
-      return;
     }
+  }, [activeMenuNo, topMenus, setActiveMenuNo]);
 
-    async function loadMenus() {
-      if (!activeMenuNo) return;
-
+  // Left Menus (Sub Menus) Query based on activeMenuNo
+  const { data: menus = [], isLoading: loading } = useQuery({
+    queryKey: ['menus', 'left', activeMenuNo],
+    queryFn: async () => {
+      if (!activeMenuNo) return [];
+      
+      // Check if it's already in the topMenus children (SSR pre-fetched data)
       const activeTop = topMenus.find(m => m.menuNo === activeMenuNo);
       if (activeTop?.children && activeTop.children.length > 0) {
-        setMenus(activeTop.children);
-        return;
+        return activeTop.children;
       }
-
-      try {
-        setLoading(true);
-        const leftList = await menuService.getLeftMenus(activeMenuNo);
-        setMenus(leftList);
-      } catch (error) {
-        console.error('Sidebar: Failed to load left menus', error);
-        setMenus([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadMenus();
-  }, [activeMenuNo, topMenus, setActiveMenuNo]);
+      
+      return await menuService.getLeftMenus(activeMenuNo);
+    },
+    enabled: !!activeMenuNo, // Only run if activeMenuNo exists
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
 
   return (
     <>
@@ -420,7 +423,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: any[] }) {
                 </div>
               ) : (
                 <nav className="space-y-1">
-                  {menus.map((item, index) => (
+                  {menus.map((item: any, index: number) => (
                     <NavItem key={item.menuNo || `menu-${index}`} item={item} />
                   ))}
                 </nav>

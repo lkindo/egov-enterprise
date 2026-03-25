@@ -15,8 +15,8 @@ vi.mock('@/lib/api/client', () => ({
 import SurveyListPage from '../page';
 
 describe('SurveyListPage', () => {
- it('renders survey list page structure', () => {
- render(<SurveyListPage />);
- expect(screen.getByText(/온라인 설문 조사/)).toBeInTheDocument();
- });
+  it('renders survey list page structure', async () => {
+  render(<SurveyListPage />);
+  expect(await screen.findByText(/온라인 설문 조사/)).toBeInTheDocument();
+  });
 });

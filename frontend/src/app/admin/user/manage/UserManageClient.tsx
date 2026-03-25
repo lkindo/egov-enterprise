@@ -83,7 +83,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
       title: '사용자 데이터 영구 삭제',
       message: '해당 사용자 계정 및 연결된 활동 로그 데이터가 모두 삭제됩니다. 정말로 진행하시겠습니까?',
       variant: 'destructive',
-      confirmText: '계정 삭제 승인'
+      confirmText: '삭제'
     });
     if (!ok) return;
 
@@ -195,7 +195,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
               size="lg"
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
             >
-              <UserPlus size={20} /> 신규 멤버 프로비저닝
+              <UserPlus size={20} /> 신규 등록
             </Button>
           </div>
         }
@@ -254,7 +254,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                         <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 max-w-[180px]">
                             * 다요소 인증(MFA)이 적용된 계정들입니다. 
                         </p>
-                        <Button variant="ghost" className="h-10 px-4 rounded-xl bg-white/5 text-primary text-[9px] font-black tracking-widest uppercase hover:bg-primary hover:text-white transition-all">REFRESH_SYNC</Button>
+                        <Button variant="ghost" className="h-10 px-4 rounded-xl bg-white/5 text-primary text-[9px] font-black tracking-widest uppercase hover:bg-primary hover:text-white transition-all">조회</Button>
                     </div>
                 </div>
             </div>
@@ -288,7 +288,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
           <div className="flex w-full gap-4">
             <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
             <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group">
-              <Zap size={18} className="group-hover:animate-pulse" /> {editingUser ? 'UPDATE_IDENTITY_SPEC' : 'PROVISION_MEMBER'}
+              <Zap size={18} className="group-hover:animate-pulse" /> 저장
             </Button>
           </div>
         }

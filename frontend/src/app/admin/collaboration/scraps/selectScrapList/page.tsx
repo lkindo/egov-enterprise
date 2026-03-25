@@ -76,7 +76,7 @@ const ScrapListPage = () => {
  <CardAction>
  <Link href="/admin/collaboration/scraps/insertScrap">
  <Button size="sm" className="gap-2 shadow-sm font-bold">
- <Plus className="w-4 h-4" /> 스크랩 등록
+ <Plus className="w-4 h-4" /> 신규 등록
  </Button>
  </Link>
  </CardAction>

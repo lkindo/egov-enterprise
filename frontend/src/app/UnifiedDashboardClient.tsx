@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { statsAdminService, StatsDto } from '@/services/admin/system/StatsAdminService';
 import { BannerSlider } from '@/app/components/dashboard/BannerSlider';
-import { Popup관리자 } from '@/app/components/dashboard/Popup관리자';
+import { PopupManager } from '@/app/components/dashboard/PopupManager';
 import { ActivityFeed } from '@/app/components/dashboard/ActivityFeed';
 import { RealTimeDashboard } from '@/components/features/dashboard/RealTimeDashboard';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -90,7 +90,7 @@ export default function UnifiedDashboardClient({
       variants={hubContainerVariants}
       className="space-y-10 pb-20 px-2 lg:px-0"
     >
-      <Popup관리자 />
+      <PopupManager />
 
       {/* Header Section with Industrial Luxury Feel */}
       <motion.div variants={hubItemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">

@@ -16,13 +16,13 @@ vi.mock('@/lib/api/client', () => ({
 import ScheduleListPage from '../../smart-toolkit/schedule/page';
 
 describe('ScheduleListPage', () => {
- it('renders schedule list page structure', () => {
+ it('renders schedule list page structure', async () => {
   const queryClient = new QueryClient();
   render(
   <QueryClientProvider client={queryClient}>
   <ScheduleListPage />
   </QueryClientProvider>
   );
-  expect(screen.getByText(/업무 및 인텔리전스/i)).toBeInTheDocument();
+  expect(await screen.findByText(/업무 및 인텔리전스/i)).toBeInTheDocument();
  });
 });

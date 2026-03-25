@@ -136,7 +136,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
   <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
   <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-2xl">
   <div className="flex items-center gap-2">
-  <Plus className="w-6 h-6" /> 게시글 작성하기
+  <Plus className="w-6 h-6" /> 신규 등록
   </div>
   </Button>
   </Link>
@@ -242,9 +242,9 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  </Select>
  </div>
 
- <Button type="submit" className="h-16 px-12 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all w-full md:w-auto">
- <Search className="mr-2 w-5 h-5" /> 검색하기
- </Button>
+  <Button type="submit" size="lg" className="h-16 px-12 gap-3 bg-slate-900 border-4 border-white shadow-2xl hover:scale-105 transition-all active:scale-95 font-black rounded-3xl">
+  <Search className="w-6 h-6" /> 조회
+  </Button>
  </div>
  </form>
  </div>

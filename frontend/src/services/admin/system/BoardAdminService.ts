@@ -22,6 +22,7 @@ export interface BoardMaster {
     tmplatNm: string;
     frstRegisterNm: string;
     frstRegistPnttm: string;
+    bbsTyCodeNm?: string;
 }
 
 /**
@@ -37,7 +38,6 @@ class BoardAdminService extends AdminService {
         return this.get<PageResponse<BoardMaster>>('', {
             ...config,
             params: {
-                ...params,
                 searchCnd: params?.searchCondition || '0',
                 searchWrd: params?.searchKeyword || params?.searchWrd || '',
             },

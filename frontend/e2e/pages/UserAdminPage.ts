@@ -30,7 +30,7 @@ export class UserAdminPage {
   }
 
   async verifyHUB() {
-    await expect(this.page.getByText(/Identity Fabric|사용자 인증 거버넌스/i)).toBeVisible();
+    await expect(this.page.getByText(/전자정부아이덴티티/i)).toBeVisible();
     await expect(this.dataTable).toBeVisible();
   }
 }

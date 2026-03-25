@@ -85,7 +85,7 @@ const DeptJobListPage = () => {
  <CardAction>
  <Link href="/smart-toolkit/dept-job/insertDeptJob">
  <Button size="lg" className="gap-2 shadow-lg font-black bg-primary hover:bg-primary/90 transition-all active:scale-95">
- <Plus className="w-5 h-5" /> 업무 등록
+ <Plus className="w-5 h-5" /> 신규 등록
  </Button>
  </Link>
  </CardAction>

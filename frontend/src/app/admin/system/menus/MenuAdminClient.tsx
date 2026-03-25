@@ -222,7 +222,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     const isConfirmed = await confirm({
       title: '메뉴 삭제 확인',
       message: '해당 메뉴를 삭제하면 모든 하위 메뉴가 함께 삭제되며 복구할 수 없습니다. 계속하시겠습니까?',
-      variant: 'destructive'
+      variant: 'destructive',
+      confirmText: '삭제'
     });
     if (isConfirmed) {
       const res = await deleteMenuAction(null, id);
@@ -548,7 +549,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               size="lg"
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
             >
-              <Plus size={20} /> 최상위 메뉴 추가
+              <Plus size={20} /> 신규 등록
             </Button>
           </div>
         }
@@ -595,7 +596,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                 ) : (
                   <Save size={16} />
                 )}
-                {isSaving ? '처리 중...' : '레이아웃 적용'}
+                {isSaving ? '처리 중...' : '저장'}
               </Button>
             )}
           </div>
@@ -644,7 +645,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                 onClick={() => handleSave()} 
                 className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-xl"
             >
-              {mode === 'create' ? '노드 설계' : '구조 업데이트'}
+              {mode === 'create' ? '저장' : '저장'}
             </Button>
           </div>
         }

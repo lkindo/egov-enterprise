@@ -177,7 +177,7 @@ export default function CommonCodeClient({
             title: '상세 코드 명세 삭제',
             message: '이 코드 정보를 데이터베이스에서 영구히 삭제하시겠습니까?',
             variant: 'destructive',
-            confirmText: '삭제 승인'
+            confirmText: '삭제'
         });
 
         if (ok) {
@@ -402,7 +402,7 @@ export default function CommonCodeClient({
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <Button onClick={handleCreateDetail} size="lg" className="h-12 px-6 rounded-2xl bg-primary text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:-translate-y-0.5 transition-all gap-2">
-                                        <Plus size={16} /> 신규 명세 등록
+                                        <Plus size={16} /> 신규 등록
                                     </Button>
                                 </div>
                             </div>
@@ -480,7 +480,7 @@ export default function CommonCodeClient({
                     <div className="flex w-full gap-4">
                         <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2 border-slate-100 shadow-sm">취소</Button>
                         <Button form="code-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group">
-                            <Plus size={18} className="group-hover:rotate-90 transition-transform" /> {editingDetail ? '변경 사항 저장' : '데이터 레이어 배포'}
+                            <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 저장
                         </Button>
                     </div>
                 }

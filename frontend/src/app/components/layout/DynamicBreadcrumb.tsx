@@ -20,8 +20,10 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
   useEffect(() => {
     const fetchPath = async () => {
       try {
-        const menus = await menuService.getHeadMenus();
+        const menus = await menuService.getHeadMenus() || [];
         const path: BreadcrumbItem[] = [];
+        
+        if (!Array.isArray(menus)) return;
         
         // 게시판 ID(bbsId)가 쿼리 스트링에 있는 경우, 해당 메뉴를 우선 탐색
         const bbsIdParam = searchParams.get('bbsId');

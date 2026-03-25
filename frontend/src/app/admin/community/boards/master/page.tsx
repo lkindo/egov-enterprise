@@ -75,10 +75,10 @@ export default function BoardMasterListPage() {
                 <div className="w-3 h-3 rounded-full bg-primary animate-ping absolute inset-0" />
                 <div className="w-3 h-3 rounded-full bg-primary relative ring-4 ring-primary/20" />
              </div>
-             <span className="text-[10px] font-black tracking-[0.4em] text-primary uppercase">Board Orchestration System</span>
+             <span className="text-[10px] font-black tracking-[0.4em] text-primary uppercase">게시판 통합 관리 시스템</span>
           </div>
           <h1 className="text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">
-            Master Console
+            마스터 콘솔
           </h1>
         </div>
         
@@ -112,7 +112,7 @@ export default function BoardMasterListPage() {
         <CardHeader className="p-10 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
              <CardTitle className="text-3xl font-black italic tracking-tighter uppercase text-slate-800 flex items-center gap-3">
-                <Settings2 className="w-8 h-8 text-primary" /> Board List
+                <Settings2 className="w-8 h-8 text-primary" /> 게시판 목록
              </CardTitle>
              <CardDescription className="text-slate-400 font-bold tracking-tight">생성된 모든 게시판의 라이프사이클을 관리합니다.</CardDescription>
           </div>
@@ -128,11 +128,11 @@ export default function BoardMasterListPage() {
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow className="border-none">
-                <TableHead className="py-10 px-10 text-xs font-black text-slate-400 uppercase tracking-widest">Master Identity</TableHead>
-                <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest">Metadata</TableHead>
+                <TableHead className="py-10 px-10 text-xs font-black text-slate-400 uppercase tracking-widest">마스터 아이덴티티</TableHead>
+                <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest">메타데이터</TableHead>
                 <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest text-center">상태</TableHead>
-                <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest text-center">Capacity</TableHead>
-                <TableHead className="pr-10 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Operations</TableHead>
+                <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest text-center">수용량</TableHead>
+                <TableHead className="pr-10 text-xs font-black text-slate-400 uppercase tracking-widest text-right">작업 컨트롤</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -178,13 +178,13 @@ export default function BoardMasterListPage() {
                       "px-4 py-1.5 rounded-full font-black text-[10px] uppercase border-none tracking-widest shadow-sm",
                       board.useAt === 'Y' ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
                     )}>
-                      {board.useAt === 'Y' ? 'Active' : 'Standby'}
+                      {board.useAt === 'Y' ? '활성' : '대기'}
                     </Badge>
                   </TableCell>
                    <TableCell className="text-center">
                     <div className="space-y-1">
                        <p className="text-xl font-black text-slate-800 italic">0</p>
-                       <p className="text-[10px] font-black text-slate-300 uppercase leading-none">Records</p>
+                       <p className="text-[10px] font-black text-slate-300 uppercase leading-none">게시글 수</p>
                     </div>
                   </TableCell>
                   <TableCell className="pr-10 text-right">
@@ -215,12 +215,13 @@ export default function BoardMasterListPage() {
         </div>
         <div className="max-w-3xl space-y-8 relative z-10">
            <h3 className="text-5xl font-black italic tracking-tighter leading-tight uppercase">Ready to scale your <span className="text-primary underline decoration-primary/30 decoration-8 underline-offset-8">ecosystem?</span></h3>
+           <h3 className="text-5xl font-black italic tracking-tighter leading-tight uppercase">생태계를 확장할 준비가 되셨습니까?</h3>
            <p className="text-xl text-slate-400 font-bold leading-relaxed tracking-tight">마법사를 통해 복잡한 과정 없이 단 4단계만으로 사내 지식 허브를 구축하십시오. 메뉴 배포부터 권한 매트릭스 설계까지 리얼타임으로 자동화됩니다.</p>
            <Button 
               onClick={() => router.push('/admin/community/boards/maker')}
               className="h-20 px-12 rounded-[2rem] bg-primary text-white text-2xl font-black tracking-tighter shadow-[0_30px_60px_-15px_rgba(59,130,246,0.4)] hover:scale-110 active:scale-95 transition-all gap-4 ring-8 ring-primary/5 italic"
            >
-              Launch Maker Wizard <Rocket className="w-8 h-8" />
+              라이브 마법사 실행 <Rocket className="w-8 h-8" />
            </Button>
         </div>
       </div>

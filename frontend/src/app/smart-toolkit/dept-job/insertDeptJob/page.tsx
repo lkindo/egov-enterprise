@@ -141,17 +141,17 @@ const InsertDeptJobPage = () => {
  <CardFooter className="flex flex-col md:flex-row justify-center gap-8 py-20 border-t border-slate-50 bg-slate-50/30 px-12 rounded-b-[3.5rem]">
  <Link href="/smart-toolkit/dept-job/selectDeptJobList">
  <Button type="button" variant="ghost" className="h-20 px-16 font-black tracking-[0.3em] text-sm text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-2xl transition-all rounded-[1.75rem] border-2 border-transparent hover:border-rose-50">
- <ArrowLeft className="w-6 h-6 mr-4" /> Discard & Return
+ <ArrowLeft className="w-6 h-6 mr-4" /> 취소
  </Button>
  </Link>
  <Button type="submit" className="h-20 px-24 gap-4 font-black tracking-[0.3em] text-sm shadow-[0_24px_48px_-8px_theme(colors.slate.900/40)] bg-slate-900 hover:bg-black transition-all active:scale-95 ring-[20px] ring-slate-100 rounded-[1.75rem]" disabled={loading}>
  {loading ? (
  <span className="flex items-center gap-3 animate-pulse">
- <div className="w-3 h-3 bg-white rounded-full" /> Dispatching...
+ <div className="w-3 h-3 bg-white rounded-full" /> 저장 중...
  </span>
  ) : (
  <>
- <Send className="w-6 h-6" /> Deploy New Task
+ <Send className="w-6 h-6" /> 저장
  </>
  )}
  </Button>

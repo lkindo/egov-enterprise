@@ -182,7 +182,7 @@ const InsertBBSContent = () => {
       onClick={() => router.back()}
       className="h-20 px-16 font-black tracking-[0.3em] text-sm text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition-all rounded-2xl active:scale-95 border-2 border-transparent"
     >
-      <ArrowLeft className="w-5 h-5 mr-4" /> 취소 및 돌아가기
+      <ArrowLeft className="w-5 h-5 mr-4" /> 취소
     </Button>
     <Button
       type="submit"
@@ -191,11 +191,11 @@ const InsertBBSContent = () => {
     >
       {isPending ? (
         <span className="flex items-center gap-3 animate-pulse">
-          <div className="w-3 h-3 bg-white rounded-full" /> 게시 중...
+          <div className="w-3 h-3 bg-white rounded-full" /> 저장 중...
         </span>
       ) : (
         <>
-          <Send className="w-5 h-5" /> 게시글 등록하기
+          <Send className="w-5 h-5" /> 저장
         </>
       )}
     </Button>

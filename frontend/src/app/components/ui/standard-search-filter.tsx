@@ -180,7 +180,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
             className="rounded-xl h-11 px-8 font-black gap-2 shadow-lg shadow-primary/20 transition-all hover:-translate-y-1 text-[10px] tracking-widest uppercase"
           >
             <Search size={16} />
-            검색 실행
+            조회
           </Button>
         </div>
       </form>

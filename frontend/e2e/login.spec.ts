@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+
 test.describe('Authentication', () => {
     test('should login successfully with admin account', async ({ page }) => {
         await page.goto('/login');
