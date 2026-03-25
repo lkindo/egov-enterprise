@@ -92,13 +92,14 @@ class CommentApiControllerTest {
     @DisplayName("댓글 생성 성공")
     void createComment_Success() throws Exception {
         // Given
-        given(commentService.createComment(anyString(), anyString(), any(CommentSaveRequest.class))).willReturn(1L);
+        given(commentService.createComment(any(), any(), any(CommentSaveRequest.class))).willReturn(1L);
 
         // When & Then
         mockMvc.perform(post("/api/v1/comments")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"nttId\":1, \"bbsId\":\"BBS_001\", \"commentCn\":\"Content\"}")
                 .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value(1));
