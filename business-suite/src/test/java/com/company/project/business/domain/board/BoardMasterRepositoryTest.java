@@ -19,7 +19,12 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.company.project.foundation.domain.config.JpaConfig;
+import com.company.project.foundation.security.audit.LoginUserAuditorAware;
+import org.springframework.context.annotation.Import;
+
 @DataJpaTest
+@Import({JpaConfig.class, LoginUserAuditorAware.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
 @DisplayName("BoardMasterRepository 테스트")

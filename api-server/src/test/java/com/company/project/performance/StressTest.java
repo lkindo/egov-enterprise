@@ -1,10 +1,10 @@
 package com.company.project.performance;
 
-import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserDto;
-import com.company.project.service.user.dto.UserResponse;
-import com.company.project.service.user.dto.UserSignupRequest;
-import com.company.project.domain.user.entity.Role;
+import com.company.project.foundation.service.user.UserService;
+import com.company.project.foundation.service.user.dto.UserDto;
+import com.company.project.foundation.service.user.dto.UserResponse;
+import com.company.project.foundation.service.user.dto.UserSignupRequest;
+import com.company.project.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

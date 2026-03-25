@@ -11,24 +11,25 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import com.company.project.foundation.domain.config.JpaConfig;
+import com.company.project.foundation.security.audit.LoginUserAuditorAware;
+import org.springframework.context.annotation.Import;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.springframework.test.context.TestPropertySource;
-
 @DataJpaTest
+@Import({JpaConfig.class, LoginUserAuditorAware.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
 @DisplayName("BoardRepository 테스트")
 class BoardRepositoryTest {
 
     @TestConfiguration
-    @EnableJpaAuditing
     static class TestConfig {
         @Bean
         public JPAQueryFactory jpaQueryFactory(EntityManager em) {

@@ -4,11 +4,13 @@ import com.company.project.foundation.core.exception.BusinessException;
 import com.company.project.foundation.core.exception.ErrorCode;
 import com.company.project.business.service.faq.FaqService;
 import com.company.project.business.service.faq.dto.FaqDto;
+import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -26,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(FaqApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@Import(GlobalExceptionHandler.class)
 @DisplayName("FaqApiController 테스트")
 class FaqApiControllerTest {
 

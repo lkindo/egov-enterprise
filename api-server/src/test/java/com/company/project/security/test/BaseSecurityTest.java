@@ -1,7 +1,7 @@
 package com.company.project.security.test;
 
-import com.company.project.security.jwt.JwtTokenProvider;
-import com.company.project.service.user.UserService;
+import com.company.project.foundation.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.service.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
