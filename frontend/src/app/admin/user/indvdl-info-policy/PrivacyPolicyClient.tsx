@@ -103,7 +103,7 @@ export default function PrivacyPolicyClient({
       <HubMetricGrid>
         <HubMetricCard title="COMPLIANCE_STATUS" value="CERTIFIED" icon={ClipboardCheck} color="emerald" status="ONLINE" />
         <HubMetricCard title="PRIVACY_LEVEL" value="TIER_1" icon={ShieldAlert} color="primary" />
-        <HubMetricCard title="AUDIT_PROBE" value="ACTIVE" icon={SearchCode} color="indigo" />
+        <HubMetricCard title="AUDIT_PROBE" value="활성" icon={SearchCode} color="indigo" />
         <HubMetricCard title="REGULATORY_SYNC" value="99.8%" icon={Gavel} color="amber" />
       </HubMetricGrid>
 
@@ -146,7 +146,7 @@ export default function PrivacyPolicyClient({
                         <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60">
                             * 본 정책 명세의 변경은 전사 서비스 및 계약 프로토콜에 즉각적인 법적 효력을 발휘합니다.
                         </p>
-                        <HubStatusBadge status="ACTIVE" className="bg-emerald-500/10 text-emerald-500 border-none px-6 py-2 rounded-xl text-[9px] tracking-widest font-black" />
+                        <HubStatusBadge status="활성" className="bg-emerald-500/10 text-emerald-500 border-none px-6 py-2 rounded-xl text-[9px] tracking-widest font-black" />
                     </div>
                 </div>
             </div>

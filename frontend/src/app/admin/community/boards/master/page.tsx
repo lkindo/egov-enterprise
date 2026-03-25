@@ -153,7 +153,7 @@ export default function BoardMasterListPage() {
                   <TableCell className="px-10">
                     <div className="flex items-center gap-6">
                        <div className="w-16 h-16 rounded-2xl bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-500">
-                          {board.bbsTyCodeNm === 'Knowledge Hub' ? <BookOpen size={28} /> : 
+                          {board.bbsTyCodeNm === '지식 허브' ? <BookOpen size={28} /> : 
                            board.bbsTyCodeNm === 'Visual Gallery' ? <ImageIcon size={28} /> : 
                            <ListIcon size={28} />}
                        </div>

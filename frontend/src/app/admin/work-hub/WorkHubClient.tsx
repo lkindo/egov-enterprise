@@ -283,7 +283,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
                     <Briefcase size={48} />
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">{activeTab === 'calendar' ? 'Ready to Sync' : 'System Idle'}</h3>
+                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">{activeTab === 'calendar' ? 'Ready to Sync' : '시스템 대기'}</h3>
                     <p className="text-[11px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed">
                       {activeTab === 'calendar' ? 'Connect Calendar Service for Insights' : 'Select Object to Capture Stream'}
                     </p>
@@ -298,7 +298,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
               title="ACTIVE WORKFLOWS" 
               value="12" 
               icon={<Activity size={24} />} 
-              status="STABLE"
+              status="안정"
               color="text-emerald-500"
             />
             <SummaryBlock 

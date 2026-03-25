@@ -146,7 +146,7 @@ export function VisualOrganizationChart() {
  <div className="flex items-center gap-3">
  <div className="p-2.5 bg-primary/10 rounded-xl text-primary"><Users size={20} /></div>
  <div>
- <h3 className="text-sm font-black tracking-tight">Global Directory</h3>
+ <h3 className="text-sm font-black tracking-tight">글로벌 디렉토리</h3>
  <p className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">Organization & Hierarchy</p>
  </div>
  </div>
@@ -182,14 +182,14 @@ export function VisualOrganizationChart() {
  <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-125 transition-transform">
  <Building2 size={80} />
  </div>
- <h4 className="relative z-10 text-sm font-black tracking-tight opacity-80 mb-2">Corporate Stats</h4>
+ <h4 className="relative z-10 text-sm font-black tracking-tight opacity-80 mb-2">기업 통계</h4>
  <div className="relative z-10 grid grid-cols-2 gap-4 mt-6">
  <div>
- <p className="text-[10px] font-black opacity-60">Total Staff</p>
+ <p className="text-[10px] font-black opacity-60">총 직원</p>
  <p className="text-2xl font-black tracking-tighter">1,204</p>
  </div>
  <div>
- <p className="text-[10px] font-black opacity-60">Departments</p>
+ <p className="text-[10px] font-black opacity-60">부서</p>
  <p className="text-2xl font-black tracking-tighter">24</p>
  </div>
  </div>

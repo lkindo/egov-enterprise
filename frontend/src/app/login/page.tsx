@@ -50,7 +50,7 @@ export default function LoginPage() {
 
  <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md">
  <CardHeader className="space-y-1 text-center">
- <CardTitle className="text-2xl font-bold tracking-tight text-primary">E-GOV ENTERPRISE</CardTitle>
+ <CardTitle className="text-2xl font-bold tracking-tight text-primary">전자정부 엔터프라이즈</CardTitle>
  <CardDescription>
  {t('login.title')}
  </CardDescription>

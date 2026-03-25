@@ -137,7 +137,7 @@ const InsertScrapPage = () => {
  </Link>
  <Button type="submit" className="h-16 px-20 gap-4 font-black tracking-tight shadow-2xl bg-indigo-600 hover:bg-indigo-700 transition-all active:scale-95 ring-[12px] ring-indigo-50 rounded-2xl" disabled={loading}>
  {loading ? (
- <span className="flex items-center gap-2 animate-pulse font-black">Archiving...</span>
+ <span className="flex items-center gap-2 animate-pulse font-black">보관 중...</span>
  ) : (
  <>
  <Send className="w-5 h-5" /> 스크랩 아카이빙 완료

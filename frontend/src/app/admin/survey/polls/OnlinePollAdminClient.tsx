@@ -222,7 +222,7 @@ export default function OnlinePollAdminClient({
           title="ANALYTIC NODES" 
           value={polls.length} 
           icon={<BarChart size={26} />} 
-          status="SYNCED"
+          status="동기화됨"
           color="text-indigo-600"
         />
       </div>
@@ -235,8 +235,8 @@ export default function OnlinePollAdminClient({
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
           <div>
-            <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">Intelligence Board</h3>
-            <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2 opacity-50">Global Feedback Monitoring</p>
+            <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">인텔리전스 게시판</h3>
+            <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2 opacity-50">글로벌 피드백 모니터링</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative group/search flex-1 md:flex-none">
@@ -272,7 +272,7 @@ export default function OnlinePollAdminClient({
               <Vote size={32} />
             </div>
             <div className="space-y-2">
-              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">Configure Protocol</DialogTitle>
+              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">프로토콜 구성</DialogTitle>
               <DialogDescription className="text-[10px] font-black tracking-[0.4em] uppercase opacity-40">
                 New Feedback Pipeline Architecture
               </DialogDescription>
@@ -295,7 +295,7 @@ export default function OnlinePollAdminClient({
             
             <section className="grid grid-cols-2 gap-8">
               <div className="space-y-4">
-                <label className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2">Initiation Date</label>
+                <label className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2">시작일</label>
                 <div className="relative group">
                   <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
                   <Input
@@ -307,7 +307,7 @@ export default function OnlinePollAdminClient({
                 </div>
               </div>
               <div className="space-y-4">
-                <label className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2">Termination Date</label>
+                <label className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2">종료일</label>
                 <div className="relative group">
                   <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
                   <Input
@@ -345,7 +345,7 @@ export default function OnlinePollAdminClient({
                     className="flex items-center gap-4 group/item"
                   >
                     <div className="w-14 h-16 rounded-2xl bg-slate-900/5 dark:bg-muted/30 flex flex-col items-center justify-center font-black text-slate-300 dark:text-muted-foreground text-[10px] shadow-inner border border-border/10 shrink-0">
-                      <span className="opacity-40 uppercase mb-0.5">NODE</span>
+                      <span className="opacity-40 uppercase mb-0.5">노드</span>
                       <span className="text-foreground leading-none">{String(index + 1).padStart(2, '0')}</span>
                     </div>
                     <div className="flex-1 relative">

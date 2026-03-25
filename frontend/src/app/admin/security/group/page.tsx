@@ -223,7 +223,7 @@ export default function GroupManagePage() {
       <HubMetricGrid>
         <HubMetricCard title="ACTIVE_GROUPS" value={groups.length} icon={Database} color="indigo" />
         <HubMetricCard title="ENTITY_NODES" value={pagination?.totalRecordCount || 0} icon={LayoutGrid} color="primary" />
-        <HubMetricCard title="SYNC_STATUS" value="STEADY" icon={Activity} color="emerald" status="SYNCED" />
+        <HubMetricCard title="SYNC_STATUS" value="STEADY" icon={Activity} color="emerald" status="동기화됨" />
         <HubMetricCard title="SECURITY_TIER" value="TIER_1" icon={Lock} color="amber" />
       </HubMetricGrid>
 
@@ -247,7 +247,7 @@ export default function GroupManagePage() {
                     </form>
                 </div>
                 <div>
-                     <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">Functional Group Table Probe</span>
+                     <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">기능적 그룹 테이블 프로브</span>
                 </div>
             </div>
 

@@ -46,7 +46,7 @@ interface SurveyItem {
   id: string | number;
   title: string;
   participants: number;
-  status: 'ACTIVE' | 'PENDING' | 'CLOSED';
+  status: '활성' | 'PENDING' | 'CLOSED';
   startDate: string;
   endDate: string;
 }
@@ -62,8 +62,8 @@ export default function SurveyHubClient() {
 
   // --- Mock Data ---
   const surveys: SurveyItem[] = [
-    { id: 1, title: '2024년 상반기 직원 만족도 조사', participants: 450, status: 'ACTIVE', startDate: '2024-03-01', endDate: '2024-03-31' },
-    { id: 2, title: '신규 기업 보안 정책 피드백', participants: 120, status: 'ACTIVE', startDate: '2024-03-10', endDate: '2024-03-24' },
+    { id: 1, title: '2024년 상반기 직원 만족도 조사', participants: 450, status: '활성', startDate: '2024-03-01', endDate: '2024-03-31' },
+    { id: 2, title: '신규 기업 보안 정책 피드백', participants: 120, status: '활성', startDate: '2024-03-10', endDate: '2024-03-24' },
     { id: 3, title: '복지 포인트 사용처 선호도 조사', participants: 856, status: 'CLOSED', startDate: '2024-02-15', endDate: '2024-03-01' },
     { id: 4, title: '사내 어학 교육 수요 조사', participants: 32, status: 'PENDING', startDate: '2024-04-01', endDate: '2024-04-15' },
   ];
@@ -113,11 +113,11 @@ export default function SurveyHubClient() {
                 <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-primary shadow-2xl border border-white/5">
                   <TrendingUp size={24} />
                 </div>
-                <HubStatusBadge label="SYNCED" variant="success" className="bg-emerald-500/20 border-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-widest uppercase" />
+                <HubStatusBadge label="동기화됨" variant="success" className="bg-emerald-500/20 border-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-widest uppercase" />
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-black text-white/30 tracking-[0.4em] uppercase leading-none">Total Participation</p>
-                <h4 className="text-4xl font-black tracking-tighter text-white leading-none tabular-nums">1,458<span className="text-sm opacity-20 ml-2">UNITS</span></h4>
+                <p className="text-[10px] font-black text-white/30 tracking-[0.4em] uppercase leading-none">총 참여</p>
+                <h4 className="text-4xl font-black tracking-tighter text-white leading-none tabular-nums">1,458<span className="text-sm opacity-20 ml-2">단위</span></h4>
                 <div className="flex items-center gap-2 text-[9px] font-black text-emerald-400 mt-4 bg-emerald-400/10 w-fit px-3 py-1 rounded-full border border-emerald-400/20">
                   <Activity size={10} /> +12.4% INCREMENTAL
                 </div>
@@ -161,10 +161,10 @@ export default function SurveyHubClient() {
                   >
                     <div className="space-y-2 max-w-[75%] relative z-10">
                       <div className="flex items-center gap-2 mb-2">
-                        {survey.status === 'ACTIVE' ? (
+                        {survey.status === '활성' ? (
                           <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/20 rounded-full border border-emerald-500/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[8px] font-black text-emerald-500 tracking-widest uppercase">ACTIVE</span>
+                            <span className="text-[8px] font-black text-emerald-500 tracking-widest uppercase">활성</span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 rounded-full border border-border/50">
@@ -185,7 +185,7 @@ export default function SurveyHubClient() {
                       <span className={cn("text-xl font-black tracking-tighter tabular-nums leading-none", selectedSurveyId === survey.id ? "text-white" : "text-primary")}>
                         {survey.participants.toLocaleString()}
                       </span>
-                      <span className="text-[9px] font-black tracking-[0.2em] opacity-40 uppercase">UNITS</span>
+                      <span className="text-[9px] font-black tracking-[0.2em] opacity-40 uppercase">단위</span>
                     </div>
                     
                     <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.02] grayscale transition-all duration-700">
@@ -227,7 +227,7 @@ export default function SurveyHubClient() {
                               <div className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                               Temporal Flow Analysis
                             </h4>
-                            <span className="text-[9px] font-black text-primary tracking-widest uppercase">Live Gauge</span>
+                            <span className="text-[9px] font-black text-primary tracking-widest uppercase">라이브 게이지</span>
                         </div>
                         <div className="h-56 rounded-[3rem] bg-slate-950 border-8 border-slate-900 flex items-end justify-between p-12 gap-8 relative overflow-hidden shadow-2xl">
                           <div className="absolute inset-x-0 bottom-0 h-1 bg-primary/10 blur-[40px] pointer-events-none" />
@@ -264,7 +264,7 @@ export default function SurveyHubClient() {
                   <PieChart size={48} />
                 </div>
                 <div className="space-y-4">
-                  <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-50">System Idle</h3>
+                  <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-50">시스템 대기</h3>
                   <p className="text-[11px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.4em] uppercase leading-relaxed">
                     Select Identity to Initiate Analytics
                   </p>

@@ -177,7 +177,7 @@ export default function SmsAdminClient({
           title="ACCUMULATED LOGS" 
           value={totalCount.toLocaleString()} 
           icon={<History size={26} />} 
-          status="STABLE"
+          status="안정"
           color="text-slate-900"
         />
         <SummaryBlock 

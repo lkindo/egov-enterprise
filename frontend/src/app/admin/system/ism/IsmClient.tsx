@@ -108,8 +108,8 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
     {
       header: '결재 대기 (PENDING)',
       accessor: (item: InfrmlSanctn) => {
-          let status: 'ACTIVE' | 'DISABLED' | 'INACTIVE' = 'INACTIVE';
-          if (item.confmAt === 'Y') status = 'ACTIVE';
+          let status: '활성' | 'DISABLED' | 'INACTIVE' = 'INACTIVE';
+          if (item.confmAt === 'Y') status = '활성';
           if (item.confmAt === 'R') status = 'DISABLED';
           
           return <HubStatusBadge status={status} labels={{ ACTIVE: '승인됨 (CONFIRMED)', DISABLED: '반려됨 (REJECTED)', INACTIVE: '결재 대기 (PENDING)' }} />;

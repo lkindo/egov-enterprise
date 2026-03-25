@@ -261,7 +261,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                                 />
                                                 <label htmlFor="status-active" className="flex flex-col cursor-pointer">
                                                     <span className="text-xs font-black uppercase tracking-widest">인프라 연결 활성화</span>
-                                                    <span className="text-[9px] font-bold text-white/30 lowercase mt-1">Live infra establish</span>
+                                                    <span className="text-[9px] font-bold text-white/30 lowercase mt-1">라이브 인프라 구축</span>
                                                 </label>
                                             </div>
                                             <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/choice">
@@ -275,7 +275,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                                 />
                                                 <label htmlFor="status-inactive" className="flex flex-col cursor-pointer">
                                                     <span className="text-xs font-black uppercase tracking-widest text-rose-500">노드 운영 중지</span>
-                                                    <span className="text-[9px] font-bold text-white/30 lowercase mt-1">Deactivate bypass</span>
+                                                    <span className="text-[9px] font-bold text-white/30 lowercase mt-1">우회 비활성화</span>
                                                 </label>
                                             </div>
                                         </div>

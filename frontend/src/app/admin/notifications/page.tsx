@@ -57,7 +57,7 @@ export default function NotificationsPage() {
  <div className="space-y-4">
  <div className="flex items-center gap-3 text-emerald-400">
  <ShieldCheck size={20} />
- <span className="text-sm font-black tracking-[0.3em] leading-none">Security Verified Channel</span>
+ <span className="text-sm font-black tracking-[0.3em] leading-none">보안 검증 채널</span>
  </div>
  <h3 className="text-3xl font-black tracking-tighter leading-none">
  {view === 'hub' ? "Unified Notification Intelligence" : "Next-Gen AI Message Dispatcher"}
@@ -71,11 +71,11 @@ export default function NotificationsPage() {
 
  <div className="flex flex-col gap-3 min-w-[200px]">
  <div className="px-6 py-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md flex items-center justify-between">
- <span className="text-[10px] font-black tracking-tight opacity-50">Global Delivery</span>
+ <span className="text-[10px] font-black tracking-tight opacity-50">글로벌 배포</span>
  <span className="text-xl font-black text-emerald-400">99.9%</span>
  </div>
  <div className="px-6 py-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md flex items-center justify-between">
- <span className="text-[10px] font-black tracking-tight opacity-50">Active Triggers</span>
+ <span className="text-[10px] font-black tracking-tight opacity-50">활성 트리거</span>
  <span className="text-xl font-black text-indigo-400">2,412</span>
  </div>
  </div>

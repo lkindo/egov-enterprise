@@ -19,17 +19,17 @@ describe('Button', () => {
  const { rerender } = render(<Button variant="destructive">Destructive</Button>);
  expect(screen.getByRole('button')).toHaveClass('bg-destructive');
 
- rerender(<Button variant="outline">Outline</Button>);
+ rerender(<Button variant="outline">외곽선</Button>);
  expect(screen.getByRole('button')).toHaveClass('border');
  });
 
  it('renders as disabled', () => {
- render(<Button disabled>Disabled</Button>);
+ render(<Button disabled>비활성화</Button>);
  expect(screen.getByRole('button')).toBeDisabled();
  });
 
  it('shows loading state', () => {
- render(<Button isLoading>Loading</Button>);
+ render(<Button isLoading>로딩 중</Button>);
  expect(screen.getByRole('button')).toBeDisabled();
  const loader = screen.getByRole('button').querySelector('.animate-spin');
  expect(loader).not.toBeNull();

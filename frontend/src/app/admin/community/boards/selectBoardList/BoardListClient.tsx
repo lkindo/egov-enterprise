@@ -106,7 +106,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
       <h2 className="text-3xl font-black tracking-tight">
         {masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공지사항' : '게시판')}
       </h2>
-      {tmplatId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2">Knowledge Hub</Badge>}
+      {tmplatId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2">지식 허브</Badge>}
     </div>
     <p className="text-muted-foreground font-medium ml-4">
       {masterInfo?.bbsIntrcn || '이 게시판의 활동량과 최신 소식을 확인하세요.'}

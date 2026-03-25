@@ -310,7 +310,7 @@ export default function CommonCodeClient({
                                     <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto text-slate-300">
                                         <SearchSlash size={24} />
                                     </div>
-                                    <p className="text-[10px] font-black tracking-widest uppercase">No Results</p>
+                                    <p className="text-[10px] font-black tracking-widest uppercase">결과 없음</p>
                                 </div>
                             ) : (
                                 filteredClusters.map((cluster) => (
@@ -426,7 +426,7 @@ export default function CommonCodeClient({
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="flex flex-col items-end pr-4 text-right">
-                                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1.5">INTEGRITY</span>
+                                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1.5">무결성</span>
                                             <div className="flex items-center gap-1">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                                 <span className="text-[10px] font-black text-emerald-500 font-mono">99.9%</span>
@@ -450,7 +450,7 @@ export default function CommonCodeClient({
                             <div className="w-24 h-24 rounded-[2.5rem] bg-slate-50 flex items-center justify-center text-slate-300 mb-8 border border-slate-100 shadow-inner">
                                 <Database size={40} className="animate-pulse" />
                             </div>
-                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase mb-4">Master Data Repository</h3>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase mb-4">마스터 데이터 저장소</h3>
                             <p className="text-xs font-bold text-slate-400 text-center max-w-sm leading-relaxed mb-10">
                                 왼쪽 코드 익스플로러에서 관리 대상을 선택하십시오.<br />
                                 도메인 계층별 모든 마스터 데이터가 이곳에 표출됩니다.

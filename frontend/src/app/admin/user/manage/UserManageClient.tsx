@@ -151,7 +151,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
     },
     { 
       header: '인증 상태', 
-      accessor: (item) => <HubStatusBadge status={item.userSttusCode === 'A' ? 'ACTIVE' : item.userSttusCode === 'P' ? 'PENDING' : 'DISABLED'} />,
+      accessor: (item) => <HubStatusBadge status={item.userSttusCode === 'A' ? '활성' : item.userSttusCode === 'P' ? 'PENDING' : 'DISABLED'} />,
       className: 'w-32'
     },
     {

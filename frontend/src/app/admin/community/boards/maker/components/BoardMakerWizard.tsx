@@ -57,7 +57,7 @@ const STEPS = [
 const TEMPLATES = [
   {
     id: 'TMPLT_HUB',
-    name: 'Knowledge Hub',
+    name: '지식 허브',
     description: '지식 공유에 최적화된 고도화 대시보드형 레이아웃',
     typeCode: 'BBST01',
     icon: BookOpen,

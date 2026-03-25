@@ -214,7 +214,7 @@ export default function RoleManagePage() {
       <HubMetricGrid>
         <HubMetricCard title="ROLE_DEFINITIONS" value={roles.length} icon={Database} color="indigo" />
         <HubMetricCard title="PATTERN_NODES" value={pagination?.totalRecordCount || 0} icon={Layers} color="primary" />
-        <HubMetricCard title="PROBE_STATUS" value="STEADY" icon={Activity} color="emerald" status="SYNCED" />
+        <HubMetricCard title="PROBE_STATUS" value="STEADY" icon={Activity} color="emerald" status="동기화됨" />
         <HubMetricCard title="GRANT_FLOW" value="VERIFIED" icon={Workflow} color="amber" />
       </HubMetricGrid>
 
@@ -238,7 +238,7 @@ export default function RoleManagePage() {
                     </form>
                 </div>
                 <div>
-                     <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">Functional Role Table Probe</span>
+                     <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">기능적 역할 테이블 프로브</span>
                 </div>
             </div>
 

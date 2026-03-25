@@ -331,7 +331,7 @@ export default function DeptAuthorityPage() {
                                          <p className="text-[11px] font-black text-slate-800 tracking-tight leading-relaxed">
                                             전역 정책 강제 배포(Batch Deployment) 시, 해당 조직 구성원이 보유한 기존의 모든 개별 권한은 <span className="text-rose-500 underline decoration-2 underline-offset-4 font-black italic">영구적으로 파기</span>되고 마스터 정책으로 전면 교체됩니다.
                                         </p>
-                                        <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase opacity-60">Architectural Override Caution</span>
+                                        <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase opacity-60">아키텍처 재정의 주의</span>
                                     </div>
                                 </div>
                             </motion.div>

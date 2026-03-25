@@ -8,13 +8,13 @@ describe('Tabs Component', () => {
  render(
  <Tabs defaultValue="tab1">
  <TabsList>
- <TabsTrigger value="tab1">Tab 1</TabsTrigger>
+ <TabsTrigger value="tab1">탭 1</TabsTrigger>
  </TabsList>
- <TabsContent value="tab1">Content 1</TabsContent>
+ <TabsContent value="tab1">콘텐츠 1</TabsContent>
  </Tabs>
  );
 
- expect(screen.getByText('Tab 1')).toBeInTheDocument();
- expect(screen.getByText('Content 1')).toBeInTheDocument();
+ expect(screen.getByText('탭 1')).toBeInTheDocument();
+ expect(screen.getByText('콘텐츠 1')).toBeInTheDocument();
  });
 });

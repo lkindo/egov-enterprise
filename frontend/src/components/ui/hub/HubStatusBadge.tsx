@@ -31,7 +31,7 @@ export function HubStatusBadge({
   // Auto-variant based on status if not provided
   let activeVariant = variant;
   if (variant === 'default' && status) {
-    if (['ACTIVE', 'PUBLISHED', 'CONFIRMED'].includes(status)) activeVariant = 'success';
+    if (['활성', 'PUBLISHED', 'CONFIRMED'].includes(status)) activeVariant = 'success';
     if (['PENDING', 'STAGED'].includes(status)) activeVariant = 'warning';
     if (['DISABLED', 'REJECTED', 'INACTIVE'].includes(status)) activeVariant = 'error';
   }

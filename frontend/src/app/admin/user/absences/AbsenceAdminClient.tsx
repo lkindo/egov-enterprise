@@ -171,7 +171,7 @@ export default function AbsenceAdminClient({
       <HubMetricGrid>
         <HubMetricCard title="TOTAL_RESOURCES" value={users.length} icon={User} color="primary" />
         <HubMetricCard title="OPERATIONAL_UNITS" value={users.length - totalAbsents} icon={UserCheck} color="emerald" status="ONLINE" />
-        <HubMetricCard title="STANDBY_UNITS" value={totalAbsents} icon={Ghost} color="rose" status={totalAbsents > 0 ? "ALERT" : "STABLE"} />
+        <HubMetricCard title="STANDBY_UNITS" value={totalAbsents} icon={Ghost} color="rose" status={totalAbsents > 0 ? "ALERT" : "안정"} />
         <HubMetricCard title="SYSTEM_INTEGRITY" value="100%" icon={ShieldCheck} color="indigo" />
       </HubMetricGrid>
 

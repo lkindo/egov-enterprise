@@ -73,7 +73,7 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg border border-border">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-foreground tracking-tight">NODE-01 ACTIVE</span>
+              <span className="text-[10px] font-bold text-foreground tracking-tight">노드-01 활성</span>
             </div>
             <Button size="sm" className="font-bold text-[11px] h-9">
               데이터 동기화
@@ -165,7 +165,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <span className="text-sm font-bold text-foreground">데이터 소스</span>
                   </div>
-                  <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] font-bold">STABLE</Badge>
+                  <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] font-bold">안정</Badge>
                 </div>
                 
                 <div className="flex items-end justify-between">

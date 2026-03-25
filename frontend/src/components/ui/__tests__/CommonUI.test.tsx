@@ -9,14 +9,14 @@ import React from 'react';
 describe('Common UI Components Extended', () => {
  describe('Badge', () => {
  it('Badge renders variants correctly', () => {
- const { rerender } = render(<Badge variant="default">Default</Badge>);
- expect(screen.getByText('Default')).toBeInTheDocument();
+ const { rerender } = render(<Badge variant="default">기본</Badge>);
+ expect(screen.getByText('기본')).toBeInTheDocument();
 
  rerender(<Badge variant="destructive">오류</Badge>);
  expect(screen.getByText('오류')).toHaveClass('bg-destructive');
  
- rerender(<Badge variant="outline">Outline</Badge>);
- expect(screen.getByText('Outline')).toHaveClass('text-foreground');
+ rerender(<Badge variant="outline">외곽선</Badge>);
+ expect(screen.getByText('외곽선')).toHaveClass('text-foreground');
  });
  });
 

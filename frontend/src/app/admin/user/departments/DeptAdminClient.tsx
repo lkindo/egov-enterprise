@@ -146,7 +146,7 @@ export default function DeptAdminClient({
     },
     {
       header: '상태',
-      accessor: (item: DeptDto) => <HubStatusBadge status="ACTIVE" />,
+      accessor: (item: DeptDto) => <HubStatusBadge status="활성" />,
       className: 'w-32'
     },
     {
@@ -216,7 +216,7 @@ export default function DeptAdminClient({
                         <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                             <Building2 size={32} className="text-primary" />
                         </div>
-                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">Organizational<br />Infrastructure</h4>
+                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">조직<br />인프라</h4>
                     </div>
 
                     <div className="space-y-8">

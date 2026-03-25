@@ -85,7 +85,7 @@ describe('LoginPage', () => {
 
  it('renders login page correctly', () => {
  render(<LoginPage />);
- expect(screen.getByText('E-GOV ENTERPRISE')).toBeInTheDocument();
+ expect(screen.getByText('전자정부 엔터프라이즈')).toBeInTheDocument();
  expect(screen.getByLabelText('ID')).toBeInTheDocument();
  expect(screen.getByLabelText('Password')).toBeInTheDocument();
  expect(screen.getByRole('button', { name: /Sign In/i })).toBeInTheDocument();

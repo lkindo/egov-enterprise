@@ -255,7 +255,7 @@ export default function AdminStatsClient({
          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
             <div className="space-y-10 flex-1 text-center lg:text-left">
                <div className="space-y-4">
-                  <h2 className="text-[11px] font-black tracking-[0.6em] text-white/30 uppercase leading-none">System Integrity Summary</h2>
+                  <h2 className="text-[11px] font-black tracking-[0.6em] text-white/30 uppercase leading-none">시스템 무결성 요약</h2>
                   <h3 className="text-5xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] uppercase tabular-nums">
                     Optimized <br />
                     <span className="text-primary italic">인텔리전스</span> Core

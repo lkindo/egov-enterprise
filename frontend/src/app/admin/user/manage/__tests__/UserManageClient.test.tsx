@@ -50,7 +50,7 @@ vi.mock('@/app/components/ui/standard-modal', () => ({
   StandardModal: ({ children, isOpen, title, onClose, footer }: any) => isOpen ? (
     <div data-testid="dialog">
       <h2>{title}</h2>
-      <button onClick={onClose}>CloseModal</button>
+      <button onClick={onClose}>모달 닫기</button>
       {children}
       <div data-testid="modal-footer">{footer}</div>
     </div>

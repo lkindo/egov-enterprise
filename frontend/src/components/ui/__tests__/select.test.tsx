@@ -18,7 +18,7 @@ describe('Select Component', () => {
  <SelectValue placeholder="선택 " />
  </SelectTrigger>
  <SelectContent>
- <SelectItem value="opt1">Option 1</SelectItem>
+ <SelectItem value="opt1">옵션 1</SelectItem>
  <SelectItem value="opt2">Option 2</SelectItem>
  </SelectContent>
  </Select>
@@ -29,7 +29,7 @@ describe('Select Component', () => {
 
  // In JSDOM/Radix, we often need to click to open and find items
  fireEvent.click(trigger);
- const item = await screen.findByText('Option 1');
+ const item = await screen.findByText('옵션 1');
  fireEvent.click(item);
 
  expect(onValueChange).toHaveBeenCalledWith('opt1');

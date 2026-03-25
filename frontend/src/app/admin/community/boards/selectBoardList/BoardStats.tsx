@@ -45,7 +45,7 @@ export function BoardStats() {
  <TrendingUp size={18} className="text-primary" />
  理쒓렐 7???몃옒??異붿씠
  </CardTitle>
- <span className="text-[10px] font-bold text-muted-foreground tracking-tight bg-muted px-2 py-1 rounded-md">Real-time</span>
+ <span className="text-[10px] font-bold text-muted-foreground tracking-tight bg-muted px-2 py-1 rounded-md">실시간</span>
  </CardHeader>
  <CardContent className="px-6 pb-6">
  <div className="h-[200px] w-full">
