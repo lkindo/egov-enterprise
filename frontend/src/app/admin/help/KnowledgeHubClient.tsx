@@ -124,7 +124,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
              onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${currentBbsId}`)}
              className="h-12 md:h-16 px-4 md:px-8 rounded-xl md:rounded-2xl bg-slate-900 text-white font-black tracking-widest text-[9px] md:text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
            >
-             <Plus className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-90 transition-transform" /> New Dataset
+             <Plus className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-90 transition-transform" /> 신규 등록
            </Button>
            <div className="h-10 md:h-16 w-[1px] md:w-[2px] bg-border/40 mx-1 md:mx-2 hidden sm:block" />
            <div className="hidden sm:flex flex-col items-end">
