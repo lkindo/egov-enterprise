@@ -73,6 +73,7 @@ pnpm-lock.yaml
 **/*.log
 **/logs/
 **/*_log.txt
+**/*_output.txt
 **/boot_error*
 **/server_run_*.txt
 **/temp_*/
@@ -83,6 +84,12 @@ pnpm-lock.yaml
 **/*.swp
 **/*~
 **/*.orig
+**/auth_error.txt
+**/build_output*.txt
+**/tests_output.txt
+**/tests_debug.txt
+**/coverage_output.txt
+**/dependency-analysis*.txt
 
 # ----- Tools & Infrastructure -----
 **/docker-data/
@@ -96,6 +103,7 @@ pnpm-lock.yaml
 **/test-results/
 **/playwright-report/
 **/blob-report/
+**/playwright-screenshots/
 **/playwright/.cache/
 **/jacoco/
 **/*.exec
@@ -121,12 +129,22 @@ pnpm-lock.yaml
 **/upload/
 **/uploads/
 **/files/
-**/storage/
+# storage/ - Removed (directory deleted)
 
 # ----- Project Specific -----
 **/convert-*.py
 **/encoding-logs/
 **/utf8-project-template/
+
+# ----- Deleted Legacy Modules (prevent re-creation) -----
+# These modules were integrated into foundation/business-suite (2026-03)
+common-core/
+common-security/
+module-core-iam/
+module-system-admin/
+module-workspace/
+module-operation/
+module-knowledge/
 
 # ----- Git Worktrees -----
 .worktrees/
