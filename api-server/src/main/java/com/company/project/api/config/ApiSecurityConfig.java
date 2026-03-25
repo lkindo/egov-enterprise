@@ -1,8 +1,8 @@
 package com.company.project.api.config;
 
-import com.company.project.security.iam.EgovAuthenticationProvider;
-import com.company.project.security.jwt.JwtAuthenticationFilter;
-import com.company.project.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.security.iam.EgovAuthenticationProvider;
+import com.company.project.foundation.security.jwt.JwtAuthenticationFilter;
+import com.company.project.foundation.security.jwt.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,7 +30,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import com.company.project.security.service.EgovPasswordEncoder;
+import com.company.project.foundation.security.service.EgovPasswordEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

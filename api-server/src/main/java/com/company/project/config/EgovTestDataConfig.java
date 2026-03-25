@@ -1,9 +1,9 @@
 package com.company.project.config;
 
-import com.company.project.domain.auth.UserAuthority;
-import com.company.project.domain.auth.UserAuthorityRepository;
-import com.company.project.domain.user.entity.User;
-import com.company.project.domain.user.repository.UserRepository;
+import com.company.project.foundation.domain.auth.UserAuthority;
+import com.company.project.foundation.domain.auth.UserAuthorityRepository;
+import com.company.project.foundation.domain.user.entity.User;
+import com.company.project.foundation.domain.user.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

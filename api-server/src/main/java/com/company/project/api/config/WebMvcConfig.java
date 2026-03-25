@@ -1,7 +1,7 @@
 package com.company.project.api.config;
 
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
-import com.company.project.security.resolver.LoginUserArgumentResolver;
+import com.company.project.foundation.security.resolver.LoginUserArgumentResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;

@@ -1,13 +1,13 @@
 package com.company.project.api.controller;
 
-import com.company.project.core.response.ApiResponse;
-import com.company.project.core.response.PageResponse;
-import com.company.project.security.annotation.LoginUser;
-import com.company.project.security.service.CustomUserDetails;
-import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserDto;
-import com.company.project.service.user.dto.UserResponse;
-import com.company.project.service.user.dto.UserSignupRequest;
+import com.company.project.foundation.core.response.ApiResponse;
+import com.company.project.foundation.core.response.PageResponse;
+import com.company.project.foundation.security.annotation.LoginUser;
+import com.company.project.foundation.security.service.CustomUserDetails;
+import com.company.project.foundation.service.user.UserService;
+import com.company.project.foundation.service.user.dto.UserDto;
+import com.company.project.foundation.service.user.dto.UserResponse;
+import com.company.project.foundation.service.user.dto.UserSignupRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

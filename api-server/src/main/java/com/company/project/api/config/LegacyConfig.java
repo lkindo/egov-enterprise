@@ -52,8 +52,8 @@ public class LegacyConfig {
     }
 
     @Bean
-    public com.company.project.core.config.ApplicationContextProvider applicationContextProvider() {
-        return new com.company.project.core.config.ApplicationContextProvider();
+    public com.company.project.foundation.core.config.ApplicationContextProvider applicationContextProvider() {
+        return new com.company.project.foundation.core.config.ApplicationContextProvider();
     }
 
     // ID Generation Services

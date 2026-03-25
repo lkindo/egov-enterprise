@@ -1,0 +1,13 @@
+package com.company.project.foundation.domain.group;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+public interface GroupManageRepository extends JpaRepository<GroupManage, String> {
+
+    @Query("SELECT g FROM GroupManage g WHERE g.groupNm LIKE %:searchKeyword%")
+    Page<GroupManage> searchByKeyword(@Param("searchKeyword") String searchKeyword, Pageable pageable);
+}

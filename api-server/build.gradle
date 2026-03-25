@@ -4,16 +4,9 @@ plugins {
 }
 
 dependencies {
-    // ── 신규 수직 모듈 (Vertical Modules) ──────────────────────────────
-    implementation project(':module-core-iam')
-    implementation project(':module-system-admin')
-    implementation project(':module-workspace')
-    implementation project(':module-operation')
-    implementation project(':module-knowledge')
-
-    // ── 공통 기반 모듈 ──
-    implementation project(':common-core')
-    implementation project(':common-security')
+    // New 2-Tier Architecture Modules
+    implementation project(':foundation')
+    implementation project(':business-suite')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -22,7 +15,7 @@ dependencies {
     implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation libs.springdoc.openapi
 
-    // Lombok 추가
+    // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'

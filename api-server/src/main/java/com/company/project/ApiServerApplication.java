@@ -6,7 +6,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import com.company.project.core.config.FullBeanNameGenerator;
+import com.company.project.foundation.core.config.FullBeanNameGenerator;
 
 /**
  * 프로젝트 메인 애플리케이션 클래스

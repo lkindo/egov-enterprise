@@ -1,6 +1,6 @@
 package com.company.project.api.interceptor;
 
-import com.company.project.security.service.CustomUserDetails;
+import com.company.project.foundation.security.service.CustomUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

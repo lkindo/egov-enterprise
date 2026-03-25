@@ -1,8 +1,8 @@
 package com.company.project.api.notification;
 
-import com.company.project.service.notification.NotificationService;
-import com.company.project.service.notification.dto.NotificationDto;
-import com.company.project.service.notification.event.NotificationEvent;
+import com.company.project.foundation.service.notification.NotificationService;
+import com.company.project.foundation.service.notification.dto.NotificationDto;
+import com.company.project.foundation.service.notification.event.NotificationEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;

@@ -42,16 +42,11 @@
 
 ```bash
 egov-enterprise/
-├── api-server/             # Spring Boot 진입점 (War 배포 모듈)
-├── common-core/            # 공통 유틸리티, 예외, 로깅, 기반 Config
-├── common-security/        # 인증/인가 (JWT, Spring Security RBAC)
-├── module-core-iam/        # [기능] 계정 관리, 권한, 그룹, 인증 서비스
-├── module-system-admin/    # [기능] 통합 관리 센터 (사용자/권한, 콘텐츠/배너/팝업, 서비스/설문/상담 관리)
-├── module-workspace/       # [기능] 사용자 협업 도구 (일정, 쪽지, 주소록, 게시판 콘텐츠 소비)
-├── module-operation/       # [기능] 사용자 운영 지원 (설문 참여, 상담 등록, Q&A 접수)
-├── module-knowledge/       # [기능] 공식 지식 베이스, 문서 관리
+├── api-server/             # Spring Boot 진입점 (War 배포 모듈, Presentation Layer)
+├── business-suite/         # 업무 도구 통합 모듈 (Business Layer: Workspace, Operation, Knowledge 통합)
+├── foundation/             # 시스템 기반 통합 모듈 (Foundation Layer: Security, IAM, Common, System Admin 통합)
 ├── frontend/               # Next.js 15 프런트엔드 애플리케이션
-└── legacy/                 # 레거시 eGovFrame 원본 소스 (폐쇄형 참조용)
+└── egov-libs/              # 전자정부 프레임워크 레거시 라이브러리 (Binary 참조용)
 ```
 
 ---
@@ -67,8 +62,9 @@ egov-enterprise/
 | **Phase 3: 운영 지원** | 일정 관리, 부서 업무, 온라인 설문, 약관 관리, 보고서 | ✅ 완료 (100%) |
 | **Phase 4: 통합/통계** | 실시간 사용자/화면 통계, 디지털 자산 관리, 모니터링 | ✅ 완료 (100%) |
 | **Phase 5: 구조 리팩토링** | 관리자 기능 통합(System Admin), 메뉴 계층 구조 전면 재편 | ✅ 완료 (100%) |
-| **Phase 6: 안정화** | 모듈 간 의존성 검증, 패키지 최적화, DB 메뉴 마이그레이션 | ✅ 완료 (100%) |
-| **Phase 7: 고도화** | E2E 테스트 고도화, CI/CD 자동화, 성능 부하 테스트 | 🔄 진행중 (85%) |
+| **Phase 6: 아키텍처 혁신** | **2-Tier (Foundation-Business) 모듈 통합 리팩토링** | ✅ 완료 (100%) |
+| **Phase 7: 최적화** | 빌드 자동화, 패키지 최적화, DB 메뉴 마이그레이션 | ✅ 완료 (100%) |
+| **Phase 8: 고도화** | E2E 테스트 고도화, CI/CD 자동화, 성능 부하 테스트 | 🔄 진행중 (88%) |
 
 ### 핵심 모듈 상술 (Key Migrated Modules)
 - **Administrative Tools**: 공통코드, 메뉴 관리, 프로그램 관리, 로그(시스템/웹/개인정보 등) 관리.
@@ -240,4 +236,4 @@ cp frontend/.env.example frontend/.env.local
 
 ---
 
-*Last Updated: 2026-03-12*
+*Last Updated: 2026-03-25 (Refactored to 2-Tier Architecture)*

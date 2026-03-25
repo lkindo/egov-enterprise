@@ -1,7 +1,7 @@
 package com.company.project.api.advice;
 
-import com.company.project.service.menu.MenuService;
-import com.company.project.service.menu.dto.MenuDto;
+import com.company.project.foundation.service.menu.MenuService;
+import com.company.project.foundation.service.menu.dto.MenuDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
