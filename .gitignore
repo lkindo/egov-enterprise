@@ -72,6 +72,7 @@ pnpm-lock.yaml
 # ----- Logs & Temp Files -----
 **/*.log
 **/logs/
+!**/src/**/logs/
 **/*_log.txt
 **/*_output.txt
 **/boot_error*
