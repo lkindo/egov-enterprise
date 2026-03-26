@@ -23,7 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import com.company.project.api.controller.UserApiController;
 import com.company.project.foundation.service.user.UserService;
-import com.company.project.foundation.core.config.ApplicationContextProvider;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
 
 @WebMvcTest(controllers = UserApiController.class)

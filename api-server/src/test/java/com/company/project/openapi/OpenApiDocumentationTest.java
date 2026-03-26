@@ -38,12 +38,11 @@ class OpenApiDocumentationTest {
   @DisplayName("OpenAPI 스펙 JSON 생성 확인")
   void openApiSpec_endpoint_accessibility() throws Exception {
     // When & Then - OpenAPI 스펙 확인
-    String content = mockMvc.perform(get("/v3/api-docs")
+    mockMvc.perform(get("/v3/api-docs")
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.openapi").exists())
-        .andReturn().getResponse().getContentAsString();
+        .andExpect(jsonPath("$.openapi").exists());
 
     // 테스트 환경에서는 파일 내보내기 기능 비활성화
     // String exportPath = System.getProperty("openapi.export.path");

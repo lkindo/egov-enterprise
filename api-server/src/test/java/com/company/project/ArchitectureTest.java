@@ -33,8 +33,7 @@ public class ArchitectureTest {
      * 참고: 대규모 리팩토링 후 아키텍처 규칙은 실제 코드 구조를 반영해야 합니다.
      */
     @ArchTest
-    static final void placeholder_test() {
+    static void placeholder_test(com.tngtech.archunit.core.domain.JavaClasses classes) {
         // Placeholder - always passes
-        // 실제 아키텍처 규칙은 점진적으로 추가할 예정
     }
 }

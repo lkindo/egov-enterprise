@@ -19,7 +19,6 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.support.WebDataBinderFactory;

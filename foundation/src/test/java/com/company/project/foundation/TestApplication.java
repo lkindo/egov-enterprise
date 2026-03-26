@@ -1,4 +1,4 @@
-package com.company.project;
+package com.company.project.foundation;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

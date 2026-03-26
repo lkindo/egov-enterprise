@@ -18,7 +18,7 @@ allprojects {
 
     apply plugin: 'jacoco'
     jacoco {
-        toolVersion = "0.8.12"
+        toolVersion = "0.8.14"
     }
 }
 
@@ -29,7 +29,7 @@ subprojects {
     apply plugin: 'jacoco'
 
     jacoco {
-        toolVersion = "0.8.12"
+        toolVersion = "0.8.14"
     }
 
     java {
@@ -81,16 +81,20 @@ subprojects {
     }
 }
 
-// 통합 리포트 태스크 (Gradle 8.x 공식 가이드 방식)
-task jacocoRootReport(type: JacocoReport) {
-    description = 'Generates an aggregate report from all subprojects'
+// 통합 리포트 태스크 (Gradle 9 지향 현대화 버전)
+tasks.register('jacocoRootReport', JacocoReport) {
+    description = 'Generates an aggregate report from all subprojects using Lazy Configuration API'
     group = 'Verification'
 
+    // 모든 서브프로젝트의 테스트 태스크에 의존
     def subprojectTests = subprojects.collect { it.tasks.withType(Test) }.flatten()
     dependsOn subprojectTests
 
-    sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
-    classDirectories.from = files(subprojects.sourceSets.main.output.classesDirs).collect {
+    // 소스 디렉토리 통합 (Lazy API 사용)
+    sourceDirectories.from = objects.fileCollection().from(subprojects.sourceSets.main.allSource.srcDirs)
+
+    // 클래스 디렉토리 통합 및 필터링
+    classDirectories.from = objects.fileCollection().from(subprojects.sourceSets.main.output.classesDirs).collect {
         fileTree(dir: it, exclude: [
             "**/Q*.class",
             "**/Q*Entity.class",
@@ -108,7 +112,9 @@ task jacocoRootReport(type: JacocoReport) {
             "**/*RepositoryImpl.class"
         ])
     }
-    executionData.from = files(subprojects.jacocoTestReport.executionData).filter { it.exists() }
+
+    // 실행 데이터(`.exec`) 통합
+    executionData.from = objects.fileCollection().from(subprojects.jacocoTestReport.executionData).filter { it.exists() }
 
     reports {
         html.required = true

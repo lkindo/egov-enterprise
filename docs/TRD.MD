@@ -1,8 +1,6 @@
-# 전자정부프레임워크 5.0 공통 모듈 구축 - 기술 설계서 (TRD)
-
-> **최종 업데이트**: 2026-03-12  
-> **프로젝트 진행률**: ✅ 100% 완료 (구조 최적화 및 통합 완료)  
-> **문서 버전**: 3.0
+# 전자정부프레임워크 5.0 공통 > **최종 업데이트**: 2026-03-26  
+> **프로젝트 진행률**: ✅ 100% 완료 (2-Tier 구조 최적화 및 통합 완료)  
+> **문서 버전**: 3.5
 
 ## 1. 기술적 목표 (Technical Goals)
 
@@ -10,7 +8,7 @@
 
 | 목표 | 설명 | 상태 |
 |------|------|------|
-| **Modular Monolith** | 모듈 단위의 재사용성 확보, 의존성 최소화 | ✅ 완료 |
+| **2-Tier Modular Monolith** | Foundation 과 Business-Suite 2 계층 구조로 응집도 향상 | ✅ 완료 |
 | **JPA 중심 데이터 처리** | MyBatis → Spring Data JPA + QueryDSL 전환 | ✅ 완료 (100%) |
 | **Modern Frontend** | JSP → Next.js 15 + React + TypeScript | ✅ 완료 |
 | **Stateless Authentication** | JWT 기반 인증, MSA 확장성 확보 | ✅ 완료 |
@@ -18,26 +16,40 @@
 
 ## 2. 시스템 아키텍처 (System Architecture)
 
-### 2.1. 멀티 모듈 구조 (Multi-Module Structure - Vertical Slicing)
+### 2.1. 2-Tier 모듈 구조 (2-Tier Module Structure)
 
-비즈니스 도메인 중심의 수직 슬라이싱 구조를 채택하여 기능 간 독립성과 확장성을 극대화합니다.
+시스템의 복잡도를 낮추고 유지보수성을 높이기 위해 기반 기술과 비즈니스 로직을 두 개의 큰 모듈로 통합한 아키텍처를 채택합니다.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Frontend Layer                           │
 │  frontend/ (Next.js 15, TypeScript, Tailwind CSS, Shadcn/UI)    │
 └─────────────────────────────────────────────────────────────────┘
-                               ↓ REST API + JWT
+                                ↓ REST API + JWT
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Entry / Config Layer                     │
+│                    Presentation Layer (Entry)                   │
 │  api-server/ (Spring Boot 진입점, War 패키징, 통합 설정)        │
 └─────────────────────────────────────────────────────────────────┘
-                               ↓ Module Reference
+                                ↓ Module Reference
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Functional Module Layers                     │
-│  module-core-iam / module-system-admin / module-workspace       │
-│  module-operation / module-knowledge                            │
+│                      Business Suite Layer                       │
+│  business-suite/ (Workspace, Operation, Knowledge 기능 통합)     │
 └─────────────────────────────────────────────────────────────────┘
+                                ↓ Module Reference
+┌─────────────────────────────────────────────────────────────────┐
+│                      Foundation Layer (Infra)                   │
+│  foundation/ (Security, IAM, Common, System Admin 통합)        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 2.2. 모듈별 상세 정보
+
+| 모듈명 | 역할 및 책임 | 주요 구성 요소 |
+| :--- | :--- | :--- |
+| **api-server** | 전역 진입점 및 통합 배포 | Web Config, Global Exception, Interceptor, War Packaging |
+| **business-suite** | 핵심 비즈니스 로직 및 컨텐츠 서비스 | 협업(Workspace), 운영지원(Operation), 컨텐츠(Board, Wiki, Popup) |
+| **foundation** | 시스템 기반 및 인프라 서비스 | 시큐리티(IAM, JWT, RBAC), 시스템관리(Code, Menu, Log), 공통유틸 |
+�─────────────────────────────────┘
                                ↓ Infrastructure Reference
 ┌─────────────────────────────────────────────────────────────────┐
 │                      Foundation Layer                           │
@@ -64,29 +76,12 @@
 ```mermaid
 graph TD
     Root[Root Project] --> Entry[api-server]
-    Root --> Core[common-core]
-    Root --> Security[common-security]
-    Root --> IAM[module-core-iam]
-    Root --> SysAdmin[module-system-admin]
-    Root --> Workspace[module-workspace]
-    Root --> Operation[module-operation]
-    Root --> Knowledge[module-knowledge]
+    Root --> Business[business-suite]
+    Root --> Foundation[foundation]
 
-    Entry --> IAM
-    Entry --> SysAdmin
-    Entry --> Workspace
-    Entry --> Operation
-    Entry --> Knowledge
-    Entry --> Security
-    Entry --> Core
-
-    IAM --> Security
-    SysAdmin --> IAM
-    Workspace --> IAM
-    Operation --> IAM
-    Knowledge --> IAM
-    
-    Security --> Core
+    Entry --> Business
+    Entry --> Foundation
+    Business --> Foundation
 ```
 
 ## 3. 기술 스택 및 버전 (Tech Stack & Versions)
@@ -100,7 +95,7 @@ graph TD
 | **Persistence** | **Spring Data JPA 3.3**, QueryDSL 5.1.0 | 복잡한 쿼리는 QueryDSL 원칙 |
 | **Database** | **PostgreSQL 16+** | Docker 기반 운영, H2 (테스트) |
 | **Security** | **Spring Security 6.3**, JWT (jjwt 0.12.6) | Stateless, OAuth2 확장 가능 |
-| **Build Tool** | **Gradle 8.12** | Groovy DSL, Lombok/QueryDSL 플러그인 |
+| **Build Tool** | **Gradle 9.4.1** | Groovy DSL, Lombok/QueryDSL 플러그인 |
 | **Mapping** | **MapStruct 1.5.5.Final** | Entity ↔ DTO 변환 |
 | **Documentation** | **SpringDoc OpenAPI 2.5.0** | Swagger UI 자동 생성 |
 | **Logging** | **Logback + SLF4J** | MDC 기반 요청 추적 |

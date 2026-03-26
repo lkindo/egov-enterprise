@@ -1,4 +1,4 @@
-package com.company.project.business.api.controller.admin.popup;
+package com.company.project.business.api.controller.admin.content.popup;
 
 import com.company.project.foundation.core.response.ApiResponse;
 import com.company.project.foundation.service.system.content.popup.PopupService;

@@ -4,17 +4,20 @@ import com.company.project.foundation.service.user.UserService;
 import com.company.project.foundation.service.user.dto.UserDto;
 import com.company.project.foundation.service.user.dto.UserResponse;
 import com.company.project.foundation.service.user.dto.UserSignupRequest;
+import com.company.project.foundation.core.exception.BusinessException;
+import com.company.project.foundation.core.exception.ErrorCode;
+import com.company.project.foundation.core.exception.GlobalExceptionHandler;
+import com.company.project.api.interceptor.OperationalAuditInterceptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import com.company.project.foundation.core.exception.BusinessException;
-import com.company.project.foundation.core.exception.ErrorCode;
-import com.company.project.api.interceptor.OperationalAuditInterceptor;
+
 import java.util.Arrays;
 import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -34,12 +37,12 @@ class UserApiControllerHttpStatusTest {
 
         mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
                 .addInterceptors(operationalAuditInterceptor)
-                .setControllerAdvice(new com.company.project.foundation.core.exception.GlobalExceptionHandler())
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
     @Test
-    @DisplayName("POST /api/v1/users/signup - Success (200 OK)")
+    @DisplayName("POST /api/v1/users/signup - 성공 (200 OK)")
     void signup_success_returns200() throws Exception {
         UserResponse response = new UserResponse(
                 "newUser",
@@ -67,7 +70,7 @@ class UserApiControllerHttpStatusTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/users/signup - Duplicate ID (409 Conflict)")
+    @DisplayName("POST /api/v1/users/signup - 중복 ID (409 Conflict)")
     void signup_fail_duplicateUserId_returns409() throws Exception {
         doThrow(new BusinessException(ErrorCode.DUPLICATE_USER_ID))
                 .when(userService).signup(any(UserSignupRequest.class));
@@ -93,7 +96,7 @@ class UserApiControllerHttpStatusTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/users - Success (200 OK)")
+    @DisplayName("GET /api/v1/users - 성공 (200 OK)")
     void getUserList_success_returns200() throws Exception {
         List<UserDto> userList = Arrays.asList(
                 UserDto.builder()
@@ -111,7 +114,7 @@ class UserApiControllerHttpStatusTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/users/paged - Success (200 OK)")
+    @DisplayName("GET /api/v1/users/paged - 성공 (200 OK)")
     void getPagedUserList_success_returns200() throws Exception {
         java.util.List<UserDto> content = Arrays.asList(
                 UserDto.builder()
@@ -134,7 +137,7 @@ class UserApiControllerHttpStatusTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/users/signup - Internal Error (500 Internal Server Error)")
+    @DisplayName("POST /api/v1/users/signup - 서버 내부 오류 (500 Internal Server Error)")
     void signup_fail_internalError_returns500() throws Exception {
         when(userService.signup(any(UserSignupRequest.class)))
                 .thenThrow(new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR));

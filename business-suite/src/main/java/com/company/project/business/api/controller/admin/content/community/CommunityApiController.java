@@ -1,4 +1,4 @@
-package com.company.project.business.api.controller.admin.community;
+package com.company.project.business.api.controller.admin.content.community;
 
 import com.company.project.foundation.core.response.ApiResponse;
 import com.company.project.foundation.core.response.PageResponse;

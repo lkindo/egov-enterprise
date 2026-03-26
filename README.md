@@ -29,22 +29,22 @@
 ### Backend
 - **Core**: Spring Boot 3.4.x, Java 21 (LTS)
 - **Database**: PostgreSQL (JPA/Hibernate)
-- **Architecture**: Modular Monolith & Event-Driven (Spring Events)
+- **Architecture**: 2-Tier Modular Monolith (Foundation & Business-Suite)
 - **Security**: Spring Security 6.x, JWT (Json Web Token)
 - **API**: RESTful API with OpenAPI 3.0
-- **Build**: Gradle 8.12 (Version Catalog)
+- **Build**: Gradle 9.4.1 (Version Catalog)
 
 ---
 
-## 📂 프로젝트 구조 (Project Structure - Vertical Slicing)
+## 📂 프로젝트 구조 (Project Structure - 2-Tier Architecture)
 
-본 프로젝트는 비즈니스 도메인을 중심으로 독립적인 배포 및 관리가 가능한 **수직 슬라이싱(Vertical Slicing) 아키텍처**를 채택하고 있습니다.
+본 프로젝트는 핵심 기반 기능과 비즈니스 로직을 분리하여 유지보수성을 극대화한 **2계층 모듈 구조**를 채택하고 있습니다.
 
 ```bash
 egov-enterprise/
 ├── api-server/             # Spring Boot 진입점 (War 배포 모듈, Presentation Layer)
-├── business-suite/         # 업무 도구 통합 모듈 (Business Layer: Workspace, Operation, Knowledge 통합)
-├── foundation/             # 시스템 기반 통합 모듈 (Foundation Layer: Security, IAM, Common, System Admin 통합)
+├── business-suite/         # 업무 도구 통합 모듈 (Business Layer: Workspace, Operation, Knowledge 등)
+├── foundation/             # 시스템 기반 통합 모듈 (Infrastructure Layer: Security, IAM, Common, System Admin 등)
 ├── frontend/               # Next.js 15 프런트엔드 애플리케이션
 └── egov-libs/              # 전자정부 프레임워크 레거시 라이브러리 (Binary 참조용)
 ```
@@ -236,4 +236,4 @@ cp frontend/.env.example frontend/.env.local
 
 ---
 
-*Last Updated: 2026-03-25 (Refactored to 2-Tier Architecture)*
+*Last Updated: 2026-03-26 (Upgraded to Gradle 9.4.1 & Stabilized 2-Tier Architecture)*
