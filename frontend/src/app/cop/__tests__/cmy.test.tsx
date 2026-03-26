@@ -15,7 +15,7 @@ vi.mock('next/link', () => ({
  default: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 
-vi.mock('@/services/community/communityService', () => ({
+vi.mock('@/services/business/community/communityService', () => ({
  getCommunityList: vi.fn().mockResolvedValue({
  resultList: [
  {
@@ -36,7 +36,7 @@ describe('CommunityListPage', () => {
  });
 
  it('renders list of communities', async () => {
- const { getCommunityList } = await import('@/services/community/communityService');
+ const { getCommunityList } = await import('@/services/business/community/communityService');
  (getCommunityList as any).mockResolvedValue({
  resultList: [
  {

@@ -105,7 +105,7 @@ test.describe('Authentication Flow', () => {
     test('should redirect to login when not authenticated', async ({ page }) => {
         try {
             // Create new context without auth
-            const context = await page.context().browser().newContext();
+            const context = await page.context().browser()!.newContext();
             const newPage = await context.newPage();
 
             await newPage.goto('/admin/dashboard', { timeout: 10000 });

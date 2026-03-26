@@ -75,11 +75,7 @@ export default function LayoutManagerClient() {
   // --- 핸들러 ---
   const handleThemeSave = () => {
     applyDesignTokens(themeConfig);
-    toast({
-      title: '디자인 시스템 동기화 성공',
-      description: '설정하신 곡률과 색상이 플랫폼 전반의 UI 인프라에 즉각 적용되었습니다.',
-      variant: 'default'
-    });
+    toast('디자인 시스템 동기화 성공: 설정하신 곡률과 색상이 플랫폼 전반의 UI 인프라에 즉각 적용되었습니다.', 'success');
   };
 
   return (

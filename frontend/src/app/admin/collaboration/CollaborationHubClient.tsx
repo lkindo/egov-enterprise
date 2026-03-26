@@ -1,39 +1,25 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
   RefreshCcw,
   Mail, 
-  Send, 
   Inbox, 
-  Contact2, 
   Bookmark, 
   Search, 
   Plus, 
-  MoreVertical, 
-  UserPlus, 
-  MessageSquare, 
-  Calendar, 
-  ChevronRight,
-  Filter,
-  ArrowUpRight,
-  Star,
-  Hash,
-  Paperclip,
-  ExternalLink,
   Trash2,
   Users,
   Zap,
-  Share2,
-  CheckCircle2
+  Share2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
-import { noteService, Note } from '@/services/business/user/NoteService';
+import { noteService } from '@/services/business/user/NoteService';
 import { scrapService } from '@/services/business/user/ScrapService';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,7 +27,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 // --- Types ---
 type CollaborationTab = 'MESSAGES' | 'ADDRESS_BOOK' | 'SCRAPS';
 
-export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { defaultTab?: CollaborationTab }) {
+interface CollaborationHubClientProps {
+  defaultTab?: CollaborationTab;
+}
+
+export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: CollaborationHubClientProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<CollaborationTab>(defaultTab);
@@ -51,33 +41,33 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
   // --- Queries ---
 
   // 1. Notes (Messages)
-  const { data: noteData, isLoading: isNoteLoading } = useQuery({
+  const { data: noteData } = useQuery({
     queryKey: ['collab-notes', activeTab],
-    queryFn: () => noteService.getReceivedNotes({ page: 0, size: 50 }),
+    queryFn: () => noteService.getReceivedNotes({ page: 1, size: 50 }),
     enabled: activeTab === 'MESSAGES'
   });
-  const notes = noteData?.list || [];
+  const notes = (noteData as any)?.resultList || [];
 
   // 2. Address Book
-  const { data: addressData, isLoading: isAddressLoading } = useQuery({
+  const { data: addressData } = useQuery({
     queryKey: ['collab-addressbook', searchKeyword],
-    queryFn: () => addressbookUserService.getAddressBooks({ page번호: 1, pageUnit: 50, searchWrd: searchKeyword }),
+    queryFn: () => addressbookUserService.getAddressBooks({ pageUnit: 50, searchWrd: searchKeyword }),
     enabled: activeTab === 'ADDRESS_BOOK'
   });
-  const addresses = addressData?.list || [];
+  const addresses = (addressData as any)?.resultList || [];
 
   // 3. Scraps
-  const { data: scrapData, isLoading: isScrapLoading } = useQuery({
+  const { data: scrapData } = useQuery({
     queryKey: ['collab-scraps', searchKeyword],
-    queryFn: () => scrapService.getMyScraps({ page: 0, size: 50 }),
+    queryFn: () => scrapService.getMyScraps({ page: 1, size: 50 }),
     enabled: activeTab === 'SCRAPS'
   });
-  const scraps = scrapData?.list || [];
+  const scraps = (scrapData as any)?.resultList || [];
 
   // --- Selection Logic ---
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
-    if (activeTab === 'MESSAGES') return notes.find(n => n.noteId === selectedItemId);
+    if (activeTab === 'MESSAGES') return notes.find((n: any) => n.noteId === selectedItemId);
     if (activeTab === 'ADDRESS_BOOK') return addresses.find((a: any) => a.adbkId === selectedItemId);
     if (activeTab === 'SCRAPS') return scraps.find((s: any) => s.scrapId === selectedItemId);
     return null;
@@ -87,7 +77,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
 
   const renderMessageList = () => (
     <div className="space-y-3">
-      {notes.map((note) => (
+      {notes.map((note: any) => (
         <div 
           key={note.noteId}
           onClick={() => setSelectedItemId(note.noteId)}
@@ -118,7 +108,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
 
   const renderAddressList = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {addresses.map((address) => (
+      {addresses.map((address: any) => (
         <Card 
           key={address.adbkId}
           onClick={() => setSelectedItemId(address.adbkId)}
@@ -154,7 +144,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
               협업 통합 허브
             </h2>
             <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
-              통합 기업용 소셜 및 메시징 센터
+              통합 기업형 포털 서비스 센터
             </p>
           </div>
         </div>
@@ -173,7 +163,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
         {/* --- Left Column: Navigation (20%) --- */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
           <Card className="rounded-[3rem] border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100 overflow-hidden">
-            <NavButton icon={<Inbox size={20} />} label="메신저" active={activeTab === 'MESSAGES'} onClick={() => { setActiveTab('MESSAGES'); setSelectedItemId(null); }} />
+            <NavButton icon={<Inbox size={20} />} label="메시지" active={activeTab === 'MESSAGES'} onClick={() => { setActiveTab('MESSAGES'); setSelectedItemId(null); }} />
             <NavButton icon={<Users size={20} />} label="전체 연락처" active={activeTab === 'ADDRESS_BOOK'} onClick={() => { setActiveTab('ADDRESS_BOOK'); setSelectedItemId(null); }} />
             <NavButton icon={<Bookmark size={20} />} label="스크랩 관리" active={activeTab === 'SCRAPS'} onClick={() => { setActiveTab('SCRAPS'); setSelectedItemId(null); }} />
           </Card>
@@ -205,7 +195,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                   <Input 
                     className="pl-12 h-14 bg-white border-slate-100 rounded-2xl text-sm font-bold shadow-sm" 
-                    placeholder="이름, 부서, 회사명 검색..." 
+                    placeholder="이름, 부서, 회사명 검색.." 
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
                   />
@@ -265,7 +255,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
                       </div>
                     </div>
                     <div className="flex gap-4">
-                      <Button className="flex-1 h-14 rounded-2xl bg-slate-900 text-white font-black tracking-tight text-[9px]">답장 / 열기</Button>
+                      <Button className="flex-1 h-14 rounded-2xl bg-slate-900 text-white font-black tracking-tight text-[9px]">답장 / 쓰기</Button>
                       <Button variant="outline" className="h-14 w-14 rounded-2xl border-2"><Trash2 size={20} /></Button>
                     </div>
                   </CardContent>

@@ -46,6 +46,8 @@ import { UserManage } from '@/types/foundation/user';
 import { deptAdminService, Department } from '@/services/foundation/system/DeptAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { PagePagination } from '@/components/common/PagePagination';
 
 // --- Types ---
 type UserOrgTab = 'USERS' | 'DEPTS' | 'ABSENCES' | 'POLICIES';
@@ -56,18 +58,22 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
   const [activeTab, setActiveTab] = useState<UserOrgTab>(defaultTab);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
+  
+  // --- Pagination States ---
+  const [userPage, setUserPage] = useState(1);
+  const [deptPage, setDeptPage] = useState(1);
 
   // --- Queries ---
   const { data: usersData, isLoading: isUsersLoading } = useQuery({
-    queryKey: ['admin-users', searchKeyword],
-    queryFn: () => userAdminService.getUserList({ page번호: 1, searchKeyword }),
+    queryKey: ['admin-users', searchKeyword, userPage],
+    queryFn: () => userAdminService.getUserList({ page번호: userPage, searchKeyword }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES'
   });
   const users = usersData?.list || [];
 
   const { data: deptsData, isLoading: isDeptsLoading } = useQuery({
-    queryKey: ['admin-depts', searchKeyword],
-    queryFn: () => deptAdminService.getDeptList({ page번호: 1, searchKeyword }),
+    queryKey: ['admin-depts', searchKeyword, deptPage],
+    queryFn: () => deptAdminService.getDeptList({ page번호: deptPage, searchKeyword }),
     enabled: activeTab === 'DEPTS'
   });
   const departments = deptsData?.list || [];
@@ -80,81 +86,50 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
     return null;
   }, [selectedItemId, activeTab, users, departments]);
 
-  // --- Renderers ---
-
-  const renderUserList = () => (
-    <div className="space-y-4">
-      {isUsersLoading && <div className="p-10 text-center opacity-40 font-black text-xs tracking-widest text-primary animate-pulse">SYNCHRONIZING_DIRECTORY...</div>}
-      {users.map((user) => (
-        <div 
-          key={user.esntlId}
-          onClick={() => setSelectedItemId(user.esntlId || null)}
-          className={cn(
-            "group p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer flex items-center justify-between overflow-hidden relative",
-            selectedItemId === user.esntlId 
-              ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" 
-              : "bg-white border-slate-100 hover:border-primary/20 text-slate-600 shadow-sm"
-          )}
-        >
-          <div className="flex items-center gap-6 relative z-10">
-            <div className={cn(
-              "w-16 h-16 rounded-[1.5rem] flex items-center justify-center font-black text-2xl shadow-xl transition-transform group-hover:rotate-6",
-              selectedItemId === user.esntlId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-300"
-            )}>
-              {user.userNm?.[0]}
-            </div>
-            <div className="space-y-1">
-              <h4 className={cn("text-lg font-black tracking-tighter leading-none uppercase", selectedItemId === user.esntlId ? "text-white" : "text-foreground")}>
-                {user.userNm}
-              </h4>
-              <p className={cn("text-[9px] font-black tracking-[0.4em] uppercase opacity-40 font-mono italic")}>{user.userId} • {user.orgnztId || 'UNCATEGORIZED'}</p>
-            </div>
+  // --- DataTable Configuration ---
+  const userColumns: Column<UserManage>[] = [
+    {
+      header: 'IDENTITY',
+      accessor: (user) => (
+        <div className="flex items-center gap-6 py-2">
+          <div className={cn(
+            "w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg transition-transform group-hover:rotate-6",
+            selectedItemId === user.esntlId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-300"
+          )}>
+            {user.userNm?.[0]}
           </div>
-          <ChevronRight size={20} className={cn("transition-all duration-500 relative z-10", selectedItemId === user.esntlId ? "rotate-90 text-primary" : "text-muted-foreground/20 group-hover:text-primary")} />
-          {selectedItemId === user.esntlId && (
-              <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl opacity-50 -mr-16 -mt-16 pointer-events-none" />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderDeptList = () => (
-    <div className="space-y-4">
-      {isDeptsLoading && <div className="p-10 text-center opacity-40 font-black text-xs tracking-widest text-primary animate-pulse">PROBING_TOPOLOGY...</div>}
-      {departments.map((dept) => (
-        <div 
-          key={dept.orgnztId}
-          onClick={() => setSelectedItemId(dept.orgnztId)}
-          className={cn(
-            "group p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer flex items-center justify-between overflow-hidden relative",
-            selectedItemId === dept.orgnztId 
-              ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" 
-              : "bg-white border-slate-100 hover:border-indigo-500/20 text-slate-600 shadow-sm"
-          )}
-        >
-          <div className="flex items-center gap-6 relative z-10">
-            <div className={cn(
-              "w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-xl transition-transform group-hover:rotate-6",
-              selectedItemId === dept.orgnztId ? "bg-white/10 text-indigo-400" : "bg-indigo-50/50 text-indigo-200"
-            )}>
-              <Building2 size={28} />
-            </div>
-            <div className="space-y-1">
-              <h4 className={cn("text-lg font-black tracking-tighter leading-none uppercase", selectedItemId === dept.orgnztId ? "text-white" : "text-foreground")}>
-                {dept.orgnztNm}
-              </h4>
-              <p className={cn("text-[9px] font-black tracking-[0.4em] uppercase opacity-40 font-mono italic")}>NODE_UID: {dept.orgnztId}</p>
-            </div>
+          <div className="space-y-1">
+            <h4 className={cn("text-md font-black tracking-tighter leading-none uppercase", selectedItemId === user.esntlId ? "text-white" : "text-foreground")}>
+              {user.userNm}
+            </h4>
+            <p className={cn("text-[8px] font-black tracking-[0.3em] uppercase opacity-40 font-mono italic")}>{user.userId}</p>
           </div>
-          <ChevronRight size={20} className={cn("transition-all duration-500 relative z-10", selectedItemId === dept.orgnztId ? "rotate-90 text-indigo-400" : "text-muted-foreground/20 group-hover:text-indigo-500")} />
-          {selectedItemId === dept.orgnztId && (
-              <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl opacity-50 -mr-16 -mt-16 pointer-events-none" />
-          )}
         </div>
-      ))}
-    </div>
-  );
+      )
+    }
+  ];
+
+  const deptColumns: Column<Department>[] = [
+    {
+      header: 'TOPOLOGY_NODE',
+      accessor: (dept) => (
+        <div className="flex items-center gap-6 py-2">
+          <div className={cn(
+            "w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-6",
+            selectedItemId === dept.orgnztId ? "bg-white/10 text-indigo-400" : "bg-indigo-50/50 text-indigo-200"
+          )}>
+            <Building2 size={24} />
+          </div>
+          <div className="space-y-1">
+            <h4 className={cn("text-md font-black tracking-tighter leading-none uppercase", selectedItemId === dept.orgnztId ? "text-white" : "text-foreground")}>
+              {dept.orgnztNm}
+            </h4>
+            <p className={cn("text-[8px] font-black tracking-[0.4em] uppercase opacity-40 font-mono italic")}>NODE_{dept.orgnztId}</p>
+          </div>
+        </div>
+      )
+    }
+  ];
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
@@ -236,7 +211,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                         />
                     </div>
 
-                    <div className="overflow-y-auto pr-2 custom-scrollbar max-h-[600px]">
+                    <div className="overflow-y-auto pr-2 custom-scrollbar max-h-[700px]">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeTab}
@@ -245,7 +220,21 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                                 exit={{ opacity: 0, y: -10 }}
                                 transition={{ duration: 0.5 }}
                             >
-                                {activeTab === 'DEPTS' ? renderDeptList() : renderUserList()}
+                                <StandardDataTable
+                                    columns={(activeTab === 'DEPTS' ? deptColumns : userColumns) as any}
+                                    data={(activeTab === 'DEPTS' ? departments : users) as any}
+                                    loading={activeTab === 'DEPTS' ? isDeptsLoading : isUsersLoading}
+                                    onRowClick={(item) => setSelectedItemId(activeTab === 'DEPTS' ? (item as Department).orgnztId : (item as UserManage).esntlId!)}
+                                    keyField={activeTab === 'DEPTS' ? 'orgnztId' : 'esntlId'}
+                                    emptyMessage="검색된 개체가 존재하지 않습니다."
+                                    isPremium={false}
+                                    className="border-none shadow-none bg-transparent"
+                                    pagination={{
+                                        currentPage: activeTab === 'DEPTS' ? deptPage : userPage,
+                                        totalPages: activeTab === 'DEPTS' ? (deptsData?.totalPage || 1) : (usersData?.totalPage || 1),
+                                        onPageChange: (p) => activeTab === 'DEPTS' ? setDeptPage(p) : setUserPage(p)
+                                    }}
+                                />
                             </motion.div>
                         </AnimatePresence>
                     </div>

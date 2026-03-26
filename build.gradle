@@ -48,7 +48,7 @@ subprojects {
         useJUnitPlatform()
         systemProperties System.properties
         maxHeapSize = "6144m"
-        ignoreFailures = true
+        ignoreFailures = false
         
         finalizedBy 'jacocoTestReport'
     }
@@ -113,8 +113,8 @@ tasks.register('jacocoRootReport', JacocoReport) {
         ])
     }
 
-    // 실행 데이터(`.exec`) 통합
-    executionData.from = objects.fileCollection().from(subprojects.jacocoTestReport.executionData).filter { it.exists() }
+    // 실행 데이터(`.exec`) 통합 (와일드카드로 더 넓게 검색)
+    executionData.from = fileTree(dir: project.rootDir, include: '**/build/jacoco/*.exec')
 
     reports {
         html.required = true

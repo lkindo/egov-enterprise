@@ -2,6 +2,7 @@ package com.company.project.foundation.service.menu;
 
 import com.company.project.foundation.domain.auth.MenuAuthority;
 import com.company.project.foundation.domain.auth.MenuAuthorityRepository;
+import com.company.project.foundation.domain.auth.MenuCreatManageProjection;
 import com.company.project.foundation.domain.menu.Menu;
 import com.company.project.foundation.domain.menu.MenuRepository;
 import com.company.project.foundation.domain.program.Program;

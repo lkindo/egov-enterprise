@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import client from '@/lib/api/client';
-import { commentService } from '@/services/user/board/CommentService';
+import { commentService } from '@/services/business/user/board/CommentService';
 
 vi.mock('@/lib/api/client', () => ({
  default: {

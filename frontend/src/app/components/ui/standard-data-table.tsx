@@ -4,7 +4,8 @@ import React, { useState, useMemo, memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { List, Search, RefreshCw } from "lucide-react";
+import { List, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export interface Column<T> {
   header: string;
@@ -19,7 +20,7 @@ export interface BulkAction<T> {
   onClick: (selectedItems: T[]) => void;
 }
 
-interface StandardDataTableProps<T> {
+export interface StandardDataTableProps<T> {
   columns: Column<T>[];
   data: T[];
   loading?: boolean;
@@ -29,7 +30,16 @@ interface StandardDataTableProps<T> {
   bulkActions?: BulkAction<T>[];
   keyField?: keyof T;
   className?: string;
-  isPremium?: boolean; // New prop for integrated container styling
+  isPremium?: boolean;
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+  };
+  search?: {
+    placeholder?: string;
+    onSearch: (keyword: string) => void;
+  };
 }
 
 const DataRow = memo(function DataRow({
@@ -133,9 +143,12 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   bulkActions = [],
   keyField = 'id' as keyof T,
   className,
-  isPremium = true
+  isPremium = true,
+  pagination,
+  search
 }: StandardDataTableProps<T>) {
   const [selectedIds, setSelectedIds] = useState<Set<any>>(new Set());
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   const selectedItems = useMemo(() =>
     data.filter(item => selectedIds.has(item[keyField])),
@@ -159,8 +172,26 @@ export function StandardDataTable<T extends { [key: string]: any }>({
     });
   }, []);
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    search?.onSearch(searchKeyword);
+  };
+
   return (
     <div className={cn("space-y-6", isPremium ? "animate-in fade-in slide-in-from-bottom-4 duration-700" : "", className)}>
+      {/* Search Bar integration if provided */}
+      {search && (
+        <form onSubmit={handleSearchSubmit} className="relative group max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+          <Input 
+            placeholder={search.placeholder || '검색어 입력...'} 
+            className="h-12 pl-12 rounded-xl border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+          />
+        </form>
+      )}
+
       {/* Bulk Action Toolbar - High Tech Style */}
       {enableSelection && selectedIds.size > 0 && (
         <div
@@ -170,7 +201,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           <div className="flex items-center gap-6">
             <div className="flex flex-col">
                <span className="text-[10px] font-black opacity-60 tracking-widest uppercase">선택 모드</span>
-               <span className="text-sm font-black">{selectedIds.size}개 항목 선택됨</span>
+               <span className="text-sm font-black">{selectedIds.size}개의 항목 선택됨</span>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div className="flex gap-2">
@@ -219,7 +250,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 )}
                 {columns.map((column, idx) => (
                   <th key={`header-${idx}`} className={cn(
-                    "px-6 py-5 font-black text-muted-foreground/60 text-[10px] uppercase tracking-[0.2em] whitespace-nowrap whitespace-nowrap", 
+                    "px-6 py-5 font-black text-muted-foreground/60 text-[10px] uppercase tracking-[0.2em] whitespace-nowrap", 
                     column.className
                   )} scope="col">
                     {column.header}
@@ -289,6 +320,37 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-8 pb-4">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="w-12 h-12 rounded-xl border-2" 
+            disabled={pagination.currentPage === 1}
+            onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
+          >
+            <ChevronLeft size={20} />
+          </Button>
+          
+          <div className="flex items-center gap-2 px-6 h-12 bg-white border-2 rounded-xl">
+             <span className="text-sm font-black italic">{pagination.currentPage}</span>
+             <span className="text-[10px] font-black text-slate-300 uppercase">of</span>
+             <span className="text-sm font-black italic text-slate-400">{pagination.totalPages}</span>
+          </div>
+
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="w-12 h-12 rounded-xl border-2" 
+            disabled={pagination.currentPage === pagination.totalPages}
+            onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
+          >
+            <ChevronRight size={20} />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -311,8 +373,8 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
       <Button 
         variant="outline" 
         size="lg" 
-        className="mt-6 rounded-2xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-primary hover:text-white transition-all group" 
-        onClick={() => window.location.reload()}
+        className="mt-6 rounded-2xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group" 
+        onClick={() => typeof window !== 'undefined' && window.location.reload()}
       >
         <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
         전체 새로고침

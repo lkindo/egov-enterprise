@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
-import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   ChevronRight, 
@@ -32,7 +31,7 @@ import {
   Settings2, 
   Info, 
   List, 
-  Image as ImageIcon, 
+  ImageIcon, 
   BookOpen, 
   UserCircle, 
   UserMinus,
@@ -42,10 +41,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-
-// Services
-// import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
-// import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
+import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 
 const STEPS = [
   { id: 1, title: '기본 설정', description: '게시판의 이름과 설명을 입력하세요.', icon: Settings2 },
@@ -105,7 +101,7 @@ const formSchema = z.object({
   tmplatId: z.string(),
   cmmntyId: z.string().optional(),
   permissions: z.record(z.string(), z.array(z.string())),
-  menuNm: z.string(), // Step 1-3 transition validation fix
+  menuNm: z.string(),
   upperMenuNo: z.string(),
   menuOrdr: z.number(),
 });
@@ -187,25 +183,23 @@ export function BoardMakerWizard() {
         atchPosblFileNumber: Number(data.atchPosblFileNumber),
         atchPosblFileSize: Number(data.atchPosblFileSize),
         tmplatId: data.tmplatId,
-        cmmntyId: data.cmmntyId,
-        blogAt: 'N', // Default
-        commentAt: 'N', // Default
-        stsfdgAt: 'N', // Default
-        useAt: 'Y',
-        frstRegisterId: 'webmaster' // 실제 인증 ID로 변경 (기존 admin은 FK 에러 가능성)
-      });
+        blogAt: 'N',
+        useAt: 'Y'
+      } as any);
 
-      const generatedMenuNo = 8000000 + Math.floor(Math.random() * 900000); // 9999999 미만으로 유지
+      if (!bbsId) throw new Error("Failed to get bbsId");
+
+      const generatedMenuNo = 8000000 + Math.floor(Math.random() * 900000);
       
       await menuAdminService.createMenu({
         menuNo: generatedMenuNo,
         menuNm: data.menuNm || data.bbsNm,
         upperMenuNo: Number(data.upperMenuNo),
         menuOrdr: data.menuOrdr,
-        progrmFileNm: 'EgovBBSMaster', // DB 제약조건(FK)을 위해 실제 존재할 법한 파일명 사용
+        progrmFileNm: 'EgovBBSMaster',
         modernRoute: `/admin/community/boards/selectBoardList?bbsId=${bbsId}`,
         menuDc: `Auto-generated menu for board ${data.bbsNm}`
-      });
+      } as any);
 
       setStatus("Provisioning Complete. Refreshing Graph...");
       
@@ -435,53 +429,55 @@ export function BoardMakerWizard() {
                 {currentStep === 3 && (
                   <div className="space-y-8">
                     <div className="rounded-[2.5rem] border-2 border-slate-50 overflow-hidden shadow-inner bg-slate-50/30">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-slate-900/5 border-b">
-                            <th className="p-8 text-left font-black text-slate-400 text-sm tracking-widest uppercase">대상 그룹 (Roles)</th>
-                            {PERMISSIONS.map(p => (
-                              <th key={p.id} className="p-8 text-center font-black text-slate-400 text-sm tracking-widest uppercase">{p.name}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {ROLES.map(role => {
-                            const RoleIcon = role.icon;
-                            const rolePerms = (permissions[role.id] as string[]) || [];
-                            
-                            return (
-                              <tr key={role.id} className="group hover:bg-white transition-colors">
-                                <td className="p-8">
-                                  <div className="flex items-center gap-4">
-                                    <div className={cn("p-3 rounded-2xl bg-white shadow-sm border border-slate-100 shadow-inner-sm", role.color)}>
-                                      <RoleIcon size={24} />
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[800px]">
+                          <thead>
+                            <tr className="bg-slate-900/5 border-b">
+                              <th className="p-8 text-left font-black text-slate-400 text-sm tracking-widest uppercase">대상 그룹 (Roles)</th>
+                              {PERMISSIONS.map(p => (
+                                <th key={p.id} className="p-8 text-center font-black text-slate-400 text-sm tracking-widest uppercase">{p.name}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {ROLES.map(role => {
+                              const RoleIcon = role.icon;
+                              const rolePerms = (permissions[role.id] as string[]) || [];
+                              
+                              return (
+                                <tr key={role.id} className="group hover:bg-white transition-colors">
+                                  <td className="p-8">
+                                    <div className="flex items-center gap-4">
+                                      <div className={cn("p-3 rounded-2xl bg-white shadow-sm border border-slate-100 shadow-inner-sm", role.color)}>
+                                        <RoleIcon size={24} />
+                                      </div>
+                                      <div>
+                                        <p className="font-black text-slate-800 text-lg">{role.name}</p>
+                                        <p className="text-xs text-slate-400 font-bold uppercase">{role.id}</p>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <p className="font-black text-slate-800 text-lg">{role.name}</p>
-                                      <p className="text-xs text-slate-400 font-bold uppercase">{role.id}</p>
-                                    </div>
-                                  </div>
-                                </td>
-                                {PERMISSIONS.map(perm => {
-                                  const isChecked = rolePerms.includes(perm.id);
-                                  return (
-                                    <td key={perm.id} className="p-8 text-center">
-                                      <Checkbox 
-                                        checked={isChecked}
-                                        onCheckedChange={() => togglePermission(role.id, perm.id)}
-                                        className={cn(
-                                          "w-8 h-8 rounded-lg transition-all border-2",
-                                          isChecked ? "bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/20" : "bg-white border-slate-200"
-                                        )}
-                                      />
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                                  </td>
+                                  {PERMISSIONS.map(perm => {
+                                    const isChecked = rolePerms.includes(perm.id);
+                                    return (
+                                      <td key={perm.id} className="p-8 text-center">
+                                        <Checkbox 
+                                          checked={isChecked}
+                                          onCheckedChange={() => togglePermission(role.id, perm.id)}
+                                          className={cn(
+                                            "w-8 h-8 rounded-lg transition-all border-2",
+                                            isChecked ? "bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/20" : "bg-white border-slate-200"
+                                          )}
+                                        />
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                     
                     <div className="p-8 bg-amber-50 rounded-[2rem] border-2 border-amber-100 flex items-start gap-4 shadow-sm">
@@ -503,11 +499,11 @@ export function BoardMakerWizard() {
                       </Label>
                       <Select value={watch('upperMenuNo')} onValueChange={(val) => setValue('upperMenuNo', val)}>
                         <SelectTrigger className="h-20 rounded-3xl border-2 border-slate-100 bg-slate-50/50 px-8 text-xl font-black shadow-inner-sm">
-                          <SelectValue placeholder="상위 메뉴를 선택하세요" />
+                          <SelectValue placeholder="상위 메뉴를 선택하세요." />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-none shadow-2xl">
-                          <SelectItem value="2000000" className="py-4 text-lg font-bold">💬 커뮤니티 및 콘텐츠</SelectItem>
-                          <SelectItem value="2030000" className="py-4 text-lg font-bold">🙋‍♂️ 사용자지원</SelectItem>
+                          <SelectItem value="2000000" className="py-4 text-lg font-bold">협업 커뮤니티 및 콘텐츠</SelectItem>
+                          <SelectItem value="2030000" className="py-4 text-lg font-bold">홍보섹션 및 사용자지원</SelectItem>
                           <SelectItem value="0" className="py-4 text-lg font-bold">ROOT (최상위 메뉴)</SelectItem>
                         </SelectContent>
                       </Select>
@@ -519,7 +515,7 @@ export function BoardMakerWizard() {
                           메뉴 명칭
                         </Label>
                         <Input 
-                          placeholder="메뉴에 표시될 이름을 입력하세요" 
+                          placeholder="메뉴에 표시할 이름을 입력하세요." 
                           className="h-16 text-lg rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm"
                           {...register('menuNm')}
                         />
@@ -593,7 +589,7 @@ export function BoardMakerWizard() {
       </Card>
       
       <p className="text-center text-slate-400 text-sm font-medium italic">
-        "마지막 클릭이 새로운 소통의 시작입니다." - Board Master Maker v1.0
+        "마지막 클릭이 새로운 소통의 시작입니다" - Board Master Maker v1.0
       </p>
     </div>
   );

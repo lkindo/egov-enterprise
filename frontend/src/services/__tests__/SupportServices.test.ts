@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import client from '@/lib/api/client';
 import * as pollService from '../poll/pollService';
-import commentService from '../comment/commentService';
+import commentService from '../business/comment/commentService';
 import fileService from '../file/fileService';
 import * as securityService from '../security/securityService';
 

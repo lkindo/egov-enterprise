@@ -46,6 +46,7 @@ import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } fr
 import { menuAdminService, Menu } from '@/services/foundation/system/MenuAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { StandardModal } from '@/app/components/ui/standard-modal';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { FormField } from '@/app/components/ui/standard-form';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -82,18 +83,23 @@ export default function SecurityHubClient() {
   const [tempUserMappings, setTempUserMappings] = useState<Set<string>>(new Set());
   const [tempMenuMappings, setTempMenuMappings] = useState<Set<number>>(new Set());
 
+  // --- Pagination States ---
+  const [rolePage, setRolePage] = useState(1);
+  const [userPage, setUserPage] = useState(1);
+
   const { data: authorsData, isLoading: isAuthorsLoading } = useQuery({
-    queryKey: ['admin-authorities', roleSearchKeyword],
-    queryFn: () => authorAdminService.getAuthorList({ page번호: 1, searchKeyword: roleSearchKeyword }),
+    queryKey: ['admin-authorities', roleSearchKeyword, rolePage],
+    queryFn: () => authorAdminService.getAuthorList({ page번호: rolePage, searchKeyword: roleSearchKeyword }),
   });
   const authorities = authorsData?.list || [];
 
   const { data: usersData, isLoading: isUsersLoading } = useQuery({
-    queryKey: ['admin-user-authorities', selectedAuthorCode, userSearchKeyword],
+    queryKey: ['admin-user-authorities', selectedAuthorCode, userSearchKeyword, userPage],
     queryFn: () => userAuthorityAdminService.getUserAuthorityList({ 
       searchKeyword: userSearchKeyword,
       searchCondition: '1',
-      authorCode: selectedAuthorCode 
+      authorCode: selectedAuthorCode,
+      page: userPage
     } as any),
     enabled: !!selectedAuthorCode
   });
@@ -227,6 +233,56 @@ export default function SecurityHubClient() {
     }
   };
 
+  // --- DataTable Columns ---
+  const roleColumns: Column<AuthorInfo>[] = [
+    {
+      header: 'ROLE_MANIFEST',
+      accessor: (auth) => (
+        <div className="flex items-center justify-between w-full group/role-item py-1">
+          <div className="flex flex-col gap-1">
+            <span className={cn("text-sm font-black tracking-tighter truncate leading-none", selectedAuthorCode === auth.authorCode ? "text-white" : "text-slate-900")}>
+                {auth.authorNm}
+            </span>
+            <span className={cn("text-[8px] font-black tracking-[0.3em] font-mono", selectedAuthorCode === auth.authorCode ? "text-white/30" : "text-slate-300")}>
+                {auth.authorCode}
+            </span>
+          </div>
+          <div className={cn("flex gap-1", selectedAuthorCode === auth.authorCode ? "opacity-100" : "opacity-0 group-hover/role-item:opacity-100 transition-opacity")}>
+              <button onClick={(e) => { e.stopPropagation(); handleOpenAuthorEdit(auth); }} className="p-2 hover:bg-white/10 rounded-xl transition-all"><Settings size={12} /></button>
+              <button onClick={(e) => { e.stopPropagation(); handleAuthorDelete(auth.authorCode); }} className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-xl transition-all"><Trash2 size={12} /></button>
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  const userColumns: Column<any>[] = [
+    {
+      header: 'IDENTITY_PROBE',
+      accessor: (user) => (
+        <div className="flex items-center justify-between w-full py-1">
+          <div className="flex items-center gap-4 relative z-10">
+              <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                  tempUserMappings.has(user.uniqId) ? "bg-white/20" : "bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
+              )}>
+                  <Fingerprint size={16} />
+              </div>
+              <div className="flex flex-col">
+                  <span className="text-sm font-black tracking-tight">{user.userNm}</span>
+                  <span className={cn("text-[8px] font-black tracking-widest font-mono opacity-40", tempUserMappings.has(user.uniqId) ? "text-white" : "text-slate-400")}>{user.userId}</span>
+              </div>
+          </div>
+          {tempUserMappings.has(user.uniqId) ? (
+              <CheckCircle2 size={20} className="text-white relative z-10" />
+          ) : (
+              <UserPlus size={16} className="text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity" />
+          )}
+        </div>
+      )
+    }
+  ];
+
   const renderMenuTreeNodes = (nodes: MenuNode[], depth = 0) => {
     return nodes.map((node, idx) => (
       <motion.div 
@@ -341,35 +397,21 @@ export default function SecurityHubClient() {
                         />
                     </div>
                     
-                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                        {authorities.map((auth: AuthorInfo) => (
-                            <div 
-                                key={auth.authorCode}
-                                onClick={() => handleRoleSelect(auth.authorCode)}
-                                className={cn(
-                                    "w-full group p-6 rounded-[2rem] border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
-                                    selectedAuthorCode === auth.authorCode 
-                                        ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" 
-                                        : "bg-white border-slate-50 hover:border-slate-200 text-slate-600 shadow-sm"
-                                )}
-                            >
-                                <div className="flex flex-col gap-1 relative z-10">
-                                    <span className={cn("text-md font-black tracking-tighter truncate leading-none", selectedAuthorCode === auth.authorCode ? "text-white" : "text-slate-900")}>
-                                        {auth.authorNm}
-                                    </span>
-                                    <span className={cn("text-[9px] font-black tracking-[0.3em] font-mono", selectedAuthorCode === auth.authorCode ? "text-white/30" : "text-slate-300")}>
-                                        {auth.authorCode}
-                                    </span>
-                                </div>
-                                <div className={cn("flex gap-1 relative z-10", selectedAuthorCode === auth.authorCode ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity")}>
-                                    <button onClick={(e) => { e.stopPropagation(); handleOpenAuthorEdit(auth); }} className="p-2 hover:bg-white/10 rounded-xl transition-all"><Settings size={14} /></button>
-                                    <button onClick={(e) => { e.stopPropagation(); handleAuthorDelete(auth.authorCode); }} className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-xl transition-all"><Trash2 size={14} /></button>
-                                </div>
-                                {selectedAuthorCode === auth.authorCode && (
-                                    <motion.div layoutId="active-role-indicator" className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-primary rounded-r-full shadow-[0_0_15px_rgba(var(--primary-rgb),0.8)]" />
-                                )}
-                            </div>
-                        ))}
+                    <div className="max-h-[650px] overflow-y-auto pr-2 custom-scrollbar">
+                        <StandardDataTable
+                            columns={roleColumns as any}
+                            data={authorities as any}
+                            loading={isAuthorsLoading}
+                            onRowClick={(item) => handleRoleSelect((item as AuthorInfo).authorCode)}
+                            keyField="authorCode"
+                            isPremium={false}
+                            className="border-none bg-transparent"
+                            pagination={{
+                                currentPage: rolePage,
+                                totalPages: authorsData?.totalPage || 1,
+                                onPageChange: (p) => setRolePage(p)
+                            }}
+                        />
                     </div>
                 </div>
             </HubSectionCard>
@@ -403,7 +445,7 @@ export default function SecurityHubClient() {
                         />
                     </div>
 
-                    <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar min-h-[500px]">
+                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[500px]">
                         <AnimatePresence mode="wait">
                             {!selectedAuthorCode ? (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center p-20 text-center space-y-6">
@@ -416,36 +458,20 @@ export default function SecurityHubClient() {
                                     </div>
                                 </motion.div>
                             ) : (
-                                users.map((user: any) => (
-                                    <div 
-                                        key={user.uniqId}
-                                        onClick={() => toggleUserMapping(user.uniqId)}
-                                        className={cn(
-                                            "p-5 rounded-3xl border-2 transition-all flex items-center justify-between group cursor-pointer relative overflow-hidden",
-                                            tempUserMappings.has(user.uniqId) 
-                                                ? "bg-primary border-primary text-white shadow-xl scale-[1.02]" 
-                                                : "bg-white border-slate-50 hover:border-slate-100 text-slate-600 shadow-sm"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-4 relative z-10">
-                                            <div className={cn(
-                                                "w-12 h-12 rounded-2xl flex items-center justify-center transition-all",
-                                                tempUserMappings.has(user.uniqId) ? "bg-white/20" : "bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
-                                            )}>
-                                                <Fingerprint size={20} />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-black tracking-tight">{user.userNm}</span>
-                                                <span className={cn("text-[9px] font-black tracking-widest font-mono opacity-40", tempUserMappings.has(user.uniqId) ? "text-white" : "text-slate-400")}>{user.userId}</span>
-                                            </div>
-                                        </div>
-                                        {tempUserMappings.has(user.uniqId) ? (
-                                            <CheckCircle2 size={24} className="text-white relative z-10" />
-                                        ) : (
-                                            <UserPlus size={20} className="text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        )}
-                                    </div>
-                                ))
+                                <StandardDataTable
+                                    columns={userColumns as any}
+                                    data={users as any}
+                                    loading={isUsersLoading}
+                                    onRowClick={(item) => toggleUserMapping((item as any).uniqId)}
+                                    keyField="uniqId"
+                                    isPremium={false}
+                                    className="border-none bg-transparent"
+                                    pagination={{
+                                        currentPage: userPage,
+                                        totalPages: usersData?.totalPage || 1,
+                                        onPageChange: (p) => setUserPage(p)
+                                    }}
+                                />
                             )}
                         </AnimatePresence>
                     </div>

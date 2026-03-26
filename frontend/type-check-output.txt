@@ -1,0 +1,45 @@
+﻿
+> frontend@0.1.0 type-check
+> tsc --noEmit
+
+e2e/05-security-domain.spec.ts(108,35): error TS2531: Object is possibly 'null'.
+src/app/admin/collaboration/CollaborationHubClient.tsx(46,51): error TS2561: Object literal may only specify known properties, but 'pageNo' does not exist in type '{ page?: number | undefined; size?: number | undefined; }'. Did you mean to write 'page'?
+src/app/admin/collaboration/CollaborationHubClient.tsx(54,61): error TS2353: Object literal may only specify known properties, and 'pageNo' does not exist in type '{ page번호?: number | undefined; pageUnit?: number | undefined; searchWrd?: string | undefined; searchCnd?: string | undefined; }'.
+src/app/admin/collaboration/CollaborationHubClient.tsx(62,47): error TS2561: Object literal may only specify known properties, but 'pageNo' does not exist in type '{ page?: number | undefined; size?: number | undefined; }'. Did you mean to write 'page'?
+src/app/admin/system/layout/LayoutManagerClient.tsx(78,11): error TS2345: Argument of type '{ title: string; description: string; variant: string; }' is not assignable to parameter of type 'string'.
+src/app/admin/system/logs/login/page.tsx(44,27): error TS2339: Property 'creatDt' does not exist on type 'LoginLog'.
+src/app/admin/system/logs/login/page.tsx(44,58): error TS2339: Property 'creatDt' does not exist on type 'LoginLog'.
+src/app/admin/system/logs/login/page.tsx(54,79): error TS2339: Property 'loginNm' does not exist on type 'LoginLog'.
+src/app/admin/system/logs/login/page.tsx(93,17): error TS2322: Type 'import("D:/project/egov-enterprise/frontend/src/services/foundation/system/SystemLogAdminService").LoginLog[]' is not assignable to type 'import("D:/project/egov-enterprise/frontend/src/types/foundation/system").LoginLog[]'.
+  Type 'LoginLog' is missing the following properties from type 'LoginLog': loginDt, errorOccrrAt, errorCode
+src/app/admin/system/logs/privacy/page.tsx(35,27): error TS2339: Property 'occrrncId' does not exist on type 'PrivacyLog'.
+src/app/admin/system/logs/privacy/page.tsx(45,27): error TS2339: Property 'occrrncPnttm' does not exist on type 'PrivacyLog'.
+src/app/admin/system/logs/privacy/page.tsx(45,63): error TS2339: Property 'occrrncPnttm' does not exist on type 'PrivacyLog'.
+src/app/admin/system/logs/privacy/page.tsx(55,85): error TS2339: Property 'srvcNm' does not exist on type 'PrivacyLog'.
+src/app/admin/system/logs/privacy/page.tsx(63,27): error TS2339: Property 'methodNm' does not exist on type 'PrivacyLog'.
+src/app/admin/system/logs/privacy/page.tsx(72,79): error TS2339: Property 'rqesterNm' does not exist on type 'PrivacyLog'.
+src/app/admin/system/logs/privacy/page.tsx(83,27): error TS2551: Property 'rqesterIp' does not exist on type 'PrivacyLog'. Did you mean 'rqesterId'?
+src/app/admin/system/logs/system/page.tsx(45,27): error TS2339: Property 'occrrncPnttm' does not exist on type 'SysLog'.
+src/app/admin/system/logs/system/page.tsx(45,63): error TS2339: Property 'occrrncPnttm' does not exist on type 'SysLog'.
+src/app/admin/system/logs/system/page.tsx(103,17): error TS2322: Type 'import("D:/project/egov-enterprise/frontend/src/services/foundation/system/SystemLogAdminService").SysLog[]' is not assignable to type 'import("D:/project/egov-enterprise/frontend/src/types/foundation/system").SysLog[]'.
+  Property 'occrrncDe' is missing in type 'import("D:/project/egov-enterprise/frontend/src/services/foundation/system/SystemLogAdminService").SysLog' but required in type 'import("D:/project/egov-enterprise/frontend/src/types/foundation/system").SysLog'.
+src/app/admin/system/logs/transfer/page.tsx(34,27): error TS2339: Property 'requstId' does not exist on type 'TransferLog'.
+src/app/admin/system/logs/transfer/page.tsx(44,27): error TS2339: Property 'occrrncPnttm' does not exist on type 'TransferLog'.
+src/app/admin/system/logs/transfer/page.tsx(44,63): error TS2339: Property 'occrrncPnttm' does not exist on type 'TransferLog'.
+src/app/admin/system/logs/transfer/page.tsx(54,27): error TS2339: Property 'cntcId' does not exist on type 'TransferLog'.
+src/app/admin/system/logs/transfer/page.tsx(63,85): error TS2339: Property 'srvcNm' does not exist on type 'TransferLog'.
+src/app/admin/system/logs/user/page.tsx(34,27): error TS2551: Property 'occrrncId' does not exist on type 'UserLog'. Did you mean 'occrrncDe'?
+src/app/admin/system/logs/user/page.tsx(44,27): error TS2339: Property 'occrrncPnttm' does not exist on type 'UserLog'.
+src/app/admin/system/logs/user/page.tsx(44,63): error TS2339: Property 'occrrncPnttm' does not exist on type 'UserLog'.
+src/app/admin/system/logs/user/page.tsx(54,85): error TS2551: Property 'srvcNm' does not exist on type 'UserLog'. Did you mean 'svcNm'?
+src/app/admin/system/logs/user/page.tsx(71,79): error TS2339: Property 'rqesterNm' does not exist on type 'UserLog'.
+src/app/admin/system/logs/user/page.tsx(82,27): error TS2551: Property 'rqesterIp' does not exist on type 'UserLog'. Did you mean 'rqesterId'?
+src/app/admin/system/logs/web/page.tsx(34,27): error TS2339: Property 'requstId' does not exist on type 'WebLog'.
+src/app/admin/system/logs/web/page.tsx(44,27): error TS2339: Property 'occrrncPnttm' does not exist on type 'WebLog'.
+src/app/admin/system/logs/web/page.tsx(44,63): error TS2339: Property 'occrrncPnttm' does not exist on type 'WebLog'.
+src/app/admin/system/logs/web/page.tsx(63,79): error TS2339: Property 'rqesterNm' does not exist on type 'WebLog'.
+src/app/admin/system/logs/web/page.tsx(64,94): error TS2551: Property 'rqesterId' does not exist on type 'WebLog'. Did you mean 'rqesterIp'?
+src/app/cop/__tests__/cmy.test.tsx(39,44): error TS2307: Cannot find module '@/services/community/communityService' or its corresponding type declarations.
+src/services/__tests__/authService.test.ts(2,29): error TS2307: Cannot find module '../authService' or its corresponding type declarations.
+src/services/__tests__/SupportServices.test.ts(4,28): error TS2307: Cannot find module '../comment/commentService' or its corresponding type declarations.
+src/services/business/user/board/__tests__/CommentService.test.ts(3,32): error TS2307: Cannot find module '@/services/user/board/CommentService' or its corresponding type declarations.

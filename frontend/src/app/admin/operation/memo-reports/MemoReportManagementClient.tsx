@@ -15,51 +15,59 @@ import { memoReportService, MemoReportInfo } from '@/services/business/memorepor
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { PagePagination } from '@/components/common/PagePagination';
 
 type ReportTab = 'MY' | 'RECEIVED' | 'ALL';
 
 export default function MemoReportManagementClient() {
   const { toast } = useToast();
+  const [page, setPage] = useState(1);
+  const size = 10;
   const [activeTab, setActiveTab] = useState<ReportTab>('RECEIVED');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
+  const handleTabChange = (tab: ReportTab) => {
+    setActiveTab(tab);
+    setPage(1);
+    setSelectedReportId(null);
+  };
+
   // --- Data Fetching ---
   const { data: reportsData, isLoading } = useQuery({
-    queryKey: ['memo-reports', activeTab, searchKeyword],
+    queryKey: ['memo-reports', activeTab, searchKeyword, page],
     queryFn: () => {
-      if (activeTab === 'MY') return memoReportService.getMyReports({ size: 20 });
-      if (activeTab === 'RECEIVED') return memoReportService.getReceivedReports({ size: 20 });
-      return memoReportService.getMemoReports({ searchKeyword, size: 20 });
+      const params = { searchKeyword, page: page - 1, size };
+      if (activeTab === 'MY') return memoReportService.getMyReports(params);
+      if (activeTab === 'RECEIVED') return memoReportService.getReceivedReports(params);
+      return memoReportService.getMemoReports(params);
     },
   });
 
   const displayItems = reportsData?.list || [];
+  const totalItems = reportsData?.total || 0;
+  const totalPages = Math.ceil(totalItems / size);
   const selectedReport = displayItems.find(r => r.reprtId === selectedReportId);
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000 font-sans">
-      {/* 1. Matrix Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 px-2">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-             <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-             <span className="text-[10px] font-black tracking-[0.4em] text-primary uppercase leading-none">메모 보고 매트릭스 (Report Node)</span>
+      <HubHeader 
+        title="메모 보고 매트릭스" 
+        highlight="Report Node" 
+        subtitle="에고브 엔터프라이즈의 비정형 보고 및 지시사항 전달을 위한 통합 커뮤니케이션 센터입니다." 
+        icon={Mail} 
+        actions={
+          <div className="flex gap-4">
+             <Button className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
+               <History size={18} /> 이전 리포트
+             </Button>
+             <Button className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
+               <Plus size={18} /> 신규 보고 작성
+             </Button>
           </div>
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none flex items-center gap-3">
-            커뮤니케이션 관리 <Mail className="text-primary" />
-          </h2>
-          <p className="text-xs font-bold text-slate-400 tracking-tight mt-2 max-w-lg">에고브 엔터프라이즈의 비정형 보고 및 지시사항 전달을 위한 통합 커뮤니케이션 센터입니다.</p>
-        </div>
-        <div className="flex items-center gap-4">
-           <Button className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
-             <History size={18} /> 이전 리포트
-           </Button>
-           <Button className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
-             <Plus size={18} /> 신규 보고 작성
-           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* 2. Main Terminal Matrix */}
       <div className="grid grid-cols-12 gap-10 px-2 lg:h-[650px]">
@@ -67,9 +75,9 @@ export default function MemoReportManagementClient() {
         <div className="col-span-12 lg:col-span-6 flex flex-col gap-6">
            <div className="flex items-center justify-between px-6">
               <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-2xl border ring-1 ring-slate-100">
-                 <NavTab active={activeTab === 'RECEIVED'} icon={<Inbox size={16} />} label="RECEIVED" onClick={() => setActiveTab('RECEIVED')} />
-                 <NavTab active={activeTab === 'MY'} icon={<Send size={16} />} label="MY OPS" onClick={() => setActiveTab('MY')} />
-                 <NavTab active={activeTab === 'ALL'} icon={<Globe size={16} />} label="GLOBAL" onClick={() => setActiveTab('ALL')} />
+                 <NavTab active={activeTab === 'RECEIVED'} icon={<Inbox size={16} />} label="RECEIVED" onClick={() => handleTabChange('RECEIVED')} />
+                 <NavTab active={activeTab === 'MY'} icon={<Send size={16} />} label="MY OPS" onClick={() => handleTabChange('MY')} />
+                 <NavTab active={activeTab === 'ALL'} icon={<Globe size={16} />} label="GLOBAL" onClick={() => handleTabChange('ALL')} />
               </div>
               <div className="relative group max-w-[200px] w-full">
                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
@@ -82,7 +90,7 @@ export default function MemoReportManagementClient() {
               </div>
            </div>
 
-           <Card className="flex-1 rounded-[4rem] border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100/50 flex flex-col">
+           <Card className="flex-1 rounded-[3.5rem] border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100/50 flex flex-col min-h-[500px]">
               <div className="flex-1 overflow-y-auto p-10 space-y-4 scrollbar-elegant">
                  {isLoading ? (
                     <div className="h-full flex items-center justify-center animate-pulse text-slate-300 text-[10px] font-black tracking-[0.5em]">SYNCHRONIZING REPORT DATA...</div>
@@ -91,46 +99,64 @@ export default function MemoReportManagementClient() {
                        <FileText size={64} />
                        <span className="font-black text-xl tracking-tighter uppercase italic">NO DATA UNITS</span>
                     </div>
-                 ) : displayItems.map((report) => (
-                    <motion.div 
-                      layout
-                      key={report.reprtId} 
-                      onClick={() => setSelectedReportId(report.reprtId)}
-                      className={cn(
-                        "p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer group flex items-start justify-between",
-                        selectedReportId === report.reprtId 
-                          ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.03]" 
-                          : "bg-white border-transparent hover:border-slate-50 text-slate-600 shadow-sm"
-                      )}
-                    >
-                       <div className="flex items-start gap-5">
-                          <div className={cn(
-                            "w-14 h-14 rounded-2xl flex flex-col items-center justify-center border transition-colors",
-                            selectedReportId === report.reprtId ? "bg-white/10 border-white/20" : "bg-slate-50 border-slate-100 group-hover:bg-primary/5"
-                          )}>
-                             <span className={cn("text-[9px] font-black", selectedReportId === report.reprtId ? "text-white/40" : "text-slate-400")}>OCT</span>
-                             <span className={cn("text-xl font-black leading-none", selectedReportId === report.reprtId ? "text-primary" : "text-slate-800")}>{report.reprtDe.slice(-2)}</span>
-                          </div>
-                          <div className="space-y-1 pr-4 min-w-0">
-                             <div className="flex items-center gap-2">
-                                <span className={cn(
-                                  "w-1.5 h-1.5 rounded-full",
-                                  report.readAt === 'Y' ? "bg-emerald-400" : "bg-primary animate-pulse"
-                                )} />
-                                <span className={cn("text-[8px] font-black tracking-[0.2em] uppercase", selectedReportId === report.reprtId ? "opacity-60" : "opacity-40")}>
-                                   {report.readAt === 'Y' ? 'Synced' : 'New Entry'}
-                                </span>
-                             </div>
-                             <h4 className="text-base font-black tracking-tighter truncate leading-none mb-1 text-ellipsis overflow-hidden">{report.reprtSj}</h4>
-                             <div className="flex items-center gap-3 opacity-40">
-                                <div className="flex items-center gap-1.5"><User size={12} /><span className="text-[10px] font-bold">{report.wrterNm}</span></div>
-                                <div className="flex items-center gap-1.5"><Clock size={12} /><span className="text-[10px] font-bold">{report.reprtDe}</span></div>
-                             </div>
-                          </div>
-                       </div>
-                       <ChevronRight size={20} className={cn("mt-4", selectedReportId === report.reprtId ? "text-primary" : "text-slate-100")} />
-                    </motion.div>
-                 ))}
+                 ) : (
+                   <>
+                    {displayItems.map((report) => (
+                      <motion.div 
+                        layout
+                        key={report.reprtId} 
+                        onClick={() => setSelectedReportId(report.reprtId)}
+                        className={cn(
+                          "p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer group flex items-start justify-between",
+                          selectedReportId === report.reprtId 
+                            ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.03]" 
+                            : "bg-white border-transparent hover:border-slate-50 text-slate-600 shadow-sm"
+                        )}
+                      >
+                        <div className="flex items-start gap-5">
+                            <div className={cn(
+                              "w-14 h-14 rounded-2xl flex flex-col items-center justify-center border transition-colors",
+                              selectedReportId === report.reprtId ? "bg-white/10 border-white/20" : "bg-slate-50 border-slate-100 group-hover:bg-primary/5"
+                            )}>
+                                <span className={cn("text-[8px] font-black", selectedReportId === report.reprtId ? "text-white/40" : "text-slate-400")}>OCT</span>
+                                <span className={cn("text-xl font-black leading-none", selectedReportId === report.reprtId ? "text-primary" : "text-slate-800")}>{report.reprtDe.slice(-2)}</span>
+                            </div>
+                            <div className="space-y-1 pr-4 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className={cn(
+                                    "w-1.5 h-1.5 rounded-full",
+                                    report.readAt === 'Y' ? "bg-emerald-400" : "bg-primary animate-pulse"
+                                  )} />
+                                  <span className={cn("text-[8px] font-black tracking-[0.2em] uppercase", selectedReportId === report.reprtId ? "opacity-60" : "opacity-40")}>
+                                      {report.readAt === 'Y' ? 'Synced' : 'New Entry'}
+                                  </span>
+                                </div>
+                                <h4 className="text-base font-black tracking-tighter truncate leading-none mb-1 text-ellipsis overflow-hidden">{report.reprtSj}</h4>
+                                <div className="flex items-center gap-3 opacity-40">
+                                  <div className="flex items-center gap-1.5"><User size={12} /><span className="text-[10px] font-bold">{report.wrterNm}</span></div>
+                                  <div className="flex items-center gap-1.5"><Clock size={12} /><span className="text-[10px] font-bold">{report.reprtDe}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <ChevronRight size={20} className={cn("mt-4", selectedReportId === report.reprtId ? "text-primary" : "text-slate-100")} />
+                      </motion.div>
+                    ))}
+                    
+                    {totalPages > 1 && (
+                      <div className="pt-8 flex justify-center border-t border-slate-50">
+                        <PagePagination 
+                          pagination={{
+                            currentPageNo: page,
+                            recordCountPerPage: size,
+                            totalRecordCount: totalItems,
+                            totalPageCount: totalPages
+                          }}
+                          onPageChange={(p) => setPage(p)}
+                        />
+                      </div>
+                    )}
+                   </>
+                 )}
               </div>
            </Card>
         </div>

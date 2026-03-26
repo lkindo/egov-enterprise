@@ -41,6 +41,7 @@ import { auditAdminService } from '@/services/foundation/system/AuditAdminServic
 import { commentAdminService } from '@/services/foundation/system/CommentAdminService';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { motion, AnimatePresence } from 'framer-motion';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -62,38 +63,42 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
+  
+  // --- Pagination States ---
+  const [page, setPage] = useState(1);
 
   const setActiveTab = (tab: MonitoringTab) => {
     const params = new URLSearchParams(searchParams);
     params.set('tab', tab.toLowerCase());
     router.push(`/admin/system/monitoring/hub?${params.toString()}`, { scroll: false });
     setSelectedItemId(null);
+    setPage(1); // Reset page on tab change
   };
 
-  const { data: auditData } = useQuery({
-    queryKey: ['admin-audit-logs', searchKeyword],
-    queryFn: () => auditAdminService.getAuditLogs({ page: 0, size: 50, keyword: searchKeyword }),
+  const { data: auditData, isLoading: isAuditLoading } = useQuery({
+    queryKey: ['admin-audit-logs', searchKeyword, page],
+    queryFn: () => auditAdminService.getAuditLogs({ page: page - 1, size: 50, keyword: searchKeyword }),
     enabled: activeTab === 'SECURITY'
   });
   const auditLogs = auditData?.list || [];
 
-  const { data: systemLogData } = useQuery({
-    queryKey: ['admin-system-logs', searchKeyword],
-    queryFn: () => systemLogAdminService.getSystemLogs({ page: 0, size: 50, searchWrd: searchKeyword }),
+  const { data: systemLogData, isLoading: isSystemLoading } = useQuery({
+    queryKey: ['admin-system-logs', searchKeyword, page],
+    queryFn: () => systemLogAdminService.getSystemLogs({ page: page - 1, size: 50, searchWrd: searchKeyword }),
     enabled: activeTab === 'SYSTEM'
   });
   const systemLogs = systemLogData?.list || [];
 
-  const { data: loginLogData } = useQuery({
-    queryKey: ['admin-login-logs', searchKeyword],
-    queryFn: () => systemLogAdminService.getLoginLogs({ page: 0, size: 50, searchWrd: searchKeyword }),
+  const { data: loginLogData, isLoading: isLoginLoading } = useQuery({
+    queryKey: ['admin-login-logs', searchKeyword, page],
+    queryFn: () => systemLogAdminService.getLoginLogs({ page: page - 1, size: 50, searchWrd: searchKeyword }),
     enabled: activeTab === 'LOGIN'
   });
   const loginLogs = loginLogData?.list || [];
 
-  const { data: commentData } = useQuery({
-    queryKey: ['admin-comments', searchKeyword],
-    queryFn: () => commentAdminService.getComments({ page: 0, size: 50, searchWrd: searchKeyword }),
+  const { data: commentData, isLoading: isCommentLoading } = useQuery({
+    queryKey: ['admin-comments', searchKeyword, page],
+    queryFn: () => commentAdminService.getComments({ page: page - 1, size: 50, searchWrd: searchKeyword }),
     enabled: activeTab === 'COMMENTS'
   });
   const comments = commentData?.list || [];
@@ -117,93 +122,105 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     return null;
   }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs, comments]);
 
-  const renderGenericList = (items: any[], idKey: string, titleKey: string, subKey: string, dateKey: string, icon: React.ReactNode) => (
-    <div className="space-y-4">
-      {items.map((item) => (
-        <div 
-          key={item[idKey]}
-          onClick={() => setSelectedItemId(item[idKey])}
-          className={cn(
-            "group p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer flex items-center justify-between overflow-hidden relative",
-            selectedItemId === item[idKey] 
-              ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" 
-              : "bg-white border-slate-100 hover:border-primary/50 text-slate-600 shadow-sm"
-          )}
-        >
-          <div className="flex items-start gap-6 relative z-10">
-            <div className={cn(
-              "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6 duration-500",
-              selectedItemId === item[idKey] ? "bg-white/10 text-white" : "bg-primary/5 text-primary"
-            )}>
-              {icon}
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <span className={cn("text-[9px] font-black tracking-widest uppercase", selectedItemId === item[idKey] ? "text-white/40" : "text-primary/60")}>
-                  {item[titleKey]}
-                </span>
-                <span className={cn("text-[9px] font-bold opacity-30 italic", selectedItemId === item[idKey] ? "text-white/40" : "")}>{item[dateKey]}</span>
-              </div>
-              <h4 className={cn("text-md font-black tracking-tighter truncate max-w-[280px]", selectedItemId === item[idKey] ? "text-white" : "text-foreground")}>
-                {item[subKey]}
-              </h4>
-            </div>
+  // --- DataTable Configurations ---
+  const auditColumns: Column<any>[] = [
+    {
+      header: 'SECURITY_AUDIT',
+      accessor: (log) => (
+        <div className="flex items-center gap-5 py-2">
+          <div className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
+            selectedItemId === log.histId ? "bg-white/10 text-white" : "bg-primary/5 text-primary"
+          )}>
+            <ShieldAlert size={20} />
           </div>
-          <ChevronRight size={18} className={cn("transition-transform duration-500 relative z-10", selectedItemId === item[idKey] ? "rotate-90 text-primary" : "text-slate-200")} />
-          
-          {selectedItemId === item[idKey] && (
-              <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />
-          )}
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+                <span className={cn("text-[8px] font-black tracking-widest uppercase opacity-40", selectedItemId === log.histId ? "text-white" : "text-primary")}>{log.sysNm}</span>
+                <span className="text-[8px] font-bold opacity-20 italic">{log.frstRegisterPnttm}</span>
+            </div>
+            <h4 className={cn("text-sm font-black tracking-tighter truncate max-w-[280px]", selectedItemId === log.histId ? "text-white" : "text-foreground")}>{log.histCn}</h4>
+          </div>
         </div>
-      ))}
-    </div>
-  );
+      )
+    }
+  ];
 
-  const renderCommentList = () => (
-    <div className="space-y-4">
-      {comments.map((c) => (
-        <div 
-          key={c.commentNo}
-          onClick={() => setSelectedItemId(c.commentNo)}
-          className={cn(
-            "group p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer flex items-center justify-between overflow-hidden relative",
-            selectedItemId === c.commentNo 
-              ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" 
-              : "bg-white border-slate-100 hover:border-indigo-500/50 text-slate-600 shadow-sm"
-          )}
-        >
-          <div className="flex items-start gap-6 relative z-10">
-            <div className={cn(
-              "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6 duration-500",
-              selectedItemId === c.commentNo ? "bg-white/10 text-white" : "bg-indigo-500/5 text-indigo-600"
-            )}>
-              <MessageSquare size={22} />
-            </div>
-            <div className="space-y-1">
-              <h4 className={cn("text-md font-black tracking-tighter", selectedItemId === c.commentNo ? "text-white" : "text-foreground")}>{c.commentCn}</h4>
-              <p className={cn("text-[9px] font-black opacity-40 uppercase tracking-[0.3em] mt-1")}>AUTHOR: {c.wrterNm}</p>
-            </div>
+  const systemLogColumns: Column<any>[] = [
+    {
+      header: 'SYSTEM_ENGINE',
+      accessor: (log) => (
+        <div className="flex items-center gap-5 py-2">
+          <div className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
+            selectedItemId === log.requstId ? "bg-white/10 text-white" : "bg-emerald-50 text-emerald-600"
+          )}>
+            <Terminal size={20} />
           </div>
-          {selectedItemId === c.commentNo ? (
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+                <span className={cn("text-[8px] font-black tracking-widest uppercase opacity-40", selectedItemId === log.requstId ? "text-white" : "text-emerald-700")}>{log.srvcNm}</span>
+                <span className="text-[8px] font-bold opacity-20 italic">{log.occcrrncDe}</span>
+            </div>
+            <h4 className={cn("text-sm font-black tracking-tighter truncate max-w-[280px]", selectedItemId === log.requstId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  const loginLogColumns: Column<any>[] = [
+    {
+      header: 'UNIFIED_LOGIN',
+      accessor: (log) => (
+        <div className="flex items-center gap-5 py-2">
+          <div className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
+            selectedItemId === log.logId ? "bg-white/10 text-white" : "bg-amber-50 text-amber-600"
+          )}>
+            <LogIn size={20} />
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+                <span className={cn("text-[8px] font-black tracking-widest uppercase opacity-40", selectedItemId === log.logId ? "text-white" : "text-amber-700")}>{log.loginId}</span>
+                <span className="text-[8px] font-bold opacity-20 italic">{log.creatDt}</span>
+            </div>
+            <h4 className={cn("text-sm font-black tracking-tighter truncate max-w-[280px]", selectedItemId === log.logId ? "text-white" : "text-foreground")}>{log.loginMthd}</h4>
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  const commentColumns: Column<any>[] = [
+    {
+      header: 'FEEDBACK_STREAM',
+      accessor: (c) => (
+        <div className="flex items-center gap-5 py-2 w-full pr-4">
+          <div className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
+            selectedItemId === c.commentNo ? "bg-white/10 text-white" : "bg-indigo-50 text-indigo-600"
+          )}>
+            <MessageSquare size={20} />
+          </div>
+          <div className="flex-1 space-y-0.5 min-w-0">
+            <h4 className={cn("text-sm font-black tracking-tighter truncate", selectedItemId === c.commentNo ? "text-white" : "text-foreground")}>{c.commentCn}</h4>
+            <p className={cn("text-[8px] font-black opacity-40 uppercase tracking-[0.2em]")}>USER_ID: {c.wrterId}</p>
+          </div>
+          {selectedItemId === c.commentNo && (
             <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={(e) => { e.stopPropagation(); deleteCommentMutation.mutate(c.commentNo); }} 
-                className="text-white bg-rose-500/20 hover:bg-rose-500/40 rounded-xl transition-all relative z-10"
+                className="text-white bg-rose-500/20 hover:bg-rose-500/40 rounded-xl transition-all relative z-10 shrink-0 h-10 w-10"
             >
-              <Trash2 size={18} />
+              <Trash2 size={16} />
             </Button>
-          ) : (
-            <ChevronRight size={18} className="text-slate-200" />
-          )}
-          
-          {selectedItemId === c.commentNo && (
-              <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />
           )}
         </div>
-      ))}
-    </div>
-  );
+      )
+    }
+  ];
 
   const renderObservability = () => (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -321,11 +338,22 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.5, ease: "circOut" }}
                 >
-                  {activeTab === 'OBSERVABILITY' ? renderObservability() : 
-                  activeTab === 'COMMENTS' ? renderCommentList() : 
-                  activeTab === 'SECURITY' ? renderGenericList(auditLogs, 'histId', 'sysNm', 'histCn', 'frstRegisterPnttm', <ShieldAlert size={22} />) :
-                  activeTab === 'SYSTEM' ? renderGenericList(systemLogs, 'requstId', 'srvcNm', 'methodNm', 'occcrrncDe', <Terminal size={22} />) :
-                  renderGenericList(loginLogs, 'logId', 'loginId', 'loginMthd', 'creatDt', <LogIn size={22} />)}
+                  {activeTab === 'OBSERVABILITY' ? renderObservability() : (
+                    <StandardDataTable
+                        columns={(activeTab === 'SECURITY' ? auditColumns : activeTab === 'SYSTEM' ? systemLogColumns : activeTab === 'LOGIN' ? loginLogColumns : commentColumns) as any}
+                        data={(activeTab === 'SECURITY' ? auditLogs : activeTab === 'SYSTEM' ? systemLogs : activeTab === 'LOGIN' ? loginLogs : comments) as any}
+                        loading={activeTab === 'SECURITY' ? isAuditLoading : activeTab === 'SYSTEM' ? isSystemLoading : activeTab === 'LOGIN' ? isLoginLoading : isCommentLoading}
+                        onRowClick={(item) => setSelectedItemId(activeTab === 'SECURITY' ? item.histId : activeTab === 'SYSTEM' ? item.requstId : activeTab === 'LOGIN' ? item.logId : item.commentNo)}
+                        keyField={activeTab === 'SECURITY' ? 'histId' : activeTab === 'SYSTEM' ? 'requstId' : activeTab === 'LOGIN' ? 'logId' : 'commentNo'}
+                        isPremium={false}
+                        className="bg-transparent border-none shadow-none"
+                        pagination={{
+                            currentPage: page,
+                            totalPages: (activeTab === 'SECURITY' ? auditData : activeTab === 'SYSTEM' ? systemLogData : activeTab === 'LOGIN' ? loginLogData : commentData)?.totalPage || 1,
+                            onPageChange: (p) => setPage(p)
+                        }}
+                    />
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
