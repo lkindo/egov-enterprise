@@ -8,7 +8,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
-import com.company.project.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.security.jwt.JwtTokenProvider;
 import org.mockito.Mockito;
 
 @TestConfiguration

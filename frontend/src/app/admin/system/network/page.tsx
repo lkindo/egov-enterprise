@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { networkAdminService, Network } from '@/services/admin/system/NetworkAdminService';
+import { networkAdminService, Network } from '@/services/foundation/system'/NetworkAdminService';
 import NetworkAdminClient from './NetworkAdminClient';
 import { Loader2 } from 'lucide-react';
 

@@ -35,11 +35,11 @@ import {
     RefreshCcw,
     SearchSlash
 } from 'lucide-react';
-import { DomainCluster, GroupCode, CodeDetail } from '@/types/common-code';
+import { DomainCluster, GroupCode, CodeDetail } from '@/types/foundation/code';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { cn } from '@/lib/utils';
-import { codeAdminService } from '@/services/admin/system/CodeAdminService';
+import { codeAdminService } from '@/services/foundation/system'/CodeAdminService';
 import {
     saveCmmnCode as saveGroupCodeAction,
     deleteCmmnCode as deleteGroupCodeAction,
@@ -47,7 +47,7 @@ import {
     deleteCodeDetail as deleteCodeDetailAction
 } from '@/app/actions/codeActions';
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
-import { CmmnClCode, CmmnCode } from '@/types/system';
+import { CmmnClCode, CmmnCode } from '@/types/foundation/system';
 
 interface CommonCodeClientProps {
     clCodes: any[];

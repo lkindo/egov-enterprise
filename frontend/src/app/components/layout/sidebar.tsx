@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { menuService } from '@/services/user/MenuService';
+import { menuService } from '@/services/business/user/MenuService';
 import { useLayout } from '@/contexts/LayoutContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';

@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommentSection from '../CommentSection';
-import commentService from '@/services/comment/commentService';
+import commentService from '@/services/business/comment'/commentService';
 
 // Mock dependencies
 vi.mock('@/services/comment/commentService');

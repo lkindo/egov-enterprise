@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { menuService } from '@/services/user/MenuService';
+import { menuService } from '@/services/business/user/MenuService';
 
 export default async function RootLayout({
  children,

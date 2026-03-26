@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { programAdminService } from '@/services/admin/system/ProgramAdminService';
+import { programAdminService } from '@/services/foundation/system'/ProgramAdminService';
 import ProgramAdminClient from './ProgramAdminClient';
 import { Loader2 } from 'lucide-react';
 

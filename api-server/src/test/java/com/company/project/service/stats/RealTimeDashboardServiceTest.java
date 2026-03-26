@@ -16,7 +16,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("RealTimeDashboardService 테스트")
+@DisplayName("RealTimeDashboardService ?뚯뒪??)
 class RealTimeDashboardServiceTest {
 
     @Mock
@@ -29,7 +29,7 @@ class RealTimeDashboardServiceTest {
     private RealTimeDashboardService realTimeDashboardService;
 
     @Test
-    @DisplayName("게시글 생성 이벤트 처리")
+    @DisplayName("寃뚯떆湲 ?앹꽦 ?대깽??泥섎━")
     void handlePostCreated_IncrementsCount() {
         // PostCreatedEvent(Object source, String bbsId, Long nttId, String userId)
         PostCreatedEvent event = new PostCreatedEvent(this, "BBS_001", 1L, "user01");
@@ -40,7 +40,7 @@ class RealTimeDashboardServiceTest {
     }
 
     @Test
-    @DisplayName("실시간 통계 브로드캐스트")
+    @DisplayName("?ㅼ떆媛??듦퀎 釉뚮줈?쒖틦?ㅽ듃")
     void broadcastRealTimeStats_Success() {
         when(notificationRepository.countByIsRead("N")).thenReturn(5L);
         
@@ -52,7 +52,7 @@ class RealTimeDashboardServiceTest {
     }
 
     @Test
-    @DisplayName("활성 사용자 증가 및 감소")
+    @DisplayName("?쒖꽦 ?ъ슜??利앷? 諛?媛먯냼")
     void activeUsers_IncrementAndDecrement() {
         realTimeDashboardService.incrementActiveUsers();
         realTimeDashboardService.decrementActiveUsers();
@@ -62,7 +62,7 @@ class RealTimeDashboardServiceTest {
     }
 
     @Test
-    @DisplayName("방문자 수 카운터 초기화")
+    @DisplayName("諛⑸Ц????移댁슫??珥덇린??)
     void resetVisitsCounter_Success() {
         realTimeDashboardService.incrementActiveUsers();
         realTimeDashboardService.resetVisitsCounter();
@@ -72,7 +72,7 @@ class RealTimeDashboardServiceTest {
     }
 
     @Test
-    @DisplayName("알림 카운트 조회 중 예외 발생 시 0 반환")
+    @DisplayName("?뚮┝ 移댁슫??議고쉶 以??덉쇅 諛쒖깮 ??0 諛섑솚")
     void getPendingAlertsCount_Exception_ReturnsZero() {
         when(notificationRepository.countByIsRead("N")).thenThrow(new RuntimeException("DB Error"));
         realTimeDashboardService.broadcastRealTimeStats();

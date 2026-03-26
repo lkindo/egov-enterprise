@@ -1,4 +1,4 @@
-import { onlinePollAdminService } from '@/services/admin/system/OnlinePollAdminService';
+import { onlinePollAdminService } from '@/services/foundation/system'/OnlinePollAdminService';
 import { cookies } from 'next/headers';
 import OnlinePollAdminClient from './OnlinePollAdminClient';
 

@@ -4,8 +4,8 @@ import React, { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('./standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { VirtualScrollList } from './virtual-scroll-list';
-import { addressbookUserService } from '@/services/user/addressbook/AddressbookUserService';
-import { NameCard } from '@/types/addressbook';
+import { addressbookUserService } from '@/services/business/user/addressbook'/AddressbookUserService';
+import { NameCard } from '@/types/business/addressbook';
 import { Search, User, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

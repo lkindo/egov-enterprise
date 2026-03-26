@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { smsAdminService, SmsDto } from '@/services/admin/operation/SmsAdminService';
+import { smsAdminService, SmsDto } from '@/services/foundation/operation'/SmsAdminService';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';

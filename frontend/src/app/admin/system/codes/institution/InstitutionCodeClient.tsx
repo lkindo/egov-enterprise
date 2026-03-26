@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { codeAdminService, InstitutionCode, InstitutionCodeRecptn } from '@/services/admin/system/CodeAdminService';
+import { codeAdminService, InstitutionCode, InstitutionCodeRecptn } from '@/services/foundation/system'/CodeAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { 
   CheckCircle, 

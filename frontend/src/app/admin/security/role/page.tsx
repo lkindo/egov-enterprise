@@ -35,9 +35,9 @@ import {
   ListOrdered,
   Key
 } from "lucide-react";
-import { roleAdminService } from '@/services/admin/system/RoleAdminService';
-import { RoleManage } from '@/types/security';
-import { SearchParams } from '@/types/system';
+import { roleAdminService } from '@/services/foundation/system'/RoleAdminService';
+import { RoleManage } from '@/types/foundation/security';
+import { SearchParams } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';

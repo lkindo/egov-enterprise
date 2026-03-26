@@ -37,7 +37,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { boardAdminService } from '@/services/admin/system/BoardAdminService';
+import { boardAdminService } from '@/services/foundation/system'/BoardAdminService';
 
 const container = {
   hidden: { opacity: 0 },

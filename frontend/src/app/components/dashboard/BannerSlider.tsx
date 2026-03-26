@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { bannerAdminService } from '@/services/admin/system/BannerAdminService';
-import { Banner } from '@/types/banner';
+import { bannerAdminService } from '@/services/foundation/system'/BannerAdminService';
+import { Banner } from '@/types/foundation/banner';
 import { cn } from '@/lib/utils';
 
 export function BannerSlider() {

@@ -1,5 +1,5 @@
 import client from './client';
-import { Survey, QustnrRespondInfo, QustnrRespondInfoVO } from '@/types/survey';
+import { Survey, QustnrRespondInfo, QustnrRespondInfoVO } from '@/types/business/survey';
 
 export const getQustnrRespondInfoList = async (params: { keyword?: string; page?: number; size?: number } = {}) => {
  return client.get<{ content: Survey[]; totalElements: number }>(

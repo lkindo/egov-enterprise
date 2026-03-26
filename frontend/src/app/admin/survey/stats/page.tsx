@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Search, BarChart3 } from "lucide-react";
-import { getPollList } from '@/services/poll/pollService';
-import { OnlinePollManageVO, PollSearchParams } from '@/types/poll';
+import { getPollList } from '@/services/business/poll'/pollService';
+import { OnlinePollManageVO, PollSearchParams } from '@/types/business/poll';
 import { TableSkeleton } from "@/components/common/TableSkeleton";
 import { PagePagination } from "@/components/common/PagePagination";
 

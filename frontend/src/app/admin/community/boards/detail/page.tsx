@@ -14,7 +14,7 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/app/components/ui/toast'; 
-import { knowledgeService } from '@/services/knowledgeService';
+import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
 
 function DetailContent() {

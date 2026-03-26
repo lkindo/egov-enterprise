@@ -2,11 +2,11 @@ package com.company.project.openapi;
 
 import com.company.project.api.controller.UserApiController;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
-import com.company.project.core.exception.GlobalExceptionHandler;
-import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserDto;
-import com.company.project.service.user.dto.UserResponse;
-import com.company.project.domain.user.entity.Role;
+import com.company.project.foundation.core.exception.GlobalExceptionHandler;
+import com.company.project.foundation.service.user.UserService;
+import com.company.project.foundation.service.user.dto.UserDto;
+import com.company.project.foundation.service.user.dto.UserResponse;
+import com.company.project.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,8 +46,8 @@ class ApiSpecificationComplianceTest {
 
     when(userService.getUserById(anyString())).thenReturn(mockUser);
     when(userService.getUserById("nonexistentUser"))
-        .thenThrow(new com.company.project.core.exception.BusinessException(
-            com.company.project.core.exception.ErrorCode.USER_NOT_FOUND));
+        .thenThrow(new com.company.project.foundation.core.exception.BusinessException(
+            com.company.project.foundation.core.exception.ErrorCode.USER_NOT_FOUND));
 
     when(userService.getUserList()).thenReturn(List.of(mockUser));
     when(userService.getPagedUserList(any())).thenReturn(new PageImpl<>(List.of(mockUser), PageRequest.of(0, 10), 1));
@@ -132,7 +132,7 @@ class ApiSpecificationComplianceTest {
   }
 
   @Test
-  @DisplayName("API 규격 준수 - 페이징 파라미터 처리 검증")
+  @DisplayName("API 규격 준수 - 페이지 파라미터 처리 검증")
   void pagingParameters_specification_compliance() throws Exception {
     mockMvc.perform(get("/api/v1/users/paged?page=0&size=10&sort=userId,asc")
         .contentType(MediaType.APPLICATION_JSON))

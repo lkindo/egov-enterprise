@@ -13,8 +13,8 @@ import {
  SelectTrigger,
  SelectValue,
 } from "@/components/ui/select";
-import { createDeptJob } from '@/services/deptJob/deptJobService';
-import { DeptJobVO } from '@/types/deptJob';
+import { createDeptJob } from '@/services/business/deptjob'/deptJobService';
+import { DeptJobVO } from '@/types/business/deptJob';
 
 export default function CreateDeptJobPage() {
  const router = useRouter();

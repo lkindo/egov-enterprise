@@ -6,7 +6,7 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { policyAdminService, PolicyDto } from '@/services/admin/user/PolicyAdminService';
+import { policyAdminService, PolicyDto } from '@/services/foundation/user'/PolicyAdminService';
 import {
   ShieldCheck,
   Save,

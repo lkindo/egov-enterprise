@@ -1,14 +1,14 @@
 package com.company.project.test.resilience;
 
 import com.company.project.api.controller.UserApiController;
-import com.company.project.core.exception.BusinessException;
-import com.company.project.core.exception.ErrorCode;
-import com.company.project.core.exception.GlobalExceptionHandler;
-import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserDto;
-import com.company.project.service.user.dto.UserSignupRequest;
-import com.company.project.service.user.dto.UserResponse;
-import com.company.project.domain.user.entity.Role;
+import com.company.project.foundation.core.exception.BusinessException;
+import com.company.project.foundation.core.exception.ErrorCode;
+import com.company.project.foundation.core.exception.GlobalExceptionHandler;
+import com.company.project.foundation.service.user.UserService;
+import com.company.project.foundation.service.user.dto.UserDto;
+import com.company.project.foundation.service.user.dto.UserSignupRequest;
+import com.company.project.foundation.service.user.dto.UserResponse;
+import com.company.project.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * 장애 복구 기능 검증 테스트 (Standalone)
+ * ?μ븷 蹂듦뎄 湲곕뒫 寃利??뚯뒪??(Standalone)
  */
 public class FaultRecoveryFunctionTest {
 
@@ -179,7 +179,7 @@ public class FaultRecoveryFunctionTest {
     void outOfMemoryRecovery_afterGC() throws Exception {
         // Given
         when(userService.getUserList())
-                .thenThrow(new RuntimeException("Memory exhausted")) // Error 대신 Exception으로 모사
+                .thenThrow(new RuntimeException("Memory exhausted")) // Error ???Exception?쇰줈 紐⑥궗
                 .thenReturn(Arrays.asList(
                         UserDto.builder().userId("memoryUser").userNm("User").esntlId("USR001").build()));
 

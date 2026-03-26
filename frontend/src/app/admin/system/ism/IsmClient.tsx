@@ -7,7 +7,7 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { ismAdminService, InfrmlSanctn } from '@/services/admin/system/IsmAdminService';
+import { ismAdminService, InfrmlSanctn } from '@/services/foundation/system'/IsmAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import {

@@ -33,9 +33,9 @@ import {
   Calendar,
   Settings
 } from "lucide-react";
-import { groupAdminService } from '@/services/admin/system/GroupAdminService';
-import { GroupManage } from '@/types/security';
-import { SearchParams } from '@/types/system';
+import { groupAdminService } from '@/services/foundation/system'/GroupAdminService';
+import { GroupManage } from '@/types/foundation/security';
+import { SearchParams } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';

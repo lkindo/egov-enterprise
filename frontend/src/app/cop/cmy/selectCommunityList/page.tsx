@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getCommunityList } from '@/services/community/communityService';
+import { getCommunityList } from '@/services/business/community'/communityService';
 import {
  Table,
  TableBody,

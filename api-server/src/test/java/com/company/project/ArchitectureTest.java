@@ -28,6 +28,6 @@ public class ArchitectureTest {
 
     @ArchTest
     static final ArchRule security_should_not_access_controllers = noClasses()
-            .that().resideInAPackage("com.company.project.security..")
+            .that().resideInAPackage("com.company.project.foundation.security..")
             .should().accessClassesThat().resideInAPackage("com.company.project.api..");
 }

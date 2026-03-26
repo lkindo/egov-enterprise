@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { statsAdminService } from '@/services/admin/system/StatsAdminService';
+import { statsAdminService } from '@/services/foundation/system'/StatsAdminService';
 import AdminStatsClient from './AdminStatsClient';
-import { SummaryStats, MenuStats } from '@/types/stats';
+import { SummaryStats, MenuStats } from '@/types/foundation/stats';
 
 export const metadata = {
  title: '인텔리전트 통계 대시보드 | 전자정부 표준프레임워크',

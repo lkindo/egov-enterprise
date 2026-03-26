@@ -41,9 +41,9 @@ import {
   Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { authorAdminService, AuthorInfo } from '@/services/admin/system/AuthorAdminService';
-import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/admin/system/UserAuthorityAdminService';
-import { menuAdminService, Menu } from '@/services/admin/system/MenuAdminService';
+import { authorAdminService, AuthorInfo } from '@/services/foundation/system'/AuthorAdminService';
+import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/foundation/system'/UserAuthorityAdminService';
+import { menuAdminService, Menu } from '@/services/foundation/system'/MenuAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { FormField } from '@/app/components/ui/standard-form';

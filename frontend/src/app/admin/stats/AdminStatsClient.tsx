@@ -5,7 +5,7 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardChartWrapper } from '@/app/components/ui/standard-chart-wrapper';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
-import { SummaryStats, MenuStats } from '@/types/stats';
+import { SummaryStats, MenuStats } from '@/types/foundation/stats';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';

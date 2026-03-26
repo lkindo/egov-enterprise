@@ -1,4 +1,4 @@
-import { manualAdminService } from '@/services/admin/user/ManualAdminService';
+import { manualAdminService } from '@/services/foundation/user'/ManualAdminService';
 import { cookies } from 'next/headers';
 import ManualAdminClient from './ManualAdminClient';
 

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { syncAdminService, SyncServer } from '@/services/admin/system/SyncAdminService';
+import { syncAdminService, SyncServer } from '@/services/foundation/system'/SyncAdminService';
 
 export async function saveSyncServerAction(prevState: any, formData: FormData) {
  try {

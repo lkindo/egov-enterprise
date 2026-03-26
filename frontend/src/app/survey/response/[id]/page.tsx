@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StatusBadge } from '@/app/components/ui/status-badge';
-import { reportService, WorkReport } from '@/services/user/ReportService';
+import { reportService, WorkReport } from '@/services/business/user/ReportService';
 import { useToast } from '@/app/components/ui/toast';
 import { FileText, Plus, Calendar, ArrowRight, UserCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';

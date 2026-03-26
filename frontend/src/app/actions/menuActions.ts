@@ -2,8 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { menuAdminService } from '@/services/admin/system/MenuAdminService';
-import { MenuInfo } from '@/types/menu';
+import { menuAdminService } from '@/services/foundation/system'/MenuAdminService';
+import { MenuInfo } from '@/types/foundation/menu';
 
 export async function saveMenuAction(prevState: any, { mode, data }: { mode: 'create' | 'edit', data: Partial<MenuInfo> }) {
   try {

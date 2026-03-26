@@ -2,12 +2,12 @@ package com.company.project.openapi;
 
 import com.company.project.api.controller.UserApiController;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
-import com.company.project.core.exception.GlobalExceptionHandler;
-import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserDto;
-import com.company.project.service.user.dto.UserResponse;
-import com.company.project.service.user.dto.UserSignupRequest;
-import com.company.project.domain.user.entity.Role;
+import com.company.project.foundation.core.exception.GlobalExceptionHandler;
+import com.company.project.foundation.service.user.UserService;
+import com.company.project.foundation.service.user.dto.UserDto;
+import com.company.project.foundation.service.user.dto.UserResponse;
+import com.company.project.foundation.service.user.dto.UserSignupRequest;
+import com.company.project.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * 요청/응답 스키마 검증 테스트 (Standalone)
+ * ?붿껌/?묐떟 ?ㅽ궎留?寃利??뚯뒪??(Standalone)
  */
 class RequestResponseSchemaValidationTest {
 
@@ -46,12 +46,12 @@ class RequestResponseSchemaValidationTest {
 
         testUserDto = UserDto.builder()
                 .userId("testUser")
-                .userNm("테스트사용자")
+                .userNm("?뚯뒪?몄궗?⑹옄")
                 .esntlId("USR_0000000000000001")
                 .role("USER")
                 .build();
         
-        testUserResponse = new UserResponse("testUser", "테스트사용자", Role.USER);
+        testUserResponse = new UserResponse("testUser", "?뚯뒪?몄궗?⑹옄", Role.USER);
 
         mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
                 .addInterceptors(operationalAuditInterceptor)
@@ -60,13 +60,13 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 회원가입 요청 본문 구조 확인")
+    @DisplayName("?ㅽ궎留?寃利?- ?뚯썝媛???붿껌 蹂몃Ц 援ъ“ ?뺤씤")
     void userSignup_requestSchema_validation() throws Exception {
         String validRequest = """
                 {
                   "userId": "validUser123",
                   "password": "ValidPass123!",
-                  "userNm": "테스트사용자",
+                  "userNm": "?뚯뒪?몄궗?⑹옄",
                   "passwordHint": "password hint",
                   "passwordCnsr": "password answer",
                   "role": "USER"
@@ -86,7 +86,7 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 필수 필드 누락 시 에러 응답 확인")
+    @DisplayName("?ㅽ궎留?寃利?- ?꾩닔 ?꾨뱶 ?꾨씫 ???먮윭 ?묐떟 ?뺤씤")
     void userSignup_missingRequiredFields_validationError() throws Exception {
         String invalidRequest = """
                 {
@@ -105,7 +105,7 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 필드 타입 불일치 시 에러 응답 확인")
+    @DisplayName("?ㅽ궎留?寃利?- ?꾨뱶 ???遺덉씪移????먮윭 ?묐떟 ?뺤씤")
     void userSignup_wrongFieldType_validationError() throws Exception {
         String invalidRequest = """
                 {
@@ -128,7 +128,7 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 사용자 목록 조회 응답 구조 확인")
+    @DisplayName("?ㅽ궎留?寃利?- ?ъ슜??紐⑸줉 議고쉶 ?묐떟 援ъ“ ?뺤씤")
     void userGetList_responseSchema_validation() throws Exception {
         when(userService.getUserList()).thenReturn(List.of(testUserDto));
 
@@ -145,7 +145,7 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 사용자 상세 조회 응답 구조 확인")
+    @DisplayName("?ㅽ궎留?寃利?- ?ъ슜???곸꽭 議고쉶 ?묐떟 援ъ“ ?뺤씤")
     void userGetById_responseSchema_validation() throws Exception {
         when(userService.getUserById("testUser")).thenReturn(testUserDto);
 
@@ -161,7 +161,7 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 페이징된 사용자 목록 응답 구조 확인")
+    @DisplayName("?ㅽ궎留?寃利?- ?섏씠吏뺣맂 ?ъ슜??紐⑸줉 ?묐떟 援ъ“ ?뺤씤")
     void pagedUserList_responseSchema_validation() throws Exception {
         Pageable pageRequest = PageRequest.of(0, 10);
         Page<UserDto> page = new PageImpl<>(List.of(testUserDto), pageRequest, 1);
@@ -178,13 +178,13 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 아이디 형식 위반 시 에러 응답 확인")
+    @DisplayName("?ㅽ궎留?寃利?- ?꾩씠???뺤떇 ?꾨컲 ???먮윭 ?묐떟 ?뺤씤")
     void userSignup_invalidIdFormat_validation() throws Exception {
         String invalidRequest = """
                 {
                   "userId": "invalid@user#id",
                   "password": "ValidPass123!",
-                  "userNm": "테스트사용자",
+                  "userNm": "?뚯뒪?몄궗?⑹옄",
                   "passwordHint": "hint",
                   "passwordCnsr": "answer",
                   "role": "USER"
@@ -200,14 +200,14 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 필드 길이 초과 시 에러 응답 확인")
+    @DisplayName("?ㅽ궎留?寃利?- ?꾨뱶 湲몄씠 珥덇낵 ???먮윭 ?묐떟 ?뺤씤")
     void userSignup_tooLongField_validation() throws Exception {
         String longUserId = "a".repeat(50);
         String invalidRequest = """
                 {
                   "userId": "%s",
                   "password": "ValidPass123!",
-                  "userNm": "테스트사용자",
+                  "userNm": "?뚯뒪?몄궗?⑹옄",
                   "passwordHint": "hint",
                   "passwordCnsr": "answer",
                   "role": "USER"
@@ -223,13 +223,13 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 비밀번호 복잡도 미달 시 에러 응답 확인")
+    @DisplayName("?ㅽ궎留?寃利?- 鍮꾨?踰덊샇 蹂듭옟??誘몃떖 ???먮윭 ?묐떟 ?뺤씤")
     void userSignup_shortPassword_validation() throws Exception {
         String invalidRequest = """
                 {
                   "userId": "validUser123",
                   "password": "123",
-                  "userNm": "테스트사용자",
+                  "userNm": "?뚯뒪?몄궗?⑹옄",
                   "passwordHint": "hint",
                   "passwordCnsr": "answer",
                   "role": "USER"
@@ -245,12 +245,12 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 사용자 정보 수정 요청 구조 확인")
+    @DisplayName("?ㅽ궎留?寃利?- ?ъ슜???뺣낫 ?섏젙 ?붿껌 援ъ“ ?뺤씤")
     void userUpdate_requestSchema_validation() throws Exception {
         String validRequest = """
                 {
                   "userId": "updateUser",
-                  "userNm": "수정사용자",
+                  "userNm": "?섏젙?ъ슜??,
                   "esntlId": "USR_0000000000000001",
                   "passwordHint": "new hint",
                   "passwordCnsr": "new answer",
@@ -266,7 +266,7 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - UserDto 전체 필드 존재 확인")
+    @DisplayName("?ㅽ궎留?寃利?- UserDto ?꾩껜 ?꾨뱶 議댁옱 ?뺤씤")
     void responseSchema_userDtoFieldExistence() throws Exception {
         when(userService.getUserById("testUser")).thenReturn(testUserDto);
 
@@ -280,7 +280,7 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 공통 응답 성공 구조 확인")
+    @DisplayName("?ㅽ궎留?寃利?- 怨듯넻 ?묐떟 ?깃났 援ъ“ ?뺤씤")
     void responseSchema_commonStructure_validation() throws Exception {
         when(userService.getUserById("testUser")).thenReturn(testUserDto);
 
@@ -293,7 +293,7 @@ class RequestResponseSchemaValidationTest {
     }
 
     @Test
-    @DisplayName("스키마 검증 - 공통 에러 응답 구조 확인")
+    @DisplayName("?ㅽ궎留?寃利?- 怨듯넻 ?먮윭 ?묐떟 援ъ“ ?뺤씤")
     void errorResponseSchema_commonStructure_validation() throws Exception {
         String invalidRequest = """
                 {

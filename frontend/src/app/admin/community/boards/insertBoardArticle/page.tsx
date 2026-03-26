@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/app/components/ui/toast';
 import { saveBoardArticle } from '@/app/actions/boardActions';
 import RichTextEditor from '@/components/ui/RichTextEditor';
-import { BoardArticle } from '@/services/knowledgeService';
+import { BoardArticle } from '@/services/business/knowledge/knowledgeService';
 
 export default function InsertBoardArticlePage() {
   const router = useRouter();

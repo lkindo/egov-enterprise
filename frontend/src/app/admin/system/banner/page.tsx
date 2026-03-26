@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { bannerAdminService } from '@/services/admin/system/BannerAdminService';
-import { popupAdminService } from '@/services/admin/system/PopupAdminService';
+import { bannerAdminService } from '@/services/foundation/system'/BannerAdminService';
+import { popupAdminService } from '@/services/foundation/system'/PopupAdminService';
 import BannerAdminClient from './BannerAdminClient';
 import { Loader2 } from 'lucide-react';
 

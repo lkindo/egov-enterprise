@@ -13,7 +13,7 @@ import {
  Bar,
  Cell,
 } from 'recharts';
-import { StatsDto } from '@/services/admin/system/StatsAdminService';
+import { StatsDto } from '@/services/foundation/system'/StatsAdminService';
 
 interface ChartProps {
  data: StatsDto[];

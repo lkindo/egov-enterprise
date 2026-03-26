@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Home, ChevronRight } from 'lucide-react';
-import { menuService } from '@/services/user/MenuService';
+import { menuService } from '@/services/business/user/MenuService';
 import { cn } from '@/lib/utils';
 
 interface BreadcrumbItem {

@@ -6,7 +6,7 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardEditor } from '@/app/components/ui/standard-editor';
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
 import { FormField } from '@/app/components/ui/standard-form';
-import { boardUserService } from '@/services/user/board/BoardUserService';
+import { boardUserService } from '@/services/business/user/board'/BoardUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';

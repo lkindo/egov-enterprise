@@ -1,7 +1,7 @@
 package com.company.project.config;
 
-import com.company.project.security.jwt.JwtTokenProvider;
-import com.company.project.security.service.EgovPasswordEncoder;
+import com.company.project.foundation.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.security.service.EgovPasswordEncoder;
 import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -26,11 +26,11 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import javax.sql.DataSource;
 import java.util.Properties;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import com.company.project.service.user.UserService;
-import com.company.project.domain.user.repository.UserRepository;
-import com.company.project.domain.user.repository.EnterpriseUserRepository;
-import com.company.project.domain.user.repository.GeneralUserRepository;
-import com.company.project.domain.auth.UserAuthorityRepository;
+import com.company.project.foundation.service.user.UserService;
+import com.company.project.foundation.domain.user.repository.UserRepository;
+import com.company.project.foundation.domain.user.repository.EnterpriseUserRepository;
+import com.company.project.foundation.domain.user.repository.GeneralUserRepository;
+import com.company.project.foundation.domain.auth.UserAuthorityRepository;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -51,7 +51,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
         "com.company.project.core",
         "com.company.project.security",
         "com.company.project.api"
-}, nameGenerator = com.company.project.core.config.FullBeanNameGenerator.class, excludeFilters = {
+}, nameGenerator = com.company.project.foundation.core.config.FullBeanNameGenerator.class, excludeFilters = {
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Scheduling.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\..*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Interceptor.*"),

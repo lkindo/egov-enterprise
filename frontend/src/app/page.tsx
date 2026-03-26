@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import UnifiedDashboardClient from './UnifiedDashboardClient';
 import client from '@/lib/api/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DashboardResponse, DashboardNoti, DashboardTask } from '@/types/dashboard';
+import { DashboardResponse, DashboardNoti, DashboardTask } from '@/types/foundation/dashboard';
 
 async function getDashboardData() {
  const cookieStore = await cookies();

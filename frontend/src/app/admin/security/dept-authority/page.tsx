@@ -38,9 +38,9 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { deptAdminService, Department } from '@/services/admin/system/DeptAdminService';
-import { deptAuthorityAdminService } from '@/services/admin/system/DeptAuthorityAdminService';
-import { AuthorInfo, authorAdminService } from '@/services/admin/system/AuthorAdminService';
+import { deptAdminService, Department } from '@/services/foundation/system'/DeptAdminService';
+import { deptAuthorityAdminService } from '@/services/foundation/system'/DeptAuthorityAdminService';
+import { AuthorInfo, authorAdminService } from '@/services/foundation/system'/AuthorAdminService';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';

@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { saveSyncServerAction, deleteSyncServerAction, executeSyncAction } from '../syncActions';
-import { syncAdminService } from '@/services/admin/system/SyncAdminService';
+import { syncAdminService } from '@/services/foundation/system'/SyncAdminService';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 

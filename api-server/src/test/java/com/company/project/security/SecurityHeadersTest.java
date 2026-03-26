@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles({"test", "security-headers-test"})
-@DisplayName("Security Headers 보안 테스트")
+@DisplayName("Security Headers 蹂댁븞 ?뚯뒪??)
 public class SecurityHeadersTest {
 
     @Autowired
@@ -41,7 +41,7 @@ public class SecurityHeadersTest {
     }
 
     @Test
-    @DisplayName("기본 보안 헤더 응답 확인")
+    @DisplayName("湲곕낯 蹂댁븞 ?ㅻ뜑 ?묐떟 ?뺤씤")
     public void testSecurityHeaders() throws Exception {
         mockMvc.perform(get("/api/v1/health"))
                 .andExpect(status().isOk())

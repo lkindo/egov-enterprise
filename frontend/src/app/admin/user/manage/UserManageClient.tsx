@@ -8,7 +8,7 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { UserManage, UserSearchParams } from '@/types/user';
+import { UserManage, UserSearchParams } from '@/types/foundation/user';
 import { useToast } from '@/app/components/ui/toast';
 import { 
   Pencil, 

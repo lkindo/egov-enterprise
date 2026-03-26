@@ -7,7 +7,7 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { deptAdminService, DeptDto } from '@/services/admin/user/DeptAdminService';
+import { deptAdminService, DeptDto } from '@/services/foundation/user'/DeptAdminService';
 import {
   Plus,
   Search,

@@ -1,6 +1,6 @@
 'use client';
 
-import { QustnrRespondInfo } from '@/types/survey';
+import { QustnrRespondInfo } from '@/types/business/survey';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getQustnrRespondInfoList, deleteQustnrRespondInfo } from '@/lib/api/survey';
 import { useState } from 'react';

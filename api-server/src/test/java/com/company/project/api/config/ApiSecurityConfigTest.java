@@ -1,7 +1,7 @@
 package com.company.project.api.config;
 
-import com.company.project.security.iam.EgovAuthenticationProvider;
-import com.company.project.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.security.iam.EgovAuthenticationProvider;
+import com.company.project.foundation.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,13 +22,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import com.company.project.api.controller.UserApiController;
-import com.company.project.service.user.UserService;
+import com.company.project.foundation.service.user.UserService;
+import com.company.project.foundation.core.config.ApplicationContextProvider;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
 
 @WebMvcTest(controllers = UserApiController.class)
 @ActiveProfiles({ "prod", "test", "security-test" })
 @ContextConfiguration(classes = { ApiSecurityConfig.class })
-@DisplayName("ApiSecurityConfig 설정 테스트")
+@DisplayName("ApiSecurityConfig ?ㅼ젙 ?뚯뒪??)
 public class ApiSecurityConfigTest {
 
     @Autowired
@@ -56,7 +57,7 @@ public class ApiSecurityConfigTest {
     private AuthenticationManager authenticationManager;
 
     @Test
-    @DisplayName("보안 관련 빈들이 정상적으로 등록되었는지 확인")
+    @DisplayName("蹂댁븞 愿??鍮덈뱾???뺤긽?곸쑝濡??깅줉?섏뿀?붿? ?뺤씤")
     void securityBeansLoadedTest() {
         assertThat(passwordEncoder).isNotNull();
         assertThat(apiSecurityFilterChain).isNotNull();
@@ -64,7 +65,7 @@ public class ApiSecurityConfigTest {
     }
 
     @Test
-    @DisplayName("공개 API 엔드포인트는 인증 없이 접근 가능해야 함")
+    @DisplayName("怨듦컻 API ?붾뱶?ъ씤?몃뒗 ?몄쬆 ?놁씠 ?묎렐 媛?ν빐????)
     void publicEndpointsTest() throws Exception {
         mockMvc.perform(get("/api/v1/health"))
                 .andExpect(result -> {
@@ -84,7 +85,7 @@ public class ApiSecurityConfigTest {
     }
 
     @Test
-    @DisplayName("인증되지 않은 사용자가 보호된 API 접근 시 401을 반환해야 함")
+    @DisplayName("?몄쬆?섏? ?딆? ?ъ슜?먭? 蹂댄샇??API ?묎렐 ??401??諛섑솚?댁빞 ??)
     void unauthorizedAccessTest() throws Exception {
         mockMvc.perform(get("/api/v1/admin/users"))
                 .andExpect(status().isUnauthorized());
@@ -92,7 +93,7 @@ public class ApiSecurityConfigTest {
 
     @Test
     @WithMockUser(roles = "USER")
-    @DisplayName("일반 사용자가 관리자 API 접근 시 403을 반환해야 함")
+    @DisplayName("?쇰컲 ?ъ슜?먭? 愿由ъ옄 API ?묎렐 ??403??諛섑솚?댁빞 ??)
     void forbiddenAccessTest() throws Exception {
         mockMvc.perform(get("/api/v1/admin/users"))
                 .andExpect(status().isForbidden());
@@ -100,14 +101,14 @@ public class ApiSecurityConfigTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("관리자 권한으로 관리자 API 접근 가능 확인")
+    @DisplayName("愿由ъ옄 沅뚰븳?쇰줈 愿由ъ옄 API ?묎렐 媛???뺤씤")
     void adminAccessTest() throws Exception {
         mockMvc.perform(get("/api/v1/admin/users"))
-                .andExpect(status().isNotFound()); // 권한 통과 후 컨트롤러 부재로 404
+                .andExpect(status().isNotFound()); // 沅뚰븳 ?듦낵 ??而⑦듃濡ㅻ윭 遺?щ줈 404
     }
 
     @Test
-    @DisplayName("CORS 설정 확인 - OPTIONS 요청 시 관련 헤더가 포함되어야 함")
+    @DisplayName("CORS ?ㅼ젙 ?뺤씤 - OPTIONS ?붿껌 ??愿???ㅻ뜑媛 ?ы븿?섏뼱????)
     void corsConfigurationTest() throws Exception {
         mockMvc.perform(options("/api/v1/health")
                         .header("Origin", "http://localhost:3000")

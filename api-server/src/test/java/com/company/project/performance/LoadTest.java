@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * 부하 테스트 클래스 (Standalone)
+ * 遺???뚯뒪???대옒??(Standalone)
  */
 class LoadTest {
 
@@ -51,7 +51,7 @@ class LoadTest {
         .build();
 
     executorService = Executors.newFixedThreadPool(20);
-    defaultUser = new UserDto("perfUser", "성능사용자", "USR001", null, null, null, null);
+    defaultUser = new UserDto("perfUser", "?깅뒫?ъ슜??, "USR001", null, null, null, null);
     
     when(userService.getUserList()).thenReturn(List.of(defaultUser));
     when(userService.getUserById(anyString())).thenReturn(defaultUser);
@@ -60,7 +60,7 @@ class LoadTest {
         List.of(defaultUser), PageRequest.of(0, 10), 1
     );
     when(userService.getPagedUserList(any())).thenReturn(page);
-    when(userService.signup(any())).thenReturn(new UserResponse("newUser", "신규", Role.USER));
+    when(userService.signup(any())).thenReturn(new UserResponse("newUser", "?좉퇋", Role.USER));
   }
 
   @AfterEach
@@ -71,7 +71,7 @@ class LoadTest {
   }
 
   @Test
-  @DisplayName("회원 목록 조회 부하 테스트 - 100건 동시 요청")
+  @DisplayName("?뚯썝 紐⑸줉 議고쉶 遺???뚯뒪??- 100嫄??숈떆 ?붿껌")
   void loadTest_getUserList_100ConcurrentRequests() throws Exception {
     int numberOfRequests = 100;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
@@ -106,7 +106,7 @@ class LoadTest {
   }
 
   @Test
-  @DisplayName("회원가입 부하 테스트 - 50건 동시 요청")
+  @DisplayName("?뚯썝媛??遺???뚯뒪??- 50嫄??숈떆 ?붿껌")
   void loadTest_userSignup_50ConcurrentRequests() throws Exception {
     int numberOfRequests = 50;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
@@ -120,7 +120,7 @@ class LoadTest {
               {
                 "userId": "loadTestUser%d",
                 "password": "Password123!",
-                "userNm": "부하테스트 사용자%d",
+                "userNm": "遺?섑뀒?ㅽ듃 ?ъ슜??d",
                 "passwordHint": "hint",
                 "passwordCnsr": "answer",
                 "role": "USER"

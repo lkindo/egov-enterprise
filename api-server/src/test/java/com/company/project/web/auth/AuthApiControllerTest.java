@@ -1,10 +1,10 @@
 package com.company.project.web.auth;
 
 import com.company.project.api.auth.AuthApiController;
-import com.company.project.core.exception.GlobalExceptionHandler;
-import com.company.project.domain.auth.UserAuthorityRepository;
-import com.company.project.domain.user.repository.UserRepository;
-import com.company.project.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.core.exception.GlobalExceptionHandler;
+import com.company.project.foundation.domain.auth.UserAuthorityRepository;
+import com.company.project.foundation.domain.user.repository.UserRepository;
+import com.company.project.foundation.security.jwt.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * AuthApiController 테스트 (Standalone)
+ * AuthApiController ?뚯뒪??(Standalone)
  */
 class AuthApiControllerTest {
 
@@ -49,7 +49,7 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그인 - 성공")
+    @DisplayName("濡쒓렇??- ?깃났")
     void login_success() throws Exception {
         // Given
         Authentication mockAuth = mock(Authentication.class);
@@ -75,7 +75,7 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그인 - 실패 (자격 증명 오류)")
+    @DisplayName("濡쒓렇??- ?ㅽ뙣 (?먭꺽 利앸챸 ?ㅻ쪟)")
     void login_fail() throws Exception {
         // Given
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))

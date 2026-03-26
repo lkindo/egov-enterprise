@@ -5,7 +5,7 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardChartWrapper } from '@/app/components/ui/standard-chart-wrapper';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
-import { StatsDto } from '@/services/admin/system/StatsAdminService';
+import { StatsDto } from '@/services/foundation/system'/StatsAdminService';
 import {
  Calendar,
  Search,

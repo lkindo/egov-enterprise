@@ -21,8 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { createPoll, updatePoll } from '@/services/poll/pollService';
-import { OnlinePollManageVO } from '@/types/poll';
+import { createPoll, updatePoll } from '@/services/business/poll'/pollService';
+import { OnlinePollManageVO } from '@/types/business/poll';
 
 export default function CreatePollPage() {
  const router = useRouter();

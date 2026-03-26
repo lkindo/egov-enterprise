@@ -4,13 +4,13 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import com.company.project.api.controller.UserApiController;
-import com.company.project.core.exception.BusinessException;
-import com.company.project.core.exception.ErrorCode;
-import com.company.project.core.exception.GlobalExceptionHandler;
-import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserResponse;
-import com.company.project.service.user.dto.UserSignupRequest;
-import com.company.project.domain.user.entity.Role;
+import com.company.project.foundation.core.exception.BusinessException;
+import com.company.project.foundation.core.exception.ErrorCode;
+import com.company.project.foundation.core.exception.GlobalExceptionHandler;
+import com.company.project.foundation.service.user.UserService;
+import com.company.project.foundation.service.user.dto.UserResponse;
+import com.company.project.foundation.service.user.dto.UserSignupRequest;
+import com.company.project.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 로깅 검증 테스트 (Standalone)
+ * 濡쒓퉭 寃利??뚯뒪??(Standalone)
  */
 public class LoggingVerificationTest {
 
@@ -63,7 +63,7 @@ public class LoggingVerificationTest {
     }
 
     @Test
-    @DisplayName("비즈니스 예외 발생 시 WARN 로그 기록")
+    @DisplayName("鍮꾩쫰?덉뒪 ?덉쇅 諛쒖깮 ??WARN 濡쒓렇 湲곕줉")
     void exception_occurs_logsWarning() throws Exception {
         when(userService.signup(any(UserSignupRequest.class)))
                 .thenThrow(new BusinessException(ErrorCode.DUPLICATE_USER_ID));
@@ -72,7 +72,7 @@ public class LoggingVerificationTest {
                 {
                   "userId": "duplicateUser",
                   "password": "password123!",
-                  "userNm": "사용자명",
+                  "userNm": "?ъ슜?먮챸",
                   "passwordHint": "hint",
                   "passwordCnsr": "answer",
                   "role": "USER"
@@ -94,7 +94,7 @@ public class LoggingVerificationTest {
     }
 
     @Test
-    @DisplayName("런타임 예외 발생 시 ERROR 로그 기록")
+    @DisplayName("?고????덉쇅 諛쒖깮 ??ERROR 濡쒓렇 湲곕줉")
     void runtimeException_occurs_logsError() throws Exception {
         when(userService.signup(any(UserSignupRequest.class)))
                 .thenThrow(new RuntimeException("Unexpected error occurred"));
@@ -103,7 +103,7 @@ public class LoggingVerificationTest {
                 {
                   "userId": "testUser",
                   "password": "password123!",
-                  "userNm": "테스트사용자",
+                  "userNm": "?뚯뒪?몄궗?⑹옄",
                   "passwordHint": "hint",
                   "passwordCnsr": "answer",
                   "role": "USER"
@@ -124,16 +124,16 @@ public class LoggingVerificationTest {
     }
 
     @Test
-    @DisplayName("정상 회원가입 시 INFO 로그 기록")
+    @DisplayName("?뺤긽 ?뚯썝媛????INFO 濡쒓렇 湲곕줉")
     void normalRequest_logsInfo() throws Exception {
         when(userService.signup(any(UserSignupRequest.class)))
-                .thenReturn(new UserResponse("newUser", "신규사용자", Role.USER));
+                .thenReturn(new UserResponse("newUser", "?좉퇋?ъ슜??, Role.USER));
 
         String requestBody = """
                 {
                   "userId": "newUser",
                   "password": "password123!",
-                  "userNm": "신규사용자",
+                  "userNm": "?좉퇋?ъ슜??,
                   "passwordHint": "hint",
                   "passwordCnsr": "answer",
                   "role": "USER"

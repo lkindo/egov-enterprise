@@ -7,7 +7,7 @@ import axios from '@/lib/api/client';
 
 import { useLayout } from '@/contexts/LayoutContext';
 
-import { MenuInfo } from '@/types/menu';
+import { MenuInfo } from '@/types/foundation/menu';
 
 const Sidebar = () => {
  const pathname = usePathname();

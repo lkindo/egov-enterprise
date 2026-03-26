@@ -1,17 +1,17 @@
 package com.company.project.api.controller;
 
-import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserDto;
-import com.company.project.service.user.dto.UserResponse;
-import com.company.project.service.user.dto.UserSignupRequest;
+import com.company.project.foundation.service.user.UserService;
+import com.company.project.foundation.service.user.dto.UserDto;
+import com.company.project.foundation.service.user.dto.UserResponse;
+import com.company.project.foundation.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import com.company.project.core.exception.BusinessException;
-import com.company.project.core.exception.ErrorCode;
+import com.company.project.foundation.core.exception.BusinessException;
+import com.company.project.foundation.core.exception.ErrorCode;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +34,7 @@ class UserApiControllerHttpStatusTest {
 
         mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
                 .addInterceptors(operationalAuditInterceptor)
-                .setControllerAdvice(new com.company.project.core.exception.GlobalExceptionHandler())
+                .setControllerAdvice(new com.company.project.foundation.core.exception.GlobalExceptionHandler())
                 .build();
     }
 
@@ -44,7 +44,7 @@ class UserApiControllerHttpStatusTest {
         UserResponse response = new UserResponse(
                 "newUser",
                 "New User",
-                com.company.project.domain.user.entity.Role.USER);
+                com.company.project.foundation.domain.user.entity.Role.USER);
 
         when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
 

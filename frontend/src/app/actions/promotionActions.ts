@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
-import { Banner, Popup } from '@/types/banner';
+import { Banner, Popup } from '@/types/foundation/banner';
 
 // Banner Actions
 export async function saveBannerAction(prevState: any, { mode, data, id }: { mode: 'create' | 'edit', data: Banner, id?: string }) {

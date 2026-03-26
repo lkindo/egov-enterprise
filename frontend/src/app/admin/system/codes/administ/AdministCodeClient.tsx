@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { codeAdminService, AdministCode } from '@/services/admin/system/CodeAdminService';
+import { codeAdminService, AdministCode } from '@/services/foundation/system'/CodeAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { 
   Plus, 

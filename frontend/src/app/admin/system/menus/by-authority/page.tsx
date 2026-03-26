@@ -29,8 +29,8 @@ import {
   Contact2,
   SearchCode
 } from "lucide-react";
-import { authorAdminService, AuthorInfo } from '@/services/admin/system/AuthorAdminService';
-import { MenuByAuthority } from '@/types/security';
+import { authorAdminService, AuthorInfo } from '@/services/foundation/system'/AuthorAdminService';
+import { MenuByAuthority } from '@/types/foundation/security';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';

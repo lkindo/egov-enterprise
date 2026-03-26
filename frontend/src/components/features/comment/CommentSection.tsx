@@ -7,8 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import commentService from '@/services/comment/commentService';
-import { CommentVO } from '@/types/comment';
+import commentService from '@/services/business/comment'/commentService';
+import { CommentVO } from '@/types/business/comment';
 import { format } from 'date-fns';
 
 interface CommentSectionProps {

@@ -8,7 +8,7 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 import { FormField } from '@/app/components/ui/standard-form';
 import { UserPicker } from '@/app/components/ui/user-picker';
 import { StatusBadge } from '@/app/components/ui/status-badge';
-import { noteService, Note } from '@/services/user/NoteService';
+import { noteService, Note } from '@/services/business/user/NoteService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search } from 'lucide-react';

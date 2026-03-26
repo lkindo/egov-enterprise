@@ -1,11 +1,11 @@
 package com.company.project.web.user;
 
 import com.company.project.api.controller.UserApiController;
-import com.company.project.core.exception.GlobalExceptionHandler;
-import com.company.project.domain.user.entity.Role;
-import com.company.project.service.user.UserService;
-import com.company.project.service.user.dto.UserResponse;
-import com.company.project.service.user.dto.UserSignupRequest;
+import com.company.project.foundation.core.exception.GlobalExceptionHandler;
+import com.company.project.foundation.domain.user.entity.Role;
+import com.company.project.foundation.service.user.UserService;
+import com.company.project.foundation.service.user.dto.UserResponse;
+import com.company.project.foundation.service.user.dto.UserSignupRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * UserApiController 테스트 (Standalone)
+ * UserApiController ?뚯뒪??(Standalone)
  */
 class UserApiControllerTest {
 
@@ -41,7 +41,7 @@ class UserApiControllerTest {
     }
 
     @Test
-    @DisplayName("사용자 목록 조회 - 성공")
+    @DisplayName("?ъ슜??紐⑸줉 議고쉶 - ?깃났")
     void getUserList_success() throws Exception {
         // Given
         when(userService.getUserList()).thenReturn(Collections.emptyList());
@@ -54,16 +54,16 @@ class UserApiControllerTest {
     }
 
     @Test
-    @DisplayName("사용자 회원가입 - 성공")
+    @DisplayName("?ъ슜???뚯썝媛??- ?깃났")
     void signup_success() throws Exception {
         // Given
-        UserResponse mockResponse = new UserResponse("newUser", "테스트 사용자", Role.USER);
+        UserResponse mockResponse = new UserResponse("newUser", "?뚯뒪???ъ슜??, Role.USER);
         when(userService.signup(any(UserSignupRequest.class))).thenReturn(mockResponse);
 
         Map<String, Object> request = Map.of(
                 "userId", "newUser",
                 "password", "password123!",
-                "userNm", "테스트 사용자",
+                "userNm", "?뚯뒪???ъ슜??,
                 "passwordHint", "hint",
                 "passwordCnsr", "answer",
                 "role", "USER");
@@ -77,17 +77,17 @@ class UserApiControllerTest {
     }
 
     @Test
-    @DisplayName("사용자 회원가입 - 중복 사용자 ID (409)")
+    @DisplayName("?ъ슜???뚯썝媛??- 以묐났 ?ъ슜??ID (409)")
     void signup_duplicateUserId() throws Exception {
         // Given
         when(userService.signup(any(UserSignupRequest.class)))
-                .thenThrow(new com.company.project.core.exception.BusinessException(
-                        com.company.project.core.exception.ErrorCode.DUPLICATE_USER_ID));
+                .thenThrow(new com.company.project.foundation.core.exception.BusinessException(
+                        com.company.project.foundation.core.exception.ErrorCode.DUPLICATE_USER_ID));
 
         Map<String, Object> request = Map.of(
                 "userId", "admin",
                 "password", "password123!",
-                "userNm", "중복 사용자",
+                "userNm", "以묐났 ?ъ슜??,
                 "passwordHint", "hint",
                 "passwordCnsr", "answer",
                 "role", "USER");

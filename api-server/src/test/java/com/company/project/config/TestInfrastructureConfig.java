@@ -9,7 +9,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.authentication.AuthenticationManager;
-import com.company.project.security.service.EgovPasswordEncoder;
+import com.company.project.foundation.security.service.EgovPasswordEncoder;
 
 @Configuration
 @Profile("test")

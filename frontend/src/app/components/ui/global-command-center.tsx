@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useShortcut } from './global-shortcut-provider';
-import { menuService } from '@/services/user/MenuService';
+import { menuService } from '@/services/business/user/MenuService';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface CommandItem {

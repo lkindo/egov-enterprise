@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
-import { NetworkInfo } from '@/services/networkService';
+import { NetworkInfo } from '@/services/foundation/system/networkService';
 
 interface NetworkFormProps {
  initialData?: Partial<NetworkInfo>;

@@ -14,8 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 /**
- * OpenAPI 문서화 테스트
- * API 문서 구조 및 스펙 확인
+ * OpenAPI 臾몄꽌???뚯뒪?? * API 臾몄꽌 援ъ“ 諛??ㅽ럺 ?뺤씤
  */
 @SpringBootTest(properties = { "springdoc.api-docs.enabled=true", "springdoc.swagger-ui.enabled=true" })
 @AutoConfigureMockMvc
@@ -26,18 +25,18 @@ class OpenApiDocumentationTest {
   private MockMvc mockMvc;
 
   @Test
-  @DisplayName("Swagger UI 엔드포인트 접근 확인")
+  @DisplayName("Swagger UI ?붾뱶?ъ씤???묎렐 ?뺤씤")
   void swaggerUi_endpoint_accessibility() throws Exception {
-    // When & Then - Swagger UI 접근 확인
+    // When & Then - Swagger UI ?묎렐 ?뺤씤
     mockMvc.perform(get("/swagger-ui/index.html")
         .contentType(MediaType.TEXT_HTML))
         .andExpect(status().isOk());
   }
 
   @Test
-  @DisplayName("OpenAPI 스펙 JSON 조회 및 내보내기")
+  @DisplayName("OpenAPI ?ㅽ럺 JSON 議고쉶 諛??대낫?닿린")
   void openApiSpec_endpoint_accessibility() throws Exception {
-    // When & Then - OpenAPI 스펙 확인
+    // When & Then - OpenAPI ?ㅽ럺 ?뺤씤
     String content = mockMvc.perform(get("/v3/api-docs")
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
@@ -45,8 +44,7 @@ class OpenApiDocumentationTest {
         .andExpect(jsonPath("$.openapi").exists())
         .andReturn().getResponse().getContentAsString();
 
-    // 시스템 프로퍼티로 경로가 지정된 경우 파일로 저장
-    String exportPath = System.getProperty("openapi.export.path");
+    // ?쒖뒪???꾨줈?쇳떚濡?寃쎈줈媛 吏?뺣맂 寃쎌슦 ?뚯씪濡????    String exportPath = System.getProperty("openapi.export.path");
     if (exportPath != null && !exportPath.isEmpty()) {
       java.nio.file.Path path = java.nio.file.Paths.get(exportPath);
       java.nio.file.Files.createDirectories(path.getParent());

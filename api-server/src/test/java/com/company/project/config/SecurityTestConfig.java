@@ -1,7 +1,7 @@
 package com.company.project.config;
 
-import com.company.project.security.jwt.JwtAuthenticationFilter;
-import com.company.project.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.security.jwt.JwtAuthenticationFilter;
+import com.company.project.foundation.security.jwt.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;

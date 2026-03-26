@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { helpUserService, FAQ, QNA } from '@/services/user/help/HelpUserService';
+import { helpUserService, FAQ, QNA } from '@/services/business/user/help'/HelpUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { HelpCircle, MessageCircle, ChevronDown, ChevronUp, Search, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';

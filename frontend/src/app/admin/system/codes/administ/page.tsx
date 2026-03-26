@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { codeAdminService } from '@/services/admin/system/CodeAdminService';
+import { codeAdminService } from '@/services/foundation/system'/CodeAdminService';
 import AdministCodeClient from './AdministCodeClient';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';

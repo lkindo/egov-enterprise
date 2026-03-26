@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { operationAdminService } from '@/services/admin/operation/OperationAdminService';
+import { operationAdminService } from '@/services/foundation/operation'/OperationAdminService';
 import ExternalHrClient from './ExternalHrClient';
 
 export const metadata = {

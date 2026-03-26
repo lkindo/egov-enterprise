@@ -16,7 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/app/components/ui/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
-import { knowledgeService, BoardArticle } from '@/services/knowledgeService';
+import { knowledgeService, BoardArticle } from '@/services/business/knowledge/knowledgeService';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 

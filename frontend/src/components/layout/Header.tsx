@@ -8,7 +8,7 @@ import axios from '@/lib/api/client';
 import { useLayout } from '@/contexts/LayoutContext';
 import { usePathname } from 'next/navigation';
 
-import { MenuInfo } from '@/types/menu';
+import { MenuInfo } from '@/types/foundation/menu';
 
 const Header = () => {
  const { user, logout, loading } = useAuth();

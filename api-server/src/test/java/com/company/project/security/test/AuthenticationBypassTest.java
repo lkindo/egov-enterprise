@@ -12,7 +12,7 @@ import static org.mockito.Mockito.when;
 class AuthenticationBypassTest extends BaseSecurityTest {
 
   @Test
-  @DisplayName("인증되지 않은 사용자가 보호된 엔드포인트에 접근 시 401 Unauthorized 결과 확인")
+  @DisplayName("?紐꾩쵄??? ??? ????癒? 癰귣똾????遺얜굡????紐꾨퓠 ?臾롫젏 ??401 Unauthorized 野껉퀗???類ㅼ뵥")
   void unauthorizedAccess_toProtectedEndpoint_returns401() throws Exception {
     // When & Then
     mockMvc.perform(get("/api/v1/users/me")
@@ -21,7 +21,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @DisplayName("잘못된 JWT로 접근 시 401 Unauthorized 결과 확인")
+  @DisplayName("??롢걵??JWT嚥??臾롫젏 ??401 Unauthorized 野껉퀗???類ㅼ뵥")
   void invalidJwtToken_toProtectedEndpoint_returns401() throws Exception {
     // Given
     String invalidToken = "invalid.token.here";
@@ -34,7 +34,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @DisplayName("만료된 JWT 토큰으로 보호된 엔드포인트 접근 시 401 Unauthorized 결과 확인")
+  @DisplayName("筌띾슢利??JWT ?醫뤾쿃??곗쨮 癰귣똾????遺얜굡??????臾롫젏 ??401 Unauthorized 野껉퀗???類ㅼ뵥")
   void expiredJwtToken_toProtectedEndpoint_returns401() throws Exception {
     // Given
     String expiredToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0VXNlciIsImV4cCI6MTUwMDAwMDB9." +
@@ -48,7 +48,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @DisplayName("토큰 없이 관리자 엔드포인트 접근 시 401 Unauthorized 결과 확인")
+  @DisplayName("?醫뤾쿃 ??곸뵠 ?온?귐딆쁽 ?遺얜굡??????臾롫젏 ??401 Unauthorized 野껉퀗???類ㅼ뵥")
   void noToken_toAdminEndpoint_returns401() throws Exception {
     // When & Then
     mockMvc.perform(get("/api/v1/admin/users")
@@ -58,7 +58,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
 
   @Test
   @WithMockUser(roles = "USER")
-  @DisplayName("권한이 없는 사용자가 관리자 엔드포인트 접근 시 403 Forbidden 결과 확인")
+  @DisplayName("亦낅슦釉????용뮉 ????癒? ?온?귐딆쁽 ?遺얜굡??????臾롫젏 ??403 Forbidden 野껉퀗???類ㅼ뵥")
   void unauthorizedUser_toAdminEndpoint_returns403() throws Exception {
     // Given
     String validToken = "valid.token.here";
@@ -77,7 +77,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @DisplayName("인증 없이 사용자 목록 조회 접근 차단 확인")
+  @DisplayName("?紐꾩쵄 ??곸뵠 ?????筌뤴뫖以?鈺곌퀬???臾롫젏 筌△뫀???類ㅼ뵥")
   void bypassAttempt_getUserList_withoutAuth_fails() throws Exception {
     // When & Then
     mockMvc.perform(get("/api/v1/users")
@@ -89,14 +89,14 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @DisplayName("인증 없이 사용자 등록 시도 차단 확인")
+  @DisplayName("?紐꾩쵄 ??곸뵠 ??????源낆쨯 ??뺣즲 筌△뫀???類ㅼ뵥")
   void bypassAttempt_createUser_withoutAuth_fails() throws Exception {
     // Given
     String requestBody = """
         {
           "userId": "attacker",
           "password": "password123!",
-          "userNm": "테스트",
+          "userNm": "???뮞??,
           "passwordHint": "hint",
           "passwordCnsr": "answer",
           "role": "USER"
@@ -113,7 +113,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @DisplayName("Authorization 헤더 없이 접근 시 401 Unauthorized 결과 확인")
+  @DisplayName("Authorization ??삳쐭 ??곸뵠 ?臾롫젏 ??401 Unauthorized 野껉퀗???類ㅼ뵥")
   void emptyAuthHeader_toProtectedEndpoint_returns401() throws Exception {
     // When & Then
     mockMvc.perform(get("/api/v1/users")
@@ -123,7 +123,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @DisplayName("Bearer 형식 아닌 토큰 접근 시 401 Unauthorized 결과 확인")
+  @DisplayName("Bearer ?類ㅻ뻼 ?袁⑤빒 ?醫뤾쿃 ?臾롫젏 ??401 Unauthorized 野껉퀗???類ㅼ뵥")
   void tokenWithoutBearerPrefix_toProtectedEndpoint_returns401() throws Exception {
     // Given
     String tokenWithoutPrefix = "some.token.here";
@@ -136,13 +136,13 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @DisplayName("인증 없이 사용자 정보 수정 시도 차단 확인")
+  @DisplayName("?紐꾩쵄 ??곸뵠 ??????類ｋ궖 ??륁젟 ??뺣즲 筌△뫀???類ㅼ뵥")
   void bypassAttempt_updateUser_withoutAuth_fails() throws Exception {
     // Given
     String requestBody = """
         {
           "userId": "victim",
-          "userNm": "수정시도",
+          "userNm": "??륁젟??뺣즲",
           "role": "ADMIN"
         }
         """;
@@ -155,7 +155,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @DisplayName("인증 없이 사용자 삭제 시도 차단 확인")
+  @DisplayName("?紐꾩쵄 ??곸뵠 ???????????뺣즲 筌△뫀???類ㅼ뵥")
   void bypassAttempt_deleteUser_withoutAuth_fails() throws Exception {
     // When & Then
     mockMvc.perform(delete("/api/v1/users/victim")
@@ -164,7 +164,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @DisplayName("쿠키에 담긴 토큰을 통한 보호된 엔드포인트 접근 차단 확인")
+  @DisplayName("?묒쥚沅????용┸ ?醫뤾쿃?????립 癰귣똾????遺얜굡??????臾롫젏 筌△뫀???類ㅼ뵥")
   void tokenViaCookie_toProtectedEndpoint_returns401() throws Exception {
     // When & Then
     mockMvc.perform(get("/api/v1/users")
@@ -174,7 +174,7 @@ class AuthenticationBypassTest extends BaseSecurityTest {
   }
 
   @Test
-  @DisplayName("커스텀 헤더를 통한 토큰 전송 시 보호 엔드포인트 접근 차단 확인")
+  @DisplayName("?뚣끉??? ??삳쐭?????립 ?醫뤾쿃 ?袁⑸꽊 ??癰귣똾???遺얜굡??????臾롫젏 筌△뫀???類ㅼ뵥")
   void tokenInCustomHeader_toProtectedEndpoint_returns401() throws Exception {
     // Given
     String tokenInCustomHeader = "Bearer some.token.here";

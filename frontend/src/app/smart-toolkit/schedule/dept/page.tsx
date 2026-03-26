@@ -28,8 +28,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Pencil, Trash2, Plus } from "lucide-react";
-import { getDeptScheduleList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/schedule/deptScheduleService';
-import { DeptSchedule, ScheduleSearchParams } from '@/types/schedule';
+import { getDeptScheduleList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule'/deptScheduleService';
+import { DeptSchedule, ScheduleSearchParams } from '@/types/business/schedule';
 
 export default function DeptSchedulePage() {
  const [schedules, setSchedules] = useState<DeptSchedule[]>([]);
