@@ -1,6 +1,6 @@
 import client from '@/lib/api/client';
-import { PageResponse } from '@/types/system';
-import { DeptJobVO, DeptJobBxVO, DeptJobSearchParams } from '@/types/deptJob';
+import { PageResponse } from '@/types/foundation/system';
+import { DeptJobVO, DeptJobBxVO, DeptJobSearchParams } from '@/types/business/deptJob';
 
 const BASE_URL = '/deptjob';
 

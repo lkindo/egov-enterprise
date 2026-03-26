@@ -29,7 +29,7 @@ import {
   Contact2,
   SearchCode
 } from "lucide-react";
-import { authorAdminService, AuthorInfo } from '@/services/foundation/system'/AuthorAdminService';
+import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { MenuByAuthority } from '@/types/foundation/security';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';

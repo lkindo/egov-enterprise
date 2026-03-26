@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { statsAdminService } from '@/services/foundation/system'/StatsAdminService';
+import { statsAdminService } from '@/services/foundation/system/StatsAdminService';
 import AdminStatsClient from './AdminStatsClient';
 import { SummaryStats, MenuStats } from '@/types/foundation/stats';
 

@@ -29,7 +29,7 @@ import com.company.project.api.interceptor.OperationalAuditInterceptor;
 @WebMvcTest(controllers = UserApiController.class)
 @ActiveProfiles({ "prod", "test", "security-test" })
 @ContextConfiguration(classes = { ApiSecurityConfig.class })
-@DisplayName("ApiSecurityConfig ?ㅼ젙 ?뚯뒪??)
+@DisplayName("ApiSecurityConfig 설정 테스트")
 public class ApiSecurityConfigTest {
 
     @Autowired
@@ -57,7 +57,7 @@ public class ApiSecurityConfigTest {
     private AuthenticationManager authenticationManager;
 
     @Test
-    @DisplayName("蹂댁븞 愿??鍮덈뱾???뺤긽?곸쑝濡??깅줉?섏뿀?붿? ?뺤씤")
+    @DisplayName("보안 빈들 로드 확인")
     void securityBeansLoadedTest() {
         assertThat(passwordEncoder).isNotNull();
         assertThat(apiSecurityFilterChain).isNotNull();
@@ -65,7 +65,7 @@ public class ApiSecurityConfigTest {
     }
 
     @Test
-    @DisplayName("怨듦컻 API ?붾뱶?ъ씤?몃뒗 ?몄쬆 ?놁씠 ?묎렐 媛?ν빐????)
+    @DisplayName("공개 API 엔드포인트 - 인증 없이 접근 가능")
     void publicEndpointsTest() throws Exception {
         mockMvc.perform(get("/api/v1/health"))
                 .andExpect(result -> {
@@ -73,7 +73,7 @@ public class ApiSecurityConfigTest {
                     assertThat(status).isNotEqualTo(401);
                     assertThat(status).isNotEqualTo(403);
                 });
-        
+
         mockMvc.perform(get("/api/v1/auth/login"))
                 .andDo(print())
                 .andExpect(result -> {
@@ -85,7 +85,7 @@ public class ApiSecurityConfigTest {
     }
 
     @Test
-    @DisplayName("?몄쬆?섏? ?딆? ?ъ슜?먭? 蹂댄샇??API ?묎렐 ??401??諛섑솚?댁빞 ??)
+    @DisplayName("미인증 사용자 접근 - 401 반환")
     void unauthorizedAccessTest() throws Exception {
         mockMvc.perform(get("/api/v1/admin/users"))
                 .andExpect(status().isUnauthorized());
@@ -93,7 +93,7 @@ public class ApiSecurityConfigTest {
 
     @Test
     @WithMockUser(roles = "USER")
-    @DisplayName("?쇰컲 ?ъ슜?먭? 愿由ъ옄 API ?묎렐 ??403??諛섑솚?댁빞 ??)
+    @DisplayName("일반 사용자 권한 - 관리자 API 접근 - 403 반환")
     void forbiddenAccessTest() throws Exception {
         mockMvc.perform(get("/api/v1/admin/users"))
                 .andExpect(status().isForbidden());
@@ -101,14 +101,14 @@ public class ApiSecurityConfigTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("愿由ъ옄 沅뚰븳?쇰줈 愿由ъ옄 API ?묎렐 媛???뺤씤")
+    @DisplayName("관리자 권한 - 관리자 API 접근 - 404 반환 (실제 엔드포인트 없음)")
     void adminAccessTest() throws Exception {
         mockMvc.perform(get("/api/v1/admin/users"))
-                .andExpect(status().isNotFound()); // 沅뚰븳 ?듦낵 ??而⑦듃濡ㅻ윭 遺?щ줈 404
+                .andExpect(status().isNotFound()); // 실제 엔드포인트 없음 404
     }
 
     @Test
-    @DisplayName("CORS ?ㅼ젙 ?뺤씤 - OPTIONS ?붿껌 ??愿???ㅻ뜑媛 ?ы븿?섏뼱????)
+    @DisplayName("CORS 설정 확인 - OPTIONS 요청 - 허용 헤더 반환")
     void corsConfigurationTest() throws Exception {
         mockMvc.perform(options("/api/v1/health")
                         .header("Origin", "http://localhost:3000")

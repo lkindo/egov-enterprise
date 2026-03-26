@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { codeAdminService } from '@/services/foundation/system'/CodeAdminService';
+import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import CommonCodeHubClient from './CommonCodeHubClient';
 
 export const metadata = {

@@ -1,6 +1,6 @@
 import client from '@/lib/api/client';
-import { PageResponse, SearchParams } from '@/types/system';
-import { AuthorManage, RoleManage, GroupManage } from '@/types/security';
+import { PageResponse, SearchParams } from '@/types/foundation/system';
+import { AuthorManage, RoleManage, GroupManage } from '@/types/foundation/security';
 
 // Authority Management
 export const getAuthorList = async (params: SearchParams): Promise<PageResponse<AuthorManage>> => {

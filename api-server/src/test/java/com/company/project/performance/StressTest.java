@@ -33,7 +33,8 @@ import com.company.project.config.TestInfrastructureConfig;
 import org.springframework.context.annotation.Import;
 
 /**
- * ?ㅽ듃?덉뒪 ?뚯뒪??- ?숈떆??諛?遺???깅뒫 寃利? */
+ * 스트레스 테스트 - 동시성 요청 대량 부하
+ */
 @SpringBootTest(properties = "springdoc.api-docs.enabled=false")
 @AutoConfigureMockMvc
 @ActiveProfiles({"test", "stress-test"})
@@ -52,7 +53,7 @@ class StressTest {
   private ExecutorService executorService;
   private UserDto defaultUser;
 
-  // 湲곗〈 而⑦뀓?ㅽ듃 異⑸룎 諛⑹???紐낆떆??Mock ?ㅼ젙
+  // 성능 저하 방지를 위한 Mock 설정
   @TestConfiguration
   static class StressTestConfig {
     @Bean
@@ -66,12 +67,12 @@ class StressTest {
   @BeforeEach
   void setUp() {
     executorService = Executors.newFixedThreadPool(50);
-    defaultUser = new UserDto("stressUser", "?ㅽ듃?덉뒪?뚯뒪??, "USR001", null, null, null, null);
+    defaultUser = new UserDto("stressUser", "스트레스테스트사용자", "USR001", null, null, null, null);
 
-    // ?꾨줉??媛앹껜?먯꽌???덉쟾??doReturn 臾몃쾿 ?ъ슜
+    // 간단한 목록 반환 - doReturn 사용
     doReturn(List.of(defaultUser)).when(userService).getUserList();
     doReturn(defaultUser).when(userService).getUserById(any(String.class));
-    doReturn(new UserResponse("newUser", "?좉퇋", Role.USER)).when(userService).signup(any(UserSignupRequest.class));
+    doReturn(new UserResponse("newUser", "신규사용자", Role.USER)).when(userService).signup(any(UserSignupRequest.class));
   }
 
   @AfterEach
@@ -90,7 +91,7 @@ class StressTest {
   }
 
   @Test
-  @DisplayName("?뚯썝 媛???ㅽ듃?덉뒪 ?뚯뒪??- ?숈떆 ?ㅻ컻???곌린 遺??(300嫄?")
+  @DisplayName("사용자 회원가입 스트레스 테스트 - 동시 요청 300 건")
   void stress_signup_concurrency_300() throws Exception {
     int numberOfRequests = 300;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
@@ -104,7 +105,7 @@ class StressTest {
               {
                 "userId": "stress%d",
                 "password": "Password123!",
-                "userNm": "?뚯뒪??d",
+                "userNm": "사용자 %d",
                 "passwordHint": "hint",
                 "passwordCnsr": "answer",
                 "role": "USER"
@@ -129,7 +130,7 @@ class StressTest {
   }
 
   @Test
-  @DisplayName("?뚯썝 紐⑸줉 議고쉶 ?ㅽ듃?덉뒪 ?뚯뒪??- 吏?띿쟻??怨좊???(500嫄?")
+  @DisplayName("사용자 목록 조회 스트레스 테스트 - 대량 요청 500 건")
   void stress_userList_heavyLoad_500() throws Exception {
     int numberOfRequests = 500;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
@@ -155,7 +156,7 @@ class StressTest {
   }
 
   @Test
-  @DisplayName("?④굔 議고쉶 ?ㅽ듃?덉뒪 ?뚯뒪??- 蹂묐ぉ 援ш컙 ?뺤씤??怨좊???(1000嫄?")
+  @DisplayName("사용자 상세 조회 스트레스 테스트 - 극한 부하 1000 건")
   void stress_userDetail_extremeLoad_1000() throws Exception {
     int numberOfRequests = 1000;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
@@ -181,7 +182,7 @@ class StressTest {
   }
 
   @Test
-  @DisplayName("蹂듯빀 ?ㅽ듃?덉뒪 ?뚯뒪??- ?쎄린/?곌린 ?숈떆 ?ㅻ컻??諛쒖깮 (800嫄?")
+  @DisplayName("혼합 스트레스 테스트 - 읽기/쓰기 동시 요청 800 건")
   void stress_mixed_concurrency_800() throws Exception {
     int numberOfRequests = 800;
     CountDownLatch latch = new CountDownLatch(numberOfRequests);
@@ -198,7 +199,7 @@ class StressTest {
                 {
                   "userId": "mixed%d",
                   "password": "Password123!",
-                  "userNm": "誘뱀뒪?뚯뒪??d",
+                  "userNm": "혼합사용자 %d",
                   "role": "USER"
                 }
                 """.formatted(requestId, requestId);
@@ -220,8 +221,8 @@ class StressTest {
 
     latch.await(120, TimeUnit.SECONDS);
     long duration = System.currentTimeMillis() - startTime;
-    
-    System.out.printf("?쇳빀 ?ㅽ듃?덉뒪 寃곌낵 - ?붿껌: %d, ?깃났: %d, ?뚯슂: %d ms%n", numberOfRequests, successCount.get(), duration);
+
+    System.out.printf("혼합 스트레스 테스트 결과 - 요청: %d, 성공: %d, 소요: %d ms%n", numberOfRequests, successCount.get(), duration);
     assertThat(successCount.get()).isGreaterThanOrEqualTo((int) (numberOfRequests * 0.85));
   }
 }

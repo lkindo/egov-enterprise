@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { ismAdminService, InfrmlSanctn } from '@/services/foundation/system'/IsmAdminService';
+import { ismAdminService, InfrmlSanctn } from '@/services/foundation/system/IsmAdminService';
 import IsmClient from './IsmClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 

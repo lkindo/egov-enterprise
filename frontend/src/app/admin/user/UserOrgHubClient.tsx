@@ -41,9 +41,9 @@ import {
   Contact2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { userAdminService } from '@/services/foundation/system'/UserAdminService';
+import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { UserManage } from '@/types/foundation/user';
-import { deptAdminService, Department } from '@/services/foundation/system'/DeptAdminService';
+import { deptAdminService, Department } from '@/services/foundation/system/DeptAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 

@@ -28,7 +28,7 @@ import {
     Database,
     Radio
 } from 'lucide-react';
-import type { Network } from '@/services/foundation/system'/NetworkAdminService';
+import type { Network } from '@/services/foundation/system/NetworkAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { 

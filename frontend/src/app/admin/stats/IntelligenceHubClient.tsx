@@ -27,8 +27,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { statsAdminService } from '@/services/foundation/system'/StatsAdminService';
-import { surveyAdminService } from '@/services/foundation/system'/SurveyAdminService';
+import { statsAdminService } from '@/services/foundation/system/StatsAdminService';
+import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
 
 // --- Types ---
 type StatsTab = 'DASHBOARD' | 'USER_STATS' | 'CONTENT_STATS' | 'SYSTEM_STATS' | 'SURVEYS' | 'REPORTS';

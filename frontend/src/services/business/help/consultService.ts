@@ -8,7 +8,7 @@ export const getCnsltList = async (params: CnsltSearchParams): Promise<Paginatio
  return client.get<PaginationResponse<CnsltVO>>(BASE_URL, {
  params: {
  ...params,
- keyword: params.searchKeyword || params.searchWrd || '',
+ keyword: params.searchKeyword || '',
  page: (params.page번호 || 1) - 1,
  size: params.pageUnit || 10
  }

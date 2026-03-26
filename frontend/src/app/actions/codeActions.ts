@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { codeAdminService } from '@/services/foundation/system'/CodeAdminService';
+import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import { CmmnDetailCode } from '@/types/foundation/system';
 
 export async function saveCodeDetail(prevState: any, data: Partial<CmmnDetailCode>) {

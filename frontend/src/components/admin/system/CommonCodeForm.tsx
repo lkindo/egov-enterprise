@@ -29,8 +29,8 @@ import {
  SelectTrigger,
  SelectValue,
 } from "@/components/ui/select";
-import { CmmnCode } from '@/types/foundation/system"';
-import { codeAdminService } from '@/services/foundation/system'/CodeAdminService';
+import { CmmnCode } from '@/types/foundation/system';
+import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 
 const formSchema = z.object({
  codeId: z.string().min(1, { message: "코드ID는 필수입니다." }),

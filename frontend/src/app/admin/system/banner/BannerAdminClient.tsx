@@ -15,7 +15,7 @@ import { FormField } from '@/app/components/ui/standard-form';
 import { Banner, Popup } from '@/types/foundation/banner';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { fileAdminService } from '@/services/foundation/system'/FileAdminService';
+import { fileAdminService } from '@/services/foundation/system/FileAdminService';
 import {
   Plus,
   Image as ImageIcon,

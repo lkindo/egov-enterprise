@@ -29,8 +29,8 @@ import {
  SelectTrigger,
  SelectValue,
 } from "@/components/ui/select";
-import { CmmnClCode } from '@/types/foundation/system"';
-import { codeAdminService } from '@/services/foundation/system'/CodeAdminService';
+import { CmmnClCode } from '@/types/foundation/system';
+import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 
 const formSchema = z.object({
  clCode: z.string().min(1, { message: "분류코드는 필수입니다." }),

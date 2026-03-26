@@ -1,16 +1,22 @@
 import client from '@/lib/api/client';
 
-export interface BoardArticle {
-  id: number;
-  bbsId: string;
-  nttSj: string;
-  nttCn: string;
-  ntcrId: string;
-  ntcrNm: string;
-  frstRegisterPnttmStr: string;
-  inqireCo: number;
-  atchFileId: string;
+export interface KnowledgeDto {
+  knoId: string;
+  knoNm: string;
+  knoCn: string;
+  knoTypeCd?: string;
+  atchFileId?: string;
+  frstRegisterId?: string;
+  frstRegisterPnttm?: string;
+  inqireCo?: number;
+  nttSj?: string;
+  nttCn?: string;
+  ntcrNm?: string;
+  frstRegisterPnttmStr?: string;
+  bbsId?: string; // Add these for compatibility
 }
+
+export type BoardArticle = KnowledgeDto;
 
 
 export interface CommentDto {
@@ -47,47 +53,35 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/a
 
 
 export const knowledgeService = {
-  getArticles: async (params: { bbsId?: string; page?: number; size?: number; searchCnd?: string; searchWrd?: string; sort?: string } = {}) => {
-    return client.get<PageResponse<BoardArticle>>(`bbs/${params.bbsId || 'BBSMSTR_AAAAAAAAAAAA'}`, { params });
+  getArticles: async (params: { bbsId?: string; searchWrd?: string; searchCnd?: string; page?: number; size?: number } = {}) => {
+    return client.get<PageResponse<KnowledgeDto>>('admin/digital-assets', { params });
   },
   getHotArticles: async (bbsId?: string) => {
-    const params = { bbsId: bbsId || 'BBSMSTR_AAAAAAAAAAAA', size: 5, sort: 'inqireCo,desc' };
-    return client.get<PageResponse<BoardArticle>>(`bbs/${params.bbsId}`, { params });
+    // Note: DAM API might not have a specific 'hot' endpoint yet, so we use list with sorting or fallback
+    return client.get<PageResponse<KnowledgeDto>>('admin/digital-assets', { params: { size: 5, sort: 'inqireCo,desc' } });
   },
-  getArticle: async (bbsId: string, nttId: string | number) => {
-    return client.get<BoardArticle>(`bbs/${bbsId}/${nttId}`);
+  getArticle: async (knoId: string) => {
+    return client.get<KnowledgeDto>(`admin/digital-assets/${knoId}`);
   },
-  getComments: async (bbsId: string, nttId: string | number) => {
-    return client.get<PageResponse<CommentDto>>(`comments`, { params: { bbsId, nttId } });
-  },
-  getFiles: async (atchFileId: string) => {
-    return client.get<FileDto[]>(`files/${atchFileId}`);
-  },
-  getDownloadUrl: (atchFileId: string, fileSn: number) => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
-    return `${baseUrl}/files/${atchFileId}/${fileSn}`;
-  },
-  getStats: async (bbsId: string) => {
-    const res = await client.get<PageResponse<BoardArticle>>(`bbs/${bbsId}`, { params: { size: 100 } });
+  getStats: async (bbsId?: string) => {
+    const res = await client.get<PageResponse<KnowledgeDto>>('admin/digital-assets', { params: { size: 100 } });
     const articles = res.list || [];
     return {
       totalCount: res.total || articles.length,
       totalViews: articles.reduce((acc, cur) => acc + (cur.inqireCo || 0), 0),
-      topContributor: articles.length > 0 ? articles[0].ntcrNm : 'N/A',
+      topContributor: articles.length > 0 ? (articles[0] as any).ntcrNm : 'N/A', // Assuming ntcrNm exists or mapping correctly
       intelligenceScore: Math.min(100, (articles.length * 1.5) + (articles.reduce((acc, cur) => acc + (cur.inqireCo || 0), 0) / 10))
     };
   },
-  getActivities: async (bbsId: string) => {
-    const res = await client.get<PageResponse<BoardArticle>>(`bbs/${bbsId}`, { params: { size: 10 } });
+  getActivities: async (bbsId?: string) => {
+    const res = await client.get<PageResponse<KnowledgeDto>>('admin/digital-assets', { params: { size: 10 } });
     return (res.list || []).map(item => ({
-      id: item.id,
+      id: item.knoId,
       type: 'SHARE',
-      title: item.nttSj,
-      user: item.ntcrNm,
-      time: item.frstRegisterPnttmStr,
+      title: item.knoNm,
+      user: item.frstRegisterId, // Using frstRegisterId for user
+      time: item.frstRegisterPnttm,
       impact: `+${(item.inqireCo || 0) % 100} Reach`
     }));
   }
 };
-
-

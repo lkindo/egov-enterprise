@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * UserApiController ?뚯뒪??(Standalone)
+ * UserApiController 테스트 (Standalone)
  */
 class UserApiControllerTest {
 
@@ -41,7 +41,7 @@ class UserApiControllerTest {
     }
 
     @Test
-    @DisplayName("?ъ슜??紐⑸줉 議고쉶 - ?깃났")
+    @DisplayName("사용자 목록 조회 - 성공")
     void getUserList_success() throws Exception {
         // Given
         when(userService.getUserList()).thenReturn(Collections.emptyList());
@@ -54,16 +54,16 @@ class UserApiControllerTest {
     }
 
     @Test
-    @DisplayName("?ъ슜???뚯썝媛??- ?깃났")
+    @DisplayName("사용자 회원가입 - 성공")
     void signup_success() throws Exception {
         // Given
-        UserResponse mockResponse = new UserResponse("newUser", "?뚯뒪???ъ슜??, Role.USER);
+        UserResponse mockResponse = new UserResponse("newUser", "테스트사용자", Role.USER);
         when(userService.signup(any(UserSignupRequest.class))).thenReturn(mockResponse);
 
         Map<String, Object> request = Map.of(
                 "userId", "newUser",
                 "password", "password123!",
-                "userNm", "?뚯뒪???ъ슜??,
+                "userNm", "테스트사용자",
                 "passwordHint", "hint",
                 "passwordCnsr", "answer",
                 "role", "USER");
@@ -77,7 +77,7 @@ class UserApiControllerTest {
     }
 
     @Test
-    @DisplayName("?ъ슜???뚯썝媛??- 以묐났 ?ъ슜??ID (409)")
+    @DisplayName("사용자 회원가입 - 중복 사용자 ID (409)")
     void signup_duplicateUserId() throws Exception {
         // Given
         when(userService.signup(any(UserSignupRequest.class)))
@@ -87,7 +87,7 @@ class UserApiControllerTest {
         Map<String, Object> request = Map.of(
                 "userId", "admin",
                 "password", "password123!",
-                "userNm", "以묐났 ?ъ슜??,
+                "userNm", "중복사용자",
                 "passwordHint", "hint",
                 "passwordCnsr", "answer",
                 "role", "USER");

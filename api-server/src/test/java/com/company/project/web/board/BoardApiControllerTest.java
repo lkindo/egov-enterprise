@@ -1,9 +1,9 @@
 package com.company.project.web.board;
 
-import com.company.project.api.controller.board.BoardApiController;
+import com.company.project.business.api.controller.board.BoardApiController;
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
-import com.company.project.service.board.BoardService;
-import com.company.project.service.board.dto.BoardDto;
+import com.company.project.business.service.board.BoardService;
+import com.company.project.business.service.board.dto.BoardDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 /**
- * BoardApiController ?뚯뒪??(Standalone)
+ * BoardApiController 테스트 (Standalone)
  */
 class BoardApiControllerTest {
 
@@ -43,7 +43,7 @@ class BoardApiControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/boards/{bbsId} - ?깃났")
+    @DisplayName("GET /api/v1/boards/{bbsId} - 성공")
     void getBoardPosts_success() throws Exception {
         String bbsId = "BBSMSTR_AAAAAAAAAAAA";
         List<BoardDto> list = new ArrayList<>();

@@ -1,6 +1,6 @@
 package com.company.project.service.stats;
 
-import com.company.project.foundation.domain.notification.NotificationRepository;
+import com.company.project.business.domain.notification.NotificationRepository;
 import com.company.project.business.service.board.event.PostCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

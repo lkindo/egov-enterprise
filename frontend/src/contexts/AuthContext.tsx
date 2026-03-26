@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { authService, UserInfo } from '@/services/authService';
+import { authService, UserInfo } from '@/services/foundation/auth/authService';
 
 interface AuthContextType {
  user: UserInfo | null;

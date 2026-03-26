@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { networkAdminService, Network } from '@/services/foundation/system'/NetworkAdminService';
+import { networkAdminService, Network } from '@/services/foundation/system/NetworkAdminService';
 
 export async function saveNetworkAction(prevState: any, formData: FormData) {
  try {

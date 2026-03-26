@@ -1,6 +1,6 @@
 import client from '@/lib/api/client';
-import { PageResponse } from '@/types/system';
-import { FileVO, FileSearchParams } from '@/types/file';
+import { PageResponse } from '@/types/foundation/system';
+import { FileVO, FileSearchParams } from '@/types/business/file';
 
 /**
  * 파일 관리 서비스 (Admin 전용)

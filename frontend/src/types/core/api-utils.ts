@@ -5,7 +5,7 @@
  * API 요청/응답 타입을 간결하게 추출하여 사용하는 헬퍼입니다.
  */
 
-import { paths, components } from './generated-api';
+import { paths, components } from '../generated/generated-api';
 
 /**
  * 특정 엔드포인트의 응답 데이터 타입을 추출합니다.

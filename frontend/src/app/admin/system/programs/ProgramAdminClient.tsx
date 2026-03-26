@@ -8,7 +8,7 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { Program } from '@/types/foundation/program';
 import { PageResponse } from '@/types/foundation/system';
-import { programAdminService } from '@/services/foundation/system'/ProgramAdminService';
+import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import {

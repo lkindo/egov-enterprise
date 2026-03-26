@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { addressbookUserService } from '@/services/business/user/addressbook'/AddressbookUserService';
+import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

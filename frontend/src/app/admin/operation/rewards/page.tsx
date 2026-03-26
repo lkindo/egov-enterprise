@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { operationAdminService } from '@/services/foundation/operation'/OperationAdminService';
+import { operationAdminService } from '@/services/foundation/operation/OperationAdminService';
 import RewardManageClient from './RewardManageClient';
 
 export const metadata = {

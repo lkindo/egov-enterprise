@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { onlinePollAdminService, OnlinePollDto, OnlinePollItemDto } from '@/services/foundation/system'/OnlinePollAdminService';
+import { onlinePollAdminService, OnlinePollDto, OnlinePollItemDto } from '@/services/foundation/system/OnlinePollAdminService';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';

@@ -26,7 +26,7 @@ function DetailContent() {
 
   const { data: article, isLoading, refetch } = useQuery({
     queryKey: ['article-detail', bbsId, nttId],
-    queryFn: () => knowledgeService.getArticle(bbsId!, nttId!),
+    queryFn: () => knowledgeService.getArticle(nttId!),
     enabled: !!bbsId && !!nttId,
   });
 
@@ -62,7 +62,7 @@ function DetailContent() {
               <span className="text-[10px] font-black text-muted-foreground tracking-widest opacity-40 uppercase">NODE ID: {nttId?.slice(-8)}</span>
             </div>
             <h1 className="text-5xl md:text-6xl font-black text-foreground tracking-tighter leading-[0.9] uppercase italic max-w-4xl">
-              {article.nttSj}
+              {article.knoNm || (article as any).nttSj}
             </h1>
           </div>
         </div>
@@ -104,8 +104,8 @@ function DetailContent() {
 
       {/* --- Meta Info Bar --- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 p-10 bg-slate-50 dark:bg-muted/10 rounded-[2.5rem] border-border/40 border">
-        <MetaItem icon={<User size={18} />} label="Contributor" value={article.ntcrNm || 'System'} />
-        <MetaItem icon={<Calendar size={18} />} label="Published" value={article.frstRegisterPnttmStr || 'Today'} />
+        <MetaItem icon={<User size={18} />} label="Contributor" value={article.frstRegisterId || 'System'} />
+        <MetaItem icon={<Calendar size={18} />} label="Published" value={article.frstRegisterPnttm || 'Today'} />
         <MetaItem icon={<Eye size={18} />} label="Global Reach" value={`${(article.inqireCo || 0).toLocaleString()} Views`} />
         <MetaItem icon={<Share2 size={18} />} label="Integrity" value="High Trust" />
       </div>
@@ -133,7 +133,7 @@ function DetailContent() {
                 prose-p:my-10
                 prose-blockquote:border-l-[6px] prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-12 prose-blockquote:py-10 prose-blockquote:rounded-r-[2rem] prose-blockquote:italic
                 prose-code:bg-slate-100 prose-code:p-1 prose-code:rounded prose-pre:bg-slate-900 prose-pre:p-8 prose-pre:rounded-3xl"
-              dangerouslySetInnerHTML={{ __html: article.nttCn || '' }} 
+              dangerouslySetInnerHTML={{ __html: article.knoCn || (article as any).nttCn || '' }} 
             />
 
             <div className="pt-24 flex items-center justify-center opacity-10">

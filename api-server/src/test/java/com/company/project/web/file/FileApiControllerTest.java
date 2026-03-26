@@ -1,6 +1,6 @@
 package com.company.project.web.file;
 
-import com.company.project.api.controller.file.FileApiController;
+import com.company.project.business.api.controller.file.FileApiController;
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.business.service.file.FileService;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * FileApiController ?뚯뒪??(Standalone)
+ * FileApiController 테스트 (Standalone)
  */
 class FileApiControllerTest {
 
@@ -33,7 +33,7 @@ class FileApiControllerTest {
     }
 
     @Test
-    @DisplayName("?뚯씪 ?낅줈??- ?깃났")
+    @DisplayName("파일 업로드 - 성공")
     void uploadFiles_success() throws Exception {
         // Given
         when(fileService.uploadFiles(anyList())).thenReturn("FILE_ID_001");

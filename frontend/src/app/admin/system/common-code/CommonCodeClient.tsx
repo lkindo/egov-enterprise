@@ -39,7 +39,7 @@ import { DomainCluster, GroupCode, CodeDetail } from '@/types/foundation/code';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { cn } from '@/lib/utils';
-import { codeAdminService } from '@/services/foundation/system'/CodeAdminService';
+import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import {
     saveCmmnCode as saveGroupCodeAction,
     deleteCmmnCode as deleteGroupCodeAction,

@@ -1,5 +1,5 @@
 import client from '@/lib/api/client';
-import { KnoManagementVO, KnoSearchParams } from '@/types/dam';
+import { KnoManagementVO, KnoSearchParams } from '@/types/business/dam';
 import { AxiosRequestConfig } from 'axios';
 
 const BASE_URL = '/admin/digital-assets';

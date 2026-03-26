@@ -41,8 +41,8 @@ import {
  ChevronRight,
  Trash2
 } from 'lucide-react';
-import { MenuManage } from '@/types/foundation/system"';
-import { menuAdminService } from '@/services/foundation/system'/MenuAdminService';
+import { MenuManage } from '@/types/foundation/system';
+import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({

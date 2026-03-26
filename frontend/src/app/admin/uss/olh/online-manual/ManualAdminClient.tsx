@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { manualAdminService, ManualDto } from '@/services/foundation/user'/ManualAdminService';
+import { manualAdminService, ManualDto } from '@/services/foundation/user/ManualAdminService';
 import {
  BookOpen,
  Plus,

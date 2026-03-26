@@ -19,8 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { boardAdminService } from '@/services/foundation/system'/BoardAdminService";
-import { menuAdminService } from '@/services/foundation/system'/MenuAdminService";
+import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
+import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   ChevronRight, 
@@ -44,8 +44,8 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Services
-// import { boardAdminService } from '@/services/foundation/system'/BoardAdminService";
-// import { menuAdminService } from '@/services/foundation/system'/MenuAdminService";
+// import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
+// import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 
 const STEPS = [
   { id: 1, title: '기본 설정', description: '게시판의 이름과 설명을 입력하세요.', icon: Settings2 },

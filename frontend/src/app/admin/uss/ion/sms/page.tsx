@@ -1,4 +1,4 @@
-import { smsAdminService } from '@/services/foundation/operation'/SmsAdminService';
+import { smsAdminService } from '@/services/foundation/operation/SmsAdminService';
 import { cookies } from 'next/headers';
 import SmsAdminClient from './SmsAdminClient';
 

@@ -13,7 +13,7 @@ import {
  SelectTrigger,
  SelectValue,
 } from "@/components/ui/select";
-import { createDeptJob } from '@/services/business/deptjob'/deptJobService';
+import { createDeptJob } from '@/services/deptJob/deptJobService';
 import { DeptJobVO } from '@/types/business/deptJob';
 
 export default function CreateDeptJobPage() {

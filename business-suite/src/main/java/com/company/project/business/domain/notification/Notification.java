@@ -1,6 +1,5 @@
-package com.company.project.foundation.domain.notification;
+package com.company.project.business.domain.notification;
 
-import com.company.project.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -9,35 +8,44 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
-/**
- * 알림 JPA Entity
- * 테이블명: N_USER_NOTIFICATION
- */
 @Entity
 @Table(name = "N_USER_NOTIFICATION")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Notification extends BaseEntity {
+public class Notification {
 
     @Id
     @Column(name = "NTCN_NO", length = 20)
     private String ntfcNo;
 
-    @Column(name = "NTCN_SJ", length = 255, nullable = false)
+    @Column(name = "NTCN_SJ", length = 250)
     private String ntfcSj;
 
-    @Column(name = "NTCN_CN", length = 4000)
+    @Column(name = "NTCN_CN", length = 2500)
     private String ntfcCn;
 
-    @Column(name = "RECEIVER_ID", length = 20, nullable = false)
+    @Column(name = "RECEIVER_ID", length = 20)
     private String receiverId;
 
     @Column(name = "IS_READ", length = 1)
-    private String isRead; // Y, N
+    private String isRead;
 
-    @Column(name = "LINK_URL", length = 255)
+    @Column(name = "LINK_URL")
     private String linkUrl;
+
+    @Column(name = "FRST_REGISTER_ID")
+    private String createdBy;
+
+    @Column(name = "FRST_REGIST_PNTTM")
+    private LocalDateTime createdDate;
+
+    @Column(name = "LAST_UPDUSR_ID")
+    private String lastModifiedBy;
+
+    @Column(name = "LAST_UPDT_PNTTM")
+    private LocalDateTime lastModifiedDate;
 
     @Builder
     public Notification(String ntfcNo, String ntfcSj, String ntfcCn, String receiverId, String linkUrl) {
@@ -47,25 +55,18 @@ public class Notification extends BaseEntity {
         this.receiverId = receiverId;
         this.linkUrl = linkUrl;
         this.isRead = "N";
+        this.createdDate = LocalDateTime.now();
+        this.lastModifiedDate = LocalDateTime.now();
     }
 
     public void markAsRead() {
         this.isRead = "Y";
-    }
-
-    // 시간 포맷 변환 메서드 추가
-    public String getNtfcTime() {
-        return this.getFrstRegisterPnttm() != null ? this.getFrstRegisterPnttm().toString() : null;
-    }
-
-    public String getBhNtfcIntrvl() {
-        // 기존 알림 방식과 호환성을 위해 필요에 따라 null 반환
-        return null;
+        this.lastModifiedDate = LocalDateTime.now();
     }
 
     public void update(String ntfcSj, String ntfcCn, String ntfcTime, String bhNtfcIntrvl) {
         this.ntfcSj = ntfcSj;
         this.ntfcCn = ntfcCn;
-        // 시간 수정은 BaseEntity에서 처리
+        this.lastModifiedDate = LocalDateTime.now();
     }
 }

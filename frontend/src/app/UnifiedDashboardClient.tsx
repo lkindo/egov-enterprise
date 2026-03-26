@@ -21,7 +21,7 @@ import {
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { statsAdminService, StatsDto } from '@/services/foundation/system'/StatsAdminService';
+import { statsAdminService, StatsDto } from '@/services/foundation/system/StatsAdminService';
 import { BannerSlider } from '@/app/components/dashboard/BannerSlider';
 import { PopupManager } from '@/app/components/dashboard/PopupManager';
 import { ActivityFeed } from '@/app/components/dashboard/ActivityFeed';

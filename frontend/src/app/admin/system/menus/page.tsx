@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { menuAdminService } from '@/services/foundation/system'/MenuAdminService';
-import { programAdminService } from '@/services/foundation/system'/ProgramAdminService';
+import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
+import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
 import MenuAdminClient from './MenuAdminClient';
 
 export const metadata = {

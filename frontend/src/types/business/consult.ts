@@ -1,4 +1,4 @@
-import { SearchParams } from './system';
+import { SearchParams } from '../foundation/system';
 
 export interface CnsltVO {
  cnsltId?: string;

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { userAdminService } from '@/services/foundation/system'/UserAdminService';
+import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { UserManage } from '@/types/foundation/user';
 
 export async function createUserAction(prevState: any, formData: UserManage) {

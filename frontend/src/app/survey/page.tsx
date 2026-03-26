@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
-import { surveyAdminService } from '@/services/foundation/survey'/SurveyAdminService';
+import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
 import { Survey } from '@/types/business/survey';
 import { useToast } from '@/app/components/ui/toast';
 import { Vote, Calendar, ArrowRight, CheckCircle2 } from 'lucide-react';

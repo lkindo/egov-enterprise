@@ -1,4 +1,4 @@
-import { templateAdminService } from '@/services/foundation/system'/TemplateAdminService';
+import { templateAdminService } from '@/services/foundation/system/TemplateAdminService';
 import { cookies } from 'next/headers';
 import TemplateAdminClient from './TemplateAdminClient';
 

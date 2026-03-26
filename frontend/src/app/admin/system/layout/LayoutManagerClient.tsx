@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
-import { bannerAdminService } from '@/services/foundation/system'/BannerAdminService';
+import { bannerAdminService } from '@/services/foundation/system/BannerAdminService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Types ---

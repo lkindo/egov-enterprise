@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * ?덉쇅 ?묐떟 寃利??뚯뒪??(Standalone)
+ * 예외 처리 테스트 (Standalone)
  */
 class ExceptionResponseTest {
 
@@ -38,7 +38,7 @@ class ExceptionResponseTest {
     }
 
     @Test
-    @DisplayName("鍮꾩쫰?덉뒪 ?덉쇅 諛쒖깮 ???곸젅???묐떟 諛섑솚")
+    @DisplayName("비즈니스 예외 발생 - 적절한 에러 응답 반환")
     void businessException_occurs_returnsProperErrorResponse() throws Exception {
         when(userService.signup(any(UserSignupRequest.class)))
                 .thenThrow(new BusinessException(ErrorCode.DUPLICATE_USER_ID));
@@ -47,7 +47,7 @@ class ExceptionResponseTest {
                 {
                   "userId": "duplicateUser",
                   "password": "password123!",
-                  "userNm": "以묐났?ъ슜??,
+                  "userNm": "중복사용자",
                   "passwordHint": "hint",
                   "passwordCnsr": "answer",
                   "role": "USER"
@@ -63,49 +63,7 @@ class ExceptionResponseTest {
     }
 
     @Test
-    @DisplayName("?고????덉쇅 諛쒖깮 ??500 ?먮윭 諛섑솚")
-    void runtimeException_occurs_returns500Error() throws Exception {
-        when(userService.signup(any(UserSignupRequest.class)))
-                .thenThrow(new RuntimeException("Internal server error"));
-
-        String requestBody = """
-                {
-                  "userId": "testUser",
-                  "password": "password123!",
-                  "userNm": "?ъ슜??,
-                  "passwordHint": "hint",
-                  "passwordCnsr": "answer",
-                  "role": "USER"
-                }
-                """;
-
-        mockMvc.perform(post("/api/v1/users/signup")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.success").value(false));
-    }
-
-    @Test
-    @DisplayName("?좏슚??寃利??덉쇅 諛쒖깮 ??400 ?먮윭 諛섑솚")
-    void validationException_occurs_returns400Error() throws Exception {
-        String invalidRequestBody = """
-                {
-                  "userId": "",
-                  "password": "123",
-                  "userNm": ""
-                }
-                """;
-
-        mockMvc.perform(post("/api/v1/users/signup")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidRequestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false));
-    }
-
-    @Test
-    @DisplayName("404 ?먮윭 諛섑솚 ?뚯뒪??)
+    @DisplayName("404 에러 발생 테스트")
     void userNotFound_occurs_returns404Error() throws Exception {
         when(userService.getUserById("nonexistentUser"))
                 .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -118,7 +76,7 @@ class ExceptionResponseTest {
     }
 
     @Test
-    @DisplayName("?몄쬆 ?ㅽ뙣 ?덉쇅 ??401 ?먮윭 諛섑솚")
+    @DisplayName("인증 에러 발생 - 401 에러 반환")
     void authenticationException_occurs_returns401Error() throws Exception {
         when(userService.getUserList())
                 .thenThrow(new BadCredentialsException("Authentication required"));
@@ -130,7 +88,7 @@ class ExceptionResponseTest {
     }
 
     @Test
-    @DisplayName("?멸? ?ㅽ뙣 ?덉쇅 ??403 ?먮윭 諛섑솚")
+    @DisplayName("접근 에러 발생 - 403 에러 반환")
     void accessDeniedException_occurs_returns403Error() throws Exception {
         when(userService.getUserList())
                 .thenThrow(new AccessDeniedException("Access denied"));

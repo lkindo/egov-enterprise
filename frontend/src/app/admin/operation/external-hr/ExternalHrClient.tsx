@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
-import { operationAdminService } from '@/services/foundation/operation'/OperationAdminService';
+import { operationAdminService } from '@/services/foundation/operation/OperationAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { Plus, User, Building2, Mail, Phone } from 'lucide-react';
 

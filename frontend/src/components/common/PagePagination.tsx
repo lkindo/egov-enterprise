@@ -8,7 +8,7 @@ import {
  PaginationPrevious,
  PaginationEllipsis,
 } from "@/components/ui/pagination";
-import { PaginationInfo } from '@/types/foundation/system"';
+import { PaginationInfo } from '@/types/foundation/system';
 
 interface PagePaginationProps {
  pagination?: PaginationInfo;

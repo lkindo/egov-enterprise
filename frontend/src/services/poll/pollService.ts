@@ -1,6 +1,6 @@
 import { ApiService } from '@/services/core/ApiService';
-import { PageResponse } from '@/types/system';
-import { OnlinePollManageVO, OnlinePollItemVO, OnlinePollPartcptnVO, PollSearchParams } from '@/types/poll';
+import { PageResponse } from '@/types/foundation/system';
+import { OnlinePollManageVO, OnlinePollItemVO, OnlinePollPartcptnVO, PollSearchParams } from '@/types/business/poll';
 import { AxiosRequestConfig } from 'axios';
 
 /**

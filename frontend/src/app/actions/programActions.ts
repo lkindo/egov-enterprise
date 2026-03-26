@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { programAdminService } from '@/services/foundation/system'/ProgramAdminService';
+import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
 import { Program } from '@/types/foundation/program';
 
 export async function saveProgramAction(prevState: any, { mode, data }: { mode: 'create' | 'edit', data: Program }) {

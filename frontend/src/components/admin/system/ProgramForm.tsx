@@ -34,8 +34,8 @@ import {
  Save, 
  Trash2 
 } from 'lucide-react';
-import { ProgrmManage } from '@/types/foundation/system"';
-import { programAdminService } from '@/services/foundation/system'/ProgramAdminService';
+import { ProgrmManage } from '@/types/foundation/system';
+import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({

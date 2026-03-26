@@ -1,6 +1,6 @@
 package com.company.project.web.auth;
 
-import com.company.project.api.auth.AuthApiController;
+import com.company.project.foundation.api.auth.AuthApiController;
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.domain.auth.UserAuthorityRepository;
 import com.company.project.foundation.domain.user.repository.UserRepository;
@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * AuthApiController ?뚯뒪??(Standalone)
+ * AuthApiController 테스트 (Standalone)
  */
 class AuthApiControllerTest {
 
@@ -49,14 +49,14 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("濡쒓렇??- ?깃났")
+    @DisplayName("로그인 - 성공")
     void login_success() throws Exception {
         // Given
         Authentication mockAuth = mock(Authentication.class);
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(mockAuth).getAuthorities();
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(mockAuth);
-        
+
         when(jwtTokenProvider.createAccessToken(anyString(), anyString())).thenReturn("mock-access-token");
         when(jwtTokenProvider.createRefreshToken(anyString())).thenReturn("mock-refresh-token");
 
@@ -75,7 +75,7 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("濡쒓렇??- ?ㅽ뙣 (?먭꺽 利앸챸 ?ㅻ쪟)")
+    @DisplayName("로그인 - 실패 (잘못된 비밀번호)")
     void login_fail() throws Exception {
         // Given
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))

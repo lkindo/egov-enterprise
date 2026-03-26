@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { addressbookUserService, AddressBook } from '@/services/business/user/addressbook'/AddressbookUserService';
+import { addressbookUserService, AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
 import {
  Table,
  TableBody,

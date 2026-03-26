@@ -7,7 +7,7 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { absenceAdminService, UserAbsenceDto } from '@/services/foundation/user'/AbsenceAdminService';
+import { absenceAdminService, UserAbsenceDto } from '@/services/foundation/user/AbsenceAdminService';
 import {
   UserX,
   UserCheck,

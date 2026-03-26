@@ -1,4 +1,4 @@
-package com.company.project.foundation.service.notification.event;
+package com.company.project.business.service.notification.event;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

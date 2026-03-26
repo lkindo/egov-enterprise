@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
 import { noteService, Note } from '@/services/business/user/NoteService';
 import { scrapService } from '@/services/business/user/ScrapService';
-import { addressbookUserService } from '@/services/business/user/addressbook'/AddressbookUserService';
+import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Types ---
