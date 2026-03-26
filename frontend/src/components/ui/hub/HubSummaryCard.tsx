@@ -56,7 +56,7 @@ export function HubSummaryCard({
       variants={cardVariants}
       whileHover={{ y: -8, transition: { duration: 0.2 } }}
       className={cn(
-        "p-10 rounded-[3.5rem] border transition-all flex flex-col justify-between h-[320px] relative overflow-hidden group",
+        "p-10 rounded-[var(--radius-hub-section)] border transition-all flex flex-col justify-between h-[320px] relative overflow-hidden group",
         colorMap[color],
         className
       )}
