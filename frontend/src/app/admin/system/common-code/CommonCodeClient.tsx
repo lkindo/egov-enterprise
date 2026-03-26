@@ -46,7 +46,6 @@ import {
     saveCodeDetail as saveCodeDetailAction,
     deleteCodeDetail as deleteCodeDetailAction
 } from '@/app/actions/codeActions';
-import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import { CmmnClCode, CmmnCode } from '@/types/foundation/system';
 
 interface CommonCodeClientProps {
@@ -275,14 +274,13 @@ export default function CommonCodeClient({
     ];
 
     return (
-        <div className="space-y-8 p-6">
-            <DynamicBreadcrumb />
+        <div className="space-y-8">
             {/* Master-Detail Layout Wrapper */}
             <div className="flex flex-col lg:flex-row gap-8 min-h-[700px]">
                 
                 {/* --- Left Sidebar: Code Tree --- */}
-                <aside className="w-full lg:w-80 flex flex-col gap-4">
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full ring-1 ring-slate-100">
+                <aside className="w-full lg:w-96 flex flex-col gap-4">
+                    <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] border border-slate-200/50 shadow-sm overflow-hidden flex flex-col h-full ring-1 ring-slate-100/50">
                         {/* Sidebar Header & Search */}
                         <div className="p-5 border-b border-slate-100 bg-slate-50/50 space-y-4">
                             <div className="flex items-center justify-between">
@@ -335,14 +333,14 @@ export default function CommonCodeClient({
                                                     className={cn(
                                                         "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all group/item",
                                                         selectedGroup?.codeId === group.codeId
-                                                            ? "bg-slate-900 text-white shadow-lg"
+                                                            ? "bg-primary/10 text-primary border-l-[3px] border-primary shadow-sm !rounded-l-none"
                                                             : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                                                     )}
                                                 >
                                                     <div className="flex items-center gap-3 truncate">
                                                         <div className={cn(
                                                             "w-7 h-7 rounded-lg flex items-center justify-center transition-colors shadow-sm",
-                                                            selectedGroup?.codeId === group.codeId ? "bg-white/10 text-white" : "bg-white text-slate-300 group-hover/item:text-primary"
+                                                            selectedGroup?.codeId === group.codeId ? "bg-primary/20 text-primary" : "bg-white text-slate-300 group-hover/item:text-primary"
                                                         )}>
                                                             <Tag size={12} />
                                                         </div>
@@ -355,7 +353,7 @@ export default function CommonCodeClient({
                                                         </div>
                                                     </div>
                                                     {selectedGroup?.codeId === group.codeId && (
-                                                        <ChevronRight size={14} className="text-white/40" />
+                                                        <ChevronRight size={14} className="text-primary/50" />
                                                     )}
                                                 </button>
                                             ))}
@@ -371,19 +369,11 @@ export default function CommonCodeClient({
                 <main className="flex-1 space-y-6">
                     {selectedGroup ? (
                         <div className="space-y-6">
-                            {/* Breadcrumb Path - 내부 상세 추적은 유지하되 상단 통합 Breadcrumb과 조화 */}
-                            <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase bg-slate-50 px-4 py-2 rounded-full w-fit border border-slate-100 shadow-sm mb-4">
-                                <span className="opacity-50">시스템 관리</span>
-                                <ChevronRight size={10} className="opacity-30" />
-                                <span>{selectedCluster.name}</span>
-                                <ChevronRight size={10} className="opacity-30" />
-                                <span className="text-primary">{selectedGroup.codeIdNm}</span>
-                            </div>
 
                             {/* Summary Header Card */}
                             <div className="p-8 rounded-[2.5rem] bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 ring-1 ring-slate-100">
                                 <div className="flex items-center gap-6">
-                                    <div className="w-16 h-16 rounded-3xl bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-200">
+                                    <div className="w-16 h-16 rounded-3xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
                                         <Fingerprint size={28} />
                                     </div>
                                     <div className="space-y-1">
@@ -479,7 +469,7 @@ export default function CommonCodeClient({
                 footer={
                     <div className="flex w-full gap-4">
                         <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2 border-slate-100 shadow-sm">취소</Button>
-                        <Button form="code-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group">
+                        <Button form="code-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group">
                             <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 저장
                         </Button>
                     </div>

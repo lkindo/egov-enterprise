@@ -105,7 +105,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       header: '기관 엔티티', 
       accessor: (item: InstitutionCode) => (
         <div className="flex items-center gap-4 py-3">
-          <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
             <Building2 size={20} />
           </div>
           <div>
@@ -220,7 +220,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
         item.processSe !== '1' && (
           <Button 
             onClick={() => handleProcess(item)}
-            className="h-10 px-6 rounded-xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2"
+            className="h-10 px-6 rounded-xl bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition-all gap-2"
           >
             <MonitorCheck size={14} /> 반영 적용
           </Button>

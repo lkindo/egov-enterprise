@@ -164,7 +164,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       {/* Bulk Action Toolbar - High Tech Style */}
       {enableSelection && selectedIds.size > 0 && (
         <div
-          className="flex items-center justify-between p-4 bg-slate-900 dark:bg-primary text-white rounded-[var(--radius-hub-item)] shadow-xl animate-in fade-in zoom-in-95"
+          className="flex items-center justify-between p-4 bg-primary text-white rounded-[var(--radius-hub-item)] shadow-xl animate-in fade-in zoom-in-95"
           role="toolbar"
         >
           <div className="flex items-center gap-6">
@@ -311,7 +311,7 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
       <Button 
         variant="outline" 
         size="lg" 
-        className="mt-6 rounded-2xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group" 
+        className="mt-6 rounded-2xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-primary hover:text-white transition-all group" 
         onClick={() => window.location.reload()}
       >
         <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />

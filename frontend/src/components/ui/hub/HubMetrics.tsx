@@ -39,7 +39,7 @@ export function HubMetricCard({
     rose: "bg-rose-500 text-white shadow-rose-500/20",
     amber: "bg-amber-500 text-white shadow-amber-500/20",
     indigo: "bg-indigo-600 text-white shadow-indigo-600/20",
-    slate: "bg-slate-900 text-white shadow-slate-900/20",
+    slate: "bg-primary/10 text-primary border border-primary/20 shadow-primary/5",
   };
 
   return (

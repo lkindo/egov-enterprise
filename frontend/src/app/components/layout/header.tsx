@@ -218,7 +218,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: any[] }) {
       <AppNotificationDrawer
         isOpen={isNotifOpen}
         onClose={() => setIsNotifOpen(false)}
-        notifications={notifications.map((n, i) => ({
+        notifications={(notifications || []).map((n, i) => ({
           id: n.ntfcNo || `notif-${i}`,
           title: n.ntfcSj,
           message: n.ntfcCn,

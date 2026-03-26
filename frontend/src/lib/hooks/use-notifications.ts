@@ -20,8 +20,9 @@ export function useNotifications() {
  client.get('/notifications').catch(() => []),
  client.get('/notifications/unread-count').catch(() => 0)
  ]);
- setNotifications(list || []);
- setUnreadCount(count || 0);
+  const actualList = Array.isArray(list) ? list : (list?.list || []);
+  setNotifications(actualList);
+  setUnreadCount(typeof count === 'number' ? count : (count?.count || 0));
  } catch (e) {
  // Quietly ignore
  }

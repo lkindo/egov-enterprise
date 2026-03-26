@@ -17,7 +17,7 @@ export interface HubSummaryCardProps {
 
 const colorMap: Record<HubSummaryColor, string> = {
   blue: "bg-hub-blue/5 dark:bg-hub-blue/10 text-hub-blue dark:text-hub-blue-foreground border-hub-blue/20 shadow-xl shadow-hub-blue/5",
-  orange: "bg-slate-900 text-white border-slate-800 shadow-2xl shadow-slate-900/20",
+  orange: "bg-white dark:bg-white/5 text-slate-900 dark:text-white border-primary/20 shadow-xl shadow-primary/5",
   purple: "bg-white dark:bg-white/5 text-slate-900 dark:text-white border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none",
   emerald: "bg-hub-emerald/5 dark:bg-hub-emerald/10 text-hub-emerald dark:text-hub-emerald-foreground border-hub-emerald/20 shadow-xl shadow-hub-emerald/5",
   rose: "bg-hub-rose/5 dark:bg-hub-rose/10 text-hub-rose dark:text-hub-rose-foreground border-hub-rose/20 shadow-xl shadow-hub-rose/5",

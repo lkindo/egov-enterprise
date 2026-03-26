@@ -108,7 +108,7 @@
     --radius-hub-widget: 2rem;          /* Hub mini widgets */
     --radius-hub-item: 1.5rem;          /* Hub list items / Summaries */
     
-    --shadow-hub-premium: 0 32px 64px -16px rgba(0, 0, 0, 0.3);
+    --shadow-hub-premium: 0 32px 64px -16px rgba(0, 0, 0, 0.08);
     --color-premium-slate: 222.2 47.4% 11.2%; /* slate-900 equivalent */
     --color-premium-emerald: 142.1 76.2% 36.3%; /* emerald-600 equivalent */
   }
@@ -193,11 +193,11 @@
   }
 
   .hub-card-section {
-    @apply bg-slate-900 text-white dark:bg-card dark:text-foreground p-12 rounded-[var(--radius-hub-section)] shadow-[var(--shadow-hub-premium)] relative overflow-hidden;
+    @apply bg-white/40 text-slate-900 border border-slate-200/50 backdrop-blur-xl dark:bg-card dark:text-foreground p-12 rounded-[var(--radius-hub-section)] shadow-[var(--shadow-hub-premium)] relative overflow-hidden;
   }
 
   .hub-icon-box {
-    @apply w-16 h-16 bg-slate-900 rounded-[var(--radius-hub-widget)] flex items-center justify-center shadow-2xl skew-y-1 hover:rotate-6 transition-transform duration-500 dark:bg-slate-100 dark:text-slate-900;
+    @apply w-16 h-16 bg-primary rounded-[var(--radius-hub-widget)] flex items-center justify-center shadow-2xl skew-y-1 hover:rotate-6 transition-transform duration-500 dark:bg-primary/20 dark:text-primary;
   }
   
   .hub-badge-status {

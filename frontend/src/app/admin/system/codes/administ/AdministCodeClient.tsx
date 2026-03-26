@@ -71,7 +71,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
         header: '행정역 코드 (식별자)', 
         accessor: (item: any) => (
             <div className="flex items-center gap-4 py-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                     <MapPin size={18} />
                 </div>
                 <div className="flex flex-col gap-0.5">
@@ -147,7 +147,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
             >
                 <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
-             <Button className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
+             <Button className="h-14 px-10 rounded-2xl bg-primary border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-3 group">
                 <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" /> 신규 행정 코드 인스턴스 등록
              </Button>
           </div>
@@ -164,25 +164,25 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
       <div className="grid grid-cols-12 gap-12">
         {/* Navigation Sidebar */}
         <div className="col-span-12 lg:col-span-4 h-full">
-            <div className="rounded-[4rem] bg-slate-900 text-white p-12 shadow-2xl relative overflow-hidden group h-full border-none min-h-[500px]">
+            <div className="rounded-[4rem] bg-white/80 backdrop-blur-xl text-slate-900 p-12 shadow-2xl relative overflow-hidden group h-full border border-slate-200/50 ring-1 ring-slate-100 min-h-[500px]">
                 <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                     <Milestone size={240} className="text-primary" />
                 </div>
                 <div className="relative z-10 space-y-12">
                     <div className="space-y-4">
-                        <div className="w-20 h-20 rounded-[2rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
+                        <div className="w-20 h-20 rounded-[2rem] bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
                             <Monitor size={36} className="text-primary" />
                         </div>
                         <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">관할 인텔리전스<br />허브</h4>
                     </div>
                     
-                    <p className="text-sm text-slate-400 font-bold leading-relaxed italic border-l-4 border-primary pl-8">
+                    <p className="text-sm text-slate-500 font-bold leading-relaxed italic border-l-4 border-primary pl-8">
                         행정표준코드 체계(KAS)와의 데이터 무결성을 보장하며, 국가 공간정보 통합 관리 체계와 실시간으로 동기화됩니다.
                     </p>
 
-                    <div className="space-y-6 pt-12 border-t border-white/5">
+                    <div className="space-y-6 pt-12 border-t border-slate-100">
                         <div className="flex items-center justify-between group/stat">
-                            <span className="text-[10px] font-black text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">섹터 엔진</span>
+                            <span className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">섹터 엔진</span>
                             <span className="text-lg font-black font-mono tracking-tighter text-emerald-500">정상</span>
                         </div>
                         <div className="flex items-center justify-between group/stat">
@@ -207,7 +207,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
                             className="h-14 pl-14 pr-6 w-full bg-slate-50 border-none rounded-2xl text-[11px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
                         />
                     </div>
-                    <Button type="submit" size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-3 group">
+                    <Button type="submit" size="lg" className="h-14 px-10 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition-all gap-3 group">
                         <Layers size={18} className="group-hover:rotate-180 transition-transform duration-500" /> 엔진 필터링 실행
                     </Button>
                 </form>

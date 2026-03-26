@@ -96,12 +96,15 @@ export default function CommonCodeHubClient({
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             {activeTab === 'STANDARD' && (
-              <CommonCodeClient 
-                clCodes={clCodes} 
-                groups={groups} 
-                details={details} 
-                selectedGroupId={selectedGroupId} 
-              />
+              <div className="hub-card-section p-4 lg:p-12 border ring-1 ring-slate-100 relative overflow-hidden bg-white/50 backdrop-blur-xl">
+                 <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -ml-64 -mt-64 opacity-60 pointer-events-none" />
+                 <CommonCodeClient 
+                  clCodes={clCodes} 
+                  groups={groups} 
+                  details={details} 
+                  selectedGroupId={selectedGroupId} 
+                />
+              </div>
             )}
             {activeTab === 'ADMINIST' && (
               <div className="hub-card-section p-4 lg:p-12 border ring-1 ring-slate-100 relative overflow-hidden bg-white/50 backdrop-blur-xl">
