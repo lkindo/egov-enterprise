@@ -4,7 +4,6 @@ import com.company.project.business.domain.image.MainImage;
 import com.company.project.business.domain.image.MainImageRepository;
 import com.company.project.business.service.image.dto.MainImageDto;
 import com.company.project.foundation.core.exception.BusinessException;
-import com.company.project.foundation.core.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

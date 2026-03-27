@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,6 +24,12 @@ import java.util.Map;
 public class PolicyApiController {
 
     private final PolicyService policyService;
+
+    @Operation(summary = "정책 목록 조회", description = "시스템의 모든 정책 목록을 조회합니다.")
+    @GetMapping("")
+    public ResponseEntity<ApiResponse<List<PolicyService.Policy>>> getPolicies() {
+        return ResponseEntity.ok(ApiResponse.success(policyService.getPolicies()));
+    }
 
     @Operation(summary = "정책 내용 조회", description = "저작권(copyright) 또는 개인정보보호정책(privacy) 내용을 조회합니다.")
     @GetMapping("/{type}")

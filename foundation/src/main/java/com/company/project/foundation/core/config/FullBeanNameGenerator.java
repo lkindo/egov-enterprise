@@ -16,11 +16,6 @@ public class FullBeanNameGenerator extends AnnotationBeanNameGenerator {
         if (beanName == null) {
             return super.buildDefaultBeanName(definition);
         }
-        // System.out.println("FullBeanNameGenerator generated: " + beanName);
-        if (beanName.contains("PopupUserApiController")) {
-            System.out.println("FULL NAME GEN for PopupUserApiController. Stack trace:");
-            new Exception().printStackTrace(System.out);
-        }
         return beanName;
     }
 }

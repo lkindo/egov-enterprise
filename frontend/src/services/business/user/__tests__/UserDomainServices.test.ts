@@ -17,7 +17,7 @@ describe('User Domain Services', () => {
 
  it('BoardUserService should call correct endpoints', async () => {
  await boardUserService.getPosts('BBS01', { page: 0 });
- expect(client.get).toHaveBeenCalledWith('/boards/BBS01', expect.objectContaining({
+ expect(client.get).toHaveBeenCalledWith('boards/BBS01', expect.objectContaining({
  params: { page: 0 }
  }));
  });
@@ -25,7 +25,7 @@ describe('User Domain Services', () => {
  it('ApprovalUserService should call correct endpoints', async () => {
  // Correct method is getPending
  await approvalUserService.getPending({ page: 0 });
- expect(client.get).toHaveBeenCalledWith('/approvals/pending', expect.objectContaining({
+ expect(client.get).toHaveBeenCalledWith('approvals/pending', expect.objectContaining({
  params: { page: 0 }
  }));
  });

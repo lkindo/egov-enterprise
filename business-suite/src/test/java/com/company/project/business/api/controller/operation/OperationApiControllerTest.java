@@ -4,8 +4,6 @@ import com.company.project.foundation.service.operation.EventInfoService;
 import com.company.project.foundation.service.operation.ExternalHrService;
 import com.company.project.foundation.service.operation.RewardManageService;
 import com.company.project.foundation.service.operation.dto.EventInfoDto;
-import com.company.project.foundation.service.operation.dto.ExternalHrDto;
-import com.company.project.foundation.service.operation.dto.RewardManageDto;
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +23,6 @@ import java.util.Collections;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class OperationApiControllerTest {

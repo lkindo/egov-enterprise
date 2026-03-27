@@ -12,7 +12,7 @@ vi.mock('next/cache', () => ({
  revalidatePath: vi.fn(),
 }));
 
-vi.mock('@/services/admin/system/SyncAdminService', () => ({
+vi.mock('@/services/foundation/system/SyncAdminService', () => ({
  syncAdminService: {
  createSyncServer: vi.fn(),
  updateSyncServer: vi.fn(),

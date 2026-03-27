@@ -5,7 +5,7 @@ import CommentSection from '../CommentSection';
 import commentService from '@/services/business/comment/commentService';
 
 // Mock dependencies
-vi.mock('@/services/comment/commentService');
+vi.mock('@/services/business/comment/commentService');
 vi.mock('date-fns', () => ({
  format: vi.fn(() => '2024-03-10 12:00'),
 }));

@@ -19,7 +19,7 @@ describe('Comprehensive User Services', () => {
  it('addressbookUserService calls correct endpoints', async () => {
  (client.get as any).mockResolvedValue({ result: { content: [] } });
  await addressbookUserService.getAddressBooks({ page번호: 1 });
- expect(client.get).toHaveBeenCalledWith('/address-books', expect.any(Object));
+ expect(client.get).toHaveBeenCalledWith('address-books', expect.any(Object));
  });
 
  it('communityUserService calls correct endpoints', async () => {
@@ -30,6 +30,6 @@ describe('Comprehensive User Services', () => {
 
  it('deptJobUserService calls correct endpoints', async () => {
  await deptJobUserService.getDeptJobs({ page: 0 });
- expect(client.get).toHaveBeenCalledWith('/deptjob', expect.any(Object));
+ expect(client.get).toHaveBeenCalledWith('deptjob', expect.any(Object));
  });
 });

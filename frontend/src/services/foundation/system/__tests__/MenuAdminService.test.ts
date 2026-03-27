@@ -16,18 +16,18 @@ describe('MenuAdminService', () => {
 
   it('getMenuList should call correct API', async () => {
     await menuAdminService.getMenuList({ page: 1 });
-    expect(client.get).toHaveBeenCalledWith('/admin/system/menus', expect.objectContaining({ params: expect.objectContaining({ page: 1 }) }));
+    expect(client.get).toHaveBeenCalledWith('admin/system/menus', expect.objectContaining({ params: expect.objectContaining({ page: 1 }) }));
   });
-
+ 
   it('createMenu should call post', async () => {
     const data = { menuNm: 'Test' };
     await menuAdminService.createMenu(data as any);
-    expect(client.post).toHaveBeenCalledWith('/admin/system/menus', data, undefined);
+    expect(client.post).toHaveBeenCalledWith('admin/system/menus', data, undefined);
   });
-
+ 
   it('updateMenuOrder should call put', async () => {
     const data = [{ menuNo: 1, sortOrdr: 1 }];
     await menuAdminService.updateMenuOrder(data as any);
-    expect(client.put).toHaveBeenCalledWith('/admin/system/menus/batch-order', data, expect.objectContaining({ timeout: 120000 }));
+    expect(client.put).toHaveBeenCalledWith('admin/system/menus/batch-order', data, expect.objectContaining({ timeout: 120000 }));
   });
 });

@@ -122,7 +122,7 @@ describe('UserManageClient Component', () => {
 
  it('opens create dialog when newUser button is clicked', async () => {
  render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
- const createBtn = screen.getByText(/신규 멤버 프로비저닝/i);
+ const createBtn = screen.getByText(/신규 등록/i);
  fireEvent.click(createBtn);
 
  const dialog = await screen.findByTestId('dialog');
@@ -165,7 +165,7 @@ describe('UserManageClient Component', () => {
  render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
  
  // Open dialog
- fireEvent.click(screen.getByText(/신규 멤버 프로비저닝/i));
+ fireEvent.click(screen.getByText(/신규 등록/i));
 
  const dialog = await screen.findByTestId('dialog');
 
@@ -175,7 +175,7 @@ describe('UserManageClient Component', () => {
  fireEvent.change(within(dialog).getByLabelText(/인증 크리덴셜/i), { target: { value: 'password123' } });
 
  // Submit
- fireEvent.click(within(dialog).getByText('PROVISION_MEMBER'));
+ fireEvent.click(within(dialog).getByText('저장'));
 
  await waitFor(() => {
  expect(userActions.createUserAction).toHaveBeenCalled();

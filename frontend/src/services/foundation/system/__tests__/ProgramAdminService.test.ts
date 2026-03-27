@@ -16,13 +16,13 @@ describe('ProgramAdminService', () => {
 
  it('getProgramList should call correct API', async () => {
  await programAdminService.getProgramList({ page: 1 });
- expect(client.get).toHaveBeenCalledWith('/admin/system/programs', expect.objectContaining({ 
+ expect(client.get).toHaveBeenCalledWith('admin/system/programs', expect.objectContaining({ 
  params: expect.objectContaining({ page: 1 }) 
  }));
  });
 
  it('getProgram should call with filename', async () => {
  await programAdminService.getProgram('test.do');
- expect(client.get).toHaveBeenCalledWith('/admin/system/programs/test.do', undefined);
+ expect(client.get).toHaveBeenCalledWith('admin/system/programs/test.do', undefined);
  });
 });

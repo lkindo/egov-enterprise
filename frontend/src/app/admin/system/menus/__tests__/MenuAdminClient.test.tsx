@@ -91,7 +91,7 @@ describe('MenuAdminClient Component', () => {
 
  it('opens create modal', async () => {
  render(<MenuAdminClient initialMenus={mockInitialMenus} programs={mockPrograms} />);
- const btn = screen.getByText(/최상위 메뉴 추가/i);
+ const btn = screen.getByText(/신규 등록/i);
  fireEvent.click(btn);
  expect(await screen.findByText(/신규 네비게이션 노드 설계/i)).toBeDefined();
  });

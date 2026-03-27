@@ -1,6 +1,5 @@
 package com.company.project.business.domain.comment;
 
-import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -309,26 +309,84 @@ class BoardServiceTest {
     }
 
     @Test
-    @DisplayName("게시글 상세 조회 실패 - 존재하지 않는 게시글")
-    void getPostDetail_Fail_NotFound() {
-        // Given
-        when(boardRepository.findArticleDetail(999L)).thenReturn(Optional.empty());
+    @DisplayName("게시글 상세 조회 시 조회수 증가 테스트")
+    void getPostDetail_IncreaseInqireCo() {
+        String bbsId = "BBS_001";
+        Long nttId = 1L;
+        BoardDetailResult detail = mock(BoardDetailResult.class);
+        Board board = Board.builder()
+                .bbsId(bbsId)
+                .nttId(nttId)
+                .inqireCo(10)
+                .build();
+        
+        when(boardRepository.findArticleDetail(nttId)).thenReturn(Optional.of(detail));
+        when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
 
-        // When & Then
-        assertThatThrownBy(() -> boardService.getPostDetail("BBS_001", 999L))
+        boardService.getPostDetail(bbsId, nttId);
+
+        assertThat(board.getInqireCo()).isEqualTo(11);
+    }
+
+    @Test
+    @DisplayName("게시글 수정 테스트 - 파일 포함 (기존 파일 없음)")
+    void updatePostWithFiles_NoExistingFile() throws IOException {
+        String bbsId = "BBS_001";
+        Long nttId = 1L;
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Updated", null, null, null);
+        List<MultipartFile> files = List.of(mock(MultipartFile.class));
+        Board board = Board.builder().bbsId(bbsId).nttId(nttId).build();
+        
+        when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
+        when(fileService.uploadFiles(files)).thenReturn("NEW_FILE_ID");
+
+        boardService.updatePostWithFiles(bbsId, nttId, request, files);
+
+        assertThat(board.getAtchFileId()).isEqualTo("NEW_FILE_ID");
+        verify(fileService).uploadFiles(files);
+    }
+
+    @Test
+    @DisplayName("게시글 수정 테스트 - 파일 포함 (기존 파일 있음)")
+    void updatePostWithFiles_ExistingFile() throws IOException {
+        String bbsId = "BBS_001";
+        Long nttId = 1L;
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Updated", null, null, "OLD_FILE_ID");
+        List<MultipartFile> files = List.of(mock(MultipartFile.class));
+        Board board = Board.builder().bbsId(bbsId).nttId(nttId).atchFileId("OLD_FILE_ID").build();
+        
+        when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
+
+        boardService.updatePostWithFiles(bbsId, nttId, request, files);
+
+        verify(fileService).updateFiles("OLD_FILE_ID", files);
+    }
+
+    @Test
+    @DisplayName("답글 등록 시 상위 게시글 미존재 시 예외 발생")
+    void replyPost_ParentNotFound() {
+        String userId = "user01";
+        Long parentId = 999L;
+        BoardSaveRequest request = new BoardSaveRequest("BBS_001", "Reply", "Content", null, null, null);
+        
+        when(boardMasterRepository.findById(anyString())).thenReturn(Optional.of(mock(BoardMaster.class)));
+        when(boardRepository.findById(parentId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> boardService.replyPost(userId, parentId, request))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ARTICLE_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("게시글 삭제 실패 - 존재하지 않는 게시글")
-    void deletePost_Fail_NotFound() {
-        // Given
-        when(boardRepository.findById(999L)).thenReturn(Optional.empty());
+    @DisplayName("게시글 등록 시 게시판 미존재 시 예외 발생")
+    void createPost_BoardNotFound() {
+        String userId = "user01";
+        BoardSaveRequest request = new BoardSaveRequest("NON_EXIST", "Title", "Content", null, null, null);
+        
+        when(boardMasterRepository.findById("NON_EXIST")).thenReturn(Optional.empty());
 
-        // When & Then
-        assertThatThrownBy(() -> boardService.deletePost("BBS_001", 999L, "user01"))
+        assertThatThrownBy(() -> boardService.createPost(userId, request))
                 .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ARTICLE_NOT_FOUND);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.BOARD_NOT_FOUND);
     }
 }
