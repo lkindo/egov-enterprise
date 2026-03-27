@@ -48,7 +48,7 @@ subprojects {
         // Jacoco 명시적 설정: 하위 프로젝트별 물리적 build 폴더 하위에 격리하여 생성 강제
         jacoco {
             enabled = true
-            destinationFile = file("${project.projectDir}/build/jacoco/test.exec")
+            destinationFile = layout.buildDirectory.file("jacoco/test.exec").get().asFile
         }
         
         finalizedBy 'jacocoTestReport'
