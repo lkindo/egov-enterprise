@@ -26,11 +26,6 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'io.freefair.lombok'
-    apply plugin: 'jacoco'
-
-    jacoco {
-        toolVersion = "0.8.14"
-    }
 
     java {
         toolchain {
@@ -49,6 +44,12 @@ subprojects {
         systemProperties System.properties
         maxHeapSize = "6144m"
         ignoreFailures = false
+        
+        // Jacoco 명시적 설정: 하위 프로젝트별 물리적 build 폴더 하위에 격리하여 생성 강제
+        jacoco {
+            enabled = true
+            destinationFile = file("${project.projectDir}/build/jacoco/test.exec")
+        }
         
         finalizedBy 'jacocoTestReport'
     }
@@ -81,21 +82,22 @@ subprojects {
     }
 }
 
-// 통합 리포트 태스크 (Gradle 9 지향 현대화 버전)
+// 통합 리포트 태스크 (현대적인 Gradle 9 멀티프로젝트 집계 설정)
 tasks.register('jacocoRootReport', JacocoReport) {
-    description = 'Generates an aggregate report from all subprojects using Lazy Configuration API'
+    description = 'Generates an aggregate report from all subprojects using explicit paths'
     group = 'Verification'
 
-    // 모든 서브프로젝트의 테스트 태스크에 의존
-    def subprojectTests = subprojects.collect { it.tasks.withType(Test) }.flatten()
-    dependsOn subprojectTests
+    // 모든 하위 프로젝트의 테스트 태스크에 의존
+    dependsOn subprojects.collect { it.tasks.withType(Test) }
 
-    // 소스 디렉토리 통합 (Lazy API 사용)
-    sourceDirectories.from = objects.fileCollection().from(subprojects.sourceSets.main.allSource.srcDirs)
+    // 소스 디렉토리 통합 (물리적 경로로 명시)
+    sourceDirectories.setFrom(subprojects.collect { 
+        file("${it.projectDir}/src/main/java") 
+    })
 
     // 클래스 디렉토리 통합 및 필터링
-    classDirectories.from = objects.fileCollection().from(subprojects.sourceSets.main.output.classesDirs).collect {
-        fileTree(dir: it, exclude: [
+    classDirectories.setFrom(subprojects.collect { 
+        fileTree(dir: "${it.projectDir}/build/classes/java/main", exclude: [
             "**/Q*.class",
             "**/Q*Entity.class",
             "**/*Request.class",
@@ -111,15 +113,14 @@ tasks.register('jacocoRootReport', JacocoReport) {
             "**/*Advice.class",
             "**/*RepositoryImpl.class"
         ])
-    }
+    })
 
-    // 실행 데이터(`.exec`) 통합 (와일드카드로 더 넓게 검색)
-    executionData.from = fileTree(dir: project.rootDir, include: '**/build/jacoco/*.exec')
+    // 실행 데이터(.exec) 통합: 루트에 집계된 대용량 실행 파일(2.2MB+)을 직접 참조
+    executionData.setFrom(files("${project.projectDir}/build/jacoco/test.exec"))
 
     reports {
-        html.required = true
         xml.required = true
-        csv.required = true
+        html.required = true
         html.outputLocation = layout.buildDirectory.dir("reports/jacoco/aggregated")
     }
 }

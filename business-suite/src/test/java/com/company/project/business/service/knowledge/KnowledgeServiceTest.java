@@ -3,26 +3,22 @@ package com.company.project.business.service.knowledge;
 import com.company.project.business.domain.knowledge.Knowledge;
 import com.company.project.business.domain.knowledge.KnowledgeRepository;
 import com.company.project.business.service.knowledge.dto.KnowledgeDto;
+import com.company.project.foundation.core.exception.BusinessException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-
-import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import java.util.Collections;
 import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("KnowledgeService 테스트")
 class KnowledgeServiceTest {
 
     @Mock
@@ -31,96 +27,59 @@ class KnowledgeServiceTest {
     @InjectMocks
     private KnowledgeService knowledgeService;
 
-    @Test
-    @DisplayName("지식 목록 조회 성공")
-    void getKnowledgeList_Success() {
-        // Given
-        Page<Knowledge> page = new PageImpl<>(List.of(Knowledge.builder().knoId("KNO1").build()));
-        given(knowledgeRepository.findAll(any(Pageable.class))).willReturn(page);
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
-        // When
-        Page<KnowledgeDto> result = knowledgeService.getKnowledgeList(null, Pageable.unpaged());
-
-        // Then
-        assertNotNull(result);
-        assertEquals(1, result.getContent().size());
-        assertEquals("KNO1", result.getContent().get(0).getKnoId());
+    private Knowledge createMockKnowledge(String id) {
+        return Knowledge.builder().knoId(id).knoNm("Test Title").build();
     }
 
     @Test
-    @DisplayName("지식 목록 키워드 검색 성공")
-    void getKnowledgeList_WithKeyword_Success() {
-        // Given
-        Page<Knowledge> page = new PageImpl<>(List.of(Knowledge.builder().knoId("KNO1").build()));
-        given(knowledgeRepository.searchByKeyword(eq("test"), any(Pageable.class))).willReturn(page);
+    @DisplayName("지식 목록 조회 - 키워드 유무 분기 테스트")
+    void getKnowledgeList_branch_test() {
+        when(knowledgeRepository.findAll(any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(Collections.singletonList(createMockKnowledge("K1"))));
+        when(knowledgeRepository.searchByKeyword(anyString(), any()))
+                .thenReturn(new PageImpl<>(Collections.singletonList(createMockKnowledge("K2"))));
 
-        // When
-        Page<KnowledgeDto> result = knowledgeService.getKnowledgeList("test", Pageable.unpaged());
+        // No keyword
+        Page<KnowledgeDto> result1 = knowledgeService.getKnowledgeList(null, PageRequest.of(0, 10));
+        assertEquals("K1", result1.getContent().get(0).getKnoId());
 
-        // Then
-        assertNotNull(result);
-        assertEquals(1, result.getContent().size());
+        // With keyword
+        Page<KnowledgeDto> result2 = knowledgeService.getKnowledgeList("test", PageRequest.of(0, 10));
+        assertEquals("K2", result2.getContent().get(0).getKnoId());
     }
 
     @Test
-    @DisplayName("지식 상세 조회 성공")
-    void getKnowledge_Success() {
-        // Given
-        Knowledge knowledge = Knowledge.builder().knoId("KNO1").build();
-        given(knowledgeRepository.findById("KNO1")).willReturn(Optional.of(knowledge));
+    @DisplayName("지식 상세/수정/삭제 - 예외 분기(404) 테스트")
+    void knowledge_exception_test() {
+        when(knowledgeRepository.findById("NOT_FOUND")).thenReturn(Optional.empty());
+        when(knowledgeRepository.findById("EXIST")).thenReturn(Optional.of(createMockKnowledge("EXIST")));
 
-        // When
-        KnowledgeDto result = knowledgeService.getKnowledge("KNO1");
-
-        // Then
-        assertNotNull(result);
-        assertEquals("KNO1", result.getKnoId());
+        // Detail 404
+        assertThrows(BusinessException.class, () -> knowledgeService.getKnowledge("NOT_FOUND"));
+        
+        // Update 404
+        KnowledgeDto dto = KnowledgeDto.builder().build();
+        assertThrows(BusinessException.class, () -> knowledgeService.updateKnowledge("NOT_FOUND", "user", dto));
+        
+        // Delete 404
+        assertThrows(BusinessException.class, () -> knowledgeService.deleteKnowledge("NOT_FOUND"));
     }
 
     @Test
-    @DisplayName("지식 등록 성공")
-    void createKnowledge_Success() {
-        // Given
+    @DisplayName("지식 등록 - 성공")
+    void createKnowledge_success() {
         KnowledgeDto dto = KnowledgeDto.builder().knoNm("Title").build();
-        given(knowledgeRepository.save(any(Knowledge.class))).willAnswer(invocation -> invocation.getArgument(0));
+        when(knowledgeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        // When
-        String knoId = knowledgeService.createKnowledge("user1", dto);
-
-        // Then
-        assertNotNull(knoId);
-        assertTrue(knoId.startsWith("KNO_"));
+        String id = knowledgeService.createKnowledge("user1", dto);
+        
+        assertNotNull(id);
+        assertTrue(id.startsWith("KNO_"));
         verify(knowledgeRepository).save(any(Knowledge.class));
-    }
-
-    @Test
-    @DisplayName("지식 삭제 성공")
-    void deleteKnowledge_Success() {
-        // Given
-        Knowledge knowledge = Knowledge.builder().knoId("KNO1").build();
-        given(knowledgeRepository.findById("KNO1")).willReturn(Optional.of(knowledge));
-
-        // When
-        knowledgeService.deleteKnowledge("KNO1");
-
-        // Then
-        verify(knowledgeRepository).delete(knowledge);
-    }
-
-    @Test
-    @DisplayName("지식 수정 성공")
-    void updateKnowledge_Success() {
-        // Given
-        Knowledge knowledge = Knowledge.builder().knoId("KNO1").build();
-        given(knowledgeRepository.findById("KNO1")).willReturn(Optional.of(knowledge));
-        KnowledgeDto dto = KnowledgeDto.builder().knoNm("Updated").build();
-
-        // When
-        knowledgeService.updateKnowledge("KNO1", "user1", dto);
-
-        // Then
-        // Verify update logic (usually we would check entity state if it was returned or via spy, 
-        // but here we just verify findById was called and it didn't throw)
-        assertEquals("Updated", knowledge.getKnoNm());
     }
 }

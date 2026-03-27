@@ -38,6 +38,7 @@ public class FileGroup extends BaseTimeEntity {
     public FileGroup(String atchFileId) {
         this.atchFileId = atchFileId != null ? atchFileId : UUID.randomUUID().toString();
         this.useAt = "Y";
+        this.fileItems = new ArrayList<>();
     }
 
     public void addFileItem(FileItem item) {

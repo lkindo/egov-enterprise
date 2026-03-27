@@ -1,10 +1,6 @@
 rootProject.name = 'egov-enterprise'
 
-// Project Modules (2-Tier Architecture)
-// - foundation: System infrastructure (Security, IAM, Common, System Admin)
-// - business-suite: Business domain features (Workspace, Operation, Knowledge)
-// - api-server: Spring Boot entry point (WAR deployment)
-
+// Project Modules
 include 'foundation'
 include 'business-suite'
 include 'api-server'

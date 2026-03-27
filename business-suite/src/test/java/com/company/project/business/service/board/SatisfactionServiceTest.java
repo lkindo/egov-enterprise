@@ -139,4 +139,38 @@ class SatisfactionServiceTest {
         // Then
         assertThat(result).isFalse();
     }
+
+    @Test
+    @DisplayName("만족도 수정 실패 - 데이터 없음 (ifPresent 분기)")
+    void updateSatisfaction_NoEntity() {
+        given(satisfactionRepository.findById(999L)).willReturn(Optional.empty());
+        SatisfactionDto dto = SatisfactionDto.builder().satisfactionId(999L).build();
+
+        satisfactionService.updateSatisfaction(dto);
+
+        verify(satisfactionRepository).findById(999L);
+    }
+
+    @Test
+    @DisplayName("상세 조회 및 암호 확인 실패 - ResourceNotFoundException")
+    void satisfaction_Exceptions() {
+        given(satisfactionRepository.findById(999L)).willReturn(Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(com.company.project.foundation.core.exception.BusinessException.class, 
+                () -> satisfactionService.getSatisfaction(999L));
+        
+        org.junit.jupiter.api.Assertions.assertThrows(com.company.project.foundation.core.exception.BusinessException.class, 
+                () -> satisfactionService.checkPassword(999L, "any"));
+    }
+
+    @Test
+    @DisplayName("비밀번호 확인 - 암호가 없는 경우 (null 분기)")
+    void checkPassword_NullPasswordInEntity() {
+        Satisfaction entity = Satisfaction.builder().id(1L).password(null).build();
+        given(satisfactionRepository.findById(1L)).willReturn(Optional.of(entity));
+
+        boolean result = satisfactionService.checkPassword(1L, "any");
+
+        assertThat(result).isFalse();
+    }
 }
