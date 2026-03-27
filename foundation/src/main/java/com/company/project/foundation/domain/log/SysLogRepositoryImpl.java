@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 
@@ -54,26 +56,30 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
     @Override
     @Transactional
     public void insertLogSummary() {
-        String sql = "INSERT INTO SSYSLOGSUMMARY " +
-                "SELECT TO_CHAR(b.OCCRRNC_DE, 'YYYYmmdd' ), b.SVC_NM, b.METHOD_NM, " +
+        String yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String sql = "INSERT INTO SSYSLOGSUMMARY (OCCRRNC_DE, SRVC_NM, METHOD_NM, CREAT_CO, UPDT_CO, RDCNT, DELETE_CO, OUTPT_CO, ERROR_CO) " +
+                "SELECT b.OCCRRNC_DE, b.SVC_NM, b.METHOD_NM, " +
                 "SUM(CASE WHEN b.PROCESS_SE_CODE = 'C' THEN 1 ELSE 0 END), " +
                 "SUM(CASE WHEN b.PROCESS_SE_CODE = 'U' THEN 1 ELSE 0 END), " +
                 "SUM(CASE WHEN b.PROCESS_SE_CODE = 'R' THEN 1 ELSE 0 END), " +
                 "SUM(CASE WHEN b.PROCESS_SE_CODE = 'D' THEN 1 ELSE 0 END), 0, 0 " +
                 "FROM NSYSLOG b " +
-                "WHERE NOT EXISTS (SELECT 1 FROM SSYSLOGSUMMARY c WHERE c.OCCRRNC_DE = TO_CHAR(NOW() - interval '1 day', 'YYYYmmdd')) "
-                +
-                "AND TO_CHAR(b.OCCRRNC_DE, 'YYYYmmdd' ) = TO_CHAR(NOW() - interval '1 day', 'YYYYmmdd') " +
-                "GROUP BY TO_CHAR(b.OCCRRNC_DE, 'YYYYmmdd' ), b.SVC_NM, b.METHOD_NM";
-        entityManager.createNativeQuery(sql).executeUpdate();
+                "WHERE NOT EXISTS (SELECT 1 FROM SSYSLOGSUMMARY c WHERE c.OCCRRNC_DE = :yesterday) " +
+                "AND b.OCCRRNC_DE = :yesterday " +
+                "GROUP BY b.OCCRRNC_DE, b.SVC_NM, b.METHOD_NM";
+        entityManager.createNativeQuery(sql)
+                .setParameter("yesterday", yesterday)
+                .executeUpdate();
     }
 
     @Override
     @Transactional
     public void deleteOldLogs(int months) {
-        String sql = "DELETE FROM NSYSLOG WHERE TO_CHAR(OCCRRNC_DE, 'YYYYmmdd') < TO_CHAR(NOW() - interval '" + months
-                + " month', 'YYYYmmdd')";
-        entityManager.createNativeQuery(sql).executeUpdate();
+        String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String sql = "DELETE FROM NSYSLOG WHERE OCCRRNC_DE < :targetDe";
+        entityManager.createNativeQuery(sql)
+                .setParameter("targetDe", targetDe)
+                .executeUpdate();
     }
 
     private BooleanExpression processSeCodeNmLike(String searchWrd, QCommonCode commonCode) {

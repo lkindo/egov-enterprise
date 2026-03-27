@@ -110,13 +110,12 @@ tasks.register('jacocoRootReport', JacocoReport) {
             "**/*DAO.class",
             "**/*Mapper.class",
             "**/*Initializer.class",
-            "**/*Advice.class",
-            "**/*RepositoryImpl.class"
+            "**/*Advice.class"
         ])
     })
 
-    // 실행 데이터(.exec) 통합: 루트에 집계된 대용량 실행 파일(2.2MB+)을 직접 참조
-    executionData.setFrom(files("${project.projectDir}/build/jacoco/test.exec"))
+    // 실행 데이터(.exec) 통합: 프로젝트 전역에서 발견되는 모든 탄약을 낱낱이 수확
+    executionData.setFrom(fileTree(dir: project.projectDir, include: '**/build/jacoco/test.exec'))
 
     reports {
         xml.required = true

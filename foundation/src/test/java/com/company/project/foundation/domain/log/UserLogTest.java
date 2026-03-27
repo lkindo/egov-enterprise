@@ -32,6 +32,14 @@ class UserLogTest {
         assertThat(log.getMethodNm()).isEqualTo("updateUser");
         assertThat(log.getCreatCo()).isEqualTo(1);
         assertThat(log.getUpdtCo()).isEqualTo(1);
+        assertThat(log.getRdCnt()).isEqualTo(10);
+        assertThat(log.getDeleteCo()).isEqualTo(0);
+        assertThat(log.getOutptCo()).isEqualTo(0);
+        assertThat(log.getErrorCo()).isEqualTo(1);
+
+        // check custom constructor (to reach 100% since it's used by SuperBuilder or manually)
+        UserLog log2 = new UserLog("20241228", "user01", "S", "M", 1, 1, 1, 1, 1, 1);
+        assertThat(log2.getOccrrncDe()).isEqualTo("20241228");
     }
 
     @Test

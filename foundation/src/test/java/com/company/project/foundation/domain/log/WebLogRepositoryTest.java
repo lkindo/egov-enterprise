@@ -63,5 +63,9 @@ class WebLogRepositoryTest {
         // when (Exception coverage)
         Page<WebLog> searchError = repository.searchWebLogs(null, "INVALID", "INVALID", PageRequest.of(0, 10));
         assertThat(searchError).isNotNull();
+
+        // when (Native Query Coverage)
+        repository.insertLogSummary();
+        repository.deleteOldLogs(6);
     }
 }

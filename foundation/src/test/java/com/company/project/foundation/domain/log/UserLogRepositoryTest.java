@@ -62,5 +62,9 @@ class UserLogRepositoryTest {
         // when (날짜 검색 - 하이픈 자동 제거 검증)
         Page<UserLog> searchByDate = repository.searchUserLogs(null, "2024-12-27", "2024-12-27", PageRequest.of(0, 10));
         assertThat(searchByDate.getContent()).hasSize(1);
+
+        // when (Native Query Coverage)
+        repository.insertLogSummary();
+        repository.deleteOldLogs(6);
     }
 }

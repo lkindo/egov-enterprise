@@ -29,5 +29,9 @@ class WebLogTest {
         assertThat(log.getRqesterId()).isEqualTo("user01");
         assertThat(log.getRqesterIp()).isEqualTo("127.0.0.1");
         assertThat(log.getOccrrncDe()).isEqualTo(now);
+
+        // check custom constructor
+        WebLog log2 = new WebLog("REQ-002", "/test", "id", "ip", now);
+        assertThat(log2.getRequstId()).isEqualTo("REQ-002");
     }
 }

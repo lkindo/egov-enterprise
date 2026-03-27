@@ -68,22 +68,26 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
     @Override
     @Transactional
     public void insertLogSummary() {
-        String sql = "INSERT INTO SWEBLOGSUMMARY " +
-                "SELECT TO_CHAR(b.OCCRRNC_DE, 'YYYYmmdd' ), b.URL, COUNT(b.URL) " +
+        String yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String sql = "INSERT INTO SWEBLOGSUMMARY (OCCRRNC_DE, URL, RDCNT) " +
+                "SELECT TO_CHAR(b.OCCRRNC_DE, 'YYYYMMDD' ), b.URL, COUNT(b.URL) " +
                 "FROM NWEBLOG b " +
-                "WHERE NOT EXISTS (SELECT 1 FROM SWEBLOGSUMMARY c WHERE c.OCCRRNC_DE = TO_CHAR(NOW() - interval '1 day', 'YYYYmmdd')) "
-                +
-                "AND TO_CHAR(b.OCCRRNC_DE, 'YYYYmmdd' ) = TO_CHAR(NOW() - interval '1 day', 'YYYYmmdd') " +
-                "GROUP BY TO_CHAR(b.OCCRRNC_DE, 'YYYYmmdd' ), b.URL";
+                "WHERE NOT EXISTS (SELECT 1 FROM SWEBLOGSUMMARY c WHERE c.OCCRRNC_DE = :yesterday) " +
+                "AND TO_CHAR(b.OCCRRNC_DE, 'YYYYMMDD' ) = :yesterday " +
+                "GROUP BY TO_CHAR(b.OCCRRNC_DE, 'YYYYMMDD' ), b.URL";
 
-        entityManager.createNativeQuery(sql).executeUpdate();
+        entityManager.createNativeQuery(sql)
+                .setParameter("yesterday", yesterday)
+                .executeUpdate();
     }
 
     @Override
     @Transactional
     public void deleteOldLogs(int months) {
-        String sql = "DELETE FROM NWEBLOG WHERE TO_CHAR(OCCRRNC_DE, 'YYYYmmdd') < TO_CHAR(NOW() - interval '" + months
-                + " month', 'YYYYmmdd')";
-        entityManager.createNativeQuery(sql).executeUpdate();
+        String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String sql = "DELETE FROM NWEBLOG WHERE TO_CHAR(OCCRRNC_DE, 'YYYYMMDD') < :targetDe";
+        entityManager.createNativeQuery(sql)
+                .setParameter("targetDe", targetDe)
+                .executeUpdate();
     }
 }

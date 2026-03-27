@@ -56,5 +56,9 @@ class SysLogRepositoryTest {
         // when (기간 검색)
         Page<SysLog> searchDateResult = repository.searchSysLogs(null, "20241227", "20241227", PageRequest.of(0, 10));
         assertThat(searchDateResult.getContent()).hasSize(1);
+
+        // when (Native Query Coverage)
+        repository.insertLogSummary();
+        repository.deleteOldLogs(6);
     }
 }
