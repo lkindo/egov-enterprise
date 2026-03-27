@@ -157,14 +157,70 @@ class BoardMasterServiceTest {
   }
 
   @Test
-@DisplayName("Blog create success")
+  @DisplayName("Blog detail success")
+  void getBlog_success() {
+    Blog blog = Blog.builder().blogId("BLOG_001").blogNm("Blog").build();
+    when(blogRepository.findById("BLOG_001")).thenReturn(Optional.of(blog));
+    
+    BlogDto result = boardMasterService.getBlog("BLOG_001");
+    
+    assertThat(result).isNotNull();
+    assertThat(result.getBlogId()).isEqualTo("BLOG_001");
+  }
+
+  @Test
+  @DisplayName("Blog user check success")
+  void checkBlogUser_success() {
+    when(blogRepository.existsByCreatedBy("USER001")).thenReturn(true);
+    
+    boolean result = boardMasterService.checkBlogUser("USER001");
+    
+    assertThat(result).isTrue();
+  }
+
+  @Test
+  @DisplayName("Get blog list for portlet success")
+  void getBlogListPortlet_success() {
+    Blog blog = Blog.builder().blogId("BLOG_001").blogNm("Blog").build();
+    when(blogRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(blog)));
+    
+    List<BlogDto> result = boardMasterService.getBlogListPortlet();
+    
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getBlogId()).isEqualTo("BLOG_001");
+  }
+
+  @Test
+  @DisplayName("Get board master list for portlet success")
+  void getBoardMasterListPortlet_success() {
+    when(boardMasterRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(mockBoardMaster)));
+    
+    List<BoardMasterDto> result = boardMasterService.getBoardMasterListPortlet();
+    
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getBbsId()).isEqualTo("BBS_0000000001");
+  }
+
+  @Test
+  @DisplayName("Get board master list by community success")
+  void getBoardMasterListByCommunity_success() {
+    when(boardMasterRepository.findByCmmntyIdAndUseAt("COMM_001", "Y")).thenReturn(List.of(mockBoardMaster));
+    
+    List<BoardMasterDto> result = boardMasterService.getBoardMasterListByCommunity("COMM_001");
+    
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getBbsId()).isEqualTo("BBS_0000000001");
+  }
+
+  @Test
+  @DisplayName("Blog create success")
   void createBlog_success() {
     boardMasterService.createBlog(BlogDto.builder().blogId("B1").build());
     verify(blogRepository).save(any(Blog.class));
   }
 
   @Test
-@DisplayName("Blog join success")
+  @DisplayName("Blog join success")
   void joinBlog_success() {
     boardMasterService.joinBlog("B1", "U1", "N");
     verify(blogUserRepository).save(any(BlogUser.class));
