@@ -40,7 +40,7 @@ public class UserApiController {
     public ResponseEntity<ApiResponse<Void>> updateMe(
             @LoginUser CustomUserDetails userDetails,
             @RequestBody UserDto userDto) {
-        userService.updateUser(userDetails.getUserId(), userDto) ;
+        userService.updateUser(userDetails.getUserId(), userDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -62,45 +62,5 @@ public class UserApiController {
     public ResponseEntity<ApiResponse<UserResponse>> signup(@RequestBody @Valid UserSignupRequest request) {
         log.info("User signup request: {}", request.userId());
         return ResponseEntity.ok(ApiResponse.success(userService.signup(request)));
-    }
-
-    @Operation(summary = "사용자 목록 조회 (전체)", description = "페이징 없이 모든 사용자 목록을 조회합니다.")
-    @GetMapping
-    public ResponseEntity<ApiResponse<java.util.List<UserDto>>> getUserList() {
-        return ResponseEntity.ok(ApiResponse.success(userService.getUserList()));
-    }
-
-    @Operation(summary = "사용자 목록 조회 (페이징)", description = "사용자 목록을 페이징하여 조회합니다.")
-    @GetMapping("/paged")
-    public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getPagedUserList(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "userId") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<UserDto> result = userService.getPagedUserList(pageable);
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
-    }
-
-    @Operation(summary = "사용자 상세 조회", description = "특정 사용자의 상세 정보를 조회합니다.")
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserDto>> getUserById(@PathVariable String id) {
-        log.info("User lookup request: {}", id);
-        return ResponseEntity.ok(ApiResponse.success(userService.getUserById(id)));
-    }
-
-    @Operation(summary = "사용자 정보 수정", description = "관리자 권한으로 사용자 정보를 수정합니다.")
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateUser(@PathVariable String id, @RequestBody UserDto userDto) {
-        userService.updateUser(id, userDto);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    @Operation(summary = "사용자 삭제", description = "사용자 계정을 삭제합니다.")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable String id) {
-        userService.deleteUser(id);
-        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

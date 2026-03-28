@@ -1,8 +1,11 @@
 package com.company.project.foundation.security.config;
 
+import com.company.project.foundation.security.service.EgovPasswordEncoder;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -11,8 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * ???뮞?紐꾩뒠 Security ??쇱젟
- * 筌뤴뫀諭??遺욧퍕????됱뒠??뤿연 ???뮞????쎈뻬
+ * 테스트용 Security 설정
  */
 @TestConfiguration
 @EnableWebSecurity
@@ -33,5 +35,16 @@ public class TestSecurityConfig {
     @Primary
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public EgovPasswordEncoder egovPasswordEncoder() {
+        return new EgovPasswordEncoder();
+    }
+
+    @Bean
+    @Primary
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 }

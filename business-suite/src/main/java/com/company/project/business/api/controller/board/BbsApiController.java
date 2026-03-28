@@ -37,8 +37,6 @@ public class BbsApiController {
             @RequestParam(value = "searchCnd", required = false) String searchCnd,
             @RequestParam(value = "searchWrd", required = false) String searchWrd) {
         
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        
         Page<BoardDto> resultPage;
         if (searchWrd != null && !searchWrd.isEmpty()) {
             resultPage = boardService.getBoardPosts(bbsId, searchCnd, searchWrd, PageRequest.of(page, size));

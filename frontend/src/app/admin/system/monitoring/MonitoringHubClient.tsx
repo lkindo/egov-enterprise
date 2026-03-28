@@ -34,7 +34,8 @@ import {
   Network,
   CheckCircle2,
   AlertCircle,
-  Share2
+  Share2,
+  FileText
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';

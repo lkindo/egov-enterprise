@@ -7,7 +7,7 @@ interface HubStatusBadgeProps {
   status?: string;
   labels?: Record<string, string>;
   icon?: LucideIcon;
-  variant?: 'default' | 'success' | 'warning' | 'error';
+  variant?: 'default' | 'success' | 'warning' | 'error' | 'secondary';
   className?: string;
 }
 
@@ -23,6 +23,7 @@ export function HubStatusBadge({
   
   const variantStyles = {
     default: 'bg-white/10 dark:bg-muted text-slate-300 dark:text-muted-foreground',
+    secondary: 'bg-slate-500/20 text-slate-400',
     success: 'bg-emerald-500/20 text-emerald-400',
     warning: 'bg-amber-500/20 text-amber-400',
     error: 'bg-rose-500/20 text-rose-400'

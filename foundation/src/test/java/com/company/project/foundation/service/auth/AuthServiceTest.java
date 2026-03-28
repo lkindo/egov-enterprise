@@ -41,7 +41,7 @@ class AuthServiceTest {
     private Authentication authentication;
 
     @InjectMocks
-    private AuthService authService;
+    private AuthServiceImpl authService;
 
     @Nested
     @DisplayName("로그인 테스트")

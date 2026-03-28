@@ -8,7 +8,7 @@ const userFile = path.resolve('playwright/.auth/user.json');
 async function authenticate(request: any, id: string, authFilePath: string) {
     const url = 'http://127.0.0.1:8080/api/v1/auth/login';
     const response = await request.post(url, {
-        data: { id: id, password: '1' }
+        data: { userId: id, password: '1' }
     }).catch((err: Error) => {
         throw new Error(`Connection failed for ${id}: ${err.message}`);
     });

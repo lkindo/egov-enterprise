@@ -38,7 +38,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 @TestConfiguration
 @Profile("minimal-test")
 @org.springframework.context.annotation.Import({
-        EgovSymIdGnrConfig.class,
+        com.company.project.foundation.core.config.EgovIdGnrConfig.class,
         org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
         org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration.class,
         org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration.class,

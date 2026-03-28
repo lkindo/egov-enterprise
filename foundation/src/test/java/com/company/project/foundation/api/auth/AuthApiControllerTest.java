@@ -59,7 +59,7 @@ class AuthApiControllerTest {
     @Test
     @DisplayName("로그인 성공 테스트")
     void loginSuccessTest() throws Exception {
-        TokenResponse tokenResponse = new TokenResponse("accessToken", "refreshToken");
+        TokenResponse tokenResponse = new TokenResponse("accessToken", "refreshToken", "ROLE_USER");
         when(authService.login(any(LoginRequest.class))).thenReturn(tokenResponse);
         doNothing().when(jwtTokenProvider).addRefreshTokenCookie(any(), eq("refreshToken"));
 
@@ -102,7 +102,7 @@ class AuthApiControllerTest {
     @DisplayName("토큰 재발급 성공 테스트")
     void reissue_Success() throws Exception {
         String refreshToken = "validRefreshToken";
-        TokenResponse tokenResponse = new TokenResponse("newAccessToken", "validRefreshToken");
+        TokenResponse tokenResponse = new TokenResponse("newAccessToken", "validRefreshToken", "ROLE_USER");
         when(authService.reissue(refreshToken)).thenReturn(tokenResponse);
 
         mockMvc.perform(post("/api/v1/auth/reissue")

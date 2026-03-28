@@ -43,7 +43,7 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(userId, finalRole);
         String refreshToken = jwtTokenProvider.createRefreshToken(userId);
         
-        return new TokenResponse(accessToken, refreshToken);
+        return new TokenResponse(accessToken, refreshToken, finalRole);
     }
 
     @Override
@@ -63,6 +63,6 @@ public class AuthServiceImpl implements AuthService {
         String finalRole = authorCode.startsWith("ROLE_") ? authorCode : "ROLE_" + authorCode;
         String newAccessToken = jwtTokenProvider.createAccessToken(userId, finalRole);
 
-        return new TokenResponse(newAccessToken, refreshToken);
+        return new TokenResponse(newAccessToken, refreshToken, finalRole);
     }
 }

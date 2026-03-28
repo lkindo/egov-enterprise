@@ -271,6 +271,33 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                 return passwordEncoder.matches(rawPassword, encodedPassword);
         }
 
+        /**
+         * 여러 사용자를 한꺼번에 삭제합니다.
+         */
+        @Transactional
+        @CacheEvict(value = { "users" }, allEntries = true)
+        public void deleteUserList(@NonNull List<String> userIds) {
+                userRepository.deleteAllByIdInBatch(Objects.requireNonNull(userIds));
+        }
+
+        /**
+         * 아이디 중복 여부를 확인합니다.
+         */
+        public boolean checkIdDplct(@NonNull String userId) {
+                return userRepository.existsById(Objects.requireNonNull(userId));
+        }
+
+        /**
+         * 관리자 권한으로 비밀번호를 변경합니다. (기존 비밀번호 확인 없음)
+         */
+        @Transactional
+        @CacheEvict(value = { "users" }, allEntries = true)
+        public void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword) {
+                User user = userRepository.findById(Objects.requireNonNull(userId))
+                                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+                user.updatePassword(passwordEncoder.encode(newPassword));
+        }
+
         private String assertNotBlank(String value, String message) {
                 if (value == null || value.trim().isEmpty()) {
                         throw new IllegalArgumentException(message);

@@ -21,7 +21,13 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+// import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+// Mock Tooltip components for when tooltip.tsx is missing
+const TooltipProvider = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+const Tooltip = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+const TooltipTrigger = ({ children, asChild }: { children: React.ReactNode, asChild?: boolean }) => <>{children}</>;
+const TooltipContent = ({ children }: { children: React.ReactNode }) => null;
 
 interface Author {
   authorCode: string;

@@ -40,8 +40,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                                                 .and(addressBook.othbcScope.eq("PUBLIC")
                                                                 .or(addressBook.wrterId.eq(userId))
                                                                 .or(addressBook.othbcScope.eq("DEPT")
-                                                                                .and(addressBook.trgetOrgnztId
-                                                                                                .eq(orgnztId)))),
+                                                                                .and(orgnztId != null ? addressBook.trgetOrgnztId.eq(orgnztId) : addressBook.trgetOrgnztId.isNull()))),
                                                 searchPredicate)
                                 .orderBy(addressBook.adbkNm.asc());
 

@@ -129,12 +129,12 @@ public class EgovIdGnrConfig {
 
     @Bean(name = "egovAdbkIdGnrService")
     public EgovIdGnrService egovAdbkIdGnrService() {
-        return createIdGnrService("ids", "ADBK_", 20);
+        return createIdGnrService("ids", "ADBK_", 15);
     }
 
     @Bean(name = "egovAdbkUserIdGnrService")
     public EgovIdGnrService egovAdbkUserIdGnrService() {
-        return createIdGnrService("ids", "ADBKUSER_", 20);
+        return createIdGnrService("ids", "ADBKUSER_", 11);
     }
 
     @Bean(name = "egovCmmntyIdGnrService")

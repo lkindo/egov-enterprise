@@ -51,7 +51,11 @@ class LoadTest {
         .build();
 
     executorService = Executors.newFixedThreadPool(20);
-    defaultUser = new UserDto("perfUser", "성능테스트사용자", "USR001", null, null, null, null);
+    defaultUser = UserDto.builder()
+        .userId("perfUser")
+        .userNm("성능테스트사용자")
+        .esntlId("USR001")
+        .build();
 
     when(userService.getUserList()).thenReturn(List.of(defaultUser));
     when(userService.getUserById(anyString())).thenReturn(defaultUser);
@@ -80,7 +84,7 @@ class LoadTest {
     for (int i = 0; i < numberOfRequests; i++) {
       Future<Boolean> future = executorService.submit(() -> {
         try {
-          mockMvc.perform(get("/api/v1/users")
+          mockMvc.perform(get("/api/v1/users/me")
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk())
               .andExpect(jsonPath("$.success").value(true));

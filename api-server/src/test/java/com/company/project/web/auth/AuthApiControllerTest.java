@@ -4,6 +4,9 @@ import com.company.project.foundation.api.auth.AuthApiController;
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.domain.auth.UserAuthorityRepository;
 import com.company.project.foundation.domain.user.repository.UserRepository;
+import com.company.project.foundation.service.auth.AuthService;
+import com.company.project.foundation.service.auth.dto.LoginRequest;
+import com.company.project.foundation.service.auth.dto.TokenResponse;
 import com.company.project.foundation.security.jwt.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,21 +32,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthApiControllerTest {
 
     private MockMvc mockMvc;
-    private AuthenticationManager authenticationManager;
+    private AuthService authService;
     private JwtTokenProvider jwtTokenProvider;
-    private UserRepository userRepository;
-    private UserAuthorityRepository userAuthorityRepository;
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        authenticationManager = mock(AuthenticationManager.class);
+        authService = mock(AuthService.class);
         jwtTokenProvider = mock(JwtTokenProvider.class);
-        userRepository = mock(UserRepository.class);
-        userAuthorityRepository = mock(UserAuthorityRepository.class);
 
-        mockMvc = MockMvcBuilders.standaloneSetup(
-                new AuthApiController(authenticationManager, jwtTokenProvider, userRepository, userAuthorityRepository))
+        mockMvc = MockMvcBuilders.standaloneSetup(new AuthApiController(authService, jwtTokenProvider))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -52,13 +50,8 @@ class AuthApiControllerTest {
     @DisplayName("로그인 - 성공")
     void login_success() throws Exception {
         // Given
-        Authentication mockAuth = mock(Authentication.class);
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(mockAuth).getAuthorities();
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(mockAuth);
-
-        when(jwtTokenProvider.createAccessToken(anyString(), anyString())).thenReturn("mock-access-token");
-        when(jwtTokenProvider.createRefreshToken(anyString())).thenReturn("mock-refresh-token");
+        TokenResponse mockResponse = new TokenResponse("mock-access-token", "mock-refresh-token", "ROLE_USER");
+        when(authService.login(any(LoginRequest.class))).thenReturn(mockResponse);
 
         Map<String, String> request = Map.of(
                 "userId", "loginUser",
@@ -78,8 +71,9 @@ class AuthApiControllerTest {
     @DisplayName("로그인 - 실패 (잘못된 비밀번호)")
     void login_fail() throws Exception {
         // Given
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new org.springframework.security.authentication.BadCredentialsException("Bad credentials"));
+        when(authService.login(any(LoginRequest.class)))
+                .thenThrow(new com.company.project.foundation.core.exception.BusinessException(
+                        com.company.project.foundation.core.exception.ErrorCode.LOGIN_FAILED));
 
         Map<String, String> request = Map.of(
                 "userId", "loginUser",

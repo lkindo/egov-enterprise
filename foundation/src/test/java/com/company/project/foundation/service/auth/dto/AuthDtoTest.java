@@ -19,9 +19,10 @@ class AuthDtoTest {
     @Test
     @DisplayName("TokenResponse 생성 테스트")
     void tokenResponseTest() {
-        TokenResponse response = new TokenResponse("atoken", "rtoken");
+        TokenResponse response = new TokenResponse("atoken", "rtoken", "ROLE_USER");
         assertThat(response.accessToken()).isEqualTo("atoken");
         assertThat(response.refreshToken()).isEqualTo("rtoken");
+        assertThat(response.role()).isEqualTo("ROLE_USER");
     }
 
     @Test

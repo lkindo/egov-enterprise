@@ -67,7 +67,11 @@ class StressTest {
   @BeforeEach
   void setUp() {
     executorService = Executors.newFixedThreadPool(50);
-    defaultUser = new UserDto("stressUser", "스트레스테스트사용자", "USR001", null, null, null, null);
+    defaultUser = UserDto.builder()
+        .userId("stressUser")
+        .userNm("스트레스테스트사용자")
+        .esntlId("USR001")
+        .build();
 
     // 간단한 목록 반환 - doReturn 사용
     doReturn(List.of(defaultUser)).when(userService).getUserList();
@@ -139,7 +143,7 @@ class StressTest {
     for (int i = 0; i < numberOfRequests; i++) {
       executorService.submit(() -> {
         try {
-          mockMvc.perform(get("/api/v1/users")
+          mockMvc.perform(get("/api/v1/users/me")
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           successCount.incrementAndGet();
@@ -165,7 +169,7 @@ class StressTest {
     for (int i = 0; i < numberOfRequests; i++) {
       executorService.submit(() -> {
         try {
-          mockMvc.perform(get("/api/v1/users/stressUser")
+          mockMvc.perform(get("/api/v1/users/me")
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           successCount.incrementAndGet();
@@ -208,7 +212,7 @@ class StressTest {
                 .content(requestBody));
           } else {
             // Read
-            mockMvc.perform(get("/api/v1/users"));
+            mockMvc.perform(get("/api/v1/users/me"));
           }
           successCount.incrementAndGet();
         } catch (Exception e) {
