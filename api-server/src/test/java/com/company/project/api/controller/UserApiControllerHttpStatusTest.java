@@ -1,7 +1,6 @@
 package com.company.project.api.controller;
 
 import com.company.project.foundation.service.user.UserService;
-import com.company.project.foundation.service.user.dto.UserDto;
 import com.company.project.foundation.service.user.dto.UserResponse;
 import com.company.project.foundation.service.user.dto.UserSignupRequest;
 import com.company.project.foundation.core.exception.BusinessException;
@@ -15,8 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Arrays;
-import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;

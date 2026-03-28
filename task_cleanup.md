@@ -20,7 +20,7 @@
 ## 현재 상태 (2026-03-28)
 - [x] 게시판 관리 및 시스템 모니터링 모듈 UI/UX 고도화 완료.
 - [x] 실시간 대시보드 차트 엔진 연동 완료.
-- [ ] 시각적 감사 타임라인 (Visual Audit Timeline) 확장 - **(Recommended Next)**
+- [x] 시각적 감사 타임라인 (Visual Audit Timeline) 확장 - **(Completed)**
 
 ## 기술 스택 및 라이브러리 (Key Technologies)
 - `@tanstack/react-query`: 비동기 데이터 상태 관리

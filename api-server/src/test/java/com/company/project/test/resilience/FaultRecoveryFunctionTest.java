@@ -35,6 +35,7 @@ public class FaultRecoveryFunctionTest {
     void setUp() {
         userService = mock(UserService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
+                .setCustomArgumentResolvers(new org.springframework.data.web.PageableHandlerMethodArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -59,8 +60,8 @@ public class FaultRecoveryFunctionTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data.length()").value(2));
+                .andExpect(jsonPath("$.data.list").isArray())
+                .andExpect(jsonPath("$.data.list.length()").value(2));
     }
 
     @Test

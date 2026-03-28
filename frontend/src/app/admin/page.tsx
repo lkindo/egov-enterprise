@@ -22,44 +22,15 @@ import {
 
 import { cn } from '@/lib/utils';
 import { GaugeChart, RealtimeSparkline, ActivityAreaChart, DistributionPieChart } from '@/app/components/ui/observability-charts';
-import { VisualAuditTimeline, AuditLog } from '@/app/components/ui/visual-audit-timeline';
+import { VisualAuditTimeline, AuditLog as UIAuditLog } from '@/app/components/ui/visual-audit-timeline';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { InsightBanner } from './components/InsightBanner';
+import { useQuery } from '@tanstack/react-query';
+import { auditAdminService } from '@/services/foundation/system/AuditAdminService';
 
 
-const MOCK_AUDIT_LOGS: AuditLog[] = [
-  {
-    id: 'audit-1',
-    action: 'UPDATE',
-    entityName: '권한 설정 변경',
-    performedBy: 'Admin_Master',
-    timestamp: '2026-03-19 14:15:22',
-    ipAddress: '192.168.1.102',
-    severity: 'medium',
-    changes: [
-      { field: 'ROLE_ADMIN', before: 'false', after: 'true' }
-    ]
-  },
-  {
-    id: 'audit-2',
-    action: 'CREATE',
-    entityName: '보안 정책 생성',
-    performedBy: 'System_Auto',
-    timestamp: '2026-03-19 13:30:11',
-    ipAddress: '127.0.0.1',
-    severity: 'low'
-  },
-  {
-    id: 'audit-3',
-    action: 'DELETE',
-    entityName: '만료된 API 키',
-    performedBy: 'Security_Officer',
-    timestamp: '2026-03-19 12:12:45',
-    ipAddress: '203.0.113.45',
-    severity: 'high'
-  }
-];
+// Mock data removed in favor of live query
 
 const MOCK_METRICS = {
   cpu: Array.from({ length: 20 }, (_, i) => ({ time: i, value: 10 + Math.random() * 20 })),
@@ -84,6 +55,25 @@ const MOCK_DISTRIBUTION_DATA = [
 ];
 
 export default function AdminDashboardPage() {
+  const { data: auditData } = useQuery({
+    queryKey: ['admin-dashboard-recent-audits'],
+    queryFn: () => auditAdminService.getAuditLogs({ page: 0, size: 5 }),
+    refetchInterval: 60000
+  });
+
+  const recentLogs: UIAuditLog[] = (auditData?.list || []).map(log => ({
+    id: log.histId,
+    action: log.histCn.includes('생성') || log.histCn.includes('등록') ? 'CREATE' : 
+            log.histCn.includes('삭제') ? 'DELETE' : 
+            log.histCn.includes('복원') ? 'RESTORE' : 'UPDATE',
+    entityName: log.histCn,
+    performedBy: log.frstRegisterId,
+    timestamp: log.frstRegisterPnttm,
+    ipAddress: log.sysNm || 'Unknown Subsystem',
+    severity: log.histCn.includes('오류') || log.histCn.includes('실패') || log.histCn.includes('삭제') ? 'high' : 
+              log.histCn.includes('보안') || log.histCn.includes('권한') ? 'medium' : 'low'
+  }));
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 px-4 md:px-0 pb-20 animate-in fade-in duration-700">
       <PageHeader
@@ -281,11 +271,11 @@ export default function AdminDashboardPage() {
                   </div>
                   <h3 className="text-sm font-black text-foreground uppercase tracking-widest leading-none">Audit History</h3>
                 </div>
-                <Link href="/admin/security/authority" className="text-[10px] font-black text-primary hover:underline uppercase tracking-tighter italic underline-offset-4 decoration-primary/30">Explore All</Link>
+                <Link href="/admin/system/audit" className="text-[10px] font-black text-primary hover:underline uppercase tracking-tighter italic underline-offset-4 decoration-primary/30">Explore All</Link>
               </div>
 
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <VisualAuditTimeline logs={MOCK_AUDIT_LOGS} />
+                <VisualAuditTimeline logs={recentLogs} />
               </div>
 
               <div className="mt-8 pt-8 border-t border-border/50">

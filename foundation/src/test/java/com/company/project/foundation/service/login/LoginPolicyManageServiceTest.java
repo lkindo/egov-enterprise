@@ -1,6 +1,5 @@
 package com.company.project.foundation.service.login;
 
-import com.company.project.foundation.core.exception.BusinessException;
 import com.company.project.foundation.domain.login.LoginPolicy;
 import com.company.project.foundation.domain.login.LoginPolicyRepository;
 import com.company.project.foundation.domain.user.entity.User;
