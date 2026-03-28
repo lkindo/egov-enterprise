@@ -188,10 +188,10 @@ test.describe('Admin Common Code - Ultimate CRUD', () => {
 // --- Banner Administration ---
 test.describe('Banner Administration E2E Verification', () => {
     test.beforeEach(async ({ page }) => {
+        // Universal onboarding bypass
         await page.addInitScript(() => {
             window.localStorage.setItem('egov_smart_tour_v1', 'true');
         });
-        await page.goto('/', { waitUntil: 'load' });
     });
 
     test('Verify Banner Administration Page Access and Registration Modal', async ({ page }) => {
@@ -232,7 +232,6 @@ test.describe('Hierarchical Menu Management', () => {
         await page.addInitScript(() => {
             window.localStorage.setItem('egov_smart_tour_v1', 'true');
         });
-        await page.goto('/', { waitUntil: 'domcontentloaded' });
     });
 
     test('should manage menu hierarchy', async ({ page }) => {

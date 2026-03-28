@@ -1,8 +1,10 @@
 import { test, expect } from './fixtures/base-test';
 
+// Global administrative session for this file
+test.use({ storageState: 'playwright/.auth/admin.json' });
+
 // --- BBS Module ---
 test.describe('BBS Module - Optimized with POM', () => {
-    test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('BBS List and Search Flow', async ({ bbsPage }) => {
         console.log('>>> Step 1: Navigating to BBS Page');
@@ -41,7 +43,6 @@ test.describe('BBS Module - Optimized with POM', () => {
 
 // --- Board Master Console ---
 test.describe('Board Master Console & Wizard E2E', () => {
-    test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('Verify Master Console Page and Wizard Entry', async ({ boardMasterPage }) => {
         console.log('>>> Step 1: Navigating to Master Console');
@@ -92,7 +93,6 @@ test.describe('Board Master Console & Wizard E2E', () => {
 
 // --- Board Maker Wizard ---
 test.describe('Board Master Maker Wizard', () => {
-    test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('should create a new board and link it to menu successfully', async ({ page }) => {
         console.log('>>> Test: Board creation via wizard');
@@ -114,7 +114,6 @@ test.describe('Board Master Maker Wizard', () => {
 
 // --- Community Module ---
 test.describe('Community Module', () => {
-    test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('should display community list', async ({ page }) => {
         await page.goto('/cop/cmy');
@@ -155,7 +154,6 @@ test.describe('Community Module', () => {
 
 // --- Survey Module - Resilient Check ---
 test.describe('Survey Module - Resilient Check', () => {
-    test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('should display survey list or empty message', async ({ page }) => {
         await page.goto('/survey/response', { waitUntil: 'domcontentloaded' });
@@ -177,7 +175,6 @@ test.describe('Survey Module - Resilient Check', () => {
 
 // --- Cmy Module ---
 test.describe('Cmy Module', () => {
-    test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('should display community list', async ({ page }) => {
         await page.goto('/cop/cmy');
@@ -187,7 +184,6 @@ test.describe('Cmy Module', () => {
 
 // --- Djm Module ---
 test.describe('Djm Module', () => {
-    test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('should display dept job list', async ({ page }) => {
         await page.goto('/cop/djm');
@@ -197,7 +193,6 @@ test.describe('Djm Module', () => {
 
 // --- Adb Addressbook Stable Check ---
 test.describe('Adb Addressbook Stable Check', () => {
-    test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('should display addressbook and search', async ({ page }) => {
         await page.goto('/cop/adb');
@@ -218,7 +213,6 @@ test.describe('Adb Addressbook Stable Check', () => {
 
 // --- Scp Scrap Module ---
 test.describe('Scrap Module', () => {
-    test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('should display scrap list', async ({ page }) => {
         await page.goto('/cop/scp');
@@ -251,7 +245,6 @@ test.describe('Scrap Module', () => {
 
 // --- Approvals Module ---
 test.describe('Approvals Module', () => {
-    test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('should display approval inbox and switch tabs', async ({ page }) => {
         await page.goto('/approval/inbox');
