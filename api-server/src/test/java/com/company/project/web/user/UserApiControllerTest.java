@@ -13,6 +13,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -20,7 +22,7 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,7 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * UserApiController 테스트 (Standalone)
+ * UserApiController 통합 테스트 (Standalone)
+ * 일반 사용자 및 관리자용 사용자 관리 API를 모두 테스트합니다.
  */
 class UserApiControllerTest {
 
@@ -61,7 +64,7 @@ class UserApiControllerTest {
 
         mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(loginUserResolver)
+                .setCustomArgumentResolvers(loginUserResolver, new PageableHandlerMethodArgumentResolver())
                 .build();
     }
 
@@ -73,6 +76,8 @@ class UserApiControllerTest {
                 .role(Role.USER.name())
                 .build();
     }
+
+    // --- 일반 사용자 기능 테스트 ---
 
     @Test
     @DisplayName("내 프로필 조회 - 성공")
@@ -97,74 +102,6 @@ class UserApiControllerTest {
     }
 
     @Test
-    @DisplayName("비밀번호 변경 - 성공")
-    void changePassword_success() throws Exception {
-        Map<String, String> request = Map.of("oldPassword", "old", "newPassword", "new");
-        
-        mockMvc.perform(put("/api/v1/users/me/password")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-        
-        verify(userService).changePassword(eq(TEST_USER_ID), eq("old"), eq("new"));
-    }
-
-    @Test
-    @DisplayName("사용자 목록 조회 - 성공")
-    void getUserList_success() throws Exception {
-        when(userService.getUserList()).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/v1/users"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-    }
-
-    @Test
-    @DisplayName("사용자 목록 조회 (페이징) - 성공")
-    void getPagedUserList_success() throws Exception {
-        when(userService.getPagedUserList(any())).thenReturn(org.springframework.data.domain.Page.empty());
-
-        mockMvc.perform(get("/api/v1/users/paged")
-                .param("page", "0")
-                .param("size", "10")
-                .param("sortDir", "desc"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("사용자 상세 조회 - 성공")
-    void getUserById_success() throws Exception {
-        when(userService.getUserById("testId")).thenReturn(createMockUser());
-
-        mockMvc.perform(get("/api/v1/users/{id}", "testId"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-    }
-
-    @Test
-    @DisplayName("사용자 정보 수정 - 성공")
-    void updateUser_success() throws Exception {
-        mockMvc.perform(put("/api/v1/users/{id}", "testId")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createMockUser())))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-        
-        verify(userService).updateUser(eq("testId"), any(UserDto.class));
-    }
-
-    @Test
-    @DisplayName("사용자 삭제 - 성공")
-    void deleteUser_success() throws Exception {
-        mockMvc.perform(delete("/api/v1/users/{id}", "testId"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-        
-        verify(userService).deleteUser("testId");
-    }
-
-    @Test
     @DisplayName("사용자 회원가입 - 성공")
     void signup_success() throws Exception {
         UserResponse mockResponse = new UserResponse("newUser", "테스트사용자", Role.USER);
@@ -185,25 +122,48 @@ class UserApiControllerTest {
                 .andExpect(jsonPath("$.success").value(true));
     }
 
+    // --- 관리자 기능 테스트 ---
+
     @Test
-    @DisplayName("사용자 회원가입 - 중복 사용자 ID (409)")
-    void signup_duplicateUserId() throws Exception {
-        when(userService.signup(any(UserSignupRequest.class)))
-                .thenThrow(new com.company.project.foundation.core.exception.BusinessException(
-                        com.company.project.foundation.core.exception.ErrorCode.DUPLICATE_USER_ID));
+    @DisplayName("관리자: 사용자 목록 조회 - 성공")
+    void getUsers_admin_success() throws Exception {
+        when(userService.getPagedUserList(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        Map<String, Object> request = Map.of(
-                "userId", "admin",
-                "password", "password123!",
-                "userNm", "중복사용자",
-                "passwordHint", "hint",
-                "passwordCnsr", "answer",
-                "role", "USER");
+        mockMvc.perform(get("/api/v1/admin/users")
+                .param("page", "0")
+                .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
 
-        mockMvc.perform(post("/api/v1/users/signup")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.success").value(false));
+    @Test
+    @DisplayName("관리자: 사용자 상세 조회 - 성공")
+    void getUser_admin_success() throws Exception {
+        when(userService.getUserById("user01")).thenReturn(createMockUser());
+
+        mockMvc.perform(get("/api/v1/admin/users/user01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userId").value(TEST_USER_ID));
+    }
+
+    @Test
+    @DisplayName("관리자: 사용자 삭제 - 성공")
+    void deleteUser_admin_success() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/users/{userId}", "user01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+        
+        verify(userService).deleteUser("user01");
+    }
+
+    @Test
+    @DisplayName("아이디 중복 확인 - 성공")
+    void checkIdDplct_success() throws Exception {
+        when(userService.checkIdDplct("user01")).thenReturn(true);
+
+        mockMvc.perform(get("/api/v1/users/check-id")
+                .param("userId", "user01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(true));
     }
 }

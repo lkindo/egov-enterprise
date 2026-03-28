@@ -46,6 +46,9 @@ class AuthApiControllerTest {
     @Mock
     private JwtTokenProvider jwtTokenProvider;
 
+    @Mock
+    private com.company.project.foundation.service.user.UserService userService;
+
     @InjectMocks
     private AuthApiController authApiController;
 
@@ -129,19 +132,27 @@ class AuthApiControllerTest {
     void me_Success_WithCustomUserDetails() throws Exception {
         CustomUserDetails userDetails = mock(CustomUserDetails.class);
         when(userDetails.getUserId()).thenReturn("user01");
-        when(userDetails.getUserNm()).thenReturn("홍길동");
-        when(userDetails.getAuthorCode()).thenReturn("ROLE_ADMIN");
 
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, null, 
                 List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
         SecurityContextHolder.getContext().setAuthentication(auth);
+
+        com.company.project.foundation.service.user.dto.UserDto mockUserDto = com.company.project.foundation.service.user.dto.UserDto.builder()
+                .userId("user01")
+                .userNm("홍길동")
+                .role("ROLE_ADMIN")
+                .userSe("EMP")
+                .emailAdres("hong@example.com")
+                .build();
+        when(userService.getUserById("user01")).thenReturn(mockUserDto);
 
         mockMvc.perform(get("/api/v1/auth/me")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value("user01"))
                 .andExpect(jsonPath("$.data.name").value("홍길동"))
-                .andExpect(jsonPath("$.data.role").value("ROLE_ADMIN"));
+                .andExpect(jsonPath("$.data.role").value("ROLE_ADMIN"))
+                .andExpect(jsonPath("$.data.userSe").value("EMP"));
         
         SecurityContextHolder.clearContext();
     }

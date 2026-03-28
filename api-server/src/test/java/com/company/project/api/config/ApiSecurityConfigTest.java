@@ -14,6 +14,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.security.test.context.support.WithMockUser;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -23,6 +25,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import com.company.project.api.controller.UserApiController;
 import com.company.project.foundation.service.user.UserService;
+import org.springframework.data.domain.PageImpl;
+import java.util.Collections;
 import com.company.project.api.interceptor.OperationalAuditInterceptor;
 
 @WebMvcTest(controllers = UserApiController.class)
@@ -100,10 +104,11 @@ public class ApiSecurityConfigTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("관리자 권한 - 관리자 API 접근 - 404 반환 (실제 엔드포인트 없음)")
+    @DisplayName("관리자 권한 - 관리자 API 접근 - 성공")
     void adminAccessTest() throws Exception {
+        when(userService.getPagedUserList(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
         mockMvc.perform(get("/api/v1/admin/users"))
-                .andExpect(status().isNotFound()); // 실제 엔드포인트 없음 404
+                .andExpect(status().isOk());
     }
 
     @Test

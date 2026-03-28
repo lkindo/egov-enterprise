@@ -2,8 +2,6 @@ package com.company.project.web.auth;
 
 import com.company.project.foundation.api.auth.AuthApiController;
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
-import com.company.project.foundation.domain.auth.UserAuthorityRepository;
-import com.company.project.foundation.domain.user.repository.UserRepository;
 import com.company.project.foundation.service.auth.AuthService;
 import com.company.project.foundation.service.auth.dto.LoginRequest;
 import com.company.project.foundation.service.auth.dto.TokenResponse;
@@ -13,13 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -34,14 +28,16 @@ class AuthApiControllerTest {
     private MockMvc mockMvc;
     private AuthService authService;
     private JwtTokenProvider jwtTokenProvider;
+    private com.company.project.foundation.service.user.UserService userService;
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
         authService = mock(AuthService.class);
         jwtTokenProvider = mock(JwtTokenProvider.class);
+        userService = mock(com.company.project.foundation.service.user.UserService.class);
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new AuthApiController(authService, jwtTokenProvider))
+        mockMvc = MockMvcBuilders.standaloneSetup(new AuthApiController(authService, jwtTokenProvider, userService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }

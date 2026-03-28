@@ -46,6 +46,7 @@ public class UserDto {
     private String emailAdres;
     private String ofcpsNm;
     private String subDn;
+    private String userSe;
     private LocalDateTime createdDate;
 
     // 레거시 테스트 호환용 생성자

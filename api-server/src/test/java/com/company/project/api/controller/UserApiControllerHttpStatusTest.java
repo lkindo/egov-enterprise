@@ -95,46 +95,6 @@ class UserApiControllerHttpStatusTest {
                 .andExpect(jsonPath("$.code").value(ErrorCode.DUPLICATE_USER_ID.getCode()));
     }
 
-    @Test
-    @DisplayName("GET /api/v1/users - 성공 (200 OK)")
-    void getUserList_success_returns200() throws Exception {
-        List<UserDto> userList = Arrays.asList(
-                UserDto.builder()
-                        .userId("user1")
-                        .userNm("User1")
-                        .esntlId("USR001")
-                        .build());
-
-        when(userService.getUserList()).thenReturn(userList);
-
-        mockMvc.perform(get("/api/v1/users")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-    }
-
-    @Test
-    @DisplayName("GET /api/v1/users/paged - 성공 (200 OK)")
-    void getPagedUserList_success_returns200() throws Exception {
-        java.util.List<UserDto> content = Arrays.asList(
-                UserDto.builder()
-                        .userId("user1")
-                        .userNm("User1")
-                        .esntlId("USR001")
-                        .build());
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
-        org.springframework.data.domain.Page<UserDto> userPage = new org.springframework.data.domain.PageImpl<>(
-                content, pageable, content.size());
-
-        when(userService.getPagedUserList(any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(userPage);
-
-        mockMvc.perform(get("/api/v1/users/paged")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.data.list").isArray());
-    }
 
     @Test
     @DisplayName("POST /api/v1/users/signup - 서버 내부 오류 (500 Internal Server Error)")

@@ -29,6 +29,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import com.company.project.foundation.security.service.CustomUserDetails;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.company.project.config.TestInfrastructureConfig;
 import org.springframework.context.annotation.Import;
@@ -54,6 +58,7 @@ class BottleneckIdentificationTest {
 
   private ExecutorService executorService;
   private UserDto defaultUser;
+  private CustomUserDetails mockPrincipal;
 
   // 성능 저하 방지를 위한 Mock 설정
   @TestConfiguration
@@ -73,6 +78,13 @@ class BottleneckIdentificationTest {
         .userId("perfUser")
         .userNm("성능테스트사용자")
         .esntlId("USR001")
+        .build();
+
+    mockPrincipal = CustomUserDetails.builder()
+        .userId("perfUser")
+        .esntlId("USR001")
+        .userNm("성능테스트사용자")
+        .roleName("USER")
         .build();
 
     // 간단한 목록 반환 - doReturn 사용
@@ -109,6 +121,7 @@ class BottleneckIdentificationTest {
     long singleThreadStartTime = System.currentTimeMillis();
     for (int i = 0; i < numberOfRequests; i++) {
       mockMvc.perform(get("/api/v1/users/me")
+          .with(user(mockPrincipal))
           .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk());
     }
@@ -122,6 +135,7 @@ class BottleneckIdentificationTest {
       Future<Boolean> future = executorService.submit(() -> {
         try {
           mockMvc.perform(get("/api/v1/users/me")
+              .with(user(mockPrincipal))
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           return true;
@@ -161,6 +175,7 @@ class BottleneckIdentificationTest {
         try {
           long requestStartTime = System.currentTimeMillis();
           mockMvc.perform(get("/api/v1/users/me")
+              .with(user(mockPrincipal))
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           long responseTime = System.currentTimeMillis() - requestStartTime;
@@ -192,6 +207,7 @@ class BottleneckIdentificationTest {
     long noCacheStartTime = System.currentTimeMillis();
     for (int i = 0; i < numberOfRequests; i++) {
       mockMvc.perform(get("/api/v1/users/me")
+          .with(user(mockPrincipal))
           .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk());
     }
@@ -200,6 +216,7 @@ class BottleneckIdentificationTest {
     long withCacheStartTime = System.currentTimeMillis();
     for (int i = 0; i < numberOfRequests; i++) {
       mockMvc.perform(get("/api/v1/users/me")
+          .with(user(mockPrincipal))
           .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk());
     }
@@ -221,6 +238,7 @@ class BottleneckIdentificationTest {
         try {
           long requestStartTime = System.currentTimeMillis();
           mockMvc.perform(get("/api/v1/users/me")
+              .with(user(mockPrincipal))
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           long responseTime = System.currentTimeMillis() - requestStartTime;
@@ -257,6 +275,7 @@ class BottleneckIdentificationTest {
       executorService.submit(() -> {
         try {
           mockMvc.perform(get("/api/v1/users/me")
+              .with(user(mockPrincipal))
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
         } catch (Exception e) {
@@ -290,6 +309,7 @@ class BottleneckIdentificationTest {
         try {
           long requestStartTime = System.currentTimeMillis();
           mockMvc.perform(get("/api/v1/users/me")
+              .with(user(mockPrincipal))
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           long responseTime = System.currentTimeMillis() - requestStartTime;
@@ -317,6 +337,7 @@ class BottleneckIdentificationTest {
     long syncStartTime = System.currentTimeMillis();
     for (int i = 0; i < numberOfRequests; i++) {
       mockMvc.perform(get("/api/v1/users/me")
+          .with(user(mockPrincipal))
           .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk());
     }
@@ -329,6 +350,7 @@ class BottleneckIdentificationTest {
       executorService.submit(() -> {
         try {
           mockMvc.perform(get("/api/v1/users/me")
+              .with(user(mockPrincipal))
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
         } catch (Exception e) {
@@ -353,11 +375,11 @@ class BottleneckIdentificationTest {
     List<Long> responseTimes = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     for (int i = 0; i < numberOfRequests; i++) {
-      final int page = i % 10;
       executorService.submit(() -> {
         try {
           long requestStartTime = System.currentTimeMillis();
           mockMvc.perform(get("/api/v1/users/me")
+              .with(user(mockPrincipal))
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           long responseTime = System.currentTimeMillis() - requestStartTime;
@@ -387,6 +409,7 @@ class BottleneckIdentificationTest {
         try {
           long requestStartTime = System.currentTimeMillis();
           mockMvc.perform(get("/api/v1/users/me")
+              .with(user(mockPrincipal))
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           long responseTime = System.currentTimeMillis() - requestStartTime;
@@ -458,6 +481,7 @@ class BottleneckIdentificationTest {
         try {
           long requestStartTime = System.currentTimeMillis();
           mockMvc.perform(get("/api/v1/users/me")
+              .with(user(mockPrincipal))
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           long responseTime = System.currentTimeMillis() - requestStartTime;

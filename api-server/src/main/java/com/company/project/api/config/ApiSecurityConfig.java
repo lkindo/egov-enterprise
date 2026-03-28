@@ -96,7 +96,9 @@ public class ApiSecurityConfig {
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/auth/**"),
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/public/**"),
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/menus/**"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/images/**"))
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/images/**"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/users/signup"),
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/users/check-id"))
                                                 .permitAll()
                                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**")).hasAnyRole("ADMIN", "SYSTEM")
                                                 .anyRequest().authenticated())

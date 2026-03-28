@@ -49,24 +49,25 @@ public class AuthApiController {
         return ApiResponse.success("Logged out successfully");
     }
 
+    private final com.company.project.foundation.service.user.UserService userService;
+
     @GetMapping("/me")
     public ApiResponse<Map<String, Object>> getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
-            Map<String, Object> userData = new HashMap<>();
-
+            String userId = auth.getName();
             if (auth.getPrincipal() instanceof CustomUserDetails) {
-                CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
-                userData.put("id", userDetails.getUserId());
-                userData.put("name", userDetails.getUserNm());
-                userData.put("role", userDetails.getAuthorCode());
-                userData.put("userSe", userDetails.getAuthorCode().contains("ADMIN") ? "EMP" : "USR");
-            } else {
-                userData.put("id", auth.getName());
-                userData.put("name", auth.getName());
-                userData.put("role", "ROLE_USER");
-                userData.put("userSe", "USR");
+                userId = ((CustomUserDetails) auth.getPrincipal()).getUserId();
             }
+            
+            com.company.project.foundation.service.user.dto.UserDto userDto = userService.getUserById(userId);
+            
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", userDto.getUserId());
+            userData.put("name", userDto.getUserNm());
+            userData.put("role", userDto.getRole());
+            userData.put("userSe", userDto.getUserSe());
+            userData.put("email", userDto.getEmailAdres());
 
             return ApiResponse.success(userData);
         }
