@@ -51,7 +51,7 @@ xmlbeans = { group = "org.apache.xmlbeans", name = "xmlbeans", version.ref = "xm
 jdom2 = { group = "org.jdom", name = "jdom2", version.ref = "jdom2" }
 
 archunit-junit5 = { group = "com.tngtech.archunit", name = "archunit-junit5", version.ref = "archunit" }
-archunit-library = { group = "com.tngtech.archunit", name = "archunit-library", version.ref = "archunit" }
+archunit = { group = "com.tngtech.archunit", name = "archunit", version.ref = "archunit" }
 
 jjwt-api = { group = "io.jsonwebtoken", name = "jjwt-api", version.ref = "jjwt" }
 jjwt-impl = { group = "io.jsonwebtoken", name = "jjwt-impl", version.ref = "jjwt" }

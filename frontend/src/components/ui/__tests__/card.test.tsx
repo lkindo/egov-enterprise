@@ -1,3 +1,10 @@
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
 import { render, screen } from '@testing-library/react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../card';
 import { describe, it, expect } from 'vitest';

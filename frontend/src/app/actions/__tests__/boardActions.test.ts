@@ -1,3 +1,10 @@
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { saveBoardArticle, deleteBoardArticle } from '../boardActions';
 import client from '@/lib/api/client';

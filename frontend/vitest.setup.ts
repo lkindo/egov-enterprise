@@ -1,5 +1,14 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import React from 'react';
+
+// ============================================
+// Environment Variables Setup
+// ============================================
+Object.assign(process.env, {
+  NEXT_PUBLIC_API_URL: 'http://localhost:8080/api/v1/',
+  NODE_ENV: 'test',
+});
 
 // Mock Next.js Navigation
 vi.mock('next/navigation', () => ({
@@ -34,14 +43,34 @@ vi.mock('@/app/components/ui/confirm-modal', () => ({
   useConfirm: () => vi.fn().mockResolvedValue(true),
 }));
 
-// Mock ResizeObserver
+// Mock observers
 global.ResizeObserver = class ResizeObserver {
   observe() { }
   unobserve() { }
   disconnect() { }
 };
 
-// Mock ScrollTo for components that might use it
+global.IntersectionObserver = class IntersectionObserver {
+  observe() { }
+  unobserve() { }
+  disconnect() { }
+} as any;
+
+// Mock window APIs
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 window.scrollTo = vi.fn();
 
 // Mock DOM elements for Radix UI

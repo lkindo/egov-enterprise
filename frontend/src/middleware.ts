@@ -11,6 +11,10 @@ export function middleware(request: NextRequest) {
   const hasToken = request.cookies.has('accessToken');
   const userRole = request.cookies.get('userRole')?.value;
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Middleware Check] Path: ${pathname} | hasToken: ${hasToken} | userRole: ${userRole}`);
+  }
+
   // 0. 레거시 경로 리다이렉션 (하위 호환성 및 E2E 안정성)
   const legacyMap: Record<string, string> = {
     '/cop/adb': '/admin/collaboration/address-book',

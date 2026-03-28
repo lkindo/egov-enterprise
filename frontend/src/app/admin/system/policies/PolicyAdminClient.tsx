@@ -49,7 +49,7 @@ export default function PolicyAdminClient() {
     if (!selectedPolicy) return;
     setIsSaving(true);
     try {
-      await policyAdminService.updatePolicy(selectedPolicy.type || (selectedPolicy as any).id, {
+      await policyAdminService.updatePolicy(selectedPolicy.type || selectedPolicy.id || '', {
         title: editTitle,
         content: editContent
       });
@@ -72,7 +72,7 @@ export default function PolicyAdminClient() {
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
             <Settings size={14} />
           </div>
-          <span className="font-bold tracking-tighter uppercase">{(item as any).id || item.type}</span>
+          <span className="font-bold tracking-tighter uppercase">{item.id || item.type}</span>
         </div>
       )
     },
@@ -139,7 +139,7 @@ export default function PolicyAdminClient() {
           <div className="bg-slate-900 p-8 text-white flex items-center justify-between">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black flex items-center gap-3">
-                <Edit2 className="text-primary" /> 정책 수정 : <span className="opacity-50 tracking-widest uppercase">{(selectedPolicy as any)?.id || selectedPolicy?.type}</span>
+                <Edit2 className="text-primary" /> 정책 수정 : <span className="opacity-50 tracking-widest uppercase">{selectedPolicy?.id || selectedPolicy?.type}</span>
               </DialogTitle>
             </DialogHeader>
             <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase">

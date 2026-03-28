@@ -1,3 +1,10 @@
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Button } from '../button';
 import { describe, it, expect, vi } from 'vitest';

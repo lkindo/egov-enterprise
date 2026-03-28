@@ -54,7 +54,9 @@ export function Header({ initialMenus = [] }: { initialMenus?: any[] }) {
 
   useEffect(() => {
     if (menus.length === 0) {
-      menuService.getHeadMenus().then(res => setMenus(res || []));
+      menuService.getHeadMenus()
+        .then(res => setMenus(res || []))
+        .catch(() => setMenus([]));
     }
   }, [menus.length]);
 

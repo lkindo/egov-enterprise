@@ -13,7 +13,7 @@ export default defineConfig({
     workers: process.env.CI ? 2 : undefined, // Allow some parallelism in CI if possible
     reporter: 'html',
     use: {
-        baseURL: 'http://127.0.0.1:3001',
+        baseURL: process.env.NEXT_PUBLIC_WEB_URL || 'http://127.0.0.1:3001',
         trace: 'retain-on-failure',
         video: 'on-first-retry',
         screenshot: 'only-on-failure',

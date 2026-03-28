@@ -6,7 +6,8 @@ const adminFile = path.resolve('playwright/.auth/admin.json');
 const userFile = path.resolve('playwright/.auth/user.json');
 
 async function authenticate(request: any, id: string, authFilePath: string) {
-    const url = 'http://127.0.0.1:8080/api/v1/auth/login';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080/api/v1/';
+    const url = `${apiUrl.endsWith('/') ? apiUrl : apiUrl + '/'}auth/login`;
     const response = await request.post(url, {
         data: { userId: id, password: '1' }
     }).catch((err: Error) => {

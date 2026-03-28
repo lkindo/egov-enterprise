@@ -1,3 +1,10 @@
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { StandardModal } from '../standard-modal';

@@ -1,3 +1,10 @@
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { authService } from '../foundation/auth/authService';
 import api from '@/lib/api/client';

@@ -1,8 +1,10 @@
 import { test, expect } from './fixtures/base-test';
 
+// Global administrative session for this file
+test.use({ storageState: 'playwright/.auth/admin.json' });
+
 // --- Admin User Management ---
 test.describe('Admin User Management - Optimized with POM', () => {
-    test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('Modern HUB List Access', async ({ userAdminPage }) => {
         await userAdminPage.goto();

@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest(classes = TestApplication.class)
-@Import({TestSecurityConfig.class, TestMessagingConfig.class})
+@Import({ TestSecurityConfig.class, TestMessagingConfig.class })
 @Transactional
 @ActiveProfiles("test")
 public abstract class BusinessIntegrationTestSupport {

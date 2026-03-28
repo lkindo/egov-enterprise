@@ -1,3 +1,10 @@
+vi.mock('next/config', () => ({
+  default: () => ({
+    publicRuntimeConfig: {},
+    serverRuntimeConfig: {},
+  }),
+}));
+
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { saveSyncServerAction, deleteSyncServerAction, executeSyncAction } from '../syncActions';
 import { syncAdminService } from '@/services/foundation/system/SyncAdminService';
