@@ -3,6 +3,10 @@ plugins {
     id 'org.springframework.boot'
     id 'io.spring.dependency-management'
 }
+ 
+repositories {
+    mavenCentral()
+}
 
 dependencies {
     api project(':foundation')
@@ -28,6 +32,9 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
+    testImplementation 'com.tngtech.archunit:archunit-junit5:1.3.0'
+    testImplementation 'com.tngtech.archunit:archunit:1.3.0'
+    testImplementation(testFixtures(project(':foundation')))
 }
 
 bootJar { enabled = false }

@@ -1,6 +1,6 @@
 package com.company.project.foundation;
 
-import com.company.project.foundation.domain.config.QuerydslConfig;
+import com.company.project.foundation.core.config.QuerydslConfig;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
 

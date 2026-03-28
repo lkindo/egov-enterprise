@@ -3,6 +3,7 @@ package com.company.project.foundation.service.auth;
 import com.company.project.foundation.security.jwt.JwtTokenProvider;
 import com.company.project.foundation.service.auth.dto.LoginRequest;
 import com.company.project.foundation.service.auth.dto.TokenResponse;
+import com.company.project.foundation.service.auth.impl.AuthServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,12 @@ class AuthServiceTest {
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private com.company.project.foundation.domain.user.repository.UserRepository userRepository;
+
+    @Mock
+    private com.company.project.foundation.domain.auth.UserAuthorityRepository userAuthorityRepository;
 
     @Mock
     private Authentication authentication;

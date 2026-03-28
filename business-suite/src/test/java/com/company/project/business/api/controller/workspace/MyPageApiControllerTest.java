@@ -3,15 +3,13 @@ package com.company.project.business.api.controller.workspace;
 import com.company.project.foundation.service.workspace.MyPageService;
 import com.company.project.foundation.service.workspace.dto.MyPageContentDto;
 import com.company.project.foundation.security.jwt.JwtTokenProvider;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.company.project.foundation.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
 
@@ -23,19 +21,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MyPageApiController.class)
-class MyPageApiControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
+class MyPageApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
     private MyPageService myPageService;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Test
     @WithMockUser

@@ -7,6 +7,7 @@ import com.company.project.business.service.board.dto.BoardDto;
 import com.company.project.business.service.board.dto.BoardSaveRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,10 +38,6 @@ public class BbsApiController {
             @RequestParam(value = "searchWrd", required = false) String searchWrd) {
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        log.debug(">>> [BBS] Accessing board: {}, User: {}, Roles: {}", 
-            bbsId, 
-            (auth != null ? auth.getName() : "ANONYMOUS"), 
-            (auth != null ? auth.getAuthorities() : "NONE"));
         
         Page<BoardDto> resultPage;
         if (searchWrd != null && !searchWrd.isEmpty()) {
@@ -65,7 +62,7 @@ public class BbsApiController {
     @PostMapping("/{bbsId}")
     public ResponseEntity<ApiResponse<Long>> createBoard(
             @PathVariable("bbsId") String bbsId,
-            @RequestPart("board") BoardSaveRequest request,
+            @Valid @RequestPart("board") BoardSaveRequest request,
             @RequestPart(value = "file", required = false) List<MultipartFile> files) throws Exception {
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -86,7 +83,7 @@ public class BbsApiController {
     public ResponseEntity<ApiResponse<Void>> updateBoard(
             @PathVariable("bbsId") String bbsId,
             @PathVariable("nttId") Long nttId,
-            @RequestPart("board") BoardSaveRequest request,
+            @Valid @RequestPart("board") BoardSaveRequest request,
             @RequestPart(value = "file", required = false) List<MultipartFile> files) throws Exception {
         
         if (files != null && !files.isEmpty()) {

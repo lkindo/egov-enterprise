@@ -3,9 +3,10 @@ package com.company.project.business.api.controller.board;
 import com.company.project.business.service.board.BoardService;
 import com.company.project.business.service.board.dto.BoardDto;
 import com.company.project.business.service.board.dto.BoardSaveRequest;
+import com.company.project.foundation.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -14,7 +15,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
@@ -27,13 +27,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(BoardApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @DisplayName("BoardApiController 테스트")
-class BoardApiControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
+class BoardApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
     private BoardService boardService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
     @Test
     @DisplayName("게시글 목록 조회 성공")

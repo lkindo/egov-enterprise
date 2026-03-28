@@ -1,0 +1,377 @@
+
+>     java.lang.AssertionError: Architecture Violation [Priority: MEDIUM] - Rule 'Layere
+d architecture considering only dependencies in any package ['com.company.project.founda
+tion..'], consisting of
+      layer 'Controller' ('..api.controller..')
+      layer 'Service' ('..service..')
+      layer 'Repository' ('..repository..')
+      layer 'Domain' ('..domain..')
+      where layer 'Controller' may not be accessed by any layer
+      where layer 'Service' may only be accessed by layers ['Controller', 'Service']
+      where layer 'Repository' may only be accessed by layers ['Service']
+      where layer 'Domain' may only be accessed by layers ['Controller', 'Service', 'Rep
+ository', 'Domain']' was violated (120 times):
+      Constructor <com.company.project.foundation.api.auth.AuthApiController.<init>(org.
+springframework.security.authentication.AuthenticationManager, com.company.project.found
+ation.security.jwt.JwtTokenProvider, com.company.project.foundation.domain.user.reposito
+ry.UserRepository, com.company.project.foundation.domain.auth.UserAuthorityRepository)> 
+has parameter of type <com.company.project.foundation.domain.auth.UserAuthorityRepositor
+y> in (AuthApiController.java:0)
+      Constructor <com.company.project.foundation.api.auth.AuthApiController.<init>(org.
+springframework.security.authentication.AuthenticationManager, com.company.project.found
+ation.security.jwt.JwtTokenProvider, com.company.project.foundation.domain.user.reposito
+ry.UserRepository, com.company.project.foundation.domain.auth.UserAuthorityRepository)> 
+has parameter of type <com.company.project.foundation.domain.user.repository.UserReposit
+ory> in (AuthApiController.java:0)
+      Constructor <com.company.project.foundation.api.auth.AuthApiController.<init>(org.
+springframework.security.authentication.AuthenticationManager, com.company.project.found
+ation.security.jwt.JwtTokenProvider, com.company.project.foundation.domain.user.reposito
+ry.UserRepository, com.company.project.foundation.domain.auth.UserAuthorityRepository)> 
+has parameter of type <com.company.project.foundation.domain.user.repository.UserReposit
+ory> in (AuthApiController.java:0)
+      Constructor <com.company.project.foundation.api.controller.system.user.UserAbsence
+ApiController.<init>(com.company.project.foundation.domain.user.repository.UserAbsenceRe
+pository)> has parameter of type <com.company.project.foundation.domain.user.repository.
+UserAbsenceRepository> in (UserAbsenceApiController.java:0)
+      Constructor <com.company.project.foundation.security.iam.CustomUserDetailsService.
+<init>(com.company.project.foundation.domain.user.repository.UserRepository, com.company
+.project.foundation.domain.auth.UserAuthorityRepository)> has parameter of type <com.com
+pany.project.foundation.domain.auth.UserAuthorityRepository> in (CustomUserDetailsServic
+e.java:0)
+      Constructor <com.company.project.foundation.security.iam.CustomUserDetailsService.
+<init>(com.company.project.foundation.domain.user.repository.UserRepository, com.company
+.project.foundation.domain.auth.UserAuthorityRepository)> has parameter of type <com.com
+pany.project.foundation.domain.user.repository.UserRepository> in (CustomUserDetailsServ
+ice.java:0)
+      Constructor <com.company.project.foundation.security.iam.CustomUserDetailsService.
+<init>(com.company.project.foundation.domain.user.repository.UserRepository, com.company
+.project.foundation.domain.auth.UserAuthorityRepository)> has parameter of type <com.com
+pany.project.foundation.domain.user.repository.UserRepository> in (CustomUserDetailsServ
+ice.java:0)
+      Constructor <com.company.project.foundation.security.iam.EgovAuthenticationProvide
+r.<init>(com.company.project.foundation.domain.user.repository.UserRepository, com.compa
+ny.project.foundation.domain.auth.UserAuthorityRepository, org.springframework.security.
+crypto.password.PasswordEncoder, com.company.project.foundation.security.service.EgovPas
+swordEncoder)> has parameter of type <com.company.project.foundation.domain.auth.UserAut
+horityRepository> in (EgovAuthenticationProvider.java:0)
+      Constructor <com.company.project.foundation.security.iam.EgovAuthenticationProvide
+r.<init>(com.company.project.foundation.domain.user.repository.UserRepository, com.compa
+ny.project.foundation.domain.auth.UserAuthorityRepository, org.springframework.security.
+crypto.password.PasswordEncoder, com.company.project.foundation.security.service.EgovPas
+swordEncoder)> has parameter of type <com.company.project.foundation.domain.user.reposit
+ory.UserRepository> in (EgovAuthenticationProvider.java:0)
+      Constructor <com.company.project.foundation.security.iam.EgovAuthenticationProvide
+r.<init>(com.company.project.foundation.domain.user.repository.UserRepository, com.compa
+ny.project.foundation.domain.auth.UserAuthorityRepository, org.springframework.security.
+crypto.password.PasswordEncoder, com.company.project.foundation.security.service.EgovPas
+swordEncoder)> has parameter of type <com.company.project.foundation.domain.user.reposit
+ory.UserRepository> in (EgovAuthenticationProvider.java:0)
+      Constructor <com.company.project.foundation.security.iam.EgovAuthenticationProvide
+r.<init>(com.company.project.foundation.domain.user.repository.UserRepository, com.compa
+ny.project.foundation.domain.auth.UserAuthorityRepository, org.springframework.security.
+crypto.password.PasswordEncoder, com.company.project.foundation.security.service.EgovPas
+swordEncoder)> has parameter of type <com.company.project.foundation.security.service.Eg
+ovPasswordEncoder> in (EgovAuthenticationProvider.java:0)
+      Field <com.company.project.foundation.api.auth.AuthApiController.userAuthorityRepo
+sitory> has type <com.company.project.foundation.domain.auth.UserAuthorityRepository> in
+ (AuthApiController.java:0)
+      Field <com.company.project.foundation.api.auth.AuthApiController.userRepository> h
+as type <com.company.project.foundation.domain.user.repository.UserRepository> in (AuthA
+piController.java:0)
+      Field <com.company.project.foundation.api.auth.AuthApiController.userRepository> h
+as type <com.company.project.foundation.domain.user.repository.UserRepository> in (AuthA
+piController.java:0)
+      Field <com.company.project.foundation.api.controller.system.user.UserAbsenceApiCon
+troller.userAbsenceRepository> has type <com.company.project.foundation.domain.user.repo
+sitory.UserAbsenceRepository> in (UserAbsenceApiController.java:0)
+      Field <com.company.project.foundation.security.iam.CustomUserDetailsService.userAu
+thorityRepository> has type <com.company.project.foundation.domain.auth.UserAuthorityRep
+ository> in (CustomUserDetailsService.java:0)
+      Field <com.company.project.foundation.security.iam.CustomUserDetailsService.userRe
+pository> has type <com.company.project.foundation.domain.user.repository.UserRepository
+> in (CustomUserDetailsService.java:0)
+      Field <com.company.project.foundation.security.iam.CustomUserDetailsService.userRe
+pository> has type <com.company.project.foundation.domain.user.repository.UserRepository
+> in (CustomUserDetailsService.java:0)
+      Field <com.company.project.foundation.security.iam.EgovAuthenticationProvider.egov
+PasswordEncoder> has type <com.company.project.foundation.security.service.EgovPasswordE
+ncoder> in (EgovAuthenticationProvider.java:0)
+      Field <com.company.project.foundation.security.iam.EgovAuthenticationProvider.user
+AuthorityRepository> has type <com.company.project.foundation.domain.auth.UserAuthorityR
+epository> in (EgovAuthenticationProvider.java:0)
+      Field <com.company.project.foundation.security.iam.EgovAuthenticationProvider.user
+Repository> has type <com.company.project.foundation.domain.user.repository.UserReposito
+ry> in (EgovAuthenticationProvider.java:0)
+      Field <com.company.project.foundation.security.iam.EgovAuthenticationProvider.user
+Repository> has type <com.company.project.foundation.domain.user.repository.UserReposito
+ry> in (EgovAuthenticationProvider.java:0)
+      Method <com.company.project.foundation.api.auth.AuthApiController.getCurrentUser()
+> calls method <com.company.project.foundation.security.service.CustomUserDetails.getAut
+horCode()> in (AuthApiController.java:118)
+      Method <com.company.project.foundation.api.auth.AuthApiController.getCurrentUser()
+> calls method <com.company.project.foundation.security.service.CustomUserDetails.getAut
+horCode()> in (AuthApiController.java:119)
+      Method <com.company.project.foundation.api.auth.AuthApiController.getCurrentUser()
+> calls method <com.company.project.foundation.security.service.CustomUserDetails.getUse
+rId()> in (AuthApiController.java:116)
+      Method <com.company.project.foundation.api.auth.AuthApiController.getCurrentUser()
+> calls method <com.company.project.foundation.security.service.CustomUserDetails.getUse
+rNm()> in (AuthApiController.java:117)
+      Method <com.company.project.foundation.api.auth.AuthApiController.getCurrentUser()
+> checks instanceof <com.company.project.foundation.security.service.CustomUserDetails> 
+in (AuthApiController.java:114)
+      Method <com.company.project.foundation.api.auth.AuthApiController.reissue(java.lan
+g.String)> calls method <com.company.project.foundation.domain.auth.UserAuthority.getAut
+horCode()> in (AuthApiController.java:79)
+      Method <com.company.project.foundation.api.auth.AuthApiController.reissue(java.lan
+g.String)> calls method <com.company.project.foundation.domain.auth.UserAuthority.getAut
+horCode()> in (AuthApiController.java:80)
+      Method <com.company.project.foundation.api.auth.AuthApiController.reissue(java.lan
+g.String)> calls method <com.company.project.foundation.domain.auth.UserAuthorityReposit
+ory.findById(java.lang.String)> in (AuthApiController.java:77)
+      Method <com.company.project.foundation.api.auth.AuthApiController.reissue(java.lan
+g.String)> calls method <com.company.project.foundation.domain.user.entity.Role.name()> 
+in (AuthApiController.java:84)
+      Method <com.company.project.foundation.api.auth.AuthApiController.reissue(java.lan
+g.String)> calls method <com.company.project.foundation.domain.user.entity.User.getEsntl
+Id()> in (AuthApiController.java:77)
+      Method <com.company.project.foundation.api.auth.AuthApiController.reissue(java.lan
+g.String)> calls method <com.company.project.foundation.domain.user.entity.User.getRole(
+)> in (AuthApiController.java:76)
+      Method <com.company.project.foundation.api.auth.AuthApiController.reissue(java.lan
+g.String)> calls method <com.company.project.foundation.domain.user.entity.User.getRole(
+)> in (AuthApiController.java:83)
+      Method <com.company.project.foundation.api.auth.AuthApiController.reissue(java.lan
+g.String)> calls method <com.company.project.foundation.domain.user.entity.User.getRole(
+)> in (AuthApiController.java:84)
+      Method <com.company.project.foundation.api.auth.AuthApiController.reissue(java.lan
+g.String)> calls method <com.company.project.foundation.domain.user.entity.User.getUserI
+d()> in (AuthApiController.java:76)
+      Method <com.company.project.foundation.api.auth.AuthApiController.reissue(java.lan
+g.String)> calls method <com.company.project.foundation.domain.user.repository.UserRepos
+itory.findById(java.lang.String)> in (AuthApiController.java:74)
+      Method <com.company.project.foundation.api.auth.AuthApiController.reissue(java.lan
+g.String)> calls method <com.company.project.foundation.domain.user.repository.UserRepos
+itory.findById(java.lang.String)> in (AuthApiController.java:74)
+      Method <com.company.project.foundation.api.controller.system.user.UserAbsenceApiCo
+ntroller.getAbsence(java.lang.String)> calls method <com.company.project.foundation.doma
+in.user.repository.UserAbsenceRepository.findById(java.lang.Object)> in (UserAbsenceApiC
+ontroller.java:39)
+      Method <com.company.project.foundation.api.controller.system.user.UserAbsenceApiCo
+ntroller.getAbsences()> calls method <com.company.project.foundation.domain.user.reposit
+ory.UserAbsenceRepository.findAll()> in (UserAbsenceApiController.java:27)
+      Method <com.company.project.foundation.api.controller.system.user.UserAbsenceApiCo
+ntroller.updateAbsence(java.lang.String, com.company.project.foundation.api.controller.s
+ystem.user.UserAbsenceApiController$UserAbsenceDto)> calls method <com.company.project.f
+oundation.domain.user.repository.UserAbsenceRepository.findById(java.lang.Object)> in (U
+serAbsenceApiController.java:52)
+      Method <com.company.project.foundation.api.controller.system.user.UserAbsenceApiCo
+ntroller.updateAbsence(java.lang.String, com.company.project.foundation.api.controller.s
+ystem.user.UserAbsenceApiController$UserAbsenceDto)> calls method <com.company.project.f
+oundation.domain.user.repository.UserAbsenceRepository.save(java.lang.Object)> in (UserA
+bsenceApiController.java:55)
+      Method <com.company.project.foundation.security.audit.LoginUserAuditorAware.getCur
+rentAuditor()> calls method <com.company.project.foundation.security.service.CustomUserD
+etails.getUserId()> in (LoginUserAuditorAware.java:29)
+      Method <com.company.project.foundation.security.audit.LoginUserAuditorAware.getCur
+rentAuditor()> checks instanceof <com.company.project.foundation.security.service.Custom
+UserDetails> in (LoginUserAuditorAware.java:28)
+      Method <com.company.project.foundation.security.config.SecurityConfig.egovPassword
+Encoder()> calls constructor <com.company.project.foundation.security.service.EgovPasswo
+rdEncoder.<init>()> in (SecurityConfig.java:46)
+      Method <com.company.project.foundation.security.config.SecurityConfig.egovPassword
+Encoder()> has return type <com.company.project.foundation.security.service.EgovPassword
+Encoder> in (SecurityConfig.java:0)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.aut
+h.UserAuthorityRepository.findById(java.lang.String)> in (CustomUserDetailsService.java:
+32)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.entity.Role.name()> in (CustomUserDetailsService.java:42)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.entity.User.getEsntlId()> in (CustomUserDetailsService.java:32)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.entity.User.getEsntlId()> in (CustomUserDetailsService.java:39)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.entity.User.getLockAt()> in (CustomUserDetailsService.java:43)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.entity.User.getPassword()> in (CustomUserDetailsService.java:41)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.entity.User.getRole()> in (CustomUserDetailsService.java:42)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.entity.User.getRole()> in (CustomUserDetailsService.java:42)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.entity.User.getUserId()> in (CustomUserDetailsService.java:38)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.entity.User.getUserNm()> in (CustomUserDetailsService.java:40)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.repository.UserRepository.findByEsntlId(java.lang.String)> in (CustomUserDetailsServic
+e.java:28)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.repository.UserRepository.findByEsntlId(java.lang.String)> in (CustomUserDetailsServic
+e.java:28)
+  
+  Gradle Test Executor 2 finished executing tests.
+  
+  > Task :foundation:test FAILED
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.repository.UserRepository.findById(java.lang.String)> in (CustomUserDetailsService.jav
+a:27)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.domain.use
+r.repository.UserRepository.findById(java.lang.String)> in (CustomUserDetailsService.jav
+a:27)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.security.s
+ervice.CustomUserDetails$CustomUserDetailsBuilder.authorCode(java.lang.String)> in (Cust
+omUserDetailsService.java:44)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.security.s
+ervice.CustomUserDetails$CustomUserDetailsBuilder.build()> in (CustomUserDetailsService.
+java:45)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.security.s
+ervice.CustomUserDetails$CustomUserDetailsBuilder.esntlId(java.lang.String)> in (CustomU
+serDetailsService.java:39)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.security.s
+ervice.CustomUserDetails$CustomUserDetailsBuilder.lockAt(java.lang.String)> in (CustomUs
+erDetailsService.java:43)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.security.s
+ervice.CustomUserDetails$CustomUserDetailsBuilder.password(java.lang.String)> in (Custom
+UserDetailsService.java:41)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.security.s
+ervice.CustomUserDetails$CustomUserDetailsBuilder.roleName(java.lang.String)> in (Custom
+UserDetailsService.java:42)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.security.s
+ervice.CustomUserDetails$CustomUserDetailsBuilder.userId(java.lang.String)> in (CustomUs
+erDetailsService.java:38)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.security.s
+ervice.CustomUserDetails$CustomUserDetailsBuilder.userNm(java.lang.String)> in (CustomUs
+erDetailsService.java:40)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> calls method <com.company.project.foundation.security.s
+ervice.CustomUserDetails.builder()> in (CustomUserDetailsService.java:37)
+      Method <com.company.project.foundation.security.iam.CustomUserDetailsService.loadU
+serByUsername(java.lang.String)> references method <com.company.project.foundation.domai
+n.auth.UserAuthority.getAuthorCode()> in (CustomUserDetailsService.java:32)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.auth.UserAuthority.getAuthorCode()> in (EgovAuthenticationProvi
+der.java:108)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.auth.UserAuthorityRepository.findById(java.lang.String)> in (Eg
+ovAuthenticationProvider.java:107)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.Role.name()> in (EgovAuthenticationProvider.java:12
+0)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.Role.name()> in (EgovAuthenticationProvider.java:13
+4)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getEsntlId()> in (EgovAuthenticationProvider.j
+ava:105)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getEsntlId()> in (EgovAuthenticationProvider.j
+ava:107)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getEsntlId()> in (EgovAuthenticationProvider.j
+ava:131)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getEsntlId()> in (EgovAuthenticationProvider.j
+ava:75)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getEsntlId()> in (EgovAuthenticationProvider.j
+ava:76)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getLockAt()> in (EgovAuthenticationProvider.ja
+va:135)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getPassword()> in (EgovAuthenticationProvider.
+java:133)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getPassword()> in (EgovAuthenticationProvider.
+java:62)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getRole()> in (EgovAuthenticationProvider.java
+:105)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getRole()> in (EgovAuthenticationProvider.java
+:120)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getRole()> in (EgovAuthenticationProvider.java
+:120)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getRole()> in (EgovAuthenticationProvider.java
+:134)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getRole()> in (EgovAuthenticationProvider.java
+:134)
+      Method <com.company.project.foundation.security.iam.EgovAuthenticationProvider.aut
+henticate(org.springframework.security.core.Authentication)> calls method <com.company.p
+roject.foundation.domain.user.entity.User.getUserId()> in (EgovAuthenticationProvider.ja
+va:105)
+>         at com.tngtech.archunit.lang.ArchRule$Assertions.assertNoViolation(ArchRule.ja
+va:94)
+          at com.tngtech.archunit.lang.ArchRule$Assertions.check(ArchRule.java:86)
+          at com.tngtech.archunit.library.Architectures$LayeredArchitecture.check(Archit
+ectures.java:347)
+          at com.tngtech.archunit.junit.internal.ArchUnitTestDescriptor$ArchUnitRuleDesc
+riptor.execute(ArchUnitTestDescriptor.java:167)
+          at com.tngtech.archunit.junit.internal.ArchUnitTestDescriptor$ArchUnitRuleDesc
+riptor.execute(ArchUnitTestDescriptor.java:150)
+          at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+          at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+  Generating HTML test report...
+  Finished generating test html results (0.056 secs) into: D:\project\egov-enterprise\fo
+undation\build\reports\tests\test
+  Finished generating test XML results (0.012 secs) into: D:\project\egov-enterprise\fou
+ndation\build\test-results\test
+  
+  [Incubating] Problems report is available at: file:///D:/project/egov-enterprise/build
+/reports/problems/problems-report.html
+  
+  Deprecated Gradle features were used in this build, making it incompatible with Gradle
+ 10.
+  
+  You can use '--warning-mode all' to show the individual deprecation warnings and deter
+mine if they come from your own scripts or plugins.
+  
+  For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line
+_interface.html#sec:command_line_warnings in the Gradle documentation.
+  6 actionable tasks: 1 executed, 5 up-to-date
+  Watched directory hierarchies: [D:\project\egov-enterprise]
+
+

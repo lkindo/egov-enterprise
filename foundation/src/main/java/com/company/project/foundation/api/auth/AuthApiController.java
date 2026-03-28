@@ -3,15 +3,14 @@ package com.company.project.foundation.api.auth;
 import com.company.project.foundation.core.exception.BusinessException;
 import com.company.project.foundation.core.exception.ErrorCode;
 import com.company.project.foundation.core.response.ApiResponse;
-import com.company.project.foundation.domain.auth.UserAuthorityRepository;
-import com.company.project.foundation.domain.user.repository.UserRepository;
 import com.company.project.foundation.security.service.CustomUserDetails;
 import com.company.project.foundation.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.service.auth.AuthService;
+import com.company.project.foundation.service.auth.dto.LoginRequest;
+import com.company.project.foundation.service.auth.dto.TokenResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -23,80 +22,25 @@ import java.util.Map;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthApiController {
-    private final AuthenticationManager authenticationManager;
+    
+    private final AuthService authService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    private final UserRepository userRepository;
-    private final UserAuthorityRepository userAuthorityRepository;
-
     @PostMapping("/login")
-    public ApiResponse<Map<String, String>> login(@RequestBody Map<String, String> loginRequest,
+    public ApiResponse<TokenResponse> login(@RequestBody LoginRequest loginRequest,
             HttpServletResponse response) {
-        String userId = loginRequest.get("id");
-        if (userId == null) {
-            userId = loginRequest.get("userId");
-        }
-        String password = loginRequest.get("password");
-        
-        log.info(">>> [Login] Attempting login for userId: {}", userId);
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(userId, password));
-            String role = authentication.getAuthorities().stream()
-                    .map(auth -> auth.getAuthority())
-                    .findFirst()
-                    .orElse("ROLE_USER");
-            String finalRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-            String accessToken = jwtTokenProvider.createAccessToken(userId, finalRole);
-            String refreshToken = jwtTokenProvider.createRefreshToken(userId);
-            jwtTokenProvider.addRefreshTokenCookie(response, refreshToken);
-            Map<String, String> responseData = new HashMap<>();
-            responseData.put("accessToken", accessToken);
-            responseData.put("role", finalRole);
-            return ApiResponse.success(responseData);
-        } catch (Exception e) {
-            log.error(">>> Login failed for user {}: ", userId, e);
-            throw new BusinessException(ErrorCode.LOGIN_FAILED);
-        }
+        log.info(">>> [Login] Attempting login for userId: {}", loginRequest.userId());
+        TokenResponse tokenResponse = authService.login(loginRequest);
+        jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.refreshToken());
+        return ApiResponse.success(tokenResponse);
     }
 
     @PostMapping("/reissue")
-    public ApiResponse<Map<String, String>> reissue(
-            @CookieValue(name = "refreshToken", required = false) String refreshToken) {
-        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
-            log.warn(">>> [Reissue] Missing or invalid refresh token");
-            throw new BusinessException(ErrorCode.INVALID_TOKEN);
-        }
-        String userId = jwtTokenProvider.getUserId(refreshToken);
-        log.info(">>> [Reissue] Request received for userId: {}", userId);
-
-        // Fetch actual user role from DB
-        String authorCode = userRepository.findById(userId)
-                .map(user -> {
-                    log.debug(">>> [Reissue] Found user: {}, current inherent role: {}", user.getUserId(), user.getRole());
-                    return userAuthorityRepository.findById(user.getEsntlId())
-                            .map(ua -> {
-                                log.debug(">>> [Reissue] Found explicit authority: {} for user: {}", ua.getAuthorCode(), userId);
-                                return ua.getAuthorCode();
-                            })
-                            .orElseGet(() -> {
-                                log.info(">>> [Reissue] No explicit authority found, using inherent role: {}", user.getRole());
-                                return user.getRole().name();
-                            });
-                })
-                .orElseGet(() -> {
-                    log.warn(">>> [Reissue] Failed to find user: {}, falling back to ROLE_USER", userId);
-                    return "ROLE_USER";
-                });
-
-        String finalRole = authorCode.startsWith("ROLE_") ? authorCode : "ROLE_" + authorCode;
-        log.info(">>> [Reissue] Final role for user {}: {}", userId, finalRole);
-        String newAccessToken = jwtTokenProvider.createAccessToken(userId, finalRole);
-
-        Map<String, String> responseData = new HashMap<>();
-        responseData.put("accessToken", newAccessToken);
-        responseData.put("role", finalRole);
-        return ApiResponse.success(responseData);
+    public ApiResponse<TokenResponse> reissue(
+            @CookieValue(name = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response) {
+        TokenResponse tokenResponse = authService.reissue(refreshToken);
+        return ApiResponse.success(tokenResponse);
     }
 
     @PostMapping("/logout")

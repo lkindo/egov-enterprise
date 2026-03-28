@@ -1,4 +1,4 @@
-package com.company.project.config;
+package com.company.project.foundation.core.config;
 
 import javax.sql.DataSource;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -9,16 +9,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 /**
- * 시스템 관리 (sym) 모듈의 ID 생성 서비스 설정
+ * 시스템 관리 모듈의 ID 생성 서비스 설정
  * 공통 컴포넌트의 EgovTableIdGnrServiceImpl을 사용하여 각 테이블별 고유 ID를 생성함.
  *
  * @since 2026-01-05
  */
 @Configuration
-public class EgovSymIdGnrConfig {
+public class EgovIdGnrConfig {
     private final DataSource dataSource;
 
-    public EgovSymIdGnrConfig(DataSource dataSource) {
+    public EgovIdGnrConfig(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

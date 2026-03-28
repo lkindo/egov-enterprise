@@ -1,0 +1,194 @@
+Initialized native services in: C:\Users\sanle\.gradle\native
+Initialized jansi services in: C:\Users\sanle\.gradle\native
+The client will now receive all logging from the daemon (pid: 20032). The daemon log file: C:\Users\sanle\.gradle\daemon\9.4.1\daemon-20032.out.log
+Starting 26th build in daemon [uptime: 32 mins 2.391 secs, performance: 99%, GC rate: 0.00/s, heap usage: 0% of 6 GiB, non-heap usage: 10% of 1 GiB]
+Using 8 worker leases.
+Operational build model parameters: {cachingModelBuilding=false, configurationCache=false, configurationCacheDisabledReason=null, configurationCacheParallelLoad=false, configurationCacheParallelStore=false, configureOnDemand=true, invalidateCoupledProjects=false, isolatedProjects=false, modelAsProjectDependency=false, modelBuilding=false, parallelModelBuilding=false, parallelProjectConfiguration=false, parallelProjectExecution=true, resilientModelBuilding=false}
+Configuration on demand is an incubating feature.
+Now considering [D:\project\egov-enterprise] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Settings evaluated using settings file 'D:\project\egov-enterprise\settings.gradle'.
+Using local directory build cache for the root build (location = C:\Users\sanle\.gradle\caches\build-cache-1, remove unused entries = after 7 days).
+Projects loaded. Root project using build file 'D:\project\egov-enterprise\build.gradle'.
+Included projects: [root project 'egov-enterprise', project ':api-server', project ':business-suite', project ':foundation']
+Task path ':foundation:test' matched project ':foundation'
+
+> Configure project :
+Evaluating root project 'egov-enterprise' using build file 'D:\project\egov-enterprise\build.gradle'.
+Resolved plugin [id: 'java']
+Resolved plugin [id: 'org.springframework.boot', version: '3.4.1', apply: false]
+Resolved plugin [id: 'io.spring.dependency-management', version: '1.1.7']
+Resolved plugin [id: 'io.freefair.lombok', version: '8.12.2', apply: false]
+Resolved plugin [id: 'jacoco']
+Applying dependency management to configuration 'annotationProcessor' in project 'egov-enterprise'
+Applying dependency management to configuration 'apiElements' in project 'egov-enterprise'
+Applying dependency management to configuration 'archives' in project 'egov-enterprise'
+Applying dependency management to configuration 'compileClasspath' in project 'egov-enterprise'
+Applying dependency management to configuration 'compileOnly' in project 'egov-enterprise'
+Applying dependency management to configuration 'default' in project 'egov-enterprise'
+Applying dependency management to configuration 'implementation' in project 'egov-enterprise'
+Applying dependency management to configuration 'mainSourceElements' in project 'egov-enterprise'
+Applying dependency management to configuration 'runtimeClasspath' in project 'egov-enterprise'
+Applying dependency management to configuration 'runtimeElements' in project 'egov-enterprise'
+Applying dependency management to configuration 'runtimeOnly' in project 'egov-enterprise'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'egov-enterprise'
+Applying dependency management to configuration 'testCompileClasspath' in project 'egov-enterprise'
+Applying dependency management to configuration 'testCompileOnly' in project 'egov-enterprise'
+Applying dependency management to configuration 'testImplementation' in project 'egov-enterprise'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'egov-enterprise'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'egov-enterprise'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'egov-enterprise'
+Applying dependency management to configuration 'jacocoAgent' in project 'egov-enterprise'
+Applying dependency management to configuration 'jacocoAnt' in project 'egov-enterprise'
+Applying dependency management to configuration 'coverageDataElementsForTest' in project 'egov-enterprise'
+Applying dependency management to configuration 'annotationProcessor' in project 'api-server'
+Applying dependency management to configuration 'api' in project 'api-server'
+Applying dependency management to configuration 'apiElements' in project 'api-server'
+Applying dependency management to configuration 'archives' in project 'api-server'
+Applying dependency management to configuration 'compileClasspath' in project 'api-server'
+Applying dependency management to configuration 'compileOnly' in project 'api-server'
+Applying dependency management to configuration 'compileOnlyApi' in project 'api-server'
+Applying dependency management to configuration 'coverageDataElementsForTest' in project 'api-server'
+Applying dependency management to configuration 'default' in project 'api-server'
+Applying dependency management to configuration 'implementation' in project 'api-server'
+Applying dependency management to configuration 'jacocoAgent' in project 'api-server'
+Applying dependency management to configuration 'jacocoAnt' in project 'api-server'
+Applying dependency management to configuration 'mainSourceElements' in project 'api-server'
+Applying dependency management to configuration 'runtimeClasspath' in project 'api-server'
+Applying dependency management to configuration 'runtimeElements' in project 'api-server'
+Applying dependency management to configuration 'runtimeOnly' in project 'api-server'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'api-server'
+Applying dependency management to configuration 'testCompileClasspath' in project 'api-server'
+Applying dependency management to configuration 'testCompileOnly' in project 'api-server'
+Applying dependency management to configuration 'testImplementation' in project 'api-server'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'api-server'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'api-server'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'api-server'
+Applying dependency management to configuration 'lombok' in project 'api-server'
+Applying dependency management to configuration 'annotationProcessor' in project 'business-suite'
+Applying dependency management to configuration 'api' in project 'business-suite'
+Applying dependency management to configuration 'apiElements' in project 'business-suite'
+Applying dependency management to configuration 'archives' in project 'business-suite'
+Applying dependency management to configuration 'compileClasspath' in project 'business-suite'
+Applying dependency management to configuration 'compileOnly' in project 'business-suite'
+Applying dependency management to configuration 'compileOnlyApi' in project 'business-suite'
+Applying dependency management to configuration 'coverageDataElementsForTest' in project 'business-suite'
+Applying dependency management to configuration 'default' in project 'business-suite'
+Applying dependency management to configuration 'implementation' in project 'business-suite'
+Applying dependency management to configuration 'jacocoAgent' in project 'business-suite'
+Applying dependency management to configuration 'jacocoAnt' in project 'business-suite'
+Applying dependency management to configuration 'mainSourceElements' in project 'business-suite'
+Applying dependency management to configuration 'runtimeClasspath' in project 'business-suite'
+Applying dependency management to configuration 'runtimeElements' in project 'business-suite'
+Applying dependency management to configuration 'runtimeOnly' in project 'business-suite'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'business-suite'
+Applying dependency management to configuration 'testCompileClasspath' in project 'business-suite'
+Applying dependency management to configuration 'testCompileOnly' in project 'business-suite'
+Applying dependency management to configuration 'testImplementation' in project 'business-suite'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'business-suite'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'business-suite'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'business-suite'
+Applying dependency management to configuration 'lombok' in project 'business-suite'
+Applying dependency management to configuration 'annotationProcessor' in project 'foundation'
+Applying dependency management to configuration 'api' in project 'foundation'
+Applying dependency management to configuration 'apiElements' in project 'foundation'
+Applying dependency management to configuration 'archives' in project 'foundation'
+Applying dependency management to configuration 'compileClasspath' in project 'foundation'
+Applying dependency management to configuration 'compileOnly' in project 'foundation'
+Applying dependency management to configuration 'compileOnlyApi' in project 'foundation'
+Applying dependency management to configuration 'coverageDataElementsForTest' in project 'foundation'
+Applying dependency management to configuration 'default' in project 'foundation'
+Applying dependency management to configuration 'implementation' in project 'foundation'
+Applying dependency management to configuration 'jacocoAgent' in project 'foundation'
+Applying dependency management to configuration 'jacocoAnt' in project 'foundation'
+Applying dependency management to configuration 'mainSourceElements' in project 'foundation'
+Applying dependency management to configuration 'runtimeClasspath' in project 'foundation'
+Applying dependency management to configuration 'runtimeElements' in project 'foundation'
+Applying dependency management to configuration 'runtimeOnly' in project 'foundation'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'foundation'
+Applying dependency management to configuration 'testCompileClasspath' in project 'foundation'
+Applying dependency management to configuration 'testCompileOnly' in project 'foundation'
+Applying dependency management to configuration 'testImplementation' in project 'foundation'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'foundation'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'foundation'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'foundation'
+Applying dependency management to configuration 'lombok' in project 'foundation'
+
+> Configure project :foundation
+Evaluating project ':foundation' using build file 'D:\project\egov-enterprise\foundation\build.gradle'.
+Resolved plugin [id: 'java-library']
+Resolved plugin [id: 'org.springframework.boot']
+Resolved plugin [id: 'io.spring.dependency-management']
+Resolved plugin [id: 'jacoco']
+Applying dependency management to configuration 'bootArchives' in project 'foundation'
+Applying dependency management to configuration 'productionRuntimeClasspath' in project 'foundation'
+Applying dependency management to configuration 'developmentOnly' in project 'foundation'
+Applying dependency management to configuration 'testAndDevelopmentOnly' in project 'foundation'
+Task name matched 'test'
+Selected primary task 'test' from project :foundation
+Resolving global dependency management for project 'foundation'
+Resource missing. [HTTP GET: https://repo.maven.apache.org/maven2/com/tngtech/archunit/archunit-library/1.3.0/archunit-library-1.3.0.pom]
+Resource missing. [HTTP GET: https://dl.google.com/dl/android/maven2/com/tngtech/archunit/archunit-library/1.3.0/archunit-library-1.3.0.pom]
+Resource missing. [HTTP GET: https://maven.egovframe.go.kr/maven/com/tngtech/archunit/archunit-library/1.3.0/archunit-library-1.3.0.pom]
+Resource missing. [HTTP GET: https://repo.maven.apache.org/maven2/com/tngtech/archunit/archunit-library/1.3.0/archunit-library-1.3.0.pom]
+Excluding [com.google.protobuf:protobuf-java]
+Excluding []
+Excluding []
+Excluding []
+Excluding []
+Excluding [com.google.protobuf:protobuf-java]
+Excluding []
+Excluding [com.google.protobuf:protobuf-java]
+Excluding []
+All projects evaluated.
+Tasks to be executed: [task ':foundation:generateEffectiveLombokConfig', task ':foundation:compileJava', task ':foundation:processResources', task ':foundation:classes', task ':foundation:generateTestEffectiveLombokConfig', task ':foundation:compileTestJava', task ':foundation:processTestResources', task ':foundation:testClasses', task ':foundation:test', task ':foundation:jacocoTestReport']
+Tasks that were excluded: []
+Resolve mutations for :foundation:generateEffectiveLombokConfig (Thread[#841,Execution worker Thread 2,5,main]) started.
+:foundation:generateEffectiveLombokConfig (Thread[#846,Execution worker Thread 7,5,main]) started.
+
+> Task :foundation:generateEffectiveLombokConfig UP-TO-DATE
+Custom actions are attached to task ':foundation:generateEffectiveLombokConfig'.
+Build cache key for task ':foundation:generateEffectiveLombokConfig' is 5d39acc3b52f8b951fe2536319df9d86
+Skipping task ':foundation:generateEffectiveLombokConfig' as it is up-to-date.
+Resolve mutations for :foundation:compileJava (Thread[#846,Execution worker Thread 7,5,main]) started.
+:foundation:compileJava (Thread[#846,Execution worker Thread 7,5,main]) started.
+
+> Task :foundation:compileJava UP-TO-DATE
+Custom actions are attached to task ':foundation:compileJava'.
+Build cache key for task ':foundation:compileJava' is b8c14afa785087a27d3573749e381a58
+Skipping task ':foundation:compileJava' as it is up-to-date.
+Resolve mutations for :foundation:processResources (Thread[#846,Execution worker Thread 7,5,main]) started.
+:foundation:processResources (Thread[#846,Execution worker Thread 7,5,main]) started.
+
+> Task :foundation:processResources UP-TO-DATE
+Caching disabled for task ':foundation:processResources' because:
+  Not worth caching
+Skipping task ':foundation:processResources' as it is up-to-date.
+Resolve mutations for :foundation:classes (Thread[#846,Execution worker Thread 7,5,main]) started.
+:foundation:classes (Thread[#846,Execution worker Thread 7,5,main]) started.
+
+> Task :foundation:classes UP-TO-DATE
+Skipping task ':foundation:classes' as it has no actions.
+Resolve mutations for :foundation:generateTestEffectiveLombokConfig (Thread[#846,Execution worker Thread 7,5,main]) started.
+:foundation:generateTestEffectiveLombokConfig (Thread[#846,Execution worker Thread 7,5,main]) started.
+
+> Task :foundation:generateTestEffectiveLombokConfig UP-TO-DATE
+Custom actions are attached to task ':foundation:generateTestEffectiveLombokConfig'.
+Build cache key for task ':foundation:generateTestEffectiveLombokConfig' is 7c4af94729c84ef9c17e1cf17d27f108
+Skipping task ':foundation:generateTestEffectiveLombokConfig' as it is up-to-date.
+Resolve mutations for :foundation:compileTestJava (Thread[#846,Execution worker Thread 7,5,main]) started.
+:foundation:compileTestJava (Thread[#846,Execution worker Thread 7,5,main]) started.
+
+> Task :foundation:compileTestJava FAILED
+
+[Incubating] Problems report is available at: file:///D:/project/egov-enterprise/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+5 actionable tasks: 1 executed, 4 up-to-date
+Watched directory hierarchies: [D:\project\egov-enterprise]

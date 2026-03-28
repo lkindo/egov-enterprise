@@ -1,0 +1,258 @@
+Initialized native services in: C:\Users\sanle\.gradle\native
+Initialized jansi services in: C:\Users\sanle\.gradle\native
+The client will now receive all logging from the daemon (pid: 2288). The daemon log file: C:\Users\sanle\.gradle\daemon\9.4.1\daemon-2288.out.log
+Starting 12th build in daemon [uptime: 15 mins 53.079 secs, performance: 100%, GC rate: 0.00/s, heap usage: 0% of 6 GiB, non-heap usage: 11% of 1 GiB]
+Using 8 worker leases.
+Operational build model parameters: {cachingModelBuilding=false, configurationCache=false, configurationCacheDisabledReason=null, configurationCacheParallelLoad=false, configurationCacheParallelStore=false, configureOnDemand=true, invalidateCoupledProjects=false, isolatedProjects=false, modelAsProjectDependency=false, modelBuilding=false, parallelModelBuilding=false, parallelProjectConfiguration=false, parallelProjectExecution=true, resilientModelBuilding=false}
+Configuration on demand is an incubating feature.
+Now considering [D:\project\egov-enterprise] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Settings evaluated using settings file 'D:\project\egov-enterprise\settings.gradle'.
+Using local directory build cache for the root build (location = C:\Users\sanle\.gradle\caches\build-cache-1, remove unused entries = after 7 days).
+Projects loaded. Root project using build file 'D:\project\egov-enterprise\build.gradle'.
+Included projects: [root project 'egov-enterprise', project ':api-server', project ':business-suite', project ':foundation']
+Task path ':foundation:test' matched project ':foundation'
+
+> Configure project :
+Evaluating root project 'egov-enterprise' using build file 'D:\project\egov-enterprise\build.gradle'.
+Resolved plugin [id: 'java']
+Resolved plugin [id: 'org.springframework.boot', version: '3.4.1', apply: false]
+Resolved plugin [id: 'io.spring.dependency-management', version: '1.1.7']
+Resolved plugin [id: 'io.freefair.lombok', version: '8.12.2', apply: false]
+Resolved plugin [id: 'jacoco']
+Applying dependency management to configuration 'annotationProcessor' in project 'egov-enterprise'
+Applying dependency management to configuration 'apiElements' in project 'egov-enterprise'
+Applying dependency management to configuration 'archives' in project 'egov-enterprise'
+Applying dependency management to configuration 'compileClasspath' in project 'egov-enterprise'
+Applying dependency management to configuration 'compileOnly' in project 'egov-enterprise'
+Applying dependency management to configuration 'default' in project 'egov-enterprise'
+Applying dependency management to configuration 'implementation' in project 'egov-enterprise'
+Applying dependency management to configuration 'mainSourceElements' in project 'egov-enterprise'
+Applying dependency management to configuration 'runtimeClasspath' in project 'egov-enterprise'
+Applying dependency management to configuration 'runtimeElements' in project 'egov-enterprise'
+Applying dependency management to configuration 'runtimeOnly' in project 'egov-enterprise'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'egov-enterprise'
+Applying dependency management to configuration 'testCompileClasspath' in project 'egov-enterprise'
+Applying dependency management to configuration 'testCompileOnly' in project 'egov-enterprise'
+Applying dependency management to configuration 'testImplementation' in project 'egov-enterprise'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'egov-enterprise'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'egov-enterprise'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'egov-enterprise'
+Applying dependency management to configuration 'jacocoAgent' in project 'egov-enterprise'
+Applying dependency management to configuration 'jacocoAnt' in project 'egov-enterprise'
+Applying dependency management to configuration 'coverageDataElementsForTest' in project 'egov-enterprise'
+Applying dependency management to configuration 'annotationProcessor' in project 'api-server'
+Applying dependency management to configuration 'api' in project 'api-server'
+Applying dependency management to configuration 'apiElements' in project 'api-server'
+Applying dependency management to configuration 'archives' in project 'api-server'
+Applying dependency management to configuration 'compileClasspath' in project 'api-server'
+Applying dependency management to configuration 'compileOnly' in project 'api-server'
+Applying dependency management to configuration 'compileOnlyApi' in project 'api-server'
+Applying dependency management to configuration 'coverageDataElementsForTest' in project 'api-server'
+Applying dependency management to configuration 'default' in project 'api-server'
+Applying dependency management to configuration 'implementation' in project 'api-server'
+Applying dependency management to configuration 'jacocoAgent' in project 'api-server'
+Applying dependency management to configuration 'jacocoAnt' in project 'api-server'
+Applying dependency management to configuration 'mainSourceElements' in project 'api-server'
+Applying dependency management to configuration 'runtimeClasspath' in project 'api-server'
+Applying dependency management to configuration 'runtimeElements' in project 'api-server'
+Applying dependency management to configuration 'runtimeOnly' in project 'api-server'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'api-server'
+Applying dependency management to configuration 'testCompileClasspath' in project 'api-server'
+Applying dependency management to configuration 'testCompileOnly' in project 'api-server'
+Applying dependency management to configuration 'testImplementation' in project 'api-server'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'api-server'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'api-server'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'api-server'
+Applying dependency management to configuration 'lombok' in project 'api-server'
+Applying dependency management to configuration 'annotationProcessor' in project 'business-suite'
+Applying dependency management to configuration 'api' in project 'business-suite'
+Applying dependency management to configuration 'apiElements' in project 'business-suite'
+Applying dependency management to configuration 'archives' in project 'business-suite'
+Applying dependency management to configuration 'compileClasspath' in project 'business-suite'
+Applying dependency management to configuration 'compileOnly' in project 'business-suite'
+Applying dependency management to configuration 'compileOnlyApi' in project 'business-suite'
+Applying dependency management to configuration 'coverageDataElementsForTest' in project 'business-suite'
+Applying dependency management to configuration 'default' in project 'business-suite'
+Applying dependency management to configuration 'implementation' in project 'business-suite'
+Applying dependency management to configuration 'jacocoAgent' in project 'business-suite'
+Applying dependency management to configuration 'jacocoAnt' in project 'business-suite'
+Applying dependency management to configuration 'mainSourceElements' in project 'business-suite'
+Applying dependency management to configuration 'runtimeClasspath' in project 'business-suite'
+Applying dependency management to configuration 'runtimeElements' in project 'business-suite'
+Applying dependency management to configuration 'runtimeOnly' in project 'business-suite'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'business-suite'
+Applying dependency management to configuration 'testCompileClasspath' in project 'business-suite'
+Applying dependency management to configuration 'testCompileOnly' in project 'business-suite'
+Applying dependency management to configuration 'testImplementation' in project 'business-suite'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'business-suite'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'business-suite'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'business-suite'
+Applying dependency management to configuration 'lombok' in project 'business-suite'
+Applying dependency management to configuration 'annotationProcessor' in project 'foundation'
+Applying dependency management to configuration 'api' in project 'foundation'
+Applying dependency management to configuration 'apiElements' in project 'foundation'
+Applying dependency management to configuration 'archives' in project 'foundation'
+Applying dependency management to configuration 'compileClasspath' in project 'foundation'
+Applying dependency management to configuration 'compileOnly' in project 'foundation'
+Applying dependency management to configuration 'compileOnlyApi' in project 'foundation'
+Applying dependency management to configuration 'coverageDataElementsForTest' in project 'foundation'
+Applying dependency management to configuration 'default' in project 'foundation'
+Applying dependency management to configuration 'implementation' in project 'foundation'
+Applying dependency management to configuration 'jacocoAgent' in project 'foundation'
+Applying dependency management to configuration 'jacocoAnt' in project 'foundation'
+Applying dependency management to configuration 'mainSourceElements' in project 'foundation'
+Applying dependency management to configuration 'runtimeClasspath' in project 'foundation'
+Applying dependency management to configuration 'runtimeElements' in project 'foundation'
+Applying dependency management to configuration 'runtimeOnly' in project 'foundation'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'foundation'
+Applying dependency management to configuration 'testCompileClasspath' in project 'foundation'
+Applying dependency management to configuration 'testCompileOnly' in project 'foundation'
+Applying dependency management to configuration 'testImplementation' in project 'foundation'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'foundation'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'foundation'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'foundation'
+Applying dependency management to configuration 'lombok' in project 'foundation'
+
+> Configure project :foundation
+Evaluating project ':foundation' using build file 'D:\project\egov-enterprise\foundation\build.gradle'.
+Resolved plugin [id: 'java-library']
+Resolved plugin [id: 'org.springframework.boot']
+Resolved plugin [id: 'io.spring.dependency-management']
+Resolved plugin [id: 'jacoco']
+Applying dependency management to configuration 'bootArchives' in project 'foundation'
+Applying dependency management to configuration 'productionRuntimeClasspath' in project 'foundation'
+Applying dependency management to configuration 'developmentOnly' in project 'foundation'
+Applying dependency management to configuration 'testAndDevelopmentOnly' in project 'foundation'
+Task name matched 'test'
+Selected primary task 'test' from project :foundation
+Resolving global dependency management for project 'foundation'
+Excluding [com.google.protobuf:protobuf-java]
+Excluding []
+Excluding []
+Excluding []
+Excluding []
+Excluding [com.google.protobuf:protobuf-java]
+Excluding []
+Excluding [com.google.protobuf:protobuf-java]
+Excluding []
+All projects evaluated.
+Tasks to be executed: [task ':foundation:generateEffectiveLombokConfig', task ':foundation:compileJava', task ':foundation:processResources', task ':foundation:classes', task ':foundation:generateTestEffectiveLombokConfig', task ':foundation:compileTestJava', task ':foundation:processTestResources', task ':foundation:testClasses', task ':foundation:test', task ':foundation:jacocoTestReport']
+Tasks that were excluded: []
+Resolve mutations for :foundation:generateEffectiveLombokConfig (Thread[#446,Execution worker,5,main]) started.
+:foundation:generateEffectiveLombokConfig (Thread[#446,Execution worker,5,main]) started.
+
+> Task :foundation:generateEffectiveLombokConfig UP-TO-DATE
+Custom actions are attached to task ':foundation:generateEffectiveLombokConfig'.
+Build cache key for task ':foundation:generateEffectiveLombokConfig' is 5d39acc3b52f8b951fe2536319df9d86
+Skipping task ':foundation:generateEffectiveLombokConfig' as it is up-to-date.
+Resolve mutations for :foundation:compileJava (Thread[#446,Execution worker,5,main]) started.
+:foundation:compileJava (Thread[#446,Execution worker,5,main]) started.
+
+> Task :foundation:compileJava
+Custom actions are attached to task ':foundation:compileJava'.
+Build cache key for task ':foundation:compileJava' is 0d3e7bef8d87c04fb39b79e5c65bd132
+Task ':foundation:compileJava' is not up-to-date because:
+  Input property 'stableSources' file D:\project\egov-enterprise\foundation\src\main\java\com\company\project\foundation\api\auth\AuthApiController.java has changed.
+  Input property 'stableSources' file D:\project\egov-enterprise\foundation\src\main\java\com\company\project\foundation\service\auth\AuthService.java has changed.
+  Input property 'stableSources' file D:\project\egov-enterprise\foundation\src\main\java\com\company\project\foundation\service\auth\impl\AuthServiceImpl.java has changed.
+Compilation mode: in-process compilation
+Created classpath snapshot for incremental compilation in 0.063 secs.
+Compiling with toolchain 'C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot'.
+Compiling with JDK Java compiler API.
+Incremental compilation of 3 classes completed in 3.682 secs.
+Class dependency analysis for incremental compilation took 0.142 secs.
+Stored cache entry for task ':foundation:compileJava' with cache key 0d3e7bef8d87c04fb39b79e5c65bd132
+Resolve mutations for :foundation:processResources (Thread[#446,Execution worker,5,main]) started.
+:foundation:processResources (Thread[#446,Execution worker,5,main]) started.
+
+> Task :foundation:processResources UP-TO-DATE
+Caching disabled for task ':foundation:processResources' because:
+  Not worth caching
+Skipping task ':foundation:processResources' as it is up-to-date.
+Resolve mutations for :foundation:classes (Thread[#446,Execution worker,5,main]) started.
+:foundation:classes (Thread[#445,included builds,5,main]) started.
+
+> Task :foundation:classes
+Skipping task ':foundation:classes' as it has no actions.
+Resolve mutations for :foundation:generateTestEffectiveLombokConfig (Thread[#445,included builds,5,main]) started.
+:foundation:generateTestEffectiveLombokConfig (Thread[#445,included builds,5,main]) started.
+
+> Task :foundation:generateTestEffectiveLombokConfig UP-TO-DATE
+Custom actions are attached to task ':foundation:generateTestEffectiveLombokConfig'.
+Build cache key for task ':foundation:generateTestEffectiveLombokConfig' is 7c4af94729c84ef9c17e1cf17d27f108
+Skipping task ':foundation:generateTestEffectiveLombokConfig' as it is up-to-date.
+Resolve mutations for :foundation:compileTestJava (Thread[#445,included builds,5,main]) started.
+:foundation:compileTestJava (Thread[#445,included builds,5,main]) started.
+
+> Task :foundation:compileTestJava
+Custom actions are attached to task ':foundation:compileTestJava'.
+Build cache key for task ':foundation:compileTestJava' is e1d60a312e9a890ebdd14e1d1f331915
+Task ':foundation:compileTestJava' is not up-to-date because:
+  Input property 'classpath' file D:\project\egov-enterprise\foundation\build\classes\java\main\com\company\project\foundation\api\auth\AuthApiController.class has changed.
+  Input property 'classpath' file D:\project\egov-enterprise\foundation\build\classes\java\main\com\company\project\foundation\api\controller\system\user\UserAbsenceApiController.class has changed.
+  Input property 'classpath' file D:\project\egov-enterprise\foundation\build\classes\java\main\com\company\project\foundation\service\auth\AuthService.class has changed.
+  and more...
+Compilation mode: in-process compilation
+Created classpath snapshot for incremental compilation in 0.272 secs.
+Compiling with toolchain 'C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot'.
+Compiling with JDK Java compiler API.
+Incremental compilation of 4 classes completed in 3.995 secs.
+Class dependency analysis for incremental compilation took 0.305 secs.
+Stored cache entry for task ':foundation:compileTestJava' with cache key e1d60a312e9a890ebdd14e1d1f331915
+Resolve mutations for :foundation:processTestResources (Thread[#445,included builds,5,main]) started.
+:foundation:processTestResources (Thread[#445,included builds,5,main]) started.
+
+> Task :foundation:processTestResources NO-SOURCE
+Skipping task ':foundation:processTestResources' as it has no source files and no previous output files.
+Resolve mutations for :foundation:testClasses (Thread[#445,included builds,5,main]) started.
+:foundation:testClasses (Thread[#445,included builds,5,main]) started.
+
+> Task :foundation:testClasses
+Skipping task ':foundation:testClasses' as it has no actions.
+Resolve mutations for :foundation:test (Thread[#445,included builds,5,main]) started.
+:foundation:test (Thread[#445,included builds,5,main]) started.
+
+> Task :foundation:test
+Custom actions are attached to task ':foundation:test'.
+Build cache key for task ':foundation:test' is cb4b3ef4025b075c1505bef9a3bf7845
+Task ':foundation:test' is not up-to-date because:
+  Task has failed previously.
+Starting process 'Gradle Test Executor 4'. Working directory: D:\project\egov-enterprise\foundation Command: C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot\bin\java.exe -Dfile.separator=\ -Djava.class.path=C:\Users\sanle\.gradle\wrapper\dists\gradle-9.4.1-bin\arn2x92ynaizyzdaamcbpbhtj\gradle-9.4.1\lib\gradle-daemon-main-9.4.1.jar -Djava.class.version=65.0 -Djava.home=C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot -Djava.library.path=C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot\bin;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\dotnet\;C:\Program Files\NVIDIA Corporation\NVIDIA app\NvDLISR;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\Git\cmd;C:\ProgramData\chocolatey\bin;C:\Program Files\nodejs\;C:\scrcpy;C:\Users\sanle\AppData\Roaming\npm;C:\ProgramData\chocolatey\lib\maven\apache-maven-3.9.11\bin;C:\Program Files\Docker\Docker\resources\bin;C:\Users\sanle\AppData\Roaming\npm;C:\Users\sanle\.local\bin;C:\Users\sanle\AppData\Local\Microsoft\WindowsApps;C:\Users\sanle\AppData\Roaming\npm;C:\Users\sanle\AppData\Local\GitHubDesktop\bin;C:\Users\sanle\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\sanle\AppData\Local\Pandoc\;C:\Users\sanle\.local\bin;C:\Users\sanle\AppData\Local\Programs\Antigravity\bin;C:\Users\sanle\.bun\bin;. -Djava.runtime.name=OpenJDK Runtime Environment -Djava.runtime.version=21.0.9+10-LTS -Djava.specification.name=Java Platform API Specification -Djava.specification.vendor=Oracle Corporation -Djava.specification.version=21 -Djava.vendor=Eclipse Adoptium -Djava.vendor.url=https://adoptium.net/ -Djava.vendor.url.bug=https://github.com/adoptium/adoptium-support/issues -Djava.vendor.version=Temurin-21.0.9+10 -Djava.version=21.0.9 -Djava.version.date=2025-10-21 -Djava.vm.compressedOopsMode=32-bit -Djava.vm.info=mixed mode, sharing -Djava.vm.name=OpenJDK 64-Bit Server VM -Djava.vm.specification.name=Java Virtual Machine Specification -Djava.vm.specification.vendor=Oracle Corporation -Djava.vm.specification.version=21 -Djava.vm.vendor=Eclipse Adoptium -Djava.vm.version=21.0.9+10-LTS -Djdk.debug=release -Dlibrary.jansi.path=C:\Users\sanle\.gradle\native\jansi\2.4.2\Windows\x86_64 -Dline.separator=
+ -Dnative.encoding=MS949 -Dorg.gradle.appname=gradlew -Dorg.gradle.internal.worker.tmpdir=D:\project\egov-enterprise\foundation\build\tmp\test\work -Dos.arch=amd64 -Dos.name=Windows 11 -Dos.version=10.0 -Dpath.separator=; -Dstderr.encoding=UTF-8 -Dstdout.encoding=MS949 -Dsun.arch.data.model=64 -Dsun.boot.library.path=C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot\bin -Dsun.cpu.endian=little -Dsun.cpu.isalist=amd64 -Dsun.io.unicode.encoding=UnicodeLittle -Dsun.java.command=org.gradle.launcher.daemon.bootstrap.GradleDaemon 9.4.1 -Dsun.java.launcher=SUN_STANDARD -Dsun.jnu.encoding=MS949 -Dsun.management.compiler=HotSpot 64-Bit Tiered Compilers -Dsun.os.patch.level -Duser.dir=D:\project\egov-enterprise -Duser.home=C:\Users\sanle -Duser.name=sanle -Duser.script -Duser.timezone=Asia/Seoul -javaagent:D:\project\egov-enterprise\foundation\build\tmp\.cache\expanded\zip_27729b840c216bdc69a9315e04b27ab1\jacocoagent.jar=destfile=build/jacoco/test.exec,append=true,inclnolocationclasses=false,dumponexit=true,output=file,jmx=false @C:\Users\sanle\.gradle\.tmp\gradle-worker-classpath602413755189843884txt -Xmx6144m -Dfile.encoding=UTF-8 -Djava.io.tmpdir=C:\Users\sanle\AppData\Local\Temp\ -Duser.country=KR -Duser.language=ko -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 4'
+Successfully started process 'Gradle Test Executor 4'
+
+Gradle Test Executor 4 started executing tests.
+
+> Task :foundation:test
+
+ArchunitTest > layered_architecture_rule STANDARD_OUT
+    13:42:35.145 [Test worker] INFO com.tngtech.archunit.core.PluginLoader -- Detected Java version 21.0.9
+
+Gradle Test Executor 4 finished executing tests.
+
+> Task :foundation:test
+Generating HTML test report...
+Finished generating test html results (0.04 secs) into: D:\project\egov-enterprise\foundation\build\reports\tests\test
+Finished generating test XML results (0.004 secs) into: D:\project\egov-enterprise\foundation\build\test-results\test
+Stored cache entry for task ':foundation:test' with cache key cb4b3ef4025b075c1505bef9a3bf7845
+Resolve mutations for :foundation:jacocoTestReport (Thread[#445,included builds,5,main]) started.
+:foundation:jacocoTestReport (Thread[#445,included builds,5,main]) started.
+
+> Task :foundation:jacocoTestReport SKIPPED
+Skipping task ':foundation:jacocoTestReport' as task onlyIf 'Any of the execution data files exists' is false.
+
+[Incubating] Problems report is available at: file:///D:/project/egov-enterprise/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 37s
+6 actionable tasks: 3 executed, 3 up-to-date
+Watched directory hierarchies: [D:\project\egov-enterprise]
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.4.1/userguide/configuration_cache_enabling.html

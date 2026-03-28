@@ -8,6 +8,7 @@ import com.company.project.business.service.addressbook.dto.AddressBookUserDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,7 +49,7 @@ public class AddressBookApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createAddressBook(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody AddressBookDto addressBookDto) {
+            @Valid @RequestBody AddressBookDto addressBookDto) {
         addressBookService.createAddressBook(userDetails.getUsername(), addressBookDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -58,7 +59,7 @@ public class AddressBookApiController {
     public ResponseEntity<ApiResponse<Void>> updateAddressBook(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "주소록 ID") @PathVariable String adbkId,
-            @RequestBody AddressBookDto addressBookDto) {
+            @Valid @RequestBody AddressBookDto addressBookDto) {
         addressBookDto.setAdbkId(adbkId);
         addressBookService.updateAddressBook(userDetails.getUsername(), addressBookDto);
         return ResponseEntity.ok(ApiResponse.success(null));

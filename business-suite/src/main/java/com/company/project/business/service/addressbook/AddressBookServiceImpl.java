@@ -6,7 +6,10 @@ import com.company.project.business.domain.addressbook.AddressBookUser;
 import com.company.project.business.domain.addressbook.AddressBookUserRepository;
 import com.company.project.business.service.addressbook.dto.AddressBookDto;
 import com.company.project.business.service.addressbook.dto.AddressBookUserDto;
+import com.company.project.foundation.core.exception.BusinessException;
+import com.company.project.foundation.core.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -41,7 +45,7 @@ public class AddressBookServiceImpl implements AddressBookService {
     @Override
     public AddressBookDto getAddressBook(@NonNull String adbkId) {
         AddressBook entity = addressBookRepository.findById(adbkId)
-                .orElseThrow(() -> new IllegalArgumentException("AddressBook not found: " + adbkId));
+                .orElseThrow(() -> new BusinessException("주소록을 찾을 수 없습니다: " + adbkId, ErrorCode.RESOURCE_NOT_FOUND));
 
         AddressBookDto dto = convertToDto(entity);
         List<AddressBookUser> users = addressBookUserRepository.findByAdbkId(adbkId);
@@ -65,7 +69,7 @@ public class AddressBookServiceImpl implements AddressBookService {
                     .createdBy(userId)
                     .build();
 
-            addressBookRepository.save(Objects.requireNonNull(entity));
+            addressBookRepository.save(entity);
 
             if (dto.getAdbkMan() != null) {
                 for (AddressBookUserDto userDto : dto.getAdbkMan()) {
@@ -81,11 +85,14 @@ public class AddressBookServiceImpl implements AddressBookService {
                             .offmTelno(userDto.getOffmTelno())
                             .fxnum(userDto.getFxnum())
                             .build();
-                    addressBookUserRepository.save(Objects.requireNonNull(userEntity));
+                    addressBookUserRepository.save(userEntity);
                 }
             }
+        } catch (BusinessException be) {
+            throw be;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create AddressBook", e);
+            log.error("Failed to create AddressBook", e);
+            throw new BusinessException("주소록 생성 중 오류가 발생했습니다.", ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -93,7 +100,7 @@ public class AddressBookServiceImpl implements AddressBookService {
     @Transactional
     public void updateAddressBook(String userId, AddressBookDto dto) {
         AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(dto.getAdbkId()))
-                .orElseThrow(() -> new IllegalArgumentException("AddressBook not found: " + dto.getAdbkId()));
+                .orElseThrow(() -> new BusinessException("수정할 주소록이 존재하지 않습니다.", ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.update(dto.getAdbkNm(), dto.getOthbcScope(), dto.getUseAt());
 
@@ -101,19 +108,16 @@ public class AddressBookServiceImpl implements AddressBookService {
             return;
         }
 
-        // Handle users update (Simplified logic: delete missing, add new)
         List<AddressBookUser> existingUsers = addressBookUserRepository.findByAdbkId(dto.getAdbkId());
 
-        // Delete users not in the new list
         for (AddressBookUser existing : existingUsers) {
             boolean remains = dto.getAdbkMan().stream()
                     .anyMatch(u -> (u.getEmplyrId() != null && u.getEmplyrId().equals(existing.getEmplyrId())));
             if (!remains) {
-                addressBookUserRepository.delete(Objects.requireNonNull(existing));
+                addressBookUserRepository.delete(existing);
             }
         }
 
-        // Add new users
         for (AddressBookUserDto userDto : dto.getAdbkMan()) {
             boolean exists = existingUsers.stream()
                     .anyMatch(u -> (u.getEmplyrId() != null && u.getEmplyrId().equals(userDto.getEmplyrId())));
@@ -131,9 +135,9 @@ public class AddressBookServiceImpl implements AddressBookService {
                             .offmTelno(userDto.getOffmTelno())
                             .fxnum(userDto.getFxnum())
                             .build();
-                    addressBookUserRepository.save(Objects.requireNonNull(newUser));
+                    addressBookUserRepository.save(newUser);
                 } catch (Exception e) {
-                    throw new RuntimeException("Failed to generate user ID", e);
+                    throw new BusinessException("ID 생성 중 오류가 발생했습니다.", ErrorCode.INTERNAL_SERVER_ERROR);
                 }
             }
         }
@@ -142,8 +146,8 @@ public class AddressBookServiceImpl implements AddressBookService {
     @Override
     @Transactional
     public void deleteAddressBook(String adbkId, String userId) {
-        AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(adbkId))
-                .orElseThrow(() -> new IllegalArgumentException("AddressBook not found: " + adbkId));
+        AddressBook entity = addressBookRepository.findById(adbkId)
+                .orElseThrow(() -> new BusinessException("삭제할 주소록이 존재하지 않습니다.", ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.update(entity.getAdbkNm(), entity.getOthbcScope(), "N");
     }
@@ -163,7 +167,6 @@ public class AddressBookServiceImpl implements AddressBookService {
 
     @Override
     public AddressBookUserDto getAdbkUser(String id) {
-        // NameCard integration was removed.
         return null;
     }
 

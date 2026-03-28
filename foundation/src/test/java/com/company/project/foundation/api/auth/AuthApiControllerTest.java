@@ -1,12 +1,13 @@
 package com.company.project.foundation.api.auth;
 
-import com.company.project.foundation.domain.auth.UserAuthorityRepository;
-import com.company.project.foundation.domain.user.entity.Role;
-import com.company.project.foundation.domain.user.entity.User;
-import com.company.project.foundation.domain.user.repository.UserRepository;
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
+import com.company.project.foundation.core.exception.BusinessException;
+import com.company.project.foundation.core.exception.ErrorCode;
 import com.company.project.foundation.security.service.CustomUserDetails;
 import com.company.project.foundation.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.service.auth.AuthService;
+import com.company.project.foundation.service.auth.dto.LoginRequest;
+import com.company.project.foundation.service.auth.dto.TokenResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -25,9 +25,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import jakarta.servlet.http.Cookie;
 import java.util.List;
-import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -41,16 +41,10 @@ class AuthApiControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private AuthenticationManager authenticationManager;
+    private AuthService authService;
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private UserAuthorityRepository userAuthorityRepository;
 
     @InjectMocks
     private AuthApiController authApiController;
@@ -65,73 +59,64 @@ class AuthApiControllerTest {
     @Test
     @DisplayName("로그인 성공 테스트")
     void loginSuccessTest() throws Exception {
-        Authentication auth = new UsernamePasswordAuthenticationToken(
-                "user01", "password", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        TokenResponse tokenResponse = new TokenResponse("accessToken", "refreshToken");
+        when(authService.login(any(LoginRequest.class))).thenReturn(tokenResponse);
+        doNothing().when(jwtTokenProvider).addRefreshTokenCookie(any(), eq("refreshToken"));
 
-        when(authenticationManager.authenticate(any())).thenReturn(auth);
-        when(jwtTokenProvider.createAccessToken("user01", "ROLE_USER")).thenReturn("accessToken");
-        when(jwtTokenProvider.createRefreshToken("user01")).thenReturn("refreshToken");
-
-        String requestBody = "{\"id\":\"user01\",\"password\":\"password\"}";
+        String requestBody = "{\"userId\":\"user01\",\"password\":\"password\"}";
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").value("accessToken"))
-                .andExpect(jsonPath("$.data.role").value("ROLE_USER"));
+                .andExpect(jsonPath("$.data.refreshToken").value("refreshToken"));
     }
 
     @Test
     @DisplayName("로그아웃 테스트")
     void logout_Success() throws Exception {
+        doNothing().when(jwtTokenProvider).addRefreshTokenCookie(any(), eq(""));
+        
         mockMvc.perform(post("/api/v1/auth/logout"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.data").value("Logged out successfully"));
     }
 
     @Test
     @DisplayName("로그인 실패 테스트 - 인증 오류")
     void loginFailTest() throws Exception {
-        when(authenticationManager.authenticate(any())).thenThrow(new org.springframework.security.authentication.BadCredentialsException("Auth failed"));
+        when(authService.login(any(LoginRequest.class))).thenThrow(new org.springframework.security.authentication.BadCredentialsException("Auth failed"));
 
-        String requestBody = "{\"id\":\"user01\",\"password\":\"wrong\"}";
+        String requestBody = "{\"userId\":\"user01\",\"password\":\"wrong\"}";
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andDo(print())
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Login Failed"));
+                .andExpect(jsonPath("$.message").value("Auth failed"));
     }
 
     @Test
     @DisplayName("토큰 재발급 성공 테스트")
     void reissue_Success() throws Exception {
         String refreshToken = "validRefreshToken";
-        User mockUser = mock(User.class);
-        when(mockUser.getUserId()).thenReturn("user01");
-        when(mockUser.getRole()).thenReturn(Role.USER);
-        when(mockUser.getEsntlId()).thenReturn("USR01");
-
-        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
-        when(jwtTokenProvider.getUserId(refreshToken)).thenReturn("user01");
-        when(userRepository.findById("user01")).thenReturn(Optional.of(mockUser));
-        when(userAuthorityRepository.findById("USR01")).thenReturn(Optional.empty());
-        when(jwtTokenProvider.createAccessToken("user01", "ROLE_USER")).thenReturn("newAccessToken");
+        TokenResponse tokenResponse = new TokenResponse("newAccessToken", "validRefreshToken");
+        when(authService.reissue(refreshToken)).thenReturn(tokenResponse);
 
         mockMvc.perform(post("/api/v1/auth/reissue")
                         .cookie(new Cookie("refreshToken", refreshToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").value("newAccessToken"))
-                .andExpect(jsonPath("$.data.role").value("ROLE_USER"));
+                .andExpect(jsonPath("$.data.refreshToken").value("validRefreshToken"));
     }
 
     @Test
     @DisplayName("토큰 재발급 실패 테스트 - 유효하지 않은 토큰")
     void reissue_Fail_InvalidToken() throws Exception {
         String refreshToken = "invalidToken";
-        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(false);
+        when(authService.reissue(refreshToken)).thenThrow(new BusinessException(ErrorCode.INVALID_TOKEN));
 
         mockMvc.perform(post("/api/v1/auth/reissue")
                         .cookie(new Cookie("refreshToken", refreshToken)))

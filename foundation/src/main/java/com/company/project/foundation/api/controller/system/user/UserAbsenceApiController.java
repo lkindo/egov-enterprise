@@ -1,12 +1,10 @@
 package com.company.project.foundation.api.controller.system.user;
 
 import com.company.project.foundation.core.response.ApiResponse;
-import com.company.project.foundation.domain.user.entity.UserAbsence;
-import com.company.project.foundation.domain.user.repository.UserAbsenceRepository;
+import com.company.project.foundation.domain.user.dto.UserAbsenceDto;
+import com.company.project.foundation.service.system.user.UserAbsenceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.Builder;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,29 +17,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserAbsenceApiController {
 
-    private final UserAbsenceRepository userAbsenceRepository;
+    private final UserAbsenceService userAbsenceService;
 
     @Operation(summary = "사용자 부재 정보 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserAbsenceDto>>> getAbsences() {
-        List<UserAbsenceDto> list = userAbsenceRepository.findAll().stream()
-                .map(entity -> UserAbsenceDto.builder()
-                        .emplyrId(entity.getEmplyrId())
-                        .userAbsnceAt(entity.getUserAbsnceAt())
-                        .build())
-                .toList();
-        return ResponseEntity.ok(ApiResponse.success(list));
+        return ResponseEntity.ok(ApiResponse.success(userAbsenceService.getAbsences()));
     }
 
     @Operation(summary = "사용자 부재 상태 상세 조회")
     @GetMapping("/{emplyrId}")
     public ResponseEntity<ApiResponse<UserAbsenceDto>> getAbsence(@PathVariable String emplyrId) {
-        UserAbsence absence = userAbsenceRepository.findById(emplyrId)
-                .orElse(UserAbsence.builder().emplyrId(emplyrId).userAbsnceAt("N").build());
-        return ResponseEntity.ok(ApiResponse.success(UserAbsenceDto.builder()
-                .emplyrId(absence.getEmplyrId())
-                .userAbsnceAt(absence.getUserAbsnceAt())
-                .build()));
+        return ResponseEntity.ok(ApiResponse.success(userAbsenceService.getAbsence(emplyrId)));
     }
 
     @Operation(summary = "사용자 부재 상태 업데이트")
@@ -49,17 +36,7 @@ public class UserAbsenceApiController {
     public ResponseEntity<ApiResponse<Void>> updateAbsence(
             @PathVariable String emplyrId,
             @RequestBody UserAbsenceDto dto) {
-        UserAbsence absence = userAbsenceRepository.findById(emplyrId)
-                .orElse(UserAbsence.builder().emplyrId(emplyrId).build());
-        absence.updateAbsence(dto.getUserAbsnceAt());
-        userAbsenceRepository.save(absence);
+        userAbsenceService.updateAbsence(emplyrId, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    @Getter
-    @Builder
-    public static class UserAbsenceDto {
-        private String emplyrId;
-        private String userAbsnceAt;
     }
 }
