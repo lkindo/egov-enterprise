@@ -22,6 +22,11 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.List;
 import java.util.concurrent.*;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import com.company.project.business.service.board.BoardService;
+import com.company.project.business.service.board.dto.BoardDto;
+import com.company.project.business.service.board.dto.BoardSaveRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,6 +51,9 @@ class StressTest {
 
   @org.springframework.test.context.bean.override.mockito.MockitoBean
   private UserService userService;
+
+  @org.springframework.test.context.bean.override.mockito.MockitoBean
+  private BoardService boardService;
 
   @org.springframework.test.context.bean.override.mockito.MockitoBean
   private org.springframework.messaging.simp.SimpMessagingTemplate simpMessagingTemplate;
@@ -75,8 +83,20 @@ class StressTest {
 
     // 간단한 목록 반환 - doReturn 사용
     doReturn(List.of(defaultUser)).when(userService).getUserList();
+    doReturn(new PageImpl<>(List.of(defaultUser))).when(userService).getPagedUserList(any(Pageable.class));
     doReturn(defaultUser).when(userService).getUserById(any(String.class));
     doReturn(new UserResponse("newUser", "신규사용자", Role.USER)).when(userService).signup(any(UserSignupRequest.class));
+
+    BoardDto defaultBoard = BoardDto.builder()
+        .id(1L)
+        .bbsId("BBS_001")
+        .nttSj("스트레스 테스트 게시글")
+        .ntcrNm("관리자")
+        .inqireCo(0)
+        .build();
+    doReturn(new PageImpl<>(List.of(defaultBoard))).when(boardService).getBoardPosts(any(String.class), any(Pageable.class));
+    doReturn(defaultBoard).when(boardService).getPostDetail(any(String.class), any(Long.class));
+    doReturn(1L).when(boardService).createPost(any(String.class), any(BoardSaveRequest.class));
   }
 
   @AfterEach
@@ -143,7 +163,7 @@ class StressTest {
     for (int i = 0; i < numberOfRequests; i++) {
       executorService.submit(() -> {
         try {
-          mockMvc.perform(get("/api/v1/users/me")
+          mockMvc.perform(get("/api/v1/admin/users")
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           successCount.incrementAndGet();
@@ -169,7 +189,7 @@ class StressTest {
     for (int i = 0; i < numberOfRequests; i++) {
       executorService.submit(() -> {
         try {
-          mockMvc.perform(get("/api/v1/users/me")
+          mockMvc.perform(get("/api/v1/admin/users/stressUser")
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           successCount.incrementAndGet();
@@ -212,7 +232,7 @@ class StressTest {
                 .content(requestBody));
           } else {
             // Read
-            mockMvc.perform(get("/api/v1/users/me"));
+            mockMvc.perform(get("/api/v1/admin/users"));
           }
           successCount.incrementAndGet();
         } catch (Exception e) {
@@ -228,5 +248,69 @@ class StressTest {
 
     System.out.printf("혼합 스트레스 테스트 결과 - 요청: %d, 성공: %d, 소요: %d ms%n", numberOfRequests, successCount.get(), duration);
     assertThat(successCount.get()).isGreaterThanOrEqualTo((int) (numberOfRequests * 0.85));
+  }
+
+  @Test
+  @DisplayName("게시판 목록 조회 스트레스 테스트 - 대량 요청 500 건")
+  void stress_boardList_heavyLoad_500() throws Exception {
+    int numberOfRequests = 500;
+    CountDownLatch latch = new CountDownLatch(numberOfRequests);
+    java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    for (int i = 0; i < numberOfRequests; i++) {
+      executorService.submit(() -> {
+        try {
+          mockMvc.perform(get("/api/v1/boards/BBS_001")
+              .contentType(MediaType.APPLICATION_JSON))
+              .andExpect(status().isOk());
+          successCount.incrementAndGet();
+        } catch (Exception e) {
+          // Ignore
+        } finally {
+          latch.countDown();
+        }
+      });
+    }
+
+    latch.await(60, TimeUnit.SECONDS);
+    assertThat(successCount.get()).isGreaterThanOrEqualTo((int) (numberOfRequests * 0.95));
+  }
+
+  @Test
+  @DisplayName("게시글 등록 스트레스 테스트 - 동시 요청 200 건")
+  void stress_boardCreate_concurrency_200() throws Exception {
+    int numberOfRequests = 200;
+    CountDownLatch latch = new CountDownLatch(numberOfRequests);
+    java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    for (int i = 0; i < numberOfRequests; i++) {
+      final int requestId = i;
+      executorService.submit(() -> {
+        try {
+          String requestBody = """
+              {
+                "bbsId": "BBS_001",
+                "nttSj": "제목 %d",
+                "nttCn": "내용 %d"
+              }
+              """.formatted(requestId, requestId);
+
+          mockMvc.perform(post("/api/v1/boards/posts")
+              .contentType(MediaType.APPLICATION_JSON)
+              .content(requestBody)
+              // AuthenticationPrincipal 은 MockUser 로 처리
+              .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("stressUser")))
+              .andExpect(status().isOk());
+          successCount.incrementAndGet();
+        } catch (Exception e) {
+          // Ignore
+        } finally {
+          latch.countDown();
+        }
+      });
+    }
+
+    latch.await(60, TimeUnit.SECONDS);
+    assertThat(successCount.get()).isEqualTo(numberOfRequests);
   }
 }

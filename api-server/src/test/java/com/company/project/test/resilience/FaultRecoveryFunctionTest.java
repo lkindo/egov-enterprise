@@ -16,13 +16,15 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.Arrays;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * ?μ븷 蹂듦뎄 湲곕뒫 寃利??뚯뒪??(Standalone)
+ * ?關釉?癰귣벀??疫꿸퀡??野꺜筌????뮞??(Standalone)
  */
 public class FaultRecoveryFunctionTest {
 
@@ -41,19 +43,19 @@ public class FaultRecoveryFunctionTest {
     @DisplayName("Temporary DB Failure - Recovery Success")
     void temporaryDbFailure_recovery_success() throws Exception {
         // Given
-        when(userService.getUserList())
+        when(userService.getPagedUserList(any(Pageable.class)))
                 .thenThrow(new RuntimeException("Database temporarily unavailable"))
-                .thenReturn(Arrays.asList(
+                .thenReturn(new PageImpl<>(Arrays.asList(
                         UserDto.builder().userId("user1").userNm("User 1").esntlId("USR001").build(),
-                        UserDto.builder().userId("user2").userNm("User 2").esntlId("USR002").build()));
+                        UserDto.builder().userId("user2").userNm("User 2").esntlId("USR002").build())));
 
         // First call fails
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
         // Second call succeeds
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -65,18 +67,18 @@ public class FaultRecoveryFunctionTest {
     @DisplayName("Exception then Recovery - Normal Service Recovery")
     void exceptionThenRecovery_normalServiceRecovery() throws Exception {
         // Given
-        when(userService.getUserList())
+        when(userService.getPagedUserList(any(Pageable.class)))
                 .thenThrow(new RuntimeException("Temporary error"))
-                .thenReturn(Arrays.asList(
-                        UserDto.builder().userId("user1").userNm("User 1").esntlId("USR001").build()));
+                .thenReturn(new PageImpl<>(Arrays.asList(
+                        UserDto.builder().userId("user1").userNm("User 1").esntlId("USR001").build())));
 
         // First call fails
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().is5xxServerError());
 
         // Second call succeeds
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
@@ -126,28 +128,28 @@ public class FaultRecoveryFunctionTest {
     @DisplayName("Circuit Breaker - Operation and Recovery")
     void circuitBreaker_operationAndRecovery() throws Exception {
         // Given
-        when(userService.getUserList())
+        when(userService.getPagedUserList(any(Pageable.class)))
                 .thenThrow(new RuntimeException("Service unavailable"))
                 .thenThrow(new RuntimeException("Service still unavailable"))
                 .thenThrow(new BusinessException(ErrorCode.INTERNAL_ERROR))
-                .thenReturn(Arrays.asList(
-                        UserDto.builder().userId("circuitBreakerUser").userNm("User").esntlId("USR001").build()));
+                .thenReturn(new PageImpl<>(Arrays.asList(
+                        UserDto.builder().userId("circuitBreakerUser").userNm("User").esntlId("USR001").build())));
 
         // Failures
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
         // Recovery
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -157,18 +159,18 @@ public class FaultRecoveryFunctionTest {
     @DisplayName("DB Connection Pool Exhaustion - Recovery")
     void dbConnectionPoolExhaustion_recovery() throws Exception {
         // Given
-        when(userService.getUserList())
+        when(userService.getPagedUserList(any(Pageable.class)))
                 .thenThrow(new RuntimeException("Connection pool exhausted"))
-                .thenReturn(Arrays.asList(
-                        UserDto.builder().userId("poolUser").userNm("User").esntlId("USR001").build()));
+                .thenReturn(new PageImpl<>(Arrays.asList(
+                        UserDto.builder().userId("poolUser").userNm("User").esntlId("USR001").build())));
 
         // Fail
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
         // Recovery
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -178,18 +180,18 @@ public class FaultRecoveryFunctionTest {
     @DisplayName("Out Of Memory Recovery - After GC")
     void outOfMemoryRecovery_afterGC() throws Exception {
         // Given
-        when(userService.getUserList())
-                .thenThrow(new RuntimeException("Memory exhausted")) // Error ???Exception?쇰줈 紐⑥궗
-                .thenReturn(Arrays.asList(
-                        UserDto.builder().userId("memoryUser").userNm("User").esntlId("USR001").build()));
+        when(userService.getPagedUserList(any(Pageable.class)))
+                .thenThrow(new RuntimeException("Memory exhausted"))
+                .thenReturn(new PageImpl<>(Arrays.asList(
+                        UserDto.builder().userId("memoryUser").userNm("User").esntlId("USR001").build())));
 
         // Fail
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
         // Recovery
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

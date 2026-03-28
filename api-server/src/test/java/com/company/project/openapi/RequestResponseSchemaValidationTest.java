@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import java.util.List;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,6 +55,7 @@ class RequestResponseSchemaValidationTest {
         testUserResponse = new UserResponse("testUser", "테스트사용자이름", Role.USER);
 
         mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .addInterceptors(operationalAuditInterceptor)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -130,18 +132,21 @@ class RequestResponseSchemaValidationTest {
     @Test
     @DisplayName("스키마 검증 - 사용자 목록 조회 응답 검증")
     void userGetList_responseSchema_validation() throws Exception {
-        when(userService.getUserList()).thenReturn(List.of(testUserDto));
+        Pageable pageRequest = PageRequest.of(0, 10);
+        Page<UserDto> page = new PageImpl<>(List.of(testUserDto), pageRequest, 1);
+        when(userService.getPagedUserList(any())).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.data[0].userId").exists())
-                .andExpect(jsonPath("$.data[0].userNm").exists())
-                .andExpect(jsonPath("$.data[0].esntlId").exists());
+                .andExpect(jsonPath("$.data").exists())
+                .andExpect(jsonPath("$.data.list").isArray())
+                .andExpect(jsonPath("$.data.list", hasSize(greaterThan(0))))
+                .andExpect(jsonPath("$.data.list[0].userId").exists())
+                .andExpect(jsonPath("$.data.list[0].userNm").exists())
+                .andExpect(jsonPath("$.data.list[0].esntlId").exists());
     }
 
     @Test
@@ -149,7 +154,7 @@ class RequestResponseSchemaValidationTest {
     void userGetById_responseSchema_validation() throws Exception {
         when(userService.getUserById("testUser")).thenReturn(testUserDto);
 
-        mockMvc.perform(get("/api/v1/users/testUser")
+        mockMvc.perform(get("/api/v1/admin/users/testUser")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -167,7 +172,7 @@ class RequestResponseSchemaValidationTest {
         Page<UserDto> page = new PageImpl<>(List.of(testUserDto), pageRequest, 1);
         when(userService.getPagedUserList(any())).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/users/paged?page=0&size=10")
+        mockMvc.perform(get("/api/v1/admin/users?page=0&size=10")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -258,7 +263,7 @@ class RequestResponseSchemaValidationTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/v1/users/updateUser")
+        mockMvc.perform(put("/api/v1/admin/users/updateUser")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(validRequest))
                 .andExpect(status().isOk())
@@ -270,7 +275,7 @@ class RequestResponseSchemaValidationTest {
     void responseSchema_userDtoFieldExistence() throws Exception {
         when(userService.getUserById("testUser")).thenReturn(testUserDto);
 
-        mockMvc.perform(get("/api/v1/users/testUser")
+        mockMvc.perform(get("/api/v1/admin/users/testUser")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -284,7 +289,7 @@ class RequestResponseSchemaValidationTest {
     void responseSchema_commonStructure_validation() throws Exception {
         when(userService.getUserById("testUser")).thenReturn(testUserDto);
 
-        mockMvc.perform(get("/api/v1/users/testUser")
+        mockMvc.perform(get("/api/v1/admin/users/testUser")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(isA(Boolean.class)))

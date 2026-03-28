@@ -14,6 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.data.domain.Pageable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -68,7 +69,7 @@ class ExceptionResponseTest {
         when(userService.getUserById("nonexistentUser"))
                 .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        mockMvc.perform(get("/api/v1/users/nonexistentUser")
+        mockMvc.perform(get("/api/v1/admin/users/nonexistentUser")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false))
@@ -78,10 +79,10 @@ class ExceptionResponseTest {
     @Test
     @DisplayName("인증 에러 발생 - 401 에러 반환")
     void authenticationException_occurs_returns401Error() throws Exception {
-        when(userService.getUserList())
+        when(userService.getPagedUserList(any(Pageable.class)))
                 .thenThrow(new BadCredentialsException("Authentication required"));
 
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false));
@@ -90,10 +91,10 @@ class ExceptionResponseTest {
     @Test
     @DisplayName("접근 에러 발생 - 403 에러 반환")
     void accessDeniedException_occurs_returns403Error() throws Exception {
-        when(userService.getUserList())
+        when(userService.getPagedUserList(any(Pageable.class)))
                 .thenThrow(new AccessDeniedException("Access denied"));
 
-        mockMvc.perform(get("/api/v1/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success").value(false));

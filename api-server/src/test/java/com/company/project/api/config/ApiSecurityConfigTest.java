@@ -31,7 +31,7 @@ import com.company.project.api.interceptor.OperationalAuditInterceptor;
 
 @WebMvcTest(controllers = UserApiController.class)
 @ActiveProfiles({ "prod", "test", "security-test" })
-@ContextConfiguration(classes = { ApiSecurityConfig.class })
+@ContextConfiguration(classes = { ApiSecurityConfig.class, UserApiController.class })
 @DisplayName("ApiSecurityConfig 설정 테스트")
 public class ApiSecurityConfigTest {
 
@@ -108,6 +108,7 @@ public class ApiSecurityConfigTest {
     void adminAccessTest() throws Exception {
         when(userService.getPagedUserList(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
         mockMvc.perform(get("/api/v1/admin/users"))
+
                 .andExpect(status().isOk());
     }
 
