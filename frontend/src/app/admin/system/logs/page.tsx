@@ -1,12 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
+import { PagePagination } from '@/components/common/PagePagination';
+import { StandardModal } from '@/app/components/ui/standard-modal';
 import {
   Terminal,
   Activity,
@@ -24,94 +28,119 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-// Mock data for integrated log dashboard
+// Log categories configuration
 const logCategories = [
-  { id: 'SYS', label: '시스템 로그', icon: <Terminal size={20} />, description: '서비스 및 메소드 실행 이력' },
-  { id: 'LGN', label: '로그인 로그', icon: <Lock size={20} />, description: '사용자 접속 및 인증 기록' },
-  { id: 'USR', label: '사용자 활동', icon: <UserCheck size={20} />, description: '데이터 변경 및 권한 추적' },
-  { id: 'WEB', label: '웹 로그', icon: <Globe size={20} />, description: 'HTTP 요청 및 데이터 분석' },
-  { id: 'TRS', label: '송수신 로그', icon: <Activity size={20} />, description: '외부 연동 및 배치 결과' },
-];
-
-interface LogItem {
-  id: string;
-  category: string;
-  timestamp: string;
-  level: 'INFO' | 'WARN' | 'ERROR';
-  message: string;
-  actor: string;
-}
-
-const recentLogs: LogItem[] = [
-  { id: '1', category: 'SYS', timestamp: '2024-05-20 14:22:01', level: 'INFO', message: 'UserAccountService.findUserById executing...', actor: 'SYSTEM' },
-  { id: '2', category: 'LGN', timestamp: '2024-05-20 14:21:45', level: 'INFO', message: 'Login successful for user admin', actor: 'admin' },
-  { id: '3', category: 'USR', timestamp: '2024-05-20 14:20:12', level: 'WARN', message: 'Priority change detected for Task ID: 882', actor: 'manager_01' },
-  { id: '4', category: 'SYS', timestamp: '2024-05-20 14:18:33', level: 'ERROR', message: 'Connection timeout on internal-api-node-02', actor: 'BACKEND' },
-  { id: '5', category: 'WEB', timestamp: '2024-05-20 14:15:01', level: 'INFO', message: 'GET /api/v1/banners - 200 OK', actor: '192.168.0.12' },
+  { id: 'SYS', label: '시스템 로그', icon: <Terminal size={20} />, description: '서비스 및 메소드 실행 이력', serviceMethod: 'getSystemLogs' },
+  { id: 'LGN', label: '로그인 로그', icon: <Lock size={20} />, description: '사용자 접속 및 인증 기록', serviceMethod: 'getLoginLogs' },
+  { id: 'USR', label: '사용자 활동', icon: <UserCheck size={20} />, description: '데이터 변경 및 권한 추적', serviceMethod: 'getUserLogs' },
+  { id: 'WEB', label: '웹 로그', icon: <Globe size={20} />, description: 'HTTP 요청 및 데이터 분석', serviceMethod: 'getWebLogs' },
+  { id: 'TRS', label: '송수신 로그', icon: <Activity size={20} />, description: '외부 연동 및 배치 결과', serviceMethod: 'getTransferLogs' },
 ];
 
 export default function LogDashboardPage() {
   const [activeCategory, setCategory] = useState('SYS');
+  const [params, setParams] = useState({ pageNo: 1, searchKeyword: '' });
+  const [selectedLog, setSelectedLog] = useState<any | null>(null);
 
-  const columns: Column<LogItem>[] = [
-    {
-      header: '발생 시각',
-      accessor: (item: LogItem) => (
-          <div className="flex items-center gap-3 py-3">
-              <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
-                  <Clock size={14} />
-              </div>
-              <span className="text-[11px] font-mono font-black text-slate-500 tracking-tighter italic">
-                  {item.timestamp}
-              </span>
-          </div>
-      ),
-      className: 'w-48'
-    },
-    {
-      header: '로그 범주',
-      accessor: (item: LogItem) => {
-        const cat = logCategories.find(c => c.id === item.category);
-        return (
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-slate-100 text-slate-400">
-               {cat?.icon || <Terminal size={12} />}
-            </div>
-            <span className="text-[10px] font-black tracking-widest uppercase text-foreground">{cat?.label || '기타'}</span>
-          </div>
-        );
-      },
-      className: 'w-32'
-    },
-    {
-      header: '상태 수준',
-      accessor: (item: LogItem) => (
-        <HubStatusBadge 
-          label={item.level} 
-          variant={item.level === 'ERROR' ? 'error' : item.level === 'WARN' ? 'warning' : 'success'} 
-          className="text-[9px] font-black tracking-widest px-3"
-        />
-      ),
-      className: 'w-24'
-    },
-    {
-      header: '메시지 분석 내역',
-      accessor: (item: LogItem) => (
-        <div className="max-w-md">
-            <p className="text-xs font-bold text-slate-600 truncate tracking-tight">{item.message}</p>
-        </div>
-      )
-    },
-    {
-        header: '수행 주체',
-        accessor: (item: LogItem) => (
-          <div className="px-3 py-1 bg-slate-50 border-2 border-slate-100 rounded-xl text-[10px] font-black tracking-widest text-slate-400 w-fit">
-              {item.actor}
-          </div>
-        ),
-        className: 'w-32'
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-logs-integrated', activeCategory, params],
+    queryFn: async () => {
+      const apiParams = { page: params.pageNo - 1, size: 10, searchWrd: params.searchKeyword };
+      switch (activeCategory) {
+        case 'SYS': return systemLogAdminService.getSystemLogs(apiParams);
+        case 'LGN': return systemLogAdminService.getLoginLogs(apiParams);
+        case 'USR': return systemLogAdminService.getUserLogs(apiParams);
+        case 'WEB': return systemLogAdminService.getWebLogs(apiParams);
+        case 'TRS': return systemLogAdminService.getTransferLogs(apiParams);
+        default: return systemLogAdminService.getSystemLogs(apiParams);
+      }
     }
-  ];
+  });
+
+  const logs = data?.resultList || data?.list || [];
+  const pagination = data?.paginationInfo || {
+    currentPageNo: params.pageNo,
+    recordCountPerPage: 10,
+    totalRecordCount: data?.totalCount || 0,
+    totalPageCount: data?.totalPageCount || 1
+  };
+
+  const columns = useMemo(() => {
+    const commonCols: Column<any>[] = [
+        {
+          header: '발생 시각',
+          accessor: (item: any) => (
+              <div className="flex items-center gap-3 py-3">
+                  <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
+                      <Clock size={14} />
+                  </div>
+                  <span className="text-[11px] font-mono font-black text-slate-500 tracking-tighter italic">
+                      {item.creatDt || item.occcrrncDe || '-'}
+                  </span>
+              </div>
+          ),
+          className: 'w-48'
+        }
+    ];
+
+    if (activeCategory === 'LGN') {
+      return [
+        ...commonCols,
+        {
+          header: '요청자',
+          accessor: (item: any) => (
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center bg-white shadow-sm font-black text-[10px] text-slate-400">
+                  {item.loginNm?.substring(0, 1)}
+               </div>
+               <span className="text-xs font-bold text-slate-700">{item.loginNm} ({item.loginId})</span>
+            </div>
+          )
+        },
+        {
+          header: '접속 IP',
+          accessor: (item: any) => (
+            <div className="font-mono text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1 rounded-lg border w-fit">{item.loginIp}</div>
+          )
+        },
+        {
+          header: '구분',
+          accessor: (item: any) => (
+            <HubStatusBadge label={item.loginMthd} variant={item.loginMthd === 'LOGIN' ? 'success' : 'secondary'} />
+          )
+        }
+      ];
+    }
+
+    return [
+      ...commonCols,
+      {
+        header: '요청자',
+        className: 'w-32',
+        accessor: (item: any) => (
+          <span className="text-xs font-bold text-slate-700">{item.rqsterNm || item.rqesterId || 'SYSTEM'}</span>
+        )
+      },
+      {
+        header: '수행 서비스 / 리소스',
+        accessor: (item: any) => (
+          <div className="flex flex-col gap-0.5 max-w-md">
+             <span className="text-[11px] font-black text-foreground truncate uppercase tracking-tighter italic">{item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
+             <span className="text-[9px] font-bold text-slate-300 font-mono truncate">{item.methodNm || item.trgetMenuNm || '-'}</span>
+          </div>
+        )
+      },
+      {
+        header: '접속 정보',
+        accessor: (item: any) => (
+          <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-slate-400">
+             <Globe size={11} className="opacity-40" />
+             {item.rqesterIp || '127.0.0.1'}
+          </div>
+        )
+      }
+    ];
+  }, [activeCategory]);
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
@@ -173,18 +202,71 @@ export default function LogDashboardPage() {
         <div className="col-span-12 lg:col-span-9">
           <HubSectionCard 
             title="실시간 로그 스트림" 
-            description="시스템 노드에서 실시간으로 유입되는 통합 로그의 가시성 스트림 데이터입니다." 
+            description={`${logCategories.find(c => c.id === activeCategory)?.label}에서 실시간으로 유입되는 가시성 스트림 데이터입니다.`} 
             icon={Activity}
           >
-            <StandardDataTable columns={columns} data={recentLogs} className="border-none bg-transparent" />
-            <div className="mt-8 flex justify-center">
-              <Button variant="ghost" className="font-black text-[10px] tracking-widest uppercase gap-3 hover:bg-slate-900 hover:text-white transition-all h-12 px-10 rounded-xl">
-                 전체 로그 아카이빙 조회 <ArrowRight size={16} />
-              </Button>
-            </div>
+            <StandardDataTable 
+              columns={columns} 
+              data={logs} 
+              loading={isLoading}
+              className="border-none bg-transparent" 
+              onRowClick={(item) => setSelectedLog(item)}
+              search={{
+                placeholder: '요청자, IP, 메시지 등으로 정밀 분석...',
+                onSearch: (keyword) => setParams({ ...params, searchKeyword: keyword, pageNo: 1 })
+              }}
+            />
+            
+            {pagination && pagination.totalPageCount > 1 && (
+               <div className="mt-12 flex justify-center">
+                   <PagePagination 
+                      pagination={pagination} 
+                      onPageChange={(page) => setParams({ ...params, pageNo: page })}
+                   />
+               </div>
+            )}
           </HubSectionCard>
         </div>
       </div>
+
+      {/* Log Inspector Modal */}
+      <StandardModal 
+         isOpen={!!selectedLog} 
+         onClose={() => setSelectedLog(null)} 
+         title="Log Inspector (Raw Intel)"
+         maxWidth="2xl"
+      >
+         <div className="p-8 space-y-8 font-sans">
+            <div className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border-2 border-slate-100">
+               <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl">
+                     <Terminal size={22} />
+                  </div>
+                  <div>
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">LOG_RESOURCE_IDENTIFIER</p>
+                     <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || 'UNKNOWN_ID'}</p>
+                  </div>
+               </div>
+               <HubStatusBadge label="VERIFIED" variant="success" />
+            </div>
+
+            <div className="space-y-4">
+               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2 italic">Raw Architecture Payload</h4>
+               <div className="p-10 rounded-[2.5rem] bg-slate-900 text-emerald-400 font-mono text-[11px] overflow-auto shadow-2xl relative group max-h-[400px]">
+                  <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-100 transition-opacity">
+                     <Zap size={20} className="animate-pulse" />
+                  </div>
+                  <pre className="whitespace-pre-wrap leading-relaxed">{JSON.stringify(selectedLog, null, 2)}</pre>
+               </div>
+            </div>
+
+            <div className="flex gap-4">
+               <Button onClick={() => setSelectedLog(null)} className="flex-1 h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all">
+                  CLOSE_INSPECTOR
+               </Button>
+            </div>
+         </div>
+      </StandardModal>
     </div>
   );
 }

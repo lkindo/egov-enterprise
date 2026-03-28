@@ -8,7 +8,9 @@ import com.company.project.foundation.service.code.dto.CommonCodeDto;
 import com.company.project.foundation.service.code.dto.CommonCodeSaveRequest;
 import lombok.RequiredArgsConstructor;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,7 +51,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
+    @CacheEvict(value = "commonCodes", allEntries = true)
     public CommonCodeDto createCode(@NonNull CommonCodeSaveRequest request) {
+
         egovLogger.info("Creating common code: {}/{}", request.codeGroupId(), request.code());
 
         if (commonCodeRepository
@@ -96,7 +100,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     @Override
     @Transactional
+    @CacheEvict(value = "commonCodes", allEntries = true)
     public void insertCmmnClCode(@NonNull CmmnClCodeDto dto) {
+
         if (commonCodeCategoryRepository.existsById(Objects.requireNonNull(dto.getClCode()))) {
             throw new BusinessException(ErrorCode.DUPLICATE_CODE);
         }
@@ -112,7 +118,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     @Override
     @Transactional
+    @CacheEvict(value = "commonCodes", allEntries = true)
     public void updateCmmnClCode(@NonNull CmmnClCodeDto dto) {
+
         commonCodeCategoryRepository.findById(Objects.requireNonNull(dto.getClCode())).ifPresent(entity -> {
             entity.update(Objects.requireNonNull(dto.getClCodeNm()), dto.getClCodeDc(), dto.getUseAt(),
                     dto.getLastUpdusrId());
@@ -121,7 +129,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     @Override
     @Transactional
+    @CacheEvict(value = "commonCodes", allEntries = true)
     public void deleteCmmnClCode(@NonNull CmmnClCodeDto dto) {
+
         commonCodeCategoryRepository.findById(Objects.requireNonNull(dto.getClCode()))
                 .ifPresent(CommonCodeCategory::delete);
     }
@@ -167,7 +177,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     @Override
     @Transactional
+    @CacheEvict(value = "commonCodes", allEntries = true)
     public void insertCmmnCode(@NonNull CmmnCodeDto dto) {
+
         if (commonCodeGroupRepository.existsById(Objects.requireNonNull(dto.getCodeId()))) {
             throw new BusinessException(ErrorCode.DUPLICATE_CODE);
         }
@@ -184,7 +196,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     @Override
     @Transactional
+    @CacheEvict(value = "commonCodes", allEntries = true)
     public void updateCmmnCode(@NonNull CmmnCodeDto dto) {
+
         commonCodeGroupRepository.findById(Objects.requireNonNull(dto.getCodeId())).ifPresent(entity -> {
             entity.update(Objects.requireNonNull(dto.getCodeIdNm()), dto.getCodeIdDc(), dto.getUseAt(),
                     dto.getLastUpdusrId());
@@ -193,7 +207,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     @Override
     @Transactional
+    @CacheEvict(value = "commonCodes", allEntries = true)
     public void deleteCmmnCode(@NonNull CmmnCodeDto dto) {
+
         commonCodeGroupRepository.findById(Objects.requireNonNull(dto.getCodeId()))
                 .ifPresent(CommonCodeGroup::delete);
     }
@@ -256,7 +272,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     @Override
     @Transactional
+    @CacheEvict(value = "commonCodes", allEntries = true)
     public void insertCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
+
         if (commonCodeRepository
                 .existsById(Objects.requireNonNull(
                         new com.company.project.foundation.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode())))) {
@@ -275,7 +293,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     @Override
     @Transactional
+    @CacheEvict(value = "commonCodes", allEntries = true)
     public void updateCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
+
         commonCodeRepository
                 .findById(Objects.requireNonNull(
                         new com.company.project.foundation.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode())))
@@ -287,7 +307,9 @@ public class CommonCodeService extends EgovAbstractServiceImpl implements EgovCo
 
     @Override
     @Transactional
+    @CacheEvict(value = "commonCodes", allEntries = true)
     public void deleteCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
+
         commonCodeRepository
                 .findById(Objects.requireNonNull(
                         new com.company.project.foundation.domain.code.CommonCodeId(dto.getCodeId(), dto.getCode())))

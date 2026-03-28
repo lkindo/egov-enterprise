@@ -19,6 +19,8 @@ jjwt = "0.12.6"
 cubrid = "11.3.2.0053"
 hibernate-dialects = "6.4.0.Final"
 h2 = "2.3.232"
+caffeine = "3.1.8"
+
 
 [libraries]
 egovframe-rte-bat-core = { group = "org.egovframe.rte", name = "egovframe-rte-bat-core", version.ref = "egovframe" }
@@ -58,3 +60,5 @@ jjwt-jackson = { group = "io.jsonwebtoken", name = "jjwt-jackson", version.ref =
 cubrid-jdbc = { group = "org.cubrid", name = "cubrid-jdbc", version.ref = "cubrid" }
 hibernate-community-dialects = { group = "org.hibernate.orm", name = "hibernate-community-dialects", version.ref = "hibernate-dialects" }
 h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
+caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }
+

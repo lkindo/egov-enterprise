@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Collections;
@@ -23,6 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @DisplayName("LoginPolicyManageService 테스트")
@@ -50,7 +52,12 @@ public class LoginPolicyManageServiceTest {
         searchVO.setPageIndex(1);
         searchVO.setPageUnit(10);
 
-        User user = User.builder().userId("user01").userNm("사용자01").build();
+        User user = User.builder()
+                .userId("user01")
+                .esntlId("essntl01")
+                .userNm("사용자 01")
+                .password("password123")
+                .build();
         Page<User> userPage = new PageImpl<>(Collections.singletonList(user));
 
         LoginPolicy policy = LoginPolicy.builder()
@@ -60,7 +67,9 @@ public class LoginPolicyManageServiceTest {
                 .lmttAt("N")
                 .build();
 
-        when(userRepository.findAll(any(Pageable.class))).thenReturn(userPage);
+        // PageRequest.of(0, 10) 을 명시적으로 모킹
+        Pageable pageable = PageRequest.of(0, 10);
+        when(userRepository.findAll(eq(pageable))).thenReturn(userPage);
         when(loginPolicyRepository.findById("user01")).thenReturn(Optional.of(policy));
 
         // When
@@ -70,7 +79,8 @@ public class LoginPolicyManageServiceTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("user01", result.get(0).getEmplyrId());
-        verify(userRepository).findAll(any(Pageable.class));
+        assertEquals("Y", result.get(0).getRegYn());
+        verify(userRepository).findAll(eq(pageable));
     }
 
     @Test
@@ -78,14 +88,19 @@ public class LoginPolicyManageServiceTest {
     public void testSelectLoginPolicy_Success() {
         // Given
         String userId = "user01";
-        User user = User.builder().userId(userId).userNm("사용자01").build();
+        User user = User.builder()
+                .userId(userId)
+                .esntlId("essntl01")
+                .userNm("사용자 01")
+                .password("password123")
+                .build();
         LoginPolicy policy = LoginPolicy.builder()
                 .emplyrId(userId)
                 .ipInfo("127.0.0.1")
                 .build();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(loginPolicyRepository.findById(userId)).thenReturn(Optional.of(policy));
+        when(userRepository.findById(eq(userId))).thenReturn(Optional.of(user));
+        when(loginPolicyRepository.findById(eq(userId))).thenReturn(Optional.of(policy));
 
         // When
         LoginPolicyDto result = loginPolicyManageService.selectLoginPolicy(userId);

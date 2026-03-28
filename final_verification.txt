@@ -1,0 +1,63 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Configuration on demand is an incubating feature.
+> Task :business-suite:generateEffectiveLombokConfig UP-TO-DATE
+> Task :foundation:generateEffectiveLombokConfig UP-TO-DATE
+> Task :api-server:generateEffectiveLombokConfig UP-TO-DATE
+> Task :business-suite:processResources NO-SOURCE
+> Task :business-suite:generateTestEffectiveLombokConfig UP-TO-DATE
+> Task :business-suite:processTestResources UP-TO-DATE
+> Task :api-server:processResources UP-TO-DATE
+> Task :api-server:generateTestEffectiveLombokConfig UP-TO-DATE
+> Task :api-server:processTestResources UP-TO-DATE
+> Task :foundation:compileJava UP-TO-DATE
+> Task :foundation:processResources UP-TO-DATE
+> Task :foundation:classes UP-TO-DATE
+> Task :foundation:jar UP-TO-DATE
+> Task :foundation:generateTestEffectiveLombokConfig UP-TO-DATE
+> Task :foundation:compileTestJava UP-TO-DATE
+> Task :business-suite:compileJava UP-TO-DATE
+> Task :business-suite:classes UP-TO-DATE
+> Task :foundation:processTestResources NO-SOURCE
+> Task :foundation:testClasses UP-TO-DATE
+> Task :business-suite:jar UP-TO-DATE
+> Task :foundation:test UP-TO-DATE
+> Task :foundation:jacocoTestReport SKIPPED
+> Task :api-server:compileJava UP-TO-DATE
+> Task :api-server:classes UP-TO-DATE
+> Task :business-suite:compileTestJava UP-TO-DATE
+> Task :business-suite:testClasses UP-TO-DATE
+> Task :api-server:compileTestJava UP-TO-DATE
+> Task :api-server:testClasses UP-TO-DATE
+> Task :business-suite:test
+> Task :api-server:test
+
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+The message received from the daemon indicates that the daemon has disappeared.
+Build request sent: Build{id=89beb687-7369-41d5-b525-8a893448c7b9, currentDir=d:\project\egov-enterprise}
+Attempting to read last messages from the daemon log...
+Daemon pid: 25192
+  log file: C:\Users\sanle\.gradle\daemon\9.4.1\daemon-25192.out.log
+----- Last 20 lines from daemon log file - daemon-25192.out.log -----
+org.gradle.internal.remote.internal.MessageIOException: Could not write '/127.0.0.1:55208'.
+	at org.gradle.internal.remote.internal.inet.SocketConnection.flush(SocketConnection.java:142)
+	at org.gradle.internal.remote.internal.hub.MessageHub$ConnectionDispatch.run(MessageHub.java:333)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.io.IOException: Connection reset by peer
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(SocketDispatcher.java:54)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(IOUtil.java:137)
+	at java.base/sun.nio.ch.IOUtil.write(IOUtil.java:81)
+	at java.base/sun.nio.ch.IOUtil.write(IOUtil.java:58)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(SocketChannelImpl.java:542)
+	at org.gradle.internal.remote.internal.inet.SocketConnection$SocketOutputStream.writeWithNonBlockingRetry(SocketConnection.java:282)
+	at org.gradle.internal.remote.internal.inet.SocketConnection$SocketOutputStream.writeBufferToChannel(SocketConnection.java:269)
+	at org.gradle.internal.remote.internal.inet.SocketConnection$SocketOutputStream.flush(SocketConnection.java:263)
+	at org.gradle.internal.remote.internal.inet.SocketConnection.flush(SocketConnection.java:140)
+	... 6 more----- End of the daemon log -----
+

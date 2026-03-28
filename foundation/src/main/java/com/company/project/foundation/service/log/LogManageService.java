@@ -8,8 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -25,10 +27,12 @@ public class LogManageService {
     private final SysLogRepository sysLogRepository;
 
     /**
-     * ??뒪??濡쒓???깅줉
+     * 시스템 로그 등록 (비동기 수행)
      */
+    @Async("logExecutor")
     @Transactional
     public void insertSysLog(SysLogDto dto) {
+
         SysLog entity = SysLog.builder()
                 .requstId(dto.getRequstId())
                 .srvcNm(dto.getSrvcNm())

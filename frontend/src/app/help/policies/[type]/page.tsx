@@ -52,10 +52,9 @@ export default function PolicyViewPage() {
       <Card className="border-none shadow-2xl bg-card/50 backdrop-blur-sm rounded-[3rem] overflow-hidden">
         <CardContent className="p-12">
           <div 
-            className="prose prose-slate dark:prose-invert max-w-none text-lg leading-relaxed whitespace-pre-wrap"
-          >
-            {policy?.content}
-          </div>
+            className="prose prose-slate dark:prose-invert max-w-none text-lg leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: policy?.content || '' }}
+          />
         </CardContent>
       </Card>
       

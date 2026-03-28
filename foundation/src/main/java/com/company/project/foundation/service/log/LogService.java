@@ -4,8 +4,10 @@ import com.company.project.foundation.domain.log.LoginLog;
 import com.company.project.foundation.domain.log.LoginLogRepository;
 import com.company.project.foundation.service.log.dto.LogDto;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -27,11 +29,13 @@ public class LogService extends EgovAbstractServiceImpl implements EgovLogServic
     }
 
     /**
-     * 로그인 로그 기록
+     * 로그인 로그 기록 (비동기 처리)
      */
     @Override
+    @Async("logExecutor")
     @Transactional
     public void logLogin(String userId, String ip, String mthd, String errAt, String errCode) {
+
         LoginLog log = LoginLog.builder()
                 .logId("LGN_" + UUID.randomUUID().toString().substring(0, 16))
                 .loginId(userId)

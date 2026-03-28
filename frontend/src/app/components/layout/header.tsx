@@ -158,15 +158,19 @@ export function Header({ initialMenus = [] }: { initialMenus?: any[] }) {
             variant="ghost"
             size="icon"
             onClick={() => setIsNotifOpen(true)}
-            className="relative text-muted-foreground"
+            className={cn(
+              "relative text-muted-foreground transition-all group",
+              unreadCount > 0 && "text-primary bg-primary/5 ring-4 ring-primary/5"
+            )}
           >
-            <Bell size={20} />
+            <Bell size={20} className={cn("transition-transform group-hover:rotate-12", unreadCount > 0 && "animate-bounce-subtle")} />
             {unreadCount > 0 && (
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-destructive text-destructive-foreground border-2 border-background font-bold text-[10px]">
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-rose-500 text-white border-2 border-background font-black text-[9px] shadow-lg">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </Badge>
             )}
           </Button>
+
 
           <div className="flex items-center gap-2 pl-2 md:pl-3 border-l ml-1 md:ml-2">
             {user ? (
@@ -223,9 +227,11 @@ export function Header({ initialMenus = [] }: { initialMenus?: any[] }) {
           title: n.ntfcSj,
           message: n.ntfcCn,
           time: n.createdDate,
-          isRead: n.isRead === 'Y'
+          isRead: n.isRead === 'Y',
+          type: n.ntfcSj?.includes('보안') ? 'SECURITY' : n.ntfcSj?.includes('시스템') ? 'SYSTEM' : 'ACTIVITY'
         }))}
       />
+
     </header>
   );
 }

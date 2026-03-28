@@ -1,0 +1,35 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Configuration on demand is an incubating feature.
+> Task :business-suite:generateEffectiveLombokConfig UP-TO-DATE
+> Task :foundation:generateEffectiveLombokConfig UP-TO-DATE
+> Task :api-server:generateEffectiveLombokConfig UP-TO-DATE
+> Task :business-suite:processResources NO-SOURCE
+> Task :api-server:processResources UP-TO-DATE
+> Task :foundation:compileJava UP-TO-DATE
+> Task :foundation:processResources UP-TO-DATE
+> Task :foundation:classes UP-TO-DATE
+> Task :foundation:generateTestEffectiveLombokConfig UP-TO-DATE
+> Task :foundation:compileTestJava UP-TO-DATE
+> Task :foundation:processTestResources NO-SOURCE
+> Task :foundation:testClasses UP-TO-DATE
+> Task :business-suite:compileJava UP-TO-DATE
+> Task :business-suite:classes UP-TO-DATE
+> Task :business-suite:jacocoTestReport SKIPPED
+> Task :foundation:test UP-TO-DATE
+> Task :foundation:jacocoTestReport SKIPPED
+> Task :api-server:compileJava UP-TO-DATE
+> Task :api-server:classes UP-TO-DATE
+> Task :api-server:jacocoTestReport SKIPPED
+
+[Incubating] Problems report is available at: file:///D:/project/egov-enterprise/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 1m 4s
+11 actionable tasks: 11 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.4.1/userguide/configuration_cache_enabling.html

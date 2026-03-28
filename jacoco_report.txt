@@ -1,0 +1,35 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Configuration on demand is an incubating feature.
+> Task :business-suite:processResources NO-SOURCE
+> Task :business-suite:processTestResources
+> Task :foundation:processResources
+> Task :foundation:processTestResources NO-SOURCE
+
+> Task :business-suite:generateEffectiveLombokConfig
+lombok config [D:\project\egov-enterprise\business-suite\src\main\java] took 3346ms
+
+> Task :foundation:generateTestEffectiveLombokConfig
+lombok config [D:\project\egov-enterprise\foundation\src\test\java] took 2550ms
+
+> Task :business-suite:generateTestEffectiveLombokConfig
+lombok config [D:\project\egov-enterprise\business-suite\src\test\java] took 4054ms
+
+> Task :foundation:generateEffectiveLombokConfig
+lombok config [D:\project\egov-enterprise\foundation\src\main\java] took 4495ms
+
+> Task :api-server:generateEffectiveLombokConfig
+lombok config [D:\project\egov-enterprise\api-server\src\main\java] took 4218ms
+
+> Task :api-server:processResources
+> Task :api-server:processTestResources
+
+> Task :api-server:generateTestEffectiveLombokConfig
+lombok config [D:\project\egov-enterprise\api-server\src\test\java] took 2417ms
+
+> Task :foundation:compileJava
+> Task :foundation:classes
+> Task :foundation:jar
+> Task :business-suite:compileJava
+> Task :foundation:compileTestJava
+> Task :foundation:testClasses

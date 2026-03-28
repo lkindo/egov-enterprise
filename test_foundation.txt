@@ -1,0 +1,171 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Configuration on demand is an incubating feature.
+> Task :foundation:generateEffectiveLombokConfig UP-TO-DATE
+> Task :foundation:compileJava UP-TO-DATE
+> Task :foundation:processResources UP-TO-DATE
+> Task :foundation:classes UP-TO-DATE
+> Task :foundation:generateTestEffectiveLombokConfig UP-TO-DATE
+> Task :foundation:compileTestJava
+> Task :foundation:processTestResources NO-SOURCE
+> Task :foundation:testClasses
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+
+> Task :foundation:test
+
+LoginPolicyManageService 테스트 > 로그인 정책 상세 조회 성공 FAILED
+    java.lang.NullPointerException at LoginPolicyManageServiceTest.java:86
+
+LoginPolicyManageService 테스트 > 로그인 정책 목록 조회 성공 FAILED
+    java.lang.NullPointerException at LoginPolicyManageServiceTest.java:55
+
+2026-03-28T11:08:35.550+09:00  INFO 5416 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists cadministcode cascade 
+Hibernate: drop table if exists ccmmnclcode cascade 
+Hibernate: drop table if exists ccmmncode cascade 
+Hibernate: drop table if exists ccmmndetailcode cascade 
+Hibernate: drop table if exists comtnindvdlpge cascade 
+Hibernate: drop table if exists comtnuserabsence cascade 
+Hibernate: drop table if exists imgtemp cascade 
+Hibernate: drop table if exists nauthorgroupinfo cascade 
+Hibernate: drop table if exists nauthorinfo cascade 
+Hibernate: drop table if exists nauthorrolerelate cascade 
+Hibernate: drop table if exists nbanner cascade 
+Hibernate: drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: drop table if exists ncmmnty cascade 
+Hibernate: drop table if exists ncmmntyuser cascade 
+Hibernate: drop table if exists ncnsltlist cascade 
+Hibernate: drop table if exists ndtausestats cascade 
+Hibernate: drop table if exists nemplyrinfo cascade 
+Hibernate: drop table if exists nemplyrinfo_aud cascade 
+Hibernate: drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: drop table if exists nentrprsmber cascade 
+Hibernate: drop table if exists neventinfo cascade 
+Hibernate: drop table if exists nextrlhrinfo cascade 
+Hibernate: drop table if exists ngnrlmber cascade 
+Hibernate: drop table if exists nindvdlpge cascade 
+Hibernate: drop table if exists nindvdlpgecntnts cascade 
+Hibernate: drop table if exists ninsttcode cascade 
+Hibernate: drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: drop table if exists nintnetsvc cascade 
+Hibernate: drop table if exists nloginlog cascade 
+Hibernate: drop table if exists nloginpolicy cascade 
+Hibernate: drop table if exists nmenucreatdtls cascade 
+Hibernate: drop table if exists nmenuinfo cascade 
+Hibernate: drop table if exists nonlinepolliem cascade 
+Hibernate: drop table if exists nonlinepollmanage cascade 
+Hibernate: drop table if exists nonlinepollresult cascade 
+Hibernate: drop table if exists norgnztinfo cascade 
+Hibernate: drop table if exists npolicy cascade 
+Hibernate: drop table if exists npopupmanage cascade 
+Hibernate: drop table if exists nprivacylog cascade 
+Hibernate: drop table if exists nprogrmlist cascade 
+Hibernate: drop table if exists nqainfo cascade 
+Hibernate: drop table if exists nqestnrinfo cascade 
+Hibernate: drop table if exists nqestnrrespond cascade 
+Hibernate: drop table if exists nqestnrtmplat cascade 
+Hibernate: drop table if exists nqustnriem cascade 
+Hibernate: drop table if exists nqustnrqesitm cascade 
+Hibernate: drop table if exists nqustnrrspnsresult cascade 
+Hibernate: drop table if exists nrefresh_token cascade 
+Hibernate: drop table if exists nreprtstats cascade 
+Hibernate: drop table if exists nroleinfo cascade 
+Hibernate: drop table if exists nrwardmanage cascade 
+Hibernate: drop table if exists nsitemap cascade 
+Hibernate: drop table if exists nsyslog cascade 
+Hibernate: drop table if exists ntmplatinfo cascade 
+Hibernate: drop table if exists nuserlog cascade 
+Hibernate: drop table if exists nweblog cascade 
+Hibernate: drop table if exists revinfo cascade 
+Hibernate: drop table if exists sbbssummary cascade 
+Hibernate: drop table if exists ssyslogsummary cascade 
+Hibernate: drop table if exists susersummary cascade 
+Hibernate: drop table if exists sweblogsummary cascade 
+2026-03-28T11:08:35.711+09:00  INFO 5416 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists cadministcode cascade 
+Hibernate: drop table if exists ccmmnclcode cascade 
+Hibernate: drop table if exists ccmmncode cascade 
+Hibernate: drop table if exists ccmmndetailcode cascade 
+Hibernate: drop table if exists comtnindvdlpge cascade 
+Hibernate: drop table if exists comtnuserabsence cascade 
+Hibernate: drop table if exists imgtemp cascade 
+Hibernate: drop table if exists nauthorgroupinfo cascade 
+Hibernate: drop table if exists nauthorinfo cascade 
+Hibernate: drop table if exists nauthorrolerelate cascade 
+Hibernate: drop table if exists nbanner cascade 
+Hibernate: drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: drop table if exists ncmmnty cascade 
+Hibernate: drop table if exists ncmmntyuser cascade 
+Hibernate: drop table if exists ncnsltlist cascade 
+Hibernate: drop table if exists ndtausestats cascade 
+Hibernate: drop table if exists nemplyrinfo cascade 
+Hibernate: drop table if exists nemplyrinfo_aud cascade 
+Hibernate: drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: drop table if exists nentrprsmber cascade 
+Hibernate: drop table if exists neventinfo cascade 
+Hibernate: drop table if exists nextrlhrinfo cascade 
+Hibernate: drop table if exists ngnrlmber cascade 
+Hibernate: drop table if exists nindvdlpge cascade 
+Hibernate: drop table if exists nindvdlpgecntnts cascade 
+Hibernate: drop table if exists ninsttcode cascade 
+Hibernate: drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: drop table if exists nintnetsvc cascade 
+Hibernate: drop table if exists nloginlog cascade 
+Hibernate: drop table if exists nloginpolicy cascade 
+Hibernate: drop table if exists nmenucreatdtls cascade 
+Hibernate: drop table if exists nmenuinfo cascade 
+Hibernate: drop table if exists nonlinepolliem cascade 
+Hibernate: drop table if exists nonlinepollmanage cascade 
+Hibernate: drop table if exists nonlinepollresult cascade 
+Hibernate: drop table if exists norgnztinfo cascade 
+Hibernate: drop table if exists npolicy cascade 
+Hibernate: drop table if exists npopupmanage cascade 
+Hibernate: drop table if exists nprivacylog cascade 
+Hibernate: drop table if exists nprogrmlist cascade 
+Hibernate: drop table if exists nqainfo cascade 
+Hibernate: drop table if exists nqestnrinfo cascade 
+Hibernate: drop table if exists nqestnrrespond cascade 
+Hibernate: drop table if exists nqestnrtmplat cascade 
+Hibernate: drop table if exists nqustnriem cascade 
+Hibernate: drop table if exists nqustnrqesitm cascade 
+Hibernate: drop table if exists nqustnrrspnsresult cascade 
+Hibernate: drop table if exists nrefresh_token cascade 
+Hibernate: drop table if exists nreprtstats cascade 
+Hibernate: drop table if exists nroleinfo cascade 
+Hibernate: drop table if exists nrwardmanage cascade 
+Hibernate: drop table if exists nsitemap cascade 
+Hibernate: drop table if exists nsyslog cascade 
+Hibernate: drop table if exists ntmplatinfo cascade 
+Hibernate: drop table if exists nuserlog cascade 
+Hibernate: drop table if exists nweblog cascade 
+Hibernate: drop table if exists revinfo cascade 
+Hibernate: drop table if exists sbbssummary cascade 
+Hibernate: drop table if exists ssyslogsummary cascade 
+Hibernate: drop table if exists susersummary cascade 
+Hibernate: drop table if exists sweblogsummary cascade 
+
+> Task :foundation:test
+
+376 tests completed, 2 failed
+
+> Task :foundation:test FAILED
+
+[Incubating] Problems report is available at: file:///D:/project/egov-enterprise/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':foundation:test'.
+> There were failing tests. See the report at: file:///D:/project/egov-enterprise/foundation/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 3m 45s
+6 actionable tasks: 2 executed, 4 up-to-date

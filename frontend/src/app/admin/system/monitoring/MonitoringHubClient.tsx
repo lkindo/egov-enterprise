@@ -33,8 +33,10 @@ import {
   SearchCode,
   Network,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Share2
 } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
 import { auditAdminService } from '@/services/foundation/system/AuditAdminService';
@@ -42,10 +44,21 @@ import { commentAdminService } from '@/services/foundation/system/CommentAdminSe
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { 
+  GaugeChart, 
+  RealtimeSparkline, 
+  SystemStatusRadar,
+  ActivityAreaChart
+} from '@/app/components/ui/observability-charts';
+import { TopologyMap } from '@/app/components/ui/topology-map';
+import { StandardModal } from '@/app/components/ui/standard-modal';
+
+
 
 import { useRouter, useSearchParams } from 'next/navigation';
 
-type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS';
+type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS' | 'TOPOLOGY';
+
 
 export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defaultTab?: MonitoringTab }) {
   const queryClient = useQueryClient();
@@ -57,12 +70,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const rawTab = searchParams.get('tab')?.toUpperCase();
   const queryTab = (rawTab === 'HEALTH' ? 'OBSERVABILITY' : rawTab === 'POLICY' ? 'LOGIN' : rawTab) as MonitoringTab;
   
-  const activeTab = (queryTab && ['SECURITY', 'SYSTEM', 'LOGIN', 'OBSERVABILITY', 'COMMENTS'].includes(queryTab)) 
+  const activeTab = (queryTab && ['SECURITY', 'SYSTEM', 'LOGIN', 'OBSERVABILITY', 'COMMENTS', 'TOPOLOGY'].includes(queryTab)) 
     ? queryTab 
     : defaultTab;
 
+
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   
   // --- Pagination States ---
   const [page, setPage] = useState(1);
@@ -225,11 +240,34 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const renderObservability = () => (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="grid grid-cols-2 gap-6">
-        <HubMetricCard title="CPU_부하" value="12.4%" icon={Cpu} color="emerald" status="최적" />
-        <HubMetricCard title="메모리_할당" value="54.8GB" icon={HardDrive} color="primary" status="정상" />
-        <HubMetricCard title="트래픽_처리량" value="240 r/s" icon={Zap} color="amber" />
-        <HubMetricCard title="DB_지연시간" value="15.2ms" icon={Database} color="indigo" status="안정" />
+        <GaugeChart value={12.4} title="CPU_LOAD" unit="%" color="#10B981" />
+        <GaugeChart value={54.8} title="MEMORY_ALLOC" unit="%" color="#3B82F6" />
       </div>
+
+      <div className="grid grid-cols-2 gap-6">
+         <RealtimeSparkline 
+            label="NETWORK_TRAFFIC (PPS)" 
+            data={[ {value: 30}, {value: 45}, {value: 32}, {value: 67}, {value: 55}, {value: 89}, {value: 24} ]} 
+            color="#F59E0B"
+         />
+         <RealtimeSparkline 
+            label="DB_LATENCY (MS)" 
+            data={[ {value: 12}, {value: 15}, {value: 14}, {value: 18}, {value: 15}, {value: 13}, {value: 15} ]} 
+            color="#8B5CF6"
+         />
+      </div>
+
+      <SystemStatusRadar 
+         title="HEURISTIC_SYSTEM_HEALTH"
+         data={[
+            { subject: '가용성', A: 99 },
+            { subject: '보안성', A: 95 },
+            { subject: '응답속도', A: 88 },
+            { subject: '무결성', A: 100 },
+            { subject: '확장성', A: 75 },
+            { subject: '안정성', A: 92 },
+         ]}
+      />
 
       <div className="rounded-[3rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group border-none">
         <div className="absolute top-0 right-0 p-16 opacity-10 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
@@ -238,7 +276,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="relative z-10 space-y-12">
           <div className="flex items-center gap-6">
             <div className="w-5 h-5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_20px_rgba(16,185,129,0.8)]" />
-            <h3 className="text-3xl font-black tracking-tighter uppercase leading-none">코어 엔진: 정상 가동 중</h3>
+            <h3 className="text-3xl font-black tracking-tighter uppercase leading-none italic">코어 엔진: 최적 상태</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <StatusIndicator label="API Microservices" status="온라인" icon={Network} />
@@ -264,8 +302,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         icon={Activity} 
         actions={
           <div className="flex gap-4 p-2">
-            <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest uppercase gap-3 hover:bg-slate-50 transition-all">
-              <Download size={18} /> 리포트 스냅샷
+            <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={() => setIsReportModalOpen(true)}
+                className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest uppercase gap-3 hover:bg-slate-50 transition-all shadow-sm group"
+            >
+              <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 리포트 스냅샷
             </Button>
             <Button size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
               <Bell size={20} /> 알림 정책
@@ -282,8 +325,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             <NavButton icon={<Terminal size={22} />} label="시스템 로그 엔진" active={activeTab === 'SYSTEM'} onClick={() => { setActiveTab('SYSTEM'); setSelectedItemId(null); }} />
             <NavButton icon={<LogIn size={22} />} label="인증 접속 히스토리" active={activeTab === 'LOGIN'} onClick={() => { setActiveTab('LOGIN'); setSelectedItemId(null); }} />
             <NavButton icon={<MonitorCheck size={22} />} label="인프라 가동성 정보" active={activeTab === 'OBSERVABILITY'} onClick={() => { setActiveTab('OBSERVABILITY'); setSelectedItemId(null); }} />
+            <NavButton icon={<Share2 size={22} />} label="인프라 토폴로지 맵" active={activeTab === 'TOPOLOGY'} onClick={() => { setActiveTab('TOPOLOGY'); setSelectedItemId(null); }} />
             <NavButton icon={<MessageSquare size={22} />} label="서비스 피드백 관리" active={activeTab === 'COMMENTS'} onClick={() => { setActiveTab('COMMENTS'); setSelectedItemId(null); }} />
           </div>
+
 
           <div className="bg-slate-900 text-white rounded-[3rem] p-10 space-y-6 text-center shadow-2xl relative overflow-hidden flex flex-col items-center">
             <div className="w-20 h-20 bg-white/10 rounded-[2rem] flex items-center justify-center border border-white/5 shadow-inner transition-transform hover:rotate-12 duration-500">
@@ -338,7 +383,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.5, ease: "circOut" }}
                 >
-                  {activeTab === 'OBSERVABILITY' ? renderObservability() : (
+                  {activeTab === 'OBSERVABILITY' ? renderObservability() : activeTab === 'TOPOLOGY' ? <TopologyMap /> : (
                     <StandardDataTable
                         columns={(activeTab === 'SECURITY' ? auditColumns : activeTab === 'SYSTEM' ? systemLogColumns : activeTab === 'LOGIN' ? loginLogColumns : commentColumns) as any}
                         data={(activeTab === 'SECURITY' ? auditLogs : activeTab === 'SYSTEM' ? systemLogs : activeTab === 'LOGIN' ? loginLogs : comments) as any}
@@ -354,6 +399,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                         }}
                     />
                   )}
+
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -422,6 +468,57 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Report Generation Modal */}
+      <StandardModal 
+         isOpen={isReportModalOpen} 
+         onClose={() => setIsReportModalOpen(false)} 
+         title="Intelligence Report Generator"
+         maxWidth="xl"
+      >
+         <div className="p-10 space-y-10 font-sans">
+            <div className="space-y-4">
+               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] px-2 italic">SELECT_REPORT_PROTOCOL</h4>
+               <div className="grid grid-cols-1 gap-4">
+                  <ReportOption icon={<FileText size={20} />} title="Executive Overview" description="시스템 활동 및 보안 지표 통합 요약 (PDF)" />
+                  <ReportOption icon={<Activity size={20} />} title="Infrastructure Metrics" description="리소스 점유율 및 성능 추이 데이터 (XLSX)" />
+                  <ReportOption icon={<ShieldAlert size={20} />} title="Security Audit Log" description="전체 보안 감사 및 인증 시도 기록 (JSON)" />
+               </div>
+            </div>
+
+            <div className="p-8 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100 space-y-4">
+               <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black text-slate-800 uppercase italic">Reconciliation Range</span>
+                  <span className="text-[10px] font-bold text-primary px-3 py-1 bg-primary/10 rounded-full">LAST_24_HOURS</span>
+               </div>
+               <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary w-2/3 animate-pulse" />
+               </div>
+               <p className="text-[10px] text-slate-400 font-medium">데이터 수집 및 정합성 검증이 백그라운드에서 실행됩니다.</p>
+            </div>
+
+            <div className="flex gap-4">
+               <Button onClick={() => setIsReportModalOpen(false)} className="flex-1 h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all">
+                  INITIALIZE_GENERATION
+               </Button>
+            </div>
+         </div>
+      </StandardModal>
+    </div>
+  );
+}
+
+function ReportOption({ icon, title, description }: any) {
+  return (
+    <div className="flex items-center gap-5 p-6 rounded-3xl border-2 border-slate-100 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer group">
+       <div className="w-12 h-12 rounded-2xl bg-white shadow-md flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
+          {icon}
+       </div>
+       <div>
+          <h5 className="text-sm font-black text-slate-900 tracking-tight">{title}</h5>
+          <p className="text-[10px] font-bold text-slate-400">{description}</p>
+       </div>
+       <ChevronRight size={16} className="ml-auto text-slate-100 group-hover:text-primary/30 transition-colors" />
     </div>
   );
 }

@@ -1,0 +1,180 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Configuration on demand is an incubating feature.
+> Task :clean
+> Task :compileJava NO-SOURCE
+> Task :processResources NO-SOURCE
+> Task :classes UP-TO-DATE
+> Task :compileTestJava NO-SOURCE
+> Task :processTestResources NO-SOURCE
+> Task :testClasses UP-TO-DATE
+> Task :test NO-SOURCE
+> Task :api-server:clean
+> Task :business-suite:clean
+> Task :business-suite:processResources NO-SOURCE
+> Task :business-suite:processTestResources
+> Task :foundation:clean
+> Task :foundation:processResources
+> Task :foundation:processTestResources NO-SOURCE
+
+> Task :business-suite:generateEffectiveLombokConfig
+lombok config [D:\project\egov-enterprise\business-suite\src\main\java] took 2154ms
+
+> Task :api-server:generateEffectiveLombokConfig
+lombok config [D:\project\egov-enterprise\api-server\src\main\java] took 2212ms
+
+> Task :business-suite:generateTestEffectiveLombokConfig
+lombok config [D:\project\egov-enterprise\business-suite\src\test\java] took 2332ms
+
+> Task :foundation:generateTestEffectiveLombokConfig
+> Task :foundation:generateEffectiveLombokConfig
+> Task :api-server:processResources
+> Task :api-server:processTestResources
+> Task :api-server:generateTestEffectiveLombokConfig
+> Task :foundation:compileJava
+> Task :foundation:classes
+> Task :foundation:jar
+> Task :foundation:compileTestJava
+> Task :foundation:testClasses
+> Task :business-suite:compileJava
+> Task :business-suite:classes
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+> Task :business-suite:jar
+> Task :foundation:test
+> Task :api-server:compileJava
+> Task :api-server:classes
+> Task :business-suite:compileTestJava
+> Task :business-suite:testClasses
+> Task :api-server:compileTestJava
+> Task :api-server:testClasses
+> Task :business-suite:test
+> Task :api-server:test
+
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-03-28T12:40:24.494+09:00  INFO 22212 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists cadministcode cascade 
+Hibernate: drop table if exists ccmmnclcode cascade 
+Hibernate: drop table if exists ccmmncode cascade 
+Hibernate: drop table if exists ccmmndetailcode cascade 
+Hibernate: drop table if exists comtnindvdlpge cascade 
+Hibernate: drop table if exists comtnuserabsence cascade 
+Hibernate: drop table if exists imgtemp cascade 
+Hibernate: drop table if exists nauthorgroupinfo cascade 
+Hibernate: drop table if exists nauthorinfo cascade 
+Hibernate: drop table if exists nauthorrolerelate cascade 
+Hibernate: drop table if exists nbanner cascade 
+Hibernate: drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: drop table if exists ncmmnty cascade 
+Hibernate: drop table if exists ncmmntyuser cascade 
+Hibernate: drop table if exists ncnsltlist cascade 
+Hibernate: drop table if exists ndtausestats cascade 
+Hibernate: drop table if exists nemplyrinfo cascade 
+Hibernate: drop table if exists nemplyrinfo_aud cascade 
+Hibernate: drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: drop table if exists nentrprsmber cascade 
+Hibernate: drop table if exists neventinfo cascade 
+Hibernate: drop table if exists nextrlhrinfo cascade 
+Hibernate: drop table if exists ngnrlmber cascade 
+Hibernate: drop table if exists nindvdlpge cascade 
+Hibernate: drop table if exists nindvdlpgecntnts cascade 
+Hibernate: drop table if exists ninsttcode cascade 
+Hibernate: drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: drop table if exists nintnetsvc cascade 
+Hibernate: drop table if exists nloginlog cascade 
+Hibernate: drop table if exists nloginpolicy cascade 
+Hibernate: drop table if exists nmenucreatdtls cascade 
+Hibernate: drop table if exists nmenuinfo cascade 
+Hibernate: drop table if exists nonlinepolliem cascade 
+Hibernate: drop table if exists nonlinepollmanage cascade 
+Hibernate: drop table if exists nonlinepollresult cascade 
+Hibernate: drop table if exists norgnztinfo cascade 
+Hibernate: drop table if exists npolicy cascade 
+Hibernate: drop table if exists npopupmanage cascade 
+Hibernate: drop table if exists nprivacylog cascade 
+Hibernate: drop table if exists nprogrmlist cascade 
+Hibernate: drop table if exists nqainfo cascade 
+Hibernate: drop table if exists nqestnrinfo cascade 
+Hibernate: drop table if exists nqestnrrespond cascade 
+Hibernate: drop table if exists nqestnrtmplat cascade 
+Hibernate: drop table if exists nqustnriem cascade 
+Hibernate: drop table if exists nqustnrqesitm cascade 
+Hibernate: drop table if exists nqustnrrspnsresult cascade 
+Hibernate: drop table if exists nrefresh_token cascade 
+Hibernate: drop table if exists nreprtstats cascade 
+Hibernate: drop table if exists nroleinfo cascade 
+Hibernate: drop table if exists nrwardmanage cascade 
+Hibernate: drop table if exists nsitemap cascade 
+Hibernate: drop table if exists nsyslog cascade 
+Hibernate: drop table if exists ntmplatinfo cascade 
+Hibernate: drop table if exists nuserlog cascade 
+Hibernate: drop table if exists nweblog cascade 
+Hibernate: drop table if exists revinfo cascade 
+Hibernate: drop table if exists sbbssummary cascade 
+Hibernate: drop table if exists ssyslogsummary cascade 
+Hibernate: drop table if exists susersummary cascade 
+Hibernate: drop table if exists sweblogsummary cascade 
+2026-03-28T12:40:25.388+09:00  INFO 22212 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists cadministcode cascade 
+Hibernate: drop table if exists ccmmnclcode cascade 
+Hibernate: drop table if exists ccmmncode cascade 
+Hibernate: drop table if exists ccmmndetailcode cascade 
+Hibernate: drop table if exists comtnindvdlpge cascade 
+Hibernate: drop table if exists comtnuserabsence cascade 
+Hibernate: drop table if exists imgtemp cascade 
+Hibernate: drop table if exists nauthorgroupinfo cascade 
+Hibernate: drop table if exists nauthorinfo cascade 
+Hibernate: drop table if exists nauthorrolerelate cascade 
+Hibernate: drop table if exists nbanner cascade 
+Hibernate: drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: drop table if exists ncmmnty cascade 
+Hibernate: drop table if exists ncmmntyuser cascade 
+Hibernate: drop table if exists ncnsltlist cascade 
+Hibernate: drop table if exists ndtausestats cascade 
+Hibernate: drop table if exists nemplyrinfo cascade 
+Hibernate: drop table if exists nemplyrinfo_aud cascade 
+Hibernate: drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: drop table if exists nentrprsmber cascade 
+Hibernate: drop table if exists neventinfo cascade 
+Hibernate: drop table if exists nextrlhrinfo cascade 
+Hibernate: drop table if exists ngnrlmber cascade 
+Hibernate: drop table if exists nindvdlpge cascade 
+Hibernate: drop table if exists nindvdlpgecntnts cascade 
+Hibernate: drop table if exists ninsttcode cascade 
+Hibernate: drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: drop table if exists nintnetsvc cascade 
+Hibernate: drop table if exists nloginlog cascade 
+Hibernate: drop table if exists nloginpolicy cascade 
+Hibernate: drop table if exists nmenucreatdtls cascade 
+Hibernate: drop table if exists nmenuinfo cascade 
+Hibernate: drop table if exists nonlinepolliem cascade 
+Hibernate: drop table if exists nonlinepollmanage cascade 
+Hibernate: drop table if exists nonlinepollresult cascade 
+Hibernate: drop table if exists norgnztinfo cascade 
+Hibernate: drop table if exists npolicy cascade 
+Hibernate: drop table if exists npopupmanage cascade 
+Hibernate: drop table if exists nprivacylog cascade 
+Hibernate: drop table if exists nprogrmlist cascade 
+Hibernate: drop table if exists nqainfo cascade 
+Hibernate: drop table if exists nqestnrinfo cascade 
+Hibernate: drop table if exists nqestnrrespond cascade 
+Hibernate: drop table if exists nqestnrtmplat cascade 
+Hibernate: drop table if exists nqustnriem cascade 
+Hibernate: drop table if exists nqustnrqesitm cascade 
+Hibernate: drop table if exists nqustnrrspnsresult cascade 
+Hibernate: drop table if exists nrefresh_token cascade 
+Hibernate: drop table if exists nreprtstats cascade 
+Hibernate: drop table if exists nroleinfo cascade 
+Hibernate: drop table if exists nrwardmanage cascade 
+Hibernate: drop table if exists nsitemap cascade 
+Hibernate: drop table if exists nsyslog cascade 
+Hibernate: drop table if exists ntmplatinfo cascade 
+Hibernate: drop table if exists nuserlog cascade 
+Hibernate: drop table if exists nweblog cascade 
+Hibernate: drop table if exists revinfo cascade 
+Hibernate: drop table if exists sbbssummary cascade 
+Hibernate: drop table if exists ssyslogsummary cascade 
+Hibernate: drop table if exists susersummary cascade 
+Hibernate: drop table if exists sweblogsummary cascade 
+
+> Task :foundation:jacocoTestReport SKIPPED

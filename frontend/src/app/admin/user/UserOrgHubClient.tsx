@@ -224,7 +224,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                                     columns={(activeTab === 'DEPTS' ? deptColumns : userColumns) as any}
                                     data={(activeTab === 'DEPTS' ? departments : users) as any}
                                     loading={activeTab === 'DEPTS' ? isDeptsLoading : isUsersLoading}
-                                    onRowClick={(item) => setSelectedItemId(activeTab === 'DEPTS' ? (item as Department).orgnztId : (item as UserManage).esntlId!)}
+                                    onRowClick={(item: any) => setSelectedItemId(activeTab === 'DEPTS' ? item.orgnztId : item.esntlId!)}
                                     keyField={activeTab === 'DEPTS' ? 'orgnztId' : 'esntlId'}
                                     emptyMessage="검색된 개체가 존재하지 않습니다."
                                     isPremium={false}

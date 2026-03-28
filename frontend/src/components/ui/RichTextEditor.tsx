@@ -5,12 +5,14 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
+import TextAlign from '@tiptap/extension-text-align';
+import CharacterCount from '@tiptap/extension-character-count';
 import { 
   Bold, Italic, List, ListOrdered, 
   Code, Heading1, Heading2, Quote, 
   Link as LinkIcon, Image as ImageIcon,
   Undo, Redo, 
-  Type, AlignLeft, AlignCenter, AlignRight
+  Type, AlignLeft, AlignCenter, AlignRight, AlignJustify
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -46,6 +48,10 @@ export default function RichTextEditor({ value, onChange, placeholder, className
         inline: true,
         allowBase64: true,
       }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      CharacterCount,
     ],
     content: value,
     immediatelyRender: false, // SSR Hydration 오류 방지를 위해 필수 설정
@@ -141,6 +147,31 @@ export default function RichTextEditor({ value, onChange, placeholder, className
             onClick={() => editor.chain().focus().toggleBlockquote().run()} 
             active={editor.isActive('blockquote')} 
             icon={<Quote size={18} />} 
+          />
+        </ToolbarGroup>
+
+        <ToolbarDivider />
+        
+        <ToolbarGroup>
+          <ToolbarButton 
+            onClick={() => editor.chain().focus().setTextAlign('left').run()} 
+            active={editor.isActive({ textAlign: 'left' })} 
+            icon={<AlignLeft size={18} />} 
+          />
+          <ToolbarButton 
+            onClick={() => editor.chain().focus().setTextAlign('center').run()} 
+            active={editor.isActive({ textAlign: 'center' })} 
+            icon={<AlignCenter size={18} />} 
+          />
+          <ToolbarButton 
+            onClick={() => editor.chain().focus().setTextAlign('right').run()} 
+            active={editor.isActive({ textAlign: 'right' })} 
+            icon={<AlignRight size={18} />} 
+          />
+          <ToolbarButton 
+            onClick={() => editor.chain().focus().setTextAlign('justify').run()} 
+            active={editor.isActive({ textAlign: 'justify' })} 
+            icon={<AlignJustify size={18} />} 
           />
         </ToolbarGroup>
 

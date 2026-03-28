@@ -16,14 +16,17 @@ import {
   LayoutDashboard,
   Box,
   Cpu,
-  Globe
+  Globe,
+  FileText
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { GaugeChart, RealtimeSparkline } from '@/app/components/ui/observability-charts';
+import { GaugeChart, RealtimeSparkline, ActivityAreaChart, DistributionPieChart } from '@/app/components/ui/observability-charts';
 import { VisualAuditTimeline, AuditLog } from '@/app/components/ui/visual-audit-timeline';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { InsightBanner } from './components/InsightBanner';
+
 
 const MOCK_AUDIT_LOGS: AuditLog[] = [
   {
@@ -63,6 +66,23 @@ const MOCK_METRICS = {
   memory: Array.from({ length: 20 }, (_, i) => ({ time: i, value: 40 + Math.random() * 10 })),
 };
 
+const MOCK_ACTIVITY_DATA = [
+  { name: 'Mon', value: 420 },
+  { name: 'Tue', value: 580 },
+  { name: 'Wed', value: 390 },
+  { name: 'Thu', value: 720 },
+  { name: 'Fri', value: 850 },
+  { name: 'Sat', value: 460 },
+  { name: 'Sun', value: 310 },
+];
+
+const MOCK_DISTRIBUTION_DATA = [
+  { name: 'General Users', value: 65 },
+  { name: 'System Admins', value: 12 },
+  { name: 'Security Officers', value: 8 },
+  { name: 'External Partners', value: 15 },
+];
+
 export default function AdminDashboardPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 px-4 md:px-0 pb-20 animate-in fade-in duration-700">
@@ -81,6 +101,9 @@ export default function AdminDashboardPage() {
           </div>
         }
       />
+
+      <InsightBanner />
+
 
       {/* Hub Entry Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -112,6 +135,15 @@ export default function AdminDashboardPage() {
           description="프로그램 및 리소스 관리"
         />
         <DashboardStatCard 
+          title="시스템 정책" 
+          value="2" 
+          icon={<FileText className="w-5 h-5" />} 
+          trend="업데이트 가능" 
+          color="amber" 
+          link="/admin/system/policies"
+          description="개인정보처리방침 및 저작권 관리"
+        />
+        <DashboardStatCard 
           title="데이터 처리" 
           value="98.2%" 
           icon={<Activity className="w-5 h-5" />} 
@@ -123,9 +155,45 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Activity Intelligence */}
+        <div className="lg:col-span-2 p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-8">
+           <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                    <TrendingUp size={24} />
+                 </div>
+                 <div>
+                    <h3 className="text-lg font-black text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">Activity Intelligence</h3>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">시스템 트래픽 및 도메인 활동 분석</p>
+                 </div>
+              </div>
+           </div>
+           <ActivityAreaChart data={MOCK_ACTIVITY_DATA} title="최근 7일간 시스템 접속 프로필" color="#6366F1" />
+        </div>
+
+        {/* User Distribution */}
+        <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-8">
+           <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                    <Users size={24} />
+                 </div>
+                 <div>
+                    <h3 className="text-lg font-black text-foreground tracking-tight">Identity Cluster</h3>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">사용자 권한 그룹 분포</p>
+                 </div>
+              </div>
+           </div>
+           <div className="flex-1 min-h-[300px]">
+              <DistributionPieChart data={MOCK_DISTRIBUTION_DATA} title="RBAC 수용량 분석" />
+           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Real-time Health Chart */}
         <div className="lg:col-span-2 space-y-8">
-          <div className="p-6 rounded-2xl bg-card border border-border shadow-sm overflow-hidden relative group">
+          <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm overflow-hidden relative group">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-xl text-primary">
@@ -151,13 +219,11 @@ export default function AdminDashboardPage() {
             <div className="h-[240px] w-full flex items-end gap-1 px-2">
               <RealtimeSparkline data={MOCK_METRICS.cpu} color="var(--primary)" label="CPU Usage" />
             </div>
-            
-            <div className="absolute right-0 top-0 w-48 h-full bg-gradient-to-l from-background/5 to-transparent pointer-events-none" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
              {/* Database Status */}
-             <div className="p-6 rounded-2xl bg-card border border-border shadow-sm flex flex-col gap-6">
+             <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-muted rounded-xl text-muted-foreground">
@@ -165,22 +231,22 @@ export default function AdminDashboardPage() {
                     </div>
                     <span className="text-sm font-bold text-foreground">데이터 소스</span>
                   </div>
-                  <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] font-bold">안정</Badge>
+                  <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] font-bold px-3 py-1">HEALTHY</Badge>
                 </div>
                 
                 <div className="flex items-end justify-between">
                   <div className="space-y-1">
-                    <p className="text-3xl font-bold tracking-tight">2.4 TB</p>
-                    <p className="text-[10px] font-semibold text-muted-foreground">전체 가용 용량 중 64% 점유</p>
+                    <p className="text-3xl font-black tracking-tighter">2.4 TB</p>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase">Storage occupied: 64%</p>
                   </div>
-                  <div className="w-16 h-16">
-                    <GaugeChart value={64} color="var(--primary)" title="Storage" />
+                  <div className="w-20 h-20">
+                    <GaugeChart value={64} color="#3B82F6" title="Storage" />
                   </div>
                 </div>
              </div>
 
              {/* Network Latency */}
-             <div className="p-6 rounded-2xl bg-card border border-border shadow-sm flex flex-col gap-6">
+             <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-muted rounded-xl text-muted-foreground">
@@ -190,16 +256,16 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="flex items-center gap-1 text-emerald-500">
                     <TrendingUp size={12} />
-                    <span className="text-[10px] font-bold">-4ms</span>
+                    <span className="text-[10px] font-bold uppercase">-4MS OPTIMIZED</span>
                   </div>
                 </div>
                 
                 <div className="flex items-end justify-between">
                   <div className="space-y-1">
-                    <p className="text-3xl font-bold tracking-tight">12 ms</p>
-                    <p className="text-[10px] font-semibold text-muted-foreground">평균 응답 속도 (아시아/서울)</p>
+                    <p className="text-3xl font-black tracking-tighter uppercase">12 ms</p>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase">Response time (Seoul Hub)</p>
                   </div>
-                  <div className="w-24 h-8 bg-muted/40 rounded-lg animate-pulse" />
+                  <div className="w-24 h-1 font-black bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
                 </div>
              </div>
           </div>
@@ -207,29 +273,29 @@ export default function AdminDashboardPage() {
 
         {/* Audit Timeline Sidebar */}
         <div className="space-y-8">
-           <div className="p-6 rounded-2xl bg-card border border-border shadow-sm flex flex-col h-full">
+           <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col h-full h-[600px]">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-muted rounded-xl text-muted-foreground">
+                  <div className="p-2 bg-slate-900 rounded-xl text-white shadow-xl">
                     <Clock size={18} />
                   </div>
-                  <h3 className="text-sm font-bold text-foreground">보안 감사 추적</h3>
+                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest leading-none">Audit History</h3>
                 </div>
-                <Link href="/admin/security/authority" className="text-[10px] font-bold text-primary hover:underline">모두 보기</Link>
+                <Link href="/admin/security/authority" className="text-[10px] font-black text-primary hover:underline uppercase tracking-tighter italic underline-offset-4 decoration-primary/30">Explore All</Link>
               </div>
 
-              <div className="flex-1">
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 <VisualAuditTimeline logs={MOCK_AUDIT_LOGS} />
               </div>
 
-              <div className="mt-8 pt-6 border-t border-border/50">
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-dashed border-border group hover:bg-muted/40 transition-all cursor-pointer">
-                  <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors shadow-sm">
-                    <AlertCircle size={18} />
+              <div className="mt-8 pt-8 border-t border-border/50">
+                <div className="flex items-center gap-4 p-5 rounded-2xl bg-slate-50 border border-dashed border-slate-200 group hover:bg-slate-900 group-hover:border-slate-800 transition-all cursor-pointer">
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shadow-sm">
+                    <AlertCircle size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-foreground">데이터 무결성 검사</p>
-                    <p className="text-[10px] font-medium text-muted-foreground">마지막 검사: 2시간 전</p>
+                    <p className="text-xs font-black text-slate-900 group-hover:text-white uppercase tracking-tight">Integrity Probe</p>
+                    <p className="text-[10px] font-bold text-slate-400">Last check: 2 hours ago</p>
                   </div>
                 </div>
               </div>

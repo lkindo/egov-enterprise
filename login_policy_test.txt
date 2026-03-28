@@ -1,0 +1,11 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Configuration on demand is an incubating feature.
+> Task :foundation:generateEffectiveLombokConfig UP-TO-DATE
+> Task :foundation:compileJava UP-TO-DATE
+> Task :foundation:processResources UP-TO-DATE
+> Task :foundation:classes UP-TO-DATE
+> Task :foundation:generateTestEffectiveLombokConfig UP-TO-DATE
+> Task :foundation:compileTestJava UP-TO-DATE
+> Task :foundation:processTestResources NO-SOURCE
+> Task :foundation:testClasses UP-TO-DATE

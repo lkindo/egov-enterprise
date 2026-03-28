@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { BoardPreview } from './BoardPreview';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -142,6 +143,7 @@ export function BoardMakerWizard() {
   const selectedTemplate = watch('tmplatId');
   const permissions = watch('permissions');
   const bbsNm = watch('bbsNm');
+  const bbsIntrcn = watch('bbsIntrcn');
 
   const nextStep = () => {
     if (currentStep === 1 && !watch('menuNm')) {
@@ -376,53 +378,72 @@ export function BoardMakerWizard() {
                 )}
 
                 {currentStep === 2 && (
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {TEMPLATES.map((tpl) => {
-                      const Icon = tpl.icon;
-                      const isSelected = selectedTemplate === tpl.id;
-
-                      return (
-                        <div 
-                          key={tpl.id}
-                          onClick={() => {
-                            setValue('tmplatId', tpl.id);
-                            setValue('bbsTyCode', tpl.typeCode);
-                          }}
-                          className={cn(
-                            "group relative p-8 rounded-[2.5rem] border-2 transition-all duration-500 cursor-pointer flex flex-col gap-6",
-                            isSelected ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-2xl scale-[1.02]" : "border-slate-50 bg-slate-50/30 hover:border-slate-200"
-                          )}
-                        >
-                          <div className={cn(
-                            "w-20 h-20 rounded-3xl flex items-center justify-center text-white transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg",
-                            tpl.color
-                          )}>
-                            <Icon size={40} />
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <h4 className="text-2xl font-black text-slate-800 tracking-tight">
-                              {tpl.name}
-                            </h4>
-                            <p className="text-sm text-slate-500 font-bold leading-relaxed">
-                              {tpl.description}
-                            </p>
-                          </div>
-
-                          <div className="mt-auto pt-6 flex items-center justify-between">
-                            <span className="text-[10px] font-black tracking-widest text-slate-300 uppercase">
-                              ID: {tpl.id}
-                            </span>
-                            <div className={cn(
-                              "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
-                              isSelected ? "bg-primary border-primary text-white" : "border-slate-200 text-transparent"
-                            )}>
-                              <Check size={16} strokeWidth={4} />
-                            </div>
-                          </div>
+                  <div className="flex flex-col lg:flex-row gap-12">
+                     <div className="flex-1 space-y-8">
+                        <div className="space-y-2">
+                           <h4 className="text-xl font-black text-slate-800 tracking-tight italic">LAYOUT_STRATEGY_SELECT</h4>
+                           <p className="text-sm text-slate-400 font-medium">비즈니스 목적에 부합하는 최적의 UI 엔진을 선택하세요.</p>
                         </div>
-                      );
-                    })}
+                        <div className="grid grid-cols-1 gap-6">
+                           {TEMPLATES.map((tpl) => {
+                           const Icon = tpl.icon;
+                           const isSelected = selectedTemplate === tpl.id;
+
+                           return (
+                              <div 
+                                 key={tpl.id}
+                                 onClick={() => {
+                                 setValue('tmplatId', tpl.id);
+                                 setValue('bbsTyCode', tpl.typeCode);
+                                 }}
+                                 className={cn(
+                                 "group relative p-8 rounded-[2.5rem] border-2 transition-all duration-500 cursor-pointer flex items-center gap-6",
+                                 isSelected ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-xl" : "border-slate-50 bg-slate-50/30 hover:border-slate-200"
+                                 )}
+                              >
+                                 <div className={cn(
+                                 "w-16 h-16 rounded-2xl flex items-center justify-center text-white transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg",
+                                 tpl.color
+                                 )}>
+                                 <Icon size={32} />
+                                 </div>
+                                 
+                                 <div className="flex-1 space-y-1">
+                                 <h4 className="text-xl font-black text-slate-800 tracking-tight">
+                                    {tpl.name}
+                                 </h4>
+                                 <p className="text-[11px] text-slate-500 font-bold leading-relaxed">
+                                    {tpl.description}
+                                 </p>
+                                 </div>
+
+                                 <div className={cn(
+                                    "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
+                                    isSelected ? "bg-primary border-primary text-white" : "border-slate-200 text-transparent"
+                                 )}>
+                                 <Check size={16} strokeWidth={4} />
+                                 </div>
+                              </div>
+                           );
+                           })}
+                        </div>
+                        <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white/40 font-mono text-[10px] tracking-widest leading-relaxed">
+                           ENGINE_OPTIMIZATION: ACTIVE <br />
+                           UI_RENDERING_MODE: HIGH_FIDELITY <br />
+                           TEMPLATE_ID: {selectedTemplate}
+                        </div>
+                     </div>
+
+                     <div className="flex-1 hidden xl:block sticky top-0">
+                        <div className="space-y-4 mb-4">
+                           <h4 className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase text-right">LIVE_SYSTEM_PREVIEW</h4>
+                        </div>
+                        <BoardPreview 
+                           tmplatId={selectedTemplate} 
+                           bbsNm={bbsNm} 
+                           bbsIntrcn={bbsIntrcn} 
+                        />
+                     </div>
                   </div>
                 )}
 

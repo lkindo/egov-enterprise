@@ -1,0 +1,2648 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Configuration on demand is an incubating feature.
+> Task :clean
+> Task :api-server:clean
+> Task :compileJava NO-SOURCE
+> Task :processResources NO-SOURCE
+> Task :classes UP-TO-DATE
+> Task :jar
+> Task :assemble
+> Task :api-server:generateEffectiveLombokConfig FROM-CACHE
+> Task :compileTestJava NO-SOURCE
+> Task :processTestResources NO-SOURCE
+> Task :testClasses UP-TO-DATE
+> Task :test NO-SOURCE
+> Task :check UP-TO-DATE
+> Task :build
+> Task :business-suite:clean
+> Task :business-suite:generateEffectiveLombokConfig FROM-CACHE
+> Task :business-suite:processResources NO-SOURCE
+> Task :business-suite:generateTestEffectiveLombokConfig FROM-CACHE
+> Task :business-suite:processTestResources
+> Task :foundation:clean
+> Task :foundation:generateEffectiveLombokConfig FROM-CACHE
+> Task :api-server:processResources
+> Task :api-server:generateTestEffectiveLombokConfig FROM-CACHE
+> Task :api-server:processTestResources
+> Task :foundation:compileJava FROM-CACHE
+> Task :foundation:processResources
+> Task :foundation:classes
+> Task :business-suite:compileJava FROM-CACHE
+> Task :business-suite:classes UP-TO-DATE
+> Task :api-server:compileJava FROM-CACHE
+> Task :api-server:classes
+> Task :api-server:resolveMainClassName
+> Task :api-server:jar SKIPPED
+> Task :business-suite:jar
+> Task :business-suite:resolveMainClassName
+> Task :foundation:jar
+> Task :foundation:resolveMainClassName
+> Task :foundation:bootJar SKIPPED
+> Task :foundation:assemble
+> Task :foundation:generateTestEffectiveLombokConfig FROM-CACHE
+> Task :foundation:compileTestJava FROM-CACHE
+> Task :foundation:processTestResources NO-SOURCE
+> Task :foundation:testClasses UP-TO-DATE
+> Task :api-server:compileTestJava
+> Task :business-suite:compileTestJava
+
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+
+> Task :foundation:test
+> Task :business-suite:bootJar SKIPPED
+> Task :business-suite:assemble
+> Task :business-suite:testClasses
+> Task :api-server:bootWar
+> Task :business-suite:test
+
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+
+> Task :api-server:war
+> Task :api-server:assemble
+> Task :api-server:testClasses
+> Task :api-server:test
+
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-03-28T12:24:39.598+09:00  INFO 26896 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists cadministcode cascade 
+Hibernate: drop table if exists ccmmnclcode cascade 
+Hibernate: drop table if exists ccmmncode cascade 
+Hibernate: drop table if exists ccmmndetailcode cascade 
+Hibernate: drop table if exists comtnindvdlpge cascade 
+Hibernate: drop table if exists comtnuserabsence cascade 
+Hibernate: drop table if exists imgtemp cascade 
+Hibernate: drop table if exists nauthorgroupinfo cascade 
+Hibernate: drop table if exists nauthorinfo cascade 
+Hibernate: drop table if exists nauthorrolerelate cascade 
+Hibernate: drop table if exists nbanner cascade 
+Hibernate: drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: drop table if exists ncmmnty cascade 
+Hibernate: drop table if exists ncmmntyuser cascade 
+Hibernate: drop table if exists ncnsltlist cascade 
+Hibernate: drop table if exists ndtausestats cascade 
+Hibernate: drop table if exists nemplyrinfo cascade 
+Hibernate: drop table if exists nemplyrinfo_aud cascade 
+Hibernate: drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: drop table if exists nentrprsmber cascade 
+Hibernate: drop table if exists neventinfo cascade 
+Hibernate: drop table if exists nextrlhrinfo cascade 
+Hibernate: drop table if exists ngnrlmber cascade 
+Hibernate: drop table if exists nindvdlpge cascade 
+Hibernate: drop table if exists nindvdlpgecntnts cascade 
+Hibernate: drop table if exists ninsttcode cascade 
+Hibernate: drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: drop table if exists nintnetsvc cascade 
+Hibernate: drop table if exists nloginlog cascade 
+Hibernate: drop table if exists nloginpolicy cascade 
+Hibernate: drop table if exists nmenucreatdtls cascade 
+Hibernate: drop table if exists nmenuinfo cascade 
+Hibernate: drop table if exists nonlinepolliem cascade 
+Hibernate: drop table if exists nonlinepollmanage cascade 
+Hibernate: drop table if exists nonlinepollresult cascade 
+Hibernate: drop table if exists norgnztinfo cascade 
+Hibernate: drop table if exists npolicy cascade 
+Hibernate: drop table if exists npopupmanage cascade 
+Hibernate: drop table if exists nprivacylog cascade 
+Hibernate: drop table if exists nprogrmlist cascade 
+Hibernate: drop table if exists nqainfo cascade 
+Hibernate: drop table if exists nqestnrinfo cascade 
+Hibernate: drop table if exists nqestnrrespond cascade 
+Hibernate: drop table if exists nqestnrtmplat cascade 
+Hibernate: drop table if exists nqustnriem cascade 
+Hibernate: drop table if exists nqustnrqesitm cascade 
+Hibernate: drop table if exists nqustnrrspnsresult cascade 
+Hibernate: drop table if exists nrefresh_token cascade 
+Hibernate: drop table if exists nreprtstats cascade 
+Hibernate: drop table if exists nroleinfo cascade 
+Hibernate: drop table if exists nrwardmanage cascade 
+Hibernate: drop table if exists nsitemap cascade 
+Hibernate: drop table if exists nsyslog cascade 
+Hibernate: drop table if exists ntmplatinfo cascade 
+Hibernate: drop table if exists nuserlog cascade 
+Hibernate: drop table if exists nweblog cascade 
+Hibernate: drop table if exists revinfo cascade 
+Hibernate: drop table if exists sbbssummary cascade 
+Hibernate: drop table if exists ssyslogsummary cascade 
+Hibernate: drop table if exists susersummary cascade 
+Hibernate: drop table if exists sweblogsummary cascade 
+2026-03-28T12:24:46.662+09:00  INFO 26896 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists cadministcode cascade 
+Hibernate: drop table if exists ccmmnclcode cascade 
+Hibernate: drop table if exists ccmmncode cascade 
+Hibernate: drop table if exists ccmmndetailcode cascade 
+Hibernate: drop table if exists comtnindvdlpge cascade 
+Hibernate: drop table if exists comtnuserabsence cascade 
+Hibernate: drop table if exists imgtemp cascade 
+Hibernate: drop table if exists nauthorgroupinfo cascade 
+Hibernate: drop table if exists nauthorinfo cascade 
+Hibernate: drop table if exists nauthorrolerelate cascade 
+Hibernate: drop table if exists nbanner cascade 
+Hibernate: drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: drop table if exists ncmmnty cascade 
+Hibernate: drop table if exists ncmmntyuser cascade 
+Hibernate: drop table if exists ncnsltlist cascade 
+Hibernate: drop table if exists ndtausestats cascade 
+Hibernate: drop table if exists nemplyrinfo cascade 
+Hibernate: drop table if exists nemplyrinfo_aud cascade 
+Hibernate: drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: drop table if exists nentrprsmber cascade 
+Hibernate: drop table if exists neventinfo cascade 
+Hibernate: drop table if exists nextrlhrinfo cascade 
+Hibernate: drop table if exists ngnrlmber cascade 
+Hibernate: drop table if exists nindvdlpge cascade 
+Hibernate: drop table if exists nindvdlpgecntnts cascade 
+Hibernate: drop table if exists ninsttcode cascade 
+Hibernate: drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: drop table if exists nintnetsvc cascade 
+Hibernate: drop table if exists nloginlog cascade 
+Hibernate: drop table if exists nloginpolicy cascade 
+Hibernate: drop table if exists nmenucreatdtls cascade 
+Hibernate: drop table if exists nmenuinfo cascade 
+Hibernate: drop table if exists nonlinepolliem cascade 
+Hibernate: drop table if exists nonlinepollmanage cascade 
+Hibernate: drop table if exists nonlinepollresult cascade 
+Hibernate: drop table if exists norgnztinfo cascade 
+Hibernate: drop table if exists npolicy cascade 
+Hibernate: drop table if exists npopupmanage cascade 
+Hibernate: drop table if exists nprivacylog cascade 
+Hibernate: drop table if exists nprogrmlist cascade 
+Hibernate: drop table if exists nqainfo cascade 
+Hibernate: drop table if exists nqestnrinfo cascade 
+Hibernate: drop table if exists nqestnrrespond cascade 
+Hibernate: drop table if exists nqestnrtmplat cascade 
+Hibernate: drop table if exists nqustnriem cascade 
+Hibernate: drop table if exists nqustnrqesitm cascade 
+Hibernate: drop table if exists nqustnrrspnsresult cascade 
+Hibernate: drop table if exists nrefresh_token cascade 
+Hibernate: drop table if exists nreprtstats cascade 
+Hibernate: drop table if exists nroleinfo cascade 
+Hibernate: drop table if exists nrwardmanage cascade 
+Hibernate: drop table if exists nsitemap cascade 
+Hibernate: drop table if exists nsyslog cascade 
+Hibernate: drop table if exists ntmplatinfo cascade 
+Hibernate: drop table if exists nuserlog cascade 
+Hibernate: drop table if exists nweblog cascade 
+Hibernate: drop table if exists revinfo cascade 
+Hibernate: drop table if exists sbbssummary cascade 
+Hibernate: drop table if exists ssyslogsummary cascade 
+Hibernate: drop table if exists susersummary cascade 
+Hibernate: drop table if exists sweblogsummary cascade 
+
+> Task :foundation:jacocoTestReport SKIPPED
+> Task :foundation:check
+> Task :foundation:build
+2026-03-28T12:27:22.613+09:00  INFO 27352 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists cadministcode cascade 
+Hibernate: drop table if exists ccmmnclcode cascade 
+Hibernate: drop table if exists ccmmncode cascade 
+Hibernate: drop table if exists ccmmndetailcode cascade 
+Hibernate: drop table if exists comtnindvdlpge cascade 
+Hibernate: drop table if exists comtnuserabsence cascade 
+Hibernate: drop table if exists file_group cascade 
+Hibernate: drop table if exists file_item cascade 
+Hibernate: drop table if exists hemaildsptchmanage cascade 
+Hibernate: drop table if exists imgtemp cascade 
+Hibernate: drop table if exists n_user_notification cascade 
+Hibernate: drop table if exists nadbk cascade 
+Hibernate: drop table if exists nadbkmanage cascade 
+Hibernate: drop table if exists nauthorgroupinfo cascade 
+Hibernate: drop table if exists nauthorinfo cascade 
+Hibernate: drop table if exists nauthorrolerelate cascade 
+Hibernate: drop table if exists nbanner cascade 
+Hibernate: drop table if exists nbbs cascade 
+Hibernate: drop table if exists nbbsmaster cascade 
+Hibernate: drop table if exists nbbsmasteroptn cascade 
+Hibernate: drop table if exists nbbsuse cascade 
+Hibernate: drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: drop table if exists nblog cascade 
+Hibernate: drop table if exists nbloguser cascade 
+Hibernate: drop table if exists ncalrestde cascade 
+Hibernate: drop table if exists ncmmnty cascade 
+Hibernate: drop table if exists ncmmntyuser cascade 
+Hibernate: drop table if exists ncnsltlist cascade 
+Hibernate: drop table if exists ncomment cascade 
+Hibernate: drop table if exists ndeptjob cascade 
+Hibernate: drop table if exists ndeptjobbx cascade 
+Hibernate: drop table if exists ndiaryinfo cascade 
+Hibernate: drop table if exists ndtausestats cascade 
+Hibernate: drop table if exists nemplyrinfo cascade 
+Hibernate: drop table if exists nemplyrinfo_aud cascade 
+Hibernate: drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: drop table if exists nentrprsmber cascade 
+Hibernate: drop table if exists neventinfo cascade 
+Hibernate: drop table if exists nextrlhrinfo cascade 
+Hibernate: drop table if exists nfaqinfo cascade 
+Hibernate: drop table if exists nfile cascade 
+Hibernate: drop table if exists nfiledetail cascade 
+Hibernate: drop table if exists ngnrlmber cascade 
+Hibernate: drop table if exists nhpcminfo cascade 
+Hibernate: drop table if exists nindvdlpge cascade 
+Hibernate: drop table if exists nindvdlpgecntnts cascade 
+Hibernate: drop table if exists ninfrmlsanctn cascade 
+Hibernate: drop table if exists ninsttcode cascade 
+Hibernate: drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: drop table if exists nintnetsvc cascade 
+Hibernate: drop table if exists nknowledge cascade 
+Hibernate: drop table if exists nleaderschdul cascade 
+Hibernate: drop table if exists nleadersttus cascade 
+Hibernate: drop table if exists nloginlog cascade 
+Hibernate: drop table if exists nloginpolicy cascade 
+Hibernate: drop table if exists nmainimage cascade 
+Hibernate: drop table if exists nmemoreprt cascade 
+Hibernate: drop table if exists nmemotodo cascade 
+Hibernate: drop table if exists nmenucreatdtls cascade 
+Hibernate: drop table if exists nmenuinfo cascade 
+Hibernate: drop table if exists nnote cascade 
+Hibernate: drop table if exists nnoterecptn cascade 
+Hibernate: drop table if exists nnotetrnsmit cascade 
+Hibernate: drop table if exists nonlinemnual cascade 
+Hibernate: drop table if exists nonlinepolliem cascade 
+Hibernate: drop table if exists nonlinepollmanage cascade 
+Hibernate: drop table if exists nonlinepollresult cascade 
+Hibernate: drop table if exists norgnztinfo cascade 
+Hibernate: drop table if exists npolicy cascade 
+Hibernate: drop table if exists npopupmanage cascade 
+Hibernate: drop table if exists nprivacylog cascade 
+Hibernate: drop table if exists nprogrmlist cascade 
+Hibernate: drop table if exists nqainfo cascade 
+Hibernate: drop table if exists nqestnrinfo cascade 
+Hibernate: drop table if exists nqestnrrespond cascade 
+Hibernate: drop table if exists nqestnrtmplat cascade 
+Hibernate: drop table if exists nqustnriem cascade 
+Hibernate: drop table if exists nqustnrqesitm cascade 
+Hibernate: drop table if exists nqustnrrspnsresult cascade 
+Hibernate: drop table if exists nrefresh_token cascade 
+Hibernate: drop table if exists nreprtstats cascade 
+Hibernate: drop table if exists nroleinfo cascade 
+Hibernate: drop table if exists nroughmap cascade 
+Hibernate: drop table if exists nrwardmanage cascade 
+Hibernate: drop table if exists nschdulinfo cascade 
+Hibernate: drop table if exists nscrap cascade 
+Hibernate: drop table if exists nsitemap cascade 
+Hibernate: drop table if exists nsms cascade 
+Hibernate: drop table if exists nsmsrecptn cascade 
+Hibernate: drop table if exists nstsfdg cascade 
+Hibernate: drop table if exists nsyslog cascade 
+Hibernate: drop table if exists ntmplatinfo cascade 
+Hibernate: drop table if exists nuserlog cascade 
+Hibernate: drop table if exists nweblog cascade 
+Hibernate: drop table if exists nwikmnthngreprt cascade 
+Hibernate: drop table if exists revinfo cascade 
+Hibernate: drop table if exists sbbssummary cascade 
+Hibernate: drop table if exists ssyslogsummary cascade 
+Hibernate: drop table if exists susersummary cascade 
+Hibernate: drop table if exists sweblogsummary cascade 
+Hibernate: drop sequence if exists answer_no_seq
+Hibernate: drop sequence if exists ntt_id_seq
+2026-03-28T12:27:22.961+09:00  INFO 27352 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists cadministcode cascade 
+Hibernate: drop table if exists ccmmnclcode cascade 
+Hibernate: drop table if exists ccmmncode cascade 
+Hibernate: drop table if exists ccmmndetailcode cascade 
+Hibernate: drop table if exists comtnindvdlpge cascade 
+Hibernate: drop table if exists comtnuserabsence cascade 
+Hibernate: drop table if exists file_group cascade 
+Hibernate: drop table if exists file_item cascade 
+Hibernate: drop table if exists hemaildsptchmanage cascade 
+Hibernate: drop table if exists imgtemp cascade 
+Hibernate: drop table if exists n_user_notification cascade 
+Hibernate: drop table if exists nadbk cascade 
+Hibernate: drop table if exists nadbkmanage cascade 
+Hibernate: drop table if exists nauthorgroupinfo cascade 
+Hibernate: drop table if exists nauthorinfo cascade 
+Hibernate: drop table if exists nauthorrolerelate cascade 
+Hibernate: drop table if exists nbanner cascade 
+Hibernate: drop table if exists nbbs cascade 
+Hibernate: drop table if exists nbbsmaster cascade 
+Hibernate: drop table if exists nbbsmasteroptn cascade 
+Hibernate: drop table if exists nbbsuse cascade 
+Hibernate: drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: drop table if exists nblog cascade 
+Hibernate: drop table if exists nbloguser cascade 
+Hibernate: drop table if exists ncalrestde cascade 
+Hibernate: drop table if exists ncmmnty cascade 
+Hibernate: drop table if exists ncmmntyuser cascade 
+Hibernate: drop table if exists ncnsltlist cascade 
+Hibernate: drop table if exists ncomment cascade 
+Hibernate: drop table if exists ndeptjob cascade 
+Hibernate: drop table if exists ndeptjobbx cascade 
+Hibernate: drop table if exists ndiaryinfo cascade 
+Hibernate: drop table if exists ndtausestats cascade 
+Hibernate: drop table if exists nemplyrinfo cascade 
+Hibernate: drop table if exists nemplyrinfo_aud cascade 
+Hibernate: drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: drop table if exists nentrprsmber cascade 
+Hibernate: drop table if exists neventinfo cascade 
+Hibernate: drop table if exists nextrlhrinfo cascade 
+Hibernate: drop table if exists nfaqinfo cascade 
+Hibernate: drop table if exists nfile cascade 
+Hibernate: drop table if exists nfiledetail cascade 
+Hibernate: drop table if exists ngnrlmber cascade 
+Hibernate: drop table if exists nhpcminfo cascade 
+Hibernate: drop table if exists nindvdlpge cascade 
+Hibernate: drop table if exists nindvdlpgecntnts cascade 
+Hibernate: drop table if exists ninfrmlsanctn cascade 
+Hibernate: drop table if exists ninsttcode cascade 
+Hibernate: drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: drop table if exists nintnetsvc cascade 
+Hibernate: drop table if exists nknowledge cascade 
+Hibernate: drop table if exists nleaderschdul cascade 
+Hibernate: drop table if exists nleadersttus cascade 
+Hibernate: drop table if exists nloginlog cascade 
+Hibernate: drop table if exists nloginpolicy cascade 
+Hibernate: drop table if exists nmainimage cascade 
+Hibernate: drop table if exists nmemoreprt cascade 
+Hibernate: drop table if exists nmemotodo cascade 
+Hibernate: drop table if exists nmenucreatdtls cascade 
+Hibernate: drop table if exists nmenuinfo cascade 
+Hibernate: drop table if exists nnote cascade 
+Hibernate: drop table if exists nnoterecptn cascade 
+Hibernate: drop table if exists nnotetrnsmit cascade 
+Hibernate: drop table if exists nonlinemnual cascade 
+Hibernate: drop table if exists nonlinepolliem cascade 
+Hibernate: drop table if exists nonlinepollmanage cascade 
+Hibernate: drop table if exists nonlinepollresult cascade 
+Hibernate: drop table if exists norgnztinfo cascade 
+Hibernate: drop table if exists npolicy cascade 
+Hibernate: drop table if exists npopupmanage cascade 
+Hibernate: drop table if exists nprivacylog cascade 
+Hibernate: drop table if exists nprogrmlist cascade 
+Hibernate: drop table if exists nqainfo cascade 
+Hibernate: drop table if exists nqestnrinfo cascade 
+Hibernate: drop table if exists nqestnrrespond cascade 
+Hibernate: drop table if exists nqestnrtmplat cascade 
+Hibernate: drop table if exists nqustnriem cascade 
+Hibernate: drop table if exists nqustnrqesitm cascade 
+Hibernate: drop table if exists nqustnrrspnsresult cascade 
+Hibernate: drop table if exists nrefresh_token cascade 
+Hibernate: drop table if exists nreprtstats cascade 
+Hibernate: drop table if exists nroleinfo cascade 
+Hibernate: drop table if exists nroughmap cascade 
+Hibernate: drop table if exists nrwardmanage cascade 
+Hibernate: drop table if exists nschdulinfo cascade 
+Hibernate: drop table if exists nscrap cascade 
+Hibernate: drop table if exists nsitemap cascade 
+Hibernate: drop table if exists nsms cascade 
+Hibernate: drop table if exists nsmsrecptn cascade 
+Hibernate: drop table if exists nstsfdg cascade 
+Hibernate: drop table if exists nsyslog cascade 
+Hibernate: drop table if exists ntmplatinfo cascade 
+Hibernate: drop table if exists nuserlog cascade 
+Hibernate: drop table if exists nweblog cascade 
+Hibernate: drop table if exists nwikmnthngreprt cascade 
+Hibernate: drop table if exists revinfo cascade 
+Hibernate: drop table if exists sbbssummary cascade 
+Hibernate: drop table if exists ssyslogsummary cascade 
+Hibernate: drop table if exists susersummary cascade 
+Hibernate: drop table if exists sweblogsummary cascade 
+Hibernate: drop sequence if exists answer_no_seq
+Hibernate: drop sequence if exists ntt_id_seq
+2026-03-28T12:27:23.177+09:00  INFO 27352 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: drop table if exists cadministcode cascade 
+Hibernate: drop table if exists ccmmnclcode cascade 
+Hibernate: drop table if exists ccmmncode cascade 
+Hibernate: drop table if exists ccmmndetailcode cascade 
+Hibernate: drop table if exists comtnindvdlpge cascade 
+Hibernate: drop table if exists comtnuserabsence cascade 
+Hibernate: drop table if exists file_group cascade 
+Hibernate: drop table if exists file_item cascade 
+Hibernate: drop table if exists hemaildsptchmanage cascade 
+Hibernate: drop table if exists imgtemp cascade 
+Hibernate: drop table if exists n_user_notification cascade 
+Hibernate: drop table if exists nadbk cascade 
+Hibernate: drop table if exists nadbkmanage cascade 
+Hibernate: drop table if exists nauthorgroupinfo cascade 
+Hibernate: drop table if exists nauthorinfo cascade 
+Hibernate: drop table if exists nauthorrolerelate cascade 
+Hibernate: drop table if exists nbanner cascade 
+Hibernate: drop table if exists nbbs cascade 
+Hibernate: drop table if exists nbbsmaster cascade 
+Hibernate: drop table if exists nbbsmasteroptn cascade 
+Hibernate: drop table if exists nbbsuse cascade 
+Hibernate: drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: drop table if exists nblog cascade 
+Hibernate: drop table if exists nbloguser cascade 
+Hibernate: drop table if exists ncalrestde cascade 
+Hibernate: drop table if exists ncmmnty cascade 
+Hibernate: drop table if exists ncmmntyuser cascade 
+Hibernate: drop table if exists ncnsltlist cascade 
+Hibernate: drop table if exists ncomment cascade 
+Hibernate: drop table if exists ndeptjob cascade 
+Hibernate: drop table if exists ndeptjobbx cascade 
+Hibernate: drop table if exists ndiaryinfo cascade 
+Hibernate: drop table if exists ndtausestats cascade 
+Hibernate: drop table if exists nemplyrinfo cascade 
+Hibernate: drop table if exists nemplyrinfo_aud cascade 
+Hibernate: drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: drop table if exists nentrprsmber cascade 
+Hibernate: drop table if exists neventinfo cascade 
+Hibernate: drop table if exists nextrlhrinfo cascade 
+Hibernate: drop table if exists nfaqinfo cascade 
+Hibernate: drop table if exists nfile cascade 
+Hibernate: drop table if exists nfiledetail cascade 
+Hibernate: drop table if exists ngnrlmber cascade 
+Hibernate: drop table if exists nhpcminfo cascade 
+Hibernate: drop table if exists nindvdlpge cascade 
+Hibernate: drop table if exists nindvdlpgecntnts cascade 
+Hibernate: drop table if exists ninfrmlsanctn cascade 
+Hibernate: drop table if exists ninsttcode cascade 
+Hibernate: drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: drop table if exists nintnetsvc cascade 
+Hibernate: drop table if exists nknowledge cascade 
+Hibernate: drop table if exists nleaderschdul cascade 
+Hibernate: drop table if exists nleadersttus cascade 
+Hibernate: drop table if exists nloginlog cascade 
+Hibernate: drop table if exists nloginpolicy cascade 
+Hibernate: drop table if exists nmainimage cascade 
+Hibernate: drop table if exists nmemoreprt cascade 
+Hibernate: drop table if exists nmemotodo cascade 
+Hibernate: drop table if exists nmenucreatdtls cascade 
+Hibernate: drop table if exists nmenuinfo cascade 
+Hibernate: drop table if exists nnote cascade 
+Hibernate: drop table if exists nnoterecptn cascade 
+Hibernate: drop table if exists nnotetrnsmit cascade 
+Hibernate: drop table if exists nonlinemnual cascade 
+Hibernate: drop table if exists nonlinepolliem cascade 
+Hibernate: drop table if exists nonlinepollmanage cascade 
+Hibernate: drop table if exists nonlinepollresult cascade 
+Hibernate: drop table if exists norgnztinfo cascade 
+Hibernate: drop table if exists npolicy cascade 
+Hibernate: drop table if exists npopupmanage cascade 
+Hibernate: drop table if exists nprivacylog cascade 
+Hibernate: drop table if exists nprogrmlist cascade 
+Hibernate: drop table if exists nqainfo cascade 
+Hibernate: drop table if exists nqestnrinfo cascade 
+Hibernate: drop table if exists nqestnrrespond cascade 
+Hibernate: drop table if exists nqestnrtmplat cascade 
+Hibernate: drop table if exists nqustnriem cascade 
+Hibernate: drop table if exists nqustnrqesitm cascade 
+Hibernate: drop table if exists nqustnrrspnsresult cascade 
+Hibernate: drop table if exists nrefresh_token cascade 
+Hibernate: drop table if exists nreprtstats cascade 
+Hibernate: drop table if exists nroleinfo cascade 
+Hibernate: drop table if exists nroughmap cascade 
+Hibernate: drop table if exists nrwardmanage cascade 
+Hibernate: drop table if exists nschdulinfo cascade 
+Hibernate: drop table if exists nscrap cascade 
+Hibernate: drop table if exists nsitemap cascade 
+Hibernate: drop table if exists nsms cascade 
+Hibernate: drop table if exists nsmsrecptn cascade 
+Hibernate: drop table if exists nstsfdg cascade 
+Hibernate: drop table if exists nsyslog cascade 
+Hibernate: drop table if exists ntmplatinfo cascade 
+Hibernate: drop table if exists nuserlog cascade 
+Hibernate: drop table if exists nweblog cascade 
+Hibernate: drop table if exists nwikmnthngreprt cascade 
+Hibernate: drop table if exists revinfo cascade 
+Hibernate: drop table if exists sbbssummary cascade 
+Hibernate: drop table if exists ssyslogsummary cascade 
+Hibernate: drop table if exists susersummary cascade 
+Hibernate: drop table if exists sweblogsummary cascade 
+Hibernate: drop sequence if exists answer_no_seq
+Hibernate: drop sequence if exists ntt_id_seq
+> Task :business-suite:jacocoTestReport SKIPPED
+> Task :business-suite:check
+> Task :business-suite:build
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] DEBUG o.s.w.c.s.GenericWebApplicationContext - Closing org.springframework.web.context.support.GenericWebApplicationContext@4348b168, started on Sat Mar 28 12:23:57 KST 2026
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] DEBUG o.s.w.c.s.GenericWebApplicationContext - Closing org.springframework.web.context.support.GenericWebApplicationContext@8a9bdc5, started on Sat Mar 28 12:24:38 KST 2026
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel removed SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - Stopping...
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@5141c9c0]]
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@5141c9c0]
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - brokerChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@5141c9c0]
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - Stopped.
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - brokerChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2026-03-28 12:29:06 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+2026-03-28 12:29:07 [SpringApplicationShutdownHook] DEBUG o.s.b.f.s.DisposableBeanAdapter - Custom destroy method 'close' on bean with name 'simpleMeterRegistry' completed
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists cadministcode cascade 
+Hibernate: 
+    drop table if exists cadministcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmnclcode cascade 
+Hibernate: 
+    drop table if exists ccmmnclcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmncode cascade 
+Hibernate: 
+    drop table if exists ccmmncode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmndetailcode cascade 
+Hibernate: 
+    drop table if exists ccmmndetailcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists comtnindvdlpge cascade 
+Hibernate: 
+    drop table if exists comtnindvdlpge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists comtnuserabsence cascade 
+Hibernate: 
+    drop table if exists comtnuserabsence cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists file_group cascade 
+Hibernate: 
+    drop table if exists file_group cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists file_item cascade 
+Hibernate: 
+    drop table if exists file_item cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists hemaildsptchmanage cascade 
+Hibernate: 
+    drop table if exists hemaildsptchmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists imgtemp cascade 
+Hibernate: 
+    drop table if exists imgtemp cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists n_user_notification cascade 
+Hibernate: 
+    drop table if exists n_user_notification cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nadbk cascade 
+Hibernate: 
+    drop table if exists nadbk cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nadbkmanage cascade 
+Hibernate: 
+    drop table if exists nadbkmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorgroupinfo cascade 
+Hibernate: 
+    drop table if exists nauthorgroupinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorinfo cascade 
+Hibernate: 
+    drop table if exists nauthorinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorrolerelate cascade 
+Hibernate: 
+    drop table if exists nauthorrolerelate cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbanner cascade 
+Hibernate: 
+    drop table if exists nbanner cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbs cascade 
+Hibernate: 
+    drop table if exists nbbs cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsmaster cascade 
+Hibernate: 
+    drop table if exists nbbsmaster cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsmasteroptn cascade 
+Hibernate: 
+    drop table if exists nbbsmasteroptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsuse cascade 
+Hibernate: 
+    drop table if exists nbbsuse cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: 
+    drop table if exists nbkmkmenumanageresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nblog cascade 
+Hibernate: 
+    drop table if exists nblog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbloguser cascade 
+Hibernate: 
+    drop table if exists nbloguser cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncalrestde cascade 
+Hibernate: 
+    drop table if exists ncalrestde cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncmmnty cascade 
+Hibernate: 
+    drop table if exists ncmmnty cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncmmntyuser cascade 
+Hibernate: 
+    drop table if exists ncmmntyuser cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncnsltlist cascade 
+Hibernate: 
+    drop table if exists ncnsltlist cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncomment cascade 
+Hibernate: 
+    drop table if exists ncomment cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndeptjob cascade 
+Hibernate: 
+    drop table if exists ndeptjob cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndeptjobbx cascade 
+Hibernate: 
+    drop table if exists ndeptjobbx cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndiaryinfo cascade 
+Hibernate: 
+    drop table if exists ndiaryinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndtausestats cascade 
+Hibernate: 
+    drop table if exists ndtausestats cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrinfo cascade 
+Hibernate: 
+    drop table if exists nemplyrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrinfo_aud cascade 
+Hibernate: 
+    drop table if exists nemplyrinfo_aud cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: 
+    drop table if exists nemplyrscrtyestbs cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nentrprsmber cascade 
+Hibernate: 
+    drop table if exists nentrprsmber cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists neventinfo cascade 
+Hibernate: 
+    drop table if exists neventinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nextrlhrinfo cascade 
+Hibernate: 
+    drop table if exists nextrlhrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfaqinfo cascade 
+Hibernate: 
+    drop table if exists nfaqinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfile cascade 
+Hibernate: 
+    drop table if exists nfile cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfiledetail cascade 
+Hibernate: 
+    drop table if exists nfiledetail cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ngnrlmber cascade 
+Hibernate: 
+    drop table if exists ngnrlmber cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nhpcminfo cascade 
+Hibernate: 
+    drop table if exists nhpcminfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nindvdlpge cascade 
+Hibernate: 
+    drop table if exists nindvdlpge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nindvdlpgecntnts cascade 
+Hibernate: 
+    drop table if exists nindvdlpgecntnts cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninfrmlsanctn cascade 
+Hibernate: 
+    drop table if exists ninfrmlsanctn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninsttcode cascade 
+Hibernate: 
+    drop table if exists ninsttcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: 
+    drop table if exists ninsttcoderecptnlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nintnetsvc cascade 
+Hibernate: 
+    drop table if exists nintnetsvc cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nknowledge cascade 
+Hibernate: 
+    drop table if exists nknowledge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nleaderschdul cascade 
+Hibernate: 
+    drop table if exists nleaderschdul cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nleadersttus cascade 
+Hibernate: 
+    drop table if exists nleadersttus cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nloginlog cascade 
+Hibernate: 
+    drop table if exists nloginlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nloginpolicy cascade 
+Hibernate: 
+    drop table if exists nloginpolicy cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmainimage cascade 
+Hibernate: 
+    drop table if exists nmainimage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmemoreprt cascade 
+Hibernate: 
+    drop table if exists nmemoreprt cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmemotodo cascade 
+Hibernate: 
+    drop table if exists nmemotodo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmenucreatdtls cascade 
+Hibernate: 
+    drop table if exists nmenucreatdtls cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmenuinfo cascade 
+Hibernate: 
+    drop table if exists nmenuinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnote cascade 
+Hibernate: 
+    drop table if exists nnote cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnoterecptn cascade 
+Hibernate: 
+    drop table if exists nnoterecptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnotetrnsmit cascade 
+Hibernate: 
+    drop table if exists nnotetrnsmit cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinemnual cascade 
+Hibernate: 
+    drop table if exists nonlinemnual cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepolliem cascade 
+Hibernate: 
+    drop table if exists nonlinepolliem cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepollmanage cascade 
+Hibernate: 
+    drop table if exists nonlinepollmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepollresult cascade 
+Hibernate: 
+    drop table if exists nonlinepollresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists norgnztinfo cascade 
+Hibernate: 
+    drop table if exists norgnztinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists npolicy cascade 
+Hibernate: 
+    drop table if exists npolicy cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists npopupmanage cascade 
+Hibernate: 
+    drop table if exists npopupmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nprivacylog cascade 
+Hibernate: 
+    drop table if exists nprivacylog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nprogrmlist cascade 
+Hibernate: 
+    drop table if exists nprogrmlist cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqainfo cascade 
+Hibernate: 
+    drop table if exists nqainfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrinfo cascade 
+Hibernate: 
+    drop table if exists nqestnrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrrespond cascade 
+Hibernate: 
+    drop table if exists nqestnrrespond cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrtmplat cascade 
+Hibernate: 
+    drop table if exists nqestnrtmplat cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnriem cascade 
+Hibernate: 
+    drop table if exists nqustnriem cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnrqesitm cascade 
+Hibernate: 
+    drop table if exists nqustnrqesitm cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnrrspnsresult cascade 
+Hibernate: 
+    drop table if exists nqustnrrspnsresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nrefresh_token cascade 
+Hibernate: 
+    drop table if exists nrefresh_token cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nreprtstats cascade 
+Hibernate: 
+    drop table if exists nreprtstats cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nroleinfo cascade 
+Hibernate: 
+    drop table if exists nroleinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nroughmap cascade 
+Hibernate: 
+    drop table if exists nroughmap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nrwardmanage cascade 
+Hibernate: 
+    drop table if exists nrwardmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nschdulinfo cascade 
+Hibernate: 
+    drop table if exists nschdulinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nscrap cascade 
+Hibernate: 
+    drop table if exists nscrap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsitemap cascade 
+Hibernate: 
+    drop table if exists nsitemap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsms cascade 
+Hibernate: 
+    drop table if exists nsms cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsmsrecptn cascade 
+Hibernate: 
+    drop table if exists nsmsrecptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nstsfdg cascade 
+Hibernate: 
+    drop table if exists nstsfdg cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsyslog cascade 
+Hibernate: 
+    drop table if exists nsyslog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ntmplatinfo cascade 
+Hibernate: 
+    drop table if exists ntmplatinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nuserlog cascade 
+Hibernate: 
+    drop table if exists nuserlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nweblog cascade 
+Hibernate: 
+    drop table if exists nweblog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nwikmnthngreprt cascade 
+Hibernate: 
+    drop table if exists nwikmnthngreprt cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists revinfo cascade 
+Hibernate: 
+    drop table if exists revinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists sbbssummary cascade 
+Hibernate: 
+    drop table if exists sbbssummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ssyslogsummary cascade 
+Hibernate: 
+    drop table if exists ssyslogsummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists susersummary cascade 
+Hibernate: 
+    drop table if exists susersummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists sweblogsummary cascade 
+Hibernate: 
+    drop table if exists sweblogsummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop sequence if exists answer_no_seq
+Hibernate: 
+    drop sequence if exists answer_no_seq
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop sequence if exists ntt_id_seq
+Hibernate: 
+    drop sequence if exists ntt_id_seq
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG o.s.w.c.s.GenericWebApplicationContext - Closing org.springframework.web.context.support.GenericWebApplicationContext@62057c1, started on Sat Mar 28 12:27:01 KST 2026
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel removed SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - Stopping...
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@5dc60a31]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@5dc60a31]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - brokerChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@5dc60a31]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - Stopped.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - brokerChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG o.s.b.f.s.DisposableBeanAdapter - Custom destroy method 'close' on bean with name 'simpleMeterRegistry' completed
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists cadministcode cascade 
+Hibernate: 
+    drop table if exists cadministcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmnclcode cascade 
+Hibernate: 
+    drop table if exists ccmmnclcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmncode cascade 
+Hibernate: 
+    drop table if exists ccmmncode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmndetailcode cascade 
+Hibernate: 
+    drop table if exists ccmmndetailcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists comtnindvdlpge cascade 
+Hibernate: 
+    drop table if exists comtnindvdlpge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists comtnuserabsence cascade 
+Hibernate: 
+    drop table if exists comtnuserabsence cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists file_group cascade 
+Hibernate: 
+    drop table if exists file_group cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists file_item cascade 
+Hibernate: 
+    drop table if exists file_item cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists hemaildsptchmanage cascade 
+Hibernate: 
+    drop table if exists hemaildsptchmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists imgtemp cascade 
+Hibernate: 
+    drop table if exists imgtemp cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists n_user_notification cascade 
+Hibernate: 
+    drop table if exists n_user_notification cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nadbk cascade 
+Hibernate: 
+    drop table if exists nadbk cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nadbkmanage cascade 
+Hibernate: 
+    drop table if exists nadbkmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorgroupinfo cascade 
+Hibernate: 
+    drop table if exists nauthorgroupinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorinfo cascade 
+Hibernate: 
+    drop table if exists nauthorinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorrolerelate cascade 
+Hibernate: 
+    drop table if exists nauthorrolerelate cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbanner cascade 
+Hibernate: 
+    drop table if exists nbanner cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbs cascade 
+Hibernate: 
+    drop table if exists nbbs cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsmaster cascade 
+Hibernate: 
+    drop table if exists nbbsmaster cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsmasteroptn cascade 
+Hibernate: 
+    drop table if exists nbbsmasteroptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsuse cascade 
+Hibernate: 
+    drop table if exists nbbsuse cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: 
+    drop table if exists nbkmkmenumanageresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nblog cascade 
+Hibernate: 
+    drop table if exists nblog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbloguser cascade 
+Hibernate: 
+    drop table if exists nbloguser cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncalrestde cascade 
+Hibernate: 
+    drop table if exists ncalrestde cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncmmnty cascade 
+Hibernate: 
+    drop table if exists ncmmnty cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncmmntyuser cascade 
+Hibernate: 
+    drop table if exists ncmmntyuser cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncnsltlist cascade 
+Hibernate: 
+    drop table if exists ncnsltlist cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncomment cascade 
+Hibernate: 
+    drop table if exists ncomment cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndeptjob cascade 
+Hibernate: 
+    drop table if exists ndeptjob cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndeptjobbx cascade 
+Hibernate: 
+    drop table if exists ndeptjobbx cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndiaryinfo cascade 
+Hibernate: 
+    drop table if exists ndiaryinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndtausestats cascade 
+Hibernate: 
+    drop table if exists ndtausestats cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrinfo cascade 
+Hibernate: 
+    drop table if exists nemplyrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrinfo_aud cascade 
+Hibernate: 
+    drop table if exists nemplyrinfo_aud cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: 
+    drop table if exists nemplyrscrtyestbs cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nentrprsmber cascade 
+Hibernate: 
+    drop table if exists nentrprsmber cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists neventinfo cascade 
+Hibernate: 
+    drop table if exists neventinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nextrlhrinfo cascade 
+Hibernate: 
+    drop table if exists nextrlhrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfaqinfo cascade 
+Hibernate: 
+    drop table if exists nfaqinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfile cascade 
+Hibernate: 
+    drop table if exists nfile cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfiledetail cascade 
+Hibernate: 
+    drop table if exists nfiledetail cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ngnrlmber cascade 
+Hibernate: 
+    drop table if exists ngnrlmber cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nhpcminfo cascade 
+Hibernate: 
+    drop table if exists nhpcminfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nindvdlpge cascade 
+Hibernate: 
+    drop table if exists nindvdlpge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nindvdlpgecntnts cascade 
+Hibernate: 
+    drop table if exists nindvdlpgecntnts cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninfrmlsanctn cascade 
+Hibernate: 
+    drop table if exists ninfrmlsanctn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninsttcode cascade 
+Hibernate: 
+    drop table if exists ninsttcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: 
+    drop table if exists ninsttcoderecptnlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nintnetsvc cascade 
+Hibernate: 
+    drop table if exists nintnetsvc cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nknowledge cascade 
+Hibernate: 
+    drop table if exists nknowledge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nleaderschdul cascade 
+Hibernate: 
+    drop table if exists nleaderschdul cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nleadersttus cascade 
+Hibernate: 
+    drop table if exists nleadersttus cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nloginlog cascade 
+Hibernate: 
+    drop table if exists nloginlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nloginpolicy cascade 
+Hibernate: 
+    drop table if exists nloginpolicy cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmainimage cascade 
+Hibernate: 
+    drop table if exists nmainimage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmemoreprt cascade 
+Hibernate: 
+    drop table if exists nmemoreprt cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmemotodo cascade 
+Hibernate: 
+    drop table if exists nmemotodo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmenucreatdtls cascade 
+Hibernate: 
+    drop table if exists nmenucreatdtls cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmenuinfo cascade 
+Hibernate: 
+    drop table if exists nmenuinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnote cascade 
+Hibernate: 
+    drop table if exists nnote cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnoterecptn cascade 
+Hibernate: 
+    drop table if exists nnoterecptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnotetrnsmit cascade 
+Hibernate: 
+    drop table if exists nnotetrnsmit cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinemnual cascade 
+Hibernate: 
+    drop table if exists nonlinemnual cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepolliem cascade 
+Hibernate: 
+    drop table if exists nonlinepolliem cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepollmanage cascade 
+Hibernate: 
+    drop table if exists nonlinepollmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepollresult cascade 
+Hibernate: 
+    drop table if exists nonlinepollresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists norgnztinfo cascade 
+Hibernate: 
+    drop table if exists norgnztinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists npolicy cascade 
+Hibernate: 
+    drop table if exists npolicy cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists npopupmanage cascade 
+Hibernate: 
+    drop table if exists npopupmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nprivacylog cascade 
+Hibernate: 
+    drop table if exists nprivacylog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nprogrmlist cascade 
+Hibernate: 
+    drop table if exists nprogrmlist cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqainfo cascade 
+Hibernate: 
+    drop table if exists nqainfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrinfo cascade 
+Hibernate: 
+    drop table if exists nqestnrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrrespond cascade 
+Hibernate: 
+    drop table if exists nqestnrrespond cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrtmplat cascade 
+Hibernate: 
+    drop table if exists nqestnrtmplat cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnriem cascade 
+Hibernate: 
+    drop table if exists nqustnriem cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnrqesitm cascade 
+Hibernate: 
+    drop table if exists nqustnrqesitm cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnrrspnsresult cascade 
+Hibernate: 
+    drop table if exists nqustnrrspnsresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nrefresh_token cascade 
+Hibernate: 
+    drop table if exists nrefresh_token cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nreprtstats cascade 
+Hibernate: 
+    drop table if exists nreprtstats cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nroleinfo cascade 
+Hibernate: 
+    drop table if exists nroleinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nroughmap cascade 
+Hibernate: 
+    drop table if exists nroughmap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nrwardmanage cascade 
+Hibernate: 
+    drop table if exists nrwardmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nschdulinfo cascade 
+Hibernate: 
+    drop table if exists nschdulinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nscrap cascade 
+Hibernate: 
+    drop table if exists nscrap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsitemap cascade 
+Hibernate: 
+    drop table if exists nsitemap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsms cascade 
+Hibernate: 
+    drop table if exists nsms cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsmsrecptn cascade 
+Hibernate: 
+    drop table if exists nsmsrecptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nstsfdg cascade 
+Hibernate: 
+    drop table if exists nstsfdg cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsyslog cascade 
+Hibernate: 
+    drop table if exists nsyslog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ntmplatinfo cascade 
+Hibernate: 
+    drop table if exists ntmplatinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nuserlog cascade 
+Hibernate: 
+    drop table if exists nuserlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nweblog cascade 
+Hibernate: 
+    drop table if exists nweblog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nwikmnthngreprt cascade 
+Hibernate: 
+    drop table if exists nwikmnthngreprt cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists revinfo cascade 
+Hibernate: 
+    drop table if exists revinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists sbbssummary cascade 
+Hibernate: 
+    drop table if exists sbbssummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ssyslogsummary cascade 
+Hibernate: 
+    drop table if exists ssyslogsummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists susersummary cascade 
+Hibernate: 
+    drop table if exists susersummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists sweblogsummary cascade 
+Hibernate: 
+    drop table if exists sweblogsummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop sequence if exists answer_no_seq
+Hibernate: 
+    drop sequence if exists answer_no_seq
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop sequence if exists ntt_id_seq
+Hibernate: 
+    drop sequence if exists ntt_id_seq
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG o.s.w.c.s.GenericWebApplicationContext - Closing org.springframework.web.context.support.GenericWebApplicationContext@795dec74, started on Sat Mar 28 12:27:54 KST 2026
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel removed SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - Stopping...
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@2187870c]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@2187870c]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - brokerChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@2187870c]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - Stopped.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - brokerChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG o.s.b.f.s.DisposableBeanAdapter - Custom destroy method 'close' on bean with name 'simpleMeterRegistry' completed
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists cadministcode cascade 
+Hibernate: 
+    drop table if exists cadministcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmnclcode cascade 
+Hibernate: 
+    drop table if exists ccmmnclcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmncode cascade 
+Hibernate: 
+    drop table if exists ccmmncode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmndetailcode cascade 
+Hibernate: 
+    drop table if exists ccmmndetailcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists comtnindvdlpge cascade 
+Hibernate: 
+    drop table if exists comtnindvdlpge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists comtnuserabsence cascade 
+Hibernate: 
+    drop table if exists comtnuserabsence cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists file_group cascade 
+Hibernate: 
+    drop table if exists file_group cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists file_item cascade 
+Hibernate: 
+    drop table if exists file_item cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists hemaildsptchmanage cascade 
+Hibernate: 
+    drop table if exists hemaildsptchmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists imgtemp cascade 
+Hibernate: 
+    drop table if exists imgtemp cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists n_user_notification cascade 
+Hibernate: 
+    drop table if exists n_user_notification cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nadbk cascade 
+Hibernate: 
+    drop table if exists nadbk cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nadbkmanage cascade 
+Hibernate: 
+    drop table if exists nadbkmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorgroupinfo cascade 
+Hibernate: 
+    drop table if exists nauthorgroupinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorinfo cascade 
+Hibernate: 
+    drop table if exists nauthorinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorrolerelate cascade 
+Hibernate: 
+    drop table if exists nauthorrolerelate cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbanner cascade 
+Hibernate: 
+    drop table if exists nbanner cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbs cascade 
+Hibernate: 
+    drop table if exists nbbs cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsmaster cascade 
+Hibernate: 
+    drop table if exists nbbsmaster cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsmasteroptn cascade 
+Hibernate: 
+    drop table if exists nbbsmasteroptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsuse cascade 
+Hibernate: 
+    drop table if exists nbbsuse cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: 
+    drop table if exists nbkmkmenumanageresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nblog cascade 
+Hibernate: 
+    drop table if exists nblog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbloguser cascade 
+Hibernate: 
+    drop table if exists nbloguser cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncalrestde cascade 
+Hibernate: 
+    drop table if exists ncalrestde cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncmmnty cascade 
+Hibernate: 
+    drop table if exists ncmmnty cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncmmntyuser cascade 
+Hibernate: 
+    drop table if exists ncmmntyuser cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncnsltlist cascade 
+Hibernate: 
+    drop table if exists ncnsltlist cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncomment cascade 
+Hibernate: 
+    drop table if exists ncomment cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndeptjob cascade 
+Hibernate: 
+    drop table if exists ndeptjob cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndeptjobbx cascade 
+Hibernate: 
+    drop table if exists ndeptjobbx cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndiaryinfo cascade 
+Hibernate: 
+    drop table if exists ndiaryinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndtausestats cascade 
+Hibernate: 
+    drop table if exists ndtausestats cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrinfo cascade 
+Hibernate: 
+    drop table if exists nemplyrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrinfo_aud cascade 
+Hibernate: 
+    drop table if exists nemplyrinfo_aud cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: 
+    drop table if exists nemplyrscrtyestbs cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nentrprsmber cascade 
+Hibernate: 
+    drop table if exists nentrprsmber cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists neventinfo cascade 
+Hibernate: 
+    drop table if exists neventinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nextrlhrinfo cascade 
+Hibernate: 
+    drop table if exists nextrlhrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfaqinfo cascade 
+Hibernate: 
+    drop table if exists nfaqinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfile cascade 
+Hibernate: 
+    drop table if exists nfile cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfiledetail cascade 
+Hibernate: 
+    drop table if exists nfiledetail cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ngnrlmber cascade 
+Hibernate: 
+    drop table if exists ngnrlmber cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nhpcminfo cascade 
+Hibernate: 
+    drop table if exists nhpcminfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nindvdlpge cascade 
+Hibernate: 
+    drop table if exists nindvdlpge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nindvdlpgecntnts cascade 
+Hibernate: 
+    drop table if exists nindvdlpgecntnts cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninfrmlsanctn cascade 
+Hibernate: 
+    drop table if exists ninfrmlsanctn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninsttcode cascade 
+Hibernate: 
+    drop table if exists ninsttcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: 
+    drop table if exists ninsttcoderecptnlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nintnetsvc cascade 
+Hibernate: 
+    drop table if exists nintnetsvc cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nknowledge cascade 
+Hibernate: 
+    drop table if exists nknowledge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nleaderschdul cascade 
+Hibernate: 
+    drop table if exists nleaderschdul cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nleadersttus cascade 
+Hibernate: 
+    drop table if exists nleadersttus cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nloginlog cascade 
+Hibernate: 
+    drop table if exists nloginlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nloginpolicy cascade 
+Hibernate: 
+    drop table if exists nloginpolicy cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmainimage cascade 
+Hibernate: 
+    drop table if exists nmainimage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmemoreprt cascade 
+Hibernate: 
+    drop table if exists nmemoreprt cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmemotodo cascade 
+Hibernate: 
+    drop table if exists nmemotodo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmenucreatdtls cascade 
+Hibernate: 
+    drop table if exists nmenucreatdtls cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmenuinfo cascade 
+Hibernate: 
+    drop table if exists nmenuinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnote cascade 
+Hibernate: 
+    drop table if exists nnote cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnoterecptn cascade 
+Hibernate: 
+    drop table if exists nnoterecptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnotetrnsmit cascade 
+Hibernate: 
+    drop table if exists nnotetrnsmit cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinemnual cascade 
+Hibernate: 
+    drop table if exists nonlinemnual cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepolliem cascade 
+Hibernate: 
+    drop table if exists nonlinepolliem cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepollmanage cascade 
+Hibernate: 
+    drop table if exists nonlinepollmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepollresult cascade 
+Hibernate: 
+    drop table if exists nonlinepollresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists norgnztinfo cascade 
+Hibernate: 
+    drop table if exists norgnztinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists npolicy cascade 
+Hibernate: 
+    drop table if exists npolicy cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists npopupmanage cascade 
+Hibernate: 
+    drop table if exists npopupmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nprivacylog cascade 
+Hibernate: 
+    drop table if exists nprivacylog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nprogrmlist cascade 
+Hibernate: 
+    drop table if exists nprogrmlist cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqainfo cascade 
+Hibernate: 
+    drop table if exists nqainfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrinfo cascade 
+Hibernate: 
+    drop table if exists nqestnrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrrespond cascade 
+Hibernate: 
+    drop table if exists nqestnrrespond cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrtmplat cascade 
+Hibernate: 
+    drop table if exists nqestnrtmplat cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnriem cascade 
+Hibernate: 
+    drop table if exists nqustnriem cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnrqesitm cascade 
+Hibernate: 
+    drop table if exists nqustnrqesitm cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnrrspnsresult cascade 
+Hibernate: 
+    drop table if exists nqustnrrspnsresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nrefresh_token cascade 
+Hibernate: 
+    drop table if exists nrefresh_token cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nreprtstats cascade 
+Hibernate: 
+    drop table if exists nreprtstats cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nroleinfo cascade 
+Hibernate: 
+    drop table if exists nroleinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nroughmap cascade 
+Hibernate: 
+    drop table if exists nroughmap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nrwardmanage cascade 
+Hibernate: 
+    drop table if exists nrwardmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nschdulinfo cascade 
+Hibernate: 
+    drop table if exists nschdulinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nscrap cascade 
+Hibernate: 
+    drop table if exists nscrap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsitemap cascade 
+Hibernate: 
+    drop table if exists nsitemap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsms cascade 
+Hibernate: 
+    drop table if exists nsms cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsmsrecptn cascade 
+Hibernate: 
+    drop table if exists nsmsrecptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nstsfdg cascade 
+Hibernate: 
+    drop table if exists nstsfdg cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsyslog cascade 
+Hibernate: 
+    drop table if exists nsyslog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ntmplatinfo cascade 
+Hibernate: 
+    drop table if exists ntmplatinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nuserlog cascade 
+Hibernate: 
+    drop table if exists nuserlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nweblog cascade 
+Hibernate: 
+    drop table if exists nweblog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nwikmnthngreprt cascade 
+Hibernate: 
+    drop table if exists nwikmnthngreprt cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists revinfo cascade 
+Hibernate: 
+    drop table if exists revinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists sbbssummary cascade 
+Hibernate: 
+    drop table if exists sbbssummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ssyslogsummary cascade 
+Hibernate: 
+    drop table if exists ssyslogsummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists susersummary cascade 
+Hibernate: 
+    drop table if exists susersummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists sweblogsummary cascade 
+Hibernate: 
+    drop table if exists sweblogsummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop sequence if exists answer_no_seq
+Hibernate: 
+    drop sequence if exists answer_no_seq
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop sequence if exists ntt_id_seq
+Hibernate: 
+    drop sequence if exists ntt_id_seq
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown initiated...
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown completed.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG o.s.w.c.s.GenericWebApplicationContext - Closing org.springframework.web.context.support.GenericWebApplicationContext@70d57290, started on Sat Mar 28 12:28:22 KST 2026
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel removed SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - Stopping...
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@282153b9]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@282153b9]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - brokerChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@282153b9]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - Stopped.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - brokerChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG o.s.b.f.s.DisposableBeanAdapter - Custom destroy method 'close' on bean with name 'simpleMeterRegistry' completed
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists cadministcode cascade 
+Hibernate: 
+    drop table if exists cadministcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmnclcode cascade 
+Hibernate: 
+    drop table if exists ccmmnclcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmncode cascade 
+Hibernate: 
+    drop table if exists ccmmncode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmndetailcode cascade 
+Hibernate: 
+    drop table if exists ccmmndetailcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists comtnindvdlpge cascade 
+Hibernate: 
+    drop table if exists comtnindvdlpge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists comtnuserabsence cascade 
+Hibernate: 
+    drop table if exists comtnuserabsence cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists file_group cascade 
+Hibernate: 
+    drop table if exists file_group cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists file_item cascade 
+Hibernate: 
+    drop table if exists file_item cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists hemaildsptchmanage cascade 
+Hibernate: 
+    drop table if exists hemaildsptchmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists imgtemp cascade 
+Hibernate: 
+    drop table if exists imgtemp cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists n_user_notification cascade 
+Hibernate: 
+    drop table if exists n_user_notification cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nadbk cascade 
+Hibernate: 
+    drop table if exists nadbk cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nadbkmanage cascade 
+Hibernate: 
+    drop table if exists nadbkmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorgroupinfo cascade 
+Hibernate: 
+    drop table if exists nauthorgroupinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorinfo cascade 
+Hibernate: 
+    drop table if exists nauthorinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorrolerelate cascade 
+Hibernate: 
+    drop table if exists nauthorrolerelate cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbanner cascade 
+Hibernate: 
+    drop table if exists nbanner cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbs cascade 
+Hibernate: 
+    drop table if exists nbbs cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsmaster cascade 
+Hibernate: 
+    drop table if exists nbbsmaster cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsmasteroptn cascade 
+Hibernate: 
+    drop table if exists nbbsmasteroptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsuse cascade 
+Hibernate: 
+    drop table if exists nbbsuse cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: 
+    drop table if exists nbkmkmenumanageresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nblog cascade 
+Hibernate: 
+    drop table if exists nblog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbloguser cascade 
+Hibernate: 
+    drop table if exists nbloguser cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncalrestde cascade 
+Hibernate: 
+    drop table if exists ncalrestde cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncmmnty cascade 
+Hibernate: 
+    drop table if exists ncmmnty cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncmmntyuser cascade 
+Hibernate: 
+    drop table if exists ncmmntyuser cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncnsltlist cascade 
+Hibernate: 
+    drop table if exists ncnsltlist cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncomment cascade 
+Hibernate: 
+    drop table if exists ncomment cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndeptjob cascade 
+Hibernate: 
+    drop table if exists ndeptjob cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndeptjobbx cascade 
+Hibernate: 
+    drop table if exists ndeptjobbx cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndiaryinfo cascade 
+Hibernate: 
+    drop table if exists ndiaryinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndtausestats cascade 
+Hibernate: 
+    drop table if exists ndtausestats cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrinfo cascade 
+Hibernate: 
+    drop table if exists nemplyrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrinfo_aud cascade 
+Hibernate: 
+    drop table if exists nemplyrinfo_aud cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: 
+    drop table if exists nemplyrscrtyestbs cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nentrprsmber cascade 
+Hibernate: 
+    drop table if exists nentrprsmber cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists neventinfo cascade 
+Hibernate: 
+    drop table if exists neventinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nextrlhrinfo cascade 
+Hibernate: 
+    drop table if exists nextrlhrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfaqinfo cascade 
+Hibernate: 
+    drop table if exists nfaqinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfile cascade 
+Hibernate: 
+    drop table if exists nfile cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfiledetail cascade 
+Hibernate: 
+    drop table if exists nfiledetail cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ngnrlmber cascade 
+Hibernate: 
+    drop table if exists ngnrlmber cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nhpcminfo cascade 
+Hibernate: 
+    drop table if exists nhpcminfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nindvdlpge cascade 
+Hibernate: 
+    drop table if exists nindvdlpge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nindvdlpgecntnts cascade 
+Hibernate: 
+    drop table if exists nindvdlpgecntnts cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninfrmlsanctn cascade 
+Hibernate: 
+    drop table if exists ninfrmlsanctn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninsttcode cascade 
+Hibernate: 
+    drop table if exists ninsttcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: 
+    drop table if exists ninsttcoderecptnlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nintnetsvc cascade 
+Hibernate: 
+    drop table if exists nintnetsvc cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nknowledge cascade 
+Hibernate: 
+    drop table if exists nknowledge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nleaderschdul cascade 
+Hibernate: 
+    drop table if exists nleaderschdul cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nleadersttus cascade 
+Hibernate: 
+    drop table if exists nleadersttus cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nloginlog cascade 
+Hibernate: 
+    drop table if exists nloginlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nloginpolicy cascade 
+Hibernate: 
+    drop table if exists nloginpolicy cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmainimage cascade 
+Hibernate: 
+    drop table if exists nmainimage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmemoreprt cascade 
+Hibernate: 
+    drop table if exists nmemoreprt cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmemotodo cascade 
+Hibernate: 
+    drop table if exists nmemotodo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmenucreatdtls cascade 
+Hibernate: 
+    drop table if exists nmenucreatdtls cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmenuinfo cascade 
+Hibernate: 
+    drop table if exists nmenuinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnote cascade 
+Hibernate: 
+    drop table if exists nnote cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnoterecptn cascade 
+Hibernate: 
+    drop table if exists nnoterecptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnotetrnsmit cascade 
+Hibernate: 
+    drop table if exists nnotetrnsmit cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinemnual cascade 
+Hibernate: 
+    drop table if exists nonlinemnual cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepolliem cascade 
+Hibernate: 
+    drop table if exists nonlinepolliem cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepollmanage cascade 
+Hibernate: 
+    drop table if exists nonlinepollmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepollresult cascade 
+Hibernate: 
+    drop table if exists nonlinepollresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists norgnztinfo cascade 
+Hibernate: 
+    drop table if exists norgnztinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists npolicy cascade 
+Hibernate: 
+    drop table if exists npolicy cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists npopupmanage cascade 
+Hibernate: 
+    drop table if exists npopupmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nprivacylog cascade 
+Hibernate: 
+    drop table if exists nprivacylog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nprogrmlist cascade 
+Hibernate: 
+    drop table if exists nprogrmlist cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqainfo cascade 
+Hibernate: 
+    drop table if exists nqainfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrinfo cascade 
+Hibernate: 
+    drop table if exists nqestnrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrrespond cascade 
+Hibernate: 
+    drop table if exists nqestnrrespond cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrtmplat cascade 
+Hibernate: 
+    drop table if exists nqestnrtmplat cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnriem cascade 
+Hibernate: 
+    drop table if exists nqustnriem cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnrqesitm cascade 
+Hibernate: 
+    drop table if exists nqustnrqesitm cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnrrspnsresult cascade 
+Hibernate: 
+    drop table if exists nqustnrrspnsresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nrefresh_token cascade 
+Hibernate: 
+    drop table if exists nrefresh_token cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nreprtstats cascade 
+Hibernate: 
+    drop table if exists nreprtstats cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nroleinfo cascade 
+Hibernate: 
+    drop table if exists nroleinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nroughmap cascade 
+Hibernate: 
+    drop table if exists nroughmap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nrwardmanage cascade 
+Hibernate: 
+    drop table if exists nrwardmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nschdulinfo cascade 
+Hibernate: 
+    drop table if exists nschdulinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nscrap cascade 
+Hibernate: 
+    drop table if exists nscrap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsitemap cascade 
+Hibernate: 
+    drop table if exists nsitemap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsms cascade 
+Hibernate: 
+    drop table if exists nsms cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsmsrecptn cascade 
+Hibernate: 
+    drop table if exists nsmsrecptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nstsfdg cascade 
+Hibernate: 
+    drop table if exists nstsfdg cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsyslog cascade 
+Hibernate: 
+    drop table if exists nsyslog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ntmplatinfo cascade 
+Hibernate: 
+    drop table if exists ntmplatinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nuserlog cascade 
+Hibernate: 
+    drop table if exists nuserlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nweblog cascade 
+Hibernate: 
+    drop table if exists nweblog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nwikmnthngreprt cascade 
+Hibernate: 
+    drop table if exists nwikmnthngreprt cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists revinfo cascade 
+Hibernate: 
+    drop table if exists revinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists sbbssummary cascade 
+Hibernate: 
+    drop table if exists sbbssummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ssyslogsummary cascade 
+Hibernate: 
+    drop table if exists ssyslogsummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists susersummary cascade 
+Hibernate: 
+    drop table if exists susersummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists sweblogsummary cascade 
+Hibernate: 
+    drop table if exists sweblogsummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop sequence if exists answer_no_seq
+Hibernate: 
+    drop sequence if exists answer_no_seq
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop sequence if exists ntt_id_seq
+Hibernate: 
+    drop sequence if exists ntt_id_seq
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-4 - Shutdown initiated...
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-4 - Shutdown completed.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG o.s.w.c.s.GenericWebApplicationContext - Closing org.springframework.web.context.support.GenericWebApplicationContext@195de7e4, started on Sat Mar 28 12:28:40 KST 2026
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG o.s.w.c.s.GenericWebApplicationContext - Closing org.springframework.web.context.support.GenericWebApplicationContext@2d60248f, started on Sat Mar 28 12:28:42 KST 2026
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel removed SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - Stopping...
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@52ca31e0]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@52ca31e0]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - brokerChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@52ca31e0]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.springframework.web.SimpLogging - Stopped.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.springframework.web.SimpLogging - brokerChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutting down.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED paused.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  org.quartz.core.QuartzScheduler - Scheduler quartzScheduler_$_NON_CLUSTERED shutdown complete.
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG o.s.b.f.s.DisposableBeanAdapter - Custom destroy method 'close' on bean with name 'simpleMeterRegistry' completed
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists cadministcode cascade 
+Hibernate: 
+    drop table if exists cadministcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmnclcode cascade 
+Hibernate: 
+    drop table if exists ccmmnclcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmncode cascade 
+Hibernate: 
+    drop table if exists ccmmncode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ccmmndetailcode cascade 
+Hibernate: 
+    drop table if exists ccmmndetailcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists comtnindvdlpge cascade 
+Hibernate: 
+    drop table if exists comtnindvdlpge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists comtnuserabsence cascade 
+Hibernate: 
+    drop table if exists comtnuserabsence cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists file_group cascade 
+Hibernate: 
+    drop table if exists file_group cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists file_item cascade 
+Hibernate: 
+    drop table if exists file_item cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists hemaildsptchmanage cascade 
+Hibernate: 
+    drop table if exists hemaildsptchmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists imgtemp cascade 
+Hibernate: 
+    drop table if exists imgtemp cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists n_user_notification cascade 
+Hibernate: 
+    drop table if exists n_user_notification cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nadbk cascade 
+Hibernate: 
+    drop table if exists nadbk cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nadbkmanage cascade 
+Hibernate: 
+    drop table if exists nadbkmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorgroupinfo cascade 
+Hibernate: 
+    drop table if exists nauthorgroupinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorinfo cascade 
+Hibernate: 
+    drop table if exists nauthorinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nauthorrolerelate cascade 
+Hibernate: 
+    drop table if exists nauthorrolerelate cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbanner cascade 
+Hibernate: 
+    drop table if exists nbanner cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbs cascade 
+Hibernate: 
+    drop table if exists nbbs cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsmaster cascade 
+Hibernate: 
+    drop table if exists nbbsmaster cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsmasteroptn cascade 
+Hibernate: 
+    drop table if exists nbbsmasteroptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbbsuse cascade 
+Hibernate: 
+    drop table if exists nbbsuse cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbkmkmenumanageresult cascade 
+Hibernate: 
+    drop table if exists nbkmkmenumanageresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nblog cascade 
+Hibernate: 
+    drop table if exists nblog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nbloguser cascade 
+Hibernate: 
+    drop table if exists nbloguser cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncalrestde cascade 
+Hibernate: 
+    drop table if exists ncalrestde cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncmmnty cascade 
+Hibernate: 
+    drop table if exists ncmmnty cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncmmntyuser cascade 
+Hibernate: 
+    drop table if exists ncmmntyuser cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncnsltlist cascade 
+Hibernate: 
+    drop table if exists ncnsltlist cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ncomment cascade 
+Hibernate: 
+    drop table if exists ncomment cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndeptjob cascade 
+Hibernate: 
+    drop table if exists ndeptjob cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndeptjobbx cascade 
+Hibernate: 
+    drop table if exists ndeptjobbx cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndiaryinfo cascade 
+Hibernate: 
+    drop table if exists ndiaryinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ndtausestats cascade 
+Hibernate: 
+    drop table if exists ndtausestats cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrinfo cascade 
+Hibernate: 
+    drop table if exists nemplyrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrinfo_aud cascade 
+Hibernate: 
+    drop table if exists nemplyrinfo_aud cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nemplyrscrtyestbs cascade 
+Hibernate: 
+    drop table if exists nemplyrscrtyestbs cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nentrprsmber cascade 
+Hibernate: 
+    drop table if exists nentrprsmber cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists neventinfo cascade 
+Hibernate: 
+    drop table if exists neventinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nextrlhrinfo cascade 
+Hibernate: 
+    drop table if exists nextrlhrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfaqinfo cascade 
+Hibernate: 
+    drop table if exists nfaqinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfile cascade 
+Hibernate: 
+    drop table if exists nfile cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nfiledetail cascade 
+Hibernate: 
+    drop table if exists nfiledetail cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ngnrlmber cascade 
+Hibernate: 
+    drop table if exists ngnrlmber cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nhpcminfo cascade 
+Hibernate: 
+    drop table if exists nhpcminfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nindvdlpge cascade 
+Hibernate: 
+    drop table if exists nindvdlpge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nindvdlpgecntnts cascade 
+Hibernate: 
+    drop table if exists nindvdlpgecntnts cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninfrmlsanctn cascade 
+Hibernate: 
+    drop table if exists ninfrmlsanctn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninsttcode cascade 
+Hibernate: 
+    drop table if exists ninsttcode cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ninsttcoderecptnlog cascade 
+Hibernate: 
+    drop table if exists ninsttcoderecptnlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nintnetsvc cascade 
+Hibernate: 
+    drop table if exists nintnetsvc cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nknowledge cascade 
+Hibernate: 
+    drop table if exists nknowledge cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nleaderschdul cascade 
+Hibernate: 
+    drop table if exists nleaderschdul cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nleadersttus cascade 
+Hibernate: 
+    drop table if exists nleadersttus cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nloginlog cascade 
+Hibernate: 
+    drop table if exists nloginlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nloginpolicy cascade 
+Hibernate: 
+    drop table if exists nloginpolicy cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmainimage cascade 
+Hibernate: 
+    drop table if exists nmainimage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmemoreprt cascade 
+Hibernate: 
+    drop table if exists nmemoreprt cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmemotodo cascade 
+Hibernate: 
+    drop table if exists nmemotodo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmenucreatdtls cascade 
+Hibernate: 
+    drop table if exists nmenucreatdtls cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nmenuinfo cascade 
+Hibernate: 
+    drop table if exists nmenuinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnote cascade 
+Hibernate: 
+    drop table if exists nnote cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnoterecptn cascade 
+Hibernate: 
+    drop table if exists nnoterecptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nnotetrnsmit cascade 
+Hibernate: 
+    drop table if exists nnotetrnsmit cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinemnual cascade 
+Hibernate: 
+    drop table if exists nonlinemnual cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepolliem cascade 
+Hibernate: 
+    drop table if exists nonlinepolliem cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepollmanage cascade 
+Hibernate: 
+    drop table if exists nonlinepollmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nonlinepollresult cascade 
+Hibernate: 
+    drop table if exists nonlinepollresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists norgnztinfo cascade 
+Hibernate: 
+    drop table if exists norgnztinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists npolicy cascade 
+Hibernate: 
+    drop table if exists npolicy cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists npopupmanage cascade 
+Hibernate: 
+    drop table if exists npopupmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nprivacylog cascade 
+Hibernate: 
+    drop table if exists nprivacylog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nprogrmlist cascade 
+Hibernate: 
+    drop table if exists nprogrmlist cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqainfo cascade 
+Hibernate: 
+    drop table if exists nqainfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrinfo cascade 
+Hibernate: 
+    drop table if exists nqestnrinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrrespond cascade 
+Hibernate: 
+    drop table if exists nqestnrrespond cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqestnrtmplat cascade 
+Hibernate: 
+    drop table if exists nqestnrtmplat cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnriem cascade 
+Hibernate: 
+    drop table if exists nqustnriem cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnrqesitm cascade 
+Hibernate: 
+    drop table if exists nqustnrqesitm cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nqustnrrspnsresult cascade 
+Hibernate: 
+    drop table if exists nqustnrrspnsresult cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nrefresh_token cascade 
+Hibernate: 
+    drop table if exists nrefresh_token cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nreprtstats cascade 
+Hibernate: 
+    drop table if exists nreprtstats cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nroleinfo cascade 
+Hibernate: 
+    drop table if exists nroleinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nroughmap cascade 
+Hibernate: 
+    drop table if exists nroughmap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nrwardmanage cascade 
+Hibernate: 
+    drop table if exists nrwardmanage cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nschdulinfo cascade 
+Hibernate: 
+    drop table if exists nschdulinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nscrap cascade 
+Hibernate: 
+    drop table if exists nscrap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsitemap cascade 
+Hibernate: 
+    drop table if exists nsitemap cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsms cascade 
+Hibernate: 
+    drop table if exists nsms cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsmsrecptn cascade 
+Hibernate: 
+    drop table if exists nsmsrecptn cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nstsfdg cascade 
+Hibernate: 
+    drop table if exists nstsfdg cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nsyslog cascade 
+Hibernate: 
+    drop table if exists nsyslog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ntmplatinfo cascade 
+Hibernate: 
+    drop table if exists ntmplatinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nuserlog cascade 
+Hibernate: 
+    drop table if exists nuserlog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nweblog cascade 
+Hibernate: 
+    drop table if exists nweblog cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists nwikmnthngreprt cascade 
+Hibernate: 
+    drop table if exists nwikmnthngreprt cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists revinfo cascade 
+Hibernate: 
+    drop table if exists revinfo cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists sbbssummary cascade 
+Hibernate: 
+    drop table if exists sbbssummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists ssyslogsummary cascade 
+Hibernate: 
+    drop table if exists ssyslogsummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists susersummary cascade 
+Hibernate: 
+    drop table if exists susersummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists sweblogsummary cascade 
+Hibernate: 
+    drop table if exists sweblogsummary cascade 
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop sequence if exists answer_no_seq
+Hibernate: 
+    drop sequence if exists answer_no_seq
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop sequence if exists ntt_id_seq
+Hibernate: 
+    drop sequence if exists ntt_id_seq
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-5 - Shutdown initiated...
+2026-03-28 12:29:10 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-5 - Shutdown completed.
+> Task :api-server:jacocoTestReport SKIPPED
+> Task :api-server:check
+> Task :api-server:build
+
+[Incubating] Problems report is available at: file:///D:/project/egov-enterprise/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 9m 30s
+31 actionable tasks: 21 executed, 10 from cache
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.4.1/userguide/configuration_cache_enabling.html

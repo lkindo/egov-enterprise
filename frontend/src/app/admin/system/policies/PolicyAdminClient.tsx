@@ -127,7 +127,8 @@ export default function PolicyAdminClient() {
         <StandardDataTable 
           columns={columns} 
           data={policies} 
-          isLoading={loading}
+          loading={loading}
+          keyField="type"
           emptyMessage="등록된 시스템 정책이 없습니다."
         />
       </div>
