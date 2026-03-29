@@ -7,7 +7,7 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { FormField } from '@/app/components/ui/standard-form';
 import { Button } from '@/components/ui/button';
@@ -21,19 +21,15 @@ import {
     Database, 
     LayoutGrid, 
     Fingerprint, 
-    Key, 
     Tag, 
-    FileJson, 
     Cpu, 
     Layers, 
-    Activity, 
-    Zap,
     Box,
     Hash,
     Maximize2,
     ChevronRight,
-    RefreshCcw,
-    SearchSlash
+    SearchSlash,
+    RefreshCcw
 } from 'lucide-react';
 import { DomainCluster, GroupCode, CodeDetail } from '@/types/foundation/code';
 import { useToast } from '@/app/components/ui/toast';
@@ -49,9 +45,9 @@ import {
 import { CmmnClCode, CmmnCode } from '@/types/foundation/system';
 
 interface CommonCodeClientProps {
-    clCodes: any[];
-    groups: any[];
-    details: any[];
+    clCodes: CmmnClCode[];
+    groups: CmmnCode[];
+    details: CodeDetail[];
     selectedGroupId: string | null;
 }
 
@@ -108,15 +104,14 @@ export default function CommonCodeClient({
             // Providing multiple common parameter names for EgovFrame compatibility
             const res = await codeAdminService.getDetailCodeList({ 
                 codeId: group.codeId, 
-                groupId: group.codeId,
                 searchKeyword: group.codeId,
                 searchCondition: '1',
                 pageUnit: 999 
-            } as any);
+            });
             
             // Failsafe: Filter details on client side just in case backend returns all items
             const fetchedDetails = (res.list || []).filter(item => 
-                item && (item as any).codeId === group.codeId
+                item && (item as CodeDetail).codeId === group.codeId
             );
 
             // 2. Update state directly
@@ -209,10 +204,10 @@ export default function CommonCodeClient({
 
         try {
             const res = await saveCodeDetailAction(null, {
-                ...data,
-                codeId: selectedGroup?.codeId,
+                ...(data as any),
+                codeId: selectedGroup?.codeId || '',
                 isNew: !editingDetail
-            } as any);
+            });
 
             if (res.success) {
                 toast(res.message, 'success');
@@ -225,7 +220,7 @@ export default function CommonCodeClient({
         }
     };
 
-    const columns = [
+    const columns: Column<CodeDetail>[] = [
         {
             header: '코드',
             accessor: (item: CodeDetail) => <span className="font-mono font-bold text-slate-700">{item.code}</span>,
@@ -425,7 +420,7 @@ export default function CommonCodeClient({
                                     </div>
                                 </div>
                                 <div className="p-4">
-                                    <StandardDataTable 
+                                    <StandardDataTable<CodeDetail> 
                                         columns={columns} 
                                         data={selectedGroup.details || []} 
                                         emptyMessage="선택된 그룹의 상세 코드가 존재하지 않습니다." 

@@ -21,7 +21,7 @@ const BASE_URL = '/files';
 
 export const fileMngService = {
  /** 파일 목록 조회 (Admin 전용) */
- getFiles: async (params?: any): Promise<PageResponse<SharedFileDetail>> => {
+ getFiles: async (params?: Record<string, unknown>): Promise<PageResponse<SharedFileDetail>> => {
  return client.get<PageResponse<SharedFileDetail>>(BASE_URL, { params });
  },
 

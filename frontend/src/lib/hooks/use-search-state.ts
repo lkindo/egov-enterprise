@@ -11,16 +11,16 @@ export function useSearchState<T extends Record<string, string>>(initialValues: 
  const pathname = usePathname();
  const searchParams = useSearchParams();
 
- // 현재 URL에서 값을 읽어옴 (없으면 초기값)
- const getSearchValues = useCallback(() => {
- const values = { ...initialValues };
- searchParams.forEach((value, key) => {
- if (key in initialValues) {
- (values as any)[key] = value;
- }
- });
- return values;
- }, [searchParams, initialValues]);
+  // 현재 URL에서 값을 읽어옴 (없으면 초기값)
+  const getSearchValues = useCallback(() => {
+    const values = { ...initialValues } as Record<string, string>;
+    searchParams.forEach((value, key) => {
+      if (key in initialValues) {
+        values[key] = value;
+      }
+    });
+    return values as T;
+  }, [searchParams, initialValues]);
 
  // 새로운 검색 조건으로 URL 업데이트
  const setSearchValues = useCallback((newValues: Partial<T>) => {

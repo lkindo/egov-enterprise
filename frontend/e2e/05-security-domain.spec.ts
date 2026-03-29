@@ -102,37 +102,49 @@ test.describe('Session Management', () => {
 
 // --- Authentication Flow ---
 test.describe('Authentication Flow', () => {
-    test('should redirect to login when not authenticated', async ({ page }) => {
+    test('should redirect to login when not authenticated', async ({ browser, baseURL }) => {
+        // We ensure no authentication for this specific test by explicitly providing an empty storage state
+        const guestContext = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+        const guestPage = await guestContext.newPage();
+         
         try {
-            // Create new context without auth
-            const context = await page.context().browser()!.newContext();
-            const newPage = await context.newPage();
-
-            await newPage.goto('/admin/dashboard', { timeout: 10000 });
-            await newPage.waitForTimeout(3000);
-
-            const currentUrl = newPage.url();
-            if (currentUrl.includes('/login') || currentUrl.includes('/auth')) {
-                console.log('>>> Redirected to login page as expected');
-            } else {
-                console.log('>>> Not redirected, but page loaded');
-            }
-
-            await context.close();
-        } catch (e) {
-            console.log('>>> Skipping - servers not available');
-            test.skip(true, 'Frontend server not available');
+            console.log(`>>> Accessing admin dashboard without authentication (Guest Context) at ${baseURL}`);
+            // Use the provided baseURL from playwright config
+            await guestPage.goto(`${baseURL}/admin/dashboard`, { waitUntil: 'domcontentloaded' });
+            
+            // Wait for redirection to take effect
+            await guestPage.waitForURL(/.*\/login.*/, { timeout: 20000 });
+            
+            const currentUrl = guestPage.url();
+            console.log(`>>> Guest Access Resulting URL: ${currentUrl}`);
+            
+            expect(currentUrl).toMatch(/.*\/login.*/);
+            console.log('>>> SUCCESS: Correctly redirected to login page from Guest Context');
+        } finally {
+            await guestContext.close();
         }
     });
 
-    test('should preserve return URL after login', async ({ page }) => {
+    test('should preserve return URL after login', async ({ browser, baseURL }) => {
+        const guestContext = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+        const guestPage = await guestContext.newPage();
+        
         try {
-            await page.goto('/admin/user/manage', { timeout: 10000 });
-            await page.waitForTimeout(2000);
-            console.log('>>> Return URL preservation test completed');
-        } catch (e) {
-            console.log('>>> Skipping - servers not available');
-            test.skip(true, 'Frontend server not available');
+            const secretPath = '/admin/user/manage';
+            console.log(`>>> Accessing protected path as Guest: ${secretPath}`);
+            await guestPage.goto(`${baseURL}${secretPath}`, { waitUntil: 'domcontentloaded' });
+            
+            await guestPage.waitForURL(/.*\/login.*/, { timeout: 20000 });
+             
+            const currentUrl = guestPage.url();
+            console.log(`>>> Guest Access Current URL: ${currentUrl}`);
+            
+            // The URL should contain the redirect parameter with the original path
+            expect(currentUrl).toContain('redirect');
+            expect(currentUrl).toContain(encodeURIComponent(secretPath));
+            console.log('>>> SUCCESS: Return URL preserved in Guest Context redirect');
+        } finally {
+            await guestContext.close();
         }
     });
 });

@@ -1,5 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PageResponse } from '@/types/foundation/system';
+import { PageResponse, SearchParams, UserLog, LoginLog as LoginLogType, WebLog, PrivacyLog, TransferLog } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface SysLog {
@@ -36,13 +36,13 @@ class SystemLogAdminService extends AdminService {
   /**
    * 시스템 로그 목록 조회
    */
-  async getSystemLogs(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<SysLog>> {
+  async getSystemLogs(params: { page?: number; size?: number; searchWrd?: string } | SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SysLog>> {
     return this.get<PageResponse<SysLog>>('/system', {
       ...config,
       params: {
         ...params,
-        page번호: (params.page || 0) + 1,
-        searchKeyword: params.searchWrd || '',
+        page번호: (('page' in params ? params.page : 0) || 0) + 1,
+        searchKeyword: ('searchWrd' in params ? params.searchWrd : '') || '',
       },
     });
   }
@@ -57,13 +57,13 @@ class SystemLogAdminService extends AdminService {
   /**
    * 로그인 로그 목록 조회
    */
-  async getLoginLogs(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<LoginLog>> {
+  async getLoginLogs(params: { page?: number; size?: number; searchWrd?: string } | SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginLog>> {
     return this.get<PageResponse<LoginLog>>('/login', {
       ...config,
       params: {
         ...params,
-        page번호: (params.page || 0) + 1,
-        searchKeyword: params.searchWrd || '',
+        page번호: (('page' in params ? params.page : 0) || 0) + 1,
+        searchKeyword: ('searchWrd' in params ? params.searchWrd : '') || '',
       },
     });
   }
@@ -78,8 +78,8 @@ class SystemLogAdminService extends AdminService {
   /**
    * 개인정보 접근 로그 목록 조회
    */
-  async getPrivacyLogs(params: any, config?: AxiosRequestConfig): Promise<PageResponse<any>> {
-    return this.get<PageResponse<any>>('/privacy', {
+  async getPrivacyLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<PrivacyLog>> {
+    return this.get<PageResponse<PrivacyLog>>('/privacy', {
       ...config,
       params: {
         ...params,
@@ -92,8 +92,8 @@ class SystemLogAdminService extends AdminService {
   /**
    * 사용자 로그 목록 조회 (관리자용)
    */
-  async getUserLogs(params: any, config?: AxiosRequestConfig): Promise<PageResponse<any>> {
-    return this.get<PageResponse<any>>('/user', {
+  async getUserLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<UserLog>> {
+    return this.get<PageResponse<UserLog>>('/user', {
       ...config,
       params: {
         ...params,
@@ -106,8 +106,8 @@ class SystemLogAdminService extends AdminService {
   /**
    * 웹 로그 목록 조회 (HTTP 요청 등)
    */
-  async getWebLogs(params: any, config?: AxiosRequestConfig): Promise<PageResponse<any>> {
-    return this.get<PageResponse<any>>('/web', {
+  async getWebLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<WebLog>> {
+    return this.get<PageResponse<WebLog>>('/web', {
       ...config,
       params: {
         ...params,
@@ -120,8 +120,8 @@ class SystemLogAdminService extends AdminService {
   /**
    * 송수신 로그 목록 조회
    */
-  async getTransferLogs(params: any, config?: AxiosRequestConfig): Promise<PageResponse<any>> {
-    return this.get<PageResponse<any>>('/transfer', {
+  async getTransferLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<TransferLog>> {
+    return this.get<PageResponse<TransferLog>>('/transfer', {
       ...config,
       params: {
         ...params,

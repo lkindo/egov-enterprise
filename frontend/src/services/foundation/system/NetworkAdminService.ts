@@ -1,4 +1,5 @@
 import { AdminService } from '@/services/core/ApiService';
+import { SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 /**
@@ -21,7 +22,7 @@ class NetworkAdminService extends AdminService {
  }
 
  /** 네트워크 목록 조회 */
- async getNetworks(params?: any, config?: AxiosRequestConfig): Promise<Network[]> {
+ async getNetworks(params?: SearchParams, config?: AxiosRequestConfig): Promise<Network[]> {
  return this.get<Network[]>('', { ...config, params });
  }
 

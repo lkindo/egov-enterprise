@@ -22,10 +22,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
+import { boardAdminService, BoardMaster } from '@/services/foundation/system/BoardAdminService';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { PageHeader } from '@/app/components/layout/page-header';
+import { LucideIcon } from 'lucide-react';
 
 const container = {
   hidden: { opacity: 0 },
@@ -42,6 +43,14 @@ const item = {
   show: { y: 0, opacity: 1 }
 };
 
+interface InsightCardProps {
+  label: string;
+  value: string;
+  desc: string;
+  icon: LucideIcon;
+  color: string;
+}
+
 export default function BoardMasterListPage() {
   const router = useRouter();
   const [searchWrd, setSearchWrd] = useState('');
@@ -51,12 +60,12 @@ export default function BoardMasterListPage() {
     queryFn: () => boardAdminService.getBoardMasterList({ searchWrd })
   });
 
-  const boardList = boardData?.resultList || [];
+  const boardList = (boardData?.resultList || []) as BoardMaster[];
 
-  const columns: Column<any>[] = [
+  const columns: Column<BoardMaster>[] = [
     {
       header: '마스터 아이덴티티',
-      accessor: (board: any) => (
+      accessor: (board: BoardMaster) => (
         <div className="flex items-center gap-6">
            <div className="w-16 h-16 rounded-2xl bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-500">
               {board.bbsTyCodeNm === '지식 허브' ? <BookOpen size={28} /> : 
@@ -73,7 +82,7 @@ export default function BoardMasterListPage() {
     },
     {
       header: '메타데이터',
-      accessor: (board: any) => (
+      accessor: (board: BoardMaster) => (
         <div className="space-y-1.5 text-left">
            <p className="text-sm font-bold text-slate-500 line-clamp-1 leading-snug">{board.bbsIntrcn}</p>
            <div className="flex gap-2">
@@ -86,7 +95,7 @@ export default function BoardMasterListPage() {
     },
     {
       header: '상태',
-      accessor: (board: any) => (
+      accessor: (board: BoardMaster) => (
         <div className="flex justify-center">
           <Badge className={cn(
             "px-4 py-1.5 rounded-full font-black text-[10px] uppercase border-none tracking-widest shadow-sm",
@@ -100,7 +109,7 @@ export default function BoardMasterListPage() {
     },
     {
       header: '수용량',
-      accessor: (_board: any) => (
+      accessor: (_board: BoardMaster) => (
         <div className="space-y-1 text-center">
            <p className="text-xl font-black text-slate-800 italic">0</p>
            <p className="text-[10px] font-black text-slate-300 uppercase leading-none">게시글 수</p>
@@ -110,7 +119,7 @@ export default function BoardMasterListPage() {
     },
     {
       header: '작업 컨트롤',
-      accessor: (board: any) => (
+      accessor: (board: BoardMaster) => (
         <div className="flex items-center justify-end gap-3 pr-6">
            <Button size="icon" variant="ghost" className="w-12 h-12 rounded-xl text-slate-400 hover:bg-primary hover:text-white transition-all shadow-hover-sm">
               <Settings2 size={20} />
@@ -163,7 +172,7 @@ export default function BoardMasterListPage() {
       </motion.div>
 
       <div className="border border-slate-100 rounded-[3rem] overflow-hidden bg-white shadow-2xl shadow-slate-200/50">
-        <StandardDataTable
+        <StandardDataTable<BoardMaster>
           columns={columns}
           data={boardList}
           loading={isLoading}
@@ -193,7 +202,7 @@ export default function BoardMasterListPage() {
   );
 }
 
-function InsightCard({ label, value, desc, icon: Icon, color }: any) {
+function InsightCard({ label, value, desc, icon: Icon, color }: InsightCardProps) {
     return (
       <motion.div variants={item} className="hub-card-premium p-8 space-y-6 group hover:ring-[30px] hover:ring-slate-100/30 transition-all border-2 border-slate-50/50">
         <div className="flex items-center justify-between">

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { manualAdminService, ManualDto } from '@/services/foundation/user/ManualAdminService';
+import { PageResponse } from '@/types/foundation/system';
 import {
  BookOpen,
  Plus,
@@ -33,11 +34,11 @@ import { toast } from 'sonner';
 export default function ManualAdminClient({ 
  initialManuals 
 }: { 
- initialManuals: any 
+ initialManuals: PageResponse<ManualDto> 
 }) {
  const [loading, setLoading] = useState(false);
  const [manuals, setManuals] = useState(initialManuals.list || []);
- const [totalCount, setTotalCount] = useState(initialManuals.pagination.totalItems || 0);
+ const [totalCount, setTotalCount] = useState(initialManuals.total || 0);
  const [searchKeyword, setSearchKeyword] = useState('');
  
  const [isFormOpen, setIsAddOpen] = useState(false);
@@ -53,7 +54,7 @@ export default function ManualAdminClient({
  try {
  const res = await manualAdminService.getManualList({ keyword: searchKeyword });
  setManuals(res.list);
- setTotalCount(res.pagination.totalItems);
+ setTotalCount(res.total);
  } catch (error) {
  toast.error('매뉴얼 목록을 불러오지 못했습니다.');
  } finally {

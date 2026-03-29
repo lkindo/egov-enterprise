@@ -7,17 +7,23 @@ import { MESSAGES } from '@/constants/messages';
 export function useMessage() {
   const t = (keyPath: string, params?: Record<string, string | number>): string => {
     const keys = keyPath.split('.');
-    let current: any = MESSAGES;
+    let current: unknown = MESSAGES;
 
     for (const key of keys) {
-      if (current[key] === undefined) {
+      if (typeof current === 'object' && current !== null && key in current) {
+        current = (current as Record<string, unknown>)[key];
+      } else {
         console.warn(`Message key not found: ${keyPath}`);
         return keyPath;
       }
-      current = current[key];
     }
 
-    let message = current as string;
+    if (typeof current !== 'string') {
+      console.warn(`Message key is not a string: ${keyPath}`);
+      return keyPath;
+    }
+
+    let message: string = current;
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         message = message.replace(`{${key}}`, String(value));

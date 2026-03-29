@@ -11,24 +11,21 @@ import { usePathname } from 'next/navigation';
 import { MenuInfo } from '@/types/foundation/menu';
 
 const Header = () => {
- const { user, logout, loading } = useAuth();
- const { activeMenuNo, setActiveMenuNo } = useLayout();
- const pathname = usePathname();
- const [menus, setMenus] = useState<MenuInfo[]>([]);
- const [menuError, setMenuError] = useState<string | null>(null);
+  const { user, logout, loading } = useAuth();
+  const { activeMenuNo, setActiveMenuNo } = useLayout();
+  const pathname = usePathname();
+  const [menus, setMenus] = useState<MenuInfo[]>([]);
 
- const fetchMenus = useCallback(async () => {
- try {
- setMenuError(null);
- const headRes = (await axios.get('/menus/head')) as any;
- const list = headRes?.list || [];
- setMenus(list);
- } catch (err: any) {
- console.error('Failed to fetch menus:', err);
- setMenuError(err.message || 'Failed to fetch menus');
- setMenus([]);
- }
- }, []);
+  const fetchMenus = useCallback(async () => {
+    try {
+      const headRes = await axios.get<{ list: MenuInfo[] }>('/menus/head');
+      const list = headRes?.list || [];
+      setMenus(list);
+    } catch (err: unknown) {
+      console.error('Failed to fetch menus:', err);
+      setMenus([]);
+    }
+  }, []);
 
  useEffect(() => {
  fetchMenus();

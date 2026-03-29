@@ -28,6 +28,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
+import { PageResponse } from '@/types/foundation/system';
+
 // Log categories configuration
 const logCategories = [
   { id: 'SYS', label: '시스템 로그', icon: <Terminal size={20} />, description: '서비스 및 메소드 실행 이력', serviceMethod: 'getSystemLogs' },
@@ -39,13 +41,13 @@ const logCategories = [
 
 export default function LogDashboardPage() {
   const [activeCategory, setCategory] = useState('SYS');
-  const [params, setParams] = useState({ pageNo: 1, searchKeyword: '' });
+  const [params, setParams] = useState({ page번호: 1, searchKeyword: '' });
   const [selectedLog, setSelectedLog] = useState<any | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<PageResponse<any>>({
     queryKey: ['admin-logs-integrated', activeCategory, params],
     queryFn: async () => {
-      const apiParams = { page: params.pageNo - 1, size: 10, searchWrd: params.searchKeyword };
+      const apiParams = { page번호: params.page번호, size: 10, searchKeyword: params.searchKeyword };
       switch (activeCategory) {
         case 'SYS': return systemLogAdminService.getSystemLogs(apiParams);
         case 'LGN': return systemLogAdminService.getLoginLogs(apiParams);
@@ -59,10 +61,10 @@ export default function LogDashboardPage() {
 
   const logs = data?.resultList || data?.list || [];
   const pagination = data?.paginationInfo || {
-    currentPageNo: params.pageNo,
+    currentPageNo: Number(params.page번호),
     recordCountPerPage: 10,
-    totalRecordCount: data?.totalCount || 0,
-    totalPageCount: data?.totalPageCount || 1
+    totalRecordCount: Number(data?.totalCount || data?.total || 0),
+    totalPageCount: Number(data?.totalPage || data?.totalPageCount || 1)
   };
 
   const columns = useMemo(() => {
@@ -213,18 +215,18 @@ export default function LogDashboardPage() {
               onRowClick={(item) => setSelectedLog(item)}
               search={{
                 placeholder: '요청자, IP, 메시지 등으로 정밀 분석...',
-                onSearch: (keyword) => setParams({ ...params, searchKeyword: keyword, pageNo: 1 })
-              }}
-            />
-            
-            {pagination && pagination.totalPageCount > 1 && (
-               <div className="mt-12 flex justify-center">
-                   <PagePagination 
-                      pagination={pagination} 
-                      onPageChange={(page) => setParams({ ...params, pageNo: page })}
-                   />
-               </div>
-            )}
+              onSearch: (keyword) => setParams({ ...params, searchKeyword: keyword, page번호: 1 })
+            }}
+          />
+          
+          {(Number(pagination.totalPageCount) || 0) > 1 && (
+             <div className="mt-12 flex justify-center">
+                 <PagePagination 
+                    pagination={pagination} 
+                    onPageChange={(page) => setParams({ ...params, page번호: page })}
+                 />
+             </div>
+          )}
           </HubSectionCard>
         </div>
       </div>

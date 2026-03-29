@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import axios from '@/lib/api/client';
 
 import { useLayout } from '@/contexts/LayoutContext';
@@ -16,28 +16,29 @@ const Sidebar = () => {
  const [parentMenu, setParentMenu] = useState<MenuInfo | null>(null);
  const [error, setError] = useState<string | null>(null);
 
- const fetchLeftMenus = useCallback(async () => {
- if (!activeMenuNo) {
- setLeftMenus([]);
- return;
- }
+  const fetchLeftMenus = useCallback(async () => {
+    if (!activeMenuNo) {
+      setLeftMenus([]);
+      return;
+    }
 
- try {
- setError(null);
- // Fetch the root category itself to get its name
- const headRes = (await axios.get('/menus/head')) as any;
- const root = headRes?.list?.find((m: any) => m.menuNo === activeMenuNo);
- if (root) setParentMenu(root);
+    try {
+      setError(null);
+      // Fetch the root category itself to get its name
+      const headRes = await axios.get<{ list: MenuInfo[] }>('/menus/head');
+      const root = headRes?.list?.find((m: MenuInfo) => m.menuNo === activeMenuNo);
+      if (root) setParentMenu(root);
 
- // Fetch children (mid-categories)
- const response = (await axios.get(`/menus/left?menuNo=${activeMenuNo}`)) as any;
- const list = response?.list || [];
- setLeftMenus(list);
- } catch (err: any) {
- console.error('Failed to fetch left menus:', err);
- setError(err.message || 'Failed to fetch menus');
- }
- }, [activeMenuNo]);
+      // Fetch children (mid-categories)
+      const response = await axios.get<{ list: MenuInfo[] }>(`/menus/left?menuNo=${activeMenuNo}`);
+      const list = response?.list || [];
+      setLeftMenus(list);
+    } catch (err: unknown) {
+      console.error('Failed to fetch left menus:', err);
+      const message = err instanceof Error ? err.message : 'Failed to fetch menus';
+      setError(message);
+    }
+  }, [activeMenuNo]);
 
  useEffect(() => {
  fetchLeftMenus();

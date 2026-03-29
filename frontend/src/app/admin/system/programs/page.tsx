@@ -3,7 +3,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
 import ProgramAdminClient from './ProgramAdminClient';
-import { Loader2 } from 'lucide-react';
+import { Program } from '@/types/foundation/program';
+import { PageResponse } from '@/types/foundation/system';
 
 export const metadata = {
  title: '시스템 프로그램 미들웨어 | 전자정부 표준프레임워크',
@@ -18,19 +19,22 @@ export default async function ProgramAdminPage({
  const resolvedSearchParams = await searchParams;
  const searchWrd = (resolvedSearchParams.searchWrd as string) || '';
 
- const cookieStore = await cookies();
- const accessToken = cookieStore.get('accessToken')?.value;
- const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
+  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- let initialData: any = { list: [], total: 0 };
- try {
-  initialData = await programAdminService.getProgramList({ page번호: 1, size: 10, searchWrd }, axiosConfig);
- } catch (error: any) {
-  if (error.response?.status === 401) {
-   redirect('/login?expired=true&redirect=/admin/system/programs');
+  let initialData: PageResponse<Program> = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
+  try {
+    initialData = await programAdminService.getProgramList({ page번호: 1, size: 10, searchWrd }, axiosConfig);
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError.response?.status === 401) {
+        redirect('/login?expired=true&redirect=/admin/system/programs');
+      }
+    }
+    console.error('Server-side fetch programs failed:', error);
   }
-  console.error('Server-side fetch programs failed:', error);
- }
 
  return (
  <Suspense fallback={<ProgramAdminLoading />}>

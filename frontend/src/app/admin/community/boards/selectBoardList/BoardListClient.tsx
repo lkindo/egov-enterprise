@@ -39,14 +39,7 @@ const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardSta
  loading: () => <Skeleton className="h-[280px] w-full rounded-[2rem]" />
 });
 
-interface Board {
- nttId: string;
- nttSj: string;
- frstRegisterNm: string;
- frstRegisterPnttm: string;
- inqireCo: number;
- commentCo?: number;
-}
+import { BoardPost } from '@/types/business/board';
 
 export const BoardListClient = ({ initialData, params: initialParams }: { initialData: any; params: any }) => {
   const searchParams = useSearchParams();
@@ -80,7 +73,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  endDate: endDate ? format(endDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined
  }, initialData);
 
- const list: Board[] = data?.resultList || [];
+ const list: BoardPost[] = data?.resultList || [];
  const totalCount = data?.totalCount || 0;
  const totalPages = data?.totalPages || 0;
 
@@ -266,7 +259,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
       </Table>
     ) : (tmplatId === 'TMPLT_GALLERY' || tmplatId === 'TMPLT_HUB') && list.length > 0 ? (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-10">
-        {list.map((item: Board, idx: number) => (
+        {list.map((item: BoardPost, idx: number) => (
           <Card key={item.nttId} className="group overflow-hidden rounded-[2.5rem] border-2 border-slate-50 hover:border-primary/20 hover:shadow-2xl transition-all cursor-pointer">
             <div className="h-56 bg-slate-100 relative overflow-hidden">
                <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:scale-125 transition-transform duration-700">
@@ -289,7 +282,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><Eye size={12} /> {item.inqireCo}회</span>
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><MessageSquare size={12} /> {item.commentCo || 0}개</span>
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><MessageSquare size={12} /> {0}개</span>
                 </div>
               </div>
             </CardContent>
@@ -313,7 +306,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
           </TableRow>
         </TableHeader>
         <TableBody>
-          {list.map((item: Board, idx: number) => (
+          {list.map((item: BoardPost, idx: number) => (
             <TableRow key={item.nttId} className="hover:bg-primary/[0.02] transition-all group border-b last:border-0">
               <TableCell className="text-center font-bold text-sm text-slate-400 py-8">
                 {totalCount - ((page번호 - 1) * 10) - idx}
@@ -334,7 +327,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
               <TableCell className="text-center py-8">
                 <div className="font-bold text-slate-400 flex items-center justify-center gap-2">
                   <CalendarIcon size={14} className="opacity-30" />
-                  {item.frstRegisterPnttm ? String(item.frstRegisterPnttm).substring(0, 10) : '-'}
+                  {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}
                 </div>
               </TableCell>
               <TableCell className="text-center py-8">
@@ -345,7 +338,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                   </div>
                   <div className="font-black text-slate-400 bg-slate-50 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-slate-100 w-24 justify-center group-hover:bg-white transition-colors">
                     <MessageSquare size={14} className="opacity-30" />
-                    {item.commentCo || 0}
+                    {0}
                   </div>
                 </div>
               </TableCell>

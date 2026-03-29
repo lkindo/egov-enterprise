@@ -28,11 +28,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
  setToasts((prev) => prev.filter((t) => t.id !== id));
  }, []);
 
-  const toast = useCallback((message: any, type: ToastType = 'info') => {
+  const toast = useCallback((message: unknown, type: ToastType = 'info') => {
     // Failsafe: format message as string to prevent [object Event] rendering errors
     const displayMessage = typeof message === 'string' 
       ? message 
-      : (message?.message || JSON.stringify(message) || '알 수 없는 오류가 발생했습니다.');
+      : ((message as any)?.message || JSON.stringify(message) || '알 수 없는 오류가 발생했습니다.');
 
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message: displayMessage, type }]);
@@ -47,9 +47,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
  // API 전역 에러 리스너
  React.useEffect(() => {
-  const handleApiError = (e: any) => {
-    if (!e.detail) return;
-    const { message, status } = e.detail;
+  const handleApiError = (e: Event) => {
+    const detail = (e as CustomEvent).detail;
+    if (!detail) return;
+    const { message, status } = detail;
  // 401은 토큰 재발급 로직이 처리하므로 사용자에게는 알리지 않음
  if (status !== 401) {
  error(message);

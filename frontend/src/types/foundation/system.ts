@@ -29,7 +29,7 @@ export interface PageResponse<T = unknown> {
  totalPage: number;
  paginationInfo?: PaginationInfo; // eGovFrame Legacy 대응
  totalCount?: number; // eGovFrame Legacy 대응
- [key: string]: any; // 모든 추가 필드 허용
+  [key: string]: unknown; // 모든 추가 필드 허용
 }
 
 export interface ApiResponse<T = unknown> {
@@ -63,7 +63,7 @@ export interface SearchParams {
  codeId?: string; // 추가
  pageUnit?: number; // 추가
  sbscrbSttus?: string; // 사용자 가입 상태 필터 추가
- [key: string]: any; // 모든 추가 필드 허용
+  [key: string]: unknown; // 모든 추가 필드 허용
 }
 
 // Common Code

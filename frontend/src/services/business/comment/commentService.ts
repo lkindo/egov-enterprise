@@ -1,6 +1,5 @@
-import { ApiService, AdminService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { CommentVO, CommentSearchParams, CommentSaveRequest } from '@/types/business/comment';
-import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 interface CommentListResult {

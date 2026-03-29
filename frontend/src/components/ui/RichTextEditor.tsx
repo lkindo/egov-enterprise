@@ -8,8 +8,8 @@ import Image from '@tiptap/extension-image';
 import TextAlign from '@tiptap/extension-text-align';
 import CharacterCount from '@tiptap/extension-character-count';
 import { 
-  Bold, Italic, List, ListOrdered, 
-  Code, Heading1, Heading2, Quote, 
+  List, ListOrdered, 
+  Heading1, Heading2, Quote, 
   Link as LinkIcon, Image as ImageIcon,
   Undo, Redo, 
   Type, AlignLeft, AlignCenter, AlignRight, AlignJustify
@@ -24,7 +24,7 @@ interface RichTextEditorProps {
   className?: string;
 }
 
-export default function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
+export default function RichTextEditor({ value, onChange, className }: RichTextEditorProps) {
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -204,7 +204,14 @@ export default function RichTextEditor({ value, onChange, placeholder, className
 
 // --- Internal Helper Components ---
 
-function ToolbarButton({ onClick, active, icon, className }: any) {
+interface ToolbarButtonProps {
+  onClick: () => void;
+  active?: boolean;
+  icon: React.ReactNode;
+  className?: string;
+}
+
+function ToolbarButton({ onClick, active, icon, className }: ToolbarButtonProps) {
   return (
     <Button
       type="button"

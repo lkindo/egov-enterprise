@@ -1,3 +1,4 @@
+import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
@@ -32,22 +33,22 @@ class OnlinePollAdminService extends AdminService {
   }
 
   /** 온라인 Poll 목록 페이징 조회 */
-  async getPollList(params?: { keyword?: string; page?: number; size?: number }, config?: any) {
+  async getPollList(params?: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig) {
     return this.get<PageResponse<OnlinePollDto>>('', { ...config, params });
   }
 
   /** 온라인 Poll 상세 조회 */
-  async getPoll(pollId: string, config?: any) {
+  async getPoll(pollId: string, config?: AxiosRequestConfig) {
     return this.get<OnlinePollDto>(`/${pollId}`, config);
   }
 
   /** 온라인 Poll 등록 */
-  async createPoll(pollDto: OnlinePollDto, config?: any) {
+  async createPoll(pollDto: OnlinePollDto, config?: AxiosRequestConfig) {
     return this.post<void>('', pollDto, config);
   }
 
   /** 투표 처리 */
-  async vote(pollId: string, pollIemId: string, config?: any) {
+  async vote(pollId: string, pollIemId: string, config?: AxiosRequestConfig) {
     return this.post<void>(`/${pollId}/vote`, null, { ...config, params: { pollIemId } });
   }
 }

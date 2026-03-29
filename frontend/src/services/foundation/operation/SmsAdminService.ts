@@ -1,3 +1,4 @@
+import { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
@@ -31,22 +32,22 @@ class SmsAdminService extends ApiService {
   }
 
   /** SMS 발송 내역 조회 */
-  async getSmsList(params?: { searchCondition?: string; searchKeyword?: string; page?: number; size?: number }, config?: any) {
+  async getSmsList(params?: { searchCondition?: string; searchKeyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig) {
     return this.get<PageResponse<SmsDto>>('', { ...config, params });
   }
 
   /** SMS 상세 조회 */
-  async getSms(smsId: string, config?: any) {
+  async getSms(smsId: string, config?: AxiosRequestConfig) {
     return this.get<SmsDto>(`/${smsId}`, config);
   }
 
   /** SMS 수신자 목록 조회 */
-  async getSmsRecipients(smsId: string, config?: any) {
+  async getSmsRecipients(smsId: string, config?: AxiosRequestConfig) {
     return this.get<SmsRecptnDto[]>(`/${smsId}/recipients`, config);
   }
 
   /** SMS 발송 */
-  async sendSms(smsDto: SmsDto, config?: any) {
+  async sendSms(smsDto: SmsDto, config?: AxiosRequestConfig) {
     return this.post<string>('', smsDto, config);
   }
 }

@@ -20,8 +20,11 @@ export default async function ManualAdminPage({
  const keyword = params.keyword;
 
  const initialManuals = await manualAdminService.getManualList({ keyword, page, size: 10 }, axiosConfig).catch(() => ({
- list: [],
- pagination: { totalItems: 0 }
+  list: [],
+  total: 0,
+  page: 0,
+  size: 10,
+  totalPage: 1
  }));
 
  return (

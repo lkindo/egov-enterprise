@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
-import { SearchParams } from '@/types/foundation/system';
+import { SearchParams, PageResponse } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -14,15 +14,15 @@ import type { LoginLog } from '@/services/foundation/system/SystemLogAdminServic
 
 const LoginLogAdminPage = () => {
     const [params, setParams] = useState<SearchParams>({
-        pageNo: 1,
+        page번호: 1,
         size: 10,
         searchKeyword: '',
     });
 
-    const { data, isLoading } = useQuery({
+    const { data, isLoading } = useQuery<PageResponse<LoginLog>>({
         queryKey: ['admin-logs-login', params],
         queryFn: () => systemLogAdminService.getLoginLogs({ 
-            page: (params.pageNo || 1) - 1, 
+            page: (Number(params.page번호) || 1) - 1, 
             size: params.size, 
             searchWrd: params.searchKeyword 
         }),
@@ -98,13 +98,13 @@ const LoginLogAdminPage = () => {
                 data={logs}
                 loading={isLoading}
                 pagination={{
-                    currentPage: params.pageNo || 1,
-                    totalPages: pagination?.totalPageCount || 1,
-                    onPageChange: (page: number) => setParams({ ...params, pageNo: page }),
+                    currentPage: (params.page번호 || 1) as number,
+                    totalPages: data?.totalPage || pagination?.totalPageCount || 1,
+                    onPageChange: (page: number) => setParams({ ...params, page번호: page }),
                 }}
                 search={{
                     placeholder: '요청자명, ID 검색...',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, pageNo: 1 }),
+                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page번호: 1 }),
                 }}
             />
         </div>

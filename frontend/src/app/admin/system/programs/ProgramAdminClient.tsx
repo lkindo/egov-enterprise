@@ -58,8 +58,9 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
    const [data, setData] = useState<Program[]>(() => {
     return initialData?.list || initialData?.content || initialData?.resultList || [];
   });
-  const [total, setTotal] = useState(() => {
-    return initialData?.total || initialData?.totalElements || initialData?.totalRecordCount || 0;
+  const [total, setTotal] = useState<number>(() => {
+    const t = initialData?.total || initialData?.totalElements || initialData?.totalRecordCount || 0;
+    return typeof t === 'number' ? t : Number(t) || 0;
   });
   const [loading, setLoading] = useState(false);
   const [currentSearchWrd, setCurrentSearchWrd] = useState(searchWrd);
@@ -67,14 +68,14 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
    const loadData = async (wrd: string = currentSearchWrd, page: number = 1) => {
     try {
       setLoading(true);
-      const res: any = await programAdminService.getProgramList({ page번호: page, size: 10, searchWrd: wrd });
+      const res = await programAdminService.getProgramList({ page번호: page, size: 10, searchWrd: wrd });
       
       const list = res.list || res.content || res.resultList || [];
-      const totalCount = res.total || res.totalElements || res.totalRecordCount || 0;
+      const totalCount = (res.total ?? res.totalElements ?? res.totalRecordCount ?? 0) as number;
       
       setData(list);
       setTotal(totalCount);
-    } catch (error) {
+    } catch (error: unknown) {
       toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);

@@ -7,15 +7,13 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
+import { PageResponse } from '@/types/foundation/system';
 import { deptAdminService, DeptDto } from '@/services/foundation/user/DeptAdminService';
 import {
   Plus,
-  Search,
   RefreshCcw,
   Building2,
-  CheckCircle2,
   Trash2,
-  Edit2,
   Network,
   Zap,
   LayoutGrid,
@@ -24,8 +22,8 @@ import {
   Settings,
   Pencil,
   MapPin,
-  ChevronRight,
-  Database
+  Database,
+  Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -40,11 +38,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function DeptAdminClient({ 
   initialDepts 
 }: { 
-  initialDepts: any 
+  initialDepts: PageResponse<DeptDto> 
 }) {
   const [loading, setLoading] = useState(false);
   const [depts, setDepts] = useState(initialDepts.list || []);
-  const [totalCount, setTotalCount] = useState(initialDepts.pagination.totalItems || 0);
+  const [totalCount, setTotalCount] = useState(initialDepts.total || 0);
   const [searchKeyword, setSearchKeyword] = useState('');
   
   const [isFormOpen, setIsAddOpen] = useState(false);
@@ -59,7 +57,7 @@ export default function DeptAdminClient({
     try {
       const res = await deptAdminService.getDeptList({ keyword: searchKeyword });
       setDepts(res.list);
-      setTotalCount(res.pagination.totalItems);
+      setTotalCount(res.total);
     } catch (error) {
       toast.error('조직 체계 스트림 로드에 실패했습니다.');
     } finally {

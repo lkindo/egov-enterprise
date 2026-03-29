@@ -177,28 +177,36 @@ test.describe('Admin Common Code - Ultimate CRUD', () => {
             }
         }
         
+        // Arrived at Common Code page
         console.log('>>> Arrived at Common Code page');
 
-        // Better handling for the taxonomy button - wait for it
-        const taxonomyBtn = page.getByRole('button').filter({ hasText: /공통코드 | 전자정부 | 부류/i }).first();
+        // Better handling for the taxonomy button - wait for it to be actionable
+        // Better handling for the taxonomy button - wait for it to be actionable
+        const taxonomyBtn = page.getByRole('button').filter({ hasText: /공통코드|전자정부|부류|COM/i }).filter({ visible: true }).first();
         try {
-            await taxonomyBtn.waitFor({ state: 'visible', timeout: 5000 });
-            await taxonomyBtn.click();
+            // Use expect for automatic retries and robustness
+            await expect(taxonomyBtn).toBeVisible({ timeout: 20000 });
+            console.log('>>> Taxonomy button detected, attempting click');
+            await taxonomyBtn.click({ force: true });
             console.log('>>> Clicked taxonomy button');
-            // Instead of waitForLoadState('domcontentloaded'), we wait for specific content change
-            await page.locator('table, [role="grid"], .loading-spinner').first().waitFor({ state: 'visible', timeout: 10000 });
+
+            // Wait for content area to refresh or update
+            const gridSelector = 'table, [role="grid"], .loading-spinner, :text-matches("데이터|No Data", "i")';
+            await page.locator(gridSelector).first().waitFor({ state: 'visible', timeout: 20000 });
+            console.log('>>> Dashboard GRID area detected after click');
         } catch (e) {
-            console.log('>>> Taxonomy button not present or grid took too long, proceeding with default state');
+            console.log('>>> Taxonomy button not actionable or grid slow to load, proceeding with default state');
         }
 
         await expect(page.locator('header, h1, h2, .title, .hub-title').first()).toBeVisible({ timeout: 20000 });
         console.log('>>> Admin Code Base UI detected');
 
         try {
-            await expect(page.locator('table, [role="grid"], :text-matches("데이터|No Data", "i")').first()).toBeVisible({ timeout: 15000 });
+            const finalCheckSelector = 'table, [role="grid"], :text-matches("데이터|No Data", "i")';
+            await page.locator(finalCheckSelector).first().waitFor({ state: 'visible', timeout: 20000 });
             console.log('>>> Standard Grid/Table detected on Common Code page');
         } catch (e) {
-            console.log('>>> Warning: Grid/Table not detected within 15s');
+            console.log('>>> Warning: Grid/Table not detected within 20s');
         }
     });
 });

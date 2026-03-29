@@ -1,6 +1,6 @@
 import client from '@/lib/api/client';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
-import { AuthorManage, RoleManage, GroupManage } from '@/types/foundation/security';
+import { AuthorManage, RoleManage, GroupManage, MenuByAuthority } from '@/types/foundation/security';
 
 // Authority Management
 export const getAuthorList = async (params: SearchParams): Promise<PageResponse<AuthorManage>> => {
@@ -68,6 +68,6 @@ export const deleteGroup = async (groupId: string): Promise<void> => {
 /**
  * Get menu list for a specific authority
  */
-export const getMenuCreatList = async (authorCode: string): Promise<PageResponse<any>> => {
- return client.get<PageResponse<any>>(`/admin/system/authorities/${authorCode}/menus`);
+export const getMenuCreatList = async (authorCode: string): Promise<PageResponse<MenuByAuthority>> => {
+  return client.get<PageResponse<MenuByAuthority>>(`/admin/system/authorities/${authorCode}/menus`);
 };

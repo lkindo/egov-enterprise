@@ -16,12 +16,14 @@ import {
   Code2,
   Layers,
   SearchCode,
-  Timer
+  Timer,
+  LucideIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { CmmnClCode, CmmnCode, CmmnDetailCode } from '@/types/foundation/system';
 import CommonCodeClient from './CommonCodeClient';
 import AdministCodeClient from '../codes/administ/AdministCodeClient';
 import InstitutionCodeClient from '../codes/institution/InstitutionCodeClient';
@@ -35,9 +37,9 @@ export default function CommonCodeHubClient({
   details, 
   selectedGroupId 
 }: { 
-  clCodes: any[]; 
-  groups: any[]; 
-  details: any[]; 
+  clCodes: CmmnClCode[]; 
+  groups: CmmnCode[]; 
+  details: CmmnDetailCode[]; 
   selectedGroupId: string | null 
 }) {
   const [activeTab, setActiveTab] = useState<CodeHubTab>('STANDARD');
@@ -127,7 +129,7 @@ export default function CommonCodeHubClient({
 
 // --- Sub-components ---
 
-function HubTabButton({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
+function HubTabButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon, label: string, active: boolean, onClick: () => void }) {
   return (
     <button 
       type="button"

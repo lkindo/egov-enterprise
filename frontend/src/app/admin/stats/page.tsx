@@ -34,7 +34,7 @@ export default async function AdminStatsPage() {
  count: item.statsCo || 0
  })) : [];
 
- initialMenuData = (Array.isArray(menuRes) ? menuRes : []) as MenuStats[];
+ initialMenuData = (Array.isArray(menuRes) ? menuRes : []) as any as MenuStats[];
  } catch (error) {
  console.error('Server-side fetch stats failed:', error);
  }

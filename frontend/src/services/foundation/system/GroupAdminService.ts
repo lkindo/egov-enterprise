@@ -1,3 +1,4 @@
+import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { GroupManage } from '@/types/foundation/security';
@@ -13,32 +14,32 @@ class GroupAdminService extends AdminService {
  }
 
  /** 그룹 목록 조회 */
- async getGroupList(params?: SearchParams, config?: any): Promise<PageResponse<GroupInfo>> {
+ async getGroupList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<GroupInfo>> {
  return this.get<PageResponse<GroupInfo>>('', { ...config, params });
  }
 
  /** 그룹 상세 조회 */
- async getGroup(groupId: string, config?: any): Promise<GroupInfo> {
+ async getGroup(groupId: string, config?: AxiosRequestConfig): Promise<GroupInfo> {
  return this.get<GroupInfo>(`/${groupId}`, config);
  }
 
  /** 그룹 등록 */
- async createGroup(data: Partial<GroupInfo>, config?: any): Promise<void> {
+ async createGroup(data: Partial<GroupInfo>, config?: AxiosRequestConfig): Promise<void> {
  return this.post<void>('', data, config);
  }
 
  /** 그룹 수정 */
- async updateGroup(groupId: string, data: Partial<GroupInfo>, config?: any): Promise<void> {
+ async updateGroup(groupId: string, data: Partial<GroupInfo>, config?: AxiosRequestConfig): Promise<void> {
  return this.put<void>(`/${groupId}`, data, config);
  }
 
  /** 그룹 삭제 */
- async deleteGroup(groupId: string, config?: any): Promise<void> {
+ async deleteGroup(groupId: string, config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>(`/${groupId}`, config);
  }
 
  /** 그룹 다중 삭제 */
- async deleteGroups(groupIds: string[], config?: any): Promise<void> {
+ async deleteGroups(groupIds: string[], config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>('', { ...config, data: groupIds });
  }
 }

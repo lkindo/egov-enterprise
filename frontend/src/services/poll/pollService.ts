@@ -64,10 +64,10 @@ class PollService extends ApiService {
  return this.post('/uss/olp/opp/registOnlinePollPartcptn.do'.replace('/uss/olp/opm', ''), participation, config); // Base path override hack if needed, or just use absolute
  }
 
- /** 설문 통계 결과 조회 */
- async getPollResult(pollId: string, config?: AxiosRequestConfig): Promise<any> {
- return this.get('/uss/olp/opp/egovOnlinePollManageStatistics.do'.replace('/uss/olp/opm', ''), { ...config, params: { pollId } });
- }
+  /** 설문 통계 결과 조회 */
+  async getPollResult(pollId: string, config?: AxiosRequestConfig): Promise<Record<string, unknown>> {
+    return this.get<Record<string, unknown>>('/uss/olp/opp/egovOnlinePollManageStatistics.do'.replace('/uss/olp/opm', ''), { ...config, params: { pollId } });
+  }
 }
 
 export const pollService = new PollService();

@@ -1,3 +1,4 @@
+import { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
 import { MenuInfo } from '@/types/foundation/menu';
 
@@ -9,9 +10,9 @@ class MenuService extends ApiService {
   /**
    * GNB(Head) 메뉴 목록 조회
    */
-  async getHeadMenus(config?: any): Promise<MenuInfo[]> {
+  async getHeadMenus(config?: AxiosRequestConfig): Promise<MenuInfo[]> {
     try {
-      const res = await this.get<any>('/head', config);
+      const res = await this.get<{ list: MenuInfo[] }>('/head', config);
       return res?.list || [];
     } catch (error) {
       console.warn('Failed to fetch head menus:', error);
@@ -22,9 +23,9 @@ class MenuService extends ApiService {
   /**
    * LNB(Left) 메뉴 목록 조회 - 상위 메뉴 번호 기준
    */
-  async getLeftMenus(menuNo: number, config?: any): Promise<MenuInfo[]> {
+  async getLeftMenus(menuNo: number, config?: AxiosRequestConfig): Promise<MenuInfo[]> {
     try {
-      const res = await this.get<any>(`/left?menuNo=${menuNo}`, config);
+      const res = await this.get<{ list: MenuInfo[] }>(`/left?menuNo=${menuNo}`, config);
       return res?.list || [];
     } catch (error) {
       console.warn('Failed to fetch left menus:', error);

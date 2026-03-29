@@ -1,38 +1,37 @@
 'use client';
 
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from "@/components/ui/button";
 import {
- Dialog,
- DialogContent,
- DialogDescription,
- DialogFooter,
- DialogHeader,
- DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
- Form,
- FormControl,
- FormField,
- FormItem,
- FormLabel,
- FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { 
- FileCode, 
- Hash, 
- Type, 
- Link as LinkIcon, 
- FolderOpen, 
- Settings2, 
- Plus, 
- Pencil, 
- Save, 
- Trash2 
+  FileCode, 
+  Hash, 
+  Type, 
+  Link as LinkIcon, 
+  FolderOpen, 
+  Settings2, 
+  Plus, 
+  Pencil, 
+  Save, 
+  Trash2 
 } from 'lucide-react';
 import { ProgrmManage } from '@/types/foundation/system';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
@@ -66,20 +65,20 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  },
  });
 
- const onSubmit = async (values: z.infer<typeof formSchema>) => {
- try {
- if (isEdit) {
- await programAdminService.updateProgram(data.progrmFileNm!, values as ProgrmManage);
- } else {
- await programAdminService.createProgram(values as ProgrmManage);
- }
- onSuccess();
- onOpenChange(false);
- } catch (error) {
- console.error(error);
- alert('저장 중 오류가 발생했습니다.');
- }
- };
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      if (isEdit) {
+        await programAdminService.updateProgram(data.progrmFileNm!, values as ProgrmManage);
+      } else {
+        await programAdminService.createProgram(values as ProgrmManage);
+      }
+      onSuccess();
+      onOpenChange(false);
+    } catch (error: unknown) {
+      console.error(error);
+      alert('저장 중 오류가 발생했습니다.');
+    }
+  };
 
  const handleDelete = async () => {
  if (!data?.progrmFileNm) return;

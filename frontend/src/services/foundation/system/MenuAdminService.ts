@@ -60,7 +60,7 @@ class MenuAdminService extends AdminService {
  }
 
   /** 메뉴 순서 일괄 수정 - API 명세에 따른 경로 수정 (/batch-order) */
-  async updateMenuOrder(data: any[], config?: AxiosRequestConfig): Promise<void> {
+  async updateMenuOrder(data: Partial<Menu>[], config?: AxiosRequestConfig): Promise<void> {
     // 80여개의 메뉴 업데이트 부하를 고려하여 타임아웃 120초로 대폭 연장
     return this.put('/batch-order', data, { ...config, timeout: 120000 });
   }

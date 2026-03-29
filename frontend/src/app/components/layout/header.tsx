@@ -30,22 +30,23 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { menuService } from '@/services/business/user/MenuService';
 import { usePathname } from 'next/navigation';
+import { MenuInfo } from '@/types/foundation/menu';
 
-const DOMAIN_ICON_MAP: Record<number, any> = {
+const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
   10: LayoutGrid, // 워크스페이스
   11: Users, // 커뮤니티
   12: HeartHandshake, // 고객지원센터
   90: ShieldCheck, // 통합 관리 센터
 };
 
-export function Header({ initialMenus = [] }: { initialMenus?: any[] }) {
+export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
   const pathname = usePathname();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   const { notifications, unreadCount } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [menus, setMenus] = useState<any[]>(initialMenus);
+  const [menus, setMenus] = useState<MenuInfo[]>(initialMenus);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -70,9 +71,9 @@ export function Header({ initialMenus = [] }: { initialMenus?: any[] }) {
     const matchTopMenu = () => {
       for (const m of menus) {
         // Check children (LNB)
-        const hasMatch = (m.children || []).some((c: any) => {
+        const hasMatch = (m.children || []).some((c: MenuInfo) => {
           if (c.modernRoute && currentPath.startsWith(c.modernRoute)) return true;
-          if (c.children?.some((cc: any) => cc.modernRoute && currentPath.startsWith(cc.modernRoute))) return true;
+          if (c.children?.some((cc: MenuInfo) => cc.modernRoute && currentPath.startsWith(cc.modernRoute))) return true;
           return false;
         });
         
@@ -225,11 +226,11 @@ export function Header({ initialMenus = [] }: { initialMenus?: any[] }) {
         isOpen={isNotifOpen}
         onClose={() => setIsNotifOpen(false)}
         notifications={(notifications || []).map((n, i) => ({
-          id: n.ntfcNo || `notif-${i}`,
+          id: n.ntfcId || `notif-${i}`,
           title: n.ntfcSj,
           message: n.ntfcCn,
-          time: n.createdDate,
-          isRead: n.isRead === 'Y',
+          time: n.ntfcPnttm,
+          isRead: n.readYn === 'Y',
           type: n.ntfcSj?.includes('보안') ? 'SECURITY' : n.ntfcSj?.includes('시스템') ? 'SYSTEM' : 'ACTIVITY'
         }))}
       />
