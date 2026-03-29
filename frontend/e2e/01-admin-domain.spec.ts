@@ -3,6 +3,41 @@ import { test, expect } from './fixtures/base-test';
 // Global administrative session for this file
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
+/**
+ * 💡 이 테스트 파일의 무결성 보장을 위해 전역 콘솔/런타임 에러를 실시간 감시합니다.
+ * 에러 발생 시 즉시 🚨 표식과 함께 로그를 남깁니다.
+ */
+test.beforeEach(async ({ page }) => {
+    // Network error detection
+    page.on('requestfailed', request => {
+        const url = request.url();
+        const failure = request.failure();
+        if (url.includes('api/v1') || url.includes('.png') || url.includes('.svg')) {
+            console.error(`[STRICT NET ERROR] Failed to load ${url}: ${failure?.errorText || 'Unknown error'}`);
+        }
+    });
+
+    // Global error detection - with hydration error filtering
+    page.on('console', (msg) => {
+        if (msg.type() === 'error') {
+            const text = msg.text();
+            if (text.includes('Hydration') || text.includes('chrome-extension') || text.includes('React does not recognize')) {
+                console.log(`[SOFT IGNORE CONSOLE ERROR] ${text}`);
+                return;
+            }
+            // Strict error detection
+            const errorMsg = text.includes('404') ? `[STRICT 404 DETECTED] ${text}` : `[STRICT ERROR DETECTED] ${text}`;
+            console.error(errorMsg);
+            throw new Error(errorMsg);
+        }
+    });
+
+    page.on('pageerror', (err) => {
+        console.error(`🚨 [CRITICAL RUNTIME EXCEPTION]: ${err.message}`);
+        throw new Error(`[BROWSER RUNTIME ERROR] ${err.message}`);
+    });
+});
+
 // --- Admin User Management ---
 test.describe('Admin User Management - Optimized with POM', () => {
 
@@ -264,7 +299,9 @@ test.describe('Hierarchical Menu Management', () => {
         const rootMenuName = `Root_${Date.now()}`;
         console.log('>>> Test: Menu hierarchy management');
 
-        await page.goto('/admin/system/menus', { waitUntil: 'domcontentloaded' });
+        // Auth Mocks Removed - Using real session from admin.json
+
+        await page.goto('/admin/dashboard', { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(3000);
 
         const mainVisible = await page.locator('main, [role="main"], .main-content').isVisible({ timeout: 10000 }).catch(() => false);

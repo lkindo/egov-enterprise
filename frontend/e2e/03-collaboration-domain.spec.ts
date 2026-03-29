@@ -3,6 +3,34 @@ import { test, expect } from '@playwright/test';
 // --- Collaboration Modules ---
 test.describe('Collaboration Modules', () => {
     test.beforeEach(async ({ page }) => {
+        // Network error detection
+        page.on('requestfailed', request => {
+            const url = request.url();
+            const failure = request.failure();
+            if (url.includes('api/v1') || url.includes('.png') || url.includes('.svg')) {
+                console.error(`[STRICT NET ERROR] Failed to load ${url}: ${failure?.errorText || 'Unknown error'}`);
+            }
+        });
+
+        // Global error detection - with hydration error filtering
+        page.on('console', (msg) => {
+            if (msg.type() === 'error') {
+                const text = msg.text();
+                if (text.includes('Hydration') || text.includes('chrome-extension') || text.includes('React does not recognize')) {
+                    console.log(`[SOFT IGNORE CONSOLE ERROR] ${text}`);
+                    return;
+                }
+                const errorMsg = text.includes('404') ? `[STRICT 404 DETECTED] ${text}` : `[STRICT ERROR DETECTED] ${text}`;
+                console.error(errorMsg);
+                throw new Error(errorMsg);
+            }
+        });
+
+        page.on('pageerror', (err) => {
+            console.error(`🚨 [CRITICAL RUNTIME EXCEPTION]: ${err.message}`);
+            throw new Error(`[BROWSER RUNTIME ERROR] ${err.message}`);
+        });
+
         await page.addInitScript(() => { 
             window.localStorage.setItem('egov_smart_tour_v1', 'true'); 
         });
@@ -169,7 +197,7 @@ test.describe('Approvals Module', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('should display approval inbox and switch tabs', async ({ page }) => {
-        await page.goto('/approval/inbox');
+        await page.goto('/approvals');
         
         const mainVisible = await page.locator('main, [role="main"], .main-content').isVisible({ timeout: 15000 }).catch(() => false);
         if (mainVisible) {
@@ -180,7 +208,7 @@ test.describe('Approvals Module', () => {
     });
 
     test('should show approval list content', async ({ page }) => {
-        await page.goto('/approval/inbox');
+        await page.goto('/approvals');
         console.log('>>> No traditional list found, checking for empty state or alternative layout');
     });
 });

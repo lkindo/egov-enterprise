@@ -3,37 +3,20 @@ import { BBSPage } from '../pages/BBSPage';
 import { UserAdminPage } from '../pages/UserAdminPage';
 import { BoardMasterPage } from '../pages/BoardMasterPage';
 
-export const test = base.extend<{
+type MyFixtures = {
   bbsPage: BBSPage;
   userAdminPage: UserAdminPage;
   boardMasterPage: BoardMasterPage;
-}>({
+};
+
+export const test = base.extend<MyFixtures>({
   bbsPage: async ({ page }, use) => {
-    // Universal onboarding bypass
-    await page.addInitScript(() => {
-      window.localStorage.setItem('egov_smart_tour_v1', 'true');
-    });
-    
-    const bbsPage = new BBSPage(page);
-    await use(bbsPage);
+    await use(new BBSPage(page));
   },
   userAdminPage: async ({ page }, use) => {
-    // Universal onboarding bypass
-    await page.addInitScript(() => {
-       window.localStorage.setItem('egov_smart_tour_v1', 'true');
-    });
-    
-    const userAdminPage = new UserAdminPage(page);
-    await use(userAdminPage);
+    await use(new UserAdminPage(page));
   },
-  boardMasterPage: async ({ page }, use) => {
-    // Universal onboarding bypass
-    await page.addInitScript(() => {
-       window.localStorage.setItem('egov_smart_tour_v1', 'true');
-    });
-    
-    const boardMasterPage = new BoardMasterPage(page);
-    await use(boardMasterPage);
+  boardMasterPage: async ({ page }, use) => {    await use(new BoardMasterPage(page));
   },
 });
 

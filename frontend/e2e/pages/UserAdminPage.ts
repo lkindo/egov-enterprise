@@ -6,11 +6,13 @@ export class UserAdminPage {
   readonly dataTable: Locator;
   readonly firstRow: Locator;
   readonly provisionButton: Locator;
+  readonly addUserButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
     // Flexible selectors for user management
-    this.searchInput = page.getByPlaceholder(/사용자명 | 고유 ID|Search|ID|Name/i).first();
+    this.searchInput = page.getByPlaceholder(/Probing for identity|사용자명|고유 ID|Search|ID|Name/i).first();
+    this.addUserButton = page.getByRole('button', { name: /MEMBER_PROVISION|등록|추가|Add/i }).first();
     this.dataTable = page.locator('.hub-card-section, table, [role="grid"], main').first();
     this.firstRow = page.locator('.hub-table-container, table tbody tr, .hub-card-item').first();
     this.provisionButton = page.getByRole('button', { name: /신규 | 멤버 | 프로비저닝|Provision|New|Add/i }).first();

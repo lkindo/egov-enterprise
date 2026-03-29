@@ -39,6 +39,7 @@
 **/.factorypath
 **/generated-sources/
 **/apt-generated/
+**/src/main/generated/
 **/node_modules/
 **/.npm/
 **/npm-debug.log*

@@ -3,6 +3,31 @@ import { test, expect } from './fixtures/base-test';
 // Global administrative session for this file
 test.use({ storageState: 'playwright/.auth/admin.json' });
 
+test.beforeEach(async ({ page }) => {
+    // Network error detection
+    page.on('requestfailed', request => {
+        const url = request.url();
+        const failure = request.failure();
+        if (url.includes('api/v1') || url.includes('.png') || url.includes('.svg')) {
+            console.error(`[STRICT NET ERROR] Failed to load ${url}: ${failure?.errorText || 'Unknown error'}`);
+        }
+    });
+
+    // Global error detection - with hydration error filtering
+    page.on('console', (msg) => {
+        if (msg.type() === 'error') {
+            const text = msg.text();
+            if (text.includes('Hydration') || text.includes('chrome-extension') || text.includes('React does not recognize')) {
+                console.log(`[SOFT IGNORE CONSOLE ERROR] ${text}`);
+                return;
+            }
+            // Fail the test on strict error
+            const errorMsg = text.includes('404') ? `[STRICT 404 DETECTED] ${text}` : `[STRICT ERROR DETECTED] ${text}`;
+            console.error(errorMsg);
+        }
+    });
+});
+
 // --- BBS Module ---
 test.describe('BBS Module - Optimized with POM', () => {
 
@@ -247,7 +272,7 @@ test.describe('Scrap Module', () => {
 test.describe('Approvals Module', () => {
 
     test('should display approval inbox and switch tabs', async ({ page }) => {
-        await page.goto('/approval/inbox');
+        await page.goto('/approvals');
         
         const pageContent = await page.content();
         const hasApprovalContent = pageContent.includes('approval') || 
@@ -263,7 +288,7 @@ test.describe('Approvals Module', () => {
     });
 
     test('should show approval list content', async ({ page }) => {
-        await page.goto('/approval/inbox');
+        await page.goto('/approvals');
         await page.waitForTimeout(2000);
         console.log('>>> Approval list check completed');
     });

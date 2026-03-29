@@ -15,7 +15,9 @@ export class BBSPage {
   }
 
   async goto(bbsId: string = 'BBSMSTR_AAAAAAAAAAAA') {
-    await this.page.goto(`/admin/community/boards?bbsId=${bbsId}`, { waitUntil: 'domcontentloaded' });
+    const url = `/admin/community/boards?bbsId=${bbsId}`;
+    console.log(`>>> Navigating to BBS: ${url}`);
+    await this.page.goto(url, { waitUntil: 'domcontentloaded' });
   }
 
   async search(keyword: string) {
