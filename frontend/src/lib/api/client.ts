@@ -27,8 +27,22 @@ const axiosInstance = axios.create({
 
 // Request interceptor: Access Token 첨부
 axiosInstance.interceptors.request.use(
- (config) => {
- let token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+ async (config) => {
+ let token = null;
+ 
+ if (typeof window !== 'undefined') {
+ token = localStorage.getItem('accessToken');
+ } else {
+ // SSR 환경: next/headers의 cookies()를 사용하여 토큰 추출 (Next.js 15 대응)
+ try {
+ const { cookies } = await import('next/headers');
+ const cookieStore = await cookies();
+ token = cookieStore.get('accessToken')?.value || null;
+ } catch (e) {
+ // 빌드 타임이나 만료된 세션 등 cookies() 접근 불가 상황 대응
+ token = null;
+ }
+ }
  
  // 문자열 "null"이나 "undefined"가 들어오는 경우 방지
  if (token === 'null' || token === 'undefined') {
@@ -46,13 +60,15 @@ axiosInstance.interceptors.request.use(
 
  if (process.env.NODE_ENV === 'development') {
  const hasAuth = !!config.headers['Authorization'];
- const tokenPreview = token ? `${token.substring(0, 10)}...` : 'NONE';
- console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url} | AuthHeader: ${hasAuth} | TokenInJS: ${tokenPreview}`);
+ const tokenPreview = token && token !== 'NONE' ? `${token.substring(0, 10)}...` : 'NONE';
+ const env = typeof window === 'undefined' ? 'SSR' : 'CLIENT';
+ console.log(`[API Request][${env}] ${config.method?.toUpperCase()} ${config.url} | AuthHeader: ${hasAuth} | Token: ${tokenPreview}`);
  }
  return config;
  },
  (error) => Promise.reject(error)
 );
+
 
 interface QueueItem {
   resolve: (value: string | null) => void;

@@ -3,17 +3,70 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * Admin Console Auditor
+ * Admin Console Auditor - Robust URL Direct Visit Sweep
  * 
- * This automated script traverses all administrative menus, clicks through functional nodes,
- * and monitors the browser console for errors, warnings, and network failures.
+ * This automated script visits each administrative route directly, 
+ * monitoring for runtime exceptions, console errors, and network failures.
  */
 
-test.describe('Admin Console Auditor - High-Fidelity Infrastructure Sweep', () => {
+// Target admin routes discovered from the project structure
+const ADMIN_ROUTES = [
+    '/admin/community/boards',
+    '/admin/help/faq',
+    '/admin/help/qna',
+    '/admin/operation/events',
+    '/admin/operation/external-hr',
+    '/admin/operation/memo-reports',
+    '/admin/operation/rewards',
+    '/admin/operation/rough-map',
+    '/admin/sanctn/forms',
+    '/admin/sanctn/workflow',
+    '/admin/security/audit',
+    '/admin/security/authority',
+    '/admin/security/dept-authority',
+    '/admin/security/group',
+    '/admin/security/role',
+    '/admin/stats/board',
+    '/admin/stats/data-usage',
+    '/admin/stats/report',
+    '/admin/stats/screen',
+    '/admin/stats/user',
+    '/admin/survey/hub',
+    '/admin/survey/items',
+    '/admin/survey/manage',
+    '/admin/survey/polls',
+    '/admin/survey/questions',
+    '/admin/survey/respondents',
+    '/admin/survey/stats',
+    '/admin/survey/templates',
+    '/admin/system/audit',
+    '/admin/system/banner',
+    '/admin/system/codes',
+    '/admin/system/comments',
+    '/admin/system/common-code',
+    '/admin/system/files',
+    '/admin/system/ism',
+    '/admin/system/layout',
+    '/admin/system/logs',
+    '/admin/system/menus',
+    '/admin/system/monitoring',
+    '/admin/system/network',
+    '/admin/system/policies',
+    '/admin/system/programs',
+    '/admin/user/absences',
+    '/admin/user/departments',
+    '/admin/user/indvdl-info-policy',
+    '/admin/user/login-policy',
+    '/admin/user/manage',
+    '/admin/uss/ion/sms',
+    '/admin/uss/olh/online-manual',
+    '/admin/workspace/mypage'
+];
+
+test.describe('Admin Console Auditor - Parallel Sweep', () => {
     // Use the pre-authenticated admin state
     test.use({ storageState: 'playwright/.auth/admin.json' });
 
-    const errorLogs: string[] = [];
     const screenshotDir = path.resolve(__dirname, '../test-results/auditor-screenshots');
 
     test.beforeAll(async () => {
@@ -22,130 +75,79 @@ test.describe('Admin Console Auditor - High-Fidelity Infrastructure Sweep', () =
         }
     });
 
-    test('Automated Menu Traversal and Console Verification', async ({ page }) => {
-        // Increase timeout for this heavy test
-        test.setTimeout(300000); // 5 minutes 
+    for (const route of ADMIN_ROUTES) {
+        test(`Audit Route: ${route}`, async ({ page }) => {
+            // Set timeout for individual route audit
+            test.setTimeout(60000); 
 
-        // 1. Setup Listeners (Consolidated for all visits)
-        page.on('console', msg => {
-            if (msg.type() === 'error' || msg.type() === 'warning') {
-                const log = `[CONSOLE ${msg.type().toUpperCase()}] at ${page.url()}: ${msg.text()}`;
-                errorLogs.push(log);
-            }
-        });
+            const errorLogs: string[] = [];
+            const routeSlug = route.replace(/\//g, '_');
+            const baseUrl = 'http://localhost:3001';
+            const fullUrl = `${baseUrl}${route}`;
 
-        page.on('pageerror', err => {
-            const log = `[RUNTIME ERROR] at ${page.url()}: ${err.message}\n${err.stack}`;
-            errorLogs.push(log);
-        });
-
-        page.on('requestfailed', request => {
-            if (request.url().includes('localhost:3001') || request.url().includes('localhost:8080')) {
-                const log = `[NETWORK FAILED] ${request.method()} ${request.url()} - ${request.failure()?.errorText}`;
-                errorLogs.push(log);
-            }
-        });
-
-        const visited = new Set<string>();
-        const queue: string[] = ['/admin'];
-
-        console.log('>>> Starting Deep Auditor Crawler (Recursive Sweep)');
-
-        // Bypass onboarding once at the start
-        await page.goto('http://127.0.0.1:3001/admin', { waitUntil: 'load' });
-        await page.evaluate(() => window.localStorage.setItem('egov_smart_tour_v1', 'true'));
-        await page.waitForTimeout(1000);
-
-        // 2. Main Crawl Loop
-        while (queue.length > 0) {
-            const url = queue.shift()!;
-            if (visited.has(url)) continue;
-            visited.add(url);
-
-            const absoluteUrl = url.startsWith('http') ? url : `http://127.0.0.1:3001${url}`;
-            const routeName = new URL(absoluteUrl).pathname.replace(/\//g, '_') || 'dashboard';
-
-            console.log(`\n--- Auditing Route [${visited.size}]: ${absoluteUrl} ---`);
-
-            try {
-                await page.goto(absoluteUrl, { waitUntil: 'load', timeout: 30000 });
-                
-                // For Dashboard or Navigation-heavy pages, expand everything to find more links
-                await page.waitForTimeout(2000);
-
-                // Expand Sidebar Buttons (Accordions/Tabs)
-                const sidebarButtons = page.locator('nav button, .sidebar button, aside button, [role="tab"]');
-                const btnCount = await sidebarButtons.count();
-                for (let i = 0; i < Math.min(btnCount, 15); i++) { // Limit to avoid endless clicking
-                    try {
-                        const btn = sidebarButtons.nth(i);
-                        if (await btn.isVisible()) {
-                            await btn.click({ force: true, timeout: 1000 }).catch(() => null);
-                            await page.waitForTimeout(300);
-                        }
-                    } catch (e) {}
+            // 1. Setup Listeners for this specific test
+            page.on('console', msg => {
+                if (msg.type() === 'error') {
+                    errorLogs.push(`[CONSOLE ERROR] ${msg.text()}`);
                 }
+            });
 
-                // Extract New Links
-                const discoveredLinks = await page.evaluate(() => {
-                    const anchors = Array.from(document.querySelectorAll('nav a, .sidebar a, [role="navigation"] a, main a, article a, [role="tablist"] a'));
-                    return anchors
-                        .map(a => (a as HTMLAnchorElement).href)
-                        .filter(href => href.includes('/admin/'))
-                        .filter(href => !href.includes('/admin/audit')) // Skip logs themselves
-                        .filter(href => !href.includes('#')) // Skip anchors
-                        .filter((href, index, self) => self.indexOf(href) === index);
-                });
+            page.on('pageerror', err => {
+                errorLogs.push(`[RUNTIME ERROR] ${err.message}`);
+            });
 
-                // Add to queue if not visited
-                for (const link of discoveredLinks) {
-                    const normalizedLink = new URL(link).origin + new URL(link).pathname + new URL(link).search;
-                    if (!visited.has(normalizedLink) && !queue.includes(normalizedLink)) {
-                        queue.push(normalizedLink);
+            page.on('requestfailed', request => {
+                const url = request.url();
+                if (url.includes('localhost') || url.includes('127.0.0.1')) {
+                    errorLogs.push(`[NETWORK FAILED] ${request.method()} ${url} - ${request.failure()?.errorText}`);
+                }
+            });
+
+            page.on('response', async response => {
+                const url = response.url();
+                if ((url.includes('localhost') || url.includes('127.0.0.1')) && response.status() >= 400) {
+                    try {
+                        const body = await response.text();
+                        const errorMsg = `[API Failure] [${response.status()}] ${response.url()}: ${body.substring(0, 200)}${body.length > 200 ? '...' : ''}`;
+                        errorLogs.push(errorMsg);
+                    } catch (e) {
+                        errorLogs.push(`[API Failure] [${response.status()}] ${response.url()} (Body unreadable)`);
                     }
                 }
+            });
 
-                console.log(`    Discovered ${discoveredLinks.length} total links. Current Queue size: ${queue.length}`);
+            // 2. Perform Onboarding Bypass (if needed per page, but once is usually enough for session)
+            // Note: Since we use storageState, we should be fine, but some apps reset local storage.
+            // We'll do it once at the start of each test for absolute safety in parallel environment.
+            await page.goto(baseUrl + '/admin', { waitUntil: 'domcontentloaded' });
+            await page.evaluate(() => window.localStorage.setItem('egov_smart_tour_v1', 'true'));
 
-                // Check for UI errors
-                const uiErrorDetected = await page.evaluate(() => {
-                    const body = document.body.innerText.toLowerCase();
-                    return body.includes('error') || body.includes('실패') || body.includes('exception') || body.includes('오류');
-                });
+            // 3. Visit Target Route
+            console.log(`Auditing: ${route}`);
+            const response = await page.goto(fullUrl, { waitUntil: 'networkidle', timeout: 45000 });
+            
+            // Allow small buffer for final rendering
+            await page.waitForTimeout(2000);
 
-                // Captures screenshot if console/network error or UI error
-                if (errorLogs.some(l => l.includes(page.url())) || uiErrorDetected) {
-                    const screenshotPath = path.join(screenshotDir, `${routeName}_${Date.now()}.png`);
-                    await page.screenshot({ path: screenshotPath, fullPage: true }).catch(() => null);
-                    console.log(`    [!] Issues detected at ${page.url()}. Screenshot saved.`);
-                }
-
-            } catch (error: any) {
-                console.error(`    >>> FAILED to audit ${absoluteUrl}: ${error.message}`);
-                errorLogs.push(`[NAVIGATION FAILED] ${absoluteUrl}: ${error.message}`);
+            // 4. Check status and logs
+            const status = response?.status() || 0;
+            const is500 = status >= 500;
+            
+            if (is500 || errorLogs.length > 0) {
+                const screenshotPath = path.join(screenshotDir, `fail${routeSlug}_${Date.now()}.png`);
+                await page.screenshot({ path: screenshotPath, fullPage: true });
+                
+                const combinedMsg = [
+                    `Route ${route} failed with status ${status}`,
+                    ...errorLogs
+                ].join('\n    ');
+                
+                throw new Error(combinedMsg);
             }
 
-            // Safety limit to avoid infinite crawl (e.g. 50 pages)
-            if (visited.size > 50) {
-                console.warn('>>> Safety limit (50 pages) reached. Ending crawl.');
-                break;
-            }
-        }
-
-        // 5. Final Report
-        console.log('\n================================================');
-        console.log('   ADMIN CONSOLE AUDITOR FINAL REPORT');
-        console.log('================================================');
-        console.log(`Total Unique Routes Audited: ${visited.size}`);
-        console.log(`Total Issues Detected: ${errorLogs.length}`);
-        
-        if (errorLogs.length > 0) {
-            console.log('\n--- DETAILED ISSUE LIST ---');
-            // Remove duplicates for cleaner report
-            const uniqueIssues = [...new Set(errorLogs)];
-            uniqueIssues.forEach((log, i) => console.log(`${i + 1}. ${log}`));
-        } else {
-            console.log('\n>>> SUCCESS: No console errors, runtime crashes, or network failures detected across entire suite.');
-        }
-    });
+            console.log(`    [✓] ${route} passed.`);
+        });
+    }
 });
+
+
