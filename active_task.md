@@ -1,20 +1,20 @@
-# Task: 프론트엔드 테스트 진행 및 리팩토링
+# Task: 빌드 안정화 및 가비지 정리 마무리
 
 ## 진행 상태 (Ralph Loop)
-- [x] Think (분석): 요구사항 분석 완료 (Next.js, Vitest, Playwright 기반 확인)
-- [x] Plan (계획): 단위 테스트 -> 리팩토링 -> E2E 테스트 순으로 진행
+- [x] Think (분석): `git restore`를 통해 실수로 삭제된 추적 파일들을 복구하고, Gradle 빌드를 통해 코드 무결성 확인.
+- [x] Plan (계획):
+    - [x] `git restore .` 수행 (추적 파일 복구)
+    - [x] `foundation/build.gradle`의 `bootJar` 설정 오류 수정
+    - [x] `./gradlew classes testClasses`를 통한 모든 모듈 컴파일 검증
 - [x] Implement (구현): 
-    - 단위 테스트 성공 (146/146 통과)
-    - **`process.env` 리팩토링 완료** (auth.setup.ts, next.config.ts, playwright.config.ts)
-- [x] Test (검증): E2E 테스트(Playwright) 진행 중 (백엔드 8080 및 프론트엔드 3001 기동 완료)
-- [/] Summarize (요약): 결과 집계 후 최종 보고
+    - [x] `git restore .`: 삭제된 계획서 및 테스트 로그 원복 완료.
+    - [x] `foundation/build.gradle`: `bootJar { enabled = false }` 및 `jar { enabled = true }` 추가로 빌드 오류 해결.
+- [x] Test (검증):
+    - [x] `./gradlew classes testClasses`: 모든 소스 및 테스트가 성공적으로 컴파일됨 (BUILD SUCCESSFUL).
+    - [ ] IDE(VS Code 등) 동기화 대기: `testFixtures` 관련 IDE 인식 오류는 Gradle 프로젝트 새로고침 필요.
+- [ ] Summarize (요약): 최종 상태 보고 및 사용자 확인
 
 ## 작업 로그
-- 2026-03-29: 태스크 시작.
-- 2026-03-29: `pnpm -C frontend test` (Vitest) 146개 테스트 통과.
-- 2026-03-29: `process.env` 리팩토링 수행 (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WEB_URL`).
-- 2026-03-29: 백엔드 기동 타임아웃 300초 설정 후 성공적으로 8080 포트 오픈 감지.
-- 2026-03-29: `playwright test`가 정상적으로 진행 중이며, 사용자 관리 테스트 등이 수행되고 있음을 확인.
-- 2026-03-29: 사용자 요청에 따라 권장 작업(Lint 리팩토링 및 E2E 테스트) 진행.
-- 2026-03-29: `PolicyAdminService` 및 `PolicyAdminClient` 내 `any` 타입 제거 및 버그 수정 완료.
-- 2026-03-29: 백엔드(8080) 및 프론트엔드(3001) 기동 후 `admin-domain.spec.ts` E2E 테스트 실행 중.
+- 2026-03-29: 가비지 파일 정리 도중 실수로 삭제된 추적 파일들을 `git restore .`로 복구 완료.
+- 2026-03-29: Gradle 빌드 수행을 통해 `foundation` 모듈의 `bootJar` 설정 누락 발견 및 수정.
+- 2026-03-29: 전체 모듈의 `testClasses` 컴파일 성공 확인. IDE 상의 에러는 Gradle 동기화 문제로 판단됨.

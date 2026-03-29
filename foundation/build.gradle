@@ -99,3 +99,6 @@ jacocoTestReport {
         html.required = true
     }
 }
+
+bootJar { enabled = false }
+jar { enabled = true }

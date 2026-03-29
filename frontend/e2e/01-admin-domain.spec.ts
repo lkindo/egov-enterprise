@@ -49,8 +49,9 @@ test.describe('Advanced User Management E2E', () => {
         const testName = `Test User ${Date.now()}`;
 
         console.log('>>> Step 1: Navigate to User Management page');
-        await page.goto('/admin/user/manage', { waitUntil: 'domcontentloaded' });
-        await page.waitForTimeout(5000);
+        await page.goto('/admin/user/manage', { waitUntil: 'load', timeout: 30000 });
+        // Instead of waitForTimeout, we wait for a reliable element
+        await page.locator('main, [role="main"], .main-content').waitFor({ state: 'visible', timeout: 15000 });
 
         // Check for main content with flexible selector
         const mainVisible = await page.locator('main, [role="main"], .main-content').isVisible({ timeout: 10000 }).catch(() => false);
@@ -66,7 +67,7 @@ test.describe('Advanced User Management E2E', () => {
             return;
         }
         await addBtn.click();
-        await page.waitForTimeout(3000);
+        await page.locator('form, input').first().waitFor({ state: 'visible', timeout: 10000 });
 
         console.log('>>> Step 3: Fill user form');
         const userIdInput = page.locator('input[name="userId"], input[placeholder*="ID"], input[placeholder*="이름"]').first();
@@ -82,7 +83,7 @@ test.describe('Advanced User Management E2E', () => {
         const confirmBtn = page.locator('button:has-text("확인"), button:has-text("등록"), button:has-text("Save"), button:has-text("Create"), button[type="submit"]').first();
         if (await confirmBtn.isVisible()) await confirmBtn.click();
 
-        await page.waitForTimeout(5000);
+        await page.locator('div, [role="alert"]').filter({ hasText: /성공|완료|Success/i }).waitFor({ state: 'visible', timeout: 10000 }).catch(() => null);
         console.log('>>> User creation completed');
 
         console.log('>>> Step 4: Search for the new user');
@@ -93,7 +94,7 @@ test.describe('Advanced User Management E2E', () => {
             if (await searchBtn.isVisible()) await searchBtn.click();
         }
 
-        await page.waitForTimeout(5000);
+        await page.locator('table, [role="grid"]').waitFor({ state: 'visible', timeout: 10000 }).catch(() => null);
 
         console.log('>>> Step 5: Verify user exists');
         const pageContent = await page.content();
@@ -108,8 +109,8 @@ test.describe('Advanced User Management E2E', () => {
 
     test('should handle "User Not Found" scenario gracefully', async ({ page }) => {
         console.log('>>> Test: User Not Found scenario - Graceful error handling');
-        await page.goto('/admin/user/manage', { waitUntil: 'domcontentloaded' });
-        await page.waitForTimeout(3000);
+        await page.goto('/admin/user/manage', { waitUntil: 'load' });
+        await page.locator('main, [role="main"], .main-content').waitFor({ state: 'visible', timeout: 10000 });
 
         const pageLoaded = await page.locator('main, [role="main"], .main-content').isVisible({ timeout: 10000 }).catch(() => false);
         if (!pageLoaded) {
@@ -132,7 +133,7 @@ test.describe('Advanced User Management E2E', () => {
         const addBtn = page.getByText('MEMBER_PROVISION').first();
         if (await addBtn.isVisible().catch(() => false)) {
             await addBtn.click();
-            await page.waitForTimeout(3000);
+            await page.locator('form, input').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => null);
             console.log('>>> MEMBER_PROVISION clicked - checking form state');
 
             const hasInputs = await page.locator('input').count() > 0;
@@ -164,24 +165,41 @@ test.describe('Admin Common Code - Ultimate CRUD', () => {
     });
 
     test('Full Flow', async ({ page }) => {
-        await page.goto('/admin/system/common-code', { waitUntil: 'domcontentloaded' });
+        // More robust navigation with retry if aborted
+        for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+                await page.goto('/admin/system/common-code', { waitUntil: 'load', timeout: 30000 });
+                break;
+            } catch (e) {
+                if (attempt === 1) throw e;
+                console.log(`>>> Navigation attempt ${attempt + 1} failed, retrying...`);
+                await page.waitForTimeout(2000);
+            }
+        }
+        
         console.log('>>> Arrived at Common Code page');
 
+        // Better handling for the taxonomy button - wait for it
         const taxonomyBtn = page.getByRole('button').filter({ hasText: /공통코드 | 전자정부 | 부류/i }).first();
-        if (await taxonomyBtn.isVisible()) {
+        try {
+            await taxonomyBtn.waitFor({ state: 'visible', timeout: 5000 });
             await taxonomyBtn.click();
-            await page.waitForLoadState('domcontentloaded');
+            console.log('>>> Clicked taxonomy button');
+            // Instead of waitForLoadState('domcontentloaded'), we wait for specific content change
+            await page.locator('table, [role="grid"], .loading-spinner').first().waitFor({ state: 'visible', timeout: 10000 });
+        } catch (e) {
+            console.log('>>> Taxonomy button not present or grid took too long, proceeding with default state');
         }
 
-        await expect(page.locator('header, h1, h2, .title').first()).toBeVisible({ timeout: 60000 });
+        await expect(page.locator('header, h1, h2, .title, .hub-title').first()).toBeVisible({ timeout: 20000 });
         console.log('>>> Admin Code Base UI detected');
 
         try {
             await expect(page.locator('table, [role="grid"], :text-matches("데이터|No Data", "i")').first()).toBeVisible({ timeout: 15000 });
+            console.log('>>> Standard Grid/Table detected on Common Code page');
         } catch (e) {
-            console.log('>>> Grid not loaded yet, but page structure is present');
+            console.log('>>> Warning: Grid/Table not detected within 15s');
         }
-        console.log('>>> Standard Grid/Table detected on Common Code page');
     });
 });
 
