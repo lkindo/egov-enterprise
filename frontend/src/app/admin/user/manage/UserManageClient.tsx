@@ -8,6 +8,7 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
+import { PageResponse } from '@/types/foundation/system';
 import { UserManage, UserSearchParams } from '@/types/foundation/user';
 import { useToast } from '@/app/components/ui/toast';
 import { 
@@ -46,7 +47,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
-export default function UserManageClient({ initialData, initialParams }: { initialData: any; initialParams: UserSearchParams }) {
+export default function UserManageClient({ initialData, initialParams }: { initialData: PageResponse<UserManage>; initialParams: UserSearchParams }) {
   const { t } = useMessage();
   const router = useRouter();
   const { toast } = useToast();
@@ -63,7 +64,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
     userSttusCode: 'P',
   });
 
-  const users: UserManage[] = initialData?.list || [];
+  const users = initialData?.list || [];
   const [params, setParams] = useState<UserSearchParams>(initialParams);
 
   const handleOpenCreate = () => {
@@ -202,9 +203,9 @@ export default function UserManageClient({ initialData, initialParams }: { initi
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="ACTIVE_RESOURCES" value={users.filter(u => u.userSttusCode === 'A').length} icon={UserCheck} color="emerald" status="TRUSTED" />
-        <HubMetricCard title="PENDING_AUTH" value={users.filter(u => u.userSttusCode === 'P').length} icon={Clock} color="amber" />
-        <HubMetricCard title="SECURITY_ALERTS" value={users.filter(u => u.userSttusCode === 'D').length} icon={ShieldAlert} color="rose" />
+        <HubMetricCard title="ACTIVE_RESOURCES" value={users.filter((u: UserManage) => u.userSttusCode === 'A').length} icon={UserCheck} color="emerald" status="TRUSTED" />
+        <HubMetricCard title="PENDING_AUTH" value={users.filter((u: UserManage) => u.userSttusCode === 'P').length} icon={Clock} color="amber" />
+        <HubMetricCard title="SECURITY_ALERTS" value={users.filter((u: UserManage) => u.userSttusCode === 'D').length} icon={ShieldAlert} color="rose" />
         <HubMetricCard title="IDENTITY_POOL" value={users.length} icon={Users} color="primary" />
       </HubMetricGrid>
 
@@ -268,7 +269,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                 icon={SearchCode}
             >
                 <div className="overflow-hidden">
-                    <StandardDataTable 
+                    <StandardDataTable<UserManage> 
                         columns={columns} 
                         data={users} 
                         emptyMessage="조회된 사용자 데이터가 데이터베이스 스트림에 존재하지 않습니다."

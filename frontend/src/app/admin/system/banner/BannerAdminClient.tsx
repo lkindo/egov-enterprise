@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -63,14 +64,24 @@ interface BannerAdminClientProps {
 export default function BannerAdminClient({ initialBanners, initialPopups }: BannerAdminClientProps) {
   const { toast } = useToast();
   const confirm = useConfirm();
+  const queryClient = useQueryClient();
   const [activeTab, setTab] = useState<'banner' | 'popup'>('banner');
 
   const [isModalOpen, setIsOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Banner | Popup | null>(null);
   const [formFiles, setFormFiles] = useState<File[]>([]);
 
-  const banners = initialBanners;
-  const popups = initialPopups;
+  const { data: banners = initialBanners, isLoading: isBannersLoading, error: bannersError, refetch: refetchBanners } = useQuery({
+    queryKey: ['admin-banners'],
+    queryFn: async () => initialBanners,
+    enabled: activeTab === 'banner'
+  });
+
+  const { data: popups = initialPopups, isLoading: isPopupsLoading, error: popupsError, refetch: refetchPopups } = useQuery({
+    queryKey: ['admin-popups'],
+    queryFn: async () => initialPopups,
+    enabled: activeTab === 'popup'
+  });
 
   const handleCreate = () => {
     setEditingItem(null);
@@ -101,6 +112,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
       if (res.success) {
         toast(res.message, 'success');
+        activeTab === 'banner' ? refetchBanners() : refetchPopups();
       } else {
         toast(res.message, 'error');
       }
@@ -113,12 +125,12 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formDataObj = new FormData(e.currentTarget);
-    const data: any = Object.fromEntries(formDataObj.entries());
+    const data: Partial<Banner & Popup> = Object.fromEntries(formDataObj.entries());
 
     try {
       if (formFiles.length > 0) {
-        const uploadRes = await fileAdminService.uploadFiles(formFiles) as any;
-        const uploadedFileId = uploadRes?.data?.data || uploadRes?.data || uploadRes;
+        const uploadRes = await fileAdminService.uploadFiles(formFiles);
+        const uploadedFileId = (uploadRes as any)?.data?.data || (uploadRes as any)?.data || uploadRes;
         if (uploadedFileId) {
           if (activeTab === 'banner') {
             data.bannerImageFile = uploadedFileId;
@@ -151,6 +163,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       if (res.success) {
         toast(res.message, 'success');
         setIsOpen(false);
+        activeTab === 'banner' ? refetchBanners() : refetchPopups();
       } else {
         toast(res.message, 'error');
       }
@@ -210,7 +223,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
     },
     { 
         header: '게시 상태', 
-        accessor: (item: any) => <HubStatusBadge status={item.reflctAt === 'Y' || item.ntceAt === 'Y' ? '게시 중' : '대기 중'} />,
+        accessor: (item: Banner | Popup) => {
+            const isLive = 'reflctAt' in item ? item.reflctAt === 'Y' : item.ntceAt === 'Y';
+            return <HubStatusBadge status={isLive ? '게시 중' : '대기 중'} />;
+        },
         className: 'w-32'
     },
     {
@@ -398,9 +414,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                         icon={activeTab === 'banner' ? ImageIcon : Monitor}
                     >
                         <div className="overflow-hidden">
-                            <StandardDataTable
-                                columns={activeTab === 'banner' ? bannerColumns : (popupColumns as any)}
-                                data={activeTab === 'banner' ? banners : (popups as any[])}
+                            <StandardDataTable<Banner | Popup>
+                                columns={activeTab === 'banner' ? (bannerColumns as Column<Banner | Popup>[]) : (popupColumns as Column<Banner | Popup>[])}
+                                data={activeTab === 'banner' ? banners : popups}
+                                loading={activeTab === 'banner' ? isBannersLoading : isPopupsLoading}
+                                error={(activeTab === 'banner' ? bannersError : popupsError) as Error | null}
+                                onRetry={() => activeTab === 'banner' ? refetchBanners() : refetchPopups()}
+                                keyField={(activeTab === 'banner' ? 'bannerId' : 'popupId') as any}
                                 emptyMessage={`등록된 ${activeTab === 'banner' ? '배너' : '팝업'} 자산이 존재하지 않습니다.`}
                                 className="border-none bg-transparent"
                             />
@@ -509,7 +529,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                 </div>
               </FormField>
 
-              {(editingItem as any)?.bannerImageFile && (
+              {(editingItem as Banner)?.bannerId && (editingItem as Banner).bannerImageFile && (
                 <div className="p-8 rounded-[2rem] bg-slate-900 text-white space-y-3 shadow-2xl relative overflow-hidden group">
                   <span className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
                   <div className="flex items-center gap-4">

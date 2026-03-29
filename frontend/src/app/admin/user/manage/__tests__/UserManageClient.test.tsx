@@ -112,7 +112,10 @@ describe('UserManageClient Component', () => {
  { userId: 'user1', userNm: 'User One', email: 'user1@test.com', userSttusCode: 'A' },
  { userId: 'user2', userNm: 'User Two', email: 'user2@test.com', userSttusCode: 'P' },
  ],
- total: 2
+ total: 2,
+ page: 1,
+ size: 10,
+ totalPage: 1
  };
  const mockInitialParams = { searchKeyword: '', searchCondition: '0', sbscrbSttus: '', page번호: 1 };
 

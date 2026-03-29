@@ -64,14 +64,14 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
   const [deptPage, setDeptPage] = useState(1);
 
   // --- Queries ---
-  const { data: usersData, isLoading: isUsersLoading } = useQuery({
+  const { data: usersData, isLoading: isUsersLoading, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', searchKeyword, userPage],
     queryFn: () => userAdminService.getUserList({ page번호: userPage, searchKeyword }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES'
   });
   const users = usersData?.list || [];
 
-  const { data: deptsData, isLoading: isDeptsLoading } = useQuery({
+  const { data: deptsData, isLoading: isDeptsLoading, error: deptsError, refetch: refetchDepts } = useQuery({
     queryKey: ['admin-depts', searchKeyword, deptPage],
     queryFn: () => deptAdminService.getDeptList({ page번호: deptPage, searchKeyword }),
     enabled: activeTab === 'DEPTS'
@@ -220,12 +220,19 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                                 exit={{ opacity: 0, y: -10 }}
                                 transition={{ duration: 0.5 }}
                             >
-                                <StandardDataTable
-                                    columns={(activeTab === 'DEPTS' ? deptColumns : userColumns) as any}
-                                    data={(activeTab === 'DEPTS' ? departments : users) as any}
+                                <StandardDataTable<UserManage | Department>
+                                    columns={(activeTab === 'DEPTS' ? deptColumns : userColumns) as Column<UserManage | Department>[]}
+                                    data={(activeTab === 'DEPTS' ? departments : users) as (UserManage | Department)[]}
                                     loading={activeTab === 'DEPTS' ? isDeptsLoading : isUsersLoading}
-                                    onRowClick={(item: any) => setSelectedItemId(activeTab === 'DEPTS' ? item.orgnztId : item.esntlId!)}
-                                    keyField={activeTab === 'DEPTS' ? 'orgnztId' : 'esntlId'}
+                                    error={(activeTab === 'DEPTS' ? deptsError : usersError) as Error | null}
+                                    onRetry={() => activeTab === 'DEPTS' ? refetchDepts() : refetchUsers()}
+                                    onRowClick={(item) => {
+                                        const id = activeTab === 'DEPTS' 
+                                            ? (item as Department).orgnztId 
+                                            : (item as UserManage).esntlId;
+                                        if (id) setSelectedItemId(id);
+                                    }}
+                                    keyField={(activeTab === 'DEPTS' ? 'orgnztId' : 'esntlId') as any}
                                     emptyMessage="검색된 개체가 존재하지 않습니다."
                                     isPremium={false}
                                     className="border-none shadow-none bg-transparent"
@@ -290,9 +297,9 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                     {/* Entity Metadata */}
                     <div className="flex-1 space-y-12 relative z-10">
                         <div className="grid grid-cols-2 gap-8">
-                            <InfoBlock icon={<Mail size={18} />} label="Communication Endpoint" value={(selectedItem as any)?.email || 'PENDING_DNS'} />
-                            <InfoBlock icon={<Phone size={18} />} label="Hotline Contact" value={(selectedItem as any)?.moblphonNo || 'NOT_DECLARED'} />
-                            <InfoBlock icon={<Building2 size={18} />} label="Topology Cluster" value={(selectedItem as any)?.orgnztId || 'GLOBAL_ROOT'} />
+                            <InfoBlock icon={<Mail size={18} />} label="Communication Endpoint" value={(selectedItem as UserManage)?.email || (activeTab === 'DEPTS' ? 'DEPT_INBOX' : 'PENDING_DNS')} />
+                            <InfoBlock icon={<Phone size={18} />} label="Hotline Contact" value={(selectedItem as UserManage)?.moblphonNo || (selectedItem as Department)?.orgnztNm || 'NOT_DECLARED'} />
+                            <InfoBlock icon={<Building2 size={18} />} label="Topology Cluster" value={(selectedItem as UserManage)?.orgnztId || (selectedItem as Department)?.orgnztId || 'GLOBAL_ROOT'} />
                             <InfoBlock icon={<MapPin size={18} />} label="Operational Zone" value="HQ_RESEARCH_CTR" />
                         </div>
 

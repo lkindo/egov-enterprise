@@ -17,9 +17,14 @@ import {
   Box,
   Cpu,
   Globe,
-  FileText
+  FileText,
+  Search,
+  Settings,
+  ArrowRight,
+  Sparkles,
+  LayoutGrid,
+  SearchCode
 } from 'lucide-react';
-
 import { cn } from '@/lib/utils';
 import { GaugeChart, RealtimeSparkline, ActivityAreaChart, DistributionPieChart } from '@/app/components/ui/observability-charts';
 import { VisualAuditTimeline, AuditLog as UIAuditLog } from '@/app/components/ui/visual-audit-timeline';
@@ -28,6 +33,11 @@ import { Button } from '@/components/ui/button';
 import { InsightBanner } from './components/InsightBanner';
 import { useQuery } from '@tanstack/react-query';
 import { auditAdminService } from '@/services/foundation/system/AuditAdminService';
+import { userAdminService } from '@/services/foundation/system/UserAdminService';
+import { authorAdminService } from '@/services/foundation/system/AuthorAdminService';
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
+import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 
 
 // Mock data removed in favor of live query
@@ -58,7 +68,24 @@ export default function AdminDashboardPage() {
   const { data: auditData } = useQuery({
     queryKey: ['admin-dashboard-recent-audits'],
     queryFn: () => auditAdminService.getAuditLogs({ page: 0, size: 5 }),
-    refetchInterval: 60000
+    refetchInterval: 60000,
+    retry: 1,
+    retryDelay: 5000,
+  });
+
+  // Intelligence Data Fetching
+  const { data: usersData } = useQuery({
+    queryKey: ['admin-dashboard-users'],
+    queryFn: () => userAdminService.getUserList({ page번호: 1, size: 1 }),
+    retry: 1,
+    retryDelay: 5000,
+  });
+
+  const { data: authorsData } = useQuery({
+    queryKey: ['admin-dashboard-authors'],
+    queryFn: () => authorAdminService.getAuthorList({ page번호: 1, size: 1 }),
+    retry: 1,
+    retryDelay: 5000,
   });
 
   const recentLogs: UIAuditLog[] = (auditData?.list || []).map(log => ({
@@ -76,71 +103,64 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 px-4 md:px-0 pb-20 animate-in fade-in duration-700">
-      <PageHeader
-        title="시스템 대시보드"
-        breadcrumbs={[{ label: '관리자' }, { label: '실시간 가시성' }]}
+      <HubHeader 
+        title="Admin" 
+        highlight="Intelligence Center" 
+        subtitle="시스템 전반의 오퍼레이션 상태, 지능형 데이터 분석 및 보안 거버넌스 통합 관제 대시보드" 
+        icon={LayoutDashboard}
         actions={
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg border border-border">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-foreground tracking-tight">노드-01 활성</span>
-            </div>
-            <Button size="sm" className="font-bold text-[11px] h-9">
-              데이터 동기화
-            </Button>
+          <div className="flex gap-4 p-2 items-center">
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 italic font-black text-[9px] uppercase tracking-widest shadow-sm">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                System_Node: Healthy
+             </div>
+             <Button size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
+                <Sparkles size={20} className="text-primary group-hover:rotate-12 transition-transform" />
+                SYNCC_COORDINATOR
+             </Button>
           </div>
         }
       />
 
       <InsightBanner />
 
-
-      {/* Hub Entry Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Modern Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <DashboardStatCard 
-          title="사용자 레지스트리" 
-          value="1,284" 
+          title="Identity Registry" 
+          value={usersData?.totalRecordCount?.toLocaleString() || "IDLE"} 
           icon={<Users className="w-5 h-5" />} 
-          trend="+12 신규" 
+          trend="+PROBING" 
           color="blue" 
           link="/admin/user/manage"
-          description="통합 계정 및 조직 관리"
+          description="사용자 및 조직 통합 매트릭스"
         />
         <DashboardStatCard 
-          title="보안 거버넌스" 
-          value="LEVEL 4" 
+          title="Security Governance" 
+          value={`${authorsData?.totalRecordCount || 0} ROLES`} 
           icon={<ShieldCheck className="w-5 h-5" />} 
-          trend="안정적" 
+          trend="STABLE" 
           color="emerald" 
           link="/admin/security/authority"
-          description="접근 제어 및 감사 정책"
+          description="RBAC 기반 접근 정책 거버넌스"
         />
         <DashboardStatCard 
-          title="시스템 모듈" 
-          value="82" 
+          title="System Topology" 
+          value="OPERATIONAL" 
           icon={<Box className="w-5 h-5" />} 
-          trend="정상 가동" 
+          trend="HEALTHY" 
           color="amber" 
           link="/admin/system/programs"
-          description="프로그램 및 리소스 관리"
+          description="모듈 및 리소스 오케스트레이션"
         />
         <DashboardStatCard 
-          title="시스템 정책" 
-          value="2" 
-          icon={<FileText className="w-5 h-5" />} 
-          trend="업데이트 가능" 
-          color="amber" 
-          link="/admin/system/policies"
-          description="개인정보처리방침 및 저작권 관리"
-        />
-        <DashboardStatCard 
-          title="데이터 처리" 
-          value="98.2%" 
+          title="Audit Streams" 
+          value={auditData?.totalRecordCount || "LIVE"} 
           icon={<Activity className="w-5 h-5" />} 
-          trend="최적화됨" 
+          trend="REALTIME" 
           color="rose" 
-          link="/admin/stats"
-          description="실시간 트래픽 가시성"
+          link="/admin/system/audit"
+          description="실시간 보안 감사 스트림 분석"
         />
       </div>
 
@@ -306,28 +326,28 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
 
   return (
     <Link href={link}>
-      <div className="p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-primary/50 transition-all cursor-pointer group relative overflow-hidden">
-        <div className="flex items-center justify-between mb-4">
-          <div className={cn("p-2.5 rounded-xl border transition-transform group-hover:scale-110", colorMap[color])}>
+      <div className="p-8 rounded-[2.5rem] bg-white border-2 border-slate-100 shadow-xl hover:border-primary/50 transition-all cursor-pointer group relative overflow-hidden active:scale-95 duration-500">
+        <div className="flex items-center justify-between mb-8">
+          <div className={cn("p-3.5 rounded-2xl border-2 transition-transform group-hover:rotate-6 shadow-inner", colorMap[color])}>
             {icon}
           </div>
-          <div className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
-            {trend}
-            <ArrowUpRight size={12} className="opacity-40 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{trend}</span>
+            <ArrowUpRight size={14} className="text-primary opacity-40 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </div>
         </div>
         
-        <div className="space-y-1">
-          <p className="text-[10px] font-bold text-muted-foreground tracking-tight uppercase">{title}</p>
-          <h4 className="text-2xl font-bold text-foreground tracking-tight tabular-nums group-hover:text-primary transition-colors">{value}</h4>
-          <p className="text-[10px] font-medium text-muted-foreground/60 leading-tight">
+        <div className="space-y-4">
+          <p className="text-[10px] font-black text-slate-300 tracking-[0.4em] uppercase font-mono">{title}</p>
+          <h4 className="text-4xl font-black text-slate-900 tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h4>
+          <p className="text-[11px] font-black text-slate-400 leading-tight uppercase opacity-60">
             {description}
           </p>
         </div>
         
         {/* Subtle decorative background element */}
-        <div className="absolute right-[-10px] bottom-[-10px] opacity-[0.02] rotate-12 group-hover:rotate-0 transition-transform duration-700 pointer-events-none">
-          <LayoutDashboard size={100} />
+        <div className="absolute right-[-20px] bottom-[-20px] opacity-[0.03] rotate-12 group-hover:rotate-6 transition-transform duration-1000 pointer-events-none scale-150">
+          {icon}
         </div>
       </div>
     </Link>

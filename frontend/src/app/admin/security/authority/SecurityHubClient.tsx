@@ -44,6 +44,7 @@ import { cn } from '@/lib/utils';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/foundation/system/UserAuthorityAdminService';
 import { menuAdminService, Menu } from '@/services/foundation/system/MenuAdminService';
+import { MenuByAuthority } from '@/types/foundation/security';
 import { useToast } from '@/app/components/ui/toast';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -95,20 +96,20 @@ export default function SecurityHubClient() {
   const [rolePage, setRolePage] = useState(1);
   const [userPage, setUserPage] = useState(1);
 
-  const { data: authorsData, isLoading: isAuthorsLoading } = useQuery({
+  const { data: authorsData, isLoading: isAuthorsLoading, error: authorsError, refetch: refetchAuthors } = useQuery({
     queryKey: ['admin-authorities', roleSearchKeyword, rolePage],
     queryFn: () => authorAdminService.getAuthorList({ page번호: rolePage, searchKeyword: roleSearchKeyword }),
   });
   const authorities = authorsData?.list || [];
 
-  const { data: usersData, isLoading: isUsersLoading } = useQuery({
+  const { data: usersData, isLoading: isUsersLoading, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-user-authorities', selectedAuthorCode, userSearchKeyword, userPage],
     queryFn: () => userAuthorityAdminService.getUserAuthorityList({ 
       searchKeyword: userSearchKeyword,
       searchCondition: '1',
       authorCode: selectedAuthorCode,
       page: userPage
-    } as any),
+    }),
     enabled: !!selectedAuthorCode
   });
   const users = usersData?.list || [];
@@ -132,7 +133,7 @@ export default function SecurityHubClient() {
 
   useEffect(() => {
     if (menusData?.authorMenus) {
-      const mappedMenuIds = (menusData.authorMenus as any[]).map(m => m.menuNo);
+      const mappedMenuIds = (menusData.authorMenus as MenuByAuthority[]).map(m => m.menuNo);
       setTempMenuMappings(new Set(mappedMenuIds));
     }
   }, [menusData, selectedAuthorCode]);
@@ -200,9 +201,9 @@ export default function SecurityHubClient() {
     setIsGlobalLoading(true);
     try {
       const allMappings = new Map<string, Set<number>>();
-      const promises = authorities.map(async (auth: any) => {
+      const promises = (authorities as AuthorInfo[]).map(async (auth) => {
         const menus = await authorAdminService.getAuthorMenus(auth.authorCode);
-        allMappings.set(auth.authorCode, new Set((menus as any[]).map(m => m.menuNo)));
+        allMappings.set(auth.authorCode, new Set((menus as MenuByAuthority[]).map(m => m.menuNo)));
       });
       await Promise.all(promises);
       setGlobalMappings(allMappings);
@@ -315,7 +316,7 @@ export default function SecurityHubClient() {
     }
   ];
 
-  const userColumns: Column<any>[] = [
+  const userColumns: Column<AuthorGroupProjection>[] = [
     {
       header: 'IDENTITY_PROBE',
       accessor: (user) => (
@@ -400,7 +401,7 @@ export default function SecurityHubClient() {
     ));
   };
 
-  const currentAuth = authorities.find((a: AuthorInfo) => a.authorCode === selectedAuthorCode);
+  const currentAuth = (authorities as AuthorInfo[]).find((a) => a.authorCode === selectedAuthorCode);
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
@@ -507,10 +508,12 @@ export default function SecurityHubClient() {
                       </div>
                       
                       <div className="max-h-[650px] overflow-y-auto pr-2 custom-scrollbar">
-                          <StandardDataTable
-                              columns={roleColumns as any}
-                              data={authorities as any}
+                          <StandardDataTable<AuthorInfo>
+                              columns={roleColumns}
+                              data={authorities as AuthorInfo[]}
                               loading={isAuthorsLoading}
+                              error={authorsError as Error | null}
+                              onRetry={() => refetchAuthors()}
                               onRowClick={(item) => handleRoleSelect((item as AuthorInfo).authorCode)}
                               keyField="authorCode"
                               isPremium={false}
@@ -567,11 +570,13 @@ export default function SecurityHubClient() {
                                       </div>
                                   </motion.div>
                               ) : (
-                                  <StandardDataTable
-                                      columns={userColumns as any}
-                                      data={users as any}
+                                  <StandardDataTable<AuthorGroupProjection>
+                                      columns={userColumns}
+                                      data={users as AuthorGroupProjection[]}
                                       loading={isUsersLoading}
-                                      onRowClick={(item) => toggleUserMapping((item as any).uniqId)}
+                                      error={usersError as Error | null}
+                                      onRetry={() => refetchUsers()}
+                                      onRowClick={(item) => toggleUserMapping((item as AuthorGroupProjection).uniqId)}
                                       keyField="uniqId"
                                       isPremium={false}
                                       className="border-none bg-transparent"

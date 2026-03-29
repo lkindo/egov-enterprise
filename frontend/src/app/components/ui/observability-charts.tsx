@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
  ResponsiveContainer,
  PieChart,
@@ -36,48 +36,53 @@ interface GaugeChartProps {
 }
 
 export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', className }: GaugeChartProps) {
- const data = [
- { value: value },
- { value: 100 - value }
- ];
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
- return (
- <div className={cn("flex flex-col items-center justify-center relative p-6 bg-card border rounded-3xl shadow-sm overflow-hidden group", className)}>
- <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity">
- <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
- </div>
- <div className="w-full h-[180px] relative">
- <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
- <PieChart>
- <Pie
- data={data}
- cx="50%"
- cy="75%"
- startAngle={180}
- endAngle={0}
- innerRadius={60}
- outerRadius={80}
- paddingAngle={0}
- dataKey="value"
- stroke="none"
- >
- <Cell key="gauge-active" fill={color} className="drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
- <Cell key="gauge-muted" fill="var(--muted)" />
- </Pie>
- </PieChart>
- </ResponsiveContainer>
- <div className="absolute inset-x-0 bottom-[20%] flex flex-col items-center justify-center">
- <span className="text-3xl font-black tracking-tighter text-foreground">{value}{unit}</span>
- <span className="text-[10px] font-bold text-muted-foreground tracking-tight">{title}</span>
- </div>
- </div>
- {value > 90 && (
- <div className="mt-2 px-3 py-1 bg-destructive/10 text-destructive text-[10px] font-black rounded-full animate-pulse">
- CRITICAL THRESHOLD
- </div>
- )}
- </div>
- );
+  const data = [
+    { value: value },
+    { value: 100 - value }
+  ];
+
+  if (!mounted) return <div className={cn("h-[240px] w-full bg-slate-50/50 rounded-3xl animate-pulse", className)} />;
+
+  return (
+    <div className={cn("flex flex-col items-center justify-center relative p-6 bg-card border rounded-3xl shadow-sm overflow-hidden group", className)}>
+      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity">
+        <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
+      </div>
+      <div className="w-full h-[180px] relative">
+        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="75%"
+              startAngle={180}
+              endAngle={0}
+              innerRadius={60}
+              outerRadius={80}
+              paddingAngle={0}
+              dataKey="value"
+              stroke="none"
+            >
+              <Cell key="gauge-active" fill={color} className="drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+              <Cell key="gauge-muted" fill="var(--muted)" />
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="absolute inset-x-0 bottom-[20%] flex flex-col items-center justify-center">
+          <span className="text-3xl font-black tracking-tighter text-foreground">{Math.round(value)}{unit}</span>
+          <span className="text-[10px] font-bold text-muted-foreground tracking-tight">{title}</span>
+        </div>
+      </div>
+      {value > 90 && (
+        <div className="mt-2 px-3 py-1 bg-destructive/10 text-destructive text-[10px] font-black rounded-full animate-pulse">
+          CRITICAL THRESHOLD
+        </div>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -91,29 +96,36 @@ interface SparklineProps {
 }
 
 export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineProps) {
- return (
- <div className="space-y-2 p-4 bg-muted/20 border border-white/5 rounded-2xl">
- <div className="flex justify-between items-center">
- <span className="text-[10px] font-black text-muted-foreground tracking-tight">{label}</span>
- <span className="text-sm font-black text-foreground">{data[data.length - 1]?.value}%</span>
- </div>
- <div className="h-12 w-full">
- <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
- <LineChart data={data}>
- <Line
- type="monotone"
- dataKey="value"
- stroke={color}
- strokeWidth={3}
- dot={false}
- isAnimationActive={false}
- />
- <YAxis hide domain={[0, 100]} />
- </LineChart>
- </ResponsiveContainer>
- </div>
- </div>
- );
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return <div className="h-20 w-full bg-slate-50 border border-slate-100 rounded-2xl animate-pulse" />;
+
+  return (
+    <div className="space-y-2 p-4 bg-muted/20 border border-white/5 rounded-2xl">
+      <div className="flex justify-between items-center">
+        <span className="text-[10px] font-black text-muted-foreground tracking-tight">{label}</span>
+        <span className="text-sm font-black text-foreground">
+          {data[data.length - 1]?.value?.toFixed(1) || '0.0'}%
+        </span>
+      </div>
+      <div className="h-12 w-full">
+        <ResponsiveContainer width="100%" height={48} minWidth={50} minHeight={30}>
+          <LineChart data={data}>
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={3}
+              dot={false}
+              isAnimationActive={false}
+            />
+            <YAxis hide domain={[0, 100]} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
 }
 
 /**

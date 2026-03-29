@@ -4,7 +4,7 @@ import React, { useState, useMemo, memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { List, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { List, Search, RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export interface Column<T> {
@@ -31,6 +31,8 @@ export interface StandardDataTableProps<T> {
   keyField?: keyof T;
   className?: string;
   isPremium?: boolean;
+  error?: Error | null;
+  onRetry?: () => void;
   pagination?: {
     currentPage: number;
     totalPages: number;
@@ -144,6 +146,8 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   keyField = 'id' as keyof T,
   className,
   isPremium = true,
+  error = null,
+  onRetry,
   pagination,
   search
 }: StandardDataTableProps<T>) {
@@ -270,6 +274,12 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                     ))}
                   </tr>
                 ))
+              ) : error ? (
+                <tr>
+                   <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="px-6 py-20 text-center">
+                    <ErrorStateDisplay error={error} onRetry={onRetry} />
+                  </td>
+                </tr>
               ) : data.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="px-6 py-20 text-center">
@@ -300,6 +310,10 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           Array.from({ length: 3 }).map((_, i) => (
             <div key={`loading-card-${i}`} className="h-56 bg-muted/20 animate-pulse rounded-[var(--radius-hub-item)]" />
           ))
+        ) : error ? (
+            <div className="p-16 bg-card border-2 border-border/60 rounded-[var(--radius-hub-section)] text-center shadow-inner">
+                 <ErrorStateDisplay error={error} onRetry={onRetry} />
+            </div>
         ) : data.length === 0 ? (
           <div className="p-16 bg-card border-2 border-dashed border-border/60 rounded-[var(--radius-hub-section)] text-center shadow-inner">
             <EmptyStateDisplay emptyMessage={emptyMessage} />
@@ -351,6 +365,38 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           </Button>
         </div>
       )}
+    </div>
+  );
+}
+
+function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in-95 duration-700 py-12">
+      <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mb-2 relative border-4 border-rose-100 shadow-xl">
+         <AlertCircle size={40} className="text-rose-500" />
+      </div>
+      <div className="space-y-2">
+        <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">데이터 로드 실패</p>
+        <div className="p-4 bg-rose-50/50 rounded-xl border border-rose-100 inline-block">
+            <p className="text-[10px] font-black font-mono text-rose-800 tracking-tight opacity-70">
+                ERROR_STREAM: {error.message || 'UNKNOWN_EXEPTION'}
+            </p>
+        </div>
+        <p className="text-xs text-muted-foreground font-black tracking-tight max-w-[360px] mx-auto leading-relaxed opacity-60 mt-4">
+          데이터베이스 세션으로부터 개체 정보를 수신하지 못했습니다. <br />네트워크 연결 상태를 확인하거나 아래 버튼을 통해 재시도하십시오.
+        </p>
+      </div>
+      <div className="flex gap-4 mt-6">
+        <Button 
+            variant="outline" 
+            size="lg" 
+            className="rounded-2xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group shadow-lg" 
+            onClick={() => onRetry ? onRetry() : window.location.reload()}
+        >
+            <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
+            RETRY_SYNC
+        </Button>
+      </div>
     </div>
   );
 }
