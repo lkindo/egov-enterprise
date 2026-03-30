@@ -75,7 +75,7 @@ test.describe('Advanced User Management E2E', () => {
 
     test.beforeEach(async ({ page }) => {
         await page.addInitScript(() => {
-            window.localStorage.setItem('egov_smart_tour_v1', 'true');
+            try { window.localStorage.setItem('egov_smart_tour_v1', 'true'); } catch(e) {}
         });
     });
 
@@ -194,7 +194,7 @@ test.describe('Admin Common Code - Ultimate CRUD', () => {
 
     test.beforeEach(async ({ page }) => {
         await page.addInitScript(() => {
-            window.localStorage.setItem('egov_smart_tour_v1', 'true');
+            try { window.localStorage.setItem('egov_smart_tour_v1', 'true'); } catch(e) {}
         });
         await page.goto('/', { waitUntil: 'domcontentloaded' });
     });
@@ -251,7 +251,7 @@ test.describe('Banner Administration E2E Verification', () => {
     test.beforeEach(async ({ page }) => {
         // Universal onboarding bypass
         await page.addInitScript(() => {
-            window.localStorage.setItem('egov_smart_tour_v1', 'true');
+            try { window.localStorage.setItem('egov_smart_tour_v1', 'true'); } catch(e) {}
         });
     });
 
@@ -291,7 +291,7 @@ test.describe('Banner Administration E2E Verification', () => {
 test.describe('Hierarchical Menu Management', () => {
     test.beforeEach(async ({ page }) => {
         await page.addInitScript(() => {
-            window.localStorage.setItem('egov_smart_tour_v1', 'true');
+            try { window.localStorage.setItem('egov_smart_tour_v1', 'true'); } catch(e) {}
         });
     });
 
@@ -380,7 +380,7 @@ test.describe('Hierarchical Menu Management', () => {
 test.describe('Admin Advanced Features E2E Verification', () => {
     test.beforeEach(async ({ page }) => {
         await page.addInitScript(() => {
-            window.localStorage.setItem('egov_smart_tour_v1', 'true');
+            try { window.localStorage.setItem('egov_smart_tour_v1', 'true'); } catch(e) {}
         });
         await page.goto('/', { waitUntil: 'domcontentloaded' });
     });

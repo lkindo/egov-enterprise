@@ -32,7 +32,7 @@ test.describe('Collaboration Modules', () => {
         });
 
         await page.addInitScript(() => { 
-            window.localStorage.setItem('egov_smart_tour_v1', 'true'); 
+            try { window.localStorage.setItem('egov_smart_tour_v1', 'true'); } catch(e) {}
         });
         await page.goto('/', { waitUntil: 'domcontentloaded' });
     });
