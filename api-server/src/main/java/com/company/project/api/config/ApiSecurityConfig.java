@@ -24,7 +24,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
@@ -90,7 +89,10 @@ public class ApiSecurityConfig {
                 http
                                 .securityMatcher(AntPathRequestMatcher.antMatcher("/api/v1/**"))
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                                .csrf(AbstractHttpConfigurer::disable)
+                                .csrf(csrf -> csrf
+                                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                                                .csrfTokenRequestHandler(new org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler())
+                                                .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/auth/login")))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/health"),
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/auth/**"),
@@ -104,7 +106,13 @@ public class ApiSecurityConfig {
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(
-                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                                                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                                        log.warn(">>> Access denied to {}: {}", request.getRequestURI(), accessDeniedException.getMessage());
+                                                        response.setContentType("application/json;charset=UTF-8");
+                                                        response.setStatus(HttpStatus.FORBIDDEN.value());
+                                                        response.getWriter().write("{\"success\":false,\"status\":403,\"code\":\"C010\",\"message\":\"Access Denied (CSRF verification failed or Insufficient privileges)\"}");
+                                                }))
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),

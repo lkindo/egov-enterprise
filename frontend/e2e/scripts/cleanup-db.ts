@@ -77,4 +77,4 @@ async function cleanup() {
   }
 }
 
-cleanup();
+export default cleanup;

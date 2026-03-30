@@ -10,23 +10,8 @@ repositories {
     mavenCentral()
 }
 
-def querydslDir = "src/main/generated"
-
-sourceSets {
-    main {
-        java {
-            srcDirs += [ querydslDir ]
-        }
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.getGeneratedSourceOutputDirectory().set(file(querydslDir))
-}
-
-clean {
-    delete file(querydslDir)
-}
+// Gradle 5+부터는 annotationProcessor가 생성하는 소스는 기본적으로 build/generated/sources/annotationProcessor/java/main에 생성됩니다.
+// IDE가 이 경로를 자동으로 인식하도록 맡기는 것이 클래스 중복 오류를 방지하는 가장 좋은 방법입니다.
 
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-data-jpa'

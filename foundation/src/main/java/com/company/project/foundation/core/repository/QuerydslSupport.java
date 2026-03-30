@@ -42,7 +42,7 @@ public abstract class QuerydslSupport {
     /**
      * Spring Data Sort를 QueryDSL OrderSpecifier로 변환합니다.
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     protected OrderSpecifier<?>[] getOrderSpecifiers(Sort sort, Path<?> parent) {
         List<OrderSpecifier<?>> orders = new ArrayList<>();
         for (Sort.Order order : sort) {

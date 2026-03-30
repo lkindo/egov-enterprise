@@ -1,11 +1,14 @@
 # 태스크 상태 (Task Status) - Ralph Loop
 
-## [ ] 루프 1: 초기화 및 남은 작업 확인
+## [/] 루프 1: 초기화 및 남은 작업 확인 (진행 중)
 - [x] **Think (분석)**: 이전 작업 요약 및 01-02 도메인 통합 완료 확인.
-- [ ] **Plan (계획)**: 
-    - [ ] 백엔드 서버(api-server) 재구동 및 안정화
+- [/] **Plan (계획)**: 
+    - [x] 서버 상태 확인 및 기동 (API 8080, Web 3001) - 진행 중
     - [ ] 03-collaboration, 04-dashboard, 05-security 도메인 E2E 테스트 감사(Audit) 및 안정화
-    - [ ] 05-security의 CSRF 테스트 500 에러 해결
+    - [x] 05-security의 CSRF 테스트 500 에러 해결 (CSRF 활성화 및 AccessDeniedHandler 적용)
+    - [x] AuthApiController 로그아웃 엔드포인트 구현 확인 및 E2E 테스트 통과
+    - [ ] 03-collaboration 도메인 E2E 테스트 연계 확인 (진행 중: 14/14 통과)
+    - [ ] 04-dashboard 도메인 E2E 테스트 연계 확인
 - [ ] **Implement (구현)**: 작업 수행
 - [ ] **Test (검증)**: 전체 E2E 테스트 실행 (`npm run test:e2e:full`)
 - [ ] **Summarize (요약)**: 루프 결과 보고
