@@ -89,10 +89,7 @@ public class ApiSecurityConfig {
                 http
                                 .securityMatcher(AntPathRequestMatcher.antMatcher("/api/v1/**"))
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                                .csrf(csrf -> csrf
-                                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                                                .csrfTokenRequestHandler(new org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler())
-                                                .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/auth/login")))
+                                .csrf(AbstractHttpConfigurer::disable)
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/health"),
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/auth/**"),

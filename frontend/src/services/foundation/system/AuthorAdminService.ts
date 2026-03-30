@@ -20,7 +20,11 @@ class AuthorAdminService extends AdminService {
 
   /** 권한 그룹 목록 조회 */
   async getAuthorList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<AuthorInfo>> {
-    return this.get<PageResponse<AuthorInfo>>('', { ...config, params });
+    const finalParams = { ...params };
+    if (params?.page !== undefined) finalParams.pageIndex = params.page + 1;
+    if (params?.page번호 !== undefined) finalParams.pageIndex = params.page번호;
+    
+    return this.get<PageResponse<AuthorInfo>>('', { ...config, params: finalParams });
   }
 
   /** 권한 그룹 상세 조회 */

@@ -129,7 +129,7 @@ class UserApiControllerTest {
     void getUsers_admin_success() throws Exception {
         when(userService.getPagedUserList(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .param("page", "0")
                 .param("size", "10"))
                 .andExpect(status().isOk())
@@ -141,7 +141,7 @@ class UserApiControllerTest {
     void getUser_admin_success() throws Exception {
         when(userService.getUserById("user01")).thenReturn(createMockUser());
 
-        mockMvc.perform(get("/api/v1/admin/users/user01"))
+        mockMvc.perform(get("/api/v1/admin/system/users/user01"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.userId").value(TEST_USER_ID));
     }
@@ -149,7 +149,7 @@ class UserApiControllerTest {
     @Test
     @DisplayName("관리자: 사용자 삭제 - 성공")
     void deleteUser_admin_success() throws Exception {
-        mockMvc.perform(delete("/api/v1/admin/users/{userId}", "user01"))
+        mockMvc.perform(delete("/api/v1/admin/system/users/{userId}", "user01"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
         

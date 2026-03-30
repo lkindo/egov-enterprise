@@ -13,9 +13,21 @@ export abstract class ApiService {
  this.basePath = basePath;
  }
 
- protected async get<T = unknown>(path: string = '', config?: AxiosRequestConfig): Promise<T> {
- return client.get<T>(`${this.basePath}${path}`, config);
- }
+  protected async get<T = unknown>(path: string = '', config?: AxiosRequestConfig): Promise<T> {
+    // Spring Boot Backend (ComDefaultVO) 파라미터 매핑 지원
+    if (config?.params) {
+      const { params } = config;
+      // 0-based page -> 1-based pageIndex
+      if (params.page !== undefined && params.pageIndex === undefined) {
+        params.pageIndex = (Number(params.page) || 0) + 1;
+      }
+      // page번호 -> pageIndex
+      if (params['page번호'] !== undefined && params.pageIndex === undefined) {
+        params.pageIndex = Number(params['page번호']) || 1;
+      }
+    }
+    return client.get<T>(`${this.basePath}${path}`, config);
+  }
 
  protected async post<T = unknown>(path: string = '', data?: unknown, config?: AxiosRequestConfig): Promise<T> {
  return client.post<T>(`${this.basePath}${path}`, data, config);

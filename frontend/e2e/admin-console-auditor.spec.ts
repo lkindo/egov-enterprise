@@ -98,8 +98,10 @@ test.describe('Admin Console Auditor - Parallel Sweep', () => {
 
             page.on('requestfailed', request => {
                 const url = request.url();
-                if (url.includes('localhost') || url.includes('127.0.0.1')) {
-                    errorLogs.push(`[NETWORK FAILED] ${request.method()} ${url} - ${request.failure()?.errorText}`);
+                const errText = request.failure()?.errorText || '';
+                // Ignore ERR_ABORTED as it's common during fast intra-page navigations in Next.js
+                if ((url.includes('localhost') || url.includes('127.0.0.1')) && !errText.includes('ERR_ABORTED')) {
+                    errorLogs.push(`[NETWORK FAILED] ${request.method()} ${url} - ${errText}`);
                 }
             });
 

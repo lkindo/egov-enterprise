@@ -70,7 +70,7 @@ class ExceptionResponseTest {
         when(userService.getUserById("nonexistentUser"))
                 .thenThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        mockMvc.perform(get("/api/v1/admin/users/nonexistentUser")
+        mockMvc.perform(get("/api/v1/admin/system/users/nonexistentUser")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false))
@@ -83,7 +83,7 @@ class ExceptionResponseTest {
         when(userService.getPagedUserList(any(Pageable.class)))
                 .thenThrow(new BadCredentialsException("Authentication required"));
 
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false));
@@ -95,7 +95,7 @@ class ExceptionResponseTest {
         when(userService.getPagedUserList(any(Pageable.class)))
                 .thenThrow(new AccessDeniedException("Access denied"));
 
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success").value(false));

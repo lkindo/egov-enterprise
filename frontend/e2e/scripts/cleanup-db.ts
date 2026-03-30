@@ -8,34 +8,64 @@ async function cleanup() {
   console.log('\n>>> [DB Cleanup] Starting cleanup of E2E test data...');
   
   try {
-    // 1. Authenticate to get token
+    // 1. Authenticate to get token and CSRF
     console.log('>>> Authenticating as admin...');
     const loginRes = await axios.post(`${API_BASE}/auth/login`, { userId: ADMIN_ID, password: ADMIN_PW });
     const token = loginRes.data.data.accessToken;
-    const authHeader = { Authorization: `Bearer ${token}` };
+    
+    // Fetch endpoint to trigger CSRF token generation
+    const meRes = await axios.get(`${API_BASE}/users/me`, { 
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    // Extract XSRF-TOKEN from set-cookie header (from /users/me response instead of login, since login is CSRF bypassed)
+    const rawCookies = meRes.headers['set-cookie'] || loginRes.headers['set-cookie'] || [];
+    let xsrfToken = '';
+    const cookieList: string[] = [];
+
+    for (const cookie of rawCookies) {
+      const parts = cookie.split(';')[0];
+      cookieList.push(parts);
+      if (parts.startsWith('XSRF-TOKEN=')) {
+        xsrfToken = parts.split('=')[1];
+      }
+    }
+
+    const headers: any = { 
+        'Authorization': `Bearer ${token}`,
+        'Cookie': cookieList.join('; '),
+        'X-Requested-With': 'XMLHttpRequest'
+    };
+    
+    if (xsrfToken) {
+        headers['X-XSRF-TOKEN'] = xsrfToken;
+        console.log(`>>> CSRF Token obtained: ${xsrfToken.substring(0, 5)}...`);
+    } else {
+        console.log('>>> WARNING: XSRF-TOKEN not found in GET response cookies.');
+    }
+    
     console.log('>>> Authentication successful.');
 
     // 2. Cleanup Users (Prefix: user_)
     console.log('>>> Cleaning up test users...');
     const usersRes = await axios.get(`${API_BASE}/admin/system/users`, { 
-      headers: authHeader,
-      params: { searchCondition: '0', searchKeyword: 'user_', pageIndex: 1, pageUnit: 100 } 
+      headers,
+      params: { searchCondition: '0', searchKeyword: 'user_', page: 0, size: 100 } 
     });
     
-    // PageResponse structure might vary (list or content)
     const users = usersRes.data.data?.list || usersRes.data.data?.content || [];
     const testUsers = users.filter((u: any) => u.userId.startsWith('user_'));
     
     for (const user of testUsers) {
       process.stdout.write(`  - Deleting User: ${user.userId}... `);
-      await axios.delete(`${API_BASE}/admin/system/users/${user.userId}`, { headers: authHeader });
+      await axios.delete(`${API_BASE}/admin/system/users/${user.userId}`, { headers });
       console.log('DONE');
     }
 
     // 3. Cleanup Boards (Prefix: E2E Test Board)
     console.log('>>> Cleaning up test boards...');
     const boardsRes = await axios.get(`${API_BASE}/admin/system/board-masters`, { 
-      headers: authHeader,
+      headers,
       params: { searchWrd: 'E2E Test Board', size: 100 } 
     });
     
@@ -44,9 +74,8 @@ async function cleanup() {
     
     for (const board of testBoards) {
       process.stdout.write(`  - Deleting Board: ${board.bbsNm} (${board.bbsId})... `);
-      // Board master delete requires userId query param
       await axios.delete(`${API_BASE}/admin/system/board-masters/${board.bbsId}`, { 
-        headers: authHeader,
+        headers,
         params: { userId: ADMIN_ID }
       });
       console.log('DONE');
@@ -54,16 +83,15 @@ async function cleanup() {
 
     // 4. Cleanup Menus (Prefix: Root_ or Menu E2E)
     console.log('>>> Cleaning up test menus...');
-    const menusRes = await axios.get(`${API_BASE}/admin/system/menus/all`, { headers: authHeader });
+    const menusRes = await axios.get(`${API_BASE}/admin/system/menus/all`, { headers });
     const menus = menusRes.data.data || [];
     const testMenus = menus.filter((m: any) => m.menuNm.startsWith('Root_') || m.menuNm.startsWith('Menu E2E'));
     
-    // Reverse sort by menuNo to delete children before parents if hierarchy exists (simple approach)
     testMenus.sort((a: any, b: any) => b.menuNo - a.menuNo);
 
     for (const menu of testMenus) {
       process.stdout.write(`  - Deleting Menu: ${menu.menuNm} (${menu.menuNo})... `);
-      await axios.delete(`${API_BASE}/admin/system/menus/${menu.menuNo}`, { headers: authHeader });
+      await axios.delete(`${API_BASE}/admin/system/menus/${menu.menuNo}`, { headers });
       console.log('DONE');
     }
 
@@ -78,3 +106,4 @@ async function cleanup() {
 }
 
 export default cleanup;
+cleanup();

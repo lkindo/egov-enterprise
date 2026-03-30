@@ -90,7 +90,7 @@ public class ApiSecurityConfigTest {
     @Test
     @DisplayName("미인증 사용자 접근 - 401 반환")
     void unauthorizedAccessTest() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/users"))
+        mockMvc.perform(get("/api/v1/admin/system/users"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -98,7 +98,7 @@ public class ApiSecurityConfigTest {
     @WithMockUser(roles = "USER")
     @DisplayName("일반 사용자 권한 - 관리자 API 접근 - 403 반환")
     void forbiddenAccessTest() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/users"))
+        mockMvc.perform(get("/api/v1/admin/system/users"))
                 .andExpect(status().isForbidden());
     }
 
@@ -107,7 +107,7 @@ public class ApiSecurityConfigTest {
     @DisplayName("관리자 권한 - 관리자 API 접근 - 성공")
     void adminAccessTest() throws Exception {
         when(userService.getPagedUserList(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
-        mockMvc.perform(get("/api/v1/admin/users"))
+        mockMvc.perform(get("/api/v1/admin/system/users"))
 
                 .andExpect(status().isOk());
     }

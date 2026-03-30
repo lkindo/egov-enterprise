@@ -136,7 +136,7 @@ class RequestResponseSchemaValidationTest {
         Page<UserDto> page = new PageImpl<>(List.of(testUserDto), pageRequest, 1);
         when(userService.getPagedUserList(any())).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -154,7 +154,7 @@ class RequestResponseSchemaValidationTest {
     void userGetById_responseSchema_validation() throws Exception {
         when(userService.getUserById("testUser")).thenReturn(testUserDto);
 
-        mockMvc.perform(get("/api/v1/admin/users/testUser")
+        mockMvc.perform(get("/api/v1/admin/system/users/testUser")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -172,7 +172,7 @@ class RequestResponseSchemaValidationTest {
         Page<UserDto> page = new PageImpl<>(List.of(testUserDto), pageRequest, 1);
         when(userService.getPagedUserList(any())).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/admin/users?page=0&size=10")
+        mockMvc.perform(get("/api/v1/admin/system/users?page=0&size=10")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -263,7 +263,7 @@ class RequestResponseSchemaValidationTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/v1/admin/users/updateUser")
+        mockMvc.perform(put("/api/v1/admin/system/users/updateUser")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(validRequest))
                 .andExpect(status().isOk())
@@ -275,7 +275,7 @@ class RequestResponseSchemaValidationTest {
     void responseSchema_userDtoFieldExistence() throws Exception {
         when(userService.getUserById("testUser")).thenReturn(testUserDto);
 
-        mockMvc.perform(get("/api/v1/admin/users/testUser")
+        mockMvc.perform(get("/api/v1/admin/system/users/testUser")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -289,7 +289,7 @@ class RequestResponseSchemaValidationTest {
     void responseSchema_commonStructure_validation() throws Exception {
         when(userService.getUserById("testUser")).thenReturn(testUserDto);
 
-        mockMvc.perform(get("/api/v1/admin/users/testUser")
+        mockMvc.perform(get("/api/v1/admin/system/users/testUser")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(isA(Boolean.class)))

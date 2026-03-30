@@ -163,7 +163,7 @@ class StressTest {
     for (int i = 0; i < numberOfRequests; i++) {
       executorService.submit(() -> {
         try {
-          mockMvc.perform(get("/api/v1/admin/users")
+          mockMvc.perform(get("/api/v1/admin/system/users")
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           successCount.incrementAndGet();
@@ -189,7 +189,7 @@ class StressTest {
     for (int i = 0; i < numberOfRequests; i++) {
       executorService.submit(() -> {
         try {
-          mockMvc.perform(get("/api/v1/admin/users/stressUser")
+          mockMvc.perform(get("/api/v1/admin/system/users/stressUser")
               .contentType(MediaType.APPLICATION_JSON))
               .andExpect(status().isOk());
           successCount.incrementAndGet();
@@ -232,7 +232,7 @@ class StressTest {
                 .content(requestBody));
           } else {
             // Read
-            mockMvc.perform(get("/api/v1/admin/users"));
+            mockMvc.perform(get("/api/v1/admin/system/users"));
           }
           successCount.incrementAndGet();
         } catch (Exception e) {

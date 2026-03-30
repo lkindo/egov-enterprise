@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * ?關釉?癰귣벀??疫꿸퀡??野꺜筌????뮞??(Standalone)
+ * 장애 복구 기능 테스트 (Standalone)
  */
 public class FaultRecoveryFunctionTest {
 
@@ -51,12 +51,12 @@ public class FaultRecoveryFunctionTest {
                         UserDto.builder().userId("user2").userNm("User 2").esntlId("USR002").build())));
 
         // First call fails
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
         // Second call succeeds
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -74,12 +74,12 @@ public class FaultRecoveryFunctionTest {
                         UserDto.builder().userId("user1").userNm("User 1").esntlId("USR001").build())));
 
         // First call fails
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().is5xxServerError());
 
         // Second call succeeds
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
@@ -137,20 +137,20 @@ public class FaultRecoveryFunctionTest {
                         UserDto.builder().userId("circuitBreakerUser").userNm("User").esntlId("USR001").build())));
 
         // Failures
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
         // Recovery
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -166,12 +166,12 @@ public class FaultRecoveryFunctionTest {
                         UserDto.builder().userId("poolUser").userNm("User").esntlId("USR001").build())));
 
         // Fail
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
         // Recovery
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -187,12 +187,12 @@ public class FaultRecoveryFunctionTest {
                         UserDto.builder().userId("memoryUser").userNm("User").esntlId("USR001").build())));
 
         // Fail
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
         // Recovery
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

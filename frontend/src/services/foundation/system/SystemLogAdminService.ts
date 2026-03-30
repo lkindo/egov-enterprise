@@ -41,7 +41,7 @@ class SystemLogAdminService extends AdminService {
       ...config,
       params: {
         ...params,
-        page번호: (('page' in params ? params.page : 0) || 0) + 1,
+        pageIndex: (('page' in params ? params.page : 0) || 0) + 1,
         searchKeyword: ('searchWrd' in params ? params.searchWrd : '') || '',
       },
     });
@@ -62,7 +62,7 @@ class SystemLogAdminService extends AdminService {
       ...config,
       params: {
         ...params,
-        page번호: (('page' in params ? params.page : 0) || 0) + 1,
+        pageIndex: (('page' in params ? params.page : 0) || 0) + 1,
         searchKeyword: ('searchWrd' in params ? params.searchWrd : '') || '',
       },
     });
@@ -83,7 +83,7 @@ class SystemLogAdminService extends AdminService {
       ...config,
       params: {
         ...params,
-        page번호: params.page번호 || 1,
+        pageIndex: params.pageIndex || params.page || 1,
         searchKeyword: params.searchKeyword || '',
       },
     });
@@ -97,7 +97,7 @@ class SystemLogAdminService extends AdminService {
       ...config,
       params: {
         ...params,
-        page번호: params.page번호 || 1,
+        pageIndex: params.pageIndex || params.page || 1,
         searchKeyword: params.searchKeyword || '',
       },
     });
@@ -111,7 +111,7 @@ class SystemLogAdminService extends AdminService {
       ...config,
       params: {
         ...params,
-        page번호: params.page번호 || 1,
+        pageIndex: params.pageIndex || params.page || 1,
         searchKeyword: params.searchKeyword || '',
       },
     });
@@ -125,7 +125,7 @@ class SystemLogAdminService extends AdminService {
       ...config,
       params: {
         ...params,
-        page번호: params.page번호 || 1,
+        pageIndex: params.pageIndex || params.page || 1,
         searchKeyword: params.searchKeyword || '',
       },
     });

@@ -98,7 +98,7 @@ export default function SecurityHubClient() {
 
   const { data: authorsData, isLoading: isAuthorsLoading, error: authorsError, refetch: refetchAuthors } = useQuery({
     queryKey: ['admin-authorities', roleSearchKeyword, rolePage],
-    queryFn: () => authorAdminService.getAuthorList({ page번호: rolePage, searchKeyword: roleSearchKeyword }),
+    queryFn: () => authorAdminService.getAuthorList({ pageIndex: rolePage, searchKeyword: roleSearchKeyword }),
   });
   const authorities = authorsData?.list || [];
 
