@@ -17,8 +17,8 @@ export const metadata: Metadata = {
 
 interface MenuWithChildren {
   menuNo: number;
-  children?: any[];
-  [key: string]: any;
+  children?: MenuWithChildren[];
+  [key: string]: unknown;
 }
 
 export default async function RootLayout({
@@ -32,7 +32,6 @@ export default async function RootLayout({
 
   // Fetch Sidebar Menus on Server to eliminate waterfall
   let initialMenus: MenuWithChildren[] = [];
-  let isUnauthorized = false;
 
   // Only attempt to fetch menus if we have a token (avoid 401 for guests/login page)
   if (accessToken) {
