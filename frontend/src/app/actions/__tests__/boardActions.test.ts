@@ -66,10 +66,10 @@ describe('boardActions', () => {
       const mockCookies = {
         get: vi.fn().mockReturnValue({ value: 'token' }),
       };
-      (cookies as any).mockResolvedValue(mockCookies);
+      (cookies as unknown).mockResolvedValue(mockCookies);
 
       // 모의 생성 응답으로 생성된 게시글 ID(예: '100')를 반환한다고 가정
-      (client.post as any).mockResolvedValue('100');
+      (client.post as unknown).mockResolvedValue('100');
 
       const result = await saveBoardArticle({}, formData);
 
@@ -113,8 +113,8 @@ describe('boardActions', () => {
       formData.append('nttCn', 'content');
       formData.append('bbsId', 'BBS_001');
 
-      (cookies as any).mockResolvedValue({ get: vi.fn() });
-      (client.post as any).mockResolvedValue(null);
+      (cookies as unknown).mockResolvedValue({ get: vi.fn() });
+      (client.post as unknown).mockResolvedValue(null);
 
       const result = await saveBoardArticle({}, formData);
 
@@ -127,8 +127,8 @@ describe('boardActions', () => {
       formData.append('nttSj', 'title');
       formData.append('nttCn', 'content');
 
-      (cookies as any).mockResolvedValue({ get: vi.fn() });
-      (client.post as any).mockRejectedValue({
+      (cookies as unknown).mockResolvedValue({ get: vi.fn() });
+      (client.post as unknown).mockRejectedValue({
         response: { data: { message: 'Network Error' } }
       });
 
@@ -145,8 +145,8 @@ describe('boardActions', () => {
       formData.append('nttId', '100');
       formData.append('bbsId', 'BBS_001');
 
-      (cookies as any).mockResolvedValue({ get: vi.fn().mockReturnValue({ value: 'token' }) });
-      (client.delete as any).mockResolvedValue({ success: true });
+      (cookies as unknown).mockResolvedValue({ get: vi.fn().mockReturnValue({ value: 'token' }) });
+      (client.delete as unknown).mockResolvedValue({ success: true });
 
       const result = await deleteBoardArticle({}, formData);
 
@@ -160,8 +160,8 @@ describe('boardActions', () => {
       formData.append('nttId', '100');
       formData.append('bbsId', 'BBS_001');
 
-      (cookies as any).mockResolvedValue({ get: vi.fn() });
-      (client.delete as any).mockResolvedValue(undefined);
+      (cookies as unknown).mockResolvedValue({ get: vi.fn() });
+      (client.delete as unknown).mockResolvedValue(undefined);
 
       const result = await deleteBoardArticle({}, formData);
 
