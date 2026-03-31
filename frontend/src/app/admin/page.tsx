@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
 import {
   Activity,
   Users,
@@ -13,17 +12,11 @@ import {
   Server,
   AlertCircle,
   Clock,
-  LayoutDashboard,
-  Box,
   Cpu,
-  Globe,
   FileText,
-  Search,
   Settings,
   ArrowRight,
-  Sparkles,
-  LayoutGrid,
-  SearchCode
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GaugeChart, RealtimeSparkline, ActivityAreaChart, DistributionPieChart } from '@/app/components/ui/observability-charts';
