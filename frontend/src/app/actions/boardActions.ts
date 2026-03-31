@@ -4,7 +4,22 @@ import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
 import { revalidatePath } from 'next/cache';
 
-export async function saveBoardArticle(prevState: any, formData: FormData) {
+interface ActionResponse {
+  success: boolean;
+  message: string;
+  field?: string;
+  redirect?: string;
+}
+
+interface BoardArticle {
+  nttSj: string;
+  nttCn: string;
+  bbsId: string;
+  replyAt?: string;
+  parntsId?: string;
+}
+
+export async function saveBoardArticle(prevState: unknown, formData: FormData): Promise<ActionResponse> {
   const nttId = formData.get('nttId') as string;
   const parntsId = formData.get('parntsId') as string;
   const nttSj = formData.get('nttSj') as string;
@@ -21,7 +36,7 @@ export async function saveBoardArticle(prevState: any, formData: FormData) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const articleData: any = { nttSj, nttCn, bbsId };
+    const articleData: BoardArticle = { nttSj, nttCn, bbsId };
     if (isReply) {
       articleData.replyAt = 'Y';
       articleData.parntsId = parntsId;
@@ -34,7 +49,7 @@ export async function saveBoardArticle(prevState: any, formData: FormData) {
     const files = formData.getAll('files') as File[];
     files.forEach(file => { if (file && file.size > 0) apiFormData.append('file', file); });
 
-    let response: any;
+    let response: unknown;
     if (isEdit) {
       response = await client.put(`/bbs/${bbsId}/${nttId}`, apiFormData, {
         ...axiosConfig,
@@ -49,33 +64,34 @@ export async function saveBoardArticle(prevState: any, formData: FormData) {
 
     if (response) {
       revalidatePath(`/admin/community/boards`);
-      const targetId = isEdit ? nttId : response;
-      return { 
-        success: true, 
-        message: isEdit ? '게시글이 성공적으로 수정되었습니다.' : '게시글이 성공적으로 등록되었습니다.', 
-        redirect: `/admin/community/boards/detail?bbsId=${bbsId}&nttId=${targetId}` 
+      const targetId = isEdit ? nttId : response as string;
+      return {
+        success: true,
+        message: isEdit ? '게시글이 성공적으로 수정되었습니다.' : '게시글이 성공적으로 등록되었습니다.',
+        redirect: `/admin/community/boards/detail?bbsId=${bbsId}&nttId=${targetId}`
       };
     } else {
       return { success: false, message: '저장에 실패했습니다.' };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : '저장 중 오류가 발생했습니다.';
     console.error('Save Action Error:', error);
-    return { success: false, message: error.response?.data?.message || '저장 중 오류가 발생했습니다.' };
+    return { success: false, message: errorMessage };
   }
 }
 
 
-export async function deleteBoardArticle(prevState: any, formData: FormData) {
+export async function deleteBoardArticle(prevState: unknown, formData: FormData): Promise<ActionResponse> {
 
- const nttId = formData.get('nttId') as string;
- const bbsId = formData.get('bbsId') as string;
+  const nttId = formData.get('nttId') as string;
+  const bbsId = formData.get('bbsId') as string;
 
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const response: any = await client.delete(`/bbs/${bbsId}/${nttId}`, axiosConfig);
+    const response: unknown = await client.delete(`/bbs/${bbsId}/${nttId}`, axiosConfig);
 
     if (response !== undefined) {
       revalidatePath(`/admin/community/boards`);
@@ -83,8 +99,9 @@ export async function deleteBoardArticle(prevState: any, formData: FormData) {
     } else {
       return { success: false, message: '삭제에 실패했습니다.' };
     }
- } catch (error: any) {
- console.error('Delete Action Error:', error);
- return { success: false, message: error.response?.data?.message || '삭제 중 오류가 발생했습니다.' };
- }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : '삭제 중 오류가 발생했습니다.';
+    console.error('Delete Action Error:', error);
+    return { success: false, message: errorMessage };
+  }
 }
