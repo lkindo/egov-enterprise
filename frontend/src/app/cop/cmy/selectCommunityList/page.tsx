@@ -41,7 +41,7 @@ const CommunityListPage = () => {
  setTotalCount(data.totalCount || 0);
  // Calculate total pages if not provided by backend
  setTotalPages(Math.ceil((data.totalCount || 0) / 10));
- } catch (error) {
+ } catch {
  console.error('Failed to fetch communities', error);
  } finally {
  setLoading(false);
@@ -61,15 +61,15 @@ const CommunityListPage = () => {
  <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-br from-blue-600 to-indigo-700 pb-12 pt-12 px-10 text-white">
  <div className="space-y-2">
  <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-4">
- <Users className="w-10 h-10 text-blue-200" /> 커뮤니티 공간
+ <Users className="w-10 h-10 text-blue-200" /> 커�??�티 공간
  </CardTitle>
-  <p className="text-blue-100/70 font-medium text-lg">워크스페이스 내의 다양한 소모임과 커뮤니티 공간을 만나보세요.</p>
+  <p className="text-blue-100/70 font-medium text-lg">?�크?�페?�스 ?�의 ?�양???�모?�과 커�??�티 공간??만나보세??</p>
  </div>
  </CardHeader>
  <CardContent className="pt-12 px-10">
  <div className="mb-8 flex items-center bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 w-fit">
  <div className="text-sm font-black text-blue-700 flex items-center gap-3">
- <ShieldCheck className="w-5 h-5" /> 활성화된 전체 커뮤니티 <span className="text-2xl font-black ml-1 animate-pulse">{totalCount}</span>
+ <ShieldCheck className="w-5 h-5" /> ?�성?�된 ?�체 커�??�티 <span className="text-2xl font-black ml-1 animate-pulse">{totalCount}</span>
  </div>
  </div>
 
@@ -78,10 +78,10 @@ const CommunityListPage = () => {
  <TableHeader className="bg-slate-50/50">
  <TableRow className="hover:bg-transparent">
  <TableHead className="w-[80px] text-center font-black text-slate-400 text-sm py-6 tracking-tight">번호</TableHead>
- <TableHead className="w-[300px] font-black text-slate-900 text-sm py-6 tracking-tight">커뮤니티명</TableHead>
- <TableHead className="font-black text-slate-400 text-sm py-6 tracking-tight">소개</TableHead>
+ <TableHead className="w-[300px] font-black text-slate-900 text-sm py-6 tracking-tight">커�??�티�?/TableHead>
+ <TableHead className="font-black text-slate-400 text-sm py-6 tracking-tight">?�개</TableHead>
  <TableHead className="w-[150px] font-black text-slate-400 text-sm py-6 text-center tracking-tight">관리자</TableHead>
- <TableHead className="w-[150px] font-black text-slate-400 text-sm py-6 text-center tracking-tight">개설일</TableHead>
+ <TableHead className="w-[150px] font-black text-slate-400 text-sm py-6 text-center tracking-tight">개설??/TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
@@ -98,7 +98,7 @@ const CommunityListPage = () => {
  ) : list.length === 0 ? (
   <TableRow>
   <TableCell colSpan={5} className="h-48 text-center text-slate-400 font-bold text-xl tracking-tighter opacity-30">
-  개설된 커뮤니티 공간이 없습니다.
+  개설??커�??�티 공간???�습?�다.
   </TableCell>
   </TableRow>
  ) : (
@@ -119,7 +119,7 @@ const CommunityListPage = () => {
  </TableCell>
  <TableCell className="py-6">
  <p className="text-base text-slate-500 font-medium line-clamp-1 leading-relaxed ">
- "{item.cmmntyIntrcn || '등록된 소개 기능이 없습니다.'}"
+ "{item.cmmntyIntrcn || '?�록???�개 기능???�습?�다.'}"
  </p>
  </TableCell>
  <TableCell className="text-center py-6">
@@ -149,7 +149,7 @@ const CommunityListPage = () => {
  disabled={page번호 === 1}
  className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-blue-600 transition-all tracking-tight text-sm"
  >
- 이전
+ ?�전
  </Button>
  <div className="bg-slate-900 text-white px-10 py-4 rounded-[2rem] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex items-center gap-4 border-4 border-white ring-8 ring-slate-100">
  <span className="text-2xl font-black">{page번호}</span>
@@ -163,7 +163,7 @@ const CommunityListPage = () => {
  disabled={page번호 === totalPages}
  className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-blue-600 transition-all tracking-tight text-sm"
  >
- 다음
+ ?�음
  </Button>
  </div>
  )}

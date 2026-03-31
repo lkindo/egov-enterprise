@@ -40,7 +40,7 @@ export default function CreatePollPage() {
 
  const handleSave = async () => {
  if (!formData.pollNm || !beginDate || !endDate) {
- alert('필수 항목을 입력해주세요.');
+ alert('?�수 ??��???�력?�주?�요.');
  return;
  }
 
@@ -52,35 +52,35 @@ export default function CreatePollPage() {
 
  try {
  await createPoll(payload);
- alert('설문이 등록되었습니다. 상세 페이지에서 설문 항목을 추가해주세요.');
+ alert('?�문???�록?�었?�니?? ?�세 ?�이지?�서 ?�문 ??��??추�??�주?�요.');
  router.push('/admin/survey/manage'); // Or redirect to detail page if we get ID back
- } catch (error) {
+ } catch {
  console.error(error);
- alert('설문 등록에 실패했습니다.');
+ alert('?�문 ?�록???�패?�습?�다.');
  }
  };
 
  return (
  <div className="max-w-2xl mx-auto space-y-8">
  <div>
- <h2 className="text-2xl font-bold tracking-tight">설문 등록</h2>
- <p className="text-muted-foreground">새로운 온라인 설문을 등록합니다.</p>
+ <h2 className="text-2xl font-bold tracking-tight">?�문 ?�록</h2>
+ <p className="text-muted-foreground">?�로???�라???�문???�록?�니??</p>
  </div>
 
  <div className="space-y-4">
  <div className="space-y-2">
- <Label htmlFor="pollNm">설문명</Label>
+ <Label htmlFor="pollNm">?�문�?/Label>
  <Input
  id="pollNm"
  value={formData.pollNm}
  onChange={(e) => setFormData(prev => ({ ...prev, pollNm: e.target.value }))}
- placeholder="설문 주제를 입력하세요"
+ placeholder="?�문 주제�??�력?�세??
  />
  </div>
 
  <div className="grid grid-cols-2 gap-4">
  <div className="space-y-2">
- <Label>시작일</Label>
+ <Label>?�작??/Label>
  <Popover>
  <PopoverTrigger asChild>
  <Button
@@ -91,7 +91,7 @@ export default function CreatePollPage() {
  )}
  >
  <CalendarIcon className="mr-2 h-4 w-4" />
- {beginDate ? format(beginDate, "yyyy-MM-dd") : <span>날짜 선택</span>}
+ {beginDate ? format(beginDate, "yyyy-MM-dd") : <span>?�짜 ?�택</span>}
  </Button>
  </PopoverTrigger>
  <PopoverContent className="w-auto p-0">
@@ -109,7 +109,7 @@ export default function CreatePollPage() {
  </div>
 
  <div className="space-y-2">
- <Label>종료일</Label>
+ <Label>종료??/Label>
  <Popover>
  <PopoverTrigger asChild>
  <Button
@@ -120,7 +120,7 @@ export default function CreatePollPage() {
  )}
  >
  <CalendarIcon className="mr-2 h-4 w-4" />
- {endDate ? format(endDate, "yyyy-MM-dd") : <span>날짜 선택</span>}
+ {endDate ? format(endDate, "yyyy-MM-dd") : <span>?�짜 ?�택</span>}
  </Button>
  </PopoverTrigger>
  <PopoverContent className="w-auto p-0">
@@ -136,24 +136,24 @@ export default function CreatePollPage() {
  </div>
 
  <div className="space-y-2">
- <Label>설문 유형</Label>
+ <Label>?�문 ?�형</Label>
  <Select
  value={formData.pollKindCode}
  onValueChange={(value) => setFormData(prev => ({ ...prev, pollKindCode: value }))}
  >
  <SelectTrigger>
- <SelectValue placeholder="유형 선택" />
+ <SelectValue placeholder="?�형 ?�택" />
  </SelectTrigger>
  <SelectContent>
- <SelectItem value="001">일반 설문</SelectItem>
- <SelectItem value="002">투표</SelectItem>
+ <SelectItem value="001">?�반 ?�문</SelectItem>
+ <SelectItem value="002">?�표</SelectItem>
  </SelectContent>
  </Select>
  </div>
 
  <div className="flex justify-end gap-2 pt-4">
  <Button variant="outline" onClick={() => router.back()}>취소</Button>
- <Button onClick={handleSave}>저장</Button>
+ <Button onClick={handleSave}>?�??/Button>
  </div>
  </div>
  </div>

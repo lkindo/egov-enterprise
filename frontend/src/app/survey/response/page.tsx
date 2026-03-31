@@ -48,10 +48,10 @@ export default function SurveyResponseListPage() {
  mutationFn: (id: string) => deleteQustnrRespondInfo(id),
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['survey-responses'] });
- alert('삭제되었습니다.');
+ alert('??��?�었?�니??');
  },
  onError: (err) => {
- alert(`삭제 실패: ${err instanceof Error ? err.message : '일 수 없는 오류'}`);
+ alert(`??�� ?�패: ${err instanceof Error ? err.message : '?????�는 ?�류'}`);
  }
  });
 
@@ -61,7 +61,7 @@ export default function SurveyResponseListPage() {
  };
 
  const handleDelete = (id: string, name: string) => {
- if (confirm(`${name}님의 응답을 삭제하시겠습니까?`)) {
+ if (confirm(`${name}?�의 ?�답????��?�시겠습?�까?`)) {
  deleteMutation.mutate(id);
  }
  };
@@ -70,16 +70,16 @@ export default function SurveyResponseListPage() {
  <div className="container mx-auto py-8 max-w-6xl space-y-6">
  <div className="flex justify-between items-end">
  <div>
- <h1 className="text-3xl font-bold tracking-tight">설문조사 응답 관리</h1>
+ <h1 className="text-3xl font-bold tracking-tight">?�문조사 ?�답 관�?/h1>
  <p className="text-muted-foreground mt-1">
- 시스템에 등록된 설문조사 응답 현황을 확인하고 관리합니다.
+ ?�스?�에 ?�록???�문조사 ?�답 ?�황???�인?�고 관리합?�다.
  </p>
  </div>
  <div className="flex space-x-2">
  <Link href="/survey/stats">
  <Button variant="outline" size="sm">
  <BarChart3 className="mr-2 h-4 w-4" />
- 통계 보기
+ ?�계 보기
  </Button>
  </Link>
  <Button
@@ -89,7 +89,7 @@ export default function SurveyResponseListPage() {
  disabled={isFetching}
  >
  <RotateCcw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
- 새로고침
+ ?�로고침
  </Button>
  </div>
  </div>
@@ -97,12 +97,12 @@ export default function SurveyResponseListPage() {
  <Card className="shadow-sm">
  <CardHeader className="pb-3">
  <div className="flex items-center justify-between">
- <CardTitle className="text-lg font-medium">응답 목록</CardTitle>
+ <CardTitle className="text-lg font-medium">?�답 목록</CardTitle>
  <div className="relative w-64">
  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
  <Input
  type="search"
- placeholder="응답자 이름 검색..."
+ placeholder="?�답???�름 검??.."
  value={searchKeyword}
  onChange={handleSearch}
  className="pl-9"
@@ -110,7 +110,7 @@ export default function SurveyResponseListPage() {
  </div>
  </div>
  <CardDescription>
- 총 {data?.totalElements || 0}건의 응답이 조회되었습니다.
+ �?{data?.totalElements || 0}건의 ?�답??조회?�었?�니??
  </CardDescription>
  </CardHeader>
  <CardContent>
@@ -118,10 +118,10 @@ export default function SurveyResponseListPage() {
  <Table>
  <TableHeader>
  <TableRow className="bg-muted/50">
- <TableHead className="w-[150px] font-semibold">응답자</TableHead>
- <TableHead className="font-semibold">응답 내용</TableHead>
- <TableHead className="w-[180px] font-semibold">등록 일시</TableHead>
- <TableHead className="w-[120px] font-semibold text-center">관리</TableHead>
+ <TableHead className="w-[150px] font-semibold">?�답??/TableHead>
+ <TableHead className="font-semibold">?�답 ?�용</TableHead>
+ <TableHead className="w-[180px] font-semibold">?�록 ?�시</TableHead>
+ <TableHead className="w-[120px] font-semibold text-center">관�?/TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
@@ -130,20 +130,20 @@ export default function SurveyResponseListPage() {
  <TableCell colSpan={4} className="h-48 text-center">
  <div className="flex flex-col items-center justify-center space-y-2">
  <Loader2 className="h-8 w-8 animate-spin text-primary" />
- <p className="text-muted-foreground">데이터를 불러오는 중입니다...</p>
+ <p className="text-muted-foreground">?�이?��? 불러?�는 중입?�다...</p>
  </div>
  </TableCell>
  </TableRow>
  ) : isError ? (
  <TableRow>
  <TableCell colSpan={4} className="h-48 text-center text-destructive">
- 연결 오류: {error instanceof Error ? error.message : '데이터를 가져올 수 없습니다.'}
+ ?�결 ?�류: {error instanceof Error ? error.message : '?�이?��? 가?�올 ???�습?�다.'}
  </TableCell>
  </TableRow>
  ) : data?.content?.length === 0 ? (
  <TableRow>
  <TableCell colSpan={4} className="h-48 text-center text-muted-foreground">
- 검색 결과가 없습니다.
+ 검??결과가 ?�습?�다.
  </TableCell>
  </TableRow>
  ) : (
@@ -183,7 +183,7 @@ export default function SurveyResponseListPage() {
  {/* Pagination */}
  <div className="mt-4 flex items-center justify-between">
  <p className="text-sm text-muted-foreground">
- 현재 {page번호}페이지
+ ?�재 {page번호}?�이지
  </p>
  <div className="flex items-center space-x-2">
  <Button
@@ -192,7 +192,7 @@ export default function SurveyResponseListPage() {
  disabled={page번호 === 1 || isFetching}
  onClick={() => setPage번호(p => Math.max(1, p - 1))}
  >
- <ChevronLeft className="h-4 w-4 mr-1" /> 이전
+ <ChevronLeft className="h-4 w-4 mr-1" /> ?�전
  </Button>
  <Button
  variant="outline"
@@ -200,7 +200,7 @@ export default function SurveyResponseListPage() {
  disabled={data?.content?.length < 10 || isFetching}
  onClick={() => setPage번호(p => p + 1)}
  >
- 다음 <ChevronRight className="h-4 w-4 ml-1" />
+ ?�음 <ChevronRight className="h-4 w-4 ml-1" />
  </Button>
  </div>
  </div>

@@ -2,9 +2,8 @@ import React from 'react';
 import { AuditTimelineClient } from './AuditTimelineClient';
 
 /**
- * 보안 감사 타임라인 페이지
- * 전사 인프라 내의 행위 추적 및 무결성 검증을 위한 인텔리전스 뷰포트
- */
+ * 보안 감사 ?�?�라???�이지
+ * ?�사 ?�프???�의 ?�위 추적 �?무결??검증을 ?�한 ?�텔리전??뷰포?? */
 export default function AuditTimelinePage() {
   return <AuditTimelineClient />;
 }

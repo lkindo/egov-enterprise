@@ -21,13 +21,13 @@ interface ChartProps {
 }
 
 export function DashboardVisitorChart({ data }: ChartProps) {
- // 데이터 가공: 날짜 포맷 최적화 (예: 20260302 -> 03.02)
+ // ?�이??가�? ?�짜 ?�맷 최적??(?? 20260302 -> 03.02)
  const chartData = (data || []).map(item => ({
  name: item.statsDate?.length === 8 ? `${item.statsDate.substring(4, 6)}.${item.statsDate.substring(6, 8)}` : item.statsDate,
  visitors: item.statsCo || 0
  }));
 
- if (!chartData.length) return <div className="h-[300px] flex items-center justify-center text-muted-foreground">데이터가 없습니다.</div>;
+ if (!chartData.length) return <div className="h-[300px] flex items-center justify-center text-muted-foreground">?�이?��? ?�습?�다.</div>;
 
  return (
  <div className="h-[300px] w-full">
@@ -88,7 +88,7 @@ export function DashboardPostChart({ data }: ChartProps) {
  posts: (item.creatCo || 0) + (item.inqireCo || 0)
  }));
 
- if (!chartData.length) return <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm font-bold tracking-tight opacity-30">펄스 비활성</div>;
+ if (!chartData.length) return <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm font-bold tracking-tight opacity-30">?�스 비활??/div>;
 
  return (
  <div className="h-[200px] w-full">

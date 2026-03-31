@@ -6,8 +6,8 @@ import { programAdminService } from '@/services/foundation/system/ProgramAdminSe
 import MenuAdminClient from './MenuAdminClient';
 
 export const metadata = {
-    title: '시스템 메뉴 아키텍처 | 전자정부 표준프레임워크',
-    description: '시스템 트리 구조와 프로그램 연결을 체계적으로 관리합니다.',
+    title: '?�스??메뉴 ?�키?�처 | ?�자?��? ?��??�레?�워??,
+    description: '?�스???�리 구조?� ?�로그램 ?�결??체계?�으�?관리합?�다.',
 };
 
 export default async function MenuAdminPage() {

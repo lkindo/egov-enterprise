@@ -24,7 +24,7 @@ const InsertDeptJobPage = () => {
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault();
  if (!formData.deptJobNm.trim()) {
- alert('업무제목을 입력해 주세요.');
+ alert('?�무?�목???�력??주세??');
  return;
  }
 
@@ -36,7 +36,7 @@ const InsertDeptJobPage = () => {
  router.push('/smart-toolkit/dept-job/selectDeptJobList');
  }
  } catch (error: any) {
- alert(error.response?.data?.message || '등록에 실패하였습니다.');
+ alert(error.response?.data?.message || '?�록???�패?��??�니??');
  } finally {
  setLoading(false);
  }
@@ -55,13 +55,13 @@ const InsertDeptJobPage = () => {
  <div className="space-y-4">
  <div className="flex items-center justify-center md:justify-start gap-3 px-4 py-1.5 bg-white/10 w-fit rounded-full border border-white/10 mx-auto md:mx-0">
  <Activity className="w-3.5 h-3.5 text-primary-foreground animate-pulse" />
- <span className="text-[10px] font-black tracking-[0.25em] text-white/80">워크플로우 시스템 2.0</span>
+ <span className="text-[10px] font-black tracking-[0.25em] text-white/80">?�크?�로???�스??2.0</span>
  </div>
  <CardTitle className="text-3xl font-black tracking-tighter leading-none ">
  Dispatch New Task
  </CardTitle>
  <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed mx-auto md:mx-0">
- 부서의 새로운 업무를 정의하고 할당합니다. <br />명확한 목표 설정을 통해 효율적인 작업을 시작하세요.
+ 부?�의 ?�로???�무�??�의?�고 ?�당?�니?? <br />명확??목표 ?�정???�해 ?�율?�인 ?�업???�작?�세??
  </p>
  </div>
  </div>
@@ -75,7 +75,7 @@ const InsertDeptJobPage = () => {
  </Label>
  <Input
  id="deptJobNm"
- placeholder="수행해야 할 핵심 업무 제목을 입력하세요"
+ placeholder="?�행?�야 ???�심 ?�무 ?�목???�력?�세??
  className="h-20 text-3xl font-black border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-[1.5rem] px-10 bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl"
  value={formData.deptJobNm}
  onChange={(e) => setFormData({ ...formData, deptJobNm: e.target.value })}
@@ -117,7 +117,7 @@ const InsertDeptJobPage = () => {
  </Label>
  <Textarea
  id="deptJobCn"
- placeholder="업무의 상세 목표, 수행 방법, 요청 사항 등을 구체적으로 서술하세요.."
+ placeholder="?�무???�세 목표, ?�행 방법, ?�청 ?�항 ?�을 구체?�으�??�술?�세??."
  className="min-h-[350px] p-12 text-xl font-medium leading-[1.8] border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-[3.5rem] bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl resize-none scrollbar-thin scrollbar-thumb-slate-200"
  value={formData.deptJobCn}
  onChange={(e) => setFormData({ ...formData, deptJobCn: e.target.value })}
@@ -131,9 +131,9 @@ const InsertDeptJobPage = () => {
  <CheckCircle className="w-10 h-10 text-primary-foreground" />
  </div>
  <div className="space-y-1">
- <p className="font-black text-2xl text-slate-900 tracking-tight ">유효성 검사 필요</p>
+ <p className="font-black text-2xl text-slate-900 tracking-tight ">?�효??검???�요</p>
  <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[450px]">
- 등록된 업무는 부서 전체 대시보드에 즉시 노출됩니다. 기입된 내용이 부서 운영 가이드라인을 준수하는지 확인해 주세요.
+ ?�록???�무??부???�체 ?�?�보?�에 즉시 ?�출?�니?? 기입???�용??부???�영 가?�드?�인??준?�하?��? ?�인??주세??
  </p>
  </div>
  </div>
@@ -147,12 +147,11 @@ const InsertDeptJobPage = () => {
  <Button type="submit" className="h-20 px-24 gap-4 font-black tracking-[0.3em] text-sm shadow-[0_24px_48px_-8px_theme(colors.slate.900/40)] bg-slate-900 hover:bg-black transition-all active:scale-95 ring-[20px] ring-slate-100 rounded-[1.75rem]" disabled={loading}>
  {loading ? (
  <span className="flex items-center gap-3 animate-pulse">
- <div className="w-3 h-3 bg-white rounded-full" /> 저장 중...
+ <div className="w-3 h-3 bg-white rounded-full" /> ?�??�?..
  </span>
  ) : (
  <>
- <Send className="w-6 h-6" /> 저장
- </>
+ <Send className="w-6 h-6" /> ?�?? </>
  )}
  </Button>
  </CardFooter>

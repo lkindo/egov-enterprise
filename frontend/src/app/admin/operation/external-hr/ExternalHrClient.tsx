@@ -18,8 +18,8 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
  setLoading(true);
  const res = await operationAdminService.getExternalHrList({ name });
  setData(res.list || []);
- } catch (error) {
- toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
+ } catch {
+ toast('?�이?��? 불러?�는 �??�류가 발생?�습?�다.', 'error');
  } finally {
  setLoading(false);
  }
@@ -27,7 +27,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
 
  const columns = [
  { 
- header: '성명', 
+ header: '?�명', 
  accessor: (item: any) => (
  <div className="flex items-center gap-3">
  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
@@ -38,7 +38,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
  )
  },
  { 
- header: '소속기관', 
+ header: '?�속기�?', 
  accessor: (item: any) => (
  <div className="flex items-center gap-2 text-slate-600">
  <Building2 size={14} className="opacity-40" />
@@ -47,7 +47,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
  )
  },
  { 
- header: '연락처', 
+ header: '?�락�?, 
  accessor: (item: any) => (
  <div className="flex items-center gap-2 text-slate-500 font-mono text-sm">
  <Phone size={14} className="opacity-40" />
@@ -56,7 +56,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
  )
  },
  { 
- header: '이메일', 
+ header: '?�메??, 
  accessor: (item: any) => (
  <div className="flex items-center gap-2 text-slate-500">
  <Mail size={14} className="opacity-40" />
@@ -65,7 +65,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
  )
  },
  { 
- header: '생년월일', 
+ header: '?�년?�일', 
  accessor: 'brthdy',
  className: 'w-32 text-slate-400 text-sm'
  }
@@ -74,11 +74,11 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
  return (
  <div className="space-y-6 max-w-6xl mx-auto pb-20">
  <PageHeader
- title="외부인사정보 관리"
- breadcrumbs={[{ label: '운영지원' }, { label: '행사관리' }, { label: '외부인사정보' }]}
+ title="?��??�사?�보 관�?
+ breadcrumbs={[{ label: '?�영지?? }, { label: '?�사관�? }, { label: '?��??�사?�보' }]}
  actions={
  <button className="h-11 px-6 bg-slate-900 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200">
- <Plus size={18} /> 인사 정보 등록
+ <Plus size={18} /> ?�사 ?�보 ?�록
  </button>
  }
  />
@@ -86,7 +86,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
  <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
  <StandardSearchFilter
  fields={[
- { name: 'name', label: '인사 성명', type: 'text', placeholder: '성명을 입력하세요...' }
+ { name: 'name', label: '?�사 ?�명', type: 'text', placeholder: '?�명???�력?�세??..' }
  ]}
  onSearch={(v) => loadData(v.name)}
  />
@@ -97,7 +97,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
  columns={columns}
  data={data}
  loading={loading}
- emptyMessage="등록된 외부인사 정보가 없습니다."
+ emptyMessage="?�록???��??�사 ?�보가 ?�습?�다."
  />
  </div>
  </div>

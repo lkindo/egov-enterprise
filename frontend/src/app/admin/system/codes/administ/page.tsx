@@ -7,8 +7,8 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { Milestone } from 'lucide-react';
 
 export const metadata = {
-  title: '행정표준코드 거버넌스 | Sentinel Registry',
-  description: '국가 행정 표준에 따른 법정동 및 행정동 코드 체계를 관리합니다.',
+  title: '?�정?��?코드 거버?�스 | Sentinel Registry',
+  description: '�?? ?�정 ?��????�른 법정??�??�정??코드 체계�?관리합?�다.',
 };
 
 export default async function AdministCodePage() {
@@ -29,8 +29,8 @@ export default async function AdministCodePage() {
   return (
     <div className="space-y-12">
       <PageHeader
-        title="행정표준코드 인텔리전스"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '행정코드' }]}
+        title="?�정?��?코드 ?�텔리전??
+        breadcrumbs={[{ label: '?�스?��?�? }, { label: '코드관�? }, { label: '?�정코드' }]}
       />
       
       <Suspense fallback={

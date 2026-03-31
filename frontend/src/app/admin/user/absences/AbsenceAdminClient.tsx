@@ -56,7 +56,7 @@ export default function AbsenceAdminClient({
     const newStatus = !currentStatus ? 'Y' : 'N';
     try {
       await absenceAdminService.updateAbsence(emplyrId, newStatus);
-      // 로컬 상태 업데이트
+      // 로컬 ?�태 ?�데?�트
       setAbsences(prev => {
         const existing = prev.find(a => a.emplyrId === emplyrId);
         if (existing) {
@@ -65,15 +65,15 @@ export default function AbsenceAdminClient({
           return [...prev, { emplyrId, userAbsnceAt: newStatus }];
         }
       });
-      toast.success(`${emplyrId} 사용자의 프로토콜이 ${newStatus === 'Y' ? '부재 모드' : '활성 모드'}로 전환되었습니다.`);
+      toast.success(`${emplyrId} ?�용?�의 ?�로?�콜??${newStatus === 'Y' ? '부??모드' : '?�성 모드'}�??�환?�었?�니??`);
     } catch {
-      toast.error('프로토콜 동기화 중 오류가 발생했습니다.');
+      toast.error('?�로?�콜 ?�기??�??�류가 발생?�습?�다.');
     }
   };
 
   const columns: Column<any>[] = [
     {
-      header: '아이덴티티 리소스',
+      header: '?�이?�티??리소??,
       accessor: (item: any) => {
         const isAbsent = getAbsenceStatus(item.emplyrId);
         return (
@@ -97,7 +97,7 @@ export default function AbsenceAdminClient({
       className: 'w-72'
     },
     {
-      header: '커뮤니케이션 엔드포인트',
+      header: '커�??��??�션 ?�드?�인??,
       accessor: (item: any) => (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
@@ -112,7 +112,7 @@ export default function AbsenceAdminClient({
       )
     },
     {
-      header: '가용성 프로토콜',
+      header: '가?�성 ?�로?�콜',
       accessor: (item: any) => {
         const isAbsent = getAbsenceStatus(item.emplyrId);
         return (
@@ -140,14 +140,14 @@ export default function AbsenceAdminClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="부재 관리 오퍼레이션"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '사용자관리' }, { label: '부재 관리' }]}
+        title="부??관�??�퍼?�이??
+        breadcrumbs={[{ label: '?�스?��?�? }, { label: '?�용?��?�? }, { label: '부??관�? }]}
       />
 
       <HubHeader
-        title="가용성"
+        title="가?�성"
         highlight="Matrix"
-        subtitle="전사 인적 리소스의 실시간 가용성 및 부재 프로토콜 통합 제어 시스템"
+        subtitle="?�사 ?�적 리소?�의 ?�시�?가?�성 �?부???�로?�콜 ?�합 ?�어 ?�스??
         icon={UserX}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -161,8 +161,7 @@ export default function AbsenceAdminClient({
               size="lg"
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
-              <Zap size={20} className="group-hover:animate-pulse" /> 가용성 프로토콜 동기화
-              <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Zap size={20} className="group-hover:animate-pulse" /> 가?�성 ?�로?�콜 ?�기??              <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
           </div>
         }
@@ -171,7 +170,7 @@ export default function AbsenceAdminClient({
       <HubMetricGrid>
         <HubMetricCard title="TOTAL_RESOURCES" value={users.length} icon={User} color="primary" />
         <HubMetricCard title="OPERATIONAL_UNITS" value={users.length - totalAbsents} icon={UserCheck} color="emerald" status="ONLINE" />
-        <HubMetricCard title="STANDBY_UNITS" value={totalAbsents} icon={Ghost} color="rose" status={totalAbsents > 0 ? "ALERT" : "안정"} />
+        <HubMetricCard title="STANDBY_UNITS" value={totalAbsents} icon={Ghost} color="rose" status={totalAbsents > 0 ? "ALERT" : "?�정"} />
         <HubMetricCard title="SYSTEM_INTEGRITY" value="100%" icon={ShieldCheck} color="indigo" />
       </HubMetricGrid>
 
@@ -187,7 +186,7 @@ export default function AbsenceAdminClient({
                 <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                   <Activity size={32} className="text-primary" />
                 </div>
-                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary">가용성<br />인텔리전스</h4>
+                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary">가?�성<br />?�텔리전??/h4>
               </div>
 
               <div className="space-y-8">
@@ -199,7 +198,7 @@ export default function AbsenceAdminClient({
                       onChange={(e) => setSearchKeyword(e.target.value)}
                       value={searchKeyword}
                       className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
-                      placeholder="리소스 명칭 또는 UID 필터링"
+                      placeholder="리소??명칭 ?�는 UID ?�터�?
                     />
                   </div>
                 </div>
@@ -207,7 +206,7 @@ export default function AbsenceAdminClient({
 
               <div className="pt-8 border-t border-white/5 flex items-center justify-between">
                 <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 max-w-[200px]">
-                  * 모든 부재 프로토콜 변경사항은 협업 매트릭스에 즉시 동기화됩니다.
+                  * 모든 부???�로?�콜 변경사??? ?�업 매트�?��??즉시 ?�기?�됩?�다.
                 </p>
                 <Button
                   className="h-12 px-8 rounded-2xl bg-white text-slate-900 border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition-all hover:-translate-y-1"
@@ -222,8 +221,8 @@ export default function AbsenceAdminClient({
         {/* Resources Availability Matrix */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
           <HubSectionCard
-            title="리소스 가용성 상태 매트릭스"
-            description="인적 리소스의 실시간 활성/부재 상태를 실시간으로 모니터링하고 제어합니다."
+            title="리소??가?�성 ?�태 매트�?��"
+            description="?�적 리소?�의 ?�시�??�성/부???�태�??�시간으�?모니?�링?�고 ?�어?�니??"
             icon={SearchCode}
           >
             <div className="overflow-hidden">
@@ -231,7 +230,7 @@ export default function AbsenceAdminClient({
                 columns={columns}
                 data={users.filter((u: any) => u.userNm.includes(searchKeyword) || u.emplyrId.includes(searchKeyword))}
                 loading={loading}
-                emptyMessage="현재 활성화된 리소스 스트림이 존재하지 않습니다."
+                emptyMessage="?�재 ?�성?�된 리소???�트림이 존재?��? ?�습?�다."
                 className="border-none bg-transparent"
               />
             </div>

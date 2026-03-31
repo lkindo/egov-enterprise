@@ -14,7 +14,7 @@ export function PopupManager() {
  async function fetchPopups() {
  try {
  const popups = await popupService.getActivePopups();
- // 필터링: "오늘 하루 보지 않기" 체크된 팝업 제외
+ // ?�터�? "?�늘 ?�루 보�? ?�기" 체크???�업 ?�외
  const filteredPopups = (popups || []).filter(popup => {
  const expireDate = localStorage.getItem(`popup_hide_${popup.popupId}`);
  if (expireDate) {
@@ -29,7 +29,7 @@ export function PopupManager() {
 
  setActivePopups(filteredPopups);
  setVisiblePopupIds(filteredPopups.map(p => p.popupId));
- } catch (error) {
+ } catch {
  console.error('Failed to fetch popups:', error);
  }
  }
@@ -77,7 +77,7 @@ export function PopupManager() {
 
  {/* Content */}
  <div className="relative w-full h-[calc(100%-80px)] overflow-auto">
- {/* 팝업 내용이 HTML이거나 이미지일 수 있음. 여기서는 이미지로 가정하거나 iframe 사용 가능 */}
+ {/* ?�업 ?�용??HTML?�거???��?지?????�음. ?�기?�는 ?��?지�?가?�하거나 iframe ?�용 가??*/}
  <div className="relative w-full min-h-[300px] h-full">
  <Image
  src={popup.fileUrl || '/api/placeholder/400/300'}
@@ -94,13 +94,13 @@ export function PopupManager() {
  onClick={() => closePopupForDay(popup.popupId)}
  className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 font-medium"
  >
- 오늘 하루 보지 않기
+ ?�늘 ?�루 보�? ?�기
  </button>
  <button
  onClick={() => closePopup(popup.popupId)}
  className="text-[11px] font-bold text-slate-700 hover:text-black"
  >
- 닫기
+ ?�기
  </button>
  </div>
  </div>

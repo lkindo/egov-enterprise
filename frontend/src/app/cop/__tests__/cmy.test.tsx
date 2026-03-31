@@ -27,9 +27,9 @@ vi.mock('@/services/business/community/communityService', () => ({
  resultList: [
  {
  cmmntyId: 'CMM_0001',
- cmmntyNm: '개발팀 커뮤니티',
- cmmntyIntrcn: '개발 관련 논의',
- frstRegisterNm: '테스터',
+ cmmntyNm: '개발?� 커�??�티',
+ cmmntyIntrcn: '개발 관???�의',
+ frstRegisterNm: '?�스??,
  frstRegisterPnttm: '2024-05-01'
  }
  ],
@@ -48,9 +48,9 @@ describe('CommunityListPage', () => {
  resultList: [
  {
  cmmntyId: 'CMM_0001',
- cmmntyNm: '개발팀 커뮤니티',
- cmmntyIntrcn: '개발 관련 논의',
- frstRegisterNm: '테스터',
+ cmmntyNm: '개발?� 커�??�티',
+ cmmntyIntrcn: '개발 관???�의',
+ frstRegisterNm: '?�스??,
  frstRegisterPnttm: '2024-05-01'
  }
  ],
@@ -60,7 +60,7 @@ describe('CommunityListPage', () => {
  render(<CommunityListPage />);
 
  await waitFor(() => {
- expect(screen.getByText('개발팀 커뮤니티')).toBeDefined();
+ expect(screen.getByText('개발?� 커�??�티')).toBeDefined();
  });
  });
 });

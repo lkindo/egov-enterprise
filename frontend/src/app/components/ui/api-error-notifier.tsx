@@ -14,7 +14,7 @@ export function ApiErrorNotifier() {
  // Don't show toast for 401 as it's handled by redirection or reissue
  if (status === 401) return;
 
- toast(message || '요청 처리 중 오류가 발생했습니다.', 'error');
+ toast(message || '?�청 처리 �??�류가 발생?�습?�다.', 'error');
  };
 
  window.addEventListener('api-error', handleApiError);

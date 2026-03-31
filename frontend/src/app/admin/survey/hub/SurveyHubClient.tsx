@@ -27,22 +27,20 @@ export function SurveyHubClient() {
       <div className="bg-slate-50/50 p-2 rounded-[1.5rem] border border-slate-100 shadow-sm inline-flex">
         <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
           <TabsTrigger value="manage" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <LayoutGrid size={16} /> 설문 관리
-          </TabsTrigger>
+            <LayoutGrid size={16} /> ?�문 관�?          </TabsTrigger>
           <TabsTrigger value="stats" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <BarChart3 size={16} /> 결과 통계
+            <BarChart3 size={16} /> 결과 ?�계
           </TabsTrigger>
           <TabsTrigger value="questions" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
             <HelpCircle size={16} /> 질문/문항
           </TabsTrigger>
           <TabsTrigger value="respondents" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <Users size={16} /> 응답자 그룹
+            <Users size={16} /> ?�답??그룹
           </TabsTrigger>
           <TabsTrigger value="templates" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <FileStack size={16} /> 템플릿 관리
-          </TabsTrigger>
+            <FileStack size={16} /> ?�플�?관�?          </TabsTrigger>
           <TabsTrigger value="settings" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <Settings2 size={16} /> 연동 설정
+            <Settings2 size={16} /> ?�동 ?�정
           </TabsTrigger>
         </TabsList>
       </div>
@@ -56,19 +54,19 @@ export function SurveyHubClient() {
       </TabsContent>
 
       <TabsContent value="questions" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="질문 및 문항 라이브러리" description="설문에 포함될 핵심 질문과 선택 항목을 구조화하여 관리합니다." icon={HelpCircle} />
+        <PlaceholderCard title="질문 �?문항 ?�이브러�? description="?�문???�함???�심 질문�??�택 ??��??구조?�하??관리합?�다." icon={HelpCircle} />
       </TabsContent>
 
       <TabsContent value="respondents" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="응답자 그룹 관리" description="설문 조사의 대상이 될 사용자 집단 및 세그먼트를 정의합니다." icon={Users} />
+        <PlaceholderCard title="?�답??그룹 관�? description="?�문 조사???�?�이 ???�용??집단 �??�그먼트�??�의?�니??" icon={Users} />
       </TabsContent>
 
       <TabsContent value="templates" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="설문 템플릿 시스템" description="표준화된 설문 양식을 생성하고 재사용 가능한 명세를 관리합니다." icon={FileStack} />
+        <PlaceholderCard title="?�문 ?�플�??�스?? description="?��??�된 ?�문 ?�식???�성?�고 ?�사??가?�한 명세�?관리합?�다." icon={FileStack} />
       </TabsContent>
 
        <TabsContent value="settings" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="대외기관 연동 설정" description="외부 포털이나 타 시스템과의 설문 데이터 연동 프로토콜을 관리합니다." icon={Settings2} />
+        <PlaceholderCard title="?�?�기관 ?�동 ?�정" description="?��? ?�털?�나 ?� ?�스?�과???�문 ?�이???�동 ?�로?�콜??관리합?�다." icon={Settings2} />
       </TabsContent>
     </Tabs>
   );

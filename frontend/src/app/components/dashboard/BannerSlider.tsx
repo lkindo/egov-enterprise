@@ -16,7 +16,7 @@ export function BannerSlider() {
  try {
  const res = await bannerAdminService.getReflectedBanners();
  setBanners(res || []);
- } catch (error) {
+ } catch {
  console.error('Failed to fetch banners:', error);
  } finally {
  setLoading(false);
@@ -50,7 +50,7 @@ export function BannerSlider() {
  }
 
  const currentBanner = banners[current번호];
- // 이미지 URL 처리 (백엔드 스토리지 또는 정적 경로)
+ // ?��?지 URL 처리 (백엔???�토리�? ?�는 ?�적 경로)
  const imageUrl = currentBanner.bannerImage.startsWith('http')
  ? currentBanner.bannerImage
  : `/api/v1/files/download?fileId=${currentBanner.bannerImageFile || currentBanner.bannerImage}`;
@@ -77,7 +77,7 @@ export function BannerSlider() {
  rel="noopener noreferrer"
  className="flex items-center gap-2 w-fit px-4 py-2 bg-white text-black rounded-xl font-bold hover:bg-primary hover:text-white transition-all text-sm"
  >
- 자세히 보기 <ExternalLink size={14} />
+ ?�세??보기 <ExternalLink size={14} />
  </a>
  )}
  </div>

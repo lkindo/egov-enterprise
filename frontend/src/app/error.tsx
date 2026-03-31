@@ -14,7 +14,7 @@ export default function Error({
  reset: () => void;
 }) {
  useEffect(() => {
- // 에러 로그 기록 (실제 서비스에서는 Sentry 등에 전송)
+ // ?�러 로그 기록 (?�제 ?�비?�에?�는 Sentry ?�에 ?�송)
  console.error('Global Error:', error);
  }, [error]);
 
@@ -29,10 +29,10 @@ export default function Error({
  </div>
 
  <div className="space-y-4">
- <h1 className="text-3xl font-black tracking-tighter text-foreground">시스템 오류가 발생했습니다</h1>
+ <h1 className="text-3xl font-black tracking-tighter text-foreground">?�스???�류가 발생?�습?�다</h1>
  <p className="text-muted-foreground font-medium leading-relaxed">
- 일시적인 오류이거나 처리 중 문제가 발생했습니다.<br />
- 페이지를 새로고침하거나 잠시 후 다시 시도해주세요.
+ ?�시?�인 ?�류?�거??처리 �?문제가 발생?�습?�다.<br />
+ ?�이지�??�로고침?�거???�시 ???�시 ?�도?�주?�요.
  </p>
  {error.digest && (
  <code className="block text-[10px] font-mono text-muted-foreground/50 bg-muted/30 py-1 px-2 rounded-md w-fit mx-auto mt-2">
@@ -47,23 +47,22 @@ export default function Error({
  size="lg"
  className="rounded-2xl h-16 font-black bg-destructive hover:bg-destructive/90 text-white shadow-xl shadow-destructive/20 gap-2"
  >
- <RotateCcw size={20} /> 다시 시도하기
+ <RotateCcw size={20} /> ?�시 ?�도?�기
  </Button>
  <Link
  href="/"
  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-2xl h-16 font-bold border-2 border-primary/10 gap-2")}
  >
- <Home size={20} /> 메인으로 돌아가기
- </Link>
+ <Home size={20} /> 메인?�로 ?�아가�? </Link>
  </div>
 
  <div className="pt-8 border-t border-destructive/5 flex flex-col items-center gap-2">
- <p className="text-sm text-muted-foreground font-bold">문제가 지속된다면 기술 지원팀에 문의하세요.</p>
+ <p className="text-sm text-muted-foreground font-bold">문제가 지?�된?�면 기술 지?��???문의?�세??</p>
  <Link
  href="/help"
  className={cn(buttonVariants({ variant: "link", size: "sm" }), "text-primary font-black gap-1")}
  >
- <MessageSquare size={14} /> 기술 지원 문의하기
+ <MessageSquare size={14} /> 기술 지??문의?�기
  </Link>
  </div>
  </div>

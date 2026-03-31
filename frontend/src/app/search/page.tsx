@@ -24,11 +24,11 @@ const IntegratedSearchPage = async ({ searchParams }: { searchParams: Promise<{ 
  articles: (bbsRes.status === 'fulfilled' && bbsRes.value.data.resultList ? (bbsRes.value.data.resultList || []) : []).slice(0, 10),
  users: (userRes.status === 'fulfilled' && userRes.value.data.resultList ? (userRes.value.data.resultList || []) : []).slice(0, 10),
  menus: [
- { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },
- { name: '자유 게시판', path: '/admin/community/boards', category: '커뮤니티' }
+ { name: '공�??�항 관�?, path: '/admin/system/menus', category: '?�스?? },
+ { name: '?�유 게시??, path: '/admin/community/boards', category: '커�??�티' }
  ].filter(m => m.name.includes(q))
  };
- } catch (error) {
+ } catch {
  console.error('Server-side search failed', error);
  }
  }
@@ -37,7 +37,7 @@ const IntegratedSearchPage = async ({ searchParams }: { searchParams: Promise<{ 
  <Suspense fallback={
  <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
  <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
- <p className="font-black text-muted-foreground animate-pulse">정보 분석 중...</p>
+ <p className="font-black text-muted-foreground animate-pulse">?�보 분석 �?..</p>
  </div>
  }>
  <SearchResultsContent initialResults={initialResults} query={q} />

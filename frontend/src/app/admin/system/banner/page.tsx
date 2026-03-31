@@ -6,8 +6,8 @@ import BannerAdminClient from './BannerAdminClient';
 import { Loader2 } from 'lucide-react';
 
 export const metadata = {
- title: '시스템 홍보 엔진 최적화 | 전자정부 표준프레임워크',
- description: '시스템 전반에 노출되는 배너와 팝업 자산을 고성능 아키텍처로 관리합니다.',
+ title: '?�스???�보 ?�진 최적??| ?�자?��? ?��??�레?�워??,
+ description: '?�스???�반???�출?�는 배너?� ?�업 ?�산??고성???�키?�처�?관리합?�다.',
 };
 
 export default async function BannerAdminPage() {
@@ -15,7 +15,7 @@ export default async function BannerAdminPage() {
  const accessToken = cookieStore.get('accessToken')?.value;
  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- // [Eliminating Waterfalls] 병렬 데이터 호출
+ // [Eliminating Waterfalls] 병렬 ?�이???�출
  let initialBanners: any[] = [];
  let initialPopups: any[] = [];
 
@@ -30,8 +30,7 @@ export default async function BannerAdminPage() {
  } catch (error: any) {
  console.error('Server-side fetch banners/popups failed:', error);
     
-    // 만약 401 에러(인증 만료)라면 로그인 페이지로 리다이렉트
-    if (error.response?.status === 401) {
+    // 만약 401 ?�러(?�증 만료)?�면 로그???�이지�?리다?�렉??    if (error.response?.status === 401) {
       const { redirect } = await import('next/navigation');
       redirect('/login?expired=true&redirect=/admin/system/banner');
     }

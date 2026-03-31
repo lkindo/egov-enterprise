@@ -28,7 +28,7 @@ export function NotificationSender() {
  const simulateAIGenerate = () => {
  setIsGenerating(true);
  setTimeout(() => {
- setMessage("[알림] 시스템 유지보수 안내\n원활한 서비스 제공을 위해 아래와 같이 정기 점검이 진행될 예정입니다.\n\n- 일시: 2026년 2월 28일 01:00 ~ 05:00\n- 영향: 점검 시간 내 모든 서비스 일시 중단\n\n중요한 데이터는 미리 저장해 주시기 바랍니다.");
+ setMessage("[?�림] ?�스???��?보수 ?�내\n?�활???�비???�공???�해 ?�래?� 같이 ?�기 ?��???진행???�정?�니??\n\n- ?�시: 2026??2??28??01:00 ~ 05:00\n- ?�향: ?��? ?�간 ??모든 ?�비???�시 중단\n\n중요???�이?�는 미리 ?�?�해 주시�?바랍?�다.");
  setIsGenerating(false);
  }, 1500);
  };
@@ -46,19 +46,19 @@ export function NotificationSender() {
  <div className="p-3 bg-primary rounded-2xl text-white shadow-xl shadow-primary/30">
  <Target size={24} />
  </div>
- <h2 className="text-3xl font-black tracking-tighter ">발송 제어 센터</h2>
+ <h2 className="text-3xl font-black tracking-tighter ">발송 ?�어 ?�터</h2>
  </div>
  <p className="text-sm font-bold text-muted-foreground opacity-60 leading-relaxed max-w-sm">
- 대상자에게 최적의 채널을 통해 중요한 메시지를 전달합니다. AI 엔진이 문맥에 맞는 톤앤매너를 추천합니다.
+ ?�?�자?�게 최적??채널???�해 중요??메시지�??�달?�니?? AI ?�진??문맥??맞는 ?�앤매너�?추천?�니??
  </p>
  </div>
 
  <div className="space-y-6">
- <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">발송 채널 선택</label>
+ <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">발송 채널 ?�택</label>
  <div className="grid grid-cols-3 gap-4">
  {[
- { id: 'system', icon: <Bell />, label: '시스템' },
- { id: 'mail', icon: <Mail />, label: '이메일' },
+ { id: 'system', icon: <Bell />, label: '?�스?? },
+ { id: 'mail', icon: <Mail />, label: '?�메?? },
  { id: 'sms', icon: <MessageSquare />, label: 'SMS' },
  ].map(item => (
  <button
@@ -82,15 +82,15 @@ export function NotificationSender() {
  </div>
 
  <div className="space-y-4">
- <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">수신 대상자 세분화</label>
+ <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">?�신 ?�?�자 ?�분??/label>
  <div className="p-6 rounded-[2.5rem] bg-muted/40 border-2 border-dashed border-primary/10 flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group/target">
  <div className="flex items-center gap-4">
  <div className="w-12 h-12 rounded-2xl bg-white border flex items-center justify-center shadow-inner group-hover/target:scale-110 transition-transform">
  <Users className="text-muted-foreground" size={20} />
  </div>
  <div>
- <p className="text-sm font-black text-foreground">전체 임직원 (Active)</p>
- <p className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">1,204명의 수신자 확인됨</p>
+ <p className="text-sm font-black text-foreground">?�체 ?�직??(Active)</p>
+ <p className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">1,204명의 ?�신???�인??/p>
  </div>
  </div>
  <UserCheck className="text-primary opacity-0 group-hover/target:opacity-100 transition-opacity" size={24} />
@@ -101,9 +101,9 @@ export function NotificationSender() {
  <div className="flex-1 p-6 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10">
  <div className="flex items-center gap-2 text-indigo-600 mb-2">
  <ShieldCheck size={16} />
- <span className="text-[9px] font-black tracking-tight leading-none">무결성 검증 통과</span>
+ <span className="text-[9px] font-black tracking-tight leading-none">무결??검�??�과</span>
  </div>
- <p className="text-[10px] font-bold text-indigo-900/40">이 메시지는 중복 발송 방지 필터에 의해 안전하게 보호되고 있습니다.</p>
+ <p className="text-[10px] font-bold text-indigo-900/40">??메시지??중복 발송 방�? ?�터???�해 ?�전?�게 보호?�고 ?�습?�다.</p>
  </div>
  </div>
  </div>
@@ -114,7 +114,7 @@ export function NotificationSender() {
  <div className="flex items-center justify-between mb-8">
  <div className="flex items-center gap-4">
  <div className="p-3 bg-primary/10 rounded-xl text-primary"><Layers size={18} /></div>
- <span className="text-sm font-black tracking-tight">콘텐츠 편집기</span>
+ <span className="text-sm font-black tracking-tight">콘텐�??�집�?/span>
  </div>
  <Button
  variant="ghost"
@@ -123,14 +123,14 @@ export function NotificationSender() {
  className="rounded-xl h-10 px-6 gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-black text-[10px] tracking-tight shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all"
  >
  {isGenerating ? <Zap size={14} className="animate-spin" /> : <Sparkles size={14} />}
- AI 콘텐츠 초안 생성
+ AI 콘텐�?초안 ?�성
 
  </Button>
  </div>
 
  <textarea
  className="flex-1 w-full bg-transparent border-none outline-none resize-none text-xl font-bold placeholder:text-muted-foreground/10 custom-scrollbar leading-relaxed"
- placeholder="메시지 내용을 입력하거나 AI 드래프트를 활용하세요..."
+ placeholder="메시지 ?�용???�력?�거??AI ?�래?�트�??�용?�세??.."
  value={message}
  onChange={(e) => setMessage(e.target.value)}
  />
@@ -143,7 +143,7 @@ export function NotificationSender() {
  <div className="flex items-center gap-3">
  <span className="text-[10px] font-black text-muted-foreground opacity-40">Words: {message.length}</span>
  <Button className="h-14 px-10 rounded-2xl font-black text-sm tracking-[0.2em] shadow-2xl shadow-primary/30 gap-3 group/send">
- 메시지 일괄 발송 <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+ 메시지 ?�괄 발송 <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
  </Button>
  </div>
  </div>
@@ -162,8 +162,8 @@ export function NotificationSender() {
  <Zap size={18} className="text-yellow-400" />
  </div>
  <div>
- <p className="text-[10px] font-black tracking-tight opacity-60">비주얼 미리보기</p>
- <p className="text-sm font-bold">모바일 잠금화면 위젯 (목업)</p>
+ <p className="text-[10px] font-black tracking-tight opacity-60">비주??미리보기</p>
+ <p className="text-sm font-bold">모바???�금?�면 ?�젯 (목업)</p>
  </div>
  </div>
  <div className="w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">

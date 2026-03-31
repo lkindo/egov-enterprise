@@ -43,18 +43,18 @@ export default function EventManagementClient() {
       accessor: (event) => (
         <div className="flex items-center gap-8 py-2">
           <div className="w-14 h-14 rounded-2xl bg-slate-50 flex flex-col items-center justify-center border border-slate-100 group-hover:bg-primary/5 transition-colors shadow-inner">
-            <span className="text-[10px] font-black text-slate-400 leading-none">행사</span>
+            <span className="text-[10px] font-black text-slate-400 leading-none">?�사</span>
             <span className="text-xl font-black text-slate-800 leading-none mt-1 group-hover:text-primary tracking-tighter transition-colors tabular-nums">{event.psncpa}</span>
           </div>
           <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-3">
-              <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] bg-primary/5 px-2 py-0.5 rounded leading-none">신청 진행 중</span>
-              <span className="text-[9px] font-bold text-slate-300 tracking-tighter">{event.rceptBeginDe} → {event.rceptEndDe}</span>
+              <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] bg-primary/5 px-2 py-0.5 rounded leading-none">?�청 진행 �?/span>
+              <span className="text-[9px] font-bold text-slate-300 tracking-tighter">{event.rceptBeginDe} ??{event.rceptEndDe}</span>
             </div>
             <h3 className="text-lg font-black text-slate-900 tracking-tighter truncate leading-tight group-hover:text-primary transition-colors">{event.eventNm}</h3>
             <div className="flex items-center gap-4 opacity-40">
-              <div className="flex items-center gap-1.5"><Users size={10} className="text-primary" /><span className="text-[10px] font-bold">참여정원: {event.psncpa}명</span></div>
-              <div className="flex items-center gap-1.5"><MapPin size={10} /><span className="text-[10px] font-bold">오프라인 컨퍼런스</span></div>
+              <div className="flex items-center gap-1.5"><Users size={10} className="text-primary" /><span className="text-[10px] font-bold">참여?�원: {event.psncpa}�?/span></div>
+              <div className="flex items-center gap-1.5"><MapPin size={10} /><span className="text-[10px] font-bold">?�프?�인 컨퍼?�스</span></div>
             </div>
           </div>
         </div>
@@ -76,17 +76,17 @@ export default function EventManagementClient() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <HubHeader 
-        title="행사 운영 센터" 
+        title="?�사 ?�영 ?�터" 
         highlight="Event Ops" 
-        subtitle="에고브 엔터프라이즈의 통합 행사 및 캠페인 관리 매트릭스입니다. 모든 이벤트 활동을 모니터링하고 제어하십시오." 
+        subtitle="?�고�??�터?�라?�즈???�합 ?�사 �?캠페??관�?매트�?��?�니?? 모든 ?�벤???�동??모니?�링?�고 ?�어?�십?�오." 
         icon={Calendar} 
         actions={
           <div className="flex gap-4">
              <Button className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-400 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
-               <History size={18} /> 아카이브 보기
+               <History size={18} /> ?�카?�브 보기
              </Button>
              <Button className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
-               <Plus size={18} /> 행사 신규 생성
+               <Plus size={18} /> ?�사 ?�규 ?�성
              </Button>
           </div>
         }
@@ -98,7 +98,7 @@ export default function EventManagementClient() {
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8 h-full">
             <HubSectionCard 
                 title="Global Event Matrix" 
-                description="전역적으로 실장된 행사 활동 및 캠페인 시그널 스트림입니다." 
+                description="?�역?�으�??�장???�사 ?�동 �?캠페???�그???�트림입?�다." 
                 icon={LayoutGrid}
             >
                 <div className="space-y-8">
@@ -109,7 +109,7 @@ export default function EventManagementClient() {
                                 value={searchWrd}
                                 onChange={(e) => setSearchWrd(e.target.value)}
                                 className="h-14 bg-slate-50 border-none rounded-2xl pl-14 font-black tracking-tight text-sm shadow-inner" 
-                                placeholder="행사 시그널 검색..." 
+                                placeholder="?�사 ?�그??검??.." 
                             />
                         </div>
                     </div>
@@ -118,7 +118,7 @@ export default function EventManagementClient() {
                         columns={eventColumns as any}
                         data={displayItems as any}
                         loading={isLoading}
-                        emptyMessage="식별된 데이터 유닛이 존재하지 않습니다."
+                        emptyMessage="?�별???�이???�닛??존재?��? ?�습?�다."
                         keyField="eventId"
                         isPremium={false}
                         className="bg-transparent border-none shadow-none"
@@ -148,7 +148,7 @@ export default function EventManagementClient() {
                    <h1 className="text-6xl font-black tracking-tighter tabular-nums text-white group-hover:text-primary transition-colors">
                      {totalItems}
                    </h1>
-                   <p className="text-[10px] font-black text-white/40 tracking-[0.5em] uppercase">등록된 전역 행사 유닛 (Active Units)</p>
+                   <p className="text-[10px] font-black text-white/40 tracking-[0.5em] uppercase">?�록???�역 ?�사 ?�닛 (Active Units)</p>
                 </div>
              </div>
              
@@ -161,7 +161,7 @@ export default function EventManagementClient() {
 
              <div className="relative z-10 p-6 bg-white/5 rounded-3xl backdrop-blur-3xl border border-white/5 flex items-center justify-between mt-auto">
                 <div className="text-left space-y-1">
-                   <span className="text-[10px] font-black opacity-40">참여 지수</span>
+                   <span className="text-[10px] font-black opacity-40">참여 지??/span>
                    <p className="text-xl font-black italic tracking-tighter">ELITE GRADE</p>
                 </div>
                 <div className="h-12 w-1 bg-primary rounded-full group-hover:scale-y-150 transition-transform" />
@@ -172,10 +172,10 @@ export default function EventManagementClient() {
 
       {/* 3. Detailed Stats Matrix (Insights) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-10 px-2 lg:mt-10">
-         <InsightCard label="Total Attendance" value="1.2M+" desc="전고점 대비 15% 상승" trend="+4.5%" type="primary" />
-         <InsightCard label="System Heatmap" value="CRITICAL" desc="참여 밀집도 높은 구역" trend="HIGH" type="rose" />
-         <InsightCard label="Schedule Matrix" value="Q2 STABLE" desc="분기별 계획 정격 동작" trend="OK" type="emerald" />
-         <InsightCard label="Network Assets" value="2.4k" desc="연동된 대외 홍보 유닛" trend="+20" type="amber" />
+         <InsightCard label="Total Attendance" value="1.2M+" desc="?�고???��?15% ?�승" trend="+4.5%" type="primary" />
+         <InsightCard label="System Heatmap" value="CRITICAL" desc="참여 밀집도 ?��? 구역" trend="HIGH" type="rose" />
+         <InsightCard label="Schedule Matrix" value="Q2 STABLE" desc="분기�?계획 ?�격 ?�작" trend="OK" type="emerald" />
+         <InsightCard label="Network Assets" value="2.4k" desc="?�동???�???�보 ?�닛" trend="+20" type="amber" />
       </div>
 
     </div>

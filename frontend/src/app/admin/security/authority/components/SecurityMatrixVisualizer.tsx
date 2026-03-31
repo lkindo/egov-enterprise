@@ -50,9 +50,8 @@ interface SecurityMatrixVisualizerProps {
 }
 
 /**
- * 보안 권한 매트릭스 시각화 (Access Control Grid)
- * 역할(X축)과 메뉴(Y축)의 관계를 히트맵 스타일의 격자로 시각화하여
- * 시스템 전체의 보안 평면을 한눈에 조감하고 제어할 수 있게 합니다.
+ * 보안 권한 매트�?�� ?�각??(Access Control Grid)
+ * ??��(X�?�?메뉴(Y�???관계�? ?�트�??��??�의 격자�??�각?�하?? * ?�스???�체??보안 ?�면???�눈??조감?�고 ?�어?????�게 ?�니??
  */
 export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> = ({ 
   authors, 
@@ -67,7 +66,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
 
   const filteredMenus = menus.filter(m => m.menuNm.toLowerCase().includes(searchMenu.toLowerCase()));
 
-  // 통계 계산
+  // ?�계 계산
   const totalCells = authors.length * menus.length;
   const activeCells = Array.from(mappings.values()).reduce((acc, set) => acc + set.size, 0);
   const coverage = totalCells > 0 ? (activeCells / totalCells) * 100 : 0;
@@ -133,7 +132,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={20} />
                   <Input 
                       className="h-16 pl-16 rounded-2xl border-none shadow-xl text-md font-black tracking-tight focus:ring-8 focus:ring-primary/5"
-                      placeholder="메뉴 노드 검색 (명칭, ID)..."
+                      placeholder="메뉴 ?�드 검??(명칭, ID)..."
                       value={searchMenu}
                       onChange={(e) => setSearchMenu(e.target.value)}
                   />
@@ -244,7 +243,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
           <div className="space-y-1">
              <p className="text-sm font-black text-slate-900 tracking-tight leading-none italic uppercase underline decoration-primary/20 decoration-4 underline-offset-4">Governance_Protocol_Guide</p>
              <p className="text-[11px] font-medium text-slate-400">
-                각 격자(Cell)를 클릭하여 해당 역할에 대한 메뉴 접근 권한을 토글합니다. 변경사항은 우측 상단의 <span className="text-slate-900 font-black">COMMIT_CHANGES</span> 버튼을 눌러야 실제 아키텍처에 반영됩니다.
+                �?격자(Cell)�??�릭?�여 ?�당 ??��???�??메뉴 ?�근 권한???��??�니?? 변경사??? ?�측 ?�단??<span className="text-slate-900 font-black">COMMIT_CHANGES</span> 버튼???�러???�제 ?�키?�처??반영?�니??
              </p>
           </div>
        </div>

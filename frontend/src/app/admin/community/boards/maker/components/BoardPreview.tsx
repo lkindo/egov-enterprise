@@ -24,9 +24,9 @@ interface PreviewProps {
 }
 
 const MOCK_POSTS = [
-  { id: 1, title: '전자정부 표준프레임워크 4.x 업데이트 가이드라인', author: '관리자', date: '2024-05-20', views: 1240, comments: 45, image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80' },
-  { id: 2, title: '리액트 서버 컴포넌트(RSC) 도입 시 주의사항 및 모범 사례', author: '기술혁신팀', date: '2024-05-19', views: 856, comments: 23, image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80' },
-  { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67, image: 'https://images.unsplash.com/photo-1558494949-ef010958384e?w=800&q=80' },
+  { id: 1, title: '?�자?��? ?��??�레?�워??4.x ?�데?�트 가?�드?�인', author: '관리자', date: '2024-05-20', views: 1240, comments: 45, image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80' },
+  { id: 2, title: '리액???�버 컴포?�트(RSC) ?�입 ??주의?�항 �?모범 ?��?', author: '기술?�신?�', date: '2024-05-19', views: 856, comments: 23, image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80' },
+  { id: 3, title: 'MSA ?�경?�서??분산 ?�랜??�� 처리 ?�략 (Saga ?�턴)', author: '?�랫?�실', date: '2024-05-18', views: 2301, comments: 67, image: 'https://images.unsplash.com/photo-1558494949-ef010958384e?w=800&q=80' },
 ];
 
 export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {

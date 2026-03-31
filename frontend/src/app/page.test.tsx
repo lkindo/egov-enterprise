@@ -103,16 +103,16 @@ describe('DashboardPage', () => {
 
  it('renders dashboard data correctly', async () => {
  const props = {
- initialNotiList: [{ nttId: 1, nttSj: '공지사항 테스트' }],
- initialTaskList: [{ nttId: 2, nttSj: '할일 테스트' }],
+ initialNotiList: [{ nttId: 1, nttSj: '공�??�항 ?�스?? }],
+ initialTaskList: [{ nttId: 2, nttSj: '?�일 ?�스?? }],
  pendingApprovalCount: 5
  };
 
  renderDashboard(props);
 
  await waitFor(() => {
- expect(screen.getByText(/공지사항 테스트/)).toBeInTheDocument();
- expect(screen.getByText(/할일 테스트/)).toBeInTheDocument();
+ expect(screen.getByText(/공�??�항 ?�스??)).toBeInTheDocument();
+ expect(screen.getByText(/?�일 ?�스??)).toBeInTheDocument();
  });
  });
 
@@ -142,7 +142,7 @@ describe('DashboardPage', () => {
  renderDashboard(props);
 
  await waitFor(() => {
- expect(screen.getAllByText(/데이터가 없습니다/i).length).toBeGreaterThan(0);
+ expect(screen.getAllByText(/?�이?��? ?�습?�다/i).length).toBeGreaterThan(0);
  });
  });
 });

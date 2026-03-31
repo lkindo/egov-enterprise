@@ -83,14 +83,14 @@ export default function AdminDashboardPage() {
 
   const recentLogs: UIAuditLog[] = (auditData?.list || []).map(log => ({
     id: log.histId,
-    action: log.histCn.includes('생성') || log.histCn.includes('등록') ? 'CREATE' :
-      log.histCn.includes('삭제') ? 'DELETE' :
+    action: log.histCn.includes('?�성') || log.histCn.includes('?�록') ? 'CREATE' :
+      log.histCn.includes('??��') ? 'DELETE' :
         log.histCn.includes('복원') ? 'RESTORE' : 'UPDATE',
     entityName: log.histCn,
     performedBy: log.frstRegisterId,
     timestamp: log.frstRegisterPnttm,
     ipAddress: log.sysNm || 'Unknown Subsystem',
-    severity: log.histCn.includes('오류') || log.histCn.includes('실패') || log.histCn.includes('삭제') ? 'high' :
+    severity: log.histCn.includes('?�류') || log.histCn.includes('?�패') || log.histCn.includes('??��') ? 'high' :
       log.histCn.includes('보안') || log.histCn.includes('권한') ? 'medium' : 'low'
   }));
 
@@ -99,18 +99,17 @@ export default function AdminDashboardPage() {
       <HubHeader
         title="Admin"
         highlight="Intelligence Center"
-        subtitle="시스템 전반의 오퍼레이션 상태, 지능형 데이터 분석 및 보안 거버넌스 통합 관제 대시보드"
+        subtitle="?�스???�반???�퍼?�이???�태, 지?�형 ?�이??분석 �?보안 거버?�스 ?�합 관???�?�보??
         icon={LayoutDashboard}
         actions={
           <div className="flex gap-4 p-2 items-center">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 italic font-black text-[9px] tracking-widest shadow-sm">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              시스템 상태: 정상
+              ?�스???�태: ?�상
             </div>
             <Button size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
               <Sparkles size={20} className="text-primary group-hover:rotate-12 transition-transform" />
-              동기화 조정자
-            </Button>
+              ?�기??조정??            </Button>
           </div>
         }
       />
@@ -126,7 +125,7 @@ export default function AdminDashboardPage() {
           trend="+PROBING"
           color="blue"
           link="/admin/user/manage"
-          description="사용자 및 조직 통합 매트릭스"
+          description="?�용??�?조직 ?�합 매트�?��"
         />
         <DashboardStatCard
           title="Security Governance"
@@ -135,7 +134,7 @@ export default function AdminDashboardPage() {
           trend="STABLE"
           color="emerald"
           link="/admin/security/authority"
-          description="RBAC 기반 접근 정책 거버넌스"
+          description="RBAC 기반 ?�근 ?�책 거버?�스"
         />
         <DashboardStatCard
           title="System Topology"
@@ -144,7 +143,7 @@ export default function AdminDashboardPage() {
           trend="HEALTHY"
           color="amber"
           link="/admin/system/programs"
-          description="모듈 및 리소스 오케스트레이션"
+          description="모듈 �?리소???��??�트?�이??
         />
         <DashboardStatCard
           title="Audit Streams"
@@ -153,7 +152,7 @@ export default function AdminDashboardPage() {
           trend="REALTIME"
           color="rose"
           link="/admin/system/audit"
-          description="실시간 보안 감사 스트림 분석"
+          description="?�시�?보안 감사 ?�트�?분석"
         />
       </div>
 
@@ -167,11 +166,11 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <h3 className="text-lg font-black text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">Activity Intelligence</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">시스템 트래픽 및 도메인 활동 분석</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">?�스???�래??�??�메???�동 분석</p>
               </div>
             </div>
           </div>
-          <ActivityAreaChart data={MOCK_ACTIVITY_DATA} title="최근 7일간 시스템 접속 프로필" color="#6366F1" />
+          <ActivityAreaChart data={MOCK_ACTIVITY_DATA} title="최근 7?�간 ?�스???�속 ?�로?? color="#6366F1" />
         </div>
 
         {/* User Distribution */}
@@ -183,12 +182,12 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <h3 className="text-lg font-black text-foreground tracking-tight">Identity Cluster</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">사용자 권한 그룹 분포</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">?�용??권한 그룹 분포</p>
               </div>
             </div>
           </div>
           <div className="flex-1 min-h-[300px]">
-            <DistributionPieChart data={MOCK_DISTRIBUTION_DATA} title="RBAC 수용량 분석" />
+            <DistributionPieChart data={MOCK_DISTRIBUTION_DATA} title="RBAC ?�용??분석" />
           </div>
         </div>
       </div>
@@ -203,13 +202,13 @@ export default function AdminDashboardPage() {
                   <Cpu size={20} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">컴퓨팅 노드 헬스체크</h3>
-                  <p className="text-[10px] font-medium text-muted-foreground mt-0.5">실시간 리소스 소비 모니터링</p>
+                  <h3 className="text-sm font-bold text-foreground">컴퓨???�드 ?�스체크</h3>
+                  <p className="text-[10px] font-medium text-muted-foreground mt-0.5">?�시�?리소???�비 모니?�링</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">평균 부하</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">?�균 부??/p>
                   <p className="text-lg font-bold tabular-nums">18.4%</p>
                 </div>
                 <div className="w-px h-8 bg-border/50" />
@@ -232,7 +231,7 @@ export default function AdminDashboardPage() {
                   <div className="p-2 bg-muted rounded-xl text-muted-foreground">
                     <Database size={18} />
                   </div>
-                  <span className="text-sm font-bold text-foreground">데이터 소스</span>
+                  <span className="text-sm font-bold text-foreground">?�이???�스</span>
                 </div>
                 <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] font-bold px-3 py-1">HEALTHY</Badge>
               </div>
@@ -255,7 +254,7 @@ export default function AdminDashboardPage() {
                   <div className="p-2 bg-muted rounded-xl text-muted-foreground">
                     <Globe size={18} />
                   </div>
-                  <span className="text-sm font-bold text-foreground">글로벌 지연시간</span>
+                  <span className="text-sm font-bold text-foreground">글로벌 지?�시�?/span>
                 </div>
                 <div className="flex items-center gap-1 text-emerald-500">
                   <TrendingUp size={12} />

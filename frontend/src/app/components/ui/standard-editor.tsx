@@ -18,7 +18,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const applyStyle = (tag: string) => {
-    // 실제 에디터 라이브러리(TipTap 등) 연동 전, 시각적 일관성을 위한 Placeholder 로직
+    // ?�제 ?�디???�이브러�?TipTap ?? ?�동 ?? ?�각???��??�을 ?�한 Placeholder 로직
     console.log(`Applying style: ${tag}`);
   };
 
@@ -45,15 +45,14 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
  ref={textareaRef}
  value={value}
  onChange={(e) => onChange(e.target.value)}
- placeholder={placeholder || "내용을 입력하세요..."}
+ placeholder={placeholder || "?�용???�력?�세??.."}
  style={{ minHeight }}
  className="w-full p-4 resize-none outline-none bg-transparent text-sm leading-relaxed"
  />
 
  {/* Word Count / Info */}
  <div className="px-4 py-2 border-t bg-muted/5 text-[10px] text-muted-foreground flex justify-end">
- {value.length} 자 입력됨
- </div>
+ {value.length} ???�력?? </div>
  </div>
  );
 }

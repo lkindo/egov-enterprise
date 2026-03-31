@@ -79,10 +79,10 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <h2 className="text-2xl font-black tracking-tighter text-foreground ">{title}</h2>
  <div className="flex items-center gap-3 mt-1">
  <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 tracking-tight">
-   <ShieldCheck size={12} /> 불변 거버넌스 원장 활성
+   <ShieldCheck size={12} /> 불�? 거버?�스 ?�장 ?�성
  </div>
  <div className="h-3 w-px bg-muted" />
-   <span className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight leading-none">실시간 데이터 무결성 모니터링</span>
+   <span className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight leading-none">?�시�??�이??무결??모니?�링</span>
  </div>
  </div>
  </div>
@@ -92,7 +92,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40" size={16} />
  <input
  className="w-full bg-muted/40 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all"
- placeholder="검색..."
+ placeholder="검??.."
  value={filter}
  onChange={(e) => setFilter(e.target.value)}
  />
@@ -143,7 +143,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  </span>
  </div>
  <p className="text-sm font-bold text-muted-foreground/60 tracking-tight">
-   <span className="text-primary">{log.action === 'CREATE' ? '생성' : log.action === 'UPDATE' ? '수정' : log.action === 'DELETE' ? '삭제' : '복구'}</span> • {log.entityName}
+   <span className="text-primary">{log.action === 'CREATE' ? '?�성' : log.action === 'UPDATE' ? '?�정' : log.action === 'DELETE' ? '??��' : '복구'}</span> ??{log.entityName}
  </p>
  </div>
  </div>
@@ -163,7 +163,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  {expandedLog === log.id && log.changes && (
  <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-slate-50 dark:bg-slate-900 space-y-6 animate-in slide-in-from-top-4 duration-500">
  <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-4 flex items-center gap-2">
-   <Cpu size={12} /> AI 기반 변경 감지 엔진
+   <Cpu size={12} /> AI 기반 변�?감�? ?�진
  </h4>
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {log.changes.map((change, cIdx) => (
@@ -184,13 +184,12 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
 
  <div className="flex justify-end gap-3 pt-4 border-t border-primary/5">
  <Button variant="ghost" size="sm" className="rounded-xl font-bold h-10 px-6 gap-2 text-muted-foreground hover:bg-rose-50 hover:text-rose-600">
- 분석 리포트 생성
+ 분석 리포???�성
  </Button>
  <Button variant="outline" size="sm" className="rounded-xl font-black h-10 px-6 gap-2 border-2 hover:bg-primary/5">
- <Monitor size={16} /> 시각적 검증
- </Button>
+ <Monitor size={16} /> ?�각??검�? </Button>
  <Button size="sm" className="rounded-xl font-black h-10 px-8 gap-2 bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200">
- <RotateCcw size={16} /> 스냅샷 롤백
+ <RotateCcw size={16} /> ?�냅??롤백
  </Button>
  </div>
  </div>
@@ -205,15 +204,15 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div className="flex items-center gap-6">
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-   <span className="text-[10px] font-black text-muted-foreground tracking-tight">마스터 원장 동기화됨</span>
+   <span className="text-[10px] font-black text-muted-foreground tracking-tight">마스???�장 ?�기?�됨</span>
  </div>
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-   <span className="text-[10px] font-black text-muted-foreground tracking-tight">암호화 키: AES-256 (NIST)</span>
+   <span className="text-[10px] font-black text-muted-foreground tracking-tight">?�호???? AES-256 (NIST)</span>
  </div>
  </div>
  <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-40 mt-4 md:mt-0">
-   Total Audit Records: {logs.length} • 무결성 검증 완료
+   Total Audit Records: {logs.length} ??무결??검�??�료
  </p>
  </div>
  </div>

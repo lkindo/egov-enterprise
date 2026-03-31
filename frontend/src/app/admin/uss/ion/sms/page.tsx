@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import SmsAdminClient from './SmsAdminClient';
 
 export const metadata = {
-  title: '문자 메시지 관리 | 부가서비스',
+  title: '문자 메시지 관�?| 부가?�비??,
 };
 
 export default async function SmsAdminPage() {
@@ -11,7 +11,7 @@ export default async function SmsAdminPage() {
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  // 초기 발송 내역 조회 (첫 페이지)
+  // 초기 발송 ?�역 조회 (�??�이지)
   const initialSmsList = await smsAdminService.getSmsList({ page: 0, size: 10 }, axiosConfig).catch(() => ({
     list: [],
     total: 0

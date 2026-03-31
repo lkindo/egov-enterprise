@@ -31,7 +31,7 @@ const SystemLogAdminPage = () => {
 
     const columns: Column<SysLog>[] = [
         {
-            header: '요청ID',
+            header: '?�청ID',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
@@ -41,7 +41,7 @@ const SystemLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '발생일자',
+            header: '발생?�자',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     {(item as any).occcrrncDe || '-'}
@@ -50,7 +50,7 @@ const SystemLogAdminPage = () => {
             className: 'w-52'
         },
         {
-            header: '서비스명',
+            header: '?�비?�명',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
@@ -59,7 +59,7 @@ const SystemLogAdminPage = () => {
             )
         },
         {
-            header: '메서드명',
+            header: '메서?�명',
             accessor: (item: SysLog) => (
                 <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-[10px] text-slate-600">
                     {item.methodNm}
@@ -67,7 +67,7 @@ const SystemLogAdminPage = () => {
             )
         },
         {
-            header: '응답시간',
+            header: '?�답?�간',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-1.5 font-bold text-slate-600">
                     <Clock size={12} className="opacity-30" />
@@ -78,7 +78,7 @@ const SystemLogAdminPage = () => {
             className: 'w-24'
         },
         {
-            header: '상태',
+            header: '?�태',
             accessor: (_item: SysLog) => (
                 <div className="flex items-center justify-center">
                     <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-md border border-emerald-100 uppercase tracking-tighter">SUCCESS</span>
@@ -90,12 +90,12 @@ const SystemLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="시스템 로그" breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '시스템 로그' }]} />
+            <PageHeader title="?�스??로그" breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }, { label: '?�스??로그' }]} />
 
-            <HubHeader title="시스템 인사이트" highlight="시스템 로그" subtitle="서버의 실시간 동작 상태와 모듈별 실행 이력을 명확하게 추적합니다." icon={Activity} 
+            <HubHeader title="?�스???�사?�트" highlight="?�스??로그" subtitle="?�버???�시�??�작 ?�태?� 모듈�??�행 ?�력??명확?�게 추적?�니??" icon={Activity} 
                 actions={
                     <div className="flex gap-4 p-2 items-center">
-                        <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">실시간 모니터링</Button>
+                        <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">?�시�?모니?�링</Button>
                     </div>
                 }
             />
@@ -110,7 +110,7 @@ const SystemLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page번호: page }),
                 }}
                 search={{
-                    placeholder: '서비스명, 요청ID 검색...',
+                    placeholder: '?�비?�명, ?�청ID 검??..',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page번호: 1 }),
                 }}
             />

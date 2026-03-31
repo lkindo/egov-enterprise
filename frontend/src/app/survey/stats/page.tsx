@@ -40,22 +40,22 @@ function StatsContent() {
  <ArrowLeft className="h-5 w-5" />
  </Button>
  <div>
- <h1 className="text-3xl font-bold tracking-tight">설문 결과 통계</h1>
+ <h1 className="text-3xl font-bold tracking-tight">?�문 결과 ?�계</h1>
  <p className="text-muted-foreground mt-1">
- 설문 조사 결과를 시각화하여 분석합니다.
+ ?�문 조사 결과�??�각?�하??분석?�니??
  </p>
  </div>
  </div>
 
  <Card className="shadow-sm border-primary/20">
  <CardHeader className="bg-primary/5">
- <CardTitle className="text-lg">설문지 선택</CardTitle>
- <CardDescription>통계를 확인하려는 설문지 ID를 입력하세요.</CardDescription>
+ <CardTitle className="text-lg">?�문지 ?�택</CardTitle>
+ <CardDescription>?�계�??�인?�려???�문지 ID�??�력?�세??</CardDescription>
  </CardHeader>
  <CardContent className="pt-6">
  <form onSubmit={handleSearch} className="flex gap-2">
  <Input
- placeholder="설문지 ID 입력 (예: QUSTR_00000000000001)"
+ placeholder="?�문지 ID ?�력 (?? QUSTR_00000000000001)"
  value={qestnrId}
  onChange={(e) => setQestnrId(e.target.value)}
  className="max-w-md"
@@ -68,7 +68,7 @@ function StatsContent() {
  {!initialQestnrId && (
  <div className="text-center py-20 border-2 border-dashed rounded-xl">
  <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
- <p className="text-muted-foreground">설문지 ID를 입력하여 통계를 확인하세요.</p>
+ <p className="text-muted-foreground">?�문지 ID�??�력?�여 ?�계�??�인?�세??</p>
  </div>
  )}
 
@@ -80,14 +80,14 @@ function StatsContent() {
 
  {isError && (
  <Card className="border-destructive/20 bg-destructive/5 text-center py-10">
- <p className="text-destructive font-medium">오류 발생: {error instanceof Error ? error.message : '데이터를 가져오지 못했습니다.'}</p>
+ <p className="text-destructive font-medium">?�류 발생: {error instanceof Error ? error.message : '?�이?��? 가?�오지 못했?�니??'}</p>
  </Card>
  )}
 
  {data && (
  <div className="grid grid-cols-1 gap-6">
  {data.length === 0 ? (
- <div className="text-center py-10">응답 데이터가 없습니다.</div>
+ <div className="text-center py-10">?�답 ?�이?��? ?�습?�다.</div>
  ) : (
  data.map((stat: any, idx: number) => (
  <Card key={idx} className="shadow-sm overflow-hidden">
@@ -100,15 +100,15 @@ function StatsContent() {
  {stat.qestnCn}
  </CardTitle>
  <div className="text-sm font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded ">
- {stat.qestnTyCode === '1' ? '객관식' : '주관식'}
+ {stat.qestnTyCode === '1' ? '객�??? : '주�???}
  </div>
  </div>
  </CardHeader>
  <CardContent className="pt-6">
  <div className="space-y-4">
  <div className="flex justify-between text-sm mb-1">
- <span className="font-medium">{stat.iemCn || '주관식 답변'}</span>
- <span className="text-muted-foreground">{stat.respondCnt || 0} 명 ({stat.qustnrPercent || 0}%)</span>
+ <span className="font-medium">{stat.iemCn || '주�????��?'}</span>
+ <span className="text-muted-foreground">{stat.respondCnt || 0} �?({stat.qustnrPercent || 0}%)</span>
  </div>
  <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
  <div

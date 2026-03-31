@@ -88,7 +88,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                     </div>
                     Alert Sentinel
                   </h2>
-                  <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">실시간 시스템 무결성 피드</p>
+                  <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">?�시�??�스??무결???�드</p>
                 </div>
                 <button 
                    onClick={onClose} 

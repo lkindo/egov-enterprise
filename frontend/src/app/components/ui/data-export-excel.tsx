@@ -11,7 +11,7 @@ interface DataExportExcelProps {
 }
 
 /**
- * 테이블 데이터를 CSV 형식으로 추출하여 엑셀에서 열 수 있도록 하는 컴포넌트
+ * ?�이�??�이?��? CSV ?�식?�로 추출?�여 ?��??�서 ?????�도�??�는 컴포?�트
  */
 export function DataExportExcel({ data, headers, filename = "export_data", className }: DataExportExcelProps) {
  const downloadExcel = () => {
@@ -48,7 +48,7 @@ export function DataExportExcel({ data, headers, filename = "export_data", class
  className={className || "flex items-center gap-2 px-3 py-2 text-sm font-semibold border rounded-md hover:bg-accent transition-colors"}
  >
  <Download size={16} />
- 내보내기
+ ?�보?�기
  </button>
  );
 }

@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import EventManagementClient from './EventManagementClient';
 
 export const metadata: Metadata = {
-  title: '행사 정보 관리 | eGov Enterprise System',
-  description: '에고브 엔터프라이즈 통합 행사 및 운영 관리 센터',
+  title: '?�사 ?�보 관�?| eGov Enterprise System',
+  description: '?�고�??�터?�라?�즈 ?�합 ?�사 �??�영 관�??�터',
 };
 
 export default function EventManagementPage() {

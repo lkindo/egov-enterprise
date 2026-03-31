@@ -45,17 +45,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 
 const STEPS = [
-  { id: 1, title: '기본 설정', description: '게시판의 이름과 설명을 입력하세요.', icon: Settings2 },
-  { id: 2, title: '템플릿 선택', description: '용도에 맞는 UI 스타일을 선택하세요.', icon: Layout },
-  { id: 3, title: '권한 매트릭스', description: '사용자 그룹별 권한을 설정하세요.', icon: ShieldCheck },
-  { id: 4, title: '메뉴 배포', description: '사이트 메뉴에 게시판을 연결하세요.', icon: Rocket },
+  { id: 1, title: '기본 ?�정', description: '게시?�의 ?�름�??�명???�력?�세??', icon: Settings2 },
+  { id: 2, title: '?�플�??�택', description: '?�도??맞는 UI ?��??�을 ?�택?�세??', icon: Layout },
+  { id: 3, title: '권한 매트�?��', description: '?�용??그룹�?권한???�정?�세??', icon: ShieldCheck },
+  { id: 4, title: '메뉴 배포', description: '?�이??메뉴??게시?�을 ?�결?�세??', icon: Rocket },
 ];
 
 const TEMPLATES = [
   {
     id: 'TMPLT_HUB',
-    name: '지식 허브',
-    description: '지식 공유에 최적화된 고도화 대시보드형 레이아웃',
+    name: '지???�브',
+    description: '지??공유??최적?�된 고도???�?�보?�형 ?�이?�웃',
     typeCode: 'BBST01',
     icon: BookOpen,
     color: 'bg-indigo-500',
@@ -63,7 +63,7 @@ const TEMPLATES = [
   {
     id: 'TMPLT_LIST',
     name: 'Enterprise List',
-    description: '빠른 탐색과 가독성을 중시하는 표준 데이터 테이블',
+    description: '빠른 ?�색�?가?�성??중시?�는 ?��? ?�이???�이�?,
     typeCode: 'BBST02',
     icon: List,
     color: 'bg-emerald-500',
@@ -71,7 +71,7 @@ const TEMPLATES = [
   {
     id: 'TMPLT_GALLERY',
     name: 'Visual Gallery',
-    description: '이미지 및 카드 중심의 시각적 커뮤니티 레이아웃',
+    description: '?��?지 �?카드 중심???�각??커�??�티 ?�이?�웃',
     typeCode: 'BBST03',
     icon: ImageIcon,
     color: 'bg-rose-500',
@@ -79,20 +79,20 @@ const TEMPLATES = [
 ];
 
 const ROLES = [
-  { id: 'ROLE_ADMIN', name: '시스템 관리자', icon: Lock, color: 'text-rose-500' },
-  { id: 'ROLE_USER', name: '일반 임직원', icon: UserCircle, color: 'text-blue-500' },
-  { id: 'ROLE_ANONYMOUS', name: '익명 사용자', icon: UserMinus, color: 'text-slate-400' },
+  { id: 'ROLE_ADMIN', name: '?�스??관리자', icon: Lock, color: 'text-rose-500' },
+  { id: 'ROLE_USER', name: '?�반 ?�직??, icon: UserCircle, color: 'text-blue-500' },
+  { id: 'ROLE_ANONYMOUS', name: '?�명 ?�용??, icon: UserMinus, color: 'text-slate-400' },
 ];
 
 const PERMISSIONS = [
   { id: 'list', name: '목록 조회' },
-  { id: 'read', name: '글 읽기' },
-  { id: 'write', name: '글 쓰기' },
-  { id: 'comment', name: '댓글 작성' },
+  { id: 'read', name: '글 ?�기' },
+  { id: 'write', name: '글 ?�기' },
+  { id: 'comment', name: '?��? ?�성' },
 ];
 
 const formSchema = z.object({
-  bbsNm: z.string().min(2, '게시판 명칭은 최소 2글자 이상이어야 합니다.'),
+  bbsNm: z.string().min(2, '게시??명칭?� 최소 2글???�상?�어???�니??'),
   bbsIntrcn: z.string(),
   replyPosblAt: z.boolean(),
   fileAtchPosblAt: z.boolean(),
@@ -209,7 +209,7 @@ export function BoardMakerWizard() {
       queryClient.invalidateQueries({ queryKey: ["menus"] });
 
       setIsSuccess(true);
-    } catch (error) {
+    } catch {
       console.error('Validation/Submission Error:', error);
       setStatus("Failed to reconcile system state.");
     } finally {
@@ -227,7 +227,7 @@ export function BoardMakerWizard() {
           <div className="space-y-4">
             <h2 className="text-5xl font-black tracking-tighter text-slate-900 italic">MISSION COMPLETE!</h2>
             <p className="text-xl text-slate-400 font-bold leading-relaxed max-w-md mx-auto">
-              게시판이 생성되었으며 <span className="text-primary">'{watch('menuNm')}'</span> 메뉴에 성공적으로 연결되었습니다.
+              게시?�이 ?�성?�었?�며 <span className="text-primary">'{watch('menuNm')}'</span> 메뉴???�공?�으�??�결?�었?�니??
             </p>
           </div>
           <div className="flex flex-col gap-4 w-full max-w-sm">
@@ -235,14 +235,14 @@ export function BoardMakerWizard() {
               onClick={() => router.push('/admin/community/boards/master')}
               className="h-16 rounded-2xl bg-primary text-xl font-black hover:scale-105 transition-all shadow-xl shadow-primary/20 italic tracking-tighter"
             >
-              게시판 목록 보기
+              게시??목록 보기
             </Button>
             <Button
               variant="ghost"
               onClick={() => window.location.reload()}
               className="h-14 rounded-2xl text-slate-400 font-bold hover:text-primary transition-colors"
             >
-              다른 게시판 추가하기
+              ?�른 게시??추�??�기
             </Button>
           </div>
         </CardContent>
@@ -316,11 +316,11 @@ export function BoardMakerWizard() {
                     <div className="space-y-4">
                       <Label htmlFor="bbsNm" className="text-xl font-black text-slate-800 flex items-center gap-2">
                         <span className="w-1.5 h-6 bg-primary rounded-full inline-block" />
-                        게시판 명칭
+                        게시??명칭
                       </Label>
                       <Input
                         id="bbsNm"
-                        placeholder="예: 사내 소식 공유 게시판"
+                        placeholder="?? ?�내 ?�식 공유 게시??
                         className={cn(
                           "h-16 text-xl rounded-2xl border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm",
                           errors.bbsNm ? "border-red-500 bg-red-50/10" : "border-slate-100 bg-slate-50/50"
@@ -333,11 +333,11 @@ export function BoardMakerWizard() {
                     <div className="space-y-4">
                       <Label htmlFor="bbsIntrcn" className="text-xl font-black text-slate-800 flex items-center gap-2">
                         <span className="w-1.5 h-6 bg-slate-300 rounded-full inline-block" />
-                        게시판 소개
+                        게시???�개
                       </Label>
                       <Textarea
                         id="bbsIntrcn"
-                        placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요."
+                        placeholder="게시?�의 목적�??�용 ?�?�을 간단???�명?�주?�요."
                         className="min-h-[140px] text-lg rounded-3xl border-2 border-slate-100 bg-slate-50/50 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm"
                         {...register('bbsIntrcn')}
                       />
@@ -347,10 +347,10 @@ export function BoardMakerWizard() {
                       <div className="flex items-center justify-between p-8 rounded-[2rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all">
                         <div className="space-y-1">
                           <Label className="text-lg font-black text-slate-800 flex items-center gap-2">
-                            댓글 사용 여부
+                            ?��? ?�용 ?��?
                             <Info className="w-4 h-4 text-slate-300" />
                           </Label>
-                          <p className="text-sm text-slate-400 font-medium whitespace-nowrap">게시글에 댓글을 작성할 수 있습니다.</p>
+                          <p className="text-sm text-slate-400 font-medium whitespace-nowrap">게시글???��????�성?????�습?�다.</p>
                         </div>
                         <Switch
                           checked={watch('replyPosblAt')}
@@ -362,10 +362,10 @@ export function BoardMakerWizard() {
                       <div className="flex items-center justify-between p-8 rounded-[2rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all">
                         <div className="space-y-1">
                           <Label className="text-lg font-black text-slate-800 flex items-center gap-2">
-                            파일 첨부 여부
+                            ?�일 첨�? ?��?
                             <Info className="w-4 h-4 text-slate-300" />
                           </Label>
-                          <p className="text-sm text-slate-400 font-medium whitespace-nowrap">문서나 이미지를 첨부할 수 있습니다.</p>
+                          <p className="text-sm text-slate-400 font-medium whitespace-nowrap">문서???��?지�?첨�??????�습?�다.</p>
                         </div>
                         <Switch
                           checked={watch('fileAtchPosblAt')}
@@ -382,7 +382,7 @@ export function BoardMakerWizard() {
                     <div className="flex-1 space-y-8">
                       <div className="space-y-2">
                         <h4 className="text-xl font-black text-slate-800 tracking-tight italic">LAYOUT_STRATEGY_SELECT</h4>
-                        <p className="text-sm text-slate-400 font-medium">비즈니스 목적에 부합하는 최적의 UI 엔진을 선택하세요.</p>
+                        <p className="text-sm text-slate-400 font-medium">비즈?�스 목적??부?�하??최적??UI ?�진???�택?�세??</p>
                       </div>
                       <div className="grid grid-cols-1 gap-6">
                         {TEMPLATES.map((tpl) => {
@@ -428,9 +428,9 @@ export function BoardMakerWizard() {
                         })}
                       </div>
                       <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white/40 font-mono text-[10px] tracking-widest leading-relaxed">
-                        엔진 최적화: 활성 <br />
-                        UI 렌더링 모드: 고충실도 <br />
-                        템플릿 ID: {selectedTemplate}
+                        ?�진 최적?? ?�성 <br />
+                        UI ?�더�?모드: 고충?�도 <br />
+                        ?�플�?ID: {selectedTemplate}
                       </div>
                     </div>
 
@@ -454,7 +454,7 @@ export function BoardMakerWizard() {
                         <table className="w-full min-w-[800px]">
                           <thead>
                             <tr className="bg-slate-900/5 border-b">
-                              <th className="p-8 text-left font-black text-slate-400 text-sm tracking-widest uppercase">대상 그룹 (Roles)</th>
+                              <th className="p-8 text-left font-black text-slate-400 text-sm tracking-widest uppercase">?�??그룹 (Roles)</th>
                               {PERMISSIONS.map(p => (
                                 <th key={p.id} className="p-8 text-center font-black text-slate-400 text-sm tracking-widest uppercase">{p.name}</th>
                               ))}
@@ -504,8 +504,8 @@ export function BoardMakerWizard() {
                     <div className="p-8 bg-amber-50 rounded-[2rem] border-2 border-amber-100 flex items-start gap-4 shadow-sm">
                       <Info className="w-8 h-8 text-amber-500 shrink-0" />
                       <div>
-                        <p className="font-black text-amber-900 text-lg">보안 정책 안내</p>
-                        <p className="text-slate-600 font-medium">관리자 그룹은 모든 권한이 기본적으로 부여됩니다. '익명 사용자'에게 쓰기 권한을 부여할 경우 스팸 게시물에 주의가 필요합니다.</p>
+                        <p className="font-black text-amber-900 text-lg">보안 ?�책 ?�내</p>
+                        <p className="text-slate-600 font-medium">관리자 그룹?� 모든 권한??기본?�으�?부?�됩?�다. '?�명 ?�용???�게 ?�기 권한??부?�할 경우 ?�팸 게시물에 주의가 ?�요?�니??</p>
                       </div>
                     </div>
                   </div>
@@ -516,16 +516,16 @@ export function BoardMakerWizard() {
                     <div className="space-y-6">
                       <Label className="text-xl font-black text-slate-800 flex items-center gap-2">
                         <span className="w-1.5 h-6 bg-primary rounded-full inline-block" />
-                        상위 메뉴 선택
+                        ?�위 메뉴 ?�택
                       </Label>
                       <Select value={watch('upperMenuNo')} onValueChange={(val) => setValue('upperMenuNo', val)}>
                         <SelectTrigger className="h-20 rounded-3xl border-2 border-slate-100 bg-slate-50/50 px-8 text-xl font-black shadow-inner-sm">
-                          <SelectValue placeholder="상위 메뉴를 선택하세요." />
+                          <SelectValue placeholder="?�위 메뉴�??�택?�세??" />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-none shadow-2xl">
-                          <SelectItem value="2000000" className="py-4 text-lg font-bold">협업 커뮤니티 및 콘텐츠</SelectItem>
-                          <SelectItem value="2030000" className="py-4 text-lg font-bold">홍보섹션 및 사용자지원</SelectItem>
-                          <SelectItem value="0" className="py-4 text-lg font-bold">ROOT (최상위 메뉴)</SelectItem>
+                          <SelectItem value="2000000" className="py-4 text-lg font-bold">?�업 커�??�티 �?콘텐�?/SelectItem>
+                          <SelectItem value="2030000" className="py-4 text-lg font-bold">?�보?�션 �??�용?��???/SelectItem>
+                          <SelectItem value="0" className="py-4 text-lg font-bold">ROOT (최상??메뉴)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -536,14 +536,14 @@ export function BoardMakerWizard() {
                           메뉴 명칭
                         </Label>
                         <Input
-                          placeholder="메뉴에 표시할 이름을 입력하세요."
+                          placeholder="메뉴???�시???�름???�력?�세??"
                           className="h-16 text-lg rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm"
                           {...register('menuNm')}
                         />
                       </div>
                       <div className="space-y-4">
                         <Label className="text-xl font-black text-slate-800 flex items-center gap-2">
-                          메뉴 순서
+                          메뉴 ?�서
                         </Label>
                         <Input
                           type="number"
@@ -560,7 +560,7 @@ export function BoardMakerWizard() {
                           /admin/community/boards/selectBoardList?bbsId=AUTO_GEN
                           <ExternalLink size={20} className="text-slate-600" />
                         </h5>
-                        <p className="text-slate-400 text-sm font-medium italic">생성 즉시 메뉴 시스템에 활성화됩니다.</p>
+                        <p className="text-slate-400 text-sm font-medium italic">?�성 즉시 메뉴 ?�스?�에 ?�성?�됩?�다.</p>
                       </div>
                       <div className="absolute right-[-20px] top-[-20px] opacity-10 group-hover:scale-110 transition-transform duration-700">
                         <Rocket size={200} />
@@ -581,7 +581,7 @@ export function BoardMakerWizard() {
               disabled={currentStep === 1 || isSubmitting}
               className="h-14 px-8 rounded-2xl font-black text-slate-600 hover:bg-white hover:text-primary transition-all disabled:opacity-0"
             >
-              <ChevronLeft className="mr-2 w-5 h-5" /> 이전 단계
+              <ChevronLeft className="mr-2 w-5 h-5" /> ?�전 ?�계
             </Button>
 
             <Button
@@ -596,11 +596,11 @@ export function BoardMakerWizard() {
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  {status || '처리 중...'}
+                  {status || '처리 �?..'}
                 </div>
               ) : (
                 <span className="flex items-center gap-2">
-                  {currentStep === STEPS.length ? '게시판 생성 및 메뉴 배포' : '다음 단계로'}
+                  {currentStep === STEPS.length ? '게시???�성 �?메뉴 배포' : '?�음 ?�계�?}
                   <ChevronRight className="ml-2 w-5 h-5" />
                 </span>
               )}
@@ -610,7 +610,7 @@ export function BoardMakerWizard() {
       </Card>
 
       <p className="text-center text-slate-400 text-sm font-medium italic">
-        "마지막 클릭이 새로운 소통의 시작입니다" - Board Master Maker v1.0
+        "마�?�??�릭???�로???�통???�작?�니?? - Board Master Maker v1.0
       </p>
     </div>
   );

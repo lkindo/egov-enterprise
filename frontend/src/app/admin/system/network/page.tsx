@@ -5,8 +5,8 @@ import NetworkAdminClient from './NetworkAdminClient';
 import { Loader2 } from 'lucide-react';
 
 export const metadata = {
- title: '네트워크 인프라 지능형 관리 및 최적화 | 전자정부 표준프레임워크',
- description: '시스템 전반의 네트워크 토폴로지 정보를 관리하고 최적의 연결성을 보장합니다.',
+ title: '?�트?�크 ?�프??지?�형 관�?�?최적??| ?�자?��? ?��??�레?�워??,
+ description: '?�스???�반???�트?�크 ?�폴로�? ?�보�?관리하�?최적???�결?�을 보장?�니??',
 };
 
 export default async function AdminNetworkPage() {
@@ -14,13 +14,13 @@ export default async function AdminNetworkPage() {
  const accessToken = cookieStore.get('accessToken')?.value;
  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- // [Eliminating Waterfalls] 서버 사이드 초기 데이터 패칭
+ // [Eliminating Waterfalls] ?�버 ?�이??초기 ?�이???�칭
  let initialNetworks: Network[] = [];
 
  try {
  const response = await networkAdminService.getNetworks({ page: 0, size: 100 }, axiosConfig);
  initialNetworks = (response as any)?.content || (response as any)?.data?.content || (response as any) || [];
- } catch (error) {
+ } catch {
  console.error('Server-side fetch network data failed:', error);
  }
 

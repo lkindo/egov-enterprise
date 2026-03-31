@@ -4,7 +4,7 @@ import React from 'react';
 import { BoardMakerWizard } from './components/BoardMakerWizard';
 
 /**
- * 게시판 빌더 마법사 페이지 (Admin)
+ * 게시??빌더 마법???�이지 (Admin)
  * /admin/community/boards/maker
  */
 export default function BoardMakerPage() {

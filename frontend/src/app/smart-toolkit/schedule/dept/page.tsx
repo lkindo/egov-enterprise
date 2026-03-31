@@ -45,7 +45,7 @@ export default function DeptSchedulePage() {
  schdulBgnde: '',
  schdulEndde: '',
  schdulPlace: '',
- schdulIpcrCode: 'A', // A: 전체, B: 부서, C: 개인
+ schdulIpcrCode: 'A', // A: ?�체, B: 부?? C: 개인
  });
 
  const fetchList = useCallback(async () => {
@@ -56,7 +56,7 @@ export default function DeptSchedulePage() {
  } else {
  setSchedules([]);
  }
- } catch (error) {
+ } catch {
  console.error(error);
  setSchedules([]);
  }
@@ -91,12 +91,12 @@ export default function DeptSchedulePage() {
  };
 
  const handleDelete = async (schdulId: string) => {
- if (!confirm('정말 삭제하시겠습니까?')) return;
+ if (!confirm('?�말 ??��?�시겠습?�까?')) return;
  try {
  await deleteDeptSchedule(schdulId);
  fetchList();
- } catch (error) {
- alert('삭제 중 오류가 발생했습니다.');
+ } catch {
+ alert('??�� �??�류가 발생?�습?�다.');
  }
  };
 
@@ -109,24 +109,24 @@ export default function DeptSchedulePage() {
  }
  setIsDialogOpen(false);
  fetchList();
- } catch (error) {
- alert('저장 중 오류가 발생했습니다.');
+ } catch {
+ alert('?�??�??�류가 발생?�습?�다.');
  }
  };
 
  return (
  <div className="space-y-6">
  <div className="flex justify-between items-center">
- <h2 className="text-2xl font-bold tracking-tight">부서일정 관리</h2>
+ <h2 className="text-2xl font-bold tracking-tight">부?�일??관�?/h2>
  <Button onClick={handleCreate}>
  <Plus className="mr-2 h-4 w-4" />
- 일정 등록
+ ?�정 ?�록
  </Button>
  </div>
 
  <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
  <Input
- placeholder="일정명 또는 내용으로 검색"
+ placeholder="?�정�??�는 ?�용?�로 검??
  className="max-w-sm"
  value={params.schdulNm}
  onChange={(e) => setParams(prev => ({ ...prev, schdulNm: e.target.value }))}
@@ -138,19 +138,19 @@ export default function DeptSchedulePage() {
  <Table>
  <TableHeader>
  <TableRow>
- <TableHead className="w-[80px]">순번</TableHead>
- <TableHead>일정명</TableHead>
- <TableHead>일시</TableHead>
- <TableHead>장소</TableHead>
- <TableHead>담당자</TableHead>
- <TableHead className="w-[120px]">관리</TableHead>
+ <TableHead className="w-[80px]">?�번</TableHead>
+ <TableHead>?�정�?/TableHead>
+ <TableHead>?�시</TableHead>
+ <TableHead>?�소</TableHead>
+ <TableHead>?�당??/TableHead>
+ <TableHead className="w-[120px]">관�?/TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
  {schedules.length === 0 ? (
  <TableRow>
  <TableCell colSpan={6} className="h-24 text-center">
- 데이터가 없습니다.
+ ?�이?��? ?�습?�다.
  </TableCell>
  </TableRow>
  ) : (
@@ -183,11 +183,11 @@ export default function DeptSchedulePage() {
  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
  <DialogContent className="max-w-md">
  <DialogHeader>
- <DialogTitle>{editingSchedule ? '일정 수정' : '일정 등록'}</DialogTitle>
+ <DialogTitle>{editingSchedule ? '?�정 ?�정' : '?�정 ?�록'}</DialogTitle>
  </DialogHeader>
  <div className="space-y-4 py-4">
  <div className="space-y-2">
- <Label htmlFor="schdulNm">일정명</Label>
+ <Label htmlFor="schdulNm">?�정�?/Label>
  <Input
  id="schdulNm"
  value={formData.schdulNm}
@@ -195,7 +195,7 @@ export default function DeptSchedulePage() {
  />
  </div>
  <div className="space-y-2">
- <Label htmlFor="schdulCn">내용</Label>
+ <Label htmlFor="schdulCn">?�용</Label>
  <Textarea
  id="schdulCn"
  value={formData.schdulCn}
@@ -203,7 +203,7 @@ export default function DeptSchedulePage() {
  />
  </div>
  <div className="space-y-2">
- <Label htmlFor="schdulPlace">장소</Label>
+ <Label htmlFor="schdulPlace">?�소</Label>
  <Input
  id="schdulPlace"
  value={formData.schdulPlace || ''}
@@ -213,7 +213,7 @@ export default function DeptSchedulePage() {
  </div>
  <DialogFooter>
  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
- <Button onClick={handleSubmit}>저장</Button>
+ <Button onClick={handleSubmit}>?�??/Button>
  </DialogFooter>
  </DialogContent>
  </Dialog>

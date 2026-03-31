@@ -50,8 +50,8 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
       setData(res.list || []);
       setTotal(res.total || 0);
       setPageNumber(page);
-    } catch (error) {
-      toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
+    } catch {
+      toast('?�이?��? 불러?�는 �??�류가 발생?�습?�다.', 'error');
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
 
   const columns: Column<AdministCode>[] = [
     { 
-        header: '행정역 코드 (식별자)', 
+        header: '?�정??코드 (?�별??', 
         accessor: (item: any) => (
             <div className="flex items-center gap-4 py-3">
                 <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
@@ -76,54 +76,54 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
                 </div>
                 <div className="flex flex-col gap-0.5">
                     <span className="font-mono font-black text-foreground tracking-tighter text-sm uppercase">{item.administZoneCode}</span>
-                    <span className="text-[8px] font-black text-muted-foreground tracking-[0.3em] uppercase opacity-40">구역 식별자</span>
+                    <span className="text-[8px] font-black text-muted-foreground tracking-[0.3em] uppercase opacity-40">구역 ?�별??/span>
                 </div>
             </div>
         ),
         className: 'w-56' 
     },
     { 
-      header: '도메인 구분', 
+      header: '?�메??구분', 
       accessor: (item: any) => (
         <div className={cn(
             "px-3 py-1.5 rounded-lg border w-fit text-[9px] font-black tracking-widest uppercase shadow-sm",
             item.administZoneSe === '1' ? "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
         )}>
-            {item.administZoneSe === '1' ? '법정동' : '행정동'}
+            {item.administZoneSe === '1' ? '법정?? : '?�정??}
         </div>
       ),
       className: 'w-32'
     },
     { 
-        header: '행정 구역 명세 (메타데이터)', 
+        header: '?�정 구역 명세 (메�??�이??', 
         accessor: (item: any) => (
             <div className="flex flex-col gap-1 py-4">
                 <span className="font-black text-foreground tracking-tight text-md uppercase leading-tight">{item.administZoneNm}</span>
                 <div className="flex items-center gap-2">
                     <Compass size={10} className="text-primary opacity-40" />
-                    <span className="text-[9px] font-black text-muted-foreground/50 tracking-[0.2em] font-mono uppercase italic leading-none">지리적 네임스페이스</span>
+                    <span className="text-[9px] font-black text-muted-foreground/50 tracking-[0.2em] font-mono uppercase italic leading-none">지리적 ?�임?�페?�스</span>
                 </div>
             </div>
         )
     },
     { 
-        header: '상위 노드 ID', 
+        header: '?�위 ?�드 ID', 
         accessor: (item: any) => (
             <div className="flex items-center gap-2 font-mono text-[10px] font-black text-muted-foreground/60 tabular-nums tracking-tighter italic">
-                {item.upperAdministZoneCode || '최상위 섹터'}
+                {item.upperAdministZoneCode || '최상???�터'}
             </div>
         ), 
         className: 'w-32' 
     },
     { 
-      header: '동기화 상태', 
+      header: '?�기???�태', 
       accessor: (item: any) => (
         <div className={cn(
             "flex items-center gap-2 px-3 py-1.5 rounded-full border w-fit shadow-sm",
             item.useAt === 'Y' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
         )}>
             <div className={cn("w-1.5 h-1.5 rounded-full shadow-sm", item.useAt === 'Y' ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
-            <span className="text-[9px] font-black tracking-widest uppercase">{item.useAt === 'Y' ? '활성' : '중단'}</span>
+            <span className="text-[9px] font-black tracking-widest uppercase">{item.useAt === 'Y' ? '?�성' : '중단'}</span>
         </div>
       ),
       className: 'w-32'
@@ -134,9 +134,9 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       
       <HubHeader 
-        title="행정 표준" 
-        highlight="레지스트리" 
-        subtitle="국가 행정 표준에 따른 법정동 및 행정동 코드 체계의 공간 인텔리전스 통합 관리" 
+        title="?�정 ?��?" 
+        highlight="?��??�트�? 
+        subtitle="�?? ?�정 ?��????�른 법정??�??�정??코드 체계??공간 ?�텔리전???�합 관�? 
         icon={Milestone} 
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -148,17 +148,17 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
                 <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
              <Button className="h-14 px-10 rounded-2xl bg-primary border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-3 group">
-                <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" /> 신규 행정 코드 인스턴스 등록
+                <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" /> ?�규 ?�정 코드 ?�스?�스 ?�록
              </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="등록 구역 수" value={stats.totalCount} icon={Database} color="primary" />
-        <HubMetricCard title="법정동 수" value={stats.legalDist} icon={Map} color="indigo" />
-        <HubMetricCard title="행정동 수" value={stats.adminDist} icon={Compass} color="amber" />
-        <HubMetricCard title="동기화 지표" value={`${stats.syncStatus}%`} icon={ShieldCheck} color="emerald" status="최적" />
+        <HubMetricCard title="?�록 구역 ?? value={stats.totalCount} icon={Database} color="primary" />
+        <HubMetricCard title="법정???? value={stats.legalDist} icon={Map} color="indigo" />
+        <HubMetricCard title="?�정???? value={stats.adminDist} icon={Compass} color="amber" />
+        <HubMetricCard title="?�기??지?? value={`${stats.syncStatus}%`} icon={ShieldCheck} color="emerald" status="최적" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
@@ -173,21 +173,21 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
                         <div className="w-20 h-20 rounded-[2rem] bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
                             <Monitor size={36} className="text-primary" />
                         </div>
-                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">관할 인텔리전스<br />허브</h4>
+                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">관???�텔리전??br />?�브</h4>
                     </div>
                     
                     <p className="text-sm text-slate-500 font-bold leading-relaxed italic border-l-4 border-primary pl-8">
-                        행정표준코드 체계(KAS)와의 데이터 무결성을 보장하며, 국가 공간정보 통합 관리 체계와 실시간으로 동기화됩니다.
+                        ?�정?��?코드 체계(KAS)?�???�이??무결?�을 보장?�며, �?? 공간?�보 ?�합 관�?체계?� ?�시간으�??�기?�됩?�다.
                     </p>
 
                     <div className="space-y-6 pt-12 border-t border-slate-100">
                         <div className="flex items-center justify-between group/stat">
-                            <span className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">섹터 엔진</span>
-                            <span className="text-lg font-black font-mono tracking-tighter text-emerald-500">정상</span>
+                            <span className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">?�터 ?�진</span>
+                            <span className="text-lg font-black font-mono tracking-tighter text-emerald-500">?�상</span>
                         </div>
                         <div className="flex items-center justify-between group/stat">
-                            <span className="text-[10px] font-black text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-amber-500 transition-colors">동기화 빈도</span>
-                            <span className="text-lg font-black font-mono tracking-tighter">매일 00시</span>
+                            <span className="text-[10px] font-black text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-amber-500 transition-colors">?�기??빈도</span>
+                            <span className="text-lg font-black font-mono tracking-tighter">매일 00??/span>
                         </div>
                     </div>
                 </div>
@@ -196,19 +196,19 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
 
         {/* Data Area */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-10">
-            <HubSectionCard title="행무 코드 매트릭스 탐색기" description="시스템에 등록된 모든 행정 구역 및 법정동 메타데이터의 저수준 프로토콜 상세입니다." icon={SearchCode}>
+            <HubSectionCard title="?�무 코드 매트�?�� ?�색�? description="?�스?�에 ?�록??모든 ?�정 구역 �?법정??메�??�이?�의 ?�?��? ?�로?�콜 ?�세?�니??" icon={SearchCode}>
                 <form onSubmit={(e) => { e.preventDefault(); loadData(searchWrd, 1); }} className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
                     <div className="relative group/search flex-1">
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={18} />
                         <Input
-                            placeholder="행정구역명을 입력하여 메타데이터 엔티티를 조회하세요..."
+                            placeholder="?�정구역명을 ?�력?�여 메�??�이???�티?��? 조회?�세??.."
                             value={searchWrd}
                             onChange={(e) => setSearchWrd(e.target.value)}
                             className="h-14 pl-14 pr-6 w-full bg-slate-50 border-none rounded-2xl text-[11px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
                         />
                     </div>
                     <Button type="submit" size="lg" className="h-14 px-10 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition-all gap-3 group">
-                        <Layers size={18} className="group-hover:rotate-180 transition-transform duration-500" /> 엔진 필터링 실행
+                        <Layers size={18} className="group-hover:rotate-180 transition-transform duration-500" /> ?�진 ?�터�??�행
                     </Button>
                 </form>
 
@@ -225,7 +225,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
                                 columns={columns}
                                 data={data}
                                 loading={loading}
-                                emptyMessage="검색 결과에 부합하는 행정코드가 현재 섹터에 존재하지 않습니다."
+                                emptyMessage="검??결과??부?�하???�정코드가 ?�재 ?�터??존재?��? ?�습?�다."
                                 className="border-none bg-transparent"
                             />
                         </motion.div>

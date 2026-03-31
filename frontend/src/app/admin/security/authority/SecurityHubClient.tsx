@@ -157,7 +157,7 @@ export default function SecurityHubClient() {
       authorMode === 'create' ? authorAdminService.createAuthor(data) : authorAdminService.updateAuthor(data.authorCode!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
-      toast('보안 권한 아키텍처가 성공적으로 반영되었습니다.', 'success');
+      toast('보안 권한 ?�키?�처가 ?�공?�으�?반영?�었?�니??', 'success');
       setIsAuthorModalOpen(false);
     }
   });
@@ -172,7 +172,7 @@ export default function SecurityHubClient() {
       return userAuthorityAdminService.saveUserAuthorities(mappings);
     },
     onSuccess: () => {
-      toast('사용자-권한 할당 매트릭스가 업데이트되었습니다.', 'success');
+      toast('?�용??권한 ?�당 매트�?��가 ?�데?�트?�었?�니??', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-user-authorities', selectedAuthorCode] });
     }
   });
@@ -180,7 +180,7 @@ export default function SecurityHubClient() {
   const saveMenuMappingMutation = useMutation({
     mutationFn: () => menuAdminService.saveMenuCreation(selectedAuthorCode, Array.from(tempMenuMappings)),
     onSuccess: () => {
-      toast('메뉴 접근 거버넌스 정책이 동기화되었습니다.', 'success');
+      toast('메뉴 ?�근 거버?�스 ?�책???�기?�되?�습?�다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus', selectedAuthorCode] });
     }
   });
@@ -197,7 +197,7 @@ export default function SecurityHubClient() {
       await Promise.all(promises);
       setGlobalMappings(allMappings);
     } catch (e) {
-      toast('글로벌 매트릭스 데이터 로드 중 오류가 발생했습니다.', 'error');
+      toast('글로벌 매트�?�� ?�이??로드 �??�류가 발생?�습?�다.', 'error');
     } finally {
       setIsGlobalLoading(false);
     }
@@ -226,10 +226,10 @@ export default function SecurityHubClient() {
         menuAdminService.saveMenuCreation(code, Array.from(set))
       );
       await Promise.all(promises);
-      toast('글로벌 보안 정책이 전사적으로 동기화되었습니다.', 'success');
+      toast('글로벌 보안 ?�책???�사?�으�??�기?�되?�습?�다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus'] });
     } catch (e) {
-      toast('글로벌 정책 저장 중 오류가 발생했습니다.', 'error');
+      toast('글로벌 ?�책 ?�??�??�류가 발생?�습?�다.', 'error');
     } finally {
       setIsGlobalLoading(false);
     }
@@ -271,14 +271,14 @@ export default function SecurityHubClient() {
   };
 
   const handleAuthorDelete = async (code: string) => {
-    if (!confirm('권한 아키텍처를 삭제하시겠습니까? 관련 할당 정보가 모두 영구적으로 소멸됩니다.')) return;
+    if (!confirm('권한 ?�키?�처�???��?�시겠습?�까? 관???�당 ?�보가 모두 ?�구?�으�??�멸?�니??')) return;
     try {
       await authorAdminService.deleteAuthor(code);
-      toast('권한 프로필이 성공적으로 삭제되었습니다.', 'success');
+      toast('권한 ?�로?�이 ?�공?�으�???��?�었?�니??', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
       if (selectedAuthorCode === code) setSelectedAuthorCode('');
     } catch (e) {
-      toast('삭제 중 시스템 예외가 발생했습니다.', 'error');
+      toast('??�� �??�스???�외가 발생?�습?�다.', 'error');
     }
   };
 
@@ -395,14 +395,14 @@ export default function SecurityHubClient() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="통합 보안 거버넌스 허브"
-        breadcrumbs={[{ label: '보안관리' }, { label: '권한 설정' }, { label: '통합 콘트롤' }]}
+        title="?�합 보안 거버?�스 ?�브"
+        breadcrumbs={[{ label: '보안관�? }, { label: '권한 ?�정' }, { label: '?�합 콘트�? }]}
       />
 
       <HubHeader
         title="Security"
         highlight="Fabric"
-        subtitle="시스템 전반의 보안 역할(Role), 사용자 할당 매트릭스 및 다차원 접근 제어 정책 통합 아키텍처"
+        subtitle="?�스???�반??보안 ??��(Role), ?�용???�당 매트�?�� �??�차???�근 ?�어 ?�책 ?�합 ?�키?�처"
         icon={Lock}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -440,7 +440,7 @@ export default function SecurityHubClient() {
               onClick={handleOpenAuthorCreate}
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
-              <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 아키텍처 실장
+              <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> ?�규 보안 ?�키?�처 ?�장
             </Button>
           </div>
         }
@@ -484,13 +484,13 @@ export default function SecurityHubClient() {
 
             {/* Left: Role Inventory */}
             <div className="col-span-12 lg:col-span-3 space-y-8 h-full">
-              <HubSectionCard title="역할 인벤토리" description="시스템 접근 수준을 정의하는 보안 프로필 리스트입니다." icon={Lock}>
+              <HubSectionCard title="??�� ?�벤?�리" description="?�스???�근 ?��????�의?�는 보안 ?�로??리스?�입?�다." icon={Lock}>
                 <div className="space-y-8 pt-4">
                   <div className="relative group/search">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                     <Input
                       className="pl-12 h-14 bg-slate-50/50 border-none rounded-2xl text-sm font-black tracking-tight shadow-inner"
-                      placeholder="역할 검색 (ID, 명칭)..."
+                      placeholder="??�� 검??(ID, 명칭)..."
                       value={roleSearchKeyword}
                       onChange={(e) => setRoleSearchKeyword(e.target.value)}
                     />
@@ -521,8 +521,8 @@ export default function SecurityHubClient() {
             {/* Center: Identity Matrix */}
             <div className="col-span-12 lg:col-span-4 space-y-8 h-full">
               <HubSectionCard
-                title="아이디 "
-                description="선택된 역할에 할당된 개별 식별자들의 실시간 할당 상태입니다."
+                title="?�이??"
+                description="?�택????��???�당??개별 ?�별?�들???�시�??�당 ?�태?�니??"
                 icon={Users}
                 action={
                   <Button
@@ -540,7 +540,7 @@ export default function SecurityHubClient() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                     <Input
                       className="pl-12 h-14 bg-slate-50/50 border-none rounded-2xl text-sm font-black tracking-tight shadow-inner"
-                      placeholder="사용자 검색 (ID, 성명)..."
+                      placeholder="?�용??검??(ID, ?�명)..."
                       value={userSearchKeyword}
                       onChange={(e) => setUserSearchKeyword(e.target.value)}
                     />
@@ -555,7 +555,7 @@ export default function SecurityHubClient() {
                           </div>
                           <div className="space-y-2">
                             <h4 className="text-xl font-black text-slate-300 uppercase tracking-tighter">Identity_Idle</h4>
-                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 역할을 선택하여 식별자 프로브를 활성화하십시오.</p>
+                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 ??��???�택?�여 ?�별???�로브�? ?�성?�하??��??</p>
                           </div>
                         </motion.div>
                       ) : (
@@ -585,8 +585,8 @@ export default function SecurityHubClient() {
             {/* Right: Policy Topology */}
             <div className="col-span-12 lg:col-span-5 h-full">
               <HubSectionCard
-                title="접근 정책 토폴로지"
-                description="역할별 동적인 메뉴 노드 계층 및 아키텍처 접근 수준 설정입니다."
+                title="?�근 ?�책 ?�폴로�?"
+                description="??���??�적??메뉴 ?�드 계층 �??�키?�처 ?�근 ?��? ?�정?�니??"
                 icon={Layers}
                 action={
                   <Button
@@ -610,8 +610,7 @@ export default function SecurityHubClient() {
                     <div className="relative z-10 space-y-1">
                       <span className="text-[10px] font-black text-white/30 tracking-[0.4em] uppercase font-mono">Policy_Manifest</span>
                       <div className="text-white text-lg font-black tracking-tighter leading-none">
-                        {tempMenuMappings.size} 개의 활성 노드가 <span className="text-primary">{selectedAuthorCode || 'N/A'}</span> 에 매핑됨
-                      </div>
+                        {tempMenuMappings.size} 개의 ?�성 ?�드가 <span className="text-primary">{selectedAuthorCode || 'N/A'}</span> ??매핑??                      </div>
                     </div>
                   </div>
 
@@ -624,7 +623,7 @@ export default function SecurityHubClient() {
                           </div>
                           <div className="space-y-2">
                             <h4 className="text-xl font-black text-slate-300 uppercase tracking-tighter">Topology_Idle</h4>
-                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 거버넌스 역할을 선택하여 계층 노드를 프로드하십시오.</p>
+                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 거버?�스 ??��???�택?�여 계층 ?�드�??�로?�하??��??</p>
                           </div>
                         </motion.div>
                       ) : isMenusLoading ? (
@@ -651,12 +650,12 @@ export default function SecurityHubClient() {
       <StandardModal
         isOpen={isAuthorModalOpen}
         onClose={() => setIsAuthorModalOpen(false)}
-        title={authorMode === 'create' ? '신규 보안 역할 프로비저닝' : '보안 역할 아키텍처 상세 수정'}
+        title={authorMode === 'create' ? '?�규 보안 ??�� ?�로비�??? : '보안 ??�� ?�키?�처 ?�세 ?�정'}
         maxWidth="xl"
       >
         <div className="p-4 space-y-12">
           <div className="grid grid-cols-2 gap-10">
-            <FormField label="보안 역할 식별자 (Role Code)" required description="시스템 전반에 적용되는 유일한 역할 고유 코드">
+            <FormField label="보안 ??�� ?�별??(Role Code)" required description="?�스???�반???�용?�는 ?�일????�� 고유 코드">
               <div className="relative group/id">
                 <Key size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                 <Input
@@ -664,31 +663,31 @@ export default function SecurityHubClient() {
                   onChange={(e) => setAuthorFormData({ ...authorFormData, authorCode: e.target.value })}
                   disabled={authorMode === 'edit'}
                   className="h-16 pl-16 rounded-2xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner"
-                  placeholder="롤 식별자"
+                  placeholder="�??�별??
                 />
               </div>
             </FormField>
-            <FormField label="역할 레이블 명칭" required description="UI 및 비즈니스 레이어에서 식별될 명문화된 이름">
+            <FormField label="??�� ?�이�?명칭" required description="UI �?비즈?�스 ?�이?�에???�별??명문?�된 ?�름">
               <div className="relative group/nm">
                 <ShieldCheck size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
                 <Input
                   value={authorFormData.authorNm}
                   onChange={(e) => setAuthorFormData({ ...authorFormData, authorNm: e.target.value })}
                   className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
-                  placeholder="역할 명칭 입력"
+                  placeholder="??�� 명칭 ?�력"
                 />
               </div>
             </FormField>
           </div>
 
-          <FormField label="보안 정책 정밀 명세" description="해당 역할의 상세 목적 및 데이터 접근 범위에 대한 정밀 명세">
+          <FormField label="보안 ?�책 ?��? 명세" description="?�당 ??��???�세 목적 �??�이???�근 범위???�???��? 명세">
             <div className="relative group/dc">
               <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
               <Textarea
                 value={authorFormData.authorDc}
                 onChange={(e) => setAuthorFormData({ ...authorFormData, authorDc: e.target.value })}
                 className="min-h-[160px] pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
-                placeholder="상세 명세 입력..."
+                placeholder="?�세 명세 ?�력..."
               />
             </div>
           </FormField>
@@ -696,7 +695,7 @@ export default function SecurityHubClient() {
           <div className="flex gap-6 pt-4">
             <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
             <Button onClick={() => saveAuthorMutation.mutate(authorFormData)} disabled={saveAuthorMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
-              <Zap size={18} className="group-hover:animate-pulse" /> {authorMode === 'create' ? '권한 배포' : '권한 수정'}
+              <Zap size={18} className="group-hover:animate-pulse" /> {authorMode === 'create' ? '권한 배포' : '권한 ?�정'}
             </Button>
           </div>
         </div>

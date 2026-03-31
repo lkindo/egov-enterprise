@@ -6,8 +6,8 @@ import { CmmnClCode, CmmnCode, CmmnDetailCode, PageResponse } from '@/types/foun
 import CommonCodeHubClient from './CommonCodeHubClient';
 
 export const metadata = {
-  title: '통합 코드 허브 | 전자정부 표준프레임워크',
-  description: '공통코드, 행정코드, 기관코드 등 시스템 전반의 메타데이터를 통합 관리합니다.',
+  title: '?�합 코드 ?�브 | ?�자?��? ?��??�레?�워??,
+  description: '공통코드, ?�정코드, 기�?코드 ???�스???�반??메�??�이?��? ?�합 관리합?�다.',
 };
 
 export default async function CommonCodePage({

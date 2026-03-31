@@ -24,7 +24,7 @@ interface SearchResult {
     icon: React.ReactNode;
 }
 
-// 카테고리별 아이콘 매핑
+// 카테고리�??�이�?매핑
 const categoryIcons = {
     Menu: <Settings size={14} />,
     Content: <FileText size={14} />,
@@ -39,7 +39,7 @@ export function CommandPalette() {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // 메뉴 데이터 로드
+    // 메뉴 ?�이??로드
     useEffect(() => {
         if (!isOpen) return;
 
@@ -60,7 +60,7 @@ export function CommandPalette() {
                     }));
 
                 setResults(searchResults);
-            } catch (error) {
+            } catch {
                 console.error('Failed to load menus:', error);
                 setResults([]);
             } finally {
@@ -71,7 +71,7 @@ export function CommandPalette() {
         loadMenus();
     }, [isOpen]);
 
-    // 필터링된 결과
+    // ?�터링된 결과
     const filteredResults = results.filter(item =>
         item.title.toLowerCase().includes(query.toLowerCase()) ||
         item.category.toLowerCase().includes(query.toLowerCase()) ||
@@ -114,7 +114,7 @@ export function CommandPalette() {
                     <input
                         autoFocus
                         className="flex-1 bg-transparent border-none outline-none text-lg font-bold placeholder:text-muted-foreground/50 text-foreground"
-                        placeholder="무엇을 찾으시나요? (메뉴, 사용자, 게시글...)"
+                        placeholder="무엇??찾으?�나?? (메뉴, ?�용?? 게시글...)"
                         value={query}
                         onChange={(e) => {
                             setQuery(e.target.value);
@@ -129,7 +129,7 @@ export function CommandPalette() {
                         }}
                     />
                     {isLoading && (
-                        <div className="text-xs text-muted-foreground animate-pulse">로딩중...</div>
+                        <div className="text-xs text-muted-foreground animate-pulse">로딩�?..</div>
                     )}
                     <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
                         <span className="text-[10px] font-black text-muted-foreground">ESC</span>
@@ -147,8 +147,8 @@ export function CommandPalette() {
                                 <Search size={40} className="text-muted-foreground/30" />
                             </div>
                             <div>
-                                <p className="text-lg font-black text-foreground">메뉴를 불러오는 중...</p>
-                                <p className="text-sm text-muted-foreground font-bold">잠시만 기다려주세요.</p>
+                                <p className="text-lg font-black text-foreground">메뉴�?불러?�는 �?..</p>
+                                <p className="text-sm text-muted-foreground font-bold">?�시�?기다?�주?�요.</p>
                             </div>
                         </div>
                     ) : filteredResults.length > 0 ? (
@@ -209,8 +209,8 @@ export function CommandPalette() {
                                 <Search size={40} className="text-muted-foreground/30" />
                             </div>
                             <div>
-                                <p className="text-lg font-black text-foreground">결과가 없습니다.</p>
-                                <p className="text-sm text-muted-foreground font-bold">다른 키워드로 검색해 보세요.</p>
+                                <p className="text-lg font-black text-foreground">결과가 ?�습?�다.</p>
+                                <p className="text-sm text-muted-foreground font-bold">?�른 ?�워?�로 검?�해 보세??</p>
                             </div>
                         </div>
                     )}
@@ -220,15 +220,15 @@ export function CommandPalette() {
                 <div className="p-4 bg-muted/30 border-t flex items-center justify-center gap-6">
                     <div className="flex items-center gap-2">
                         <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">Enter</kbd>
-                        <span className="text-[10px] font-bold text-muted-foreground">선택</span>
+                        <span className="text-[10px] font-bold text-muted-foreground">?�택</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">↑↓</kbd>
-                        <span className="text-[10px] font-bold text-muted-foreground">이동</span>
+                        <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">?�↓</kbd>
+                        <span className="text-[10px] font-bold text-muted-foreground">?�동</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <Command size={12} className="text-muted-foreground" />
-                        <span className="text-[10px] font-bold text-muted-foreground">EGov 엔터프라이즈 인텔리전스</span>
+                        <span className="text-[10px] font-bold text-muted-foreground">EGov ?�터?�라?�즈 ?�텔리전??/span>
                     </div>
                 </div>
             </div>
@@ -236,7 +236,7 @@ export function CommandPalette() {
     );
 }
 
-// 메뉴 경로별 아이콘 반환
+// 메뉴 경로�??�이�?반환
 function getMenuIcon(route: string): React.ReactNode {
     if (route.includes('stats') || route.includes('dashboard')) return <LayoutDashboard size={14} />;
     if (route.includes('user')) return <Users size={14} />;

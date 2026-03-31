@@ -35,11 +35,11 @@ const AddressBookListPage = () => {
             const params = { page번호, pageUnit: 10, searchWrd };
             const response = await addressbookUserService.getAddressBooks(params);
 
-            // Spring Data Page 객체 구조에 맞게 매핑
+            // Spring Data Page 객체 구조??맞게 매핑
             setList(response.list || []);
             setTotalCount(response.total || 0);
             setTotalPages(response.totalPage || 0);
-        } catch (error) {
+        } catch {
             console.error('Failed to fetch address books', error);
         } finally {
             setLoading(false);
@@ -57,12 +57,12 @@ const AddressBookListPage = () => {
     };
 
     const handleDelete = async (adbkId: string) => {
-        if (!confirm('삭제하시겠습니까?')) return;
+        if (!confirm('??��?�시겠습?�까?')) return;
         try {
             await addressbookUserService.deleteAddressBook(adbkId);
             fetchList();
         } catch {
-            alert('삭제에 실패했습니다.');
+            alert('??��???�패?�습?�다.');
         }
     };
 
@@ -71,21 +71,20 @@ const AddressBookListPage = () => {
             {/* Breadcrumb Navigation */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
                 <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
-                    <Home className="w-4 h-4" /> 홈
-                </Link>
+                    <Home className="w-4 h-4" /> ??                </Link>
                 <ChevronRight className="w-4 h-4" />
-                <span>협업</span>
+                <span>?�업</span>
                 <ChevronRight className="w-4 h-4" />
-                <span className="text-foreground font-medium">주소록관리</span>
+                <span className="text-foreground font-medium">주소록�?�?/span>
             </div>
 
             <Card className="border-none shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between pb-6">
-                    <CardTitle className="text-2xl font-bold tracking-tight">주소록 목록</CardTitle>
+                    <CardTitle className="text-2xl font-bold tracking-tight">주소�?목록</CardTitle>
                     <CardAction>
                         <Link href="/admin/collaboration/address-book/insertAddressBook">
                             <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90 transition-all">
-                                <Plus className="w-4 h-4" /> 등록
+                                <Plus className="w-4 h-4" /> ?�록
                             </Button>
                         </Link>
                     </CardAction>
@@ -99,18 +98,16 @@ const AddressBookListPage = () => {
                                 <Input
                                     type="text"
                                     className="pl-9 h-11 transition-all focus:ring-2 focus:ring-primary/20"
-                                    placeholder="이름/전화번호로 검색하세요"
+                                    placeholder="?�름/?�화번호�?검?�하?�요"
                                     value={searchWrd}
                                     onChange={(e) => setSearchWrd(e.target.value)}
                                 />
                             </div>
                             <Button type="submit" variant="secondary" className="h-11 px-6 font-medium border border-input shadow-sm hover:bg-accent transition-colors">
-                                검색
-                            </Button>
+                                검??                            </Button>
                         </form>
                         <div className="text-sm font-medium text-muted-foreground whitespace-nowrap bg-muted px-4 py-2 rounded-full">
-                            총 <span className="text-primary font-bold">{totalCount}</span>건의 연락처
-                        </div>
+                            �?<span className="text-primary font-bold">{totalCount}</span>건의 ?�락�?                        </div>
                     </div>
 
                     {/* Table Area */}
@@ -119,11 +116,11 @@ const AddressBookListPage = () => {
                             <TableHeader className="bg-muted/50">
                                 <TableRow>
                                     <TableHead className="w-[80px] text-center font-bold">번호</TableHead>
-                                    <TableHead className="w-[150px] font-bold">이름</TableHead>
-                                    <TableHead className="w-[180px] font-bold">전화번호</TableHead>
-                                    <TableHead className="font-bold">이메일 / 주소</TableHead>
-                                    <TableHead className="w-[120px] text-center font-bold">등록일</TableHead>
-                                    <TableHead className="w-[100px] text-center font-bold">관리</TableHead>
+                                    <TableHead className="w-[150px] font-bold">?�름</TableHead>
+                                    <TableHead className="w-[180px] font-bold">?�화번호</TableHead>
+                                    <TableHead className="font-bold">?�메??/ 주소</TableHead>
+                                    <TableHead className="w-[120px] text-center font-bold">?�록??/TableHead>
+                                    <TableHead className="w-[100px] text-center font-bold">관�?/TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -141,7 +138,7 @@ const AddressBookListPage = () => {
                                 ) : list.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                                            등록된 주소록 정보가 없습니다.
+                                            ?�록??주소�??�보가 ?�습?�다.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -192,7 +189,7 @@ const AddressBookListPage = () => {
                                 disabled={page번호 === 1}
                                 className="px-4 shadow-sm"
                             >
-                                이전
+                                ?�전
                             </Button>
                             <div className="flex items-center gap-2">
                                 <span className="text-sm font-bold text-primary">{page번호}</span>
@@ -206,7 +203,7 @@ const AddressBookListPage = () => {
                                 disabled={page번호 === totalPages}
                                 className="px-4 shadow-sm"
                             >
-                                다음
+                                ?�음
                             </Button>
                         </div>
                     )}

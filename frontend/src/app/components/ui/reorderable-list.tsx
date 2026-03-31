@@ -24,7 +24,7 @@ export function ReorderableList<T>({
  const onDragStart = (e: React.DragEvent, index: number) => {
  setDragged번호(index);
  e.dataTransfer.effectAllowed = 'move';
- // 드래그 시 고스트 이미지 스타일을 위해 투명도 조절 등을 할 수 있습니다.
+ // ?�래�???고스???��?지 ?��??�을 ?�해 ?�명??조절 ?�을 ?????�습?�다.
  };
 
  const onDragOver = (e: React.DragEvent, index: number) => {

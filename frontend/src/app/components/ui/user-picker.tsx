@@ -20,7 +20,7 @@ export function UserPicker({
  isOpen,
  onClose,
  onSelect,
- title = "사용자 검색 및 선택"
+ title = "?�용??검??�??�택"
 }: UserPickerProps) {
  const [keyword, setKeyword] = useState('');
  const [results, setResults] = useState<NameCard[]>([]);
@@ -34,7 +34,7 @@ export function UserPicker({
  setLoading(true);
  const res = await addressbookUserService.searchUsers(keyword);
  setResults(res || []);
- } catch (error) {
+ } catch {
  console.error('Search failed', error);
  } finally {
  setLoading(false);
@@ -79,7 +79,7 @@ export function UserPicker({
  type="text"
  value={keyword}
  onChange={(e) => setKeyword(e.target.value)}
- placeholder="이름, 부서, ID 검색..."
+ placeholder="?�름, 부?? ID 검??.."
  className="w-full h-11 pl-10 pr-4 rounded-xl border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
  autoFocus
  />
@@ -87,21 +87,20 @@ export function UserPicker({
  type="submit"
  className="absolute right-2 top-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-bold shadow-sm"
  >
- 검색
- </button>
+ 검?? </button>
  </form>
 
  {/* Results Area */}
  <div className="bg-card border rounded-2xl overflow-hidden min-h-[350px] flex flex-col">
  {loading ? (
  <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground animate-pulse font-medium">
- 검색 중...
+ 검??�?..
  </div>
  ) : results.length === 0 ? (
  <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center space-y-2">
  <Search size={32} className="opacity-10" />
- <p className="text-sm font-bold">검색 결과가 없습니다.</p>
- <p className="text-[10px]">이름이나 부서명을 입력하고 엔터를 눌러주세요.</p>
+ <p className="text-sm font-bold">검??결과가 ?�습?�다.</p>
+ <p className="text-[10px]">?�름?�나 부?�명???�력?�고 ?�터�??�러주세??</p>
  </div>
  ) : (
  <VirtualScrollList

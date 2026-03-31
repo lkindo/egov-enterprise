@@ -33,10 +33,10 @@ export class StandardErrorBoundary extends Component<Props, State> {
  <div className="p-4 bg-destructive/10 text-destructive rounded-full mb-4">
  <AlertTriangle size={48} />
  </div>
- <h2 className="text-2xl font-bold text-foreground mb-2">시스템 오류가 발생했습니다</h2>
+ <h2 className="text-2xl font-bold text-foreground mb-2">?�스???�류가 발생?�습?�다</h2>
  <p className="text-muted-foreground max-w-md mb-8">
- 예상치 못한 문제가 발생하여 화면을 표시할 수 없습니다. <br />
- 잠시 후 다시 시도하거나 관리자에게 문의해 주세요.
+ ?�상�?못한 문제가 발생?�여 ?�면???�시?????�습?�다. <br />
+ ?�시 ???�시 ?�도?�거??관리자?�게 문의??주세??
  </p>
  <div className="flex gap-3">
  <button
@@ -44,14 +44,14 @@ export class StandardErrorBoundary extends Component<Props, State> {
  className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-colors"
  >
  <RefreshCcw size={18} />
- 다시 시도
+ ?�시 ?�도
  </button>
  <button
  onClick={() => window.location.href = '/'}
  className="flex items-center gap-2 px-6 py-2.5 border rounded-md font-semibold hover:bg-accent transition-colors"
  >
  <Home size={18} />
- 메인으로
+ 메인?�로
  </button>
  </div>
  {process.env.NODE_ENV === 'development' && (

@@ -98,9 +98,9 @@ describe('MenuAdminClient Component', () => {
 
  it('opens create modal', async () => {
  render(<MenuAdminClient initialMenus={mockInitialMenus} programs={mockPrograms} />);
- const btn = screen.getByText(/신규 등록/i);
+ const btn = screen.getByText(/?�규 ?�록/i);
  fireEvent.click(btn);
- expect(await screen.findByText(/신규 네비게이션 노드 설계/i)).toBeDefined();
+ expect(await screen.findByText(/?�규 ?�비게이???�드 ?�계/i)).toBeDefined();
  });
 
  it('handles deletion', async () => {

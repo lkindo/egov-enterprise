@@ -28,8 +28,8 @@ export default function HelpCenterPage() {
  const res = await helpUserService.getQnas({ page: 0, size: 10 });
  setQnas(res.list || []);
  }
- } catch (error) {
- toast('데이터를 불러오지 못했습니다.', 'error');
+ } catch {
+ toast('?�이?��? 불러?��? 못했?�니??', 'error');
  } finally {
  setLoading(false);
  }
@@ -39,20 +39,20 @@ export default function HelpCenterPage() {
 
  const qnaColumns = [
  {
- header: '제목',
+ header: '?�목',
  accessor: (item: QNA) => item.qestnSj,
  className: 'font-bold'
  },
  {
- header: '작성자',
+ header: '?�성??,
  accessor: (item: QNA) => item.wrterNm
  },
  {
- header: '등록일',
+ header: '?�록??,
  accessor: (item: QNA) => item.writngDe
  },
  {
- header: '상태',
+ header: '?�태',
  accessor: (item: QNA) => (
  <StatusBadge status={item.qnaProcessSttusCode === '3' ? 'Y' : 'R'} />
  )
@@ -62,19 +62,19 @@ export default function HelpCenterPage() {
  return (
  <div className="max-w-5xl mx-auto space-y-8 pb-20">
  <PageHeader
- title="도움말 센터"
- breadcrumbs={[{ label: '지원서비스' }, { label: '도움말센터' }]}
+ title="?��?�??�터"
+ breadcrumbs={[{ label: '지?�서비스' }, { label: '?��?말센?? }]}
  />
 
  {/* Hero Section */}
  <div className="bg-primary rounded-3xl p-12 text-white text-center shadow-xl space-y-4">
- <h2 className="text-3xl font-black">무엇을 도와드릴까요?</h2>
- <p className="opacity-80 text-sm font-medium">자주 묻는 질문을 확인하거나 1:1 문의를 남겨주세요.</p>
+ <h2 className="text-3xl font-black">무엇???��??�릴까요?</h2>
+ <p className="opacity-80 text-sm font-medium">?�주 묻는 질문???�인?�거??1:1 문의�??�겨주세??</p>
  <div className="max-w-xl mx-auto relative mt-8">
  <Search className="absolute left-4 top-3.5 text-primary" size={20} />
  <input
  type="text"
- placeholder="키워드로 검색하세요"
+ placeholder="?�워?�로 검?�하?�요"
  className="w-full h-14 pl-12 pr-4 rounded-2xl bg-white text-black text-sm outline-none focus:ring-4 focus:ring-white/20"
  />
  </div>
@@ -86,7 +86,7 @@ export default function HelpCenterPage() {
  active={tab === 'faq'}
  onClick={() => setTab('faq')}
  icon={<HelpCircle size={20} />}
- label="자주 묻는 질문 (FAQ)"
+ label="?�주 묻는 질문 (FAQ)"
  />
  <TabButton
  active={tab === 'qna'}
@@ -100,7 +100,7 @@ export default function HelpCenterPage() {
  <div className="space-y-4">
  {tab === 'faq' ? (
  faqs.length === 0 ? (
- <div className="text-center py-20 text-muted-foreground ">자주 묻는 질문이 없습니다.</div>
+ <div className="text-center py-20 text-muted-foreground ">?�주 묻는 질문???�습?�다.</div>
  ) : (
  faqs.map((faq) => (
  <div key={faq.faqId} className="bg-card border rounded-2xl overflow-hidden transition-all hover:border-primary/20">
@@ -127,14 +127,14 @@ export default function HelpCenterPage() {
  <div className="space-y-4">
  <div className="flex justify-end">
  <button className="flex items-center gap-2 text-primary font-bold text-sm hover:underline">
- <PlusCircle size={18} /> 문의하기
+ <PlusCircle size={18} /> 문의?�기
  </button>
  </div>
  <StandardDataTable
  columns={qnaColumns}
  data={qnas}
  loading={loading}
- emptyMessage="등록된 Q&A가 없습니다."
+ emptyMessage="?�록??Q&A가 ?�습?�다."
  />
  </div>
  )}

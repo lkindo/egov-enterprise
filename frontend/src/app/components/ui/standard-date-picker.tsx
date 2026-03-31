@@ -29,7 +29,7 @@ export function StandardDatePicker({ date, onDateChange, placeholder, className 
  >
  <div className="flex items-center gap-2">
  <CalendarIcon size={16} />
- {date ? format(date, 'yyyy-MM-dd') : <span>{placeholder || '날짜 선택'}</span>}
+ {date ? format(date, 'yyyy-MM-dd') : <span>{placeholder || '?�짜 ?�택'}</span>}
  </div>
  </button>
 

@@ -29,7 +29,7 @@ export function ImageLightbox({ src, alt, isOpen, onClose }: ImageLightboxProps)
  <div className="relative max-w-[90vw] max-h-[90vh] w-full h-[85vh]">
  <Image
  src={src}
- alt={alt || "í™•ëŒ€ ì´ë¯¸ì§€"}
+ alt={alt || "?•ë? ?´ë?ì§€"}
  fill
  className="object-contain max-w-full max-h-[85vh] rounded-lg shadow-2xl animate-in zoom-in-95 duration-300"
  />

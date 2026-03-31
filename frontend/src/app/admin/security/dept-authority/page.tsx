@@ -86,15 +86,15 @@ export default function DeptAuthorityPage() {
         allMembers: true
       }),
     onSuccess: () => {
-      toast('부서 전체 사용자에게 보안 정책이 일괄 적용되었습니다.', 'success');
+      toast('부???�체 ?�용?�에�?보안 ?�책???�괄 ?�용?�었?�니??', 'success');
       setSelectedAuthorCode(null);
     },
-    onError: () => toast('보안 정책 반영 중 익셉션이 발생했습니다.', 'error')
+    onError: () => toast('보안 ?�책 반영 �??�셉?�이 발생?�습?�다.', 'error')
   });
 
   const columns: Column<AuthorInfo>[] = [
     {
-      header: '정책 프로토콜 ID',
+      header: '?�책 ?�로?�콜 ID',
       accessor: (item: AuthorInfo) => (
           <div className="flex flex-col gap-0.5">
               <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic leading-none mb-1">POLICY_UID</span>
@@ -104,7 +104,7 @@ export default function DeptAuthorityPage() {
       className: 'w-48'
     },
     {
-      header: '권한 아키텍처 명칭',
+      header: '권한 ?�키?�처 명칭',
       accessor: (item: AuthorInfo) => (
           <div className="flex flex-col gap-0.5 py-2">
               <span className="font-black text-foreground tracking-tight text-md uppercase leading-tight">{item.authorNm}</span>
@@ -140,13 +140,13 @@ export default function DeptAuthorityPage() {
 
   const handleSave = () => {
     if (!selectedDept) {
-      return toast('대상 조직(Department)을 먼저 식별해 주세요.', 'info');
+      return toast('?�??조직(Department)??먼�? ?�별??주세??', 'info');
     }
     if (!selectedAuthorCode) {
-      return toast('일괄 배포할 보안 권한을 선택해 주세요.', 'info');
+      return toast('?�괄 배포??보안 권한???�택??주세??', 'info');
     }
 
-    if (confirm(`선택한 조직의 모든 실별자에게 '${selectedAuthorCode}' 보안 정책을 전역적으로 강제 적용하시겠습니까?`)) {
+    if (confirm(`?�택??조직??모든 ?�별?�에�?'${selectedAuthorCode}' 보안 ?�책???�역?�으�?강제 ?�용?�시겠습?�까?`)) {
       saveMutation.mutate(selectedAuthorCode);
     }
   };
@@ -156,14 +156,14 @@ export default function DeptAuthorityPage() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="조직 기반 권한 일괄 프로비저닝"
-        breadcrumbs={[{ label: '보안관리' }, { label: '조직권한' }, { label: '일괄관리' }]}
+        title="조직 기반 권한 ?�괄 ?�로비�???
+        breadcrumbs={[{ label: '보안관�? }, { label: '조직권한' }, { label: '?�괄관�? }]}
       />
 
       <HubHeader 
         title="Department" 
         highlight="Batch" 
-        subtitle="조직 단위의 보안 역할 강제 배포 및 계정 권한 집합 토폴로지 통합 관리" 
+        subtitle="조직 ?�위??보안 ??�� 강제 배포 �?계정 권한 집합 ?�폴로�? ?�합 관�? 
         icon={Building2} 
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -178,7 +178,7 @@ export default function DeptAuthorityPage() {
               onClick={handleSave}
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
-              <Save size={20} className="group-hover:scale-110 transition-transform duration-500" /> 정책 마스터 배포
+              <Save size={20} className="group-hover:scale-110 transition-transform duration-500" /> ?�책 마스??배포
             </Button>
           </div>
         }
@@ -194,12 +194,12 @@ export default function DeptAuthorityPage() {
       <div className="grid grid-cols-12 gap-12 min-h-[850px]">
         {/* Left: Department Explorer */}
         <div className="col-span-12 lg:col-span-4 h-full flex flex-col gap-8">
-            <HubSectionCard title="조직 아키텍처 식별" description="권한 정책을 일괄 배포할 시스템 하위 조직을 식별하세요." icon={Building2}>
+            <HubSectionCard title="조직 ?�키?�처 ?�별" description="권한 ?�책???�괄 배포???�스???�위 조직???�별?�세??" icon={Building2}>
                 <div className="space-y-8 pt-4">
                     <div className="relative group/search">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                         <Input
-                            placeholder="조직(부서) 명칭 검색..."
+                            placeholder="조직(부?? 명칭 검??.."
                             className="pl-12 h-14 bg-slate-50/50 border-none rounded-2xl text-sm font-black tracking-tight shadow-inner"
                             value={searchKeyword}
                             onChange={(e) => setSearchKeyword(e.target.value)}
@@ -268,8 +268,8 @@ export default function DeptAuthorityPage() {
         {/* Right: Policy Matrix Selection */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-10 h-full">
             <HubSectionCard 
-                title={currentDept ? `[${currentDept.orgnztNm}] 보안 마스터 정책 배포` : "보안 메트릭스 선택"} 
-                description="식별된 조직의 모든 계정에 동기화할 마스터 권한 아키텍처를 선택하십시오." 
+                title={currentDept ? `[${currentDept.orgnztNm}] 보안 마스???�책 배포` : "보안 메트�?�� ?�택"} 
+                description="?�별??조직??모든 계정???�기?�할 마스??권한 ?�키?�처�??�택?�십?�오." 
                 icon={ShieldCheck}
             >
                 <div className="relative h-full flex flex-col pt-4">
@@ -285,7 +285,7 @@ export default function DeptAuthorityPage() {
                                 </div>
                                 <div className="space-y-4">
                                     <h3 className="text-3xl font-black text-slate-200 uppercase tracking-tighter italic">Selection_Required</h3>
-                                    <p className="text-[11px] font-black text-slate-200 tracking-[0.4em] uppercase leading-relaxed font-mono max-w-xs mx-auto">식별된 부서의 보안 거버넌스 구성을 위해 좌측 리스트를 프로브하십시오.</p>
+                                    <p className="text-[11px] font-black text-slate-200 tracking-[0.4em] uppercase leading-relaxed font-mono max-w-xs mx-auto">?�별??부?�의 보안 거버?�스 구성???�해 좌측 리스?��? ?�로브하??��??</p>
                                 </div>
                             </motion.div>
                         ) : (
@@ -307,7 +307,7 @@ export default function DeptAuthorityPage() {
                                             <h4 className="text-3xl font-black tracking-tighter leading-none">{currentDept?.orgnztNm}</h4>
                                             <span className="text-xs font-black text-white/40 tracking-widest font-mono">[{selectedDept}]</span>
                                         </div>
-                                        <p className="text-[10px] font-black text-primary/80 tracking-widest uppercase mt-2">이 부서의 모든 실별자에게 전역 정책을 실장할 수 있는 상태입니다 ✓</p>
+                                        <p className="text-[10px] font-black text-primary/80 tracking-widest uppercase mt-2">??부?�의 모든 ?�별?�에�??�역 ?�책???�장?????�는 ?�태?�니????/p>
                                     </div>
                                 </div>
 
@@ -317,7 +317,7 @@ export default function DeptAuthorityPage() {
                                         data={roles}
                                         loading={loading}
                                         keyField="authorCode"
-                                        emptyMessage="보안 아키텍처 정보가 시스템에 등록되지 않았습니다."
+                                        emptyMessage="보안 ?�키?�처 ?�보가 ?�스?�에 ?�록?��? ?�았?�니??"
                                         onRowClick={(item) => setSelectedAuthorCode(item.authorCode)}
                                         className="border-none bg-transparent"
                                     />
@@ -329,9 +329,9 @@ export default function DeptAuthorityPage() {
                                     </div>
                                     <div className="space-y-1">
                                          <p className="text-[11px] font-black text-slate-800 tracking-tight leading-relaxed">
-                                            전역 정책 강제 배포(Batch Deployment) 시, 해당 조직 구성원이 보유한 기존의 모든 개별 권한은 <span className="text-rose-500 underline decoration-2 underline-offset-4 font-black italic">영구적으로 파기</span>되고 마스터 정책으로 전면 교체됩니다.
+                                            ?�역 ?�책 강제 배포(Batch Deployment) ?? ?�당 조직 구성?�이 보유??기존??모든 개별 권한?� <span className="text-rose-500 underline decoration-2 underline-offset-4 font-black italic">?�구?�으�??�기</span>?�고 마스???�책?�로 ?�면 교체?�니??
                                         </p>
-                                        <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase opacity-60">아키텍처 재정의 주의</span>
+                                        <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase opacity-60">?�키?�처 ?�정??주의</span>
                                     </div>
                                 </div>
                             </motion.div>

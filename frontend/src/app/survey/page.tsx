@@ -23,8 +23,8 @@ export default function SurveyListPage() {
  setLoading(true);
  const res = await surveyAdminService.getSurveys({ page: 0, size: 10 });
  setData(res.list || []);
- } catch (error) {
- toast('설문 목록을 불러오지 못했습니다.', 'error');
+ } catch {
+ toast('?�문 목록??불러?��? 못했?�니??', 'error');
  } finally {
  setLoading(false);
  }
@@ -34,19 +34,19 @@ export default function SurveyListPage() {
 
  const columns = [
  {
- header: '상태',
+ header: '?�태',
  accessor: (item: Survey) => (
  <span className={cn(
  "px-2 py-1 rounded text-[10px] font-black ",
  item.status === 'OPEN' ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"
  )}>
- {item.status === 'OPEN' ? '진행중' : '종료'}
+ {item.status === 'OPEN' ? '진행�? : '종료'}
  </span>
  ),
  className: 'w-24'
  },
  {
- header: '설문 제목',
+ header: '?�문 ?�목',
  accessor: (item: Survey) => (
  <div className="font-bold text-foreground group-hover:text-primary transition-colors">
  {item.qestnrSj}
@@ -82,13 +82,13 @@ export default function SurveyListPage() {
  return (
  <div className="space-y-6">
  <PageHeader
- title="온라인 설문 조사"
- breadcrumbs={[{ label: '업무지원' }, { label: '설문조사' }]}
+ title="?�라???�문 조사"
+ breadcrumbs={[{ label: '?�무지?? }, { label: '?�문조사' }]}
  />
 
  <StandardSearchFilter
  fields={[
- { name: 'searchWrd', label: '설문명 검색', type: 'text', placeholder: '제목 입력...' }
+ { name: 'searchWrd', label: '?�문�?검??, type: 'text', placeholder: '?�목 ?�력...' }
  ]}
  onSearch={(v) => console.log('Filtering...', v)}
  />
@@ -99,7 +99,7 @@ export default function SurveyListPage() {
  data={data}
  loading={loading}
  onRowClick={(item) => router.push(`/survey/${item.qestnrId}`)}
- emptyMessage="등록된 설문 조사가 없습니다."
+ emptyMessage="?�록???�문 조사가 ?�습?�다."
  />
  </div>
  </div>

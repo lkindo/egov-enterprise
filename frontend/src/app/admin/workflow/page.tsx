@@ -17,17 +17,17 @@ import { cn } from '@/lib/utils';
 import { WorkflowCanvas, WorkflowNode, WorkflowEdge } from '@/app/components/ui/workflow-canvas';
 
 const MOCK_WORKFLOW_NODES: WorkflowNode[] = [
- { id: '1', type: 'start', label: '휴가 신청 시작', status: 'completed', position: { x: 50, y: 100 } },
- { id: '2', type: 'step', label: '신청서 작성 및 제출', assignee: '홍길동 (신청자)', status: 'completed', position: { x: 300, y: 100 } },
- { id: '3', type: 'decision', label: '팀장 검토 및 승인', assignee: '이순신 (팀장)', status: 'current', position: { x: 550, y: 100 } },
- { id: '4', type: 'step', label: '인사과 최종 확정', assignee: '강감찬 (인사팀)', status: 'pending', position: { x: 800, y: 300 } },
- { id: '5', type: 'end', label: '휴가 승인 완료', status: 'pending', position: { x: 1050, y: 300 } },
+ { id: '1', type: 'start', label: '?��? ?�청 ?�작', status: 'completed', position: { x: 50, y: 100 } },
+ { id: '2', type: 'step', label: '?�청???�성 �??�출', assignee: '?�길??(?�청??', status: 'completed', position: { x: 300, y: 100 } },
+ { id: '3', type: 'decision', label: '?�??검??�??�인', assignee: '?�순??(?�??', status: 'current', position: { x: 550, y: 100 } },
+ { id: '4', type: 'step', label: '?�사�?최종 ?�정', assignee: '강감�?(?�사?�)', status: 'pending', position: { x: 800, y: 300 } },
+ { id: '5', type: 'end', label: '?��? ?�인 ?�료', status: 'pending', position: { x: 1050, y: 300 } },
 ];
 
 const MOCK_WORKFLOW_EDGES: WorkflowEdge[] = [
  { id: 'e1-2', from: '1', to: '2' },
  { id: 'e2-3', from: '2', to: '3' },
- { id: 'e3-4', from: '3', to: '4', label: '승인됨' },
+ { id: 'e3-4', from: '3', to: '4', label: '?�인?? },
  { id: 'e4-5', from: '4', to: '5' },
 ];
 
@@ -43,13 +43,13 @@ export default function WorkflowPage() {
  <div className="p-2 bg-primary/10 rounded-xl text-primary">
  <GitBranch size={18} />
  </div>
- <span className="text-sm font-black text-primary tracking-tight">워크플로우 엔진</span>
+ <span className="text-sm font-black text-primary tracking-tight">?�크?�로???�진</span>
  </div>
  <h1 className="text-3xl font-black tracking-tighter text-foreground ">
- Process <span className="text-primary ">캔버스</span>
+ Process <span className="text-primary ">캔버??/span>
  </h1>
  <p className="text-muted-foreground font-bold text-sm max-w-lg">
- 도메인 이벤트 기반의 워크플로우 엔진을 통해 비즈니스 프로세스를 설계하고 실시간 진행 상태를 시각화합니다.
+ ?�메???�벤??기반???�크?�로???�진???�해 비즈?�스 ?�로?�스�??�계?�고 ?�시�?진행 ?�태�??�각?�합?�다.
  </p>
  </div>
 
@@ -70,12 +70,12 @@ export default function WorkflowPage() {
  <div className="flex items-center gap-6">
  <div className="flex items-center gap-2">
  <span className="text-sm font-black text-foreground">WORKFLOW:</span>
- <span className="text-sm font-bold text-muted-foreground ">연차/휴가 결재 프로세스_v1.2</span>
+ <span className="text-sm font-bold text-muted-foreground ">?�차/?��? 결재 ?�로?�스_v1.2</span>
  </div>
  <div className="h-4 w-px bg-muted" />
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-full bg-emerald-500" />
- <span className="text-[10px] font-black text-muted-foreground ">활성</span>
+ <span className="text-[10px] font-black text-muted-foreground ">?�성</span>
  </div>
  </div>
  <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function WorkflowPage() {
  <div className="space-y-6">
  <div className="p-8 border rounded-[3rem] bg-card shadow-lg space-y-8">
  <div className="flex items-center justify-between">
- <h3 className="text-sm font-black text-foreground tracking-tight">단계 상세</h3>
+ <h3 className="text-sm font-black text-foreground tracking-tight">?�계 ?�세</h3>
  <button className="p-2 hover:bg-muted rounded-full"><MoreHorizontal size={14} /></button>
  </div>
 
@@ -116,7 +116,7 @@ export default function WorkflowPage() {
 
  <div className="space-y-6">
  <div className="space-y-2">
- <span className="text-[9px] font-black text-muted-foreground tracking-[0.2em]">현재 담당자</span>
+ <span className="text-[9px] font-black text-muted-foreground tracking-[0.2em]">?�재 ?�당??/span>
  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl border border-white/5">
  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-sm ">
  {selectedNode.assignee?.charAt(0)}
@@ -130,25 +130,25 @@ export default function WorkflowPage() {
  <div className="space-y-4 border-l-2 border-muted ml-2 pl-6 pt-2">
  <div className="relative">
  <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-background" />
- <p className="text-sm font-black">신청서 수신 완료</p>
+ <p className="text-sm font-black">?�청???�신 ?�료</p>
  <p className="text-[10px] text-muted-foreground font-bold ">2026-02-22 14:20:01</p>
  </div>
  <div className="relative opacity-50">
  <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-muted border-4 border-background" />
- <p className="text-sm font-black">팀장 내부 상신</p>
- <p className="text-[10px] text-muted-foreground font-bold ">대기중...</p>
+ <p className="text-sm font-black">?�???��? ?�신</p>
+ <p className="text-[10px] text-muted-foreground font-bold ">?�기중...</p>
  </div>
  </div>
  </div>
  </div>
 
  <button className="w-full py-5 bg-primary text-white rounded-full font-black text-sm tracking-tight shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
- 승인 처리하기
+ ?�인 처리?�기
  </button>
  </div>
  ) : (
  <div className="py-20 text-center opacity-30 ">
- <p className="text-sm font-bold">노드를 선택하여 상세 정보를 확인하세요.</p>
+ <p className="text-sm font-bold">?�드�??�택?�여 ?�세 ?�보�??�인?�세??</p>
  </div>
  )}
  </div>

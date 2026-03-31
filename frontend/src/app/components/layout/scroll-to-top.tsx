@@ -8,8 +8,8 @@ export function ScrollToTop() {
  const searchParams = useSearchParams();
 
  useEffect(() => {
- // 페이지 경로가 바뀔 때마다 윈도우 스크롤을 상단으로 이동
- // setTimeout을 사용하여 렌더링 후 스크롤이 확실하게 동작하도록 유도
+ // ?�이지 경로가 바�??�마???�도???�크롤을 ?�단?�로 ?�동
+ // setTimeout???�용?�여 ?�더�????�크롤이 ?�실?�게 ?�작?�도�??�도
  const timeoutId = setTimeout(() => {
  window.scrollTo(0, 0);
  }, 10);

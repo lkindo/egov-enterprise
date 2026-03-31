@@ -39,7 +39,7 @@ const PrivacyLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '대상명',
+            header: '?�?�명',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <User size={14} className="text-primary/40" />
@@ -49,7 +49,7 @@ const PrivacyLogAdminPage = () => {
             )
         },
         {
-            header: '대상유형',
+            header: '?�?�유??,
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/40" />
@@ -70,7 +70,7 @@ const PrivacyLogAdminPage = () => {
             className: 'w-24'
         },
         {
-            header: '요청자ID',
+            header: '?�청?�ID',
             accessor: (item: PrivacyLog) => (
                 <div className="px-3 py-1 bg-white border rounded-full w-fit shadow-sm text-xs font-black text-slate-700">
                     {item.rqesterId}
@@ -79,7 +79,7 @@ const PrivacyLogAdminPage = () => {
             className: 'w-36'
         },
         {
-            header: '등록일시',
+            header: '?�록?�시',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     <Calendar size={14} className="opacity-30" />
@@ -92,9 +92,9 @@ const PrivacyLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="개인정보 접근 로그" breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '개인정보 접근 로그' }]} />
+            <PageHeader title="개인?�보 ?�근 로그" breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }, { label: '개인?�보 ?�근 로그' }]} />
 
-            <HubHeader title="프라이버시 가드" highlight="개인정보 접근 로그" subtitle="개인정보 접근 및 처리 이력을 추적하여 데이터 보호 컴플라이언스를 보장합니다." icon={ShieldAlert} />
+            <HubHeader title="?�라?�버??가?? highlight="개인?�보 ?�근 로그" subtitle="개인?�보 ?�근 �?처리 ?�력??추적?�여 ?�이??보호 컴플?�이?�스�?보장?�니??" icon={ShieldAlert} />
 
             <StandardDataTable
                 columns={columns}
@@ -106,7 +106,7 @@ const PrivacyLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page번호: page }),
                 }}
                 search={{
-                    placeholder: '대상명, 요청자 검색...',
+                    placeholder: '?�?�명, ?�청??검??..',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page번호: 1 }),
                 }}
             />

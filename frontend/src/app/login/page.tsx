@@ -35,9 +35,8 @@ export default function LoginPage() {
         setIsSubmitting(true);
         try {
             await login({ id, password });
-            // AuthContext 의 user 상태 업데이트가 완료될 때까지 잠시 대기
-            await new Promise(resolve => setTimeout(resolve, 100));
-            // router.push 사용 (페이지 완전 리로드 방지)
+            // AuthContext ??user ?�태 ?�데?�트가 ?�료???�까지 ?�시 ?��?            await new Promise(resolve => setTimeout(resolve, 100));
+            // router.push ?�용 (?�이지 ?�전 리로??방�?)
             router.push(redirectUrl);
         } catch (err: any) {
             console.error(err);
@@ -53,7 +52,7 @@ export default function LoginPage() {
 
             <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md">
                 <CardHeader className="space-y-1 text-center">
-                    <CardTitle className="text-2xl font-bold tracking-tight text-primary">전자정부 엔터프라이즈</CardTitle>
+                    <CardTitle className="text-2xl font-bold tracking-tight text-primary">?�자?��? ?�터?�라?�즈</CardTitle>
                     <CardDescription>
                         {t('login.title')}
                     </CardDescription>

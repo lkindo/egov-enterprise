@@ -49,8 +49,8 @@ export default function ApprovalInboxPage() {
  } else {
  setSelectedItem(null);
  }
- } catch (error) {
- toast('결재 목록을 불러오지 못했습니다.', 'error');
+ } catch {
+ toast('결재 목록??불러?��? 못했?�니??', 'error');
  } finally {
  setLoading(false);
  }
@@ -61,10 +61,10 @@ export default function ApprovalInboxPage() {
  }, [loadData]);
 
  const handleAction = async (item: Approval, status: 'Y' | 'N') => {
- const actionNm = status === 'Y' ? '승인' : '반려';
+ const actionNm = status === 'Y' ? '?�인' : '반려';
  const isConfirmed = await confirm({
  title: `결재 ${actionNm}`,
- message: `[${item.approvalId}] 요청을 ${actionNm}하시겠습니까?`,
+ message: `[${item.approvalId}] ?�청??${actionNm}?�시겠습?�까?`,
  variant: status === 'N' ? 'destructive' : 'default'
  });
 
@@ -72,16 +72,16 @@ export default function ApprovalInboxPage() {
 
  try {
  await approvalUserService.confirm(item.approvalId, status);
- toast(`성공적으로 ${actionNm}되었습니다.`, 'success');
+ toast(`?�공?�으�?${actionNm}?�었?�니??`, 'success');
  loadData();
- } catch (error) {
- toast(`${actionNm} 처리 중 오류가 발생했습니다.`, 'error');
+ } catch {
+ toast(`${actionNm} 처리 �??�류가 발생?�습?�다.`, 'error');
  }
  };
 
  const columns = [
  {
- header: '결재 정보',
+ header: '결재 ?�보',
  accessor: (item: Approval) => (
  <div className="flex items-center gap-3">
  <div className={cn(
@@ -94,14 +94,14 @@ export default function ApprovalInboxPage() {
  <div className="flex flex-col overflow-hidden">
  <span className="font-black text-sm tracking-tight truncate">{item.approvalId}</span>
  <span className="text-[10px] font-bold text-muted-foreground tracking-tight">
- {item.jobType === '1' ? '주간보고' : item.jobType === '01' ? '연차' : '일반 결재'}
+ {item.jobType === '1' ? '주간보고' : item.jobType === '01' ? '?�차' : '?�반 결재'}
  </span>
  </div>
  </div>
  )
  },
  {
- header: '신청자',
+ header: '?�청??,
  accessor: (item: Approval) => (
  <div className="flex items-center gap-2">
  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0">
@@ -111,16 +111,16 @@ export default function ApprovalInboxPage() {
  </div>
  )
  },
- { header: '상태', accessor: (item: Approval) => <StatusBadge status={item.status} /> }
+ { header: '?�태', accessor: (item: Approval) => <StatusBadge status={item.status} /> }
  ];
 
  const workflowSteps = useMemo(() => {
  if (!selectedItem) return [];
  return [
  { label: '기안', user: selectedItem.applicantId, status: 'completed' as const, date: selectedItem.requestDate },
- { label: '검토', user: '이순신 과장', status: selectedItem.status === 'R' ? 'current' as const : 'completed' as const },
+ { label: '검??, user: '?�순??과장', status: selectedItem.status === 'R' ? 'current' as const : 'completed' as const },
  {
- label: '최종 승인',
+ label: '최종 ?�인',
  user: '관리자',
  status: selectedItem.status === 'Y' ? 'completed' as const :
  selectedItem.status === 'N' ? 'rejected' as const : 'pending' as const
@@ -131,11 +131,11 @@ export default function ApprovalInboxPage() {
  return (
  <div className="space-y-8 pb-20 animate-in fade-in duration-700">
  <PageHeader
- title="전자결재 관제 센터"
- breadcrumbs={[{ label: '업무지원' }, { label: '전자결재' }]}
+ title="?�자결재 관???�터"
+ breadcrumbs={[{ label: '?�무지?? }, { label: '?�자결재' }]}
  actions={
  <Button className="rounded-xl h-11 px-6 font-black shadow-lg shadow-primary/20 gap-2">
- <ClipboardCheck size={18} /> 새 결재 기안
+ <ClipboardCheck size={18} /> ??결재 기안
  </Button>
  }
  />
@@ -146,14 +146,14 @@ export default function ApprovalInboxPage() {
  active={tab === 'received'}
  onClick={() => setTab('received')}
  icon={<Inbox size={18} />}
- label="받은 결재함"
+ label="받�? 결재??
  count={tab === 'received' ? data.length : 3}
  />
  <TabButton
  active={tab === 'sent'}
  onClick={() => setTab('sent')}
  icon={<Send size={18} />}
- label="보낸 결재함"
+ label="보낸 결재??
  />
  </div>
 
@@ -164,11 +164,10 @@ export default function ApprovalInboxPage() {
  <div className="px-8 py-6 border-b border-primary/5 flex items-center justify-between bg-muted/5">
  <h3 className="font-black text-lg flex items-center gap-2.5">
  <History size={20} className="text-primary" />
- {tab === 'received' ? '미처리 요청' : '기안 이력'}
+ {tab === 'received' ? '미처�??�청' : '기안 ?�력'}
  </h3>
  <span className="text-[10px] font-bold bg-primary/10 text-primary px-3 py-1 rounded-full ">
- 				{data.length} 건
-
+ 				{data.length} �?
  </span>
  </div>
  <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
@@ -177,7 +176,7 @@ export default function ApprovalInboxPage() {
  data={data}
  loading={loading}
  onRowClick={setSelectedItem}
- emptyMessage={tab === 'received' ? "대기 중인 결재 요청이 없습니다." : "보낸 결재 이력이 없습니다."}
+ emptyMessage={tab === 'received' ? "?��?중인 결재 ?�청???�습?�다." : "보낸 결재 ?�력???�습?�다."}
  className="border-none shadow-none rounded-none"
  />
  </div>
@@ -193,12 +192,12 @@ export default function ApprovalInboxPage() {
  <div className="space-y-2">
  <div className="flex items-center gap-3">
  <div className="px-3 py-1 bg-primary text-white text-[10px] font-black rounded-lg tracking-tight shadow-lg shadow-primary/20">
-   상세 보기
+   ?�세 보기
  </div>
  <span className="text-sm font-bold text-muted-foreground font-mono">#{selectedItem.approvalId}</span>
  </div>
  <h3 className="text-3xl font-black tracking-tight">
- {selectedItem.jobType === '1' ? '2026년 2월 주간보고 결재 건' : '연차 유급 휴가 신청의 건'}
+ {selectedItem.jobType === '1' ? '2026??2??주간보고 결재 �? : '?�차 ?�급 ?��? ?�청??�?}
  </h3>
  </div>
  {tab === 'received' && selectedItem.status === 'R' && (
@@ -207,7 +206,7 @@ export default function ApprovalInboxPage() {
  onClick={() => handleAction(selectedItem, 'Y')}
  className="h-14 px-8 rounded-2xl font-black bg-emerald-500 hover:bg-emerald-600 shadow-xl shadow-emerald-500/20 gap-2"
  >
- <Check size={20} /> 승인 처리
+ <Check size={20} /> ?�인 처리
  </Button>
  <Button
  variant="destructive"
@@ -223,9 +222,8 @@ export default function ApprovalInboxPage() {
  <div className="bg-background/50 rounded-[2rem] p-8 border-2 border-primary/5 shadow-inner">
  <div className="flex items-center justify-between mb-6">
  <h4 className="text-sm font-black text-muted-foreground tracking-[0.2em] flex items-center gap-2">
-   <Zap size={14} className="text-primary" /> 결재 워크플로우
- </h4>
-   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">실시간 업데이트</span>
+   <Zap size={14} className="text-primary" /> 결재 ?�크?�로?? </h4>
+   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">?�시�??�데?�트</span>
 
  </div>
  <ApprovalStepper steps={workflowSteps} />
@@ -234,18 +232,18 @@ export default function ApprovalInboxPage() {
 
  <div className="p-10 space-y-10 flex-1 overflow-y-auto custom-scrollbar">
  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
- <DetailSection icon={<User size={16} />} title="기안자 정보" value={selectedItem.applicantId} desc="기술지원부 / 대리" />
- <DetailSection icon={<Calendar size={16} />} title="기안 일시" value={selectedItem.requestDate} desc="최종 수정: 2026-02-17 10:00" />
+ <DetailSection icon={<User size={16} />} title="기안???�보" value={selectedItem.applicantId} desc="기술지?��? / ?��? />
+ <DetailSection icon={<Calendar size={16} />} title="기안 ?�시" value={selectedItem.requestDate} desc="최종 ?�정: 2026-02-17 10:00" />
  </div>
 
  <div className="space-y-4">
  <h4 className="text-sm font-black text-muted-foreground tracking-[0.2em] flex items-center gap-2">
- <Info size={14} className="text-primary" /> 상세 상신 내용
+ <Info size={14} className="text-primary" /> ?�세 ?�신 ?�용
  </h4>
  <div className="p-8 bg-muted/20 rounded-[2rem] border-2 border-primary/5 min-h-[200px]">
  <p className="text-base font-medium leading-relaxed text-foreground/80">
- 본 결재 건은 시스템 현대화 프로젝트의 주간 보고 내용이며, 주요 인프라 교체 및 UI 표준화 작업에 대한 승인을 요청드립니다. <br /><br />
- 세부 내용은 첨부된 '2026_Weekly_Report_Feb.pdf' 파일을 참조하시기 바랍니다.
+ �?결재 건�? ?�스???��????�로?�트??주간 보고 ?�용?�며, 주요 ?�프??교체 �?UI ?��????�업???�???�인???�청?�립?�다. <br /><br />
+ ?��? ?�용?� 첨�???'2026_Weekly_Report_Feb.pdf' ?�일??참조?�시�?바랍?�다.
  </p>
  </div>
  </div>
@@ -253,7 +251,7 @@ export default function ApprovalInboxPage() {
 
  <div className="p-8 bg-muted/5 border-t border-primary/5 flex items-center justify-center">
  <p className="text-[10px] font-bold text-muted-foreground/40 tracking-[0.3em]">
-   전자결재 인증 시스템 v5.0
+   ?�자결재 ?�증 ?�스??v5.0
  </p>
  </div>
  </div>
@@ -262,8 +260,8 @@ export default function ApprovalInboxPage() {
  <div className="w-24 h-24 bg-muted rounded-[2.5rem] flex items-center justify-center mb-6">
  <ClipboardCheck size={48} className="text-muted-foreground/20" />
  </div>
- <h3 className="text-xl font-black text-muted-foreground/60">결재 항목을 선택해주세요</h3>
- <p className="text-sm text-muted-foreground/40 mt-2 max-w-xs">좌측 목록에서 상세 내용을 확인하고 싶은 결재 건을 선택하세요.</p>
+ <h3 className="text-xl font-black text-muted-foreground/60">결재 ??��???�택?�주?�요</h3>
+ <p className="text-sm text-muted-foreground/40 mt-2 max-w-xs">좌측 목록?�서 ?�세 ?�용???�인?�고 ?��? 결재 건을 ?�택?�세??</p>
  </div>
  )}
  </div>

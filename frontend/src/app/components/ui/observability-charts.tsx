@@ -25,8 +25,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * 1. GaugeChart
- * DB 커넥션 및 리소스 사용률을 계기판 형태로 시각화
- */
+ * DB 커넥??�?리소???�용률을 계기???�태�??�각?? */
 interface GaugeChartProps {
  value: number; // 0 to 100
  title: string;
@@ -87,8 +86,7 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
 
 /**
  * 2. RealtimeSparkline
- * CPU/MEM 추이를 보여주는 초소형 미세 추세선
- */
+ * CPU/MEM 추이�?보여주는 초소??미세 추세?? */
 interface SparklineProps {
  data: { value: number }[];
  color?: string;
@@ -130,7 +128,7 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
 
 /**
  * 3. SystemStatusRadar
- * 가용성, 보안, 성능, 안정성 등의 다차원 분석
+ * 가?�성, 보안, ?�능, ?�정???�의 ?�차??분석
  */
 interface RadarProps {
  data: { subject: string; A: number }[];
@@ -171,8 +169,7 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
 
 /**
  * 4. ActivityAreaChart
- * 활동 트렌드(예: 최근 7일 로그인 수)를 화려한 그라데이션 면적 차트로 시각화
- */
+ * ?�동 ?�렌???? 최근 7??로그????�??�려??그라?�이??면적 차트�??�각?? */
 interface ActivityData {
   name: string;
   value: number;
@@ -192,7 +189,7 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
         <h4 className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase">{title}</h4>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-[10px] font-bold text-foreground opacity-60">통계 프로브</span>
+          <span className="text-[10px] font-bold text-foreground opacity-60">?�계 ?�로�?/span>
         </div>
       </div>
       <div style={{ width: '100%', height: height }}>
@@ -247,8 +244,7 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
 
 /**
  * 5. DistributionPieChart
- * 데이터 분포(예: 사용자 역할 구성)를 세련된 링 형태의 도넛 차트로 시각화
- */
+ * ?�이??분포(?? ?�용????�� 구성)�??�련??�??�태???�넛 차트�??�각?? */
 interface DistributionData {
   name: string;
   value: number;
