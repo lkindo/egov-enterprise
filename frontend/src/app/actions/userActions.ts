@@ -5,50 +5,58 @@ import { cookies } from 'next/headers';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { UserManage } from '@/types/foundation/user';
 
-export async function createUserAction(prevState: any, formData: UserManage) {
- try {
- const cookieStore = await cookies();
- const accessToken = cookieStore.get('accessToken')?.value;
- const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
- await userAdminService.createUser(formData, axiosConfig);
-
- revalidatePath('/admin/user/manage');
- return { success: true, message: '사용자가 등록되었습니다.' };
- } catch (error: any) {
- console.error('Create User Error:', error);
- return { success: false, message: error.message || '등록 중 오류 발생' };
- }
+interface ActionResponse {
+    success: boolean;
+    message: string;
 }
 
-export async function updateUserAction(prevState: any, formData: UserManage) {
- try {
- const cookieStore = await cookies();
- const accessToken = cookieStore.get('accessToken')?.value;
- const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+export async function createUserAction(prevState: unknown, formData: UserManage): Promise<ActionResponse> {
+    try {
+        const cookieStore = await cookies();
+        const accessToken = cookieStore.get('accessToken')?.value;
+        const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- await userAdminService.updateUser(formData.userId, formData, axiosConfig);
+        await userAdminService.createUser(formData, axiosConfig);
 
- revalidatePath('/admin/user/manage');
- return { success: true, message: '사용자 정보가 수정되었습니다.' };
- } catch (error: any) {
- console.error('Update User Error:', error);
- return { success: false, message: error.message || '수정 중 오류 발생' };
- }
+        revalidatePath('/admin/user/manage');
+        return { success: true, message: '사용자가 등록되었습니다.' };
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : '등록 중 오류 발생';
+        console.error('Create User Error:', error);
+        return { success: false, message: errorMessage };
+    }
 }
 
-export async function deleteUserAction(prevState: any, userId: string) {
- try {
- const cookieStore = await cookies();
- const accessToken = cookieStore.get('accessToken')?.value;
- const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+export async function updateUserAction(prevState: unknown, formData: UserManage): Promise<ActionResponse> {
+    try {
+        const cookieStore = await cookies();
+        const accessToken = cookieStore.get('accessToken')?.value;
+        const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- await userAdminService.deleteUser(userId, axiosConfig);
+        await userAdminService.updateUser(formData.userId, formData, axiosConfig);
 
- revalidatePath('/admin/user/manage');
- return { success: true, message: '사용자가 삭제되었습니다.' };
- } catch (error: any) {
- console.error('Delete User Error:', error);
- return { success: false, message: error.message || '삭제 중 오류 발생' };
- }
+        revalidatePath('/admin/user/manage');
+        return { success: true, message: '사용자 정보가 수정되었습니다.' };
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : '수정 중 오류 발생';
+        console.error('Update User Error:', error);
+        return { success: false, message: errorMessage };
+    }
+}
+
+export async function deleteUserAction(prevState: unknown, userId: string): Promise<ActionResponse> {
+    try {
+        const cookieStore = await cookies();
+        const accessToken = cookieStore.get('accessToken')?.value;
+        const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+        await userAdminService.deleteUser(userId, axiosConfig);
+
+        revalidatePath('/admin/user/manage');
+        return { success: true, message: '사용자가 삭제되었습니다.' };
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
+        console.error('Delete User Error:', error);
+        return { success: false, message: errorMessage };
+    }
 }

@@ -77,7 +77,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
   });
 
   const displayItems = React.useMemo(() => {
-    let items = articlesData?.list || [];
+    const items = articlesData?.list || [];
     if (sortBy === 'views') {
       return [...items].sort((a, b) => (b.inqireCo || 0) - (a.inqireCo || 0));
     }

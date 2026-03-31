@@ -101,7 +101,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
     if (!rawUrl || rawUrl === '#') return '#';
     
     // Ensure leading slash for internal links
-    let formatted = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
+    const formatted = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
     
     // Legacy mapping (expand as needed)
     if (formatted.includes('selectBoardList.do')) return '/admin/community/boards';
