@@ -51,7 +51,14 @@ const DataRow = memo(function DataRow({
   enableSelection,
   onToggle,
   onRowClick
-}: any) {
+}: {
+  item: unknown;
+  columns: unknown[];
+  isSelected: boolean;
+  enableSelection: boolean;
+  onToggle: () => void;
+  onRowClick?: (item: unknown) => void;
+}) {
   return (
     <tr
       className={cn(
@@ -70,11 +77,11 @@ const DataRow = memo(function DataRow({
           />
         </td>
       )}
-      {columns.map((column: any, colIdx: number) => (
+      {columns.map((column: unknown, colIdx: number) => (
         <td
           key={`row-cell-${colIdx}`}
           className={cn(
-            "px-6 py-5 text-sm font-medium text-foreground/80 tracking-tight transition-colors group-hover:text-foreground", 
+            "px-6 py-5 text-sm font-medium text-foreground/80 tracking-tight transition-colors group-hover:text-foreground",
             column.className
           )}
         >
@@ -107,7 +114,7 @@ const MobileCard = memo(function MobileCard({
     >
       <div className="flex justify-between items-start mb-5">
         <div className="flex items-center gap-3 flex-1 overflow-hidden">
-           {enableSelection && (
+          {enableSelection && (
             <div onClick={(e) => e.stopPropagation()} className="relative z-10">
               <Checkbox checked={isSelected} onCheckedChange={onToggle} className="w-6 h-6 rounded-lg" />
             </div>
@@ -187,8 +194,8 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       {search && (
         <form onSubmit={handleSearchSubmit} className="relative group max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
-          <Input 
-            placeholder={search.placeholder || '검색어 입력...'} 
+          <Input
+            placeholder={search.placeholder || '검색어 입력...'}
             className="h-12 pl-12 rounded-xl border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
@@ -204,8 +211,8 @@ export function StandardDataTable<T extends { [key: string]: any }>({
         >
           <div className="flex items-center gap-6">
             <div className="flex flex-col">
-               <span className="text-[10px] font-black opacity-60 tracking-widest uppercase">선택 모드</span>
-               <span className="text-sm font-black">{selectedIds.size}개의 항목 선택됨</span>
+              <span className="text-[10px] font-black opacity-60 tracking-widest uppercase">선택 모드</span>
+              <span className="text-sm font-black">{selectedIds.size}개의 항목 선택됨</span>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div className="flex gap-2">
@@ -254,7 +261,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 )}
                 {columns.map((column, idx) => (
                   <th key={`header-${idx}`} className={cn(
-                    "px-6 py-5 font-black text-muted-foreground/60 text-[10px] uppercase tracking-[0.2em] whitespace-nowrap", 
+                    "px-6 py-5 font-black text-muted-foreground/60 text-[10px] uppercase tracking-[0.2em] whitespace-nowrap",
                     column.className
                   )} scope="col">
                     {column.header}
@@ -276,7 +283,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 ))
               ) : error ? (
                 <tr>
-                   <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="px-6 py-20 text-center">
+                  <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="px-6 py-20 text-center">
                     <ErrorStateDisplay error={error} onRetry={onRetry} />
                   </td>
                 </tr>
@@ -311,9 +318,9 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             <div key={`loading-card-${i}`} className="h-56 bg-muted/20 animate-pulse rounded-[var(--radius-hub-item)]" />
           ))
         ) : error ? (
-            <div className="p-16 bg-card border-2 border-border/60 rounded-[var(--radius-hub-section)] text-center shadow-inner">
-                 <ErrorStateDisplay error={error} onRetry={onRetry} />
-            </div>
+          <div className="p-16 bg-card border-2 border-border/60 rounded-[var(--radius-hub-section)] text-center shadow-inner">
+            <ErrorStateDisplay error={error} onRetry={onRetry} />
+          </div>
         ) : data.length === 0 ? (
           <div className="p-16 bg-card border-2 border-dashed border-border/60 rounded-[var(--radius-hub-section)] text-center shadow-inner">
             <EmptyStateDisplay emptyMessage={emptyMessage} />
@@ -338,26 +345,26 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       {/* Pagination Controls */}
       {pagination && pagination.totalPages > 1 && (
         <div className="flex items-center justify-center gap-3 pt-8 pb-4">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="w-12 h-12 rounded-xl border-2" 
+          <Button
+            variant="outline"
+            size="icon"
+            className="w-12 h-12 rounded-xl border-2"
             disabled={pagination.currentPage === 1}
             onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
           >
             <ChevronLeft size={20} />
           </Button>
-          
+
           <div className="flex items-center gap-2 px-6 h-12 bg-white border-2 rounded-xl">
-             <span className="text-sm font-black italic">{pagination.currentPage}</span>
-             <span className="text-[10px] font-black text-slate-300 uppercase">of</span>
-             <span className="text-sm font-black italic text-slate-400">{pagination.totalPages}</span>
+            <span className="text-sm font-black italic">{pagination.currentPage}</span>
+            <span className="text-[10px] font-black text-slate-300 uppercase">of</span>
+            <span className="text-sm font-black italic text-slate-400">{pagination.totalPages}</span>
           </div>
 
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="w-12 h-12 rounded-xl border-2" 
+          <Button
+            variant="outline"
+            size="icon"
+            className="w-12 h-12 rounded-xl border-2"
             disabled={pagination.currentPage === pagination.totalPages}
             onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
           >
@@ -373,28 +380,28 @@ function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => v
   return (
     <div className="flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in-95 duration-700 py-12">
       <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mb-2 relative border-4 border-rose-100 shadow-xl">
-         <AlertCircle size={40} className="text-rose-500" />
+        <AlertCircle size={40} className="text-rose-500" />
       </div>
       <div className="space-y-2">
         <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">데이터 로드 실패</p>
         <div className="p-4 bg-rose-50/50 rounded-xl border border-rose-100 inline-block">
-            <p className="text-[10px] font-black font-mono text-rose-800 tracking-tight opacity-70">
-                ERROR_STREAM: {error.message || 'UNKNOWN_EXEPTION'}
-            </p>
+          <p className="text-[10px] font-black font-mono text-rose-800 tracking-tight opacity-70">
+            ERROR_STREAM: {error.message || 'UNKNOWN_EXEPTION'}
+          </p>
         </div>
         <p className="text-xs text-muted-foreground font-black tracking-tight max-w-[360px] mx-auto leading-relaxed opacity-60 mt-4">
           데이터베이스 세션으로부터 개체 정보를 수신하지 못했습니다. <br />네트워크 연결 상태를 확인하거나 아래 버튼을 통해 재시도하십시오.
         </p>
       </div>
       <div className="flex gap-4 mt-6">
-        <Button 
-            variant="outline" 
-            size="lg" 
-            className="rounded-2xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group shadow-lg" 
-            onClick={() => onRetry ? onRetry() : window.location.reload()}
+        <Button
+          variant="outline"
+          size="lg"
+          className="rounded-2xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group shadow-lg"
+          onClick={() => onRetry ? onRetry() : window.location.reload()}
         >
-            <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
-            RETRY_SYNC
+          <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
+          RETRY_SYNC
         </Button>
       </div>
     </div>
@@ -405,10 +412,10 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in-95 duration-700 py-12">
       <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-2 relative">
-         <Search size={40} className="text-muted-foreground/20" />
-         <div className="absolute -right-1 -bottom-1 w-8 h-8 bg-background border-2 border-border rounded-full flex items-center justify-center">
-            <List size={14} className="text-muted-foreground" />
-         </div>
+        <Search size={40} className="text-muted-foreground/20" />
+        <div className="absolute -right-1 -bottom-1 w-8 h-8 bg-background border-2 border-border rounded-full flex items-center justify-center">
+          <List size={14} className="text-muted-foreground" />
+        </div>
       </div>
       <div className="space-y-2">
         <p className="text-xl font-black text-foreground tracking-tighter uppercase">{emptyMessage}</p>
@@ -416,10 +423,10 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
           시스템에서 데이터를 조회하지 못했습니다. <br />검색 조건을 조정하거나 다시 초기화해 보십시오.
         </p>
       </div>
-      <Button 
-        variant="outline" 
-        size="lg" 
-        className="mt-6 rounded-2xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group" 
+      <Button
+        variant="outline"
+        size="lg"
+        className="mt-6 rounded-2xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group"
         onClick={() => typeof window !== 'undefined' && window.location.reload()}
       >
         <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
