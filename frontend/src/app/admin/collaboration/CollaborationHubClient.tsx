@@ -5,13 +5,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   RefreshCcw,
-  Mail, 
-  Inbox, 
-  Bookmark, 
-  Search, 
-  Plus, 
+  Mail,
+  Inbox,
+  Bookmark,
+  Search,
+  Plus,
   Trash2,
   Users,
   Zap,
@@ -78,13 +78,13 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
   const renderMessageList = () => (
     <div className="space-y-3">
       {notes.map((note: any) => (
-        <div 
+        <div
           key={note.noteId}
           onClick={() => setSelectedItemId(note.noteId)}
           className={cn(
             "group p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer flex items-center justify-between",
-            selectedItemId === note.noteId 
-              ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]" 
+            selectedItemId === note.noteId
+              ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]"
               : "bg-white border-transparent hover:border-slate-50 text-slate-600 shadow-sm"
           )}
         >
@@ -109,13 +109,13 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
   const renderAddressList = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {addresses.map((address: any) => (
-        <Card 
+        <Card
           key={address.adbkId}
           onClick={() => setSelectedItemId(address.adbkId)}
           className={cn(
             "rounded-[2.5rem] border-2 transition-all cursor-pointer p-6 flex items-center gap-6",
-            selectedItemId === address.adbkId 
-              ? "bg-slate-900 border-slate-900 text-white shadow-xl" 
+            selectedItemId === address.adbkId
+              ? "bg-slate-900 border-slate-900 text-white shadow-xl"
               : "bg-white border-transparent hover:border-slate-50"
           )}
         >
@@ -128,6 +128,42 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           </div>
         </Card>
       ))}
+    </div>
+  );
+
+  const renderScrapList = () => (
+    <div className="space-y-3">
+      {scraps.length === 0 ? (
+        <div className="p-10 text-center opacity-30 font-black tracking-[0.3em]">
+          스크랩이 없습니다
+        </div>
+      ) : (
+        scraps.map((scrap: any) => (
+          <div
+            key={scrap.scrapId}
+            onClick={() => setSelectedItemId(scrap.scrapId)}
+            className={cn(
+              "group p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer flex items-center justify-between",
+              selectedItemId === scrap.scrapId
+                ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]"
+                : "bg-white border-transparent hover:border-slate-50 text-slate-600 shadow-sm"
+            )}
+          >
+            <div className="flex items-start gap-6">
+              <div className={cn(
+                "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg",
+                selectedItemId === scrap.scrapId ? "bg-primary text-white" : "bg-slate-50 text-slate-400"
+              )}>
+                <Bookmark size={20} />
+              </div>
+              <div className="space-y-1">
+                <h4 className={cn("text-sm font-black ", selectedItemId === scrap.scrapId ? "text-white" : "text-slate-900 tracking-tight")}>{scrap.scrapNm}</h4>
+                <p className="text-[8px] font-black tracking-tight opacity-40">스크랩 날짜: {scrap.createdDate?.substring(0, 10) || '알 수 없음'}</p>
+              </div>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 
@@ -159,7 +195,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
       </div>
 
       <div className="grid grid-cols-12 gap-8 px-2 min-h-[700px]">
-        
+
         {/* --- Left Column: Navigation (20%) --- */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
           <Card className="rounded-[3rem] border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100 overflow-hidden">
@@ -193,14 +229,14 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
               <div className="flex gap-4">
                 <div className="relative flex-1 group">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                  <Input 
-                    className="pl-12 h-14 bg-white border-slate-100 rounded-2xl text-sm font-bold shadow-sm" 
-                    placeholder="이름, 부서, 회사명 검색.." 
+                  <Input
+                    className="pl-12 h-14 bg-white border-slate-100 rounded-2xl text-sm font-bold shadow-sm"
+                    placeholder="이름, 부서, 회사명 검색.."
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
                   />
                 </div>
-                <Button 
+                <Button
                   onClick={() => queryClient.invalidateQueries({ queryKey: ['collab-addressbook'] })}
                   className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-black tracking-tighter shadow-xl hover:-translate-y-1 transition-all"
                 >
@@ -218,11 +254,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                 >
                   {activeTab === 'MESSAGES' && renderMessageList()}
                   {activeTab === 'ADDRESS_BOOK' && renderAddressList()}
-                  {activeTab === 'SCRAPS' && (
-                    <div className="p-10 text-center opacity-30 font-black tracking-[0.3em]">
-                      스크랩 서비스 노드 연결 중
-                    </div>
-                  )}
+                  {activeTab === 'SCRAPS' && renderScrapList()}
                 </motion.div>
               </AnimatePresence>
             </CardContent>
@@ -233,7 +265,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
         <div className="col-span-12 lg:col-span-4 h-full">
           <AnimatePresence mode="wait">
             {selectedItemId ? (
-              <motion.div 
+              <motion.div
                 key={selectedItemId}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -281,12 +313,12 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
 
 function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button 
+    <button
       onClick={onClick}
       className={cn(
         "w-full group p-6 rounded-[2rem] border-2 transition-all flex items-center gap-5",
-        active 
-          ? "bg-slate-900 border-slate-900 text-white shadow-xl" 
+        active
+          ? "bg-slate-900 border-slate-900 text-white shadow-xl"
           : "bg-white border-transparent hover:border-slate-50 text-slate-500 hover:text-slate-900"
       )}
     >

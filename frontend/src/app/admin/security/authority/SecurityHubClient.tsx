@@ -705,9 +705,9 @@ export default function SecurityHubClient() {
           </FormField>
 
           <div className="flex gap-6 pt-4">
-            <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
-            <Button onClick={() => saveAuthorMutation.mutate(authorFormData)} disabled={saveAuthorMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
-              <Zap size={18} className="group-hover:animate-pulse" /> {authorMode === 'create' ? 'DEPLOY_AUTHORITY' : 'PATCH_AUTHORITY'}
+            <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button onClick={() => saveAuthorMutation.mutate(authorFormData)} disabled={saveAuthorMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
+              <Zap size={18} className="group-hover:animate-pulse" /> {authorMode === 'create' ? '권한 배포' : '권한 수정'}
             </Button>
           </div>
         </div>

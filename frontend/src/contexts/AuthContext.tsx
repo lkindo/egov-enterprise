@@ -27,8 +27,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 토큰이 만료되었더라도 interceptor에서 reissue를 시도할 것이므로
-    // /auth/me를 호출하여 최종 유효성을 검증합니다.
+    // 토큰이 만료되었더라도 interceptor 에서 reissue 를 시도할 것이므로
+    // /auth/me 를 호출하여 최종 유효성을 검증합니다.
     try {
       const userData = await authService.getCurrentUser();
       if (userData) {
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
     } catch (_error: unknown) {
-      // 401 에러는 interceptor가 토큰 재발급 실패 시 최종적으로 던집니다.
+      // 401 에러는 interceptor 가 토큰 재발급 실패 시 최종적으로 던집니다.
       setUser(null);
       if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');
@@ -58,15 +58,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await authService.login(loginData);
 
       if (data && data.accessToken) {
+        // 1. localStorage 에 저장 (우선)
         localStorage.setItem('accessToken', data.accessToken);
-        // 서버 사이드 컴포넌트(SSR) 및 미들웨어 접근을 위해 쿠키에 저장
+
+        // 2. 쿠키에 저장 (middleware 및 SSR 용)
         document.cookie = `accessToken=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
         if (data.role) {
           document.cookie = `userRole=${data.role}; path=/; max-age=86400; SameSite=Lax`;
         }
 
-        // 전역 상태 업데이트를 위해 내 정보 조회
-        await checkAuth();
+        // 3. 전역 상태 업데이트 (즉시 반영)
+        const userData = await authService.getCurrentUser();
+        setUser(userData);
+
+        // 4. 디버깅: 저장 확인
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AuthContext] Login successful, user set to:', userData);
+          console.log('[AuthContext] Cookies set:', document.cookie);
+          console.log('[AuthContext] localStorage:', localStorage.getItem('accessToken'));
+        }
       } else {
         throw new Error('인증 정보가 올바르지 않습니다.');
       }
@@ -75,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Login process error:', message);
       throw new Error(message);
     }
-  }, [checkAuth]);
+  }, []);
 
   const logout = useCallback(async () => {
     try {

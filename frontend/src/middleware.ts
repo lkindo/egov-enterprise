@@ -42,13 +42,13 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith('/admin')) {
     const normalizedRole = userRole?.toUpperCase() || '';
     const isAdmin = normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN';
-    
+
     // 시스템/사용자/보안 등 민감한 관리 경로
-    const isSensitivePath = pathname.startsWith('/admin/system') || 
-                           pathname.startsWith('/admin/user') || 
-                           pathname.startsWith('/admin/security') ||
-                           pathname.startsWith('/admin/stats') ||
-                           pathname.startsWith('/admin/workflow');
+    const isSensitivePath = pathname.startsWith('/admin/system') ||
+      pathname.startsWith('/admin/user') ||
+      pathname.startsWith('/admin/security') ||
+      pathname.startsWith('/admin/stats') ||
+      pathname.startsWith('/admin/workflow');
 
     if (isSensitivePath && !isAdmin) {
       console.warn(`[Middleware] Sensitive Admin Access Attempt Refused for ${userRole} from ${pathname}`);

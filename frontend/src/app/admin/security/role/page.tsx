@@ -203,7 +203,7 @@ export default function RoleManagePage() {
             </Button>
             <Button
               onClick={handleCreate}
-              className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+              className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
               <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 롤 실장
             </Button>
@@ -234,7 +234,7 @@ export default function RoleManagePage() {
                   value={params.searchKeyword || ''}
                   onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                 />
-                <Button type="submit" className="h-16 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE_PATTERNS</Button>
+                <Button type="submit" className="h-16 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">패턴 분석</Button>
               </form>
             </div>
             <div>
@@ -353,10 +353,10 @@ export default function RoleManagePage() {
           </FormField>
 
           <div className="flex gap-6 pt-4">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
-            <Button onClick={handleSubmit} disabled={createMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button onClick={handleSubmit} disabled={createMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
               {createMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
-              <span className="ml-2">DEPLOY_ROLE_ARCHITECTURE</span>
+              <span className="ml-2">롤 아키텍처 배포</span>
             </Button>
           </div>
         </div>

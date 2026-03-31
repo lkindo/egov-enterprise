@@ -13,27 +13,27 @@ import { FormField } from '@/app/components/ui/standard-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-    Plus, 
-    Network as NetworkIcon, 
-    Server, 
-    Activity, 
-    Shield, 
-    Cpu, 
-    Settings, 
-    Trash2, 
-    Search, 
-    Zap, 
-    Globe, 
+import {
+    Plus,
+    Network as NetworkIcon,
+    Server,
+    Activity,
+    Shield,
+    Cpu,
+    Settings,
+    Trash2,
+    Search,
+    Zap,
+    Globe,
     Database,
     Radio
 } from 'lucide-react';
 import type { Network } from '@/services/foundation/system/NetworkAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { 
-    saveNetworkAction as saveNetworkNodeAction, 
-    deleteNetworkAction as deleteNetworkNodeAction 
+import {
+    saveNetworkAction as saveNetworkNodeAction,
+    deleteNetworkAction as deleteNetworkNodeAction
 } from '@/app/actions/networkActions';
 
 interface NetworkAdminClientProps {
@@ -47,7 +47,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
     const [isModalOpen, setIsOpen] = useState(false);
     const [editingNode, setEditingNode] = useState<Network | null>(null);
 
-    const filteredNodes = initialNetworks.filter(node => 
+    const filteredNodes = initialNetworks.filter(node =>
         (node.manageIem?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
         (node.ntwrkId?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
@@ -154,11 +154,11 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
             <PageHeader title="네트워크 토폴로지 관리" breadcrumbs={[{ label: '시스템관리' }, { label: '네트워크 관리' }]} />
 
-            <HubHeader 
-                title="인프라" 
-                highlight="네트워크 노드 관리" 
-                subtitle="전사 서비스 노드의 IP 할당 정책, 게이트웨이 및 서브넷 구성을 물리적으로 매핑하여 관리합니다." 
-                icon={NetworkIcon} 
+            <HubHeader
+                title="인프라"
+                highlight="네트워크 노드 관리"
+                subtitle="전사 서비스 노드의 IP 할당 정책, 게이트웨이 및 서브넷 구성을 물리적으로 매핑하여 관리합니다."
+                icon={NetworkIcon}
                 actions={
                     <Button onClick={handleCreate} size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2">
                         <Plus size={18} /> 신규 노드 등록
@@ -178,8 +178,8 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                     <div className="flex flex-col md:flex-row gap-4 flex-1">
                         <div className="relative group/search flex-1">
                             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
-                            <Input 
-                                placeholder="노드 명칭 또는 ID 기반 지능형 검색..." 
+                            <Input
+                                placeholder="노드 명칭 또는 ID 기반 지능형 검색..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="h-16 pl-16 pr-8 rounded-[2rem] bg-slate-50 border-2 border-slate-100 font-black text-md tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
@@ -198,8 +198,8 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                 maxWidth="3xl"
                 footer={
                     <div className="flex w-full gap-4">
-                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
-                        <Button form="network-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group">
+                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+                        <Button form="network-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group">
                             <Plus size={18} className="group-hover:rotate-90 transition-transform" /> {editingNode ? '구성 변경 사항 적용' : '인프라 연결 활성화'}
                         </Button>
                     </div>
@@ -209,20 +209,20 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="space-y-8">
                             <FormField label="인프라 노드 식별자 (NODE_ID)" required description="시스템에서 고유하게 인식되는 ID입니다.">
-                                <Input 
-                                    name="ntwrkId" 
-                                    defaultValue={editingNode?.ntwrkId} 
-                                    required 
+                                <Input
+                                    name="ntwrkId"
+                                    defaultValue={editingNode?.ntwrkId}
+                                    required
                                     readOnly={!!editingNode}
                                     className="h-14 rounded-2xl bg-slate-50 border-2 border-slate-100 font-mono text-sm font-black shadow-inner"
                                     placeholder="EX: NODE-SVR-01"
                                 />
                             </FormField>
                             <FormField label="노드 자산 별칭 (Alias)" required>
-                                <Input 
-                                    name="manageIem" 
-                                    defaultValue={editingNode?.manageIem} 
-                                    required 
+                                <Input
+                                    name="manageIem"
+                                    defaultValue={editingNode?.manageIem}
+                                    required
                                     className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner"
                                     placeholder="네트워크 노드 이름 입력"
                                 />
@@ -230,17 +230,17 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                             <FormField label="IP 엔드포인트 주소" required>
                                 <div className="relative group/ip">
                                     <Globe size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/ip:opacity-100 transition-opacity" />
-                                    <Input 
-                                        name="ntwrkIp" 
-                                        defaultValue={editingNode?.ntwrkIp} 
-                                        required 
+                                    <Input
+                                        name="ntwrkIp"
+                                        defaultValue={editingNode?.ntwrkIp}
+                                        required
                                         className="h-14 pl-16 rounded-2xl font-mono text-xs font-black shadow-inner"
                                         placeholder="0.0.0.0"
                                     />
                                 </div>
                             </FormField>
                         </div>
-                        
+
                         <div className="space-y-8">
                             <div className="p-10 rounded-[2.5rem] bg-slate-900 text-white space-y-6 shadow-2xl relative overflow-hidden group">
                                 <div className="relative z-10">
@@ -251,11 +251,11 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                     <FormField label="노드 운영 상태 활성화">
                                         <div className="grid grid-cols-1 gap-4 mt-4">
                                             <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/choice">
-                                                <input 
-                                                    type="radio" 
-                                                    name="useAt" 
-                                                    value="Y" 
-                                                    defaultChecked={editingNode?.useAt !== 'N'} 
+                                                <input
+                                                    type="radio"
+                                                    name="useAt"
+                                                    value="Y"
+                                                    defaultChecked={editingNode?.useAt !== 'N'}
                                                     id="status-active"
                                                     className="w-5 h-5 accent-primary"
                                                 />
@@ -265,11 +265,11 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                                 </label>
                                             </div>
                                             <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/choice">
-                                                <input 
-                                                    type="radio" 
-                                                    name="useAt" 
-                                                    value="N" 
-                                                    defaultChecked={editingNode?.useAt === 'N'} 
+                                                <input
+                                                    type="radio"
+                                                    name="useAt"
+                                                    value="N"
+                                                    defaultChecked={editingNode?.useAt === 'N'}
                                                     id="status-inactive"
                                                     className="w-5 h-5 accent-rose-500"
                                                 />

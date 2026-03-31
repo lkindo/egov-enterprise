@@ -158,7 +158,7 @@ export default function LogDashboardPage() {
         icon={History}
         actions={
           <div className="flex gap-4">
-            <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest uppercase gap-3">
+            <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest gap-3">
               <SearchCode size={18} /> 상세 로그 검색
             </Button>
           </div>

@@ -46,7 +46,7 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 // Helper to build tree from flat list - Hardened against null/undefined
 const buildMenuTree = (flatMenus: MenuInfo[] | null | undefined): MenuInfo[] => {
   if (!flatMenus || !Array.isArray(flatMenus)) return [];
-  
+
   const map: Record<number, MenuInfo> = {};
   const roots: MenuInfo[] = [];
 
@@ -61,7 +61,7 @@ const buildMenuTree = (flatMenus: MenuInfo[] | null | undefined): MenuInfo[] => 
       if (!m || !m.menuNo) return;
       const item = map[m.menuNo];
       const parentId = m.upperMenuNo ?? m.upperMenuId ?? 0;
-      
+
       if (parentId === 0 || !map[parentId]) {
         roots.push(item);
       } else {
@@ -96,7 +96,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
-   const [isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [treeMenus, setTreeMenus] = useState<MenuInfo[]>(() => buildMenuTree(initialMenus));
   const [hasChanges, setHasChanges] = useState(false);
   const [draggedMenuId, setDraggedMenuId] = useState<number | null>(null);
@@ -171,7 +171,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     const flat: any[] = [];
     const traverse = (items: MenuInfo[] | undefined, parentId: number) => {
       if (!items || !Array.isArray(items)) return;
-      
+
       items.forEach((item, idx) => {
         // 성공 이력이 확인된 규격으로 전송 (null 방식)
         const parentNo = parentId === 0 ? null : parentId;
@@ -188,7 +188,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
           modernRoute: item.modernRoute || '',
           menuDc: item.menuDc || ''
         });
-        
+
         if (item.children && Array.isArray(item.children) && item.children.length > 0) {
           traverse(item.children, item.menuNo);
         }
@@ -258,8 +258,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
   const handleExpandAll = () => {
     const idsWithChildren = initialMenus
-        .filter(m => initialMenus.some(child => (child.upperMenuNo ?? child.upperMenuId) === m.menuNo))
-        .map(m => m.menuNo);
+      .filter(m => initialMenus.some(child => (child.upperMenuNo ?? child.upperMenuId) === m.menuNo))
+      .map(m => m.menuNo);
     setExpandedIds(new Set(idsWithChildren));
   };
 
@@ -270,7 +270,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   const handleDragStart = (e: React.DragEvent, id: number) => {
     e.dataTransfer.setData('menuId', String(id));
     e.dataTransfer.effectAllowed = 'move';
-    
+
     // 브라우저가 드래그 세션을 완전히 생성한 '직후'에 상태를 업데이트 (0ms 지연)
     // 드래그 시작 즉시 DOM이 변하면 브라우저가 드래그를 강제 취소하는 버그 대응
     setTimeout(() => {
@@ -314,17 +314,17 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
     // 어떤 상황에서도 잔상이 남지 않도록 클린업 보장
     const cleanup = () => {
-        setDraggedMenuId(null);
-        setDropTargetId(null);
-        setDropPosition(null);
+      setDraggedMenuId(null);
+      setDropTargetId(null);
+      setDropPosition(null);
     };
 
     const sourceId = draggedMenuId || Number(e.dataTransfer.getData('menuId'));
     const position = forcedPosition || dropPosition;
 
     if (!sourceId || sourceId === targetId) {
-        cleanup();
-        return;
+      cleanup();
+      return;
     }
 
     const newTree = JSON.parse(JSON.stringify(treeMenus));
@@ -344,46 +344,46 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
     draggedItem = findAndRemove(newTree, sourceId);
     if (!draggedItem) {
-        cleanup();
-        return;
+      cleanup();
+      return;
     }
 
     // Helper to find parent array and index of target
     const findParentAnd번호 = (items: MenuInfo[], id: number): { parent: MenuInfo[], index: number, parentItem: MenuInfo | null } | null => {
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].menuNo === id) return { parent: items, index: i, parentItem: null };
-            if (items[i].children) {
-                const found = findParentAnd번호(items[i].children!, id);
-                if (found) {
-                    if (found.parentItem === null) {
-                        return { ...found, parentItem: items[i] };
-                    }
-                    return found;
-                }
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].menuNo === id) return { parent: items, index: i, parentItem: null };
+        if (items[i].children) {
+          const found = findParentAnd번호(items[i].children!, id);
+          if (found) {
+            if (found.parentItem === null) {
+              return { ...found, parentItem: items[i] };
             }
+            return found;
+          }
         }
-        return null;
+      }
+      return null;
     };
 
     if (targetId === 0) {
-        // Drop into standard promotion area
-        newTree.push({ ...draggedItem, upperMenuId: 0, upperMenuNo: 0 });
+      // Drop into standard promotion area
+      newTree.push({ ...draggedItem, upperMenuId: 0, upperMenuNo: 0 });
     } else {
-        const targetInfo = findParentAnd번호(newTree, targetId);
-        if (targetInfo) {
-            const { parent, index, parentItem } = targetInfo;
-            const parentId = parentItem ? parentItem.menuNo : 0;
+      const targetInfo = findParentAnd번호(newTree, targetId);
+      if (targetInfo) {
+        const { parent, index, parentItem } = targetInfo;
+        const parentId = parentItem ? parentItem.menuNo : 0;
 
-            if (position === 'inside') {
-                const targetNode = parent[index];
-                targetNode.children = targetNode.children || [];
-                targetNode.children.push({ ...draggedItem, upperMenuId: targetId, upperMenuNo: targetId });
-            } else if (position === 'before') {
-                parent.splice(index, 0, { ...draggedItem, upperMenuId: parentId, upperMenuNo: parentId });
-            } else if (position === 'after') {
-                parent.splice(index + 1, 0, { ...draggedItem, upperMenuId: parentId, upperMenuNo: parentId });
-            }
+        if (position === 'inside') {
+          const targetNode = parent[index];
+          targetNode.children = targetNode.children || [];
+          targetNode.children.push({ ...draggedItem, upperMenuId: targetId, upperMenuNo: targetId });
+        } else if (position === 'before') {
+          parent.splice(index, 0, { ...draggedItem, upperMenuId: parentId, upperMenuNo: parentId });
+        } else if (position === 'after') {
+          parent.splice(index + 1, 0, { ...draggedItem, upperMenuId: parentId, upperMenuNo: parentId });
         }
+      }
     }
 
     setTreeMenus(newTree);
@@ -400,7 +400,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedIds.has(item.menuNo);
 
-     return (
+    return (
       <div
         draggable={!isSaving}
         onDragStart={(e) => {
@@ -429,7 +429,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
         {/* Connection Line Visualization */}
         {level > 0 && (
-            <div className="absolute left-0 top-6 w-8 h-0.5 bg-slate-100 rounded-full" />
+          <div className="absolute left-0 top-6 w-8 h-0.5 bg-slate-100 rounded-full" />
         )}
 
         <div className={cn(
@@ -489,7 +489,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all relative z-10">
             {level < 2 && (
               <Button
-                variant="ghost" 
+                variant="ghost"
                 size="icon"
                 onClick={() => handleOpenCreate(item.menuNo)}
                 className="h-10 w-10 bg-slate-50 hover:bg-primary hover:text-white rounded-xl border border-slate-100 transition-all font-black"
@@ -498,7 +498,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               </Button>
             )}
             <Button
-              variant="ghost" 
+              variant="ghost"
               size="icon"
               onClick={() => handleOpenEdit(item)}
               className="h-10 w-10 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-100 transition-all"
@@ -506,7 +506,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               <Settings size={16} />
             </Button>
             <Button
-              variant="ghost" 
+              variant="ghost"
               size="icon"
               onClick={() => handleDelete(item.menuNo)}
               className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all"
@@ -514,7 +514,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               <Trash2 size={16} />
             </Button>
           </div>
-          
+
           {/* Subtle decoration */}
           <div className="absolute right-0 top-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
         </div>
@@ -537,11 +537,11 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         breadcrumbs={[{ label: '시스템관리' }, { label: '메뉴 관리' }]}
       />
 
-      <HubHeader 
-        title="메뉴" 
-        highlight="아키텍처" 
-        subtitle="시스템 전반의 계층적 메뉴 구조 설계와 권한 기반 네비게이션 트리 관리" 
-        icon={FolderTree} 
+      <HubHeader
+        title="메뉴"
+        highlight="아키텍처"
+        subtitle="시스템 전반의 계층적 메뉴 구조 설계와 권한 기반 네비게이션 트리 관리"
+        icon={FolderTree}
         actions={
           <div className="flex gap-4 p-2 items-center">
             <Button
@@ -562,9 +562,9 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         <HubMetricCard title="동기화_무결성" value="최적" icon={ShieldCheck} color="amber" />
       </HubMetricGrid>
 
-      <HubSectionCard 
-        title="시스템 네비게이션 트리" 
-        description="최대 3단계의 계층 구조를 지원합니다. 드래그 앤 드롭으로 메뉴 구조를 설계하십시오." 
+      <HubSectionCard
+        title="시스템 네비게이션 트리"
+        description="최대 3단계의 계층 구조를 지원합니다. 드래그 앤 드롭으로 메뉴 구조를 설계하십시오."
         icon={SearchCode}
         action={
           <div className="flex gap-4 items-center">
@@ -626,8 +626,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               <Plus size={32} />
             </div>
             <div className="text-center space-y-2">
-                <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">아키텍처 어셈블리</p>
-                <p className="text-sm font-black text-muted-foreground tracking-tight group-hover:text-foreground transition-colors uppercase">드래그한 요소를 여기에 놓으면 '최상위' 노드로 프로모션됩니다</p>
+              <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">아키텍처 어셈블리</p>
+              <p className="text-sm font-black text-muted-foreground tracking-tight group-hover:text-foreground transition-colors uppercase">드래그한 요소를 여기에 놓으면 '최상위' 노드로 프로모션됩니다</p>
             </div>
           </div>
         </div>
@@ -640,10 +640,10 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
-            <Button 
-                onClick={() => handleSave()} 
-                className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-xl"
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button
+              onClick={() => handleSave()}
+              className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest shadow-xl"
             >
               {mode === 'create' ? '저장' : '저장'}
             </Button>
@@ -697,16 +697,16 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
           <FormField label="라우팅 엔드포인트 (경로)" description="전자정부 표준 프레임워크 기반 프론트엔드 라우트 경로">
             <div className="relative group/route">
-                <Network size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/route:opacity-100 transition-opacity" />
-                <Input
-                  value={formData.modernRoute || ''}
-                  onChange={(e) => setFormData({ ...formData, modernRoute: e.target.value })}
-                  className="h-14 pl-16 rounded-2xl text-xs font-mono font-black italic shadow-inner border-2 border-slate-100"
-                  placeholder="예: /admin/system/codes"
-                />
+              <Network size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/route:opacity-100 transition-opacity" />
+              <Input
+                value={formData.modernRoute || ''}
+                onChange={(e) => setFormData({ ...formData, modernRoute: e.target.value })}
+                className="h-14 pl-16 rounded-2xl text-xs font-mono font-black italic shadow-inner border-2 border-slate-100"
+                placeholder="예: /admin/system/codes"
+              />
             </div>
           </FormField>
-          
+
           <FormField label="노드 상세 메타데이터">
             <textarea
               value={formData.menuDc || ''}

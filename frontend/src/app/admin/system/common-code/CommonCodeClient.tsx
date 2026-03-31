@@ -13,17 +13,17 @@ import { FormField } from '@/app/components/ui/standard-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-    Plus, 
-    Settings, 
-    Trash2, 
-    Search, 
-    Database, 
-    LayoutGrid, 
-    Fingerprint, 
-    Tag, 
-    Cpu, 
-    Layers, 
+import {
+    Plus,
+    Settings,
+    Trash2,
+    Search,
+    Database,
+    LayoutGrid,
+    Fingerprint,
+    Tag,
+    Cpu,
+    Layers,
     Box,
     Hash,
     Maximize2,
@@ -51,11 +51,11 @@ interface CommonCodeClientProps {
     selectedGroupId: string | null;
 }
 
-export default function CommonCodeClient({ 
-    clCodes, 
-    groups, 
-    details, 
-    selectedGroupId 
+export default function CommonCodeClient({
+    clCodes,
+    groups,
+    details,
+    selectedGroupId
 }: CommonCodeClientProps) {
     const router = useRouter();
     const { toast } = useToast();
@@ -87,9 +87,9 @@ export default function CommonCodeClient({
     }, [clCodes, groups, details, selectedGroupId]);
 
     const [selectedCluster, setSelectedCluster] = useState<DomainCluster>(
-        initialClusters[0] || { 
-            id: '', name: '전체', groups: [], 
-            clCode: '', clCodeNm: '', clCodeDc: '', useAt: 'N' 
+        initialClusters[0] || {
+            id: '', name: '전체', groups: [],
+            clCode: '', clCodeNm: '', clCodeDc: '', useAt: 'N'
         }
     );
     const [selectedGroup, setSelectedGroup] = useState<GroupCode | null>(null);
@@ -99,18 +99,18 @@ export default function CommonCodeClient({
     const loadGroupDetails = async (group: GroupCode) => {
         try {
             setDetailsLoading(true);
-            
+
             // 1. Fetch details from API with robust filtering parameters
             // Providing multiple common parameter names for EgovFrame compatibility
-            const res = await codeAdminService.getDetailCodeList({ 
-                codeId: group.codeId, 
+            const res = await codeAdminService.getDetailCodeList({
+                codeId: group.codeId,
                 searchKeyword: group.codeId,
                 searchCondition: '1',
-                pageUnit: 999 
+                pageUnit: 999
             });
-            
+
             // Failsafe: Filter details on client side just in case backend returns all items
-            const fetchedDetails = (res.list || []).filter(item => 
+            const fetchedDetails = (res.list || []).filter(item =>
                 item && (item as CodeDetail).codeId === group.codeId
             );
 
@@ -149,12 +149,12 @@ export default function CommonCodeClient({
         const lowerQuery = searchQuery.toLowerCase();
         return initialClusters.map(c => ({
             ...c,
-            groups: c.groups.filter(g => 
-                g.codeIdNm.toLowerCase().includes(lowerQuery) || 
+            groups: c.groups.filter(g =>
+                g.codeIdNm.toLowerCase().includes(lowerQuery) ||
                 g.codeId.toLowerCase().includes(lowerQuery)
             )
-        })).filter(c => 
-            c.name.toLowerCase().includes(lowerQuery) || 
+        })).filter(c =>
+            c.name.toLowerCase().includes(lowerQuery) ||
             c.groups.length > 0
         );
     }, [initialClusters, searchQuery]);
@@ -166,7 +166,7 @@ export default function CommonCodeClient({
 
     const handleDeleteDetail = async (code: string) => {
         if (!selectedGroup) return;
-        
+
         const ok = await confirm({
             title: '상세 코드 명세 삭제',
             message: '이 코드 정보를 데이터베이스에서 영구히 삭제하시겠습니까?',
@@ -245,20 +245,20 @@ export default function CommonCodeClient({
             className: 'text-right w-28',
             accessor: (item: CodeDetail) => (
                 <div className="flex justify-end gap-1">
-                    <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 hover:bg-slate-100 rounded-lg" 
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-slate-100 rounded-lg"
                         onClick={(e) => { e.preventDefault(); handleEditDetail(item); }}
                     >
                         <Settings size={14} />
                     </Button>
-                    <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-lg" 
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-lg"
                         onClick={(e) => { e.preventDefault(); handleDeleteDetail(item.code); }}
                     >
                         <Trash2 size={14} />
@@ -272,7 +272,7 @@ export default function CommonCodeClient({
         <div className="space-y-8">
             {/* Master-Detail Layout Wrapper */}
             <div className="flex flex-col lg:flex-row gap-8 min-h-[700px]">
-                
+
                 {/* --- Left Sidebar: Code Tree --- */}
                 <aside className="w-full lg:w-96 flex flex-col gap-4">
                     <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] border border-slate-200/50 shadow-sm overflow-hidden flex flex-col h-full ring-1 ring-slate-100/50">
@@ -287,8 +287,8 @@ export default function CommonCodeClient({
                             </div>
                             <div className="relative group">
                                 <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                <Input 
-                                    placeholder="그룹/이름 검색..." 
+                                <Input
+                                    placeholder="그룹/이름 검색..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="h-10 pl-10 pr-4 rounded-xl border-slate-200 bg-white text-xs focus:ring-4 focus:ring-primary/5 transition-all"
@@ -420,11 +420,11 @@ export default function CommonCodeClient({
                                     </div>
                                 </div>
                                 <div className="p-4">
-                                    <StandardDataTable<CodeDetail> 
-                                        columns={columns} 
-                                        data={selectedGroup.details || []} 
-                                        emptyMessage="선택된 그룹의 상세 코드가 존재하지 않습니다." 
-                                        className="border-none" 
+                                    <StandardDataTable<CodeDetail>
+                                        columns={columns}
+                                        data={selectedGroup.details || []}
+                                        emptyMessage="선택된 그룹의 상세 코드가 존재하지 않습니다."
+                                        className="border-none"
                                         isPremium={false}
                                     />
                                 </div>
@@ -463,8 +463,8 @@ export default function CommonCodeClient({
                 maxWidth="3xl"
                 footer={
                     <div className="flex w-full gap-4">
-                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2 border-slate-100 shadow-sm">취소</Button>
-                        <Button form="code-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group">
+                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
+                        <Button form="code-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group">
                             <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 저장
                         </Button>
                     </div>
@@ -479,10 +479,10 @@ export default function CommonCodeClient({
                                 </div>
                             </FormField>
                             <FormField label="코드 식별키 (Unique ID)" required>
-                                <Input 
-                                    name="code" 
-                                    defaultValue={editingDetail?.code} 
-                                    required 
+                                <Input
+                                    name="code"
+                                    defaultValue={editingDetail?.code}
+                                    required
                                     readOnly={!!editingDetail}
                                     className="h-14 rounded-2xl font-mono text-xs font-black shadow-inner border-none bg-slate-50 focus:bg-white transition-all"
                                     placeholder="고유 키 코드 (예: CM001)"
@@ -492,12 +492,12 @@ export default function CommonCodeClient({
                                 <Input name="codeNm" defaultValue={editingDetail?.codeNm} required className="h-14 rounded-2xl text-sm font-black tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all" placeholder="한글/영문 코드 이름" />
                             </FormField>
                         </div>
-                        
+
                         <div className="space-y-8">
                             <FormField label="활성 상태 프로토콜">
-                                <Select 
-                                    key={editingDetail ? `edit-${editingDetail.code}` : 'new'} 
-                                    name="useAt" 
+                                <Select
+                                    key={editingDetail ? `edit-${editingDetail.code}` : 'new'}
+                                    name="useAt"
                                     defaultValue={editingDetail?.useAt || 'Y'}
                                 >
                                     <SelectTrigger className="h-14 rounded-2xl border-none bg-slate-50 font-black text-[10px] tracking-widest uppercase shadow-inner">
