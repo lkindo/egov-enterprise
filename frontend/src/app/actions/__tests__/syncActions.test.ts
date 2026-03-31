@@ -71,7 +71,7 @@ describe('syncActions', () => {
 
     it('should handle errors', async () => {
       const formData = new FormData();
-      (syncAdminService.createSyncServer as any).mockRejectedValue(new Error('Save Failed'));
+      (syncAdminService.createSyncServer as unknown).mockRejectedValue(new Error('Save Failed'));
 
       const result = await saveSyncServerAction({}, formData);
 
