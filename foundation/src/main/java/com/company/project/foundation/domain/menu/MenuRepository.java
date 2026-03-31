@@ -56,4 +56,26 @@ public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositor
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Menu m SET m.modernRoute = :modernRoute WHERE m.progrmFileNm LIKE :pattern")
     int bulkUpdateModernRouteByPattern(@Param("pattern") String pattern, @Param("modernRoute") String modernRoute);
+
+    /**
+     * [성능 최적화] 메뉴와 권한 정보를 한 번에 조회 (N+1 방지)
+     */
+    @Query("""
+                SELECT m, ma
+                FROM Menu m
+                LEFT JOIN MenuAuthority ma ON m.id = ma.id.menuNo
+                ORDER BY m.upperMenuNo ASC, m.menuOrdr ASC
+            """)
+    List<Object[]> findAllWithAuthorities();
+
+    /**
+     * [성능 최적화] 메뉴와 프로그램 정보를 한 번에 조회 (N+1 방지)
+     */
+    @Query("""
+                SELECT m, p
+                FROM Menu m
+                LEFT JOIN Program p ON m.progrmFileNm = p.progrmFileNm
+                ORDER BY m.upperMenuNo ASC, m.menuOrdr ASC
+            """)
+    List<Object[]> findAllWithPrograms();
 }

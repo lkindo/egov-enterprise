@@ -25,7 +25,7 @@ export function useNotifications() {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      // client.ts 인터셉터가 이미 data.data를 풀어서 주므로 바로 사용합니다.
+      // client.ts 인터셉터가 이미 data.data 를 풀어서 주므로 바로 사용합니다.
       const [listResult, countResult]: unknown[] = await Promise.all([
         client.get('/notifications').catch(() => []),
         client.get('/notifications/unread-count').catch(() => 0)
@@ -37,10 +37,13 @@ export function useNotifications() {
       const actualList = Array.isArray(list) ? list : (list?.list || []);
       setNotifications(actualList);
       setUnreadCount(typeof countData === 'number' ? countData : (countData?.count || 0));
-    } catch (e) {
-      // Quietly ignore
+    } catch (error) {
+      // 에러 로그 출력 (프로덕션에서는 console.error 대신 에러 모니터링 서비스 사용 권장)
+      console.error('Failed to fetch notifications:', error);
+      // 사용자에게 토스트 메시지 표시
+      toast('알림을 불러오는데 실패했습니다.', 'error');
     }
-  }, []);
+  }, [toast]);
 
   const handleNewNotification = useCallback((message: IMessage) => {
     const newNotif: Notification = JSON.parse(message.body);
@@ -84,8 +87,9 @@ export function useNotifications() {
     try {
       await client.put(`/notifications/${id}/read`);
       fetchNotifications();
-    } catch (e) {
-      console.error('Failed to mark notification as read');
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+      toast('알림 읽음 처리에 실패했습니다.', 'error');
     }
   };
 

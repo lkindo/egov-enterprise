@@ -71,6 +71,12 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.mockito:mockito-core'
     testImplementation 'com.h2database:h2'
+    
+    // Testcontainers for integration testing with real PostgreSQL
+    testImplementation platform(libs.testcontainers.bom)
+    testImplementation libs.testcontainers.postgresql
+    testImplementation libs.testcontainers.junit.jupiter
+    
     // ArchUnit - disabled due to test engine conflicts
     // testImplementation libs.archunit.junit5
     // testImplementation libs.archunit
@@ -82,6 +88,8 @@ dependencies {
     testFixturesImplementation 'org.springframework.boot:spring-boot-starter-test'
     testFixturesImplementation 'org.springframework.security:spring-security-test'
     testFixturesImplementation 'com.h2database:h2'
+    testFixturesImplementation platform(libs.testcontainers.bom)
+    testFixturesImplementation libs.testcontainers.postgresql
 }
 
 test {
@@ -100,8 +108,59 @@ jacocoTestReport {
     reports {
         xml.required = true
         html.required = true
+        csv.required = false
+    }
+    
+    // 커버리지 측정에서 제외할 클래스
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/Q*.class',
+                '**/*Dto.class',
+                '**/*Request.class',
+                '**/*Response.class',
+                '**/dto/**',
+                '**/*Config*.class',
+                '**/*Application.class',
+                '**/*VO.class'
+            ])
+        }))
     }
 }
+
+// JaCoCo 커버리지 임계값 설정
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.60 // 최소 60% 커버리지 목표
+            }
+        }
+        rule {
+            enabled = true
+            element = 'CLASS'
+            
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.50 // 클래스별 최소 50% 라인 커버리지
+            }
+            
+            // 제외할 클래스 패턴
+            excludes = [
+                '*.Q*',
+                '*.dto.*',
+                '*Config*',
+                '*Application*',
+                '*VO'
+            ]
+        }
+    }
+}
+
+// check 태스크에 커버리지 검증 포함
+check.dependsOn jacocoTestCoverageVerification
 
 bootJar { enabled = false }
 jar { enabled = true }

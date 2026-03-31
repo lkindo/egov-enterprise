@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withBundleAnalyzer from '@next/bundle-analyzer';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -50,5 +51,9 @@ const nextConfig: NextConfig = {
   },
 };
 
+// Bundle Analyzer 적용 (ANALYZE=true 환경변수 설정 시 활성화)
+const bundleAnalyzerConfig = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+})(nextConfig);
 
-export default nextConfig;
+export default bundleAnalyzerConfig;

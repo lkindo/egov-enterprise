@@ -56,7 +56,7 @@ public class MenuService {
         try {
             log.debug("getMenuHierarchy started (Cache Miss)");
 
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();        
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             List<String> roles = new ArrayList<>();
             if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
                 for (GrantedAuthority authority : auth.getAuthorities()) {
@@ -74,34 +74,49 @@ public class MenuService {
     }
 
     /**
-     * 공통 메뉴 트리 빌더
+     * 공통 메뉴 트리 빌더 (N+1 쿼리 개선 버전)
+     * 
      * @param rootMenuNo 최상단 부모 번호 (null 인 경우 전체 루트 조회)
-     * @param roles 사용자 권한 목록
+     * @param roles      사용자 권한 목록
      */
     private List<MenuDto> buildMenuTree(Long rootMenuNo, List<String> roles) {
-        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
-        List<MenuAuthority> authorities = menuAuthorityRepository.findAll();
+        // [성능 개선] 단일 쿼리로 메뉴와 권한 정보를 함께 조회 (N+1 방지)
+        List<Object[]> menuWithAuthResults = menuRepository.findAllWithAuthorities();
 
-        List<Long> authorizedMenuNos = authorities.stream()
-                .filter(ma -> roles.contains(ma.getId().getAuthorCode()))
-                .map(ma -> ma.getId().getMenuNo())
-                .distinct()
-                .collect(Collectors.toList());
+        // 메뉴와 권한 매핑
+        Map<Long, Menu> menuMap = new LinkedHashMap<>();
+        Map<Long, List<MenuAuthority>> authorityMap = new HashMap<>();
 
-        List<Menu> filteredMenus = allMenus.stream()
+        for (Object[] result : menuWithAuthResults) {
+            Menu menu = (Menu) result[0];
+            MenuAuthority authority = (MenuAuthority) result[1];
+
+            menuMap.put(menu.getId(), menu);
+
+            if (authority != null) {
+                authorityMap.computeIfAbsent(menu.getId(), k -> new ArrayList<>())
+                        .add(authority);
+            }
+        }
+
+        // 권한 기반 메뉴 필터링
+        List<Menu> filteredMenus = menuMap.values().stream()
                 .filter(m -> {
-                    boolean isAuthorized = authorizedMenuNos.contains(m.getId());
+                    boolean isAuthorized = authorityMap.getOrDefault(m.getId(), new ArrayList<>()).stream()
+                            .anyMatch(ma -> roles.contains(ma.getId().getAuthorCode()));
                     boolean isAdmin = roles.contains("ROLE_ADMIN");
                     return (isAuthorized || isAdmin) && m.getId() <= 9999999;
                 })
                 .collect(Collectors.toList());
 
+        // [성능 개선] 단일 쿼리로 프로그램 정보 조회
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
                 .filter(p -> p.getProgrmFileNm() != null)
                 .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
 
-        Map<Long, MenuDto> menuMap = new LinkedHashMap<>();
+        // 메뉴 트리 구성
+        Map<Long, MenuDto> dtoMap = new LinkedHashMap<>();
         List<MenuDto> rootNodes = new ArrayList<>();
 
         for (Menu menu : filteredMenus) {
@@ -121,22 +136,22 @@ public class MenuService {
                     .relateImageNm(menu.getRelateImageNm())
                     .build();
 
-            menuMap.put(dto.getId(), dto);
+            dtoMap.put(dto.getId(), dto);
 
             Long upperNo = dto.getUpperMenuNo();
             if (rootMenuNo == null) {
                 // 전체 루트 조회인 경우
                 if (upperNo == null || upperNo == 0) {
                     rootNodes.add(dto);
-                } else if (menuMap.containsKey(upperNo)) {
-                    menuMap.get(upperNo).addChild(dto);
+                } else if (dtoMap.containsKey(upperNo)) {
+                    dtoMap.get(upperNo).addChild(dto);
                 }
             } else {
                 // 특정 서브트리 조회인 경우
                 if (upperNo != null && upperNo.equals(rootMenuNo)) {
                     rootNodes.add(dto);
-                } else if (menuMap.containsKey(upperNo)) {
-                    menuMap.get(upperNo).addChild(dto);
+                } else if (dtoMap.containsKey(upperNo)) {
+                    dtoMap.get(upperNo).addChild(dto);
                 }
             }
         }
@@ -150,7 +165,7 @@ public class MenuService {
 
     @Cacheable(value = "menuParentMap")
     public Map<Long, Long> getMenuParentMapCached() {
-        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();        
+        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
         Map<Long, Long> parentMap = new HashMap<>();
         for (Menu m : allMenus) {
             parentMap.put(m.getId(), m.getUpperMenuNo());
@@ -160,16 +175,18 @@ public class MenuService {
 
     @Cacheable(value = "allMenuDtos")
     public List<MenuDto> getAllMenus() {
-        List<Menu> filteredMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
-        List<Program> programs = programRepository.findAll();
-        Map<String, Program> programMap = programs.stream()
-                .filter(p -> p.getProgrmFileNm() != null)
-                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
+        // [성능 개선] 단일 쿼리로 메뉴와 프로그램 정보를 함께 조회 (N+1 방지)
+        List<Object[]> menuWithProgramResults = menuRepository.findAllWithPrograms();
 
         List<MenuDto> result = new ArrayList<>();
 
-        for (Menu menu : filteredMenus) {
-            String url = calculateUrl(menu, programMap);
+        for (Object[] menuResult : menuWithProgramResults) {
+            Menu menu = (Menu) menuResult[0];
+            Program program = (Program) menuResult[1];
+
+            // 프로그램 맵 대신 직접 사용 (단일 쿼리에서 이미 조인됨)
+            String url = calculateUrl(menu,
+                    program != null ? java.util.Collections.singletonMap(program.getProgrmFileNm(), program) : null);
 
             MenuDto dto = MenuDto.builder()
                     .id(menu.getId())
@@ -194,7 +211,7 @@ public class MenuService {
         return programRepository.findAll();
     }
 
-    public List<MenuCreateDto> selectMenuCreatManagList(@NonNull ComDefaultVO searchVO) {        
+    public List<MenuCreateDto> selectMenuCreatManagList(@NonNull ComDefaultVO searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
                 Sort.by("authorCode").ascending());
         String searchKeyword = searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "";
@@ -231,13 +248,14 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
-        menuAuthorityRepository.deleteByIdAuthorCode(Objects.requireNonNull(authorCode));        
+        menuAuthorityRepository.deleteByIdAuthorCode(Objects.requireNonNull(authorCode));
 
         if (checkedMenuNos != null && !checkedMenuNos.isEmpty()) {
             String[] menuNos = checkedMenuNos.split(",");
             List<MenuAuthority> authorities = new ArrayList<>();
             for (String menuNo : menuNos) {
-                if (menuNo == null || menuNo.isEmpty()) continue;
+                if (menuNo == null || menuNo.isEmpty())
+                    continue;
                 long mNo = Long.parseLong(menuNo);
                 MenuAuthority ma = MenuAuthority.builder()
                         .id(MenuAuthority.MenuAuthorityId.builder()
@@ -259,7 +277,8 @@ public class MenuService {
     public void insertMenuManage(@NonNull MenuDto vo) {
         // FK 제약 방지를 위해 프로그램이 없으면 자동 등록
         if (vo.getProgrmFileNm() != null && !programRepository.existsById(vo.getProgrmFileNm())) {
-            com.company.project.foundation.domain.program.Program p = com.company.project.foundation.domain.program.Program.builder()
+            com.company.project.foundation.domain.program.Program p = com.company.project.foundation.domain.program.Program
+                    .builder()
                     .progrmFileNm(vo.getProgrmFileNm())
                     .progrmKoreanNm("자동생성메뉴(" + vo.getMenuNm() + ")")
                     .url(vo.getModernRoute())
@@ -281,8 +300,7 @@ public class MenuService {
                 "webmaster",
                 java.time.LocalDateTime.now(),
                 "webmaster",
-                java.time.LocalDateTime.now()
-        );
+                java.time.LocalDateTime.now());
         menuRepository.save(Objects.requireNonNull(menu));
     }
 
@@ -304,11 +322,13 @@ public class MenuService {
 
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void deleteMenuManageList(String checkedMenuNoForDel) {
-        if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty()) return;
+        if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
+            return;
         String[] delMenuNos = checkedMenuNoForDel.split(",");
         List<Long> ids = new ArrayList<>();
         for (String menuNo : delMenuNos) {
-            if (menuNo == null || menuNo.isEmpty()) continue;
+            if (menuNo == null || menuNo.isEmpty())
+                continue;
             ids.add(Long.parseLong(menuNo));
         }
         if (!ids.isEmpty()) {
@@ -319,21 +339,25 @@ public class MenuService {
     @Cacheable(value = "rootMenuIdByUrl", key = "#url", unless = "#result == null")
     public Long getRootMenuIdByUrl(String url) {
         String progrmFileNm = getProgrmFileNmByUrl(url);
-        if (progrmFileNm == null) return null;
+        if (progrmFileNm == null)
+            return null;
         return getRootMenuIdByProgrmFileNm(progrmFileNm);
     }
 
     public String getProgrmFileNmByUrl(String url) {
-        if (url == null || url.isEmpty()) return null;
+        if (url == null || url.isEmpty())
+            return null;
         return programRepository.findByUrl(Objects.requireNonNull(url))
                 .map(Program::getProgrmFileNm)
                 .orElse(null);
     }
 
     public Long getRootMenuIdByProgrmFileNm(String progrmFileNm) {
-        if (progrmFileNm == null) return null;
+        if (progrmFileNm == null)
+            return null;
         Menu currentMenu = menuRepository.findByProgrmFileNm(Objects.requireNonNull(progrmFileNm)).orElse(null);
-        if (currentMenu == null) return null;
+        if (currentMenu == null)
+            return null;
 
         List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
         Map<Long, Long> parentMap = new HashMap<>();
@@ -345,7 +369,8 @@ public class MenuService {
         Long upperId = currentMenu.getUpperMenuNo();
 
         while (upperId != null && upperId != 0) {
-            if (!parentMap.containsKey(upperId)) break;
+            if (!parentMap.containsKey(upperId))
+                break;
             Long nextUpperId = parentMap.get(upperId);
             currentId = upperId;
             upperId = nextUpperId;
@@ -357,7 +382,7 @@ public class MenuService {
      * 하위 메뉴 목록 조회
      */
     public List<MenuDto> getSubMenus(Long menuNo) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();        
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         List<String> roles = new ArrayList<>();
         if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
             for (GrantedAuthority authority : auth.getAuthorities()) {
@@ -370,17 +395,18 @@ public class MenuService {
     }
 
     /**
-     * 메뉴 관리 목록 조회
+     * 메뉴 관리 목록 조회 (N+1 쿼리 개선 버전)
      */
     public List<MenuDto> selectMenuManageList(@NonNull ComDefaultVO searchVO) {
-        List<Menu> allMenus = menuRepository.findAllByOrderByUpperMenuNoAscMenuOrdrAsc();
-        List<Program> programs = programRepository.findAll();
-        Map<String, Program> programMap = programs.stream()
-                .filter(p -> p.getProgrmFileNm() != null)
-                .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
+        // [성능 개선] 단일 쿼리로 메뉴와 프로그램 정보를 함께 조회
+        List<Object[]> menuWithProgramResults = menuRepository.findAllWithPrograms();
 
-        return allMenus.stream().map(menu -> {
-            String url = calculateUrl(menu, programMap);
+        return menuWithProgramResults.stream().map(menuResult -> {
+            Menu menu = (Menu) menuResult[0];
+            Program program = (Program) menuResult[1];
+
+            String url = calculateUrl(menu,
+                    program != null ? java.util.Collections.singletonMap(program.getProgrmFileNm(), program) : null);
 
             return MenuDto.builder()
                     .id(menu.getId())
@@ -447,7 +473,8 @@ public class MenuService {
 
         // 1. 프로그램명 기반 정교한 추론
         String inferred = inferModernRoute(progrmFileNm);
-        if (inferred != null) return inferred;
+        if (inferred != null)
+            return inferred;
 
         // 2. 레거시 프로그램 URL 폴백
         Program program = null;
@@ -471,40 +498,65 @@ public class MenuService {
     }
 
     private String inferModernRoute(String progrmFileNm) {
-        if (progrmFileNm == null) return null;
+        if (progrmFileNm == null)
+            return null;
 
-        if (progrmFileNm.contains("BoardManage")) return "/admin/community/boards";
-        if (progrmFileNm.contains("BBSMaster")) return "/admin/community";
-        if (progrmFileNm.contains("CmmCode")) return "/admin/system/common-code";
-        if (progrmFileNm.contains("GroupList")) return "/admin/security/group";
-        if (progrmFileNm.contains("RoleList")) return "/admin/security/role";
-        if (progrmFileNm.contains("AuthorGroup")) return "/admin/security/authority";
-        if (progrmFileNm.contains("QustnrManage")) return "/admin/survey/manage";
-        if (progrmFileNm.contains("QustnrTmplat")) return "/admin/survey/templates";
-        if (progrmFileNm.contains("AdbkList")) return "/admin/collaboration/address-book";
-        if (progrmFileNm.contains("FaqList")) return "/admin/help/faq";
-        if (progrmFileNm.contains("CnsltList")) return "/admin/help/qna";
-        if (progrmFileNm.contains("MainImage")) return "/admin/system/banner";
-        if (progrmFileNm.contains("FileMng")) return "/admin/system/files";
-        if (progrmFileNm.contains("ProgramList")) return "/admin/system/programs";
-        if (progrmFileNm.contains("MenuCreat")) return "/admin/system/menus/by-authority";
-        if (progrmFileNm.contains("MenuList")) return "/admin/system/menus";
+        if (progrmFileNm.contains("BoardManage"))
+            return "/admin/community/boards";
+        if (progrmFileNm.contains("BBSMaster"))
+            return "/admin/community";
+        if (progrmFileNm.contains("CmmCode"))
+            return "/admin/system/common-code";
+        if (progrmFileNm.contains("GroupList"))
+            return "/admin/security/group";
+        if (progrmFileNm.contains("RoleList"))
+            return "/admin/security/role";
+        if (progrmFileNm.contains("AuthorGroup"))
+            return "/admin/security/authority";
+        if (progrmFileNm.contains("QustnrManage"))
+            return "/admin/survey/manage";
+        if (progrmFileNm.contains("QustnrTmplat"))
+            return "/admin/survey/templates";
+        if (progrmFileNm.contains("AdbkList"))
+            return "/admin/collaboration/address-book";
+        if (progrmFileNm.contains("FaqList"))
+            return "/admin/help/faq";
+        if (progrmFileNm.contains("CnsltList"))
+            return "/admin/help/qna";
+        if (progrmFileNm.contains("MainImage"))
+            return "/admin/system/banner";
+        if (progrmFileNm.contains("FileMng"))
+            return "/admin/system/files";
+        if (progrmFileNm.contains("ProgramList"))
+            return "/admin/system/programs";
+        if (progrmFileNm.contains("MenuCreat"))
+            return "/admin/system/menus/by-authority";
+        if (progrmFileNm.contains("MenuList"))
+            return "/admin/system/menus";
 
         return null;
     }
 
     private String inferFromLegacyUrl(String legacyUrl) {
-        if (legacyUrl == null) return null;
-        
+        if (legacyUrl == null)
+            return null;
+
         // 레거시 경로 패턴을 현대적 패턴으로 변환
-        if (legacyUrl.contains("/uss/olh/qna/")) return "/admin/help/qna";
-        if (legacyUrl.contains("/uss/olh/faq/")) return "/admin/help/faq";
-        if (legacyUrl.contains("/sec/gmt/")) return "/admin/security/group";
-        if (legacyUrl.contains("/sec/ram/")) return "/admin/security/role";
-        if (legacyUrl.contains("/sym/ccm/")) return "/admin/system/common-code";
-        if (legacyUrl.contains("/uss/olp/qtm/")) return "/admin/survey/templates";
-        if (legacyUrl.contains("/uss/olp/qmc/")) return "/admin/survey/manage";
-        
+        if (legacyUrl.contains("/uss/olh/qna/"))
+            return "/admin/help/qna";
+        if (legacyUrl.contains("/uss/olh/faq/"))
+            return "/admin/help/faq";
+        if (legacyUrl.contains("/sec/gmt/"))
+            return "/admin/security/group";
+        if (legacyUrl.contains("/sec/ram/"))
+            return "/admin/security/role";
+        if (legacyUrl.contains("/sym/ccm/"))
+            return "/admin/system/common-code";
+        if (legacyUrl.contains("/uss/olp/qtm/"))
+            return "/admin/survey/templates";
+        if (legacyUrl.contains("/uss/olp/qmc/"))
+            return "/admin/survey/manage";
+
         return null;
     }
 }

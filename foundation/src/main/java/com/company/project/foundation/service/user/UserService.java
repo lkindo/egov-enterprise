@@ -51,26 +51,29 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         }
 
         /**
-         * 사용자 목록 조회
+         * 사용자 목록 조회 (N+1 쿼리 개선 버전)
          */
         @Override
         @Cacheable(value = "users", key = "'userList'")
         public List<UserDto> getUserList() {
-                List<User> users = userRepository.findAll();
+                // [성능 개선] 단일 쿼리로 사용자와 권한 정보를 함께 조회 (N+1 방지)
+                List<Object[]> results = userRepository.findAllWithAuthorities();
 
-                List<String> userIds = users.stream()
-                                .map(User::getEsntlId)
-                                .collect(Collectors.toList());
+                // 사용자와 권한 매핑
+                Map<String, User> userMap = new java.util.LinkedHashMap<>();
+                Map<String, UserAuthority> authorityMap = new java.util.HashMap<>();
 
-                List<UserAuthority> authorities = userAuthorityRepository
-                                .findByUniqIdIn(Objects.requireNonNull(userIds));
+                for (Object[] result : results) {
+                        User user = (User) result[0];
+                        UserAuthority authority = (UserAuthority) result[1];
 
-                Map<String, UserAuthority> authorityMap = authorities.stream()
-                                .collect(Collectors.toMap(
-                                                authority -> Objects.requireNonNull(authority.getUniqId()),
-                                                authority -> authority));
+                        userMap.put(user.getEsntlId(), user);
+                        if (authority != null) {
+                                authorityMap.put(authority.getUniqId(), authority);
+                        }
+                }
 
-                return users.stream()
+                return userMap.values().stream()
                                 .map(user -> userMapper.toDtoWithAuthority(user, authorityMap.get(user.getEsntlId())))
                                 .collect(Collectors.toList());
         }

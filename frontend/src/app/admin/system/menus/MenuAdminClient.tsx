@@ -521,7 +521,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
         {hasChildren && isExpanded && (
           <div className="space-y-2 overflow-hidden animate-in slide-in-from-top-4 duration-500">
-            {item.children!.map(child => (
+            {item.children?.map(child => (
               <MenuNode key={child.menuNo} item={child} level={level + 1} />
             ))}
           </div>

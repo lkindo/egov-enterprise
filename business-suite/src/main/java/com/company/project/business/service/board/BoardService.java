@@ -16,6 +16,7 @@ import com.company.project.foundation.service.user.EgovUserService;
 import com.company.project.foundation.service.user.dto.UserDto;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.data.domain.Page;
@@ -33,6 +34,7 @@ import java.util.Objects;
  * - 전자정부 표준프레임워크 5.0 명세에 맞춘 기능 구현
  * - EgovAbstractServiceImpl 상속 및 BoardService 인터페이스 구현
  */
+@Slf4j
 @Service("egovBoardService")
 public class BoardService extends EgovAbstractServiceImpl implements EgovBoardService {
 
@@ -59,7 +61,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         @Override
         @Transactional(readOnly = true)
-        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable) { 
+        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable) {
                 return getBoardPosts(bbsId, "", "", pageable);
         }
 
@@ -81,18 +83,25 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         @Override
         @Transactional
-        public Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {      
+        public Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {
                 Timer.Sample sample = Timer.start(meterRegistry);
-                
+
                 try {
                         BoardMaster master = boardMasterRepository.findById(Objects.requireNonNull(request.bbsId()))
                                         .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
+                        // 사용자 정보 조회 (실패 시 익명 처리)
                         UserDto author = null;
                         try {
-                                author = userService.getUserById(Objects.requireNonNull(userId));        
+                                author = userService.getUserById(Objects.requireNonNull(userId));
+                        } catch (BusinessException e) {
+                                if (e.getErrorCode() == ErrorCode.USER_NOT_FOUND) {
+                                        log.warn("게시글 작성자를 찾을 수 없습니다 (ID: {}), 익명 처리합니다.", userId, e);
+                                } else {
+                                        log.error("게시글 작성자 조회 중 예외 발생 (ID: {})", userId, e);
+                                }
                         } catch (Exception e) {
-                                // ignore
+                                log.error("게시글 작성자 조회 중 예외 발생 (ID: {})", userId, e);
                         }
 
                         Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
@@ -152,11 +161,18 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .findById(Objects.requireNonNull(parentId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
+                // 사용자 정보 조회 (실패 시 익명 처리)
                 UserDto author = null;
                 try {
                         author = userService.getUserById(Objects.requireNonNull(userId));
+                } catch (BusinessException e) {
+                        if (e.getErrorCode() == ErrorCode.USER_NOT_FOUND) {
+                                log.warn("답글 작성자를 찾을 수 없습니다 (ID: {}), 익명 처리합니다.", userId, e);
+                        } else {
+                                log.error("답글 작성자 조회 중 예외 발생 (ID: {})", userId, e);
+                        }
                 } catch (Exception e) {
-                        // ignore
+                        log.error("답글 작성자 조회 중 예외 발생 (ID: {})", userId, e);
                 }
 
                 Long nttNo = boardRepository.findMaxNttNo(master.getBbsId(), parent.getSortOrdr()) + 1;
@@ -221,7 +237,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 board.update(request.nttSj(), request.nttCn(), board.getNtcrId(), board.getNtcrNm(),
-                                board.getPassword(), request.ntceBgnde(), request.ntceEndde(),   
+                                board.getPassword(), request.ntceBgnde(), request.ntceEndde(),
                                 request.atchFileId());
         }
 
@@ -249,7 +265,7 @@ public class BoardService extends EgovAbstractServiceImpl implements EgovBoardSe
 
         @Override
         @Transactional
-        public void deletePost(@NonNull String bbsId, @NonNull Long nttId, String authorId) {    
+        public void deletePost(@NonNull String bbsId, @NonNull Long nttId, String authorId) {
                 Board board = boardRepository
                                 .findById(Objects.requireNonNull(nttId))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));

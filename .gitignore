@@ -1,6 +1,6 @@
 # ==========================================
 # eGovFrame / Java / Gradle / Next.js .gitignore
-# Optimized Version
+# Optimized Version 2.0
 # ==========================================
 
 # ----- OS & IDE -----
@@ -49,15 +49,25 @@
 **/.next/
 **/dist/
 **/export/
-# package-lock.json  # DO NOT IGNORE: Committed for consistent builds
-# yarn.lock          # DO NOT IGNORE: Committed for consistent builds
-pnpm-lock.yaml
+**/storybook-static/
+**/playwright/.auth/
+**/playwright-reports/
+
+# ----- Lock Files (Committed for consistency) -----
+# package-lock.json  - Committed
+# yarn.lock          - Committed
+# pnpm-lock.yaml     - Committed (primary)
+
+# ----- Office Documents (Binary) -----
 *.xlsx
 *.xls
 *.doc
 *.docx
 *.ppt
 *.pptx
+*.pdf
+*.hwp
+*.hwpx
 
 # ----- Local Configuration & Secrets -----
 **/egovProps/conf/
@@ -69,6 +79,10 @@ pnpm-lock.yaml
 **/.env.production.local
 **/application-local.properties
 **/application-local.yml
+**/application-dev.properties
+**/application-dev.yml
+**/application-prod.properties
+**/application-prod.yml
 
 # ----- Logs & Temp Files -----
 **/*.log
@@ -107,6 +121,7 @@ pnpm-lock.yaml
 **/blob-report/
 **/playwright-screenshots/
 **/playwright/.cache/
+**/.playwright/
 **/jacoco/
 **/*.exec
 **/coverage/
@@ -131,12 +146,17 @@ pnpm-lock.yaml
 **/upload/
 **/uploads/
 **/files/
-# storage/ - Removed (directory deleted)
+# storage/ - Active project directory
 
 # ----- Project Specific -----
 **/convert-*.py
 **/encoding-logs/
 **/utf8-project-template/
+**/check_db_menus.py
+**/check_menus.py
+**/fix_menus.py
+**/fix_networkidle.ps1
+**/restore-non-session-files.ps1
 
 # ----- Deleted Legacy Modules (prevent re-creation) -----
 # These modules were integrated into foundation/business-suite (2026-03)
@@ -150,4 +170,21 @@ module-knowledge/
 
 # ----- Git Worktrees -----
 .worktrees/
+
+# ----- Analysis & Reports -----
+**/analysis/
+**/lighthouse-reports/
+**/bundle-analysis/
+**/next-build-cache/
+
+# ----- Storybook -----
+**/storybook-static/
+**/.storybook-generated/
+
+# ----- Lighthouse CI -----
+**/.lighthouseci/
+**/lhci-reports/
+
+# ----- Security -----
+**/.snyk
 

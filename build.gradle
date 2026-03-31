@@ -4,6 +4,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'io.freefair.lombok' version '8.12.2' apply false
     id 'jacoco'
+    id 'org.owasp.dependencycheck' version '12.1.0'
 }
 
 allprojects {
@@ -17,8 +18,49 @@ allprojects {
     }
 
     apply plugin: 'jacoco'
+    apply plugin: 'org.owasp.dependencycheck'
+    
     jacoco {
         toolVersion = "0.8.14"
+    }
+    
+    // OWASP Dependency-Check 설정
+    dependencyCheck {
+        // 분석 실패 기준 CVE 스코어 (0-10, 7 이상은 High)
+        failBuildOnCVSS = 7
+        
+        // 분석 제외 의존성
+        skipConfigurations = [
+            'compileOnly',
+            'testCompileOnly',
+            'annotationProcessor',
+            'testAnnotationProcessor'
+        ]
+        
+        // NVD API 키 (선택사항, 있으면 업데이트 속도 향상)
+        // nvd.apiKey = System.getenv('NVD_API_KEY')
+        
+        // 리포트 설정
+        formats = ['HTML', 'JUNIT']
+        
+        // 스캔 제외 파일 패턴
+        suppressionFile = file('config/dependency-check/suppressions.xml').absolutePath
+        
+        // 데이터베이스 디렉토리 설정
+        data.directory = file("${rootProject.buildDir}/dependency-check-cache")
+        
+        
+        /* 
+        // 스캔 대상 아키텍처
+        analyzers {
+            // Jar 파일 분석
+            jarEnabled = true
+            // Maven Central 검색 사용
+            centralEnabled = true
+            // NVD 데이터베이스 사용
+            nvdEnabled = true
+        }
+        */
     }
 }
 
@@ -121,5 +163,24 @@ tasks.register('jacocoRootReport', JacocoReport) {
         xml.required = true
         html.required = true
         html.outputLocation = layout.buildDirectory.dir("reports/jacoco/aggregated")
+    }
+}
+
+// 루트 프로젝트 JaCoCo 커버리지 검증
+tasks.register('jacocoRootCoverageVerification', JacocoCoverageVerification) {
+    description = 'Verifies code coverage for all subprojects'
+    group = 'Verification'
+    
+    dependsOn jacocoRootReport
+    
+    violationRules {
+        rule {
+            // 전체 프로젝트 최소 커버리지 목표
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.50 // 50% 이상 목표
+            }
+        }
     }
 }

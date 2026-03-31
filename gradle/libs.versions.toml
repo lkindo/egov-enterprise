@@ -20,6 +20,7 @@ cubrid = "11.3.2.0053"
 hibernate-dialects = "6.4.0.Final"
 h2 = "2.3.232"
 caffeine = "3.1.8"
+testcontainers = "1.20.4"
 
 
 [libraries]
@@ -61,4 +62,9 @@ cubrid-jdbc = { group = "org.cubrid", name = "cubrid-jdbc", version.ref = "cubri
 hibernate-community-dialects = { group = "org.hibernate.orm", name = "hibernate-community-dialects", version.ref = "hibernate-dialects" }
 h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
 caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }
+
+# Testcontainers for integration testing
+testcontainers-bom = { group = "org.testcontainers", name = "testcontainers-bom", version.ref = "testcontainers" }
+testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { group = "org.testcontainers", name = "junit-jupiter", version.ref = "testcontainers" }
 

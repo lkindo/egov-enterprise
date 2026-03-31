@@ -46,7 +46,7 @@ public class UserApiController {
     @PutMapping("/users/me")
     public ResponseEntity<ApiResponse<Void>> updateMe(
             @LoginUser CustomUserDetails userDetails,
-            @RequestBody UserDto userDto) {
+            @RequestBody @Valid UserDto userDto) {
         userService.updateUser(userDetails.getUserId(), userDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -59,8 +59,7 @@ public class UserApiController {
         userService.changePassword(
                 userDetails.getUserId(),
                 request.get("oldPassword"),
-                request.get("newPassword")
-        );
+                request.get("newPassword"));
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -78,7 +77,7 @@ public class UserApiController {
     }
 
     // --- [관리자 전용 기능] /api/v1/admin/system/users ---
-    
+
     @Operation(summary = "사용자 목록 조회", description = "전체 사용자 목록을 페이징하여 조회합니다.")
     @GetMapping("/admin/system/users")
     public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getUsers(
@@ -98,13 +97,13 @@ public class UserApiController {
     @PostMapping("/admin/system/users")
     public ResponseEntity<ApiResponse<String>> insertUser(@RequestBody UserDto dto) {
         String resultId = userService.registerUser(
-            dto.getUserId(), 
-            dto.getPassword(), 
-            dto.getUserNm(), 
-            dto.getPasswordHint(), 
-            dto.getPasswordCnsr(), 
-            dto.getRole() != null ? com.company.project.foundation.domain.user.entity.Role.valueOf(dto.getRole()) : null
-        );
+                dto.getUserId(),
+                dto.getPassword(),
+                dto.getUserNm(),
+                dto.getPasswordHint(),
+                dto.getPasswordCnsr(),
+                dto.getRole() != null ? com.company.project.foundation.domain.user.entity.Role.valueOf(dto.getRole())
+                        : null);
         return ResponseEntity.ok(ApiResponse.success(resultId));
     }
 

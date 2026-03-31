@@ -7,6 +7,10 @@ export default defineConfig({
     timeout: 120000, // 2 minutes for CI stability
     expect: {
         timeout: 30000,
+        toHaveScreenshot: {
+            maxDiffPixels: 100, // Allow minor differences (anti-aliasing, etc.)
+            threshold: 0.1, // Pixel comparison threshold (0-1)
+        },
     },
     fullyParallel: true,
     forbidOnly: !!process.env.CI,

@@ -1,0 +1,41 @@
+# Test Profile Configuration
+# Used for integration tests with Testcontainers
+
+# Database (Testcontainers auto-configures via @ServiceConnection)
+spring.datasource.url=jdbc:postgresql://localhost:5432/testdb
+spring.datasource.username=test
+spring.datasource.password=test
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# JPA / Hibernate
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# Disable lazy loading for tests to avoid LazyInitializationException
+spring.jpa.open-in-view=true
+
+# Logging
+logging.level.root=INFO
+logging.level.com.company=DEBUG
+logging.level.org.hibernate.SQL=DEBUG
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+
+# Actuator (disable in tests)
+management.endpoints.web.exposure.include=none
+
+# JWT (test secret)
+jwt.secret=test-secret-key-for-integration-testing-minimum-32-chars
+jwt.expiration=3600000
+
+# Cache (disable for tests)
+spring.cache.type=none
+
+# Email (disable for tests)
+spring.mail.host=localhost
+spring.mail.port=25
+
+# File Upload
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB

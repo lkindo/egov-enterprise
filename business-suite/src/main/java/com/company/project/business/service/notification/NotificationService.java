@@ -86,7 +86,16 @@ public class NotificationService implements EgovNotificationService {
     }
 
     @Override
-    public List<NotificationDto> getActiveNotifications() {
+    public Page<NotificationDto> getActiveNotifications(Pageable pageable) {
+        log.debug("Fetching active notifications with pagination");
+        return notificationRepository.findAll(pageable)
+                .map(NotificationDto::from);
+    }
+
+    @Override
+    public List<NotificationDto> getActiveNotificationsAll() {
+        // [경고] 대량 데이터 조회 - 배치 작업 등 특수한 경우에만 사용
+        log.warn("Fetching ALL notifications without pagination - use with caution");
         return notificationRepository.findAll().stream()
                 .map(NotificationDto::from)
                 .collect(Collectors.toList());
