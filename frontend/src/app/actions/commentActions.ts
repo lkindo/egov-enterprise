@@ -4,7 +4,18 @@ import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
 import { revalidatePath } from 'next/cache';
 
-export async function createComment(prevState: any, formData: FormData) {
+interface ActionResponse {
+  success: boolean;
+  message: string;
+}
+
+interface CreateCommentData {
+  nttId: number;
+  bbsId: string;
+  commentCn: string;
+}
+
+export async function createComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
   const nttId = formData.get('nttId') as string;
   const bbsId = formData.get('bbsId') as string;
   const commentCn = formData.get('commentCn') as string;
@@ -18,11 +29,13 @@ export async function createComment(prevState: any, formData: FormData) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const response: any = await client.post(`/comments`, {
+    const commentData: CreateCommentData = {
       nttId: parseInt(nttId),
       bbsId,
       commentCn
-    }, axiosConfig);
+    };
+
+    const response: unknown = await client.post(`/comments`, commentData, axiosConfig);
 
     if (response) {
       revalidatePath(`/admin/community/boards/detail`);
@@ -30,13 +43,14 @@ export async function createComment(prevState: any, formData: FormData) {
     } else {
       return { success: false, message: '댓글 등록에 실패했습니다.' };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : '오류가 발생했습니다.';
     console.error('Comment Create Error:', error);
-    return { success: false, message: error.response?.data?.message || '오류가 발생했습니다.' };
+    return { success: false, message: errorMessage };
   }
 }
 
-export async function deleteComment(prevState: any, formData: FormData) {
+export async function deleteComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
   const id = formData.get('commentId') as string;
   const bbsId = formData.get('bbsId') as string;
   const nttId = formData.get('nttId') as string;
@@ -46,16 +60,17 @@ export async function deleteComment(prevState: any, formData: FormData) {
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const response: any = await client.delete(`/comments/${id}`, axiosConfig);
+    const response: unknown = await client.delete(`/comments/${id}`, axiosConfig);
 
     if (response !== undefined) {
-      revalidatePath(`/admin/community/boards/detail`);
+      revalidatePath(`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${nttId}`);
       return { success: true, message: '댓글이 삭제되었습니다.' };
     } else {
       return { success: false, message: '삭제에 실패했습니다.' };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : '삭제 중 오류가 발생했습니다.';
     console.error('Comment Delete Error:', error);
-    return { success: false, message: error.response?.data?.message || '삭제 중 오류가 발생했습니다.' };
+    return { success: false, message: errorMessage };
   }
 }
