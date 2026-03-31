@@ -57,7 +57,7 @@ export default function InsertBoardArticlePage() {
       } else {
         toast(result.message || '등록 실패', 'error');
       }
-    } catch (error) {
+    } catch {
       toast('등록 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsSubmitting(false);
