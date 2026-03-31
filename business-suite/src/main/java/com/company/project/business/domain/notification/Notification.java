@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "N_USER_NOTIFICATION")
 @Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Notification {
 
@@ -47,7 +50,6 @@ public class Notification {
     @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastModifiedDate;
 
-    @Builder
     public Notification(String ntfcNo, String ntfcSj, String ntfcCn, String receiverId, String linkUrl) {
         this.ntfcNo = ntfcNo;
         this.ntfcSj = ntfcSj;

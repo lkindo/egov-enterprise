@@ -31,14 +31,14 @@ class PostgresContainerTest {
             .withUsername("test")
             .withPassword("test");
 
-    @org.junit.jupiter.api.Test
+    @Test
     void containerStartsAndStops() {
         // Then: 컨테이너가 실행 중임
         assertThat(postgres.isCreated()).isTrue();
         assertThat(postgres.isRunning()).isTrue();
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void canExecuteQuery() throws Exception {
         // Given: PostgreSQL 컨테이너가 실행 중
         try (Connection connection = postgres.createConnection("");
@@ -54,7 +54,7 @@ class PostgresContainerTest {
         }
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void canAccessDatabaseViaSpring(@Autowired DataSource dataSource) throws Exception {
         // Given: Spring 이 주입한 DataSource
         try (Connection connection = dataSource.getConnection();

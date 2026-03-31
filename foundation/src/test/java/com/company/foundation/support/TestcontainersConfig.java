@@ -17,7 +17,7 @@ import org.testcontainers.utility.DockerImageName;
 @Profile("test")
 public class TestcontainersConfig {
 
-    @Bean
+    @Bean(destroyMethod = "stop")
     public PostgreSQLContainer<?> postgresContainer() {
         return new PostgreSQLContainer<>(DockerImageName.parse("postgres:16"))
                 .withDatabaseName("testdb")
