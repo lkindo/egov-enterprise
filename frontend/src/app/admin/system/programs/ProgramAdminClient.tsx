@@ -55,7 +55,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
     progrmDc: ''
   });
 
-   const [data, setData] = useState<Program[]>(() => {
+  const [data, setData] = useState<Program[]>(() => {
     return initialData?.list || initialData?.content || initialData?.resultList || [];
   });
   const [total, setTotal] = useState<number>(() => {
@@ -65,14 +65,14 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
   const [loading, setLoading] = useState(false);
   const [currentSearchWrd, setCurrentSearchWrd] = useState(searchWrd);
 
-   const loadData = async (wrd: string = currentSearchWrd, page: number = 1) => {
+  const loadData = async (wrd: string = currentSearchWrd, page: number = 1) => {
     try {
       setLoading(true);
       const res = await programAdminService.getProgramList({ page번호: page, size: 10, searchWrd: wrd });
-      
+
       const list = res.list || res.content || res.resultList || [];
       const totalCount = (res.total ?? res.totalElements ?? res.totalRecordCount ?? 0) as number;
-      
+
       setData(list);
       setTotal(totalCount);
     } catch (error: unknown) {
@@ -142,7 +142,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       header: '식별 파일명',
       accessor: (item: Program) => (
         <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg w-fit">
-            <span className="text-[10px] font-black text-primary tracking-tight font-mono">{item.progrmFileNm}</span>
+          <span className="text-[10px] font-black text-primary tracking-tight font-mono">{item.progrmFileNm}</span>
         </div>
       ),
       className: 'w-48'
@@ -151,8 +151,8 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       header: '엔드포인트 (API/URL)',
       accessor: (item: Program) => (
         <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/70 tracking-tighter italic">
-            <LinkIcon size={12} className="text-primary opacity-40" />
-            {item.url}
+          <LinkIcon size={12} className="text-primary opacity-40" />
+          {item.url}
         </div>
       ),
       className: 'w-64'
@@ -180,11 +180,11 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
         breadcrumbs={[{ label: '시스템관리' }, { label: '프로그램 관리' }]}
       />
 
-      <HubHeader 
-        title="프로그램" 
-        highlight="자산 관리" 
-        subtitle="시스템을 구성하는 모든 논리적 프로그램 모듈 및 API 엔드포인트의 생명주기 관리" 
-        icon={Box} 
+      <HubHeader
+        title="프로그램"
+        highlight="자산 관리"
+        subtitle="시스템을 구성하는 모든 논리적 프로그램 모듈 및 API 엔드포인트의 생명주기 관리"
+        icon={Box}
         actions={
           <Button
             onClick={handleOpenCreate}
@@ -198,7 +198,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
       <HubMetricGrid>
         <HubMetricCard title="활성_프로그램_수" value={total} icon={Layers} color="primary" />
-        <HubMetricCard title="시스템_무결성" value="정상" icon={ShieldCheck} color="emerald" status="VERIFIED" />
+        <HubMetricCard title="시스템_무결성" value="정상" icon={ShieldCheck} color="emerald" status="확인됨" />
         <HubMetricCard title="서비스_가동시간" value="99.9%" icon={Zap} color="amber" />
         <HubMetricCard title="레지스트리_동기화" value="실시간" icon={RefreshCcw} color="indigo" />
       </HubMetricGrid>
@@ -207,14 +207,14 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
           <div className="flex-1 max-w-2xl">
             <div className="relative group/search">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
-                <Input
-                  placeholder="프로그램명 또는 파일명을 입력하여 검색..."
-                  value={currentSearchWrd}
-                  onChange={(e) => setCurrentSearchWrd(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && loadData()}
-                  className="h-16 pl-16 pr-8 w-full bg-slate-50/50 border-none rounded-[1.25rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-                />
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
+              <Input
+                placeholder="프로그램명 또는 파일명을 입력하여 검색..."
+                value={currentSearchWrd}
+                onChange={(e) => setCurrentSearchWrd(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && loadData()}
+                className="h-16 pl-16 pr-8 w-full bg-slate-50/50 border-none rounded-[1.25rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+              />
             </div>
           </div>
           <Button onClick={() => loadData()} size="lg" className="h-16 px-10 rounded-[1.25rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2">
@@ -238,7 +238,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
         onClose={() => setIsOpen(false)}
         title={mode === 'create' ? '신규 프로그램 등록' : '프로그램 정보 수정'}
         maxWidth="2xl"
-         footer={
+        footer={
           <div className="flex w-full gap-4">
             <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2 uppercase">취소</Button>
             <Button onClick={handleSave} className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest shadow-xl uppercase">
@@ -255,7 +255,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
                 onChange={(e) => setFormData({ ...formData, progrmFileNm: e.target.value })}
                 readOnly={mode === 'edit'}
                 className={cn("h-14 rounded-2xl text-xs font-mono font-black tracking-widest uppercase shadow-inner", mode === 'edit' && "bg-muted/50 border-none")}
-                placeholder="UNIQUE_ASSET_ID"
+                placeholder="고유 자산 ID"
               />
             </FormField>
             <FormField label="프로그램 한글 명칭" required>
@@ -267,7 +267,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
               />
             </FormField>
           </div>
-          
+
           <FormField label="인터페이스 엔드포인트 (URL)" required description="실제 서비스가 제공되는 웹 주소 또는 API 경로">
             <Input
               value={formData.url || ''}
@@ -276,7 +276,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
               placeholder="/api/v1/..."
             />
           </FormField>
- 
+
           <FormField label="물리적 저장 경로" description="서버 내 파일 저장소 논리 경로 (Optional)">
             <Input
               value={formData.progrmStrePath || ''}
@@ -285,7 +285,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
               placeholder="/src/egov/main..."
             />
           </FormField>
- 
+
           <FormField label="상세 기능 명세">
             <textarea
               value={formData.progrmDc || ''}

@@ -22,19 +22,19 @@ import {
 } from "@/components/ui/select";
 import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
 import { useQueryClient } from "@tanstack/react-query";
-import { 
-  ChevronRight, 
-  ChevronLeft, 
-  Check, 
-  Layout, 
-  ShieldCheck, 
-  Rocket, 
-  Settings2, 
-  Info, 
-  List, 
-  ImageIcon, 
-  BookOpen, 
-  UserCircle, 
+import {
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  Layout,
+  ShieldCheck,
+  Rocket,
+  Settings2,
+  Info,
+  List,
+  ImageIcon,
+  BookOpen,
+  UserCircle,
   UserMinus,
   Lock,
   ExternalLink,
@@ -147,7 +147,7 @@ export function BoardMakerWizard() {
 
   const nextStep = () => {
     if (currentStep === 1 && !watch('menuNm')) {
-        setValue('menuNm', bbsNm);
+      setValue('menuNm', bbsNm);
     }
     setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
   };
@@ -158,7 +158,7 @@ export function BoardMakerWizard() {
     const newPerms = rolePerms.includes(permId)
       ? rolePerms.filter(p => p !== permId)
       : [...rolePerms, permId];
-    
+
     setValue('permissions', {
       ...permissions,
       [roleId]: newPerms
@@ -173,7 +173,7 @@ export function BoardMakerWizard() {
 
     setIsSubmitting(true);
     setStatus("Creating Board Master in Core...");
-    
+
     try {
       // 1. Create Board Master
       const bbsId = await boardAdminService.createBoardMaster({
@@ -192,7 +192,7 @@ export function BoardMakerWizard() {
       if (!bbsId) throw new Error("Failed to get bbsId");
 
       const generatedMenuNo = 8000000 + Math.floor(Math.random() * 900000);
-      
+
       await menuAdminService.createMenu({
         menuNo: generatedMenuNo,
         menuNm: data.menuNm || data.bbsNm,
@@ -204,10 +204,10 @@ export function BoardMakerWizard() {
       } as any);
 
       setStatus("Provisioning Complete. Refreshing Graph...");
-      
+
       queryClient.invalidateQueries({ queryKey: ["boardMasters"] });
       queryClient.invalidateQueries({ queryKey: ["menus"] });
-      
+
       setIsSuccess(true);
     } catch (error) {
       console.error('Validation/Submission Error:', error);
@@ -222,7 +222,7 @@ export function BoardMakerWizard() {
       <Card className="max-w-3xl mx-auto border-none shadow-2xl rounded-[3.5rem] overflow-hidden bg-white mt-10">
         <CardContent className="p-20 flex flex-col items-center text-center gap-10">
           <div className="w-32 h-32 rounded-full bg-green-500 flex items-center justify-center text-white animate-bounce-short">
-             <Check size={64} strokeWidth={4} />
+            <Check size={64} strokeWidth={4} />
           </div>
           <div className="space-y-4">
             <h2 className="text-5xl font-black tracking-tighter text-slate-900 italic">MISSION COMPLETE!</h2>
@@ -231,19 +231,19 @@ export function BoardMakerWizard() {
             </p>
           </div>
           <div className="flex flex-col gap-4 w-full max-w-sm">
-             <Button 
-                onClick={() => router.push('/admin/community/boards/master')}
-                className="h-16 rounded-2xl bg-primary text-xl font-black hover:scale-105 transition-all shadow-xl shadow-primary/20 italic tracking-tighter"
-             >
-                게시판 목록 보기
-             </Button>
-             <Button 
-                variant="ghost"
-                onClick={() => window.location.reload()}
-                className="h-14 rounded-2xl text-slate-400 font-bold hover:text-primary transition-colors"
-             >
-                다른 게시판 추가하기
-             </Button>
+            <Button
+              onClick={() => router.push('/admin/community/boards/master')}
+              className="h-16 rounded-2xl bg-primary text-xl font-black hover:scale-105 transition-all shadow-xl shadow-primary/20 italic tracking-tighter"
+            >
+              게시판 목록 보기
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => window.location.reload()}
+              className="h-14 rounded-2xl text-slate-400 font-bold hover:text-primary transition-colors"
+            >
+              다른 게시판 추가하기
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -262,12 +262,12 @@ export function BoardMakerWizard() {
 
           return (
             <div key={step.id} className="relative z-10 flex flex-col items-center gap-3">
-              <div 
+              <div
                 className={cn(
                   "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 border-4",
-                  isActive ? "bg-primary border-primary text-white shadow-xl shadow-primary/30 scale-110" : 
-                  isCompleted ? "bg-green-500 border-green-500 text-white" : 
-                  "bg-white border-slate-200 text-slate-400"
+                  isActive ? "bg-primary border-primary text-white shadow-xl shadow-primary/30 scale-110" :
+                    isCompleted ? "bg-green-500 border-green-500 text-white" :
+                      "bg-white border-slate-200 text-slate-400"
                 )}
               >
                 {isCompleted ? <Check className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
@@ -301,10 +301,10 @@ export function BoardMakerWizard() {
               {React.createElement(STEPS[currentStep - 1].icon, { size: 120 })}
             </div>
           </CardHeader>
-          
+
           <CardContent className="p-12 min-h-[550px]">
             <AnimatePresence mode="wait">
-              <motion.div 
+              <motion.div
                 key={currentStep}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -318,14 +318,14 @@ export function BoardMakerWizard() {
                         <span className="w-1.5 h-6 bg-primary rounded-full inline-block" />
                         게시판 명칭
                       </Label>
-                      <Input 
-                        id="bbsNm" 
-                        placeholder="예: 사내 소식 공유 게시판" 
+                      <Input
+                        id="bbsNm"
+                        placeholder="예: 사내 소식 공유 게시판"
                         className={cn(
                           "h-16 text-xl rounded-2xl border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm",
                           errors.bbsNm ? "border-red-500 bg-red-50/10" : "border-slate-100 bg-slate-50/50"
                         )}
-                        {...register('bbsNm')} 
+                        {...register('bbsNm')}
                       />
                       {errors.bbsNm && <p className="text-red-500 text-sm font-bold ml-2">{errors.bbsNm.message}</p>}
                     </div>
@@ -335,9 +335,9 @@ export function BoardMakerWizard() {
                         <span className="w-1.5 h-6 bg-slate-300 rounded-full inline-block" />
                         게시판 소개
                       </Label>
-                      <Textarea 
-                        id="bbsIntrcn" 
-                        placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요." 
+                      <Textarea
+                        id="bbsIntrcn"
+                        placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요."
                         className="min-h-[140px] text-lg rounded-3xl border-2 border-slate-100 bg-slate-50/50 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm"
                         {...register('bbsIntrcn')}
                       />
@@ -352,7 +352,7 @@ export function BoardMakerWizard() {
                           </Label>
                           <p className="text-sm text-slate-400 font-medium whitespace-nowrap">게시글에 댓글을 작성할 수 있습니다.</p>
                         </div>
-                        <Switch 
+                        <Switch
                           checked={watch('replyPosblAt')}
                           onCheckedChange={(checked) => setValue('replyPosblAt', checked)}
                           className="data-[state=checked]:bg-primary scale-125"
@@ -367,7 +367,7 @@ export function BoardMakerWizard() {
                           </Label>
                           <p className="text-sm text-slate-400 font-medium whitespace-nowrap">문서나 이미지를 첨부할 수 있습니다.</p>
                         </div>
-                        <Switch 
+                        <Switch
                           checked={watch('fileAtchPosblAt')}
                           onCheckedChange={(checked) => setValue('fileAtchPosblAt', checked)}
                           className="data-[state=checked]:bg-primary scale-125"
@@ -379,71 +379,71 @@ export function BoardMakerWizard() {
 
                 {currentStep === 2 && (
                   <div className="flex flex-col lg:flex-row gap-12">
-                     <div className="flex-1 space-y-8">
-                        <div className="space-y-2">
-                           <h4 className="text-xl font-black text-slate-800 tracking-tight italic">LAYOUT_STRATEGY_SELECT</h4>
-                           <p className="text-sm text-slate-400 font-medium">비즈니스 목적에 부합하는 최적의 UI 엔진을 선택하세요.</p>
-                        </div>
-                        <div className="grid grid-cols-1 gap-6">
-                           {TEMPLATES.map((tpl) => {
-                           const Icon = tpl.icon;
-                           const isSelected = selectedTemplate === tpl.id;
+                    <div className="flex-1 space-y-8">
+                      <div className="space-y-2">
+                        <h4 className="text-xl font-black text-slate-800 tracking-tight italic">LAYOUT_STRATEGY_SELECT</h4>
+                        <p className="text-sm text-slate-400 font-medium">비즈니스 목적에 부합하는 최적의 UI 엔진을 선택하세요.</p>
+                      </div>
+                      <div className="grid grid-cols-1 gap-6">
+                        {TEMPLATES.map((tpl) => {
+                          const Icon = tpl.icon;
+                          const isSelected = selectedTemplate === tpl.id;
 
-                           return (
-                              <div 
-                                 key={tpl.id}
-                                 onClick={() => {
-                                 setValue('tmplatId', tpl.id);
-                                 setValue('bbsTyCode', tpl.typeCode);
-                                 }}
-                                 className={cn(
-                                 "group relative p-8 rounded-[2.5rem] border-2 transition-all duration-500 cursor-pointer flex items-center gap-6",
-                                 isSelected ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-xl" : "border-slate-50 bg-slate-50/30 hover:border-slate-200"
-                                 )}
-                              >
-                                 <div className={cn(
-                                 "w-16 h-16 rounded-2xl flex items-center justify-center text-white transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg",
-                                 tpl.color
-                                 )}>
-                                 <Icon size={32} />
-                                 </div>
-                                 
-                                 <div className="flex-1 space-y-1">
-                                 <h4 className="text-xl font-black text-slate-800 tracking-tight">
-                                    {tpl.name}
-                                 </h4>
-                                 <p className="text-[11px] text-slate-500 font-bold leading-relaxed">
-                                    {tpl.description}
-                                 </p>
-                                 </div>
-
-                                 <div className={cn(
-                                    "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
-                                    isSelected ? "bg-primary border-primary text-white" : "border-slate-200 text-transparent"
-                                 )}>
-                                 <Check size={16} strokeWidth={4} />
-                                 </div>
+                          return (
+                            <div
+                              key={tpl.id}
+                              onClick={() => {
+                                setValue('tmplatId', tpl.id);
+                                setValue('bbsTyCode', tpl.typeCode);
+                              }}
+                              className={cn(
+                                "group relative p-8 rounded-[2.5rem] border-2 transition-all duration-500 cursor-pointer flex items-center gap-6",
+                                isSelected ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-xl" : "border-slate-50 bg-slate-50/30 hover:border-slate-200"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-16 h-16 rounded-2xl flex items-center justify-center text-white transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg",
+                                tpl.color
+                              )}>
+                                <Icon size={32} />
                               </div>
-                           );
-                           })}
-                        </div>
-                        <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white/40 font-mono text-[10px] tracking-widest leading-relaxed">
-                           ENGINE_OPTIMIZATION: ACTIVE <br />
-                           UI_RENDERING_MODE: HIGH_FIDELITY <br />
-                           TEMPLATE_ID: {selectedTemplate}
-                        </div>
-                     </div>
 
-                     <div className="flex-1 hidden xl:block sticky top-0">
-                        <div className="space-y-4 mb-4">
-                           <h4 className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase text-right">LIVE_SYSTEM_PREVIEW</h4>
-                        </div>
-                        <BoardPreview 
-                           tmplatId={selectedTemplate} 
-                           bbsNm={bbsNm} 
-                           bbsIntrcn={bbsIntrcn} 
-                        />
-                     </div>
+                              <div className="flex-1 space-y-1">
+                                <h4 className="text-xl font-black text-slate-800 tracking-tight">
+                                  {tpl.name}
+                                </h4>
+                                <p className="text-[11px] text-slate-500 font-bold leading-relaxed">
+                                  {tpl.description}
+                                </p>
+                              </div>
+
+                              <div className={cn(
+                                "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
+                                isSelected ? "bg-primary border-primary text-white" : "border-slate-200 text-transparent"
+                              )}>
+                                <Check size={16} strokeWidth={4} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white/40 font-mono text-[10px] tracking-widest leading-relaxed">
+                        엔진 최적화: 활성 <br />
+                        UI 렌더링 모드: 고충실도 <br />
+                        템플릿 ID: {selectedTemplate}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 hidden xl:block sticky top-0">
+                      <div className="space-y-4 mb-4">
+                        <h4 className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase text-right">LIVE_SYSTEM_PREVIEW</h4>
+                      </div>
+                      <BoardPreview
+                        tmplatId={selectedTemplate}
+                        bbsNm={bbsNm}
+                        bbsIntrcn={bbsIntrcn}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -464,7 +464,7 @@ export function BoardMakerWizard() {
                             {ROLES.map(role => {
                               const RoleIcon = role.icon;
                               const rolePerms = (permissions[role.id] as string[]) || [];
-                              
+
                               return (
                                 <tr key={role.id} className="group hover:bg-white transition-colors">
                                   <td className="p-8">
@@ -482,7 +482,7 @@ export function BoardMakerWizard() {
                                     const isChecked = rolePerms.includes(perm.id);
                                     return (
                                       <td key={perm.id} className="p-8 text-center">
-                                        <Checkbox 
+                                        <Checkbox
                                           checked={isChecked}
                                           onCheckedChange={() => togglePermission(role.id, perm.id)}
                                           className={cn(
@@ -500,7 +500,7 @@ export function BoardMakerWizard() {
                         </table>
                       </div>
                     </div>
-                    
+
                     <div className="p-8 bg-amber-50 rounded-[2rem] border-2 border-amber-100 flex items-start gap-4 shadow-sm">
                       <Info className="w-8 h-8 text-amber-500 shrink-0" />
                       <div>
@@ -535,8 +535,8 @@ export function BoardMakerWizard() {
                         <Label className="text-xl font-black text-slate-800 flex items-center gap-2">
                           메뉴 명칭
                         </Label>
-                        <Input 
-                          placeholder="메뉴에 표시할 이름을 입력하세요." 
+                        <Input
+                          placeholder="메뉴에 표시할 이름을 입력하세요."
                           className="h-16 text-lg rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm"
                           {...register('menuNm')}
                         />
@@ -545,7 +545,7 @@ export function BoardMakerWizard() {
                         <Label className="text-xl font-black text-slate-800 flex items-center gap-2">
                           메뉴 순서
                         </Label>
-                        <Input 
+                        <Input
                           type="number"
                           className="h-16 text-lg rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm"
                           {...register('menuOrdr', { valueAsNumber: true })}
@@ -573,9 +573,9 @@ export function BoardMakerWizard() {
           </CardContent>
 
           <CardFooter className="p-10 bg-slate-50/50 border-t flex justify-between items-center">
-            <Button 
+            <Button
               type="button"
-              variant="ghost" 
+              variant="ghost"
               size="lg"
               onClick={prevStep}
               disabled={currentStep === 1 || isSubmitting}
@@ -584,7 +584,7 @@ export function BoardMakerWizard() {
               <ChevronLeft className="mr-2 w-5 h-5" /> 이전 단계
             </Button>
 
-            <Button 
+            <Button
               type="submit"
               size="lg"
               disabled={isSubmitting}
@@ -595,8 +595,8 @@ export function BoardMakerWizard() {
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
-                   <Loader2 className="w-5 h-5 animate-spin" />
-                    {status || '처리 중...'}
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {status || '처리 중...'}
                 </div>
               ) : (
                 <span className="flex items-center gap-2">
@@ -608,7 +608,7 @@ export function BoardMakerWizard() {
           </CardFooter>
         </form>
       </Card>
-      
+
       <p className="text-center text-slate-400 text-sm font-medium italic">
         "마지막 클릭이 새로운 소통의 시작입니다" - Board Master Maker v1.0
       </p>

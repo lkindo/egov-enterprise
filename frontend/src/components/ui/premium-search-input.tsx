@@ -8,13 +8,13 @@ interface PremiumSearchInputProps extends React.InputHTMLAttributes<HTMLInputEle
   onSearch?: (value: string) => void;
 }
 
-export function PremiumSearchInput({ 
-  placeholder = "SEARCH ASSETS...", 
-  className, 
+export function PremiumSearchInput({
+  placeholder = "자산 검색...",
+  className,
   onSearch,
-  ...props 
+  ...props
 }: PremiumSearchInputProps) {
-  
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && onSearch) {
       onSearch(e.currentTarget.value);
@@ -24,15 +24,15 @@ export function PremiumSearchInput({
 
   return (
     <div className={cn("relative group transition-all", className)}>
-      <Search 
-        className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" 
-        size={20} 
+      <Search
+        className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300"
+        size={20}
       />
       <Input
-        placeholder={placeholder.toUpperCase()}
+        placeholder={placeholder}
         className={cn(
           "h-14 pl-14 pr-6 w-full rounded-[var(--radius-hub-widget)] border-2 border-border font-[number:var(--font-weight-hub-title)] text-[10px] tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-background shadow-sm hover:border-primary/50",
-          "placeholder:font-black placeholder:tracking-[0.2em] placeholder:text-muted-foreground/40",
+          "placeholder:font-black placeholder:text-muted-foreground/40",
           className
         )}
         onKeyDown={handleKeyDown}

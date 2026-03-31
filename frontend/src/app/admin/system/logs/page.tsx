@@ -69,20 +69,20 @@ export default function LogDashboardPage() {
 
   const columns = useMemo(() => {
     const commonCols: Column<any>[] = [
-        {
-          header: '발생 시각',
-          accessor: (item: any) => (
-              <div className="flex items-center gap-3 py-3">
-                  <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
-                      <Clock size={14} />
-                  </div>
-                  <span className="text-[11px] font-mono font-black text-slate-500 tracking-tighter italic">
-                      {item.creatDt || item.occcrrncDe || '-'}
-                  </span>
-              </div>
-          ),
-          className: 'w-48'
-        }
+      {
+        header: '발생 시각',
+        accessor: (item: any) => (
+          <div className="flex items-center gap-3 py-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
+              <Clock size={14} />
+            </div>
+            <span className="text-[11px] font-mono font-black text-slate-500 tracking-tighter italic">
+              {item.creatDt || item.occcrrncDe || '-'}
+            </span>
+          </div>
+        ),
+        className: 'w-48'
+      }
     ];
 
     if (activeCategory === 'LGN') {
@@ -92,10 +92,10 @@ export default function LogDashboardPage() {
           header: '요청자',
           accessor: (item: any) => (
             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center bg-white shadow-sm font-black text-[10px] text-slate-400">
-                  {item.loginNm?.substring(0, 1)}
-               </div>
-               <span className="text-xs font-bold text-slate-700">{item.loginNm} ({item.loginId})</span>
+              <div className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center bg-white shadow-sm font-black text-[10px] text-slate-400">
+                {item.loginNm?.substring(0, 1)}
+              </div>
+              <span className="text-xs font-bold text-slate-700">{item.loginNm} ({item.loginId})</span>
             </div>
           )
         },
@@ -127,8 +127,8 @@ export default function LogDashboardPage() {
         header: '수행 서비스 / 리소스',
         accessor: (item: any) => (
           <div className="flex flex-col gap-0.5 max-w-md">
-             <span className="text-[11px] font-black text-foreground truncate uppercase tracking-tighter italic">{item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
-             <span className="text-[9px] font-bold text-slate-300 font-mono truncate">{item.methodNm || item.trgetMenuNm || '-'}</span>
+            <span className="text-[11px] font-black text-foreground truncate uppercase tracking-tighter italic">{item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
+            <span className="text-[9px] font-bold text-slate-300 font-mono truncate">{item.methodNm || item.trgetMenuNm || '-'}</span>
           </div>
         )
       },
@@ -136,8 +136,8 @@ export default function LogDashboardPage() {
         header: '접속 정보',
         accessor: (item: any) => (
           <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-slate-400">
-             <Globe size={11} className="opacity-40" />
-             {item.rqesterIp || '127.0.0.1'}
+            <Globe size={11} className="opacity-40" />
+            {item.rqesterIp || '127.0.0.1'}
           </div>
         )
       }
@@ -151,16 +151,16 @@ export default function LogDashboardPage() {
         breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }]}
       />
 
-      <HubHeader 
-        title="시스템" 
-        highlight="로그 통합 관리" 
-        subtitle="시스템 전반에서 발생하는 보안, 접속, 활동, 웹 요청 로그를 통합적으로 모니터링합니다." 
-        icon={History} 
+      <HubHeader
+        title="시스템"
+        highlight="로그 통합 관리"
+        subtitle="시스템 전반에서 발생하는 보안, 접속, 활동, 웹 요청 로그를 통합적으로 모니터링합니다."
+        icon={History}
         actions={
           <div className="flex gap-4">
-             <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest uppercase gap-3">
-                <SearchCode size={18} /> 상세 로그 검색
-             </Button>
+            <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest uppercase gap-3">
+              <SearchCode size={18} /> 상세 로그 검색
+            </Button>
           </div>
         }
       />
@@ -181,8 +181,8 @@ export default function LogDashboardPage() {
                 onClick={() => setCategory(cat.id)}
                 className={cn(
                   "w-full group p-6 rounded-[2.5rem] border-2 transition-all flex items-center gap-5 relative overflow-hidden",
-                  activeCategory === cat.id 
-                    ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" 
+                  activeCategory === cat.id
+                    ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
                     : "bg-transparent border-transparent hover:bg-slate-100 text-slate-400 hover:text-slate-900"
                 )}
               >
@@ -202,72 +202,72 @@ export default function LogDashboardPage() {
         </div>
 
         <div className="col-span-12 lg:col-span-9">
-          <HubSectionCard 
-            title="실시간 로그 스트림" 
-            description={`${logCategories.find(c => c.id === activeCategory)?.label}에서 실시간으로 유입되는 가시성 스트림 데이터입니다.`} 
+          <HubSectionCard
+            title="실시간 로그 스트림"
+            description={`${logCategories.find(c => c.id === activeCategory)?.label}에서 실시간으로 유입되는 가시성 스트림 데이터입니다.`}
             icon={Activity}
           >
-            <StandardDataTable 
-              columns={columns} 
-              data={logs} 
+            <StandardDataTable
+              columns={columns}
+              data={logs}
               loading={isLoading}
-              className="border-none bg-transparent" 
+              className="border-none bg-transparent"
               onRowClick={(item) => setSelectedLog(item)}
               search={{
                 placeholder: '요청자, IP, 메시지 등으로 정밀 분석...',
-              onSearch: (keyword) => setParams({ ...params, searchKeyword: keyword, page번호: 1 })
-            }}
-          />
-          
-          {(Number(pagination.totalPageCount) || 0) > 1 && (
-             <div className="mt-12 flex justify-center">
-                 <PagePagination 
-                    pagination={pagination} 
-                    onPageChange={(page) => setParams({ ...params, page번호: page })}
-                 />
-             </div>
-          )}
+                onSearch: (keyword) => setParams({ ...params, searchKeyword: keyword, page번호: 1 })
+              }}
+            />
+
+            {(Number(pagination.totalPageCount) || 0) > 1 && (
+              <div className="mt-12 flex justify-center">
+                <PagePagination
+                  pagination={pagination}
+                  onPageChange={(page) => setParams({ ...params, page번호: page })}
+                />
+              </div>
+            )}
           </HubSectionCard>
         </div>
       </div>
 
       {/* Log Inspector Modal */}
-      <StandardModal 
-         isOpen={!!selectedLog} 
-         onClose={() => setSelectedLog(null)} 
-         title="Log Inspector (Raw Intel)"
-         maxWidth="2xl"
+      <StandardModal
+        isOpen={!!selectedLog}
+        onClose={() => setSelectedLog(null)}
+        title="Log Inspector (Raw Intel)"
+        maxWidth="2xl"
       >
-         <div className="p-8 space-y-8 font-sans">
-            <div className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border-2 border-slate-100">
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl">
-                     <Terminal size={22} />
-                  </div>
-                  <div>
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">LOG_RESOURCE_IDENTIFIER</p>
-                     <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || 'UNKNOWN_ID'}</p>
-                  </div>
-               </div>
-               <HubStatusBadge label="VERIFIED" variant="success" />
+        <div className="p-8 space-y-8 font-sans">
+          <div className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border-2 border-slate-100">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl">
+                <Terminal size={22} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">로그 리소스 식별자</p>
+                <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || '알 수 없음'}</p>
+              </div>
             </div>
+            <HubStatusBadge label="확인됨" variant="success" />
+          </div>
 
-            <div className="space-y-4">
-               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2 italic">Raw Architecture Payload</h4>
-               <div className="p-10 rounded-[2.5rem] bg-slate-900 text-emerald-400 font-mono text-[11px] overflow-auto shadow-2xl relative group max-h-[400px]">
-                  <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-100 transition-opacity">
-                     <Zap size={20} className="animate-pulse" />
-                  </div>
-                  <pre className="whitespace-pre-wrap leading-relaxed">{JSON.stringify(selectedLog, null, 2)}</pre>
-               </div>
+          <div className="space-y-4">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2 italic">Raw Architecture Payload</h4>
+            <div className="p-10 rounded-[2.5rem] bg-slate-900 text-emerald-400 font-mono text-[11px] overflow-auto shadow-2xl relative group max-h-[400px]">
+              <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-100 transition-opacity">
+                <Zap size={20} className="animate-pulse" />
+              </div>
+              <pre className="whitespace-pre-wrap leading-relaxed">{JSON.stringify(selectedLog, null, 2)}</pre>
             </div>
+          </div>
 
-            <div className="flex gap-4">
-               <Button onClick={() => setSelectedLog(null)} className="flex-1 h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all">
-                  CLOSE_INSPECTOR
-               </Button>
-            </div>
-         </div>
+          <div className="flex gap-4">
+            <Button onClick={() => setSelectedLog(null)} className="flex-1 h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all">
+              CLOSE_INSPECTOR
+            </Button>
+          </div>
+        </div>
       </StandardModal>
     </div>
   );

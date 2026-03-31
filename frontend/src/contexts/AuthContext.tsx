@@ -4,31 +4,31 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 
 interface AuthContextType {
- user: UserInfo | null;
- loading: boolean;
- login: (credentials: Record<string, string>) => Promise<void>;
- logout: () => Promise<void>;
- checkAuth: () => Promise<void>;
+  user: UserInfo | null;
+  loading: boolean;
+  login: (credentials: Record<string, string>) => Promise<void>;
+  logout: () => Promise<void>;
+  checkAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
- const [user, setUser] = useState<UserInfo | null>(null);
- const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [loading, setLoading] = useState(true);
 
- const checkAuth = useCallback(async () => {
- const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const checkAuth = useCallback(async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
- // 토큰이 없으면 인증 확인을 건너뜁니다.
- if (!token) {
- setUser(null);
- setLoading(false);
- return;
- }
+    // 토큰이 없으면 인증 확인을 건너뜁니다.
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
 
- // 토큰이 만료되었더라도 interceptor에서 reissue를 시도할 것이므로
- // /auth/me를 호출하여 최종 유효성을 검증합니다.
+    // 토큰이 만료되었더라도 interceptor에서 reissue를 시도할 것이므로
+    // /auth/me를 호출하여 최종 유효성을 검증합니다.
     try {
       const userData = await authService.getCurrentUser();
       if (userData) {
@@ -50,7 +50,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (credentials: Record<string, string>) => {
     try {
-      const data = await authService.login(credentials);
+      // 백엔드 기대 필드명 변환: id → userId
+      const loginData = {
+        userId: credentials.id,
+        password: credentials.password,
+      };
+      const data = await authService.login(loginData);
 
       if (data && data.accessToken) {
         localStorage.setItem('accessToken', data.accessToken);
@@ -72,36 +77,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [checkAuth]);
 
- const logout = useCallback(async () => {
- try {
- await authService.logout();
- } catch (error) {
- console.error('Logout API call failed', error);
- } finally {
- setUser(null);
- if (typeof window !== 'undefined') {
- localStorage.removeItem('accessToken');
- document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
- document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
- }
- }
- }, []);
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout API call failed', error);
+    } finally {
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('accessToken');
+        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      }
+    }
+  }, []);
 
- useEffect(() => {
- checkAuth();
- }, [checkAuth]);
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
- return (
- <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
- {children}
- </AuthContext.Provider>
- );
+  return (
+    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => {
- const context = useContext(AuthContext);
- if (context === undefined) {
- throw new Error('useAuth must be used within an AuthProvider');
- }
- return context;
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { 
-  ArrowLeft, Save, Zap, 
+import {
+  ArrowLeft, Save, Zap,
   Layers, Package, Monitor
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,8 @@ export default function InsertBoardArticlePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA'; 
-  const parntsId = searchParams.get('parntsId') || undefined; 
+  const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
+  const parntsId = searchParams.get('parntsId') || undefined;
 
   const [form, setForm] = useState<Partial<BoardArticle & { password?: string; replyAt?: string; parntsId?: string }>>({
     bbsId: bbsId,
@@ -41,7 +41,7 @@ export default function InsertBoardArticlePage() {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const formData = new FormData();
       Object.entries(form).forEach(([key, value]) => {
@@ -68,8 +68,8 @@ export default function InsertBoardArticlePage() {
     <div className="max-w-5xl mx-auto space-y-12 pb-24 pt-8">
       {/* Header section */}
       <div className="flex items-center gap-8 px-2">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => router.back()}
           className="w-16 h-16 rounded-[2rem] border-2 group hover:bg-slate-900 transition-all duration-500 shadow-xl active:scale-95"
         >
@@ -96,7 +96,7 @@ export default function InsertBoardArticlePage() {
               </div>
               <span className="text-[10px] font-black tracking-widest text-white/40 uppercase">Dataset Core Subject</span>
             </div>
-            <Input 
+            <Input
               value={form.nttSj}
               onChange={(e) => setForm({ ...form, nttSj: e.target.value })}
               className="h-20 bg-transparent border-none text-white text-3xl font-black placeholder:text-white/10 focus-visible:ring-0 p-0 tracking-tight"
@@ -113,14 +113,14 @@ export default function InsertBoardArticlePage() {
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
               <Package size={18} className="text-primary" />
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Intelligence Node Content</h3>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">지식 노드 콘텐츠</h3>
             </div>
             <div className="flex items-center gap-2">
-               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-               <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Live Sync Ready</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">실시간 동기화 준비됨</span>
             </div>
           </div>
-          <RichTextEditor 
+          <RichTextEditor
             value={form.nttCn || ''}
             onChange={(content) => setForm({ ...form, nttCn: content })}
             placeholder="상세 내용을 기술하십시오..."
@@ -129,50 +129,50 @@ export default function InsertBoardArticlePage() {
 
         {/* Bottom Actions Matrix */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-8 pt-8 border-t border-border/40">
-           <div className="flex items-center gap-8">
-              <div className="flex flex-col">
-                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Dataset Type</span>
-                 <span className="text-xs font-black text-slate-800 mt-1 uppercase italic">{bbsId.split('_')[1] || 'CORE'}</span>
-              </div>
-              <div className="w-[1px] h-8 bg-border/40" />
-              <div className="flex flex-col">
-                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Security Clearance</span>
-                 <span className="text-xs font-black text-emerald-500 mt-1 uppercase italic">Authenticated</span>
-              </div>
-           </div>
+          <div className="flex items-center gap-8">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Dataset Type</span>
+              <span className="text-xs font-black text-slate-800 mt-1 uppercase italic">{bbsId.split('_')[1] || 'CORE'}</span>
+            </div>
+            <div className="w-[1px] h-8 bg-border/40" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Security Clearance</span>
+              <span className="text-xs font-black text-emerald-500 mt-1 uppercase italic">Authenticated</span>
+            </div>
+          </div>
 
-           <div className="flex items-center gap-4 w-full sm:w-auto">
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                className="h-16 flex-1 sm:flex-none px-10 rounded-2xl border-2 font-black tracking-widest text-[11px] uppercase hover:bg-slate-50 transition-all"
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                disabled={isSubmitting}
-                className="h-16 flex-1 sm:flex-none px-12 rounded-2xl bg-primary text-white font-black tracking-widest text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 gap-3 group"
-              >
-                {isSubmitting ? (
-                  <span className="animate-pulse">Saving Node...</span>
-                ) : (
-                  <>
-                    <Save size={18} className="group-hover:rotate-12 transition-transform" /> Commit Knowledge
-                  </>
-                )}
-              </Button>
-           </div>
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              className="h-16 flex-1 sm:flex-none px-10 rounded-2xl border-2 font-black tracking-widest text-[11px] uppercase hover:bg-slate-50 transition-all"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="h-16 flex-1 sm:flex-none px-12 rounded-2xl bg-primary text-white font-black tracking-widest text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 gap-3 group"
+            >
+              {isSubmitting ? (
+                <span className="animate-pulse">Saving Node...</span>
+              ) : (
+                <>
+                  <Save size={18} className="group-hover:rotate-12 transition-transform" /> Commit Knowledge
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </form>
 
       {/* Footer Insight */}
       <div className="text-center">
-         <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-50 rounded-full border border-border/50">
-            <Monitor size={14} className="text-muted-foreground/40" />
-            <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">Enterprise Command Node • Unit Version 2.4.0</span>
-         </div>
+        <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-50 rounded-full border border-border/50">
+          <Monitor size={14} className="text-muted-foreground/40" />
+          <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">Enterprise Command Node • Unit Version 2.4.0</span>
+        </div>
       </div>
     </div>
   );

@@ -23,10 +23,10 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
   // --- Data Fetching ---
   const { data, isLoading } = useQuery({
     queryKey: ['admin-rewards', searchKeyword, page],
-    queryFn: () => operationAdminService.getRewardList({ 
-      searchKeyword, 
-      page번호: page, 
-      pageSize: size 
+    queryFn: () => operationAdminService.getRewardList({
+      searchKeyword,
+      page번호: page,
+      pageSize: size
     }),
     initialData: { list: initialData, total: initialData.length, totalPage: Math.ceil(initialData.length / size), page: 1, size },
   });
@@ -36,8 +36,8 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
   const totalPages = data?.totalPage || Math.ceil(totalItems / size);
 
   const columns: Column<any>[] = [
-    { 
-      header: 'REWARD_UNIT', 
+    {
+      header: 'REWARD_UNIT',
       accessor: (item) => (
         <div className="flex items-center gap-6 py-2">
           <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-100 shadow-inner group-hover:bg-amber-500 group-hover:text-white transition-all">
@@ -46,20 +46,20 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="font-black text-slate-900 leading-tight tracking-tight group-hover:text-primary transition-colors">{item.rwardNm}</span>
             <div className="flex items-center gap-2">
-                <span className="text-[8px] font-black text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded-md leading-none bg-amber-50/50 uppercase tracking-widest">{item.rwardCode}</span>
-                <span className="text-[10px] text-slate-400 font-bold truncate italic leading-none">{item.rwardLevel || 'STANDARD'}</span>
+              <span className="text-[8px] font-black text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded-md leading-none bg-amber-50/50 uppercase tracking-widest">{item.rwardCode}</span>
+              <span className="text-[10px] text-slate-400 font-bold truncate italic leading-none">{item.rwardLevel || 'STANDARD'}</span>
             </div>
           </div>
         </div>
       )
     },
-    { 
-      header: 'WINNER_ID', 
+    {
+      header: 'WINNER_ID',
       accessor: 'rwardwnrId',
       className: 'w-32 font-mono text-xs font-black text-slate-400 tracking-tighter'
     },
-    { 
-      header: 'DATE_STAMP', 
+    {
+      header: 'DATE_STAMP',
       accessor: (item) => (
         <div className="flex items-center gap-2.5 text-slate-500 font-bold text-[11px]">
           <Calendar size={12} className="opacity-40" />
@@ -67,31 +67,30 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
         </div>
       )
     },
-    { 
-      header: 'CONFIRMATION', 
+    {
+      header: 'CONFIRMATION',
       accessor: (item) => (
-        <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase transition-all ${
-          item.confmAt === 'Y' 
-          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+        <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase transition-all ${item.confmAt === 'Y'
+          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
           : 'bg-slate-50 text-slate-400 border border-slate-100'
-        }`}>
+          }`}>
           {item.confmAt === 'Y' ? (
             <>
               <CheckCircle2 size={12} className="animate-pulse" />
-              <span>SYNC_VERIFIED</span>
+              <span>동기화 확인됨</span>
             </>
           ) : (
             <>
               <RefreshCcw size={12} className="animate-spin-slow" />
-              <span>PENDING_FLOW</span>
+              <span>대기 중</span>
             </>
           )}
         </div>
       ),
       className: 'w-36 text-center'
     },
-    { 
-      header: 'AUDIT_TRAIL', 
+    {
+      header: 'AUDIT_TRAIL',
       accessor: 'sanctnDt',
       className: 'w-48 text-slate-300 text-[10px] tabular-nums font-mono italic pr-8 text-right'
     }
@@ -109,11 +108,11 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
         breadcrumbs={[{ label: '운영지원' }, { label: '상훈관리' }, { label: '포상관리' }]}
       />
 
-      <HubHeader 
-        title="Reward &" 
-        highlight="Honor" 
-        subtitle="조직 내 우수한 성과 및 공헌에 대한 포상 기록을 정밀하게 트래킹하고 승인 프로세스를 관리하는 통제실입니다." 
-        icon={Trophy} 
+      <HubHeader
+        title="Reward &"
+        highlight="Honor"
+        subtitle="조직 내 우수한 성과 및 공헌에 대한 포상 기록을 정밀하게 트래킹하고 승인 프로세스를 관리하는 통제실입니다."
+        icon={Trophy}
         actions={
           <div className="flex gap-4">
             <Button
@@ -131,48 +130,48 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="TOTAL_REWARDS" value={totalItems} icon={Layers} color="amber" />
-        <HubMetricCard title="SYNC_STATUS" value="VERIFIED" icon={Zap} color="emerald" status="동기화됨" />
-        <HubMetricCard title="ACTIVE_RECORDS" value={rewards.length} icon={Activity} color="primary" />
-        <HubMetricCard title="AUDIT_PROBE" value="SECURE" icon={Filter} color="indigo" />
+        <HubMetricCard title="포상 현황" value={totalItems} icon={Layers} color="amber" />
+        <HubMetricCard title="동기화 상태" value="확인됨" icon={Zap} color="emerald" status="동기화됨" />
+        <HubMetricCard title="활성 레코드" value={rewards.length} icon={Activity} color="primary" />
+        <HubMetricCard title="감시 프로브" value="안전함" icon={Filter} color="indigo" />
       </HubMetricGrid>
 
-      <HubSectionCard 
-        title="포상 아카이브 매트릭스" 
-        description="전사적으로 관리되는 상훈 및 포상 데이터 유닛의 실시간 스트림 및 상세 상세 명세입니다." 
+      <HubSectionCard
+        title="포상 아카이브 매트릭스"
+        description="전사적으로 관리되는 상훈 및 포상 데이터 유닛의 실시간 스트림 및 상세 상세 명세입니다."
         icon={Trophy}
       >
         <div className="space-y-8">
-            <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-10 mb-8">
-                <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
-                    <Input
-                        placeholder="포상 명칭 또는 대상자 식별자로 분석..."
-                        className="h-16 pl-16 rounded-2xl border-2 bg-slate-50/50 text-sm font-black tracking-tight shadow-inner"
-                        value={searchKeyword}
-                        onChange={(e) => setSearchKeyword(e.target.value)}
-                    />
-                    <Button type="submit" className="h-16 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE</Button>
-                </form>
-                <div>
-                     <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic tabular-nums">DATA_PROBE_UPDATING...</span>
-                </div>
+          <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-10 mb-8">
+            <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
+              <Input
+                placeholder="포상 명칭 또는 대상자 식별자로 분석..."
+                className="h-16 pl-16 rounded-2xl border-2 bg-slate-50/50 text-sm font-black tracking-tight shadow-inner"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+              />
+              <Button type="submit" className="h-16 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE</Button>
+            </form>
+            <div>
+              <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic tabular-nums">DATA_PROBE_UPDATING...</span>
             </div>
+          </div>
 
-            <div className="min-h-[500px]">
-                <StandardDataTable
-                    columns={columns}
-                    data={rewards}
-                    loading={isLoading}
-                    emptyMessage="식별된 포상 아랍 레코드가 존재하지 않습니다."
-                    className="border-none bg-transparent shadow-none"
-                    pagination={{
-                        currentPage: page,
-                        totalPages: totalPages,
-                        onPageChange: (p) => setPage(p)
-                    }}
-                />
-            </div>
+          <div className="min-h-[500px]">
+            <StandardDataTable
+              columns={columns}
+              data={rewards}
+              loading={isLoading}
+              emptyMessage="식별된 포상 아랍 레코드가 존재하지 않습니다."
+              className="border-none bg-transparent shadow-none"
+              pagination={{
+                currentPage: page,
+                totalPages: totalPages,
+                onPageChange: (p) => setPage(p)
+              }}
+            />
+          </div>
         </div>
       </HubSectionCard>
     </div>

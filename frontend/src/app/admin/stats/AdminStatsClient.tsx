@@ -110,17 +110,17 @@ export default function AdminStatsClient({
         breadcrumbs={[{ label: '시스템관리' }, { label: '분석 대시보드' }]}
       />
 
-      <HubHeader 
-        title="시스템 분석" 
-        highlight="매트릭스" 
-        subtitle="전체 시스템의 실시간 트래픽 및 도메인 상호작용 통계 인텔리전스" 
-        icon={BarChart3} 
+      <HubHeader
+        title="시스템 분석"
+        highlight="매트릭스"
+        subtitle="전체 시스템의 실시간 트래픽 및 도메인 상호작용 통계 인텔리전스"
+        icon={BarChart3}
         actions={
           <div className="flex gap-4 p-2 items-center">
             <select className="h-12 px-6 rounded-xl border-2 border-border bg-white font-black text-[10px] tracking-widest uppercase outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer shadow-sm">
-                <option>REALTIME_FLOW (14D)</option>
-                <option>MONTHLY_BATCH (30D)</option>
-                <option>QUARTERLY_ANALYSIS</option>
+              <option>REALTIME_FLOW (14D)</option>
+              <option>MONTHLY_BATCH (30D)</option>
+              <option>QUARTERLY_ANALYSIS</option>
             </select>
             <Button
               variant="outline"
@@ -173,14 +173,14 @@ export default function AdminStatsClient({
         </div>
 
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-10">
-           <HubSectionCard
+          <HubSectionCard
             title="환경 기기 분포"
             description="사용자 접속 환경의 프로파일링 및 기기별 세션 비중입니다."
             icon={Monitor}
           >
             <div className="bg-slate-900 text-white rounded-[3.5rem] p-8 shadow-2xl relative overflow-hidden group min-h-[440px] flex items-center justify-center">
-               <div className="absolute inset-x-0 top-0 h-1 bg-primary/20 blur-[40px] pointer-events-none" />
-               <StandardChartWrapper
+              <div className="absolute inset-x-0 top-0 h-1 bg-primary/20 blur-[40px] pointer-events-none" />
+              <StandardChartWrapper
                 title="ENVIRONMENT DISTRIBUTION"
                 type="pie"
                 data={browserData}
@@ -205,7 +205,7 @@ export default function AdminStatsClient({
             icon={Target}
           >
             <div className="p-8 bg-slate-50 rounded-[3rem] border border-border/30 shadow-inner">
-               <StandardChartWrapper
+              <StandardChartWrapper
                 title="HIGH-INTERACTION SERVICES"
                 type="bar"
                 data={initialMenuData.slice(0, 5).map(m => ({ name: m.menuNm, count: m.count }))}
@@ -223,8 +223,8 @@ export default function AdminStatsClient({
             icon={Globe}
           >
             <div className="p-4 bg-white rounded-[3rem] border-2 border-slate-50 flex items-center justify-center min-h-[480px] shadow-sm relative overflow-hidden">
-               <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0)', backgroundSize: '16px 16px' }} />
-               <NationalDistributionMap />
+              <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0)', backgroundSize: '16px 16px' }} />
+              <NationalDistributionMap />
             </div>
           </HubSectionCard>
         </div>
@@ -235,7 +235,7 @@ export default function AdminStatsClient({
         description="시스템 전반에 걸친 마이크로 상호작용 노드들의 세부 데이터 보고서입니다."
         icon={Cpu}
         statusBadges={
-           <HubStatusBadge label="HIGH_FIDELITY_STREAM" variant="success" className="bg-emerald-500/10 text-emerald-500 border-none animate-pulse text-[8px] font-black tracking-widest" />
+          <HubStatusBadge label="고충실도 스트림" variant="success" className="bg-emerald-500/10 text-emerald-500 border-none animate-pulse text-[8px] font-black tracking-widest" />
         }
       >
         <div className="px-2 overflow-x-auto">
@@ -250,28 +250,28 @@ export default function AdminStatsClient({
       </HubSectionCard>
 
       <div className="relative group rounded-[5rem] overflow-hidden bg-slate-900 shadow-2xl p-24 border border-white/5">
-         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-indigo-500/5 opacity-50" />
-         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-primary/20 blur-[120px] rounded-full group-hover:scale-150 transition-transform duration-[3s]" />
-         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
-            <div className="space-y-10 flex-1 text-center lg:text-left">
-               <div className="space-y-4">
-                  <h2 className="text-[11px] font-black tracking-[0.6em] text-white/30 uppercase leading-none">시스템 무결성 요약</h2>
-                  <h3 className="text-5xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] uppercase tabular-nums">
-                    Optimized <br />
-                    <span className="text-primary italic">인텔리전스</span> Core
-                  </h3>
-               </div>
-               <p className="text-lg lg:text-xl text-white/40 font-bold max-w-3xl leading-relaxed tracking-tight">
-                시스템 자원의 99.9%가 효율적으로 관리되고 있습니다. 인텔리전스 엔진은 실시간 도메인 이벤트를 추적하여 최적의 성능 프로파일을 동적으로 생성하고 있습니다.
-               </p>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-indigo-500/5 opacity-50" />
+        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-primary/20 blur-[120px] rounded-full group-hover:scale-150 transition-transform duration-[3s]" />
+        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
+          <div className="space-y-10 flex-1 text-center lg:text-left">
+            <div className="space-y-4">
+              <h2 className="text-[11px] font-black tracking-[0.6em] text-white/30 uppercase leading-none">시스템 무결성 요약</h2>
+              <h3 className="text-5xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] uppercase tabular-nums">
+                Optimized <br />
+                <span className="text-primary italic">인텔리전스</span> Core
+              </h3>
             </div>
-            <div className="shrink-0">
-               <Button className="h-24 px-16 bg-white text-slate-900 rounded-[2.5rem] font-black text-lg tracking-[0.2em] shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-6 group/btn uppercase border-none">
-                  Execute Global Report
-                  <ArrowUpRight size={28} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
-               </Button>
-            </div>
-         </div>
+            <p className="text-lg lg:text-xl text-white/40 font-bold max-w-3xl leading-relaxed tracking-tight">
+              시스템 자원의 99.9%가 효율적으로 관리되고 있습니다. 인텔리전스 엔진은 실시간 도메인 이벤트를 추적하여 최적의 성능 프로파일을 동적으로 생성하고 있습니다.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <Button className="h-24 px-16 bg-white text-slate-900 rounded-[2.5rem] font-black text-lg tracking-[0.2em] shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-6 group/btn uppercase border-none">
+              Execute Global Report
+              <ArrowUpRight size={28} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -3,9 +3,9 @@
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  ArrowLeft, Edit3, Trash2, 
-  Download, MessageSquare, 
+import {
+  ArrowLeft, Edit3, Trash2,
+  Download, MessageSquare,
   Calendar, Eye, User,
   FileText, Share2, Quote,
   MessageCircle, CornerDownRight, Plus, Package
@@ -13,7 +13,7 @@ import {
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/app/components/ui/toast'; 
+import { useToast } from '@/app/components/ui/toast';
 import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
 
@@ -44,8 +44,8 @@ function DetailContent() {
       {/* --- Action Header --- */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b-2 border-border/50 pb-12">
         <div className="space-y-6">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => router.back()}
             className="group px-0 hover:bg-transparent text-muted-foreground hover:text-primary transition-colors flex items-center gap-3"
           >
@@ -68,14 +68,14 @@ function DetailContent() {
         </div>
 
         <div className="flex items-center gap-3 relative z-10">
-          <Button 
+          <Button
             variant="outline"
             onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&nttId=${nttId}`)}
             className="h-16 px-8 rounded-2xl border-2 font-black text-[11px] tracking-widest uppercase gap-3 shadow-xl hover:-translate-y-1 transition-all"
           >
             <Edit3 size={18} /> Edit Entry
           </Button>
-          <Button 
+          <Button
             variant="outline"
             onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&parntsId=${nttId}&replyAt=Y`)}
             className="h-16 px-8 rounded-2xl border-2 font-black text-[11px] tracking-widest uppercase gap-3 shadow-xl hover:-translate-y-1 transition-all"
@@ -91,7 +91,7 @@ function DetailContent() {
           }}>
             <input type="hidden" name="bbsId" value={bbsId!} />
             <input type="hidden" name="nttId" value={nttId!} />
-            <Button 
+            <Button
               type="submit"
               variant="outline"
               className="h-16 w-16 rounded-2xl border-2 text-rose-500 border-rose-100 hover:bg-rose-500 hover:text-white shadow-xl hover:-translate-y-1 transition-all"
@@ -113,7 +113,7 @@ function DetailContent() {
       {/* --- CONTENT AREA --- */}
       <div className="relative group">
         <div className="absolute -inset-4 bg-gradient-to-br from-primary/5 via-transparent to-rose-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-        
+
         <div className="relative bg-white dark:bg-muted/10 rounded-[4rem] p-16 md:p-24 border-2 border-border/40 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.05)] overflow-hidden">
           <div className="absolute top-0 right-0 p-12 opacity-[0.03] grayscale pointer-events-none group-hover:rotate-12 transition-transform duration-1000">
             <Quote size={200} className="text-primary" />
@@ -122,10 +122,10 @@ function DetailContent() {
           <div className="relative z-10 max-w-4xl mx-auto space-y-16">
             <div className="flex items-center gap-4">
               <span className="h-[2px] w-12 bg-primary" />
-              <p className="text-[10px] font-black tracking-[0.6em] text-primary uppercase leading-none italic">Verified Knowledge Dataset</p>
+              <p className="text-[10px] font-black tracking-[0.6em] text-primary uppercase leading-none italic">검증된 지식 데이터셋</p>
             </div>
 
-            <div 
+            <div
               className="prose prose-2xl dark:prose-invert prose-slate max-w-none 
                 text-slate-800 dark:text-slate-200 
                 font-medium leading-[1.6] tracking-tight 
@@ -133,7 +133,7 @@ function DetailContent() {
                 prose-p:my-10
                 prose-blockquote:border-l-[6px] prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-12 prose-blockquote:py-10 prose-blockquote:rounded-r-[2rem] prose-blockquote:italic
                 prose-code:bg-slate-100 prose-code:p-1 prose-code:rounded prose-pre:bg-slate-900 prose-pre:p-8 prose-pre:rounded-3xl"
-              dangerouslySetInnerHTML={{ __html: article.knoCn || (article as any).nttCn || '' }} 
+              dangerouslySetInnerHTML={{ __html: article.knoCn || (article as any).nttCn || '' }}
             />
 
             <div className="pt-24 flex items-center justify-center opacity-10">
@@ -159,14 +159,14 @@ function DetailContent() {
               <p className="text-[11px] font-black tracking-widest uppercase">Associated Data Assets</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {/* 이 부분은 실제 파일 리스트 로직이 있다면 연동 */}
-               <div className="flex items-center justify-between p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white hover:text-slate-900 transition-all cursor-pointer group/file">
-                  <div className="flex items-center gap-4">
-                    <FileText size={20} className="text-primary" />
-                    <span className="text-sm font-bold tracking-tight">Technical_Specification_Unit_{nttId?.slice(-4)}.pdf</span>
-                  </div>
-                  <Download size={18} className="opacity-40 group-hover/file:opacity-100 transition-opacity" />
-               </div>
+              {/* 이 부분은 실제 파일 리스트 로직이 있다면 연동 */}
+              <div className="flex items-center justify-between p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white hover:text-slate-900 transition-all cursor-pointer group/file">
+                <div className="flex items-center gap-4">
+                  <FileText size={20} className="text-primary" />
+                  <span className="text-sm font-bold tracking-tight">Technical_Specification_Unit_{nttId?.slice(-4)}.pdf</span>
+                </div>
+                <Download size={18} className="opacity-40 group-hover/file:opacity-100 transition-opacity" />
+              </div>
             </div>
           </div>
         </div>

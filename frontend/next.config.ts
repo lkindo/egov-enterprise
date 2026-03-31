@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
             key: 'Content-Security-Policy',
-            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' https://grainy-gradients.vercel.app blob: data:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' http://localhost:8080 http://127.0.0.1:8080 ws://localhost:8080 ws://127.0.0.1:8080 wss://localhost:8080 wss://127.0.0.1:8080; object-src 'self' data:; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' https://grainy-gradients.vercel.app blob: data:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' http://localhost:8080 http://127.0.0.1:8080 ws://localhost:8080 ws://127.0.0.1:8080 wss://localhost:8080 wss://127.0.0.1:8080 https://cdn.jsdelivr.net; object-src 'self' data:; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`
           },
         ],
       },
