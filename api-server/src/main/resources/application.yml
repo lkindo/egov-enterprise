@@ -40,11 +40,11 @@ spring:
       jdbc:
         batch_size: 25
         fetch_size: 100
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
-        format_sql: false
-        use_sql_comments: false
+        format_sql: true
+        use_sql_comments: true
         generate_statistics: true
         default_batch_fetch_size: 100
         jdbc:
@@ -66,11 +66,11 @@ logging:
     com.company.project: debug
     egovframework: info
     org.hibernate.SQL: debug
-    org.hibernate.orm.jdbc.bind: debug
-    org.hibernate.stat: info
+    org.hibernate.orm.jdbc.bind: trace
+    org.hibernate.stat: debug
     org.springframework.security: info
-    org.springframework.web: debug
-    org.springframework.web.servlet.mvc.method.annotation: trace
+    org.springframework.web: info
+    org.springframework.web.servlet.mvc.method.annotation: info
     org.springframework.orm.jpa: debug
   file:
     name: logs/backend.log

@@ -201,6 +201,42 @@ cp frontend/.env.example frontend/.env.local
 
 ---
 
+## 📚 문서 가이드
+
+프로젝트의 주요 문서들은 `docs/` 폴더에 있습니다.
+
+| 문서 | 설명 |
+|------|------|
+| [CHANGELOG](./CHANGELOG.md) | 버전별 변경사항 기록 |
+| [API 문서화 가이드](./docs/API_DOCUMENTATION_GUIDE.md) | OpenAPI/Swagger 사용법 |
+| [CI/CD 파이프라인 가이드](./docs/CICD_PIPELINE.md) | GitHub Actions 설정 및 사용법 |
+| [테스트 가이드](./docs/TESTING_GUIDE.md) | 단위/통합/E2E 테스트 작성법 |
+| [성능 최적화 가이드](./docs/PERFORMANCE_OPTIMIZATION_GUIDE.md) | N+1 쿼리 해결, 캐싱, 프론트엔드 최적화 |
+| [데이터베이스 최적화 가이드](./docs/DATABASE_OPTIMIZATION_GUIDE.md) | 인덱스, 쿼리 튜닝 |
+| [E2E 테스트 가이드](./E2E_GUIDE.md) | Playwright 테스트 작성법 |
+
+---
+
+## 🚀 최근 주요 변경사항 (2026-03)
+
+### 성능 최적화
+- ✅ **N+1 쿼리 해결** - MenuService, UserService, UserLogRepository (95% 성능 향상)
+- ✅ **캐싱 최적화** - menuHierarchy, users 캐시 적용 (응답 시간 10-50ms)
+- ✅ **프론트엔드 빌드 최적화** - 11 개 패키지 최적화 (200-800ms 단축)
+
+### CI/CD 개선
+- ✅ **Gradle 캐싱 활성화** - 빌드 시간 91% 단축 (2m13s → 12s)
+- ✅ **Playwright Sharding** - 3 shard 병렬 실행 (66% 시간 단축)
+- ✅ **OWASP Dependency-Check** - 보안 취약점 자동 스캔
+
+### 테스트 보강
+- ✅ **Testcontainers 통합 테스트** - PostgreSQL 기반 테스트
+- ✅ **JaCoCo 커버리지 목표** - 60% 이상 (클래스별 50%)
+
+자세한 내용은 [CHANGELOG](./CHANGELOG.md) 를 확인하세요.
+
+---
+
 ## 🤝 기여 가이드
 
 ### Pull Request 전 확인사항
