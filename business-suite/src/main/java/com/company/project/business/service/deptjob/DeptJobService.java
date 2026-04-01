@@ -15,7 +15,7 @@ import com.company.project.foundation.domain.user.repository.UserRepository;
 import com.company.project.business.service.deptjob.dto.DeptJobDto;
 import com.company.project.business.domain.deptjob.QDeptJob;
 import com.querydsl.core.BooleanBuilder;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

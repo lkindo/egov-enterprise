@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PostgresContainerTest {
 
     @Container
+    @SuppressWarnings("resource")
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("testdb")
             .withUsername("test")
@@ -42,10 +43,8 @@ class PostgresContainerTest {
     void canExecuteQuery() throws Exception {
         // Given: PostgreSQL 컨테이너가 실행 중
         try (Connection connection = postgres.createConnection("");
-                Statement statement = connection.createStatement()) {
-
-            // When: 간단한 쿼리 실행
-            ResultSet resultSet = statement.executeQuery("SELECT 1");
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery("SELECT 1")) {
             resultSet.next();
             int result = resultSet.getInt(1);
 
@@ -58,10 +57,8 @@ class PostgresContainerTest {
     void canAccessDatabaseViaSpring(@Autowired DataSource dataSource) throws Exception {
         // Given: Spring 이 주입한 DataSource
         try (Connection connection = dataSource.getConnection();
-                Statement statement = connection.createStatement()) {
-
-            // When: PostgreSQL 버전 조회
-            ResultSet resultSet = statement.executeQuery("SELECT version()");
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery("SELECT version()")) {
             resultSet.next();
             String version = resultSet.getString(1);
 

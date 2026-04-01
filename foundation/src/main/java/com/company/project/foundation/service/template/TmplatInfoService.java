@@ -5,7 +5,7 @@ import com.company.project.foundation.core.exception.ErrorCode;
 import com.company.project.foundation.core.service.BaseAbstractService;
 import com.company.project.foundation.domain.template.TmplatInfo;
 import com.company.project.foundation.domain.template.TmplatInfoRepository;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;

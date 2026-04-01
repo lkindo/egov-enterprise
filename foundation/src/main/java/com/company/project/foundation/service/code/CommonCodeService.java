@@ -7,7 +7,7 @@ import com.company.project.foundation.domain.code.CommonCode;
 import com.company.project.foundation.domain.code.CommonCodeRepository;
 import com.company.project.foundation.service.code.dto.CommonCodeDto;
 import com.company.project.foundation.service.code.dto.CommonCodeSaveRequest;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 

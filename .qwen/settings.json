@@ -14,7 +14,10 @@
       "Bash(select-string *)",
       "WebFetch(github.com)",
       "Bash(get-content *)",
-      "Bash(set-content *)"
+      "Bash(set-content *)",
+      "WebSearch",
+      "Bash(curl *)",
+      "Bash(timeout *)"
     ]
   },
   "$version": 3
