@@ -17,7 +17,9 @@
       "Bash(set-content *)",
       "WebSearch",
       "Bash(curl *)",
-      "Bash(timeout *)"
+      "Bash(timeout *)",
+      "Bash(foreach-object *)",
+      "Bash(start-sleep *)"
     ]
   },
   "$version": 3

@@ -4,7 +4,6 @@ import com.company.project.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.envers.Audited;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.lang.NonNull;
@@ -23,7 +22,6 @@ import java.util.Objects;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @SuperBuilder
-@Audited
 @EntityListeners(AuditingEntityListener.class)
 public class User extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -142,7 +140,8 @@ public class User extends BaseEntity implements Serializable {
             String fxnum, String homeadres, String detailAdres, String zip,
             String offmTelno, String moblphonNo, String emailAdres, String ofcpsNm,
             String groupId, String orgnztId, String insttCode, Role role, String subDn) {
-        if (userNm != null) this.userNm = userNm;
+        if (userNm != null)
+            this.userNm = userNm;
         this.passwordHint = passwordHint;
         this.passwordCnsr = passwordCnsr;
         this.emplNo = emplNo;
@@ -163,7 +162,8 @@ public class User extends BaseEntity implements Serializable {
         this.groupId = groupId;
         this.orgnztId = orgnztId;
         this.insttCode = insttCode;
-        if (role != null) this.role = role;
+        if (role != null)
+            this.role = role;
         this.subDn = subDn;
     }
 
