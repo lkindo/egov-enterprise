@@ -7,11 +7,11 @@ export default function SurveyItemsPage() {
  return (
  <div className="space-y-6">
  <PageHeader
- title="설문 항목 관리"
- breadcrumbs={[{ label: '설문조사' }, { label: '항목 관리' }]}
+ title="?�문 ??�� 관�?
+ breadcrumbs={[{ label: '?�문조사' }, { label: '??�� 관�? }]}
  />
  <div className="p-8 text-center bg-white rounded-3xl border border-dashed border-slate-200">
- <p className="text-slate-500 font-medium">설문 항목 관리 준비 중입니다.</p>
+ <p className="text-slate-500 font-medium">?�문 ??�� 관�?준�?중입?�다.</p>
  </div>
  </div>
  );

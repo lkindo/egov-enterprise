@@ -74,7 +74,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
  options.variant === 'destructive' ? "bg-red-600 hover:bg-red-700" : "bg-primary hover:bg-primary/90"
  )}
  >
- {options.confirmText || '확인'}
+ {options.confirmText || '?�인'}
  </button>
  </div>
  </div>

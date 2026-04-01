@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import {
@@ -27,10 +27,10 @@ const trafficData = [
 ];
 
 const authorData = [
- { name: '愿由ъ옄', value: 400 },
- { name: '?ъ슜?륚', value: 300 },
- { name: '?ъ슜?륛', value: 200 },
- { name: '湲고?', value: 100 },
+ { name: '관리자', value: 400 },
+ { name: '?�용?�A', value: 300 },
+ { name: '?�용?�B', value: 200 },
+ { name: '기�?', value: 100 },
 ];
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1'];
@@ -38,14 +38,14 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1'];
 export function BoardStats() {
  return (
  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
- {/* ?몃옒??異붿씠 */}
+ {/* ?�래??추이 */}
  <Card className="lg:col-span-2 border-none shadow-lg rounded-[2rem] overflow-hidden ring-1 ring-slate-100">
  <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-8">
  <CardTitle className="text-lg font-black flex items-center gap-2">
  <TrendingUp size={18} className="text-primary" />
- 理쒓렐 7???몃옒??異붿씠
+ 최근 7???�래??추이
  </CardTitle>
- <span className="text-[10px] font-bold text-muted-foreground tracking-tight bg-muted px-2 py-1 rounded-md">실시간</span>
+ <span className="text-[10px] font-bold text-muted-foreground tracking-tight bg-muted px-2 py-1 rounded-md">�ǽð�</span>
  </CardHeader>
  <CardContent className="px-6 pb-6">
  <div className="h-[200px] w-full">
@@ -68,12 +68,12 @@ export function BoardStats() {
  </CardContent>
  </Card>
 
- {/* ?묒꽦??遺꾪룷 */}
+ {/* ?�성??분포 */}
  <Card className="border-none shadow-lg rounded-[2rem] overflow-hidden ring-1 ring-slate-100">
  <CardHeader className="pb-2 pt-6 px-8">
  <CardTitle className="text-lg font-black flex items-center gap-2">
  <Users size={18} className="text-primary" />
- ?묒꽦??遺꾪룷
+ ?�성??분포
  </CardTitle>
  </CardHeader>
  <CardContent className="px-6 pb-6 flex flex-col items-center">

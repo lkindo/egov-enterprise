@@ -85,7 +85,7 @@ function DetailContent() {
           <form action={async (formData) => {
             const res = await deleteBoardArticle(null, formData);
             if (res.success) {
-              toast('지식 자산이 삭제되었습니다.', 'success');
+              toast('지???�산????��?�었?�니??', 'success');
               router.push('/admin/help');
             }
           }}>
@@ -122,7 +122,7 @@ function DetailContent() {
           <div className="relative z-10 max-w-4xl mx-auto space-y-16">
             <div className="flex items-center gap-4">
               <span className="h-[2px] w-12 bg-primary" />
-              <p className="text-[10px] font-black tracking-[0.6em] text-primary uppercase leading-none italic">검증된 지식 데이터셋</p>
+              <p className="text-[10px] font-black tracking-[0.6em] text-primary uppercase leading-none italic">검증된 지???�이?�셋</p>
             </div>
 
             <div
@@ -159,7 +159,7 @@ function DetailContent() {
               <p className="text-[11px] font-black tracking-widest uppercase">Associated Data Assets</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* 이 부분은 실제 파일 리스트 로직이 있다면 연동 */}
+              {/* ??부분�? ?�제 ?�일 리스??로직???�다�??�동 */}
               <div className="flex items-center justify-between p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white hover:text-slate-900 transition-all cursor-pointer group/file">
                 <div className="flex items-center gap-4">
                   <FileText size={20} className="text-primary" />

@@ -32,9 +32,9 @@ describe('DeptJobListPage', () => {
  resultList: [
  {
  deptJobId: 'JOB_0001',
- deptJobNm: '주간 보고 작성',
+ deptJobNm: '주간 보고 ?�성',
  priort: '1', // High
- frstRegisterNm: '팀장',
+ frstRegisterNm: '?�??,
  frstRegisterPnttm: '2024-06-01'
  }
  ],
@@ -47,8 +47,8 @@ describe('DeptJobListPage', () => {
  render(<DeptJobListPage />);
 
  await waitFor(() => {
- expect(screen.getByText('주간 보고 작성')).toBeDefined();
- expect(screen.getByText('높음')).toBeDefined();
+ expect(screen.getByText('주간 보고 ?�성')).toBeDefined();
+ expect(screen.getByText('?�음')).toBeDefined();
  });
  });
 });

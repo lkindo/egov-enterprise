@@ -39,9 +39,9 @@ export function SmartNotificationHub() {
  {
  id: 'nt-001',
  type: 'system',
- title: '보안 정책 변경 안내',
- content: '패스워드 만료 주기 정책이 30일로 단축되었습니다.',
- recipient: '전체 사용자',
+ title: '보안 ?�책 변�??�내',
+ content: '?�스?�드 만료 주기 ?�책??30?�로 ?�축?�었?�니??',
+ recipient: '?�체 ?�용??,
  timestamp: '2026-02-23 10:30:15',
  status: 'sent',
  severity: 'high'
@@ -49,8 +49,8 @@ export function SmartNotificationHub() {
  {
  id: 'nt-002',
  type: 'mail',
- title: '연간 성과 분석 보고서',
- content: '2025년도 성과 분석 결과 리포트가 발송되었습니다.',
+ title: '?�간 ?�과 분석 보고??,
+ content: '2025?�도 ?�과 분석 결과 리포?��? 발송?�었?�니??',
  recipient: 'executives@company.com',
  timestamp: '2026-02-23 09:15:00',
  status: 'pending',
@@ -59,8 +59,8 @@ export function SmartNotificationHub() {
  {
  id: 'nt-003',
  type: 'sms',
- title: '서버 과부하 경고',
- content: '[EGov] DB 서버 CPU 점유율 95% 초과 발생',
+ title: '?�버 과�???경고',
+ content: '[EGov] DB ?�버 CPU ?�유??95% 초과 발생',
  recipient: '010-XXXX-XXXX',
  timestamp: '2026-02-23 08:45:22',
  status: 'failed',
@@ -69,8 +69,8 @@ export function SmartNotificationHub() {
  {
  id: 'nt-004',
  type: 'system',
- title: '신규 업데이트 완료',
- content: '플랫폼 v2.4.0 패치가 성공적으로 적용되었습니다.',
+ title: '?�규 ?�데?�트 ?�료',
+ content: '?�랫??v2.4.0 ?�치가 ?�공?�으�??�용?�었?�니??',
  recipient: 'Admin.Lee',
  timestamp: '2026-02-22 23:00:00',
  status: 'sent',
@@ -106,10 +106,10 @@ export function SmartNotificationHub() {
  {/* Dynamic Stats Cards */}
  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
  {[
- { label: '전체 알림', count: 1284, delta: '+12%', icon: <Bell />, color: 'primary' },
- { label: '시스템 공지', count: 42, delta: '+2', icon: <Bot />, color: 'indigo' },
+ { label: '?�체 ?�림', count: 1284, delta: '+12%', icon: <Bell />, color: 'primary' },
+ { label: '?�스??공�?', count: 42, delta: '+2', icon: <Bot />, color: 'indigo' },
  { label: '메일 발송', count: 856, delta: '+45', icon: <Mail />, color: 'blue' },
- { label: 'SMS 전송', count: 386, delta: '-5%', icon: <MessageSquare />, color: 'emerald' },
+ { label: 'SMS ?�송', count: 386, delta: '-5%', icon: <MessageSquare />, color: 'emerald' },
  ].map((stat, i) => (
  <div key={`hub-stat-${i}`} className="p-8 pb-6 bg-card border-2 border-primary/5 rounded-[2.5rem] shadow-xl relative overflow-hidden group">
  <div className="flex items-center justify-between mb-4">
@@ -139,9 +139,9 @@ export function SmartNotificationHub() {
  <div className="absolute top-0 right-0 w-3 h-3 bg-rose-500 border-2 border-white rounded-full" />
  </div>
  <div>
-   <h2 className="text-xl font-black tracking-tighter ">실시간 알림 스트림</h2>
+   <h2 className="text-xl font-black tracking-tighter ">?�시�??�림 ?�트�?/h2>
  <div className="flex items-center gap-2 mt-0.5 text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">
-   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 채널 무결성: 최적화됨
+   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 채널 무결?? 최적?�됨
  </div>
  </div>
  </div>
@@ -163,7 +163,7 @@ export function SmartNotificationHub() {
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30" size={14} />
  <input
  className="w-full bg-muted/20 border-none rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/10 transition-all"
-   placeholder="검색 및 필터링..."
+   placeholder="검??�??�터�?.."
  value={search}
  onChange={(e) => setSearch(e.target.value)}
  />
@@ -203,7 +203,7 @@ export function SmartNotificationHub() {
  <div className="p-2 bg-background rounded-full border shadow-sm group-hover:rotate-12 transition-transform">
  {getStatusIcon(log.status)}
  </div>
-   <span className="text-[9px] font-black text-muted-foreground opacity-40">{log.status === 'sent' ? '발송완료' : log.status === 'pending' ? '대기중' : '실패'}</span>
+   <span className="text-[9px] font-black text-muted-foreground opacity-40">{log.status === 'sent' ? '발송?�료' : log.status === 'pending' ? '?�기중' : '?�패'}</span>
  </div>
 
  <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical size={16} /></Button>
@@ -222,16 +222,16 @@ export function SmartNotificationHub() {
  <Zap size={40} className="text-white fill-white" />
  </div>
  <div>
-   <h3 className="text-2xl font-black tracking-tighter">AI 스마트 배달</h3>
- <p className="text-sm font-bold opacity-80 mt-2 leading-relaxed">수신자의 업무 패턴을 분석하여<br />최적의 시간에 알림을 배달합니다.</p>
+   <h3 className="text-2xl font-black tracking-tighter">AI ?�마??배달</h3>
+ <p className="text-sm font-bold opacity-80 mt-2 leading-relaxed">?�신?�의 ?�무 ?�턴??분석?�여<br />최적???�간???�림??배달?�니??</p>
  </div>
- <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-2xl h-14 font-black shadow-xl">발송 최적화 엔진 활성</Button>
+ <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-2xl h-14 font-black shadow-xl">발송 최적???�진 ?�성</Button>
  </div>
  </div>
 
  <div className="p-10 bg-card border-2 border-primary/5 rounded-[3.5rem] shadow-xl space-y-8 flex-1">
  <div>
-   <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-6">채널 상태 지표</h4>
+   <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-6">채널 ?�태 지??/h4>
  <div className="space-y-6">
  {[
  { name: 'System Push', score: 99, color: 'primary' },
@@ -252,11 +252,11 @@ export function SmartNotificationHub() {
  </div>
 
  <div className="pt-8 border-t border-primary/5 space-y-4">
-   <h4 className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">지능형 인사이트</h4>
+   <h4 className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">지?�형 ?�사?�트</h4>
  <div className="p-5 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-4">
  <Info size={16} className="text-indigo-500 mt-0.5" />
  <p className="text-[10px] font-bold text-indigo-900/60 leading-relaxed">
- 오전 10시에서 11시 사이에 발송된 알림의 확인율이 가장 높습니다. 중요한 공지는 이 시간을 활용하세요.
+ ?�전 10?�에??11???�이??발송???�림???�인?�이 가???�습?�다. 중요??공�??????�간???�용?�세??
  </p>
  </div>
  </div>

@@ -3,6 +3,7 @@ package com.company.project.foundation.service.user;
 import com.company.project.foundation.constants.Constants;
 import com.company.project.foundation.core.exception.BusinessException;
 import com.company.project.foundation.core.exception.ErrorCode;
+import com.company.project.foundation.core.service.BaseAbstractService;
 import com.company.project.foundation.domain.auth.UserAuthority;
 import com.company.project.foundation.domain.auth.UserAuthorityRepository;
 import com.company.project.foundation.domain.user.entity.Role;
@@ -18,24 +19,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
-import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
  * JPA 기반 사용자 관리 서비스 구현체
  * - 전자정부 표준프레임워크 5.0 호환성 인증 요건 충족
- * - EgovAbstractServiceImpl 상속 및 EgovUserService 인터페이스 구현
+ * - BaseAbstractService 상속으로 중복 코드 제거
  */
 @Service("egovUserService")
 @Transactional(readOnly = true)
-public class UserService extends EgovAbstractServiceImpl implements EgovUserService {
+public class UserService extends BaseAbstractService implements EgovUserService {
 
         private final UserRepository userRepository;
         private final UserAuthorityRepository userAuthorityRepository;
@@ -44,10 +43,11 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
 
         public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
                         PasswordEncoder passwordEncoder, UserMapper userMapper) {
-                this.userRepository = Objects.requireNonNull(userRepository);
-                this.userAuthorityRepository = Objects.requireNonNull(userAuthorityRepository);
-                this.passwordEncoder = Objects.requireNonNull(passwordEncoder);
-                this.userMapper = Objects.requireNonNull(userMapper);
+                this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
+                this.userAuthorityRepository = required(userAuthorityRepository,
+                                "UserAuthorityRepository 는 null 일 수 없습니다");
+                this.passwordEncoder = required(passwordEncoder, "PasswordEncoder 는 null 일 수 없습니다");
+                this.userMapper = required(userMapper, "UserMapper 는 null 일 수 없습니다");
         }
 
         /**
@@ -84,28 +84,25 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Override
         @Cacheable(value = "users", key = "'pagedUserList:' + #pageable.pageNumber + ':' + #pageable.pageSize")
         public Page<UserDto> getPagedUserList(@NonNull Pageable pageable) {
-                Page<User> userPage = userRepository.findAll(Objects.requireNonNull(pageable));
+                Page<User> userPage = userRepository.findAll(required(pageable, "Pageable 은 null 일 수 없습니다"));
 
                 List<String> userIds = userPage.getContent().stream()
                                 .map(User::getEsntlId)
                                 .collect(Collectors.toList());
 
                 List<UserAuthority> authorities = userAuthorityRepository
-                                .findByUniqIdIn(Objects.requireNonNull(userIds));
+                                .findByUniqIdIn(required(userIds, "사용자 ID 목록은 null 일 수 없습니다"));
 
                 Map<String, UserAuthority> authorityMap = authorities.stream()
                                 .collect(Collectors.toMap(
-                                                authority -> Objects.requireNonNull(authority.getUniqId()),
+                                                authority -> required(authority.getUniqId(), "권한 ID 는 null 일 수 없습니다"),
                                                 authority -> authority));
 
                 List<UserDto> userDtos = userPage.getContent().stream()
                                 .map(user -> userMapper.toDtoWithAuthority(user, authorityMap.get(user.getEsntlId())))
                                 .collect(Collectors.toList());
 
-                return new PageImpl<>(
-                                Objects.requireNonNull(userDtos),
-                                Objects.requireNonNull(userPage.getPageable()),
-                                userPage.getTotalElements());
+                return new PageImpl<>(userDtos, userPage.getPageable(), userPage.getTotalElements());
         }
 
         /**
@@ -114,16 +111,17 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Override
         @Cacheable(value = "users", key = "#id")
         public UserDto getUserById(@NonNull String id) {
-                User user = userRepository.findById(Objects.requireNonNull(id))
-                                .orElseGet(() -> userRepository.findByEsntlId(Objects.requireNonNull(id))
+                User user = userRepository.findById(required(id, "사용자 ID 는 null 일 수 없습니다"))
+                                .orElseGet(() -> userRepository.findByEsntlId(required(id, "사용자 ID 는 null 일 수 없습니다"))
                                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND)));
 
-                String authorCode = userAuthorityRepository.findById(Objects.requireNonNull(user.getEsntlId()))
+                String authorCode = userAuthorityRepository
+                                .findById(required(user.getEsntlId(), "사용자 고유 ID 는 null 일 수 없습니다"))
                                 .map(UserAuthority::getAuthorCode)
                                 .orElse(null);
 
                 UserAuthority authority = (authorCode != null) ? UserAuthority.builder()
-                                .uniqId(Objects.requireNonNull(user.getEsntlId()))
+                                .uniqId(required(user.getEsntlId()))
                                 .authorCode(authorCode)
                                 .build() : null;
 
@@ -142,16 +140,16 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                 String encodedPassword = passwordEncoder.encode(password);
 
                 User user = User.builder()
-                                .userId(assertNotBlank(userId, "User ID is required"))
-                                .password(assertNotBlank(encodedPassword, "Password is required"))
-                                .userNm(assertNotBlank(userNm, "User name is required"))
+                                .userId(notBlank(userId, "User ID 는 null 이거나 빈 값일 수 없습니다"))
+                                .password(notBlank(encodedPassword, "Password 는 null 이거나 빈 값일 수 없습니다"))
+                                .userNm(notBlank(userNm, "사용자 이름은 null 이거나 빈 값일 수 없습니다"))
                                 .esntlId(esntlId)
                                 .passwordHint(passwordHint)
                                 .passwordCnsr(passwordCnsr)
                                 .role(role != null ? role : Role.USER)
                                 .build();
 
-                userRepository.save(Objects.requireNonNull(user));
+                userRepository.save(required(user));
 
                 // 권한 정보 저장
                 UserAuthority authority = UserAuthority.builder()
@@ -170,7 +168,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUser(@NonNull String userId, @NonNull UserDto userDto) {
-                User user = userRepository.findById(Objects.requireNonNull(userId))
+                User user = userRepository.findById(required(userId, "사용자 ID 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
                 user.update(
@@ -204,7 +202,7 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
          */
         @Transactional
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
-                User user = userRepository.findById(Objects.requireNonNull(userId))
+                User user = userRepository.findById(required(userId, "사용자 ID 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
                 if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
@@ -221,10 +219,10 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUser(@NonNull String userId) {
-                if (!userRepository.existsById(Objects.requireNonNull(userId))) {
+                if (!userRepository.existsById(required(userId, "사용자 ID 는 null 일 수 없습니다"))) {
                         throw new BusinessException(ErrorCode.USER_NOT_FOUND);
                 }
-                userRepository.deleteById(Objects.requireNonNull(userId));
+                userRepository.deleteById(required(userId));
         }
 
         /**
@@ -234,9 +232,9 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public UserResponse signup(UserSignupRequest request) {
-                UserValidator.validateUserSignupRequest(Objects.requireNonNull(request));
+                UserValidator.validateUserSignupRequest(required(request, "회원가입 요청은 null 일 수 없습니다"));
 
-                if (userRepository.existsById(Objects.requireNonNull(request.userId()))) {
+                if (userRepository.existsById(required(request.userId(), "사용자 ID 는 null 일 수 없습니다"))) {
                         throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);
                 }
 
@@ -244,16 +242,16 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
                 String encodedPassword = passwordEncoder.encode(request.password());
 
                 User user = User.builder()
-                                .userId(Objects.requireNonNull(request.userId()))
-                                .password(Objects.requireNonNull(encodedPassword))
-                                .userNm(Objects.requireNonNull(request.userNm()))
+                                .userId(required(request.userId()))
+                                .password(required(encodedPassword))
+                                .userNm(required(request.userNm()))
                                 .esntlId(esntlId)
                                 .passwordHint(request.passwordHint())
                                 .passwordCnsr(request.passwordCnsr())
                                 .role(request.role() != null ? request.role() : Role.USER)
                                 .build();
 
-                userRepository.save(Objects.requireNonNull(user));
+                userRepository.save(required(user));
 
                 // 권한 정보 저장
                 UserAuthority authority = UserAuthority.builder()
@@ -280,14 +278,14 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUserList(@NonNull List<String> userIds) {
-                userRepository.deleteAllByIdInBatch(Objects.requireNonNull(userIds));
+                userRepository.deleteAllByIdInBatch(required(userIds, "사용자 ID 목록은 null 일 수 없습니다"));
         }
 
         /**
          * 아이디 중복 여부를 확인합니다.
          */
         public boolean checkIdDplct(@NonNull String userId) {
-                return userRepository.existsById(Objects.requireNonNull(userId));
+                return userRepository.existsById(required(userId, "사용자 ID 는 null 일 수 없습니다"));
         }
 
         /**
@@ -296,15 +294,8 @@ public class UserService extends EgovAbstractServiceImpl implements EgovUserServ
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword) {
-                User user = userRepository.findById(Objects.requireNonNull(userId))
+                User user = userRepository.findById(required(userId, "사용자 ID 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
                 user.updatePassword(passwordEncoder.encode(newPassword));
-        }
-
-        private String assertNotBlank(String value, String message) {
-                if (value == null || value.trim().isEmpty()) {
-                        throw new IllegalArgumentException(message);
-                }
-                return value;
         }
 }

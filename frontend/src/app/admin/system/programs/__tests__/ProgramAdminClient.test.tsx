@@ -31,7 +31,7 @@ vi.mock('@/app/components/ui/standard-modal', () => ({
   StandardModal: ({ children, isOpen, title, onClose, footer }: any) => isOpen ? (
     <div data-testid="modal">
       <h2 data-testid="modal-title">{title}</h2>
-      <button onClick={onClose}>닫기</button>
+      <button onClick={onClose}>?�기</button>
       {children}
       <div data-testid="modal-footer">{footer}</div>
     </div>
@@ -125,14 +125,14 @@ describe('ProgramAdminClient Component', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('opens the registration modal when "신규 등록" is clicked', async () => {
+  it('opens the registration modal when "?�규 ?�록" is clicked', async () => {
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
     
-    const deployBtn = screen.getByText(/신규 등록/i);
+    const deployBtn = screen.getByText(/?�규 ?�록/i);
     fireEvent.click(deployBtn);
 
     const modal = await screen.findByTestId('modal');
-    expect(within(modal).getByText('신규 프로그램 등록')).toBeDefined();
+    expect(within(modal).getByText('?�규 ?�로그램 ?�록')).toBeDefined();
   });
 
   it('opens the edit modal with correct data when settings icon is clicked', async () => {
@@ -142,7 +142,7 @@ describe('ProgramAdminClient Component', () => {
     fireEvent.click(settingsBtns[0]);
 
     const modal = await screen.findByTestId('modal');
-    expect(within(modal).getByText('프로그램 정보 수정')).toBeDefined();
+    expect(within(modal).getByText('?�로그램 ?�보 ?�정')).toBeDefined();
     
     const input = within(modal).getByDisplayValue('PROG_1') as HTMLInputElement;
     expect(input).toBeDefined();
@@ -170,15 +170,15 @@ describe('ProgramAdminClient Component', () => {
     
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
     
-    const deployBtn = screen.getByText(/신규 등록/i);
+    const deployBtn = screen.getByText(/?�규 ?�록/i);
     fireEvent.click(deployBtn);
 
     const modal = await screen.findByTestId('modal');
 
-    const nameInput = within(modal).getByPlaceholderText('한국어 자산 명칭 입력');
+    const nameInput = within(modal).getByPlaceholderText('?�국???�산 명칭 ?�력');
     fireEvent.change(nameInput, { target: { value: 'New Program Name' } });
 
-    const submitBtn = within(modal).getByText('신규 등록');
+    const submitBtn = within(modal).getByText('?�규 ?�록');
     fireEvent.click(submitBtn);
 
     await waitFor(() => {

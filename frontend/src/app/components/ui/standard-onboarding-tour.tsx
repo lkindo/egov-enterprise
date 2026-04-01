@@ -60,28 +60,28 @@ export function StandardOnboardingTour() {
 
  const steps: TourStep[] = [
  {
- title: "eGov 5.0 현대화 플랫폼에 오신 것을 환영합니다!",
- description: "국가 정보화 표준을 선도하는 새로운 관리 시스템입니다. 더 빠르고, 더 직관적인 업무 환경을 경험해보세요.",
+ title: "eGov 5.0 ?��????�랫?�에 ?�신 것을 ?�영?�니??",
+ description: "�?? ?�보???��????�도?�는 ?�로??관�??�스?�입?�다. ??빠르�? ??직�??�인 ?�무 ?�경??경험?�보?�요.",
  icon: <Sparkles className="text-primary" size={32} />
  },
  {
- title: "스마트 내비게이션",
- description: "왼쪽 사이드바를 통해 모든 업무 모듈에 빠르게 접근할 수 있습니다. 계층형 메뉴와 현대적인 아이콘으로 원하는 메뉴를 쉽게 찾아보세요.",
+ title: "?�마???�비게이??,
+ description: "?�쪽 ?�이?�바�??�해 모든 ?�무 모듈??빠르�??�근?????�습?�다. 계층??메뉴?� ?��??�인 ?�이콘으�??�하??메뉴�??�게 찾아보세??",
  icon: <Layout className="text-blue-500" size={32} />
  },
  {
- title: "글로벌 커맨드 센터 (Ctrl+K)",
- description: "마우스 클릭 없이 키보드만으로 어디든 이동하세요. 단축키 Ctrl+K를 눌러 메뉴 검색, 사용자 찾기, 빠른 액션을 실행할 수 있습니다.",
+ title: "글로벌 커맨???�터 (Ctrl+K)",
+ description: "마우???�릭 ?�이 ?�보?�만?�로 ?�디???�동?�세?? ?�축??Ctrl+K�??�러 메뉴 검?? ?�용??찾기, 빠른 ?�션???�행?????�습?�다.",
  icon: <Command className="text-purple-500" size={32} />
  },
  {
- title: "실시간 지능형 알림",
- description: "상단 종 모양 아이콘을 통해 실시간 업무 알림을 받아보세요. 새로운 결재 요청이나 공지사항이 등록되면 즉시 알려드립니다.",
+ title: "?�시�?지?�형 ?�림",
+ description: "?�단 �?모양 ?�이콘을 ?�해 ?�시�??�무 ?�림??받아보세?? ?�로??결재 ?�청?�나 공�??�항???�록?�면 즉시 ?�려?�립?�다.",
  icon: <Bell className="text-orange-500" size={32} />
  },
  {
- title: "당신만의 워크스페이스",
- description: "마이페이지에서는 개인 정보 관리와 활동 이력을 한눈에 확인할 수 있습니다. 나에게 최적화된 대시보드를 만나보세요.",
+ title: "?�신만의 ?�크?�페?�스",
+ description: "마이?�이지?�서??개인 ?�보 관리�? ?�동 ?�력???�눈???�인?????�습?�다. ?�에�?최적?�된 ?�?�보?��? 만나보세??",
  icon: <User className="text-emerald-500" size={32} />
  }
  ];
@@ -113,7 +113,7 @@ export function StandardOnboardingTour() {
  <button
  onClick={handleComplete}
  className="absolute top-6 right-6 p-2 hover:bg-muted rounded-full transition-colors z-20 text-muted-foreground"
- aria-label="가이드 닫기"
+ aria-label="가?�드 ?�기"
  >
  <X size={20} />
  </button>
@@ -140,24 +140,24 @@ export function StandardOnboardingTour() {
  "rounded-xl font-bold h-12 px-6 gap-2",
  currentStep === 0 && "invisible"
  )}
- aria-label="이전 단계로 이동"
+ aria-label="?�전 ?�계�??�동"
  >
- <ChevronLeft size={18} /> 이전
+ <ChevronLeft size={18} /> ?�전
  </Button>
 
  <div className="flex gap-2">
  {currentStep < steps.length - 1 ? (
  <>
- <Button variant="ghost" onClick={handleComplete} className="rounded-xl font-bold h-12 px-6 text-muted-foreground" aria-label="가이드 건너뛰기">
- 건너뛰기
+ <Button variant="ghost" onClick={handleComplete} className="rounded-xl font-bold h-12 px-6 text-muted-foreground" aria-label="가?�드 건너?�기">
+ 건너?�기
  </Button>
- <Button onClick={nextStep} className="rounded-xl font-black h-12 px-8 gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all" aria-label="다음 단계로 이동">
- 다음 가이드 <ChevronRight size={18} />
+ <Button onClick={nextStep} className="rounded-xl font-black h-12 px-8 gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all" aria-label="?�음 ?�계�??�동">
+ ?�음 가?�드 <ChevronRight size={18} />
  </Button>
  </>
  ) : (
- <Button onClick={handleComplete} className="rounded-xl font-black h-12 px-10 gap-2 shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white hover:scale-105 transition-all" aria-label="가이드 완료 및 시작하기">
- 시작하기 <CheckCircle2 size={18} />
+ <Button onClick={handleComplete} className="rounded-xl font-black h-12 px-10 gap-2 shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white hover:scale-105 transition-all" aria-label="가?�드 ?�료 �??�작?�기">
+ ?�작?�기 <CheckCircle2 size={18} />
  </Button>
  )}
  </div>
@@ -166,7 +166,7 @@ export function StandardOnboardingTour() {
 
  <div className="bg-muted/20 px-10 py-4 border-t border-primary/5 text-center">
  <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.3em]">
- Step {currentStep + 1} of {steps.length} • User Onboarding Experience
+ Step {currentStep + 1} of {steps.length} ??User Onboarding Experience
  </p>
  </div>
  </div>

@@ -72,7 +72,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
           {icon}
         </div>
         <HubStatusBadge
-          label="실시간 동기화"
+          label="?�시�??�기??
           variant={selected ? 'default' : 'success'}
           className={selected ? 'border-white/20' : 'text-[8px] font-black tracking-widest'}
         />
@@ -98,13 +98,13 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
   const renderJobList = () => (
     <div className="space-y-4">
       {jobs.length === 0 ? (
-        <div className="p-10 text-center opacity-30 font-black text-xs tracking-widest border-2 border-dashed border-border rounded-3xl">등록된 업무가 없습니다.</div>
+        <div className="p-10 text-center opacity-30 font-black text-xs tracking-widest border-2 border-dashed border-border rounded-3xl">?�록???�무가 ?�습?�다.</div>
       ) : jobs.map((item) => (
         <WorkListItem
           key={item.deptJobBxId}
           id={item.deptJobBxId}
           title={item.deptJobBxNm}
-          subtitle={`부서: ${item.deptId || '글로벌'} • ID: ${item.deptJobBxId}`}
+          subtitle={`부?? ${item.deptId || '글로벌'} ??ID: ${item.deptJobBxId}`}
           icon={<ClipboardList size={22} />}
           selected={selectedItemId === item.deptJobBxId}
           onClick={() => setSelectedItemId(item.deptJobBxId)}
@@ -116,13 +116,13 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
   const renderReportList = () => (
     <div className="space-y-4">
       {reports.length === 0 ? (
-        <div className="p-10 text-center opacity-30 font-black text-xs tracking-widest border-2 border-dashed border-border rounded-3xl">등록된 보고서가 없습니다.</div>
+        <div className="p-10 text-center opacity-30 font-black text-xs tracking-widest border-2 border-dashed border-border rounded-3xl">?�록??보고?��? ?�습?�다.</div>
       ) : reports.map((item) => (
         <WorkListItem
           key={item.reprtId}
           id={item.reprtId}
           title={item.reprtSj}
-          subtitle={`작성자: ${item.wrterNm} • ${item.reprtDe}`}
+          subtitle={`?�성?? ${item.wrterNm} ??${item.reprtDe}`}
           icon={<FileText size={22} />}
           selected={selectedItemId === item.reprtId}
           onClick={() => setSelectedItemId(item.reprtId)}
@@ -135,18 +135,18 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="p-8 rounded-[2rem] bg-white border-2 border-slate-100 shadow-xl space-y-8">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-black tracking-tighter uppercase">통합 스마트 캘린더</h3>
+          <h3 className="text-xl font-black tracking-tighter uppercase">?�합 ?�마??캘린??/h3>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="rounded-full text-[9px] font-black">개인 일정</Button>
-            <Button size="sm" variant="default" className="rounded-full text-[9px] font-black bg-slate-900 text-white">부서 일정</Button>
+            <Button size="sm" variant="outline" className="rounded-full text-[9px] font-black">개인 ?�정</Button>
+            <Button size="sm" variant="default" className="rounded-full text-[9px] font-black bg-slate-900 text-white">부???�정</Button>
           </div>
         </div>
         <div className="aspect-[4/3] bg-slate-50 rounded-[2.5rem] flex flex-col items-center justify-center border-2 border-dashed border-slate-100 p-12 space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center text-primary mb-2">
             <Calendar size={32} />
           </div>
-          <p className="text-sm font-black text-slate-900 tracking-tighter uppercase">대화형 스케줄링 시스템</p>
-          <p className="text-[10px] font-bold text-slate-400 max-w-[200px] text-center leading-relaxed">준비된 캘린더 엔진이 비즈니스 일정을 실시간으로 동기화합니다.</p>
+          <p className="text-sm font-black text-slate-900 tracking-tighter uppercase">?�?�형 ?��?줄링 ?�스??/p>
+          <p className="text-[10px] font-bold text-slate-400 max-w-[200px] text-center leading-relaxed">준비된 캘린???�진??비즈?�스 ?�정???�시간으�??�기?�합?�다.</p>
         </div>
       </div>
     </div>
@@ -155,22 +155,22 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="워크플로우 허브"
-        breadcrumbs={[{ label: '업무관리' }, { label: '메인 워크스테이션' }]}
+        title="?�크?�로???�브"
+        breadcrumbs={[{ label: '?�무관�? }, { label: '메인 ?�크?�테?�션' }]}
       />
 
       <HubHeader
-        title="업무 및 인텔리전스"
-        highlight="허브"
-        subtitle="전사 부서 업무 처리 및 비즈니스 데이터 자산 통합 관리 센터"
+        title="?�무 �??�텔리전??
+        highlight="?�브"
+        subtitle="?�사 부???�무 처리 �?비즈?�스 ?�이???�산 ?�합 관�??�터"
         icon={Briefcase}
         actions={
           <div className="flex gap-4 p-2">
             <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">
-              <Filter size={16} /> 뷰포트 필터
+              <Filter size={16} /> 뷰포???�터
             </Button>
             <Button size="lg" className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest air-shadow-primary hover:-translate-y-1 transition-all gap-2 bg-slate-900 text-white border-none">
-              <Plus size={18} /> 새 업무 생성
+              <Plus size={18} /> ???�무 ?�성
             </Button>
           </div>
         }
@@ -245,14 +245,14 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
           <HubSectionCard
             title={selectedItemId ? "ASSET DEEP ANALYSIS" : activeTab === 'calendar' ? "SCHEDULE INTELLIGENCE" : "WAITING FOR FOCUS"}
             description={selectedItemId
-              ? `선출된 엔티티(#${selectedItemId})에 대한 실시간 연동 및 비즈니스 로직 분석이 활성화되었습니다.`
-              : activeTab === 'calendar' ? "전사 및 개인 일정을 통합하여 비즈니스 가용성을 한눈에 파악합니다."
-                : "왼쪽 리스트에서 분석할 업무 개체 또는 보고 자료를 선택하여 데이터 요약을 시작하십시오."}
+              ? `?�출???�티??#${selectedItemId})???�???�시�??�동 �?비즈?�스 로직 분석???�성?�되?�습?�다.`
+              : activeTab === 'calendar' ? "?�사 �?개인 ?�정???�합?�여 비즈?�스 가?�성???�눈???�악?�니??"
+                : "?�쪽 리스?�에??분석???�무 개체 ?�는 보고 ?�료�??�택?�여 ?�이???�약???�작?�십?�오."}
             icon={selectedItemId ? Sparkles : activeTab === 'calendar' ? Calendar : Activity}
             statusBadges={
               <>
-                <HubStatusBadge label="시스템 정상" icon={CheckCircle2} variant="success" className="text-[9px] font-black tracking-widest" />
-                <HubStatusBadge label="스트리밍 활성" icon={Clock} variant="default" className="text-[9px] font-black tracking-widest" />
+                <HubStatusBadge label="?�스???�상" icon={CheckCircle2} variant="success" className="text-[9px] font-black tracking-widest" />
+                <HubStatusBadge label="?�트리밍 ?�성" icon={Clock} variant="default" className="text-[9px] font-black tracking-widest" />
               </>
             }
           >
@@ -270,8 +270,8 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
                     <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center shadow-xl border border-border/20 mb-6 relative z-10 transition-transform group-hover:rotate-12">
                       <Database size={32} className="text-primary" />
                     </div>
-                    <p className="text-xs font-black text-muted-foreground tracking-[0.4em] uppercase relative z-10">인텔리전스 엔진 시각화</p>
-                    <p className="text-xl font-black text-foreground tracking-tighter mt-4 max-w-sm relative z-10">데이터 구조 분석 및 워크플로우 시각화 컴포넌트 준비됨</p>
+                    <p className="text-xs font-black text-muted-foreground tracking-[0.4em] uppercase relative z-10">?�텔리전???�진 ?�각??/p>
+                    <p className="text-xl font-black text-foreground tracking-tighter mt-4 max-w-sm relative z-10">?�이??구조 분석 �??�크?�로???�각??컴포?�트 준비됨</p>
                   </div>
                   <Button className="w-full h-18 text-base rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-black tracking-[0.4em] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all uppercase">
                     Launch Full Analytics
@@ -283,7 +283,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
                     <Briefcase size={48} />
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">{activeTab === 'calendar' ? 'Ready to Sync' : '시스템 대기'}</h3>
+                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">{activeTab === 'calendar' ? 'Ready to Sync' : '?�스???��?}</h3>
                     <p className="text-[11px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed">
                       {activeTab === 'calendar' ? 'Connect Calendar Service for Insights' : 'Select Object to Capture Stream'}
                     </p>
@@ -298,7 +298,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
               title="ACTIVE WORKFLOWS"
               value="12"
               icon={<Activity size={24} />}
-              status="안정"
+              status="?�정"
               color="text-emerald-500"
             />
             <SummaryBlock

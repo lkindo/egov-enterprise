@@ -63,27 +63,27 @@ export function SmartOnboardingHub() {
  const steps: TourStep[] = [
  {
  title: "eGov 5.0 Intelligence Platform",
- description: "차세대 공공 행정 표준을 선도하는 지능형 운영 플랫폼에 오신 것을 환영합니다. 인프라 관제부터 비즈니스 워크플로우까지, 데이터 중심의 업무 환경이 당신을 기다립니다.",
+ description: "차세?� 공공 ?�정 ?��????�도?�는 지?�형 ?�영 ?�랫?�에 ?�신 것을 ?�영?�니?? ?�프??관?��???비즈?�스 ?�크?�로?�까지, ?�이??중심???�무 ?�경???�신??기다립니??",
  icon: <Sparkles className="text-primary animate-pulse" size={40} />
  },
  {
- title: "인텔리전스 커맨드 센터",
- description: "명령어 기반의 빠른 탐색과 액션을 경험하세요. 마우스 없이 CMD+K 만으로 시스템의 모든 구석구석을 제어하고 정보를 찾을 수 있습니다.",
+ title: "?�텔리전??커맨???�터",
+ description: "명령??기반??빠른 ?�색�??�션??경험?�세?? 마우???�이 CMD+K 만으�??�스?�의 모든 구석구석???�어?�고 ?�보�?찾을 ???�습?�다.",
  icon: <Command className="text-purple-500" size={40} />
  },
  {
- title: "실시간 시스템 관측 (Observability)",
- description: "서버의 심장박동을 실시간으로 추적합니다. CPU, 메모리, DB 커넥션을 3초 주기로 정밀 분석하여 안정적인 서비스 운영을 보장합니다.",
+ title: "?�시�??�스??관�?(Observability)",
+ description: "?�버???�장박동???�시간으�?추적?�니?? CPU, 메모�? DB 커넥?�을 3�?주기�??��? 분석?�여 ?�정?�인 ?�비???�영??보장?�니??",
  icon: <Activity className="text-rose-500" size={40} />
  },
  {
- title: "워크플로우 프로세스 캔버스",
- description: "복잡한 비즈니스 로직을 시각화된 캠버스에서 관리하세요. 도메인 이벤트 기반의 스마트 엔진이 당신의 업무 프로세스를 유연하게 연결합니다.",
+ title: "?�크?�로???�로?�스 캔버??,
+ description: "복잡??비즈?�스 로직???�각?�된 캠버?�에??관리하?�요. ?�메???�벤??기반???�마???�진???�신???�무 ?�로?�스�??�연?�게 ?�결?�니??",
  icon: <Layout className="text-indigo-500" size={40} />
  },
  {
- title: "하이퍼 데이터 그리드",
- description: "엔터프라이즈급 대용량 데이터를 고성능 그리드로 완벽히 제어합니다. 컬럼 고정, 실시간 필터링, 인라인 수정을 통해 데이터 통찰력을 극대화하세요.",
+ title: "?�이???�이??그리??,
+ description: "?�터?�라?�즈�??�?�량 ?�이?��? 고성??그리?�로 ?�벽???�어?�니?? 컬럼 고정, ?�시�??�터�? ?�라???�정???�해 ?�이???�찰?�을 극�??�하?�요.",
  icon: <CheckCircle2 className="text-emerald-500" size={40} />
  }
  ];
@@ -116,7 +116,7 @@ export function SmartOnboardingHub() {
  </div>
  <div className="absolute bottom-10 left-10 flex items-center gap-3">
  <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
- <span className="text-[10px] font-black text-white/50 tracking-[0.4em]">기능 스포트라이트</span>
+ <span className="text-[10px] font-black text-white/50 tracking-[0.4em]">기능 ?�포?�라?�트</span>
  </div>
  </div>
 
@@ -134,7 +134,7 @@ export function SmartOnboardingHub() {
  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-700">
  <div className="flex items-center gap-2">
  <div className="h-px w-8 bg-primary" />
- <span className="text-[10px] font-black text-primary tracking-[0.3em]">모듈 가이드</span>
+ <span className="text-[10px] font-black text-primary tracking-[0.3em]">모듈 가?�드</span>
  </div>
  <h2 className="text-3xl font-black tracking-tighter text-white leading-[1.1]">
  {steps[currentStep].title}
@@ -147,28 +147,28 @@ export function SmartOnboardingHub() {
  <div className="flex flex-col gap-4">
  <div className="flex items-center gap-3">
  <CheckCircle2 size={16} className="text-emerald-500" />
- <span className="text-sm font-bold text-white/80">직관적인 사용자 인터페이스</span>
+ <span className="text-sm font-bold text-white/80">직�??�인 ?�용???�터?�이??/span>
  </div>
  <div className="flex items-center gap-3">
  <CheckCircle2 size={16} className="text-emerald-500" />
- <span className="text-sm font-bold text-white/80">실시간 데이터 연동 및 분석</span>
+ <span className="text-sm font-bold text-white/80">?�시�??�이???�동 �?분석</span>
  </div>
  </div>
  </div>
 
  <div className="flex items-center justify-between gap-4 pt-10 border-t border-white/5">
  <Button variant="ghost" onClick={prevStep} className={cn("rounded-2xl font-black h-12 px-6 text-white/40 hover:text-white transition-all", currentStep === 0 && "invisible")}>
- <ChevronLeft size={20} /> 이전
+ <ChevronLeft size={20} /> ?�전
  </Button>
 
  <div className="flex gap-3">
  {currentStep < steps.length - 1 ? (
  <Button onClick={nextStep} className="rounded-2xl font-black h-14 px-10 bg-primary text-white shadow-[0_15px_30px_-5px_rgba(59,130,246,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
- {currentStep === 0 ? "플랫폼 둘러보기" : "다음 기능"} <ArrowRight size={18} />
+ {currentStep === 0 ? "?�랫???�러보기" : "?�음 기능"} <ArrowRight size={18} />
  </Button>
  ) : (
  <Button onClick={handleComplete} className="rounded-2xl font-black h-14 px-12 bg-emerald-500 text-white shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
- 시작하기 <CheckCircle2 size={18} />
+ ?�작?�기 <CheckCircle2 size={18} />
  </Button>
  )}
  </div>

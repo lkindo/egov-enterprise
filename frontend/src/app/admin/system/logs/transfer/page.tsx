@@ -39,7 +39,7 @@ const TransferLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '제공기관코드',
+            header: '?�공기�?코드',
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2">
                     <Box size={14} className="text-primary/40" />
@@ -49,7 +49,7 @@ const TransferLogAdminPage = () => {
             className: 'w-36'
         },
         {
-            header: '제공시스템',
+            header: '?�공?�스??,
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/30" />
@@ -59,7 +59,7 @@ const TransferLogAdminPage = () => {
             className: 'w-32'
         },
         {
-            header: '요청시스템',
+            header: '?�청?�스??,
             accessor: (item: TransferLog) => (
                 <code className="px-2 py-0.5 bg-sky-50 text-sky-600 text-[10px] font-black rounded border border-sky-100">
                     {item.requstSysCode}
@@ -79,7 +79,7 @@ const TransferLogAdminPage = () => {
             className: 'w-24'
         },
         {
-            header: '등록일시',
+            header: '?�록?�시',
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     <Calendar size={14} className="opacity-30" />
@@ -92,9 +92,9 @@ const TransferLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="송수신 로그" breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '송수신 로그' }]} />
+            <PageHeader title="?�수??로그" breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }, { label: '?�수??로그' }]} />
 
-            <HubHeader title="연계 마스터" highlight="송수신 로그" subtitle="외부 시스템 및 내부 모듈 간의 데이터 송수신 이력을 실시간으로 모니터링합니다." icon={Share2} />
+            <HubHeader title="?�계 마스?? highlight="?�수??로그" subtitle="?��? ?�스??�??��? 모듈 간의 ?�이???�수???�력???�시간으�?모니?�링?�니??" icon={Share2} />
 
             <StandardDataTable
                 columns={columns}
@@ -106,7 +106,7 @@ const TransferLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page번호: page }),
                 }}
                 search={{
-                    placeholder: '기관코드, 시스템 검색...',
+                    placeholder: '기�?코드, ?�스??검??..',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page번호: 1 }),
                 }}
             />

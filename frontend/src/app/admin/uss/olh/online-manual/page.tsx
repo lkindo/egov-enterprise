@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import ManualAdminClient from './ManualAdminClient';
 
 export const metadata = {
- title: '온라인 매뉴얼 관리 | 부가서비스',
+ title: '?�라??매뉴??관�?| 부가?�비??,
 };
 
 export default async function ManualAdminPage({

@@ -49,42 +49,41 @@ interface MenuItem {
 }
 
 const ICON_MAP: Record<string, any> = {
-  '대시보드': LayoutDashboard,
+  '?�?�보??: LayoutDashboard,
   '관리자': Settings,
-  '사용자관리': Users,
-  '사용자 계정 및 권한 관리': Users,
-  '보안관리': ShieldCheck,
-  '통합 보안 및 접속 정책': ShieldCheck,
-  '시스템관리': Settings,
-  '시스템 설정': Settings,
-  '게시판': MessageSquare,
-  '협업': Users,
-  '일정관리': CalendarDays,
-  '스마트 일정/일지 관리': CalendarDays,
-  '통계': LayoutDashboard,
-  '감사 및 통계 모니터링': BarChart3,
-  '도움말': BookOpen,
-  '사용자지원': UserCheck,
-  '설문조사': ClipboardList,
-  '설문조사 및 투표 센터': ClipboardList,
-  '마이페이지': UserCircle,
-  '마이페이지관리': Settings,
-  '공통코드관리': Database,
-  '행정코드관리': Database,
-  '기관코드수신': Database,
-  '로그관리': FileText,
-  '임직원 및 부서 관리': Building2,
+  '?�용?��?�?: Users,
+  '?�용??계정 �?권한 관�?: Users,
+  '보안관�?: ShieldCheck,
+  '?�합 보안 �??�속 ?�책': ShieldCheck,
+  '?�스?��?�?: Settings,
+  '?�스???�정': Settings,
+  '게시??: MessageSquare,
+  '?�업': Users,
+  '?�정관�?: CalendarDays,
+  '?�마???�정/?��? 관�?: CalendarDays,
+  '?�계': LayoutDashboard,
+  '감사 �??�계 모니?�링': BarChart3,
+  '?��?�?: BookOpen,
+  '?�용?��???: UserCheck,
+  '?�문조사': ClipboardList,
+  '?�문조사 �??�표 ?�터': ClipboardList,
+  '마이?�이지': UserCircle,
+  '마이?�이지관�?: Settings,
+  '공통코드관�?: Database,
+  '?�정코드관�?: Database,
+  '기�?코드?�신': Database,
+  '로그관�?: FileText,
+  '?�직??�?부??관�?: Building2,
   '기본': CircleDot
 };
 
 const DOMAIN_ICON_MAP: Record<number, any> = {
-  10: LayoutGrid, // 워크스페이스
-  11: MessageSquare, // 커뮤니티
-  12: BookOpen, // 고객지원센터
-  90: Settings, // 통합 관리 센터
-  1000000: Briefcase, // 🏢 Workspace (New Domain Layout)
-  2000000: Library, // 💬 Community & Content (New Domain Layout)
-  3000000: Sparkles, // 🙋‍♂️ Service & Operation (New Domain Layout)
+  10: LayoutGrid, // ?�크?�페?�스
+  11: MessageSquare, // 커�??�티
+  12: BookOpen, // 고객지?�센??  90: Settings, // ?�합 관�??�터
+  1000000: Briefcase, // ?�� Workspace (New Domain Layout)
+  2000000: Library, // ?�� Community & Content (New Domain Layout)
+  3000000: Sparkles, // ?��?�♂�?Service & Operation (New Domain Layout)
 };
 
 const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
@@ -150,7 +149,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
       depth === 1 && "pl-10",
       depth === 2 && "pl-14",
       depth >= 3 && "pl-16",
-      depth > 0 && "font-medium" // 하위 메뉴는 폰트 두께를 약간 조절
+      depth > 0 && "font-medium" // ?�위 메뉴???�트 ?�께�??�간 조절
     )}>
       <div className="flex items-center gap-3">
         {Icon && depth === 0 && (
@@ -214,7 +213,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
           >
             <div className={cn(
               "mt-1 space-y-0.5 relative",
-              depth === 0 && "ml-5 border-l border-border/40" // 1단계 하위에만 가이드라인 추가
+              depth === 0 && "ml-5 border-l border-border/40" // 1?�계 ?�위?�만 가?�드?�인 추�?
             )}>
               {item.children?.map((child, idx) => (
                 <NavItem key={child.menuNo || `child-${idx}`} item={child} depth={depth + 1} />
@@ -283,7 +282,7 @@ const MobileDomainNode = ({
               </div>
             ) : menus.length === 0 ? (
               <div className="p-4 text-center text-[10px] font-medium text-muted-foreground/40">
-                하위 메뉴가 없습니다.
+                ?�위 메뉴가 ?�습?�다.
               </div>
             ) : (
               <div className="space-y-1 py-1">
@@ -363,8 +362,8 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: any[] }) {
                 <span className="text-primary-foreground font-bold text-lg">eG</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-bold tracking-tight leading-none text-foreground">엔터프라이즈</span>
-                <span className="text-[10px] text-muted-foreground/60 font-semibold tracking-wider">포털 5.0</span>
+                <span className="text-base font-bold tracking-tight leading-none text-foreground">?�터?�라?�즈</span>
+                <span className="text-[10px] text-muted-foreground/60 font-semibold tracking-wider">?�털 5.0</span>
               </div>
             </Link>
             <Button
@@ -382,7 +381,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: any[] }) {
             <div className="lg:hidden space-y-2">
               <div className="mb-6 px-2">
                 <div className="text-[11px] font-bold text-muted-foreground/40 tracking-wider">
-                  서비스 모듈
+                  ?�비??모듈
                 </div>
               </div>
               {topMenus.map((domain, index) => (
@@ -401,7 +400,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: any[] }) {
             <div className="hidden lg:block space-y-1">
               <div className="mb-6 px-2 flex items-center justify-between">
                 <div className="text-[11px] font-bold text-muted-foreground/40 tracking-wider">
-                  전체 메뉴
+                  ?�체 메뉴
                 </div>
                 {topMenus.find(m => m.menuNo === activeMenuNo) && (
                   <Badge variant="secondary" className="text-[9px] px-2 py-0 border-none">
@@ -419,7 +418,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: any[] }) {
               ) : menus.length === 0 ? (
                 <div className="p-8 text-center space-y-3 opacity-20">
                   <Database size={32} className="mx-auto" />
-                  <p className="text-sm font-bold tracking-tight">메뉴를 불러올 수 없습니다.</p>
+                  <p className="text-sm font-bold tracking-tight">메뉴�?불러?????�습?�다.</p>
                 </div>
               ) : (
                 <nav className="space-y-1">
@@ -439,7 +438,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: any[] }) {
                 <span className="text-[10px] font-bold text-primary tracking-tight">eGovFrame 5.0</span>
               </div>
               <p className="text-[9px] font-medium text-muted-foreground/50 leading-relaxed">
-                현대화된 엔터프라이즈 UI 키트
+                ?��??�된 ?�터?�라?�즈 UI ?�트
                 <br />
                 최종 버전 1.0.2
               </p>

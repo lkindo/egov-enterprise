@@ -7,8 +7,8 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { Building2 } from 'lucide-react';
 
 export const metadata = {
-  title: '공공기관 인스턴스 거버넌스 | Sentinel Registry',
-  description: '전국 행정 기관 및 공공 기관의 시스템 식별 코드를 동기화하고 관리합니다.',
+  title: '공공기�? ?�스?�스 거버?�스 | Sentinel Registry',
+  description: '?�국 ?�정 기�? �?공공 기�????�스???�별 코드�??�기?�하�?관리합?�다.',
 };
 
 export default async function InstitutionCodePage() {
@@ -29,8 +29,8 @@ export default async function InstitutionCodePage() {
   return (
     <div className="space-y-12">
       <PageHeader
-        title="공공기관 노드 인텔리전스"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '기관코드' }]}
+        title="공공기�? ?�드 ?�텔리전??
+        breadcrumbs={[{ label: '?�스?��?�? }, { label: '코드관�? }, { label: '기�?코드' }]}
       />
       
       <Suspense fallback={

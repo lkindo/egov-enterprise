@@ -30,7 +30,7 @@ const UserLogAdminPage = () => {
 
     const columns: Column<UserLog>[] = [
         {
-            header: '발생일자',
+            header: '발생?�자',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
@@ -40,7 +40,7 @@ const UserLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '서비스명',
+            header: '?�비?�명',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
@@ -49,7 +49,7 @@ const UserLogAdminPage = () => {
             )
         },
         {
-            header: '메서드명',
+            header: '메서?�명',
             accessor: (item: UserLog) => (
                 <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-[10px] text-slate-600">
                     {item.methodNm}
@@ -57,7 +57,7 @@ const UserLogAdminPage = () => {
             )
         },
         {
-            header: '요청자ID',
+            header: '?�청?�ID',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-full w-fit shadow-sm">
                     <span className="text-xs font-black text-slate-700">{item.rqesterId}</span>
@@ -66,7 +66,7 @@ const UserLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '등록일시',
+            header: '?�록?�시',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/80 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
@@ -79,9 +79,9 @@ const UserLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="사용자 로그" breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '사용자 로그' }]} />
+            <PageHeader title="?�용??로그" breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }, { label: '?�용??로그' }]} />
 
-            <HubHeader title="행정 이력" highlight="사용자 로그" subtitle="시스템 사용자의 서비스 모듈별 상호작용 및 작업 수행 이력을 명확하게 관리합니다." icon={History} />
+            <HubHeader title="?�정 ?�력" highlight="?�용??로그" subtitle="?�스???�용?�의 ?�비??모듈�??�호?�용 �??�업 ?�행 ?�력??명확?�게 관리합?�다." icon={History} />
 
             <StandardDataTable
                 columns={columns}
@@ -93,7 +93,7 @@ const UserLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page번호: page }),
                 }}
                 search={{
-                    placeholder: '서비스명, 요청자 검색...',
+                    placeholder: '?�비?�명, ?�청??검??..',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page번호: 1 }),
                 }}
             />

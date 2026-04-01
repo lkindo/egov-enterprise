@@ -33,10 +33,9 @@ import { usePathname } from 'next/navigation';
 import { MenuInfo } from '@/types/foundation/menu';
 
 const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
-  10: LayoutGrid, // 워크스페이스
-  11: Users, // 커뮤니티
-  12: HeartHandshake, // 고객지원센터
-  90: ShieldCheck, // 통합 관리 센터
+  10: LayoutGrid, // ?�크?�페?�스
+  11: Users, // 커�??�티
+  12: HeartHandshake, // 고객지?�센??  90: ShieldCheck, // ?�합 관�??�터
 };
 
 export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
@@ -106,8 +105,8 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
             <span className="text-primary-foreground font-bold text-lg">eG</span>
           </div>
           <div className="hidden sm:flex flex-col">
-            <span className="text-sm font-bold leading-tight text-foreground">전자정부 5.0</span>
-            <span className="text-[10px] text-muted-foreground font-semibold tracking-tight">전자정부 포털</span>
+            <span className="text-sm font-bold leading-tight text-foreground">?�자?��? 5.0</span>
+            <span className="text-[10px] text-muted-foreground font-semibold tracking-tight">?�자?��? ?�털</span>
           </div>
         </Link>
 
@@ -141,7 +140,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
         <div className="flex items-center gap-1 md:gap-2">
           <Link
             href="/help"
-            title="메뉴구성 설명"
+            title="메뉴구성 ?�명"
             className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "hidden md:flex text-muted-foreground")}
           >
             <Info size={20} />
@@ -152,7 +151,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
             size="icon"
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
             className="text-muted-foreground"
-            title="테마 변경"
+            title="?�마 변�?
           >
             {mounted ? (resolvedTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />) : <div className="w-5 h-5" />}
           </Button>
@@ -185,7 +184,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
                     </div>
                     <div className="flex flex-col items-start mr-1 hidden sm:flex">
                       <span className="text-sm font-bold leading-none">{user.name}</span>
-                      <span className="text-[10px] text-muted-foreground font-semibold mt-0.5">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
+                      <span className="text-[10px] text-muted-foreground font-semibold mt-0.5">{user.userSe === 'USR' ? '?�용?? : '관리자'}</span>
                     </div>
                     <ChevronDown size={14} className="text-muted-foreground opacity-50 hidden sm:block" />
                   </Button>
@@ -197,10 +196,10 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
                   </div>
                   <div className="space-y-0.5">
                     <Link href="/mypage" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
-                      <span className="flex items-center gap-2"><User size={14} /> 개인정보수정</span>
+                      <span className="flex items-center gap-2"><User size={14} /> 개인?�보?�정</span>
                     </Link>
                     <Link href="/admin/system/settings" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
-                      <span className="flex items-center gap-2"><Settings size={14} /> 환경설정</span>
+                      <span className="flex items-center gap-2"><Settings size={14} /> ?�경?�정</span>
                     </Link>
                     <div className="h-px bg-muted my-1" />
                     <Button
@@ -208,15 +207,14 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
                       className="w-full justify-start text-sm h-9 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 font-medium"
                       onClick={() => logout()}
                     >
-                      <LogOut size={14} /> 로그아웃
+                      <LogOut size={14} /> 로그?�웃
                     </Button>
                   </div>
                 </PopoverContent>
               </Popover>
             ) : (
               <Link href="/login" className={cn(buttonVariants({ size: "sm" }), "rounded-lg h-9 px-4 font-bold")}>
-                로그인
-              </Link>
+                로그??              </Link>
             )}
           </div>
         </div>
@@ -231,7 +229,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
           message: n.ntfcCn,
           time: n.ntfcPnttm,
           isRead: n.readYn === 'Y',
-          type: n.ntfcSj?.includes('보안') ? 'SECURITY' : n.ntfcSj?.includes('시스템') ? 'SYSTEM' : 'ACTIVITY'
+          type: n.ntfcSj?.includes('보안') ? 'SECURITY' : n.ntfcSj?.includes('?�스??) ? 'SYSTEM' : 'ACTIVITY'
         }))}
       />
 

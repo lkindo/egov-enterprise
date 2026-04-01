@@ -26,9 +26,9 @@ interface TimelineItemProps {
 }
 
 export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspect, isSelected }) => {
-  const isSecurity = log.histCn.includes('로그인') || log.histCn.includes('보안');
-  const isSystem = log.histCn.includes('시스템') || log.histCn.includes('배포');
-  const isError = log.histCn.includes('오류') || log.histCn.includes('실패');
+  const isSecurity = log.histCn.includes('로그??) || log.histCn.includes('보안');
+  const isSystem = log.histCn.includes('?�스??) || log.histCn.includes('배포');
+  const isError = log.histCn.includes('?�류') || log.histCn.includes('?�패');
   
   const getIcon = () => {
     if (isError) return <AlertCircle size={20} />;

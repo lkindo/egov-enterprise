@@ -32,8 +32,8 @@ export function IntelligenceMeetingPlanner() {
  <Calendar size={24} />
  </div>
  <div>
- <h3 className="text-xl font-black tracking-tight ">스마트 스케줄링 캔버스</h3>
- <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-60 ">실시간 리소스 할당 엔진</p>
+ <h3 className="text-xl font-black tracking-tight ">?�마???��?줄링 캔버??/h3>
+ <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-60 ">?�시�?리소???�당 ?�진</p>
  </div>
  </div>
  <div className="flex gap-2">
@@ -94,7 +94,7 @@ export function IntelligenceMeetingPlanner() {
  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform">
  <Zap size={100} />
  </div>
- <h3 className="relative z-10 text-sm font-black tracking-[0.3em] opacity-50 mb-6 ">활성 용량</h3>
+ <h3 className="relative z-10 text-sm font-black tracking-[0.3em] opacity-50 mb-6 ">?�성 ?�량</h3>
  <div className="relative z-10 space-y-2">
  <div className="flex items-end justify-between">
  <p className="text-3xl font-black tracking-tighter tabular-nums">78%</p>
@@ -108,7 +108,7 @@ export function IntelligenceMeetingPlanner() {
 
  <div className="p-8 bg-card border-2 border-primary/5 rounded-[3.5rem] shadow-xl space-y-6">
  <div className="flex items-center justify-between">
- <h4 className="text-sm font-black tracking-tight ">회의실 매트릭스</h4>
+ <h4 className="text-sm font-black tracking-tight ">?�의??매트�?��</h4>
  <Sparkles size={16} className="text-primary opacity-40" />
  </div>
  <div className="space-y-4">
@@ -133,9 +133,9 @@ export function IntelligenceMeetingPlanner() {
 
  <div className="p-10 bg-primary rounded-[3rem] text-white shadow-2xl shadow-primary/20 text-center space-y-4">
  <Clock size={40} className="mx-auto opacity-30" />
- <h4 className="text-xl font-black tracking-tight leading-none ">Instant <br />예약</h4>
- <p className="text-[10px] font-bold opacity-80 tracking-tight leading-relaxed">AI가 일정을 분석하여 최적의 시간을 찾습니다</p>
- <Button variant="secondary" className="w-full h-12 rounded-xl font-black text-[10px] tracking-tight mt-4">빠른 예약</Button>
+ <h4 className="text-xl font-black tracking-tight leading-none ">Instant <br />?�약</h4>
+ <p className="text-[10px] font-bold opacity-80 tracking-tight leading-relaxed">AI가 ?�정??분석?�여 최적???�간??찾습?�다</p>
+ <Button variant="secondary" className="w-full h-12 rounded-xl font-black text-[10px] tracking-tight mt-4">빠른 ?�약</Button>
  </div>
  </div>
  </div>

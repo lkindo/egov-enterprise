@@ -5,8 +5,8 @@ import AdminStatsClient from './AdminStatsClient';
 import { SummaryStats, MenuStats } from '@/types/foundation/stats';
 
 export const metadata = {
- title: '인텔리전트 통계 대시보드 | 전자정부 표준프레임워크',
- description: '시스템 전반의 활동 데이터와 도메인 지표를 실시간으로 분석합니다.',
+ title: '?�텔리전???�계 ?�?�보??| ?�자?��? ?��??�레?�워??,
+ description: '?�스???�반???�동 ?�이?��? ?�메??지?��? ?�시간으�?분석?�니??',
 };
 
 export default async function AdminStatsPage() {
@@ -14,7 +14,7 @@ export default async function AdminStatsPage() {
  const accessToken = cookieStore.get('accessToken')?.value;
  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- // [Eliminating Waterfalls] 병렬 데이터 호출
+ // [Eliminating Waterfalls] 병렬 ?�이???�출
  let initialSummary: SummaryStats | null = null;
  let initialConnectData: any[] = [];
  let initialMenuData: MenuStats[] = [];

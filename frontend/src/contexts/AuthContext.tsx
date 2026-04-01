@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUser(null);
       }
-    } catch (_error: unknown) {
+    } catch {
       // 401 에러는 interceptor 가 토큰 재발급 실패 시 최종적으로 던집니다.
       setUser(null);
       if (typeof window !== 'undefined') {

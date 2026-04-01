@@ -54,7 +54,7 @@ export default function SmsAdminClient({
   // Send SMS State
   const [isSendOpen, setIsSendOpen] = useState(false);
   const [sendForm, setSendForm] = useState({
-    trnsmitTelno: '02-1234-5678', // 발신번호 (기본값)
+    trnsmitTelno: '02-1234-5678', // 발신번호 (기본�?
     recptnTelno: '',
     trnsmitCn: ''
   });
@@ -66,7 +66,11 @@ export default function SmsAdminClient({
       setSmsList(res.list);
       setTotalCount(res.total);
     } catch {
+<<<<<<< HEAD
       toast.error('발송 내역을 불러오지 못했습니다.');
+=======
+      toast.error('발송 ?�역??불러?��? 못했?�니??');
+>>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
     } finally {
       setLoading(false);
     }
@@ -74,18 +78,22 @@ export default function SmsAdminClient({
 
   const handleSend = async () => {
     if (!sendForm.recptnTelno || !sendForm.trnsmitCn) {
-      toast.error('수신번호와 내용을 입력해주세요.');
+      toast.error('?�신번호?� ?�용???�력?�주?�요.');
       return;
     }
 
     setLoading(true);
     try {
       await smsAdminService.sendSms(sendForm);
-      toast.success('문자 메시지를 발송했습니다.');
+      toast.success('문자 메시지�?발송?�습?�다.');
       setIsSendOpen(false);
       handleSearch(); // 목록 갱신
     } catch {
+<<<<<<< HEAD
       toast.error('발송에 실패했습니다.');
+=======
+      toast.error('발송???�패?�습?�다.');
+>>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
     } finally {
       setLoading(false);
     }
@@ -93,7 +101,7 @@ export default function SmsAdminClient({
 
   const columns = [
     {
-      header: '발송 타임스탬프',
+      header: '발송 ?�?�스?�프',
       accessor: (item: SmsDto) => (
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-muted/30 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-border/50 shadow-inner">
@@ -111,7 +119,7 @@ export default function SmsAdminClient({
       )
     },
     {
-      header: '엔드포인트 (발신)',
+      header: '?�드?�인??(발신)',
       accessor: (item: SmsDto) => (
         <div className="flex items-center gap-3">
           <Phone size={14} className="text-primary opacity-50" />
@@ -120,7 +128,7 @@ export default function SmsAdminClient({
       )
     },
     {
-      header: '페이로드 (내용)',
+      header: '?�이로드 (?�용)',
       accessor: (item: SmsDto) => (
         <div className="max-w-[450px] truncate font-bold text-muted-foreground/80 lowercase tracking-tight italic">
           "{item.trnsmitCn}"
@@ -128,11 +136,11 @@ export default function SmsAdminClient({
       )
     },
     {
-      header: '트랜잭션 상태',
+      header: '?�랜??�� ?�태',
       accessor: () => (
         <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-full border border-emerald-500/20 w-fit shadow-sm">
           <ShieldCheck size={14} />
-          <span className="text-[9px] font-black tracking-widest uppercase ">전달됨</span>
+          <span className="text-[9px] font-black tracking-widest uppercase ">?�달??/span>
         </div>
       )
     }
@@ -141,14 +149,14 @@ export default function SmsAdminClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="메시지 오케스트레이션"
-        breadcrumbs={[{ label: '부가서비스' }, { label: '문자메시지 엔진' }]}
+        title="메시지 ?��??�트?�이??
+        breadcrumbs={[{ label: '부가?�비?? }, { label: '문자메시지 ?�진' }]}
       />
 
       <HubHeader 
-        title="SMS 트랜잭션" 
-        highlight="매트릭스" 
-        subtitle="시스템 자동 알림 및 보안 인증 문자 메시지 전송 아카이브 관리" 
+        title="SMS ?�랜??��" 
+        highlight="매트�?��" 
+        subtitle="?�스???�동 ?�림 �?보안 ?�증 문자 메시지 ?�송 ?�카?�브 관�? 
         icon={Send} 
         actions={
           <div className="flex gap-4 p-2">
@@ -158,14 +166,13 @@ export default function SmsAdminClient({
               onClick={handleSearch}
               className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2"
             >
-              <RefreshCcw size={16} className={cn(loading && "animate-spin")} /> 로그 동기화
-            </Button>
+              <RefreshCcw size={16} className={cn(loading && "animate-spin")} /> 로그 ?�기??            </Button>
             <Button
               size="lg"
               onClick={() => setIsSendOpen(true)}
               className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2"
             >
-              <Plus size={18} /> 새 메시지 구성
+              <Plus size={18} /> ??메시지 구성
             </Button>
           </div>
         }
@@ -177,7 +184,7 @@ export default function SmsAdminClient({
           title="ACCUMULATED LOGS" 
           value={totalCount.toLocaleString()} 
           icon={<History size={26} />} 
-          status="안정"
+          status="?�정"
           color="text-slate-900"
         />
         <SummaryBlock 
@@ -199,14 +206,14 @@ export default function SmsAdminClient({
 
       {/* Main Stream Area */}
       <HubSectionCard
-        title="메시지 전송 스트림"
-        description="시스템에서 처리된 모든 아웃바운드 메시지 트래픽의 실시간 이력입니다."
+        title="메시지 ?�송 ?�트�?
+        description="?�스?�에??처리??모든 ?�웃바운??메시지 ?�래?�의 ?�시�??�력?�니??"
         icon={MessageSquare}
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
           <div>
-            <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">전송 로그</h3>
-            <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2 opacity-50">글로벌 출력 모니터링</p>
+            <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">?�송 로그</h3>
+            <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2 opacity-50">글로벌 출력 모니?�링</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative group/search flex-1 md:flex-none">
@@ -226,7 +233,7 @@ export default function SmsAdminClient({
             columns={columns}
             data={smsList}
             loading={loading}
-            emptyMessage="기록된 메시지 전송 로직이 없습니다."
+            emptyMessage="기록??메시지 ?�송 로직???�습?�다."
             className="border-none bg-transparent"
           />
         </div>
@@ -243,7 +250,7 @@ export default function SmsAdminClient({
               <Send size={32} />
             </div>
             <div className="text-center space-y-2">
-              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">스트림 작성</DialogTitle>
+              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">?�트�??�성</DialogTitle>
               <DialogDescription className="text-[10px] font-black tracking-[0.4em] uppercase opacity-40">
                 Outbound Message Configuration
               </DialogDescription>
@@ -274,7 +281,7 @@ export default function SmsAdminClient({
               </label>
               <div className="relative">
                 <Textarea
-                  placeholder="보안 메시지 내용을 구상하십시오..."
+                  placeholder="보안 메시지 ?�용??구상?�십?�오..."
                   value={sendForm.trnsmitCn}
                   onChange={(e) => setSendForm(prev => ({ ...prev, trnsmitCn: e.target.value }))}
                   className="min-h-[180px] p-8 rounded-[2.5rem] border-none bg-slate-50 text-base font-bold outline-none focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"

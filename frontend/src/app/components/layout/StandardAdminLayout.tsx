@@ -19,22 +19,22 @@ interface StandardAdminLayoutProps<T extends { [key: string]: any }> {
  data: T[];
  keyField: keyof T;
 
- /** 전체 레코드 수 */
+ /** ?�체 ?�코????*/
  totalCount?: number;
- /** 페이지당 항목 수 (기본 10) */
+ /** ?�이지????�� ??(기본 10) */
  pageSize?: number;
- /** 현재 페이지 번호 (1-based) */
+ /** ?�재 ?�이지 번호 (1-based) */
  currentPage?: number;
- /** 페이지 변경 콜백 */
+ /** ?�이지 변�?콜백 */
  onPageChange?: (page: number) => void;
 
  actionButton?: React.ReactNode;
- children?: React.ReactNode; // 모달 등 추가 요소
+ children?: React.ReactNode; // 모달 ??추�? ?�소
 }
 
 /**
- * 표준 관리자 페이지 레이아웃 컴포넌트
- * - 검색 필터, 데이터 그리드, 페이지 헤더를 통합한 표준 패턴
+ * ?��? 관리자 ?�이지 ?�이?�웃 컴포?�트
+ * - 검???�터, ?�이??그리?? ?�이지 ?�더�??�합???��? ?�턴
  */
 export function StandardAdminLayout<T extends { [key: string]: any }>({
  title,

@@ -65,7 +65,7 @@ export default function UnifiedDashboardClient({
   const [taskList] = useState<DashboardTask[]>(initialTaskList);
   const [pendingCount] = useState<number>(pendingApprovalCount);
 
-  // 접속 통계 데이터 조회 (최근 7일)
+  // ?�속 ?�계 ?�이??조회 (최근 7??
   const { data: connectStats = [] } = useQuery<StatsDto[]>({
     queryKey: ['dashboard', 'stats', 'connect'],
     queryFn: () => statsAdminService.getConnectStats({ statsKind: 'SERVICE' }),
@@ -97,10 +97,9 @@ export default function UnifiedDashboardClient({
         <div className="space-y-2">
           <HubInsightBadge label={t('dashboard.badge')} />
           <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-foreground leading-tight">
-            {t('dashboard.greeting')} <span className="text-primary ">{user.name}</span>님
-          </h1>
+            {t('dashboard.greeting')} <span className="text-primary ">{user.name}</span>??          </h1>
           <p className="text-lg text-muted-foreground font-medium max-w-xl">
-            오늘의 <span className="text-foreground font-bold underline decoration-primary/30 underline-offset-4">주요 인사이트</span>와 실시간 지표를 분석했습니다.
+            ?�늘??<span className="text-foreground font-bold underline decoration-primary/30 underline-offset-4">주요 ?�사?�트</span>?� ?�시�?지?��? 분석?�습?�다.
           </p>
         </div>
 
@@ -111,8 +110,7 @@ export default function UnifiedDashboardClient({
             onClick={() => router.push('/admin/community/boards')}
             className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-slate-900 dark:text-white dark:border-white/10 rounded-[2rem] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
           >
-            <Plus size={20} /> 새 포스트
-          </motion.button>
+            <Plus size={20} /> ???�스??          </motion.button>
         </div>
       </motion.div>
 
@@ -130,7 +128,7 @@ export default function UnifiedDashboardClient({
       <motion.div variants={hubContainerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <HubSummaryCard
           key="summary-tasks"
-          title="내 업무 현황"
+          title="???�무 ?�황"
           value={taskList.length.toString().padStart(2, '0')}
           description={t('dashboard.newTasks', { count: taskList.filter((t: DashboardTask) => t.isNew).length })}
           icon={<Zap size={24} />}
@@ -139,16 +137,16 @@ export default function UnifiedDashboardClient({
         />
         <HubSummaryCard
           key="summary-notifications"
-          title="결재 대기"
+          title="결재 ?��?
           value={pendingCount.toString().padStart(2, '0')}
-          description="현재 대기중인 결재 요청입니다."
+          description="?�재 ?�기중??결재 ?�청?�니??"
           icon={<Bell size={24} />}
           trend={pendingCount > 0 ? 10 : 0}
           color="purple"
         />
         <HubSummaryCard
           key="summary-security"
-          title="보안 지수"
+          title="보안 지??
           value={t('dashboard.securityStatus.safe')}
           description={t('dashboard.securityStatus.desc')}
           icon={<ShieldCheck size={24} />}
@@ -157,9 +155,9 @@ export default function UnifiedDashboardClient({
         />
         <HubSummaryCard
           key="summary-visitors"
-          title="오늘의 방문자"
+          title="?�늘??방문??
           value={connectStats.length > 0 ? connectStats[connectStats.length-1].statsCo.toString() : '0'}
-          description="실시간 접속 데이터 기반"
+          description="?�시�??�속 ?�이??기반"
           icon={<BarChart3 size={24} />}
           trend={5}
           color="blue"
@@ -172,8 +170,8 @@ export default function UnifiedDashboardClient({
           {/* Main Chart Card */}
           <HubChartCard
             key="main-visitor-chart"
-            title="트래픽 데이터 분석"
-            subtitle="시스템 실시간 방문자 분포 지표"
+            title="?�래???�이??분석"
+            subtitle="?�스???�시�?방문??분포 지??
             icon={<BarChart3 size={24} />}
             color="blue"
           >
@@ -184,7 +182,7 @@ export default function UnifiedDashboardClient({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <HubListCard
               key="list-notices"
-              title="최근 공지사항"
+              title="최근 공�??�항"
               items={notiList}
               icon={<Bell size={20} />}
               moreHref="/admin/community/boards"
@@ -192,7 +190,7 @@ export default function UnifiedDashboardClient({
             />
             <HubListCard
               key="list-tasks"
-              title="배정된 업무"
+              title="배정???�무"
               items={taskList}
               icon={<CheckCircle2 size={20} />}
               moreHref="/admin/community/boards"
@@ -212,7 +210,7 @@ export default function UnifiedDashboardClient({
               <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
                 <Clock size={22} className="text-primary" />
               </div>
-              실시간 피드
+              ?�시�??�드
             </h3>
             <div className="relative z-10">
               <ActivityFeed />
@@ -226,13 +224,12 @@ export default function UnifiedDashboardClient({
             <div className="flex items-center justify-between mb-8">
               <h3 className="hub-label-accent flex items-center gap-3">
                 <div className="w-2 h-2 bg-primary rounded-full animate-ping" />
-                시스템 활성 지표
-              </h3>
+                ?�스???�성 지??              </h3>
             </div>
             <div className="space-y-8">
                <div className="space-y-2">
                  <div className="flex justify-between text-sm font-black">
-                   <span className="opacity-40">CPU 사용량</span>
+                   <span className="opacity-40">CPU ?�용??/span>
                    <span className="text-primary">24%</span>
                  </div>
                  <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
@@ -245,7 +242,7 @@ export default function UnifiedDashboardClient({
                </div>
                <div className="space-y-2">
                  <div className="flex justify-between text-sm font-black">
-                   <span className="opacity-40">메모리</span>
+                   <span className="opacity-40">메모�?/span>
                    <span className="text-emerald-500">42%</span>
                  </div>
                  <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">

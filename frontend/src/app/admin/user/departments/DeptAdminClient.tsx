@@ -59,7 +59,11 @@ export default function DeptAdminClient({
       setDepts(res.list);
       setTotalCount(res.total);
     } catch {
+<<<<<<< HEAD
       toast.error('조직 체계 스트림 로드에 실패했습니다.');
+=======
+      toast.error('조직 체계 ?�트�?로드???�패?�습?�다.');
+>>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
     } finally {
       setLoading(false);
     }
@@ -79,7 +83,7 @@ export default function DeptAdminClient({
 
   const handleSubmit = async () => {
     if (!form.orgnztNm) {
-      toast.error('유효한 조직 명칭이 필요합니다.');
+      toast.error('?�효??조직 명칭???�요?�니??');
       return;
     }
 
@@ -87,30 +91,38 @@ export default function DeptAdminClient({
     try {
       if (selectedDept?.orgnztId) {
         await deptAdminService.updateDept(selectedDept.orgnztId, form);
-        toast.success('조직 아키텍처가 성공적으로 업데이트되었습니다.');
+        toast.success('조직 ?�키?�처가 ?�공?�으�??�데?�트?�었?�니??');
       } else {
         await deptAdminService.createDept(form);
-        toast.success('신규 조직 노드가 배포되었습니다.');
+        toast.success('?�규 조직 ?�드가 배포?�었?�니??');
       }
       setIsAddOpen(false);
       handleRefresh();
     } catch {
+<<<<<<< HEAD
       toast.error('데이터 정합성 오류로 저장이 취소되었습니다.');
+=======
+      toast.error('?�이???�합???�류�??�?�이 취소?�었?�니??');
+>>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (deptId: string) => {
-    if (!confirm('해당 조직 노드를 영구적으로 제거하시겠습니까? 관련 데이터가 소실될 수 있습니다.')) return;
+    if (!confirm('?�당 조직 ?�드�??�구?�으�??�거?�시겠습?�까? 관???�이?��? ?�실?????�습?�다.')) return;
 
     setLoading(true);
     try {
       await deptAdminService.deleteDept(deptId);
-      toast.success('조직 자산이 삭제되었습니다.');
+      toast.success('조직 ?�산????��?�었?�니??');
       handleRefresh();
     } catch {
+<<<<<<< HEAD
       toast.error('권한 부족 또는 시스템 오류로 삭제를 수행하지 못했습니다.');
+=======
+      toast.error('권한 부�??�는 ?�스???�류�???���??�행?��? 못했?�니??');
+>>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
     } finally {
       setLoading(false);
     }
@@ -118,7 +130,7 @@ export default function DeptAdminClient({
 
   const columns: Column<DeptDto>[] = [
     {
-      header: '조직 아이덴티티',
+      header: '조직 ?�이?�티??,
       accessor: (item: DeptDto) => (
         <div className="flex flex-col gap-1 py-4">
           <span className="font-black font-mono text-muted-foreground/40 text-[9px] tracking-[0.4em] uppercase italic leading-none mb-1">NODE_UID: {item.orgnztId}</span>
@@ -133,18 +145,18 @@ export default function DeptAdminClient({
       className: 'w-72'
     },
     {
-      header: '아키텍처 명세 (Metadata)',
+      header: '?�키?�처 명세 (Metadata)',
       accessor: (item: DeptDto) => (
         <div className="max-w-[400px]">
           <span className="text-xs font-bold text-muted-foreground/60 leading-relaxed block italic py-2">
-            {item.orgnztDc || '명세되지 않은 조직 정적 데이터입니다.'}
+            {item.orgnztDc || '명세?��? ?��? 조직 ?�적 ?�이?�입?�다.'}
           </span>
         </div>
       )
     },
     {
-      header: '상태',
-      accessor: (item: DeptDto) => <HubStatusBadge status="활성" />,
+      header: '?�태',
+      accessor: (item: DeptDto) => <HubStatusBadge status="?�성" />,
       className: 'w-32'
     },
     {
@@ -166,14 +178,14 @@ export default function DeptAdminClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="조직 아키텍처 거버넌스"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '부서 관리' }]}
+        title="조직 ?�키?�처 거버?�스"
+        breadcrumbs={[{ label: '?�스?��?�? }, { label: '부??관�? }]}
       />
 
       <HubHeader
         title="Organization"
         highlight="Topology"
-        subtitle="전사 비즈니스 조직 체계 및 계층적 부서 구조의 실시간 관리 시스템"
+        subtitle="?�사 비즈?�스 조직 체계 �?계층??부??구조???�시�?관�??�스??
         icon={Network}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -189,7 +201,7 @@ export default function DeptAdminClient({
               size="lg"
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
             >
-              <Plus size={20} /> 신규 조직 노드 구성
+              <Plus size={20} /> ?�규 조직 ?�드 구성
             </Button>
           </div>
         }
@@ -214,7 +226,7 @@ export default function DeptAdminClient({
                 <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                   <Building2 size={32} className="text-primary" />
                 </div>
-                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">조직<br />인프라</h4>
+                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">조직<br />?�프??/h4>
               </div>
 
               <div className="space-y-8">
@@ -226,7 +238,7 @@ export default function DeptAdminClient({
                       onChange={(e) => setSearchKeyword(e.target.value)}
                       value={searchKeyword}
                       className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
-                      placeholder="조직 또는 부서 식별자"
+                      placeholder="조직 ?�는 부???�별??
                     />
                   </div>
                 </div>
@@ -234,7 +246,7 @@ export default function DeptAdminClient({
 
               <div className="pt-8 border-t border-white/5 flex items-center justify-between">
                 <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 max-w-[200px]">
-                  * 프로비저닝된 모든 조직 자산은 실시간으로 사용자 매트릭스와 동기화됩니다.
+                  * ?�로비�??�된 모든 조직 ?�산?� ?�시간으�??�용??매트�?��?� ?�기?�됩?�다.
                 </p>
                 <Button
                   onClick={handleRefresh}
@@ -250,8 +262,8 @@ export default function DeptAdminClient({
         {/* Structural Assets Stream */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
           <HubSectionCard
-            title="조직 자산 디렉토리 인벤토리"
-            description="시스템 토폴로지 내에 구성된 전사 비즈니스 조직 단위의 실시간 상태 명세입니다."
+            title="조직 ?�산 ?�렉?�리 ?�벤?�리"
+            description="?�스???�폴로�? ?�에 구성???�사 비즈?�스 조직 ?�위???�시�??�태 명세?�니??"
             icon={SearchCode}
           >
             <div className="overflow-hidden">
@@ -259,7 +271,7 @@ export default function DeptAdminClient({
                 columns={columns}
                 data={depts}
                 loading={loading}
-                emptyMessage="조회된 조직 구조 데이터가 존재하지 않습니다."
+                emptyMessage="조회??조직 구조 ?�이?��? 존재?��? ?�습?�다."
                 className="border-none bg-transparent"
               />
             </div>
@@ -270,23 +282,23 @@ export default function DeptAdminClient({
       <StandardModal
         isOpen={isFormOpen}
         onClose={() => setIsAddOpen(false)}
-        title={selectedDept ? '조직 노드 스펙 수정' : '신규 부서 자산 프로비저닝'}
+        title={selectedDept ? '조직 ?�드 ?�펙 ?�정' : '?�규 부???�산 ?�로비�???}
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
             <Button variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
             <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group">
-              <Zap size={18} className="group-hover:animate-pulse" /> {selectedDept ? '조직 수정' : '부서 배포'}
+              <Zap size={18} className="group-hover:animate-pulse" /> {selectedDept ? '조직 ?�정' : '부??배포'}
             </Button>
           </div>
         }
       >
         <div className="space-y-10 pt-4">
-          <FormField label="조직 및 부서 명칭" required description="시스템 전반에 노출될 조직의 표준 명칭">
+          <FormField label="조직 �?부??명칭" required description="?�스???�반???�출??조직???��? 명칭">
             <div className="relative group/name">
               <Building2 size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/name:opacity-100 transition-opacity" />
               <Input
-                placeholder="조직 아이덴티티 입력"
+                placeholder="조직 ?�이?�티???�력"
                 value={form.orgnztNm}
                 onChange={(e) => setForm(prev => ({ ...prev, orgnztNm: e.target.value }))}
                 className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
@@ -294,11 +306,11 @@ export default function DeptAdminClient({
             </div>
           </FormField>
 
-          <FormField label="조직 아키텍처 명세" description="해당 조직의 주요 역할 및 메타데이터 정의">
+          <FormField label="조직 ?�키?�처 명세" description="?�당 조직??주요 ??�� �?메�??�이???�의">
             <div className="relative group/dc">
               <Pencil size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
               <Textarea
-                placeholder="조직 상세 명세 입력"
+                placeholder="조직 ?�세 명세 ?�력"
                 value={form.orgnztDc}
                 onChange={(e) => setForm(prev => ({ ...prev, orgnztDc: e.target.value }))}
                 className="min-h-[160px] pl-16 p-6 rounded-[2rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all resize-none shadow-inner"
@@ -312,7 +324,7 @@ export default function DeptAdminClient({
             </div>
             <div className="space-y-1">
               <h6 className="text-[10px] font-black text-indigo-900 tracking-widest uppercase">Structural_Integrity_Check</h6>
-              <p className="text-[10px] font-bold text-indigo-700/60 leading-relaxed italic uppercase">신규 조직 노드 생성 시 계층 구조 자동 검증 프로토콜이 수행됩니다.</p>
+              <p className="text-[10px] font-bold text-indigo-700/60 leading-relaxed italic uppercase">?�규 조직 ?�드 ?�성 ??계층 구조 ?�동 검�??�로?�콜???�행?�니??</p>
             </div>
           </div>
         </div>

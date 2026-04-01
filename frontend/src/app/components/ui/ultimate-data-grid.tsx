@@ -45,7 +45,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
     keyField,
     className,
     onDataChange,
-    title = "데이터 인텔리전스"
+    title = "?�이???�텔리전??
 }: UltimateDataGridProps<T>) {
     const [data, setData] = useState<T[]>(initialData);
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }[]>([]);
@@ -142,7 +142,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                     </div>
                     <div>
                         <h3 className="text-lg font-black tracking-tight text-foreground ">{title}</h3>
-                        <p className="text-[10px] font-bold text-muted-foreground tracking-tight leading-none">고성능 인텔리전스 그리드</p>
+                        <p className="text-[10px] font-bold text-muted-foreground tracking-tight leading-none">고성???�텔리전??그리??/p>
                     </div>
                 </div>
 
@@ -151,7 +151,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40" size={16} />
                         <input
                             className="w-full bg-muted/30 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all font-sans"
-                            placeholder="전역 검색..."
+                            placeholder="?�역 검??.."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -279,22 +279,22 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[10px] font-black text-muted-foreground tracking-tight">라이브 엔진 활성화</span>
+                        <span className="text-[10px] font-black text-muted-foreground tracking-tight">?�이�??�진 ?�성??/span>
                     </div>
                     <div className="h-4 w-px bg-muted" />
                     <span className="text-[10px] font-black text-muted-foreground opacity-50 underline decoration-primary/30 underline-offset-4">
-                        {filteredData.length}개 레코드 검색됨
+                        {filteredData.length}�??�코??검?�됨
                     </span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight disabled:opacity-30">이전</Button>
+                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight disabled:opacity-30">?�전</Button>
                     <div className="flex items-center gap-1">
                         {[1, 2, 3].map(p => (
                             <Button key={`page-${p}`} variant={p === 1 ? "default" : "ghost"} size="sm" className="w-9 h-9 rounded-xl text-[10px] font-black p-0 shadow-sm">{p}</Button>
                         ))}
                     </div>
-                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight">다음</Button>
+                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight">?�음</Button>
                 </div>
             </div>
         </div>

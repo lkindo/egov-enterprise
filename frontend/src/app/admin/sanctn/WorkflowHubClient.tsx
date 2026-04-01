@@ -34,7 +34,7 @@ interface ApprovalFormItem {
  id: string | number;
  title: string;
  version: string;
- status: '활성' | '초안' | '사용중단';
+ status: '?�성' | '초안' | '?�용중단';
  usage: number;
 }
 
@@ -45,10 +45,10 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
 
  // --- Mock Data ---
  const forms: ApprovalFormItem[] = [
- { id: 'F01', title: '일반 지출 결의서', version: 'v2.4', status: '활성', usage: 1240 },
- { id: 'F02', title: '연차/휴가 신청서', version: 'v1.8', status: '활성', usage: 4500 },
- { id: 'F03', title: 'IT 자산 구매 요청', version: 'v3.0', status: '초안', usage: 0 },
- { id: 'F04', title: '프로젝트 법인카드 신청', version: 'v1.1', status: '사용중단', usage: 890 },
+ { id: 'F01', title: '?�반 지�?결의??, version: 'v2.4', status: '?�성', usage: 1240 },
+ { id: 'F02', title: '?�차/?��? ?�청??, version: 'v1.8', status: '?�성', usage: 4500 },
+ { id: 'F03', title: 'IT ?�산 구매 ?�청', version: 'v3.0', status: '초안', usage: 0 },
+ { id: 'F04', title: '?�로?�트 법인카드 ?�청', version: 'v1.1', status: '?�용중단', usage: 890 },
  ];
 
  return (
@@ -61,15 +61,15 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  </div>
  <div>
  <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
- 전자결재 및 워크플로우 허브
+ ?�자결재 �??�크?�로???�브
  </h2>
  <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
- 통합 결재 및 감사 관리 센터
+ ?�합 결재 �?감사 관�??�터
  </p>
  </div>
  </div>
  <Button className="h-14 px-8 rounded-2xl bg-primary text-white font-black tracking-tight shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all gap-3">
- <Zap size={20} /> 워크플로우 배포
+ <Zap size={20} /> ?�크?�로??배포
  </Button>
  </div>
 
@@ -80,13 +80,12 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <Card className="rounded-[3rem] border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100">
  <CardHeader className="bg-slate-50/50 p-8 border-b">
  <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-2">
- <Workflow size={14} className="text-primary" /> 코어 엔진 모듈 관리
- </CardTitle>
+ <Workflow size={14} className="text-primary" /> 코어 ?�진 모듈 관�? </CardTitle>
  </CardHeader>
  <CardContent className="p-4 space-y-2">
  <NavButton icon={<FileText size={20} />} label="Sanction Forms" active={activeTab === 'FORMS'} onClick={() => setActiveTab('FORMS')} />
- <NavButton icon={<GitBranch size={20} />} label="워크플로우 " active={activeTab === 'WORKFLOW'} onClick={() => setActiveTab('WORKFLOW')} />
- <NavButton icon={<Activity size={20} />} label="시스템 " active={activeTab === 'MONITOR'} onClick={() => setActiveTab('MONITOR')} />
+ <NavButton icon={<GitBranch size={20} />} label="?�크?�로??" active={activeTab === 'WORKFLOW'} onClick={() => setActiveTab('WORKFLOW')} />
+ <NavButton icon={<Activity size={20} />} label="?�스??" active={activeTab === 'MONITOR'} onClick={() => setActiveTab('MONITOR')} />
  </CardContent>
  </Card>
 
@@ -113,13 +112,13 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <CardHeader className="bg-slate-50/50 border-b p-8 space-y-6">
  <div className="flex items-center justify-between">
  <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.3em] ">
- 결재 양식 인벤토리
+ 결재 ?�식 ?�벤?�리
  </CardTitle>
  <Button size="icon" className="w-10 h-10 bg-slate-900 rounded-xl"><Plus size={20} /></Button>
  </div>
  <div className="relative">
  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
- <Input className="pl-9 h-11 bg-white border-slate-100 rounded-xl text-sm font-bold" placeholder="검색..." />
+ <Input className="pl-9 h-11 bg-white border-slate-100 rounded-xl text-sm font-bold" placeholder="검??.." />
  </div>
  </CardHeader>
  <CardContent className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -138,7 +137,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <div className="flex items-center gap-2 mb-1">
  <span className={cn(
  "w-1.5 h-1.5 rounded-full",
- form.status === '활성' ? "bg-emerald-400 animate-pulse" : 
+ form.status === '?�성' ? "bg-emerald-400 animate-pulse" : 
  form.status === '초안' ? "bg-amber-400" : "bg-rose-400"
  )} />
  <span className={cn("text-[8px] font-black tracking-tight opacity-40")}>{form.status}</span>
@@ -146,10 +145,10 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <h4 className={cn("text-sm font-black truncate", selectedFormId === form.id ? "text-white" : "text-slate-900 ")}>
  {form.title}
  </h4>
- <p className={cn("text-[9px] font-bold opacity-40")}>ID: {form.id} • {form.version}</p>
+ <p className={cn("text-[9px] font-bold opacity-40")}>ID: {form.id} ??{form.version}</p>
  </div>
  <div className="text-right flex flex-col items-end gap-1">
- <span className="text-[10px] font-black opacity-40">사용량</span>
+ <span className="text-[10px] font-black opacity-40">?�용??/span>
  <span className={cn("text-sm font-black", selectedFormId === form.id ? "text-primary" : "text-slate-900")}>
  {form.usage > 1000 ? (form.usage / 1000).toFixed(1) + 'k' : form.usage}
  </span>
@@ -175,7 +174,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <CardHeader className="bg-slate-50/50 p-10 border-b flex flex-row items-center justify-between">
  <div className="space-y-1">
  <h3 className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-2 ">
- <Layers size={14} className="text-primary" /> 시각적 로직 설계기 
+ <Layers size={14} className="text-primary" /> ?�각??로직 ?�계�?
  </h3>
  <h2 className="text-2xl font-black text-slate-900 tracking-tighter ">{forms.find(f => f.id === selectedFormId)?.title}</h2>
  </div>
@@ -184,29 +183,29 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  
  <CardContent className="flex-1 p-10 relative overflow-hidden bg-slate-50/50 flex items-center justify-center">
  <div className="w-full space-y-6 relative z-10">
- <WorkflowNode type="START" label="기안자" date="문서 제출" />
+ <WorkflowNode type="START" label="기안?? date="문서 ?�출" />
  <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
- <WorkflowNode type="APPROVE" label="Dept. 관리자" date="L1 승인" active />
+ <WorkflowNode type="APPROVE" label="Dept. 관리자" date="L1 ?�인" active />
  <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
- <WorkflowNode type="APPROVE" label="재무 담당자" date="L2 검증" />
+ <WorkflowNode type="APPROVE" label="?�무 ?�당?? date="L2 검�? />
  <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
- <WorkflowNode type="END" label="시스템 " date="완료됨" />
+ <WorkflowNode type="END" label="?�스??" date="?�료?? />
  </div>
  {/* Grid Overlay */}
  <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
  </CardContent>
 
  <div className="p-10 border-t bg-white flex gap-4">
- <Button variant="outline" className="h-14 flex-1 rounded-2xl font-black tracking-tight text-[10px] border-2 opacity-50">로직 수정</Button>
- <Button className="h-14 flex-[2] bg-slate-900 text-white rounded-2xl font-black tracking-[0.3em] text-[10px] shadow-2xl shadow-slate-900/40">인스턴스 실행</Button>
+ <Button variant="outline" className="h-14 flex-1 rounded-2xl font-black tracking-tight text-[10px] border-2 opacity-50">로직 ?�정</Button>
+ <Button className="h-14 flex-[2] bg-slate-900 text-white rounded-2xl font-black tracking-[0.3em] text-[10px] shadow-2xl shadow-slate-900/40">?�스?�스 ?�행</Button>
  </div>
  </Card>
  </motion.div>
  ) : (
  <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none grayscale bg-white rounded-[3rem] border-2 border-dashed border-slate-200">
  <GitBranch size={64} className="mb-8 rotate-45" />
- <h3 className="text-2xl font-black text-slate-900 tracking-tighter ">활성화된 워크플로우 없음</h3>
- <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2">로직을 확인하려면 양식을 선택하세요</p>
+ <h3 className="text-2xl font-black text-slate-900 tracking-tighter ">?�성?�된 ?�크?�로???�음</h3>
+ <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2">로직???�인?�려�??�식???�택?�세??/p>
  </div>
  )}
  </AnimatePresence>

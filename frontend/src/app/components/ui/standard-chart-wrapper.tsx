@@ -154,7 +154,7 @@ export function StandardChartWrapper({
                             </LineChart>
                         ) : (
                             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                                차트 유형이 지원되지 않습니다.
+                                차트 ?�형??지?�되지 ?�습?�다.
                             </div>
                         )}
                     </ResponsiveContainer>

@@ -77,19 +77,19 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  </div>
  <div>
   <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
-  Intelligence <span className="text-primary">허브</span>
+  Intelligence <span className="text-primary">?�브</span>
   </h2>
  <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
- 인텔리전스 허브 • 거버넌스 인사이트 및 데이터 분석
+ ?�텔리전???�브 ??거버?�스 ?�사?�트 �??�이??분석
  </p>
  </div>
  </div>
  <div className="flex gap-4">
  <Button variant="outline" className="h-14 px-6 rounded-2xl border-2 font-black tracking-tight gap-2">
- <Download size={18} /> 데이터셋 내보내기
+ <Download size={18} /> ?�이?�셋 ?�보?�기
  </Button>
  <Button className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition-all gap-2">
- <RefreshCcw size={20} /> 강제 새로고침
+ <RefreshCcw size={20} /> 강제 ?�로고침
  </Button>
  </div>
  </div>
@@ -100,22 +100,22 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  <div className="col-span-12 lg:col-span-3 space-y-6">
  <Card className="rounded-[3rem] border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100">
  <NavButton icon={<LayoutDashboard size={20} />} label="글로벌 개요" active={activeTab === 'DASHBOARD'} onClick={() => setActiveTab('DASHBOARD')} />
- <NavButton icon={<Users size={20} />} label="사용자 " active={activeTab === 'USER_STATS'} onClick={() => setActiveTab('USER_STATS')} />
- <NavButton icon={<Box size={20} />} label="콘텐츠 지표" active={activeTab === 'CONTENT_STATS'} onClick={() => setActiveTab('CONTENT_STATS')} />
- <NavButton icon={<Database size={20} />} label="시스템 " active={activeTab === 'SYSTEM_STATS'} onClick={() => setActiveTab('SYSTEM_STATS')} />
- <NavButton icon={<Vote size={20} />} label="설문조사 " active={activeTab === 'SURVEYS'} onClick={() => setActiveTab('SURVEYS')} />
- <NavButton icon={<FileText size={20} />} label="운영 보고서" active={activeTab === 'REPORTS'} onClick={() => setActiveTab('REPORTS')} />
+ <NavButton icon={<Users size={20} />} label="?�용??" active={activeTab === 'USER_STATS'} onClick={() => setActiveTab('USER_STATS')} />
+ <NavButton icon={<Box size={20} />} label="콘텐�?지?? active={activeTab === 'CONTENT_STATS'} onClick={() => setActiveTab('CONTENT_STATS')} />
+ <NavButton icon={<Database size={20} />} label="?�스??" active={activeTab === 'SYSTEM_STATS'} onClick={() => setActiveTab('SYSTEM_STATS')} />
+ <NavButton icon={<Vote size={20} />} label="?�문조사 " active={activeTab === 'SURVEYS'} onClick={() => setActiveTab('SURVEYS')} />
+ <NavButton icon={<FileText size={20} />} label="?�영 보고?? active={activeTab === 'REPORTS'} onClick={() => setActiveTab('REPORTS')} />
  </Card>
 
  <Card className="rounded-[3rem] border-0 bg-slate-900 text-white shadow-2xl p-10 space-y-8 relative overflow-hidden group">
  <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
  <div className="relative z-10 space-y-6">
- <h4 className="text-[10px] font-black text-white/40 tracking-tight leading-tight">예상 효율성</h4>
+ <h4 className="text-[10px] font-black text-white/40 tracking-tight leading-tight">?�상 ?�율??/h4>
  <div className="flex items-center gap-4">
  <span className="text-3xl font-black tracking-tighter tabular-nums">+{userStats?.length || 24}%</span>
  <Zap size={32} className="text-primary fill-primary" />
  </div>
- <p className="text-[11px] text-white/30 font-bold tracking-tight">인텔리전스 엔진 v4.2 최적화</p>
+ <p className="text-[11px] text-white/30 font-bold tracking-tight">?�텔리전???�진 v4.2 최적??/p>
  </div>
  </Card>
  </div>
@@ -124,27 +124,27 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  <div className="col-span-12 lg:col-span-9 space-y-8">
  
  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
- <StatSummaryCard icon={<Activity size={24} />} label="활성 " value={`${userStats?.length || 0}`} trend="+12%" />
- <StatSummaryCard icon={<Monitor size={24} />} label="화면 요청" value={`${screenStats?.length || 0}k`} trend="+5.4k" color="primary" />
- <StatSummaryCard icon={<Database size={24} />} label="데이터 사용량" value={`${dataUsage?.length || 0}GB`} trend="-2.1%" />
+ <StatSummaryCard icon={<Activity size={24} />} label="?�성 " value={`${userStats?.length || 0}`} trend="+12%" />
+ <StatSummaryCard icon={<Monitor size={24} />} label="?�면 ?�청" value={`${screenStats?.length || 0}k`} trend="+5.4k" color="primary" />
+ <StatSummaryCard icon={<Database size={24} />} label="?�이???�용?? value={`${dataUsage?.length || 0}GB`} trend="-2.1%" />
  </div>
 
  <Card className="rounded-[3.5rem] border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100 min-h-[500px] flex flex-col">
  <CardHeader className="bg-slate-50/50 border-b p-10 flex flex-row items-center justify-between">
  <div className="space-y-1">
- <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] ">심층 분석 뷰포트</h3>
+ <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] ">?�층 분석 뷰포??/h3>
  <CardTitle className="text-2xl font-black text-slate-900 tracking-tighter ">
  {activeTab === 'DASHBOARD' ? '글로벌 개요' : 
- activeTab === 'USER_STATS' ? '사용자 통계' :
- activeTab === 'CONTENT_STATS' ? '콘텐츠 지표 분석' :
- activeTab === 'SYSTEM_STATS' ? '시스템 활성 지표' :
- activeTab === 'SURVEYS' ? '설문조사 분석' :
- activeTab === 'REPORTS' ? '운영 보고서 분석' : activeTab}
+ activeTab === 'USER_STATS' ? '?�용???�계' :
+ activeTab === 'CONTENT_STATS' ? '콘텐�?지??분석' :
+ activeTab === 'SYSTEM_STATS' ? '?�스???�성 지?? :
+ activeTab === 'SURVEYS' ? '?�문조사 분석' :
+ activeTab === 'REPORTS' ? '?�영 보고??분석' : activeTab}
  </CardTitle>
  </div>
  <div className="flex gap-4">
- <Button variant="outline" className="rounded-xl h-10 px-4 text-[9px] font-black tracking-tight">최근 30일</Button>
- <Button size="icon" variant="ghost" className="rounded-xl"><Filter size={18} /> 필터</Button>
+ <Button variant="outline" className="rounded-xl h-10 px-4 text-[9px] font-black tracking-tight">최근 30??/Button>
+ <Button size="icon" variant="ghost" className="rounded-xl"><Filter size={18} /> ?�터</Button>
  </div>
  </CardHeader>
  <CardContent className="flex-1 overflow-y-auto p-12">
@@ -158,7 +158,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  >
  {activeTab === 'SURVEYS' ? (
  <div className="space-y-6">
- {isSurveyLoading && <div className="p-10 text-center opacity-40 ">설문 저장소 동기화 중...</div>}
+ {isSurveyLoading && <div className="p-10 text-center opacity-40 ">?�문 ?�?�소 ?�기??�?..</div>}
  {surveys?.list?.map((s: any) => (
  <div key={s.qestnrId} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all">
  <div className="flex items-center gap-6">
@@ -170,7 +170,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  {s.qestnrSj}
  </h4>
  <p className="text-[10px] font-bold text-slate-400 tracking-tight">
- Status: {s.qestnrEndde > new Date().toISOString() ? '활성' : '보관됨'} • {s.qestnrEndde}
+ Status: {s.qestnrEndde > new Date().toISOString() ? '?�성' : '보�???} ??{s.qestnrEndde}
  </p>
  </div>
  </div>
@@ -188,10 +188,10 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  </div>
  <div className="space-y-4">
  <h4 className="text-3xl font-black tracking-tighter text-slate-900">
- {isUserLoading || isBbsLoading || isScreenLoading ? '인텔리전스 처리 중...' : '데이터셋 동기화 완료'}
+ {isUserLoading || isBbsLoading || isScreenLoading ? '?�텔리전??처리 �?..' : '?�이?�셋 ?�기???�료'}
  </h4>
  <p className="text-[10px] font-black text-slate-400 tracking-[0.5em]">
- 거버넌스 데이터 검증 및 최적화 완료
+ 거버?�스 ?�이??검�?�?최적???�료
  </p>
  </div>
  </div>

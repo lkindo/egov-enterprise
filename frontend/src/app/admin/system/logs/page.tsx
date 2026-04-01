@@ -32,11 +32,11 @@ import { PageResponse } from '@/types/foundation/system';
 
 // Log categories configuration
 const logCategories = [
-  { id: 'SYS', label: '시스템 로그', icon: <Terminal size={20} />, description: '서비스 및 메소드 실행 이력', serviceMethod: 'getSystemLogs' },
-  { id: 'LGN', label: '로그인 로그', icon: <Lock size={20} />, description: '사용자 접속 및 인증 기록', serviceMethod: 'getLoginLogs' },
-  { id: 'USR', label: '사용자 활동', icon: <UserCheck size={20} />, description: '데이터 변경 및 권한 추적', serviceMethod: 'getUserLogs' },
-  { id: 'WEB', label: '웹 로그', icon: <Globe size={20} />, description: 'HTTP 요청 및 데이터 분석', serviceMethod: 'getWebLogs' },
-  { id: 'TRS', label: '송수신 로그', icon: <Activity size={20} />, description: '외부 연동 및 배치 결과', serviceMethod: 'getTransferLogs' },
+  { id: 'SYS', label: '?�스??로그', icon: <Terminal size={20} />, description: '?�비??�?메소???�행 ?�력', serviceMethod: 'getSystemLogs' },
+  { id: 'LGN', label: '로그??로그', icon: <Lock size={20} />, description: '?�용???�속 �??�증 기록', serviceMethod: 'getLoginLogs' },
+  { id: 'USR', label: '?�용???�동', icon: <UserCheck size={20} />, description: '?�이??변�?�?권한 추적', serviceMethod: 'getUserLogs' },
+  { id: 'WEB', label: '??로그', icon: <Globe size={20} />, description: 'HTTP ?�청 �??�이??분석', serviceMethod: 'getWebLogs' },
+  { id: 'TRS', label: '?�수??로그', icon: <Activity size={20} />, description: '?��? ?�동 �?배치 결과', serviceMethod: 'getTransferLogs' },
 ];
 
 export default function LogDashboardPage() {
@@ -70,7 +70,7 @@ export default function LogDashboardPage() {
   const columns = useMemo(() => {
     const commonCols: Column<any>[] = [
       {
-        header: '발생 시각',
+        header: '발생 ?�각',
         accessor: (item: any) => (
           <div className="flex items-center gap-3 py-3">
             <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
@@ -89,7 +89,7 @@ export default function LogDashboardPage() {
       return [
         ...commonCols,
         {
-          header: '요청자',
+          header: '?�청??,
           accessor: (item: any) => (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center bg-white shadow-sm font-black text-[10px] text-slate-400">
@@ -100,7 +100,7 @@ export default function LogDashboardPage() {
           )
         },
         {
-          header: '접속 IP',
+          header: '?�속 IP',
           accessor: (item: any) => (
             <div className="font-mono text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1 rounded-lg border w-fit">{item.loginIp}</div>
           )
@@ -117,14 +117,14 @@ export default function LogDashboardPage() {
     return [
       ...commonCols,
       {
-        header: '요청자',
+        header: '?�청??,
         className: 'w-32',
         accessor: (item: any) => (
           <span className="text-xs font-bold text-slate-700">{item.rqsterNm || item.rqesterId || 'SYSTEM'}</span>
         )
       },
       {
-        header: '수행 서비스 / 리소스',
+        header: '?�행 ?�비??/ 리소??,
         accessor: (item: any) => (
           <div className="flex flex-col gap-0.5 max-w-md">
             <span className="text-[11px] font-black text-foreground truncate uppercase tracking-tighter italic">{item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
@@ -133,7 +133,7 @@ export default function LogDashboardPage() {
         )
       },
       {
-        header: '접속 정보',
+        header: '?�속 ?�보',
         accessor: (item: any) => (
           <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-slate-400">
             <Globe size={11} className="opacity-40" />
@@ -147,29 +147,28 @@ export default function LogDashboardPage() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="로그 통합 대시보드"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }]}
+        title="로그 ?�합 ?�?�보??
+        breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }]}
       />
 
       <HubHeader
-        title="시스템"
-        highlight="로그 통합 관리"
-        subtitle="시스템 전반에서 발생하는 보안, 접속, 활동, 웹 요청 로그를 통합적으로 모니터링합니다."
+        title="?�스??
+        highlight="로그 ?�합 관�?
+        subtitle="?�스???�반?�서 발생?�는 보안, ?�속, ?�동, ???�청 로그�??�합?�으�?모니?�링?�니??"
         icon={History}
         actions={
           <div className="flex gap-4">
             <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest gap-3">
-              <SearchCode size={18} /> 상세 로그 검색
-            </Button>
+              <SearchCode size={18} /> ?�세 로그 검??            </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="오늘 전체 로그" value="1,492" icon={Database} color="primary" />
-        <HubMetricCard title="보안 위협 로그" value="3" icon={Lock} color="rose" status="이상 징후" />
-        <HubMetricCard title="활성 세션" value="84" icon={Activity} color="emerald" status="안전" />
-        <HubMetricCard title="평균 지연 속도" value="38ms" icon={Zap} color="amber" />
+        <HubMetricCard title="?�늘 ?�체 로그" value="1,492" icon={Database} color="primary" />
+        <HubMetricCard title="보안 ?�협 로그" value="3" icon={Lock} color="rose" status="?�상 징후" />
+        <HubMetricCard title="?�성 ?�션" value="84" icon={Activity} color="emerald" status="?�전" />
+        <HubMetricCard title="?�균 지???�도" value="38ms" icon={Zap} color="amber" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
@@ -203,8 +202,8 @@ export default function LogDashboardPage() {
 
         <div className="col-span-12 lg:col-span-9">
           <HubSectionCard
-            title="실시간 로그 스트림"
-            description={`${logCategories.find(c => c.id === activeCategory)?.label}에서 실시간으로 유입되는 가시성 스트림 데이터입니다.`}
+            title="?�시�?로그 ?�트�?
+            description={`${logCategories.find(c => c.id === activeCategory)?.label}?�서 ?�시간으�??�입?�는 가?�성 ?�트�??�이?�입?�다.`}
             icon={Activity}
           >
             <StandardDataTable
@@ -214,7 +213,7 @@ export default function LogDashboardPage() {
               className="border-none bg-transparent"
               onRowClick={(item) => setSelectedLog(item)}
               search={{
-                placeholder: '요청자, IP, 메시지 등으로 정밀 분석...',
+                placeholder: '?�청?? IP, 메시지 ?�으�??��? 분석...',
                 onSearch: (keyword) => setParams({ ...params, searchKeyword: keyword, page번호: 1 })
               }}
             />
@@ -245,11 +244,11 @@ export default function LogDashboardPage() {
                 <Terminal size={22} />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">로그 리소스 식별자</p>
-                <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || '알 수 없음'}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">로그 리소???�별??/p>
+                <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || '?????�음'}</p>
               </div>
             </div>
-            <HubStatusBadge label="확인됨" variant="success" />
+            <HubStatusBadge label="?�인?? variant="success" />
           </div>
 
           <div className="space-y-4">

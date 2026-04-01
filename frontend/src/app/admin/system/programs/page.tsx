@@ -7,8 +7,8 @@ import { Program } from '@/types/foundation/program';
 import { PageResponse } from '@/types/foundation/system';
 
 export const metadata = {
- title: '시스템 프로그램 미들웨어 | 전자정부 표준프레임워크',
- description: '시스템 아키텍처 내의 각 프로그램과 엔드포인트를 정의하고 관리합니다.',
+ title: '?�스???�로그램 미들?�어 | ?�자?��? ?��??�레?�워??,
+ description: '?�스???�키?�처 ?�의 �??�로그램�??�드?�인?��? ?�의?�고 관리합?�다.',
 };
 
 export default async function ProgramAdminPage({

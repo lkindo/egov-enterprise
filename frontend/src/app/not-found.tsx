@@ -23,10 +23,10 @@ export default function NotFound() {
  </div>
 
  <div className="space-y-3">
- <h1 className="text-3xl font-black tracking-tighter text-foreground">길을 잃으셨나요?</h1>
+ <h1 className="text-3xl font-black tracking-tighter text-foreground">길을 ?�으?�나??</h1>
  <p className="text-muted-foreground font-medium leading-relaxed">
- 요청하신 페이지를 찾을 수 없습니다.<br />
- 주소가 정확한지 다시 한번 확인해주세요.
+ ?�청?�신 ?�이지�?찾을 ???�습?�다.<br />
+ 주소가 ?�확?��? ?�시 ?�번 ?�인?�주?�요.
  </p>
  </div>
 
@@ -35,13 +35,13 @@ export default function NotFound() {
  href="javascript:history.back()"
  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-2xl h-14 font-bold border-2 gap-2")}
  >
- <ArrowLeft size={18} /> 이전으로
+ <ArrowLeft size={18} /> ?�전?�로
  </Link>
  <Link
  href="/"
  className={cn(buttonVariants({ size: "lg" }), "rounded-2xl h-14 font-black shadow-xl shadow-primary/20 gap-2")}
  >
- <Home size={18} /> 홈으로 이동
+ <Home size={18} /> ?�으�??�동
  </Link>
  </div>
 

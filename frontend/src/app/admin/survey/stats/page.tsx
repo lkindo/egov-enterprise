@@ -43,12 +43,12 @@ export default function SurveyStatsPage() {
  return (
  <div className="space-y-6">
  <div className="flex justify-between items-center">
- <h2 className="text-2xl font-bold tracking-tight">설문 통계 분석</h2>
+ <h2 className="text-2xl font-bold tracking-tight">?�문 ?�계 분석</h2>
  </div>
 
  <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
  <Input
- placeholder="설문명 검색"
+ placeholder="?�문�?검??
  className="max-w-sm"
  value={params.searchKeyword || ''}
  onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
@@ -64,11 +64,11 @@ export default function SurveyStatsPage() {
  <TableHeader>
  <TableRow>
  <TableHead className="w-[60px]">번호</TableHead>
- <TableHead>설문명</TableHead>
- <TableHead>응답수</TableHead>
+ <TableHead>?�문�?/TableHead>
+ <TableHead>?�답??/TableHead>
  <TableHead>기간</TableHead>
- <TableHead>상태</TableHead>
- <TableHead className="text-right">통계보기</TableHead>
+ <TableHead>?�태</TableHead>
+ <TableHead className="text-right">?�계보기</TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
@@ -77,7 +77,7 @@ export default function SurveyStatsPage() {
  ) : polls.length === 0 ? (
  <TableRow>
  <TableCell colSpan={6} className="h-24 text-center">
- 설문 데이터가 없습니다.
+ ?�문 ?�이?��? ?�습?�다.
  </TableCell>
  </TableRow>
  ) : (
@@ -88,7 +88,7 @@ export default function SurveyStatsPage() {
  <TableCell>0</TableCell>
  <TableCell>{poll.pollBeginDe} ~ {poll.pollEndDe}</TableCell>
  <TableCell>
- <Badge variant="outline">집계중</Badge>
+ <Badge variant="outline">집계�?/Badge>
  </TableCell>
  <TableCell className="text-right">
  <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/survey/stats/${poll.pollId}`)}>

@@ -88,7 +88,7 @@ export default function CommonCodeClient({
 
     const [selectedCluster, setSelectedCluster] = useState<DomainCluster>(
         initialClusters[0] || {
-            id: '', name: '전체', groups: [],
+            id: '', name: '?�체', groups: [],
             clCode: '', clCodeNm: '', clCodeDc: '', useAt: 'N'
         }
     );
@@ -120,7 +120,11 @@ export default function CommonCodeClient({
                 details: fetchedDetails
             });
         } catch {
+<<<<<<< HEAD
             toast('상세 코드를 불러오는 중 오류가 발생했습니다.', 'error');
+=======
+            toast('?�세 코드�?불러?�는 �??�류가 발생?�습?�다.', 'error');
+>>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
         } finally {
             setDetailsLoading(false);
         }
@@ -168,10 +172,10 @@ export default function CommonCodeClient({
         if (!selectedGroup) return;
 
         const ok = await confirm({
-            title: '상세 코드 명세 삭제',
-            message: '이 코드 정보를 데이터베이스에서 영구히 삭제하시겠습니까?',
+            title: '?�세 코드 명세 ??��',
+            message: '??코드 ?�보�??�이?�베?�스?�서 ?�구????��?�시겠습?�까?',
             variant: 'destructive',
-            confirmText: '삭제'
+            confirmText: '??��'
         });
 
         if (ok) {
@@ -183,14 +187,18 @@ export default function CommonCodeClient({
                     toast(res.message, 'error');
                 }
             } catch {
+<<<<<<< HEAD
                 toast('네트워크 오류가 발생했습니다.', 'error');
+=======
+                toast('?�트?�크 ?�류가 발생?�습?�다.', 'error');
+>>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
             }
         }
     };
 
     const handleCreateDetail = () => {
         if (!selectedGroup) {
-            toast('코드 명세를 등록할 그룹 코드를 먼저 선택하십시오.', 'info');
+            toast('코드 명세�??�록??그룹 코드�?먼�? ?�택?�십?�오.', 'info');
             return;
         }
         setEditingDetail(null);
@@ -216,7 +224,11 @@ export default function CommonCodeClient({
                 toast(res.message, 'error');
             }
         } catch {
+<<<<<<< HEAD
             toast('정합성 검증에 실패했습니다.', 'error');
+=======
+            toast('?�합??검증에 ?�패?�습?�다.', 'error');
+>>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
         }
     };
 
@@ -236,12 +248,12 @@ export default function CommonCodeClient({
             )
         },
         {
-            header: '사용 여부',
-            accessor: (item: CodeDetail) => <HubStatusBadge status={item.useAt === 'Y' ? '사용중' : '미사용'} />,
+            header: '?�용 ?��?',
+            accessor: (item: CodeDetail) => <HubStatusBadge status={item.useAt === 'Y' ? '?�용�? : '미사??} />,
             className: 'w-24'
         },
         {
-            header: '관리',
+            header: '관�?,
             className: 'text-right w-28',
             accessor: (item: CodeDetail) => (
                 <div className="flex justify-end gap-1">
@@ -288,7 +300,7 @@ export default function CommonCodeClient({
                             <div className="relative group">
                                 <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
                                 <Input
-                                    placeholder="그룹/이름 검색..."
+                                    placeholder="그룹/?�름 검??.."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="h-10 pl-10 pr-4 rounded-xl border-slate-200 bg-white text-xs focus:ring-4 focus:ring-primary/5 transition-all"
@@ -303,7 +315,7 @@ export default function CommonCodeClient({
                                     <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto text-slate-300">
                                         <SearchSlash size={24} />
                                     </div>
-                                    <p className="text-[10px] font-black tracking-widest uppercase">결과 없음</p>
+                                    <p className="text-[10px] font-black tracking-widest uppercase">결과 ?�음</p>
                                 </div>
                             ) : (
                                 filteredClusters.map((cluster) => (
@@ -381,13 +393,13 @@ export default function CommonCodeClient({
                                             </div>
                                         </div>
                                         <p className="text-xs font-bold text-slate-400 italic">
-                                            {selectedGroup.codeIdDc || '정의된 수집 명세가 없습니다.'}
+                                            {selectedGroup.codeIdDc || '?�의???�집 명세가 ?�습?�다.'}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <Button onClick={handleCreateDetail} size="lg" className="h-12 px-6 rounded-2xl bg-primary text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:-translate-y-0.5 transition-all gap-2">
-                                        <Plus size={16} /> 신규 등록
+                                        <Plus size={16} /> ?�규 ?�록
                                     </Button>
                                 </div>
                             </div>
@@ -403,15 +415,15 @@ export default function CommonCodeClient({
                                             {detailsLoading ? <RefreshCcw size={18} className="animate-spin" /> : <Layers size={18} />}
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase">시스템 구성 명세</h3>
+                                            <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase">?�스??구성 명세</h3>
                                             <p className="text-[10px] font-bold text-slate-400">
-                                                {detailsLoading ? '서버로부터 명세를 읽어오는 중...' : `총 ${selectedGroup.details?.length || 0}개의 파라미터가 정의됨`}
+                                                {detailsLoading ? '?�버로�???명세�??�어?�는 �?..' : `�?${selectedGroup.details?.length || 0}개의 ?�라미터가 ?�의??}
                                             </p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="flex flex-col items-end pr-4 text-right">
-                                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1.5">무결성</span>
+                                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1.5">무결??/span>
                                             <div className="flex items-center gap-1">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                                 <span className="text-[10px] font-black text-emerald-500 font-mono">99.9%</span>
@@ -423,7 +435,7 @@ export default function CommonCodeClient({
                                     <StandardDataTable<CodeDetail>
                                         columns={columns}
                                         data={selectedGroup.details || []}
-                                        emptyMessage="선택된 그룹의 상세 코드가 존재하지 않습니다."
+                                        emptyMessage="?�택??그룹???�세 코드가 존재?��? ?�습?�다."
                                         className="border-none"
                                         isPremium={false}
                                     />
@@ -435,18 +447,18 @@ export default function CommonCodeClient({
                             <div className="w-24 h-24 rounded-[2.5rem] bg-slate-50 flex items-center justify-center text-slate-300 mb-8 border border-slate-100 shadow-inner">
                                 <Database size={40} className="animate-pulse" />
                             </div>
-                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase mb-4">마스터 데이터 저장소</h3>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase mb-4">마스???�이???�?�소</h3>
                             <p className="text-xs font-bold text-slate-400 text-center max-w-sm leading-relaxed mb-10">
-                                왼쪽 코드 익스플로러에서 관리 대상을 선택하십시오.<br />
-                                도메인 계층별 모든 마스터 데이터가 이곳에 표출됩니다.
+                                ?�쪽 코드 ?�스?�로?�에??관�??�?�을 ?�택?�십?�오.<br />
+                                ?�메??계층�?모든 마스???�이?��? ?�곳???�출?�니??
                             </p>
                             <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
                                 <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col gap-2">
-                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">도메인 클러스터</span>
+                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">?�메???�러?�터</span>
                                     <span className="text-2xl font-black text-slate-900 font-mono italic">{initialClusters.length}</span>
                                 </div>
                                 <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col gap-2">
-                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">활성 그룹 시퀀스</span>
+                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">?�성 그룹 ?�퀀??/span>
                                     <span className="text-2xl font-black text-slate-900 font-mono italic">{groups.length}</span>
                                 </div>
                             </div>
@@ -459,42 +471,41 @@ export default function CommonCodeClient({
             <StandardModal
                 isOpen={isModalOpen}
                 onClose={() => setIsOpen(false)}
-                title={editingDetail ? '아키텍처 명세 수정' : '신규 명세 등록'}
+                title={editingDetail ? '?�키?�처 명세 ?�정' : '?�규 명세 ?�록'}
                 maxWidth="3xl"
                 footer={
                     <div className="flex w-full gap-4">
                         <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
                         <Button form="code-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group">
-                            <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 저장
-                        </Button>
+                            <Plus size={18} className="group-hover:rotate-90 transition-transform" /> ?�??                        </Button>
                     </div>
                 }
             >
                 <form id="code-form" onSubmit={handleSubmitDetail} className="space-y-10 pt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="space-y-8">
-                            <FormField label="상위 그룹 식별자">
+                            <FormField label="?�위 그룹 ?�별??>
                                 <div className="h-14 flex items-center px-6 rounded-2xl bg-slate-100 border-none font-mono text-xs font-black shadow-inner text-slate-500">
                                     {selectedGroup?.codeId}
                                 </div>
                             </FormField>
-                            <FormField label="코드 식별키 (Unique ID)" required>
+                            <FormField label="코드 ?�별??(Unique ID)" required>
                                 <Input
                                     name="code"
                                     defaultValue={editingDetail?.code}
                                     required
                                     readOnly={!!editingDetail}
                                     className="h-14 rounded-2xl font-mono text-xs font-black shadow-inner border-none bg-slate-50 focus:bg-white transition-all"
-                                    placeholder="고유 키 코드 (예: CM001)"
+                                    placeholder="고유 ??코드 (?? CM001)"
                                 />
                             </FormField>
-                            <FormField label="논리 레이블 (Label)" required>
-                                <Input name="codeNm" defaultValue={editingDetail?.codeNm} required className="h-14 rounded-2xl text-sm font-black tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all" placeholder="한글/영문 코드 이름" />
+                            <FormField label="?�리 ?�이�?(Label)" required>
+                                <Input name="codeNm" defaultValue={editingDetail?.codeNm} required className="h-14 rounded-2xl text-sm font-black tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all" placeholder="?��?/?�문 코드 ?�름" />
                             </FormField>
                         </div>
 
                         <div className="space-y-8">
-                            <FormField label="활성 상태 프로토콜">
+                            <FormField label="?�성 ?�태 ?�로?�콜">
                                 <Select
                                     key={editingDetail ? `edit-${editingDetail.code}` : 'new'}
                                     name="useAt"
@@ -505,16 +516,16 @@ export default function CommonCodeClient({
                                     </SelectTrigger>
                                     <SelectContent className="rounded-2xl shadow-xl z-[9999]">
                                         <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-emerald-500">
-                                            --- 사용중 (ACTIVE) ---
+                                            --- ?�용�?(ACTIVE) ---
                                         </SelectItem>
                                         <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">
-                                            --- 미사용 (INACTIVE) ---
+                                            --- 미사??(INACTIVE) ---
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </FormField>
-                            <FormField label="메타데이터 컨텍스트 설명">
-                                <textarea name="codeDc" defaultValue={editingDetail?.codeDc} className="w-full min-h-[160px] p-6 rounded-[2rem] border-none bg-slate-50 text-[11px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner" placeholder="코드 사용처 및 시스템 제약 조건 설명..." />
+                            <FormField label="메�??�이??컨텍?�트 ?�명">
+                                <textarea name="codeDc" defaultValue={editingDetail?.codeDc} className="w-full min-h-[160px] p-6 rounded-[2rem] border-none bg-slate-50 text-[11px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner" placeholder="코드 ?�용�?�??�스???�약 조건 ?�명..." />
                             </FormField>
                         </div>
                     </div>

@@ -14,7 +14,7 @@ interface MasterDetailLayoutProps {
 
 /**
  * Precision Workspace - Master-Detail Layout
- * 분할 정복 기반의 정밀 레이아웃 컴포넌트
+ * 분할 ?�복 기반???��? ?�이?�웃 컴포?�트
  */
 export const MasterDetailLayout = ({
  master,
@@ -56,7 +56,7 @@ export const MasterDetailLayout = ({
  animate={{ opacity: 1 }}
  className="h-full w-full flex items-center justify-center text-muted-foreground p-8"
  >
- <p className="text-sm tracking-tight ">항목을 선택하여 상세정보를 확인하세요</p>
+ <p className="text-sm tracking-tight ">??��???�택?�여 ?�세?�보�??�인?�세??/p>
  </motion.div>
  )}
  </AnimatePresence>

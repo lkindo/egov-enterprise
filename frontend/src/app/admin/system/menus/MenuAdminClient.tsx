@@ -104,7 +104,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   const [dropPosition, setDropPosition] = useState<'before' | 'inside' | 'after' | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
-  // 서버 데이터(initialMenus) 동기화 - 사용자의 현재 작업이 없거나 드래그 중이 아닐 때만 업데이트
+  // ?�버 ?�이??initialMenus) ?�기??- ?�용?�의 ?�재 ?�업???�거???�래�?중이 ?�닐 ?�만 ?�데?�트
   useEffect(() => {
     if (!hasChanges && !isSaving && !draggedMenuId) {
       setTreeMenus(buildMenuTree(initialMenus));
@@ -173,13 +173,12 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       if (!items || !Array.isArray(items)) return;
 
       items.forEach((item, idx) => {
-        // 성공 이력이 확인된 규격으로 전송 (null 방식)
+        // ?�공 ?�력???�인??규격?�로 ?�송 (null 방식)
         const parentNo = parentId === 0 ? null : parentId;
 
-        // 서버 부하와 로직 충돌 방지를 위해 핵심 필드만 정제 (Payload Sanitization)
+        // ?�버 부?��? 로직 충돌 방�?�??�해 ?�심 ?�드�??�제 (Payload Sanitization)
         flat.push({
-          id: item.menuNo, // id 필드 대응
-          menuNo: item.menuNo,
+          id: item.menuNo, // id ?�드 ?�??          menuNo: item.menuNo,
           menuOrdr: idx + 1,
           upperMenuNo: parentNo,
           upperMenuId: parentNo,
@@ -203,7 +202,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       if (res.success) {
         toast(res.message, 'success');
         setHasChanges(false);
-        // 부드러운 배경 갱신을 위해 startTransition 사용
+        // 부?�러??배경 갱신???�해 startTransition ?�용
         React.startTransition(() => {
           router.refresh();
         });
@@ -212,7 +211,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       }
     } catch (err: any) {
       console.error('Critical Error in handleSaveChanges:', err);
-      toast('순서 변환 중 예기치 않은 오류가 발생했습니다.', 'error');
+      toast('?�서 변??�??�기�??��? ?�류가 발생?�습?�다.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -220,10 +219,10 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
   const handleDelete = async (id: number) => {
     const isConfirmed = await confirm({
-      title: '메뉴 삭제 확인',
-      message: '해당 메뉴를 삭제하면 모든 하위 메뉴가 함께 삭제되며 복구할 수 없습니다. 계속하시겠습니까?',
+      title: '메뉴 ??�� ?�인',
+      message: '?�당 메뉴�???��?�면 모든 ?�위 메뉴가 ?�께 ??��?�며 복구?????�습?�다. 계속?�시겠습?�까?',
       variant: 'destructive',
-      confirmText: '삭제'
+      confirmText: '??��'
     });
     if (isConfirmed) {
       const res = await deleteMenuAction(null, id);
@@ -271,9 +270,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     e.dataTransfer.setData('menuId', String(id));
     e.dataTransfer.effectAllowed = 'move';
 
-    // 브라우저가 드래그 세션을 완전히 생성한 '직후'에 상태를 업데이트 (0ms 지연)
-    // 드래그 시작 즉시 DOM이 변하면 브라우저가 드래그를 강제 취소하는 버그 대응
-    setTimeout(() => {
+    // 브라?��?가 ?�래�??�션???�전???�성??'직후'???�태�??�데?�트 (0ms 지??
+    // ?�래�??�작 즉시 DOM??변?�면 브라?��?가 ?�래그�? 강제 취소?�는 버그 ?�??    setTimeout(() => {
       setDraggedMenuId(id);
     }, 0);
   };
@@ -312,7 +310,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     e.preventDefault();
     e.stopPropagation();
 
-    // 어떤 상황에서도 잔상이 남지 않도록 클린업 보장
+    // ?�떤 ?�황?�서???�상???��? ?�도�??�린??보장
     const cleanup = () => {
       setDraggedMenuId(null);
       setDropTargetId(null);
@@ -391,7 +389,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     setDraggedMenuId(null);
     setDropTargetId(null);
     setDropPosition(null);
-    toast('메뉴 구조가 변경되었습니다. 트리 섹션 상단의 [레이아웃 적용] 버튼을 클릭하여 저장해 주세요.', 'info');
+    toast('메뉴 구조가 변경되?�습?�다. ?�리 ?�션 ?�단??[?�이?�웃 ?�용] 버튼???�릭?�여 ?�?�해 주세??', 'info');
   };
 
   const MenuNode = ({ item, level = 0 }: { item: MenuInfo; level: number }) => {
@@ -533,14 +531,14 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="네비게이션 정보 아키텍처"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '메뉴 관리' }]}
+        title="?�비게이???�보 ?�키?�처"
+        breadcrumbs={[{ label: '?�스?��?�? }, { label: '메뉴 관�? }]}
       />
 
       <HubHeader
         title="메뉴"
-        highlight="아키텍처"
-        subtitle="시스템 전반의 계층적 메뉴 구조 설계와 권한 기반 네비게이션 트리 관리"
+        highlight="?�키?�처"
+        subtitle="?�스???�반??계층??메뉴 구조 ?�계?� 권한 기반 ?�비게이???�리 관�?
         icon={FolderTree}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -549,22 +547,22 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               size="lg"
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
             >
-              <Plus size={20} /> 신규 등록
+              <Plus size={20} /> ?�규 ?�록
             </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="등록된_노드_수" value={(initialMenus || []).length} icon={Database} color="primary" />
+        <HubMetricCard title="?�록???�드_?? value={(initialMenus || []).length} icon={Database} color="primary" />
         <HubMetricCard title="계층_깊이" value={3} icon={LayoutGrid} color="indigo" />
-        <HubMetricCard title="활성_경로_수" value={(initialMenus || []).filter(m => !!m?.modernRoute).length} icon={Network} color="emerald" />
-        <HubMetricCard title="동기화_무결성" value="최적" icon={ShieldCheck} color="amber" />
+        <HubMetricCard title="?�성_경로_?? value={(initialMenus || []).filter(m => !!m?.modernRoute).length} icon={Network} color="emerald" />
+        <HubMetricCard title="?�기??무결?? value="최적" icon={ShieldCheck} color="amber" />
       </HubMetricGrid>
 
       <HubSectionCard
-        title="시스템 네비게이션 트리"
-        description="최대 3단계의 계층 구조를 지원합니다. 드래그 앤 드롭으로 메뉴 구조를 설계하십시오."
+        title="?�스???�비게이???�리"
+        description="최�? 3?�계??계층 구조�?지?�합?�다. ?�래�????�롭?�로 메뉴 구조�??�계?�십?�오."
         icon={SearchCode}
         action={
           <div className="flex gap-4 items-center">
@@ -574,14 +572,13 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                 onClick={handleExpandAll}
                 className="h-10 px-3 text-[10px] font-black tracking-widest uppercase hover:bg-white/20 text-white/70 hover:text-white"
               >
-                <ChevronsUpDown size={14} className="mr-2" /> 펼치기
-              </Button>
+                <ChevronsUpDown size={14} className="mr-2" /> ?�치�?              </Button>
               <Button
                 variant="ghost"
                 onClick={handleCollapseAll}
                 className="h-10 px-3 text-[10px] font-black tracking-widest uppercase hover:bg-white/20 text-white/70 hover:text-white"
               >
-                <ChevronsDownUp size={14} className="mr-2" /> 접기
+                <ChevronsDownUp size={14} className="mr-2" /> ?�기
               </Button>
             </div>
 
@@ -596,7 +593,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                 ) : (
                   <Save size={16} />
                 )}
-                {isSaving ? '처리 중...' : '저장'}
+                {isSaving ? '처리 �?..' : '?�??}
               </Button>
             )}
           </div>
@@ -626,8 +623,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               <Plus size={32} />
             </div>
             <div className="text-center space-y-2">
-              <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">아키텍처 어셈블리</p>
-              <p className="text-sm font-black text-muted-foreground tracking-tight group-hover:text-foreground transition-colors uppercase">드래그한 요소를 여기에 놓으면 '최상위' 노드로 프로모션됩니다</p>
+              <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">?�키?�처 ?�셈블리</p>
+              <p className="text-sm font-black text-muted-foreground tracking-tight group-hover:text-foreground transition-colors uppercase">?�래그한 ?�소�??�기???�으�?'최상?? ?�드�??�로모션?�니??/p>
             </div>
           </div>
         </div>
@@ -636,7 +633,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       <StandardModal
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
-        title={mode === 'create' ? '신규 네비게이션 노드 설계' : '메뉴 노드 구성 속성 수정'}
+        title={mode === 'create' ? '?�규 ?�비게이???�드 ?�계' : '메뉴 ?�드 구성 ?�성 ?�정'}
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
@@ -645,29 +642,29 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               onClick={() => handleSave()}
               className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest shadow-xl"
             >
-              {mode === 'create' ? '저장' : '저장'}
+              {mode === 'create' ? '?�?? : '?�??}
             </Button>
           </div>
         }
       >
         <div className="space-y-8 pt-4">
-          <FormField label="메뉴 명칭" required description="사용자 인터페이스에 노출될 라벨입니다.">
+          <FormField label="메뉴 명칭" required description="?�용???�터?�이?�에 ?�출???�벨?�니??">
             <Input
               value={formData.menuNm || ''}
               onChange={(e) => setFormData({ ...formData, menuNm: e.target.value })}
               className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner"
-              placeholder="메뉴 이름 입력 (예: 사용자 관리)"
+              placeholder="메뉴 ?�름 ?�력 (?? ?�용??관�?"
             />
           </FormField>
 
           <div className="grid grid-cols-2 gap-8">
-            <FormField label="상위 노드 식별자">
+            <FormField label="?�위 ?�드 ?�별??>
               <div className="h-14 rounded-2xl border-2 border-slate-100 flex items-center px-6 text-[10px] font-black tracking-widest uppercase bg-slate-50/50 text-muted-foreground/60 italic overflow-hidden shadow-inner">
-                {formData.upperMenuId === 0 ? 'SYSTEM_ROOT (최상위)' : `PARENT_NODE_${formData.upperMenuId}`}
+                {formData.upperMenuId === 0 ? 'SYSTEM_ROOT (최상??' : `PARENT_NODE_${formData.upperMenuId}`}
               </div>
             </FormField>
 
-            <FormField label="표열 순서 (우선순위)" required>
+            <FormField label="?�열 ?�서 (?�선?�위)" required>
               <Input
                 type="number"
                 value={formData.menuOrdr}
@@ -677,13 +674,13 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
             </FormField>
           </div>
 
-          <FormField label="연동 소프트웨어 자산 (대상 모듈)">
+          <FormField label="?�동 ?�프?�웨???�산 (?�??모듈)">
             <Select
               value={formData.progrmFileNm || ''}
               onValueChange={(v) => setFormData({ ...formData, progrmFileNm: v })}
             >
               <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase focus:ring-4 focus:ring-primary/10 transition-all shadow-inner">
-                <SelectValue placeholder="--- UNLINKED (연동되지 않음) ---" />
+                <SelectValue placeholder="--- UNLINKED (?�동?��? ?�음) ---" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl shadow-2xl p-2">
                 {programs.map((p) => (
@@ -695,24 +692,24 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
             </Select>
           </FormField>
 
-          <FormField label="라우팅 엔드포인트 (경로)" description="전자정부 표준 프레임워크 기반 프론트엔드 라우트 경로">
+          <FormField label="?�우???�드?�인??(경로)" description="?�자?��? ?��? ?�레?�워??기반 ?�론?�엔???�우??경로">
             <div className="relative group/route">
               <Network size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/route:opacity-100 transition-opacity" />
               <Input
                 value={formData.modernRoute || ''}
                 onChange={(e) => setFormData({ ...formData, modernRoute: e.target.value })}
                 className="h-14 pl-16 rounded-2xl text-xs font-mono font-black italic shadow-inner border-2 border-slate-100"
-                placeholder="예: /admin/system/codes"
+                placeholder="?? /admin/system/codes"
               />
             </div>
           </FormField>
 
-          <FormField label="노드 상세 메타데이터">
+          <FormField label="?�드 ?�세 메�??�이??>
             <textarea
               value={formData.menuDc || ''}
               onChange={(e) => setFormData({ ...formData, menuDc: e.target.value })}
               className="w-full min-h-[140px] p-6 rounded-2xl border-2 border-border bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
-              placeholder="메뉴에 대한 상세 설명 및 주석"
+              placeholder="메뉴???�???�세 ?�명 �?주석"
             />
           </FormField>
         </div>

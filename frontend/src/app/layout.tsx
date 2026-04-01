@@ -11,8 +11,8 @@ import { cookies } from 'next/headers';
 import { menuService } from '@/services/business/user/MenuService';
 
 export const metadata: Metadata = {
-  title: '전자정부 프레임워크 현대화',
-  description: 'KRDS 기반 모던 전사 공통 모듈',
+  title: '?�자?��? ?�레?�워???��???,
+  description: 'KRDS 기반 모던 ?�사 공통 모듈',
 };
 
 interface MenuWithChildren {

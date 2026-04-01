@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import RoughMapManagementClient from './RoughMapManagementClient';
 
 export const metadata: Metadata = {
-  title: '약도 관리 | eGov Enterprise System',
-  description: '에고브 엔터프라이즈 공간 인텔리전스 및 약도 관리 센터',
+  title: '?�도 관�?| eGov Enterprise System',
+  description: '?�고�??�터?�라?�즈 공간 ?�텔리전??�??�도 관�??�터',
 };
 
 export default function RoughMapPage() {

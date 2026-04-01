@@ -12,8 +12,7 @@ interface VirtualScrollListProps<T> {
 }
 
 /**
- * 대량의 데이터를 효율적으로 보여주기 위한 가상화 리스트
- */
+ * ?�?�의 ?�이?��? ?�율?�으�?보여주기 ?�한 가?�화 리스?? */
 export function VirtualScrollList<T>({
  items,
  itemHeight,

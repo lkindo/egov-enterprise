@@ -55,11 +55,11 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
   const [startDate, setStartDate] = useState<Date | undefined>(initialParams.startDate ? new Date(initialParams.startDate) : undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(initialParams.endDate ? new Date(initialParams.endDate) : undefined);
   
-  // 마스터 정보 및 템플릿 확인
+  // 마스???�보 �??�플�??�인
   const masterInfo = initialData.masterInfo || null;
   const tmplatId = masterInfo?.tmplatId || 'TMPLT_LIST';
-  // 메뉴를 통한 진입 여부 (관리자 대시보드용이 아닌 실제 서비스용인지 확인)
-  // 관리자 권한이 있어도 일반 게시판 서비스 위치일 경우 통계를 숨김
+  // 메뉴�??�한 진입 ?��? (관리자 ?�?�보?�용???�닌 ?�제 ?�비?�용?��? ?�인)
+  // 관리자 권한???�어???�반 게시???�비???�치??경우 ?�계�??��?
   const isManagementView = pathname.includes('/admin/system/board-masters') || !bbsId.startsWith('BBSMSTR_');
 
  const { data, isLoading: loading } = useBoardList({
@@ -84,29 +84,29 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
 
  return (
  <div className="flex flex-col gap-6 p-6 pb-20">
-  {/* Breadcrumb - 동적 메뉴 시스템 연동 */}
+  {/* Breadcrumb - ?�적 메뉴 ?�스???�동 */}
   <DynamicBreadcrumb 
     customItems={[
-      { name: pathname.includes('/admin/system') ? '시스템 관리' : '커뮤니티 및 콘텐츠' },
-      { name: masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공지사항' : '게시판') }
+      { name: pathname.includes('/admin/system') ? '?�스??관�? : '커�??�티 �?콘텐�? },
+      { name: masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공�??�항' : '게시??) }
     ]}
   />
 
-  {/* 템플릿에 따른 차별화된 상단 헤더 */}
+  {/* ?�플릿에 ?�른 차별?�된 ?�단 ?�더 */}
   <div className="flex flex-col gap-4 mb-4">
     <div className="flex items-center gap-3">
       <div className={cn("w-1.5 h-8 rounded-full", tmplatId === 'TMPLT_HUB' ? "bg-indigo-500" : "bg-primary")} />
       <h2 className="text-3xl font-black tracking-tight">
-        {masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공지사항' : '게시판')}
+        {masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공�??�항' : '게시??)}
       </h2>
-      {tmplatId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2">지식 허브</Badge>}
+      {tmplatId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2">지???�브</Badge>}
     </div>
     <p className="text-muted-foreground font-medium ml-4">
-      {masterInfo?.bbsIntrcn || '이 게시판의 활동량과 최신 소식을 확인하세요.'}
+      {masterInfo?.bbsIntrcn || '??게시?�의 ?�동?�과 최신 ?�식???�인?�세??'}
     </p>
   </div>
 
-  {/* 관리자 뷰에서만 통계 리포트 노출 */}
+  {/* 관리자 뷰에?�만 ?�계 리포???�출 */}
   {isAdmin && isManagementView && <BoardStats />}
 
  <Card className="border-none shadow-2xl overflow-hidden rounded-[2.5rem] ring-1 ring-slate-200 bg-white">
@@ -114,22 +114,22 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
   <div className="space-y-2 relative z-10">
   <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
   {tmplatId === 'TMPLT_HUB' ? <BookOpen className="w-8 h-8 text-primary" /> : <MessageSquare className="w-8 h-8 text-primary" />}
-  <span>{masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공지사항' : '자유 게시판')}</span>
+  <span>{masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공�??�항' : '?�유 게시??)}</span>
   </CardTitle>
-  <p className="text-slate-400 font-bold text-sm">총 <span className="text-white">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
+  <p className="text-slate-400 font-bold text-sm">�?<span className="text-white">{totalCount}�?/span>???�중???�야기�? ?�겨?�습?�다.</p>
   </div>
  <CardAction className="relative z-10 flex items-center gap-3">
   {isAdmin && (
   <Link href="/admin/community/boards/master">
   <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-white/20 bg-white/10 text-white hover:bg-white hover:text-slate-900 font-black shadow-xl transition-all rounded-2xl backdrop-blur-md">
-  <Settings2 className="w-6 h-6" /> 마스터 콘솔
+  <Settings2 className="w-6 h-6" /> 마스??콘솔
   </Button>
   </Link>
   )}
   <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
   <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-2xl">
   <div className="flex items-center gap-2">
-  <Plus className="w-6 h-6" /> 신규 등록
+  <Plus className="w-6 h-6" /> ?�규 ?�록
   </div>
   </Button>
   </Link>
@@ -144,12 +144,12 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  <div className="flex flex-col md:flex-row gap-4">
  <Select value={searchCnd} onValueChange={setSearchCnd}>
  <SelectTrigger className="w-full md:w-[150px] h-16 rounded-2xl border-2 border-white bg-white font-bold shadow-sm">
- <SelectValue placeholder="검색 조건" />
+ <SelectValue placeholder="검??조건" />
  </SelectTrigger>
  <SelectContent>
- <SelectItem value="0">제목</SelectItem>
- <SelectItem value="1">내용</SelectItem>
- <SelectItem value="2">작성자</SelectItem>
+ <SelectItem value="0">?�목</SelectItem>
+ <SelectItem value="1">?�용</SelectItem>
+ <SelectItem value="2">?�성??/SelectItem>
  </SelectContent>
  </Select>
  <div className="relative flex-1 group">
@@ -157,7 +157,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  <Input
  type="text"
  className="pl-14 h-16 text-lg border-2 border-white bg-white shadow-sm rounded-2xl focus-visible:ring-primary/20 transition-all font-bold"
- placeholder="어떤 정보를 찾으시나요?"
+ placeholder="?�떤 ?�보�?찾으?�나??"
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
  />
@@ -185,21 +185,20 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
   format(startDate, "yyyy.MM.dd")
   )
   ) : (
-  <span>기간 선택</span>
+  <span>기간 ?�택</span>
   )}
  </Button>
  </PopoverTrigger>
  <PopoverContent className="w-auto p-0 rounded-3xl overflow-hidden border-none shadow-2xl" align="start">
  <div className="p-4 bg-white border-b flex items-center justify-between">
- <span className="font-black text-slate-800">기간 설정</span>
+ <span className="font-black text-slate-800">기간 ?�정</span>
  <Button
  variant="ghost"
  size="sm"
  onClick={() => { setStartDate(undefined); setEndDate(undefined); }}
  className="h-8 px-2 text-sm font-bold text-slate-400 hover:text-red-500"
  >
- <X size={14} className="mr-1" /> 초기화
- </Button>
+ <X size={14} className="mr-1" /> 초기?? </Button>
  </div>
  <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x">
  <Calendar
@@ -225,12 +224,12 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  <Select value={orderBy} onValueChange={setOrderBy}>
  <SelectTrigger className="w-full md:w-[150px] h-14 rounded-2xl border-2 border-white bg-white font-bold shadow-sm">
  <ArrowUpDown className="mr-2 h-4 w-4 text-primary opacity-50" />
- <SelectValue placeholder="정렬 방식" />
+ <SelectValue placeholder="?�렬 방식" />
  </SelectTrigger>
  <SelectContent>
- <SelectItem value="date">최신순</SelectItem>
- <SelectItem value="views">조회수순</SelectItem>
- <SelectItem value="comments">댓글순</SelectItem>
+ <SelectItem value="date">최신??/SelectItem>
+ <SelectItem value="views">조회?�순</SelectItem>
+ <SelectItem value="comments">?��???/SelectItem>
  </SelectContent>
  </Select>
  </div>
@@ -281,8 +280,8 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                   <span className="text-sm font-bold text-slate-600">{item.frstRegisterNm}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><Eye size={12} /> {item.inqireCo}회</span>
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><MessageSquare size={12} /> {0}개</span>
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><Eye size={12} /> {item.inqireCo}??/span>
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><MessageSquare size={12} /> {0}�?/span>
                 </div>
               </div>
             </CardContent>
@@ -292,17 +291,17 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
     ) : list.length === 0 ? (
       <div className="flex flex-col items-center justify-center h-80 gap-4 text-slate-300">
         <div className="p-10 bg-slate-50 rounded-full"><MessageSquare className="w-16 h-16 opacity-10" /></div>
-        <p className="text-xl font-black">게시글이 아직 없습니다.</p>
+        <p className="text-xl font-black">게시글???�직 ?�습?�다.</p>
       </div>
     ) : (
       <Table>
         <TableHeader className="bg-slate-50/80">
           <TableRow className="hover:bg-transparent border-b-2">
             <TableHead className="w-[80px] text-center font-black text-slate-400 tracking-tight text-[11px] py-8">번호</TableHead>
-            <TableHead className="font-black text-slate-900 tracking-tight text-[11px] py-8 px-6">제목</TableHead>
-            <TableHead className="w-[150px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">작성자</TableHead>
-            <TableHead className="w-[140px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">등록일</TableHead>
-            <TableHead className="w-[180px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">참여도</TableHead>
+            <TableHead className="font-black text-slate-900 tracking-tight text-[11px] py-8 px-6">?�목</TableHead>
+            <TableHead className="w-[150px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">?�성??/TableHead>
+            <TableHead className="w-[140px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">?�록??/TableHead>
+            <TableHead className="w-[180px] font-black text-slate-400 tracking-tight text-[11px] py-8 text-center">참여??/TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -357,7 +356,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  disabled={page번호 === 1}
  className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
  >
- 이전
+ ?�전
  </Button>
  <div className="flex items-center gap-4 bg-slate-900 px-8 py-3 rounded-2xl shadow-xl">
  <span className="text-lg font-black text-white">{page번호}</span>
@@ -370,7 +369,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
  disabled={page번호 === totalPages}
  className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
  >
- 다음
+ ?�음
  </Button>
  </div>
  ) : null}

@@ -5,8 +5,8 @@ import IsmClient from './IsmClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 
 export const metadata = {
- title: '약식결재 및 승인 관리 | 전자정부 표준프레임워크',
- description: '시스템 내 발생하는 약식 결재 요청을 승인 또는 반려 처리합니다.',
+ title: '?�식결재 �??�인 관�?| ?�자?��? ?��??�레?�워??,
+ description: '?�스????발생?�는 ?�식 결재 ?�청???�인 ?�는 반려 처리?�니??',
 };
 
 export default async function InformalSanctionPage() {

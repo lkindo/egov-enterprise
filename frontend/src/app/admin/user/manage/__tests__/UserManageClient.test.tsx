@@ -57,7 +57,7 @@ vi.mock('@/app/components/ui/standard-modal', () => ({
   StandardModal: ({ children, isOpen, title, onClose, footer }: any) => isOpen ? (
     <div data-testid="dialog">
       <h2>{title}</h2>
-      <button onClick={onClose}>모달 닫기</button>
+      <button onClick={onClose}>모달 ?�기</button>
       {children}
       <div data-testid="modal-footer">{footer}</div>
     </div>
@@ -132,12 +132,12 @@ describe('UserManageClient Component', () => {
 
  it('opens create dialog when newUser button is clicked', async () => {
  render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
- const createBtn = screen.getByText(/신규 등록/i);
+ const createBtn = screen.getByText(/?�규 ?�록/i);
  fireEvent.click(createBtn);
 
  const dialog = await screen.findByTestId('dialog');
  expect(dialog).toBeDefined();
- expect(within(dialog).getByText('신규 아이덴티티 프로비저닝')).toBeDefined();
+ expect(within(dialog).getByText('?�규 ?�이?�티???�로비�???)).toBeDefined();
  });
 
  it('opens edit dialog with user data when pencil icon is clicked', async () => {
@@ -148,9 +148,9 @@ describe('UserManageClient Component', () => {
 
  const dialog = await screen.findByTestId('dialog');
  expect(dialog).toBeDefined();
- expect(within(dialog).getByText('사용자 아키텍트 명세 수정')).toBeDefined();
+ expect(within(dialog).getByText('?�용???�키?�트 명세 ?�정')).toBeDefined();
  
- const idInput = within(dialog).getByLabelText(/사용자 고유 식별 명칭/i) as HTMLInputElement;
+ const idInput = within(dialog).getByLabelText(/?�용??고유 ?�별 명칭/i) as HTMLInputElement;
  expect(idInput.value).toBe('user1');
  expect(idInput.readOnly).toBe(true);
  });
@@ -175,17 +175,17 @@ describe('UserManageClient Component', () => {
  render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
  
  // Open dialog
- fireEvent.click(screen.getByText(/신규 등록/i));
+ fireEvent.click(screen.getByText(/?�규 ?�록/i));
 
  const dialog = await screen.findByTestId('dialog');
 
  // Fill form
- fireEvent.change(within(dialog).getByLabelText(/사용자 고유 식별 명칭/i), { target: { value: 'newuser' } });
- fireEvent.change(within(dialog).getByLabelText(/사용자 성명/i), { target: { value: 'New User' } });
- fireEvent.change(within(dialog).getByLabelText(/인증 크리덴셜/i), { target: { value: 'password123' } });
+ fireEvent.change(within(dialog).getByLabelText(/?�용??고유 ?�별 명칭/i), { target: { value: 'newuser' } });
+ fireEvent.change(within(dialog).getByLabelText(/?�용???�명/i), { target: { value: 'New User' } });
+ fireEvent.change(within(dialog).getByLabelText(/?�증 ?�리?�셜/i), { target: { value: 'password123' } });
 
  // Submit
- fireEvent.click(within(dialog).getByText('저장'));
+ fireEvent.click(within(dialog).getByText('?�??));
 
  await waitFor(() => {
  expect(userActions.createUserAction).toHaveBeenCalled();

@@ -77,12 +77,12 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
           {item.confmAt === 'Y' ? (
             <>
               <CheckCircle2 size={12} className="animate-pulse" />
-              <span>동기화 확인됨</span>
+              <span>?�기???�인??/span>
             </>
           ) : (
             <>
               <RefreshCcw size={12} className="animate-spin-slow" />
-              <span>대기 중</span>
+              <span>?��?�?/span>
             </>
           )}
         </div>
@@ -104,14 +104,14 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="상훈 및 포상 관리 체계"
-        breadcrumbs={[{ label: '운영지원' }, { label: '상훈관리' }, { label: '포상관리' }]}
+        title="?�훈 �??�상 관�?체계"
+        breadcrumbs={[{ label: '?�영지?? }, { label: '?�훈관�? }, { label: '?�상관�? }]}
       />
 
       <HubHeader
         title="Reward &"
         highlight="Honor"
-        subtitle="조직 내 우수한 성과 및 공헌에 대한 포상 기록을 정밀하게 트래킹하고 승인 프로세스를 관리하는 통제실입니다."
+        subtitle="조직 ???�수???�과 �?공헌???�???�상 기록???��??�게 ?�래?�하�??�인 ?�로?�스�?관리하???�제?�입?�다."
         icon={Trophy}
         actions={
           <div className="flex gap-4">
@@ -123,22 +123,22 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
               <RefreshCcw size={22} className="hover:rotate-180 transition-transform duration-700" />
             </Button>
             <Button className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase hover:bg-primary transition-all hover:-translate-y-1 gap-3 shadow-2xl">
-              <Plus size={20} /> 포상 기록 신규 실장
+              <Plus size={20} /> ?�상 기록 ?�규 ?�장
             </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="포상 현황" value={totalItems} icon={Layers} color="amber" />
-        <HubMetricCard title="동기화 상태" value="확인됨" icon={Zap} color="emerald" status="동기화됨" />
-        <HubMetricCard title="활성 레코드" value={rewards.length} icon={Activity} color="primary" />
-        <HubMetricCard title="감시 프로브" value="안전함" icon={Filter} color="indigo" />
+        <HubMetricCard title="?�상 ?�황" value={totalItems} icon={Layers} color="amber" />
+        <HubMetricCard title="?�기???�태" value="?�인?? icon={Zap} color="emerald" status="?�기?�됨" />
+        <HubMetricCard title="?�성 ?�코?? value={rewards.length} icon={Activity} color="primary" />
+        <HubMetricCard title="감시 ?�로�? value="?�전?? icon={Filter} color="indigo" />
       </HubMetricGrid>
 
       <HubSectionCard
-        title="포상 아카이브 매트릭스"
-        description="전사적으로 관리되는 상훈 및 포상 데이터 유닛의 실시간 스트림 및 상세 상세 명세입니다."
+        title="?�상 ?�카?�브 매트�?��"
+        description="?�사?�으�?관리되???�훈 �??�상 ?�이???�닛???�시�??�트�?�??�세 ?�세 명세?�니??"
         icon={Trophy}
       >
         <div className="space-y-8">
@@ -146,7 +146,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
             <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
               <Input
-                placeholder="포상 명칭 또는 대상자 식별자로 분석..."
+                placeholder="?�상 명칭 ?�는 ?�?�자 ?�별?�로 분석..."
                 className="h-16 pl-16 rounded-2xl border-2 bg-slate-50/50 text-sm font-black tracking-tight shadow-inner"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
@@ -163,7 +163,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
               columns={columns}
               data={rewards}
               loading={isLoading}
-              emptyMessage="식별된 포상 아랍 레코드가 존재하지 않습니다."
+              emptyMessage="?�별???�상 ?�랍 ?�코?��? 존재?��? ?�습?�다."
               className="border-none bg-transparent shadow-none"
               pagination={{
                 currentPage: page,

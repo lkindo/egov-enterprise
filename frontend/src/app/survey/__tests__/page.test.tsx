@@ -24,6 +24,6 @@ import SurveyListPage from '../page';
 describe('SurveyListPage', () => {
   it('renders survey list page structure', async () => {
   render(<SurveyListPage />);
-  expect(await screen.findByText(/온라인 설문 조사/)).toBeInTheDocument();
+  expect(await screen.findByText(/?�라???�문 조사/)).toBeInTheDocument();
   });
 });

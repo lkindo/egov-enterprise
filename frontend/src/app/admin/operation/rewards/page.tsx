@@ -3,8 +3,8 @@ import { operationAdminService } from '@/services/foundation/operation/Operation
 import RewardManageClient from './RewardManageClient';
 
 export const metadata = {
- title: '포상 관리 | 전자정부 표준프레임워크',
- description: '임직원 포상 및 상훈 정보를 관리합니다.',
+ title: '?�상 관�?| ?�자?��? ?��??�레?�워??,
+ description: '?�직???�상 �??�훈 ?�보�?관리합?�다.',
 };
 
 export default async function RewardManagePage() {
@@ -17,7 +17,7 @@ export default async function RewardManagePage() {
  }
 
  return (
- <Suspense fallback={<div>로딩 중...</div>}>
+ <Suspense fallback={<div>로딩 �?..</div>}>
  <RewardManageClient initialData={initialData} />
  </Suspense>
  );

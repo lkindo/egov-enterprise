@@ -43,23 +43,23 @@ export default function PollManagePage() {
  const getStatusBadge = (endDate: string) => {
  const today = new Date();
  const end = new Date(endDate);
- if (end < today) return <Badge variant="secondary">종료됨</Badge>;
- return <Badge variant="default">진행중</Badge>;
+ if (end < today) return <Badge variant="secondary">종료??/Badge>;
+ return <Badge variant="default">진행�?/Badge>;
  };
 
  return (
  <div className="space-y-6">
  <div className="flex justify-between items-center">
- <h2 className="text-2xl font-bold tracking-tight">온라인 설문 관리</h2>
+ <h2 className="text-2xl font-bold tracking-tight">?�라???�문 관�?/h2>
  <Button onClick={() => router.push('/admin/survey/manage/create')}>
  <Plus className="mr-2 h-4 w-4" />
- 설문 등록
+ ?�문 ?�록
  </Button>
  </div>
 
  <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
  <Input
- placeholder="설문명 검색"
+ placeholder="?�문�?검??
  className="max-w-sm"
  value={params.searchKeyword || ''}
  onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
@@ -75,11 +75,11 @@ export default function PollManagePage() {
  <TableHeader>
  <TableRow>
  <TableHead className="w-[60px]">번호</TableHead>
- <TableHead>설문명</TableHead>
+ <TableHead>?�문�?/TableHead>
  <TableHead>기간</TableHead>
- <TableHead>상태</TableHead>
- <TableHead>등록자</TableHead>
- <TableHead>등록일</TableHead>
+ <TableHead>?�태</TableHead>
+ <TableHead>?�록??/TableHead>
+ <TableHead>?�록??/TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
@@ -88,7 +88,7 @@ export default function PollManagePage() {
  ) : polls.length === 0 ? (
  <TableRow>
  <TableCell colSpan={6} className="h-24 text-center">
- 설문 데이터가 없습니다.
+ ?�문 ?�이?��? ?�습?�다.
  </TableCell>
  </TableRow>
  ) : (

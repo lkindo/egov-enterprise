@@ -16,7 +16,7 @@ describe('StandardModal', () => {
  render(
  <div id="modal-root">
  <StandardModal isOpen={true} onClose={() => { }} title="Base Title">
- <div>내용</div>
+ <div>?�용</div>
  </StandardModal>
  </div>
  );

@@ -3,8 +3,8 @@ import { operationAdminService } from '@/services/foundation/operation/Operation
 import ExternalHrClient from './ExternalHrClient';
 
 export const metadata = {
-    title: '외부인사정보 관리 | 전자정부 표준프레임워크',
-    description: '행사 관련 외부인사 정보를 관리합니다.',
+    title: '?��??�사?�보 관�?| ?�자?��? ?��??�레?�워??,
+    description: '?�사 관???��??�사 ?�보�?관리합?�다.',
 };
 
 export default async function ExternalHrPage() {
@@ -17,7 +17,7 @@ export default async function ExternalHrPage() {
     }
 
     return (
-        <Suspense fallback={<div>로딩 중...</div>}>
+        <Suspense fallback={<div>로딩 �?..</div>}>
             <ExternalHrClient initialData={initialData} />
         </Suspense>
     );

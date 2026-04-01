@@ -27,7 +27,7 @@ interface GenericStatsClientProps {
  subtitle: string;
  breadcrumbs: { label: string }[];
  initialData: StatsDto[];
- statsName: string; // e.g., "게시물 수", "이용 건수", "보고서 건수"
+ statsName: string; // e.g., "게시�???, "?�용 건수", "보고??건수"
  exportFilename: string;
 }
 
@@ -72,7 +72,7 @@ export default function GenericStatsClient({
 
  const columns = [
  {
- header: '날짜',
+ header: '?�짜',
  accessor: (item: StatsDto) => (
  <span className="font-mono font-black text-slate-900 tracking-tighter ">
  {item.statsDate ? `${item.statsDate.substring(0, 4)}-${item.statsDate.substring(4, 6)}-${item.statsDate.substring(6, 8)}` : 'N/A'}
@@ -111,7 +111,7 @@ export default function GenericStatsClient({
  </Button>
  <DataExportExcel
  data={initialData}
- headers={[{ label: '날짜', key: 'statsDate' }, { label: statsName, key: 'statsCo' }]}
+ headers={[{ label: '?�짜', key: 'statsDate' }, { label: statsName, key: 'statsCo' }]}
  filename={exportFilename}
  />
  </div>
@@ -123,7 +123,7 @@ export default function GenericStatsClient({
  <div className="flex flex-col md:flex-row md:items-end gap-6 relative z-10">
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1">
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight ml-1">분석 시작</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-1">분석 ?�작</label>
  <div className="relative">
  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
  <Input
@@ -153,8 +153,7 @@ export default function GenericStatsClient({
  className="h-14 px-10 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 min-w-[160px]"
  >
  {loading ? <RefreshCcw size={16} className="animate-spin" /> : <Search size={16} />}
- 동기화
- </Button>
+ ?�기?? </Button>
  </div>
  <div className="absolute right-[-2%] bottom-[-10%] opacity-[0.03] -rotate-12 group-hover:rotate-0 transition-all duration-1000">
  <TrendingUp size={180} />
@@ -169,11 +168,11 @@ export default function GenericStatsClient({
  </div>
  <div>
  <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">{subtitle}</h3>
- <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">시간적 추이 분석</p>
+ <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">?�간??추이 분석</p>
  </div>
  </div>
  <StandardChartWrapper
- title={`${statsName} 시계열 추이`}
+ title={`${statsName} ?�계??추이`}
  type="area"
  data={chartData}
  dataKeys={['count']}
@@ -189,8 +188,8 @@ export default function GenericStatsClient({
  <Database size={24} />
  </div>
  <div>
- <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">데이터 무결성 매트릭스</h3>
- <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">표 형식 데이터셋 뷰</p>
+ <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">?�이??무결??매트�?��</h3>
+ <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">???�식 ?�이?�셋 �?/p>
  </div>
  </div>
  <div className="px-2 overflow-x-auto">
@@ -198,7 +197,7 @@ export default function GenericStatsClient({
  columns={columns}
  data={initialData}
  loading={loading}
- emptyMessage="통계 데이터를 분석 중입니다..."
+ emptyMessage="?�계 ?�이?��? 분석 중입?�다..."
  className="border-none bg-slate-50/50 rounded-[2rem] md:rounded-[3rem] p-4 md:p-8"
  />
  </div>

@@ -27,43 +27,43 @@ interface InsightMessage {
 }
 
 /**
- * AI-Driven 인텔리전스 인사이트 배너
- * 룰 기반 휴리스틱 엔진을 통해 생성된 지능형 요약 정보를 관리자에게 제공합니다.
+ * AI-Driven ?�텔리전???�사?�트 배너
+ * �?기반 ?�리?�틱 ?�진???�해 ?�성??지?�형 ?�약 ?�보�?관리자?�게 ?�공?�니??
  */
 export const InsightBanner: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  // 가상의 지능형 인사이트 데이터 (추후 API 연동 예정)
+  // 가?�의 지?�형 ?�사?�트 ?�이??(추후 API ?�동 ?�정)
   const insights: InsightMessage[] = [
     {
       id: '1',
       type: 'SECURITY',
       severity: 'WARNING',
-      message: "비정상적인 로그인 시도 감지: 지난 10분간 US 지역 IP에서의 접근이 25% 급증했습니다.",
-      timestamp: "방금 전",
-      action: "방화벽 정책 검토"
+      message: "비정?�적??로그???�도 감�?: 지??10분간 US 지??IP?�서???�근??25% 급증?�습?�다.",
+      timestamp: "방금 ??,
+      action: "방화�??�책 검??
     },
     {
       id: '2',
       type: 'TRAFFIC',
       severity: 'INFO',
-      message: "인프라 최적화 성공: 캐싱 서비스 도입 이후 평균 응답 속도가 14.2ms 개선되었습니다.",
-      timestamp: "12분 전"
+      message: "?�프??최적???�공: 캐싱 ?�비???�입 ?�후 ?�균 ?�답 ?�도가 14.2ms 개선?�었?�니??",
+      timestamp: "12�???
     },
     {
       id: '3',
       type: 'SYSTEM',
       severity: 'CRITICAL',
-      message: "DB 커넥션 풀 임계치 도달: 현재 할당량의 88%를 점유 중입니다. 인스턴스 확장을 권장합니다.",
-      timestamp: "5분 전",
-      action: "스케일 아웃 실행"
+      message: "DB 커넥???� ?�계�??�달: ?�재 ?�당?�의 88%�??�유 중입?�다. ?�스?�스 ?�장??권장?�니??",
+      timestamp: "5�???,
+      action: "?��????�웃 ?�행"
     },
     {
       id: '4',
       type: 'OPTIMIZATION',
       severity: 'INFO',
-      message: "정상 가동 중: 전사 시스템 무결성 검사가 완료되었으며, 발견된 이상 징후가 없습니다.",
-      timestamp: "1시간 전"
+      message: "?�상 가??�? ?�사 ?�스??무결??검?��? ?�료?�었?�며, 발견???�상 징후가 ?�습?�다.",
+      timestamp: "1?�간 ??
     }
   ];
 

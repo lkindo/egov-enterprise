@@ -46,13 +46,13 @@ export default function CommonCodeHubClient({
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader title="마스터 데이터 거버넌스" breadcrumbs={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '통합 코드 허브' }]} />
+      <PageHeader title="마스???�이??거버?�스" breadcrumbs={[{ label: '?�스?��?�? }, { label: '코드관�? }, { label: '?�합 코드 ?�브' }]} />
 
       <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-10">
         <HubHeader 
           title="코드" 
-          highlight="통합 허브" 
-          subtitle="시스템 전반의 표준 코드, 행정 표준 및 기관 노드 식별 체계에 대한 통합 거버넌스 관리" 
+          highlight="?�합 ?�브" 
+          subtitle="?�스???�반???��? 코드, ?�정 ?��? �?기�? ?�드 ?�별 체계???�???�합 거버?�스 관�? 
           icon={Database} 
         />
 
@@ -60,19 +60,19 @@ export default function CommonCodeHubClient({
         <div className="bg-slate-100/80 backdrop-blur-md p-2 rounded-[2.5rem] flex flex-wrap gap-2 border border-slate-200/50 shadow-inner">
           <HubTabButton 
             icon={FileCode} 
-            label="표준 코드" 
+            label="?��? 코드" 
             active={activeTab === 'STANDARD'} 
             onClick={() => setActiveTab('STANDARD')} 
           />
           <HubTabButton 
             icon={MapPin} 
-            label="행정 표준" 
+            label="?�정 ?��?" 
             active={activeTab === 'ADMINIST'} 
             onClick={() => setActiveTab('ADMINIST')} 
           />
           <HubTabButton 
             icon={Building2} 
-            label="기관 노드" 
+            label="기�? ?�드" 
             active={activeTab === 'INSTITUTION'} 
             onClick={() => setActiveTab('INSTITUTION')} 
           />
@@ -81,10 +81,10 @@ export default function CommonCodeHubClient({
 
       {/* Code Metrics Section */}
       <HubMetricGrid>
-        <HubMetricCard title="현재 등록 코드" value={groups.length + details.length} icon={Code2} color="primary" />
-        <HubMetricCard title="표준 상태 가용성" value="활성" icon={ShieldCheck} color="emerald" status="동기화됨" />
-        <HubMetricCard title="메타데이터 건전성" value="99.8%" icon={Zap} color="amber" />
-        <HubMetricCard title="노드 연동 속도" value="1.2s" icon={Timer} color="indigo" />
+        <HubMetricCard title="?�재 ?�록 코드" value={groups.length + details.length} icon={Code2} color="primary" />
+        <HubMetricCard title="?��? ?�태 가?�성" value="?�성" icon={ShieldCheck} color="emerald" status="?�기?�됨" />
+        <HubMetricCard title="메�??�이??건전?? value="99.8%" icon={Zap} color="amber" />
+        <HubMetricCard title="?�드 ?�동 ?�도" value="1.2s" icon={Timer} color="indigo" />
       </HubMetricGrid>
 
       {/* --- Viewport Content --- */}

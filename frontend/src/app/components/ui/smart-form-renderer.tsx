@@ -26,8 +26,8 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
         let rule: z.ZodTypeAny = z.string();
         if (field.type === 'number') rule = z.number();
         if (field.required) {
-            if (field.type === 'checkbox') rule = z.boolean().refine(v => v === true, { message: "필수 동의 항목입니다." });
-            else rule = (rule as z.ZodString).min(1, { message: `${field.label}은(는) 필수 입력 항목입니다.` });
+            if (field.type === 'checkbox') rule = z.boolean().refine(v => v === true, { message: "?�수 ?�의 ??��?�니??" });
+            else rule = (rule as z.ZodString).min(1, { message: `${field.label}?�(?? ?�수 ?�력 ??��?�니??` });
         } else {
             rule = rule.optional();
         }
@@ -70,7 +70,7 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
                                         ) : field.type === 'select' ? (
                                             <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
                                                 <SelectTrigger className="h-12 rounded-2xl border-2 border-primary/5 focus:ring-primary/20 transition-all font-bold">
-                                                    <SelectValue placeholder={field.placeholder || "선택하세요"} />
+                                                    <SelectValue placeholder={field.placeholder || "?�택?�세??} />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-2xl border-primary/10">
                                                     {field.options?.map(opt => (
@@ -86,7 +86,7 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
                                                     className="rounded-lg w-5 h-5 border-2 border-primary/20 data-[state=checked]:bg-primary"
                                                 />
                                                 <span className="text-sm font-bold text-foreground/80 group-hover:text-primary transition-colors cursor-pointer" onClick={() => formField.onChange(!formField.value)}>
-                                                    {field.placeholder || '동의합니다'}
+                                                    {field.placeholder || '?�의?�니??}
                                                 </span>
                                             </div>
                                         ) : (
@@ -107,10 +107,9 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
 
                     <div className="col-span-2 pt-6 border-t border-primary/5 mt-4 flex justify-end gap-3">
                         <Button type="button" variant="outline" className="rounded-xl h-12 px-8 font-bold border-2" onClick={() => form.reset()}>
-                            초기화
-                        </Button>
+                            초기??                        </Button>
                         <Button type="submit" className="rounded-xl h-12 px-10 font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">
-                            문서 제출하기
+                            문서 ?�출?�기
                         </Button>
                     </div>
                 </form>

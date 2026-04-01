@@ -168,14 +168,14 @@ export default function MenuByAuthorityPage() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="권한 기반 내비게이션 토폴로지"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '메뉴관리' }, { label: '권한별 메뉴' }]}
+        title="권한 기반 ?�비게이???�폴로�?"
+        breadcrumbs={[{ label: '?�스?��?�? }, { label: '메뉴관�? }, { label: '권한�?메뉴' }]}
       />
 
       <HubHeader 
         title="계층 구조" 
         highlight="감사" 
-        subtitle="특정 보안 역할(Role)에 할당된 기능적 노드 계층 구조 및 접근 경로 매트릭스 시각화" 
+        subtitle="?�정 보안 ??��(Role)???�당??기능???�드 계층 구조 �??�근 경로 매트�?�� ?�각?? 
         icon={Workflow} 
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -187,31 +187,30 @@ export default function MenuByAuthorityPage() {
                 <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
             <Button className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
-                <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> 역할 인벤토리 관리
-            </Button>
+                <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> ??�� ?�벤?�리 관�?            </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="활성_스키마_수" value={authorities.length} icon={Database} color="primary" />
-        <HubMetricCard title="범위_내_노드_수" value={rawMenus.length} icon={LayoutGrid} color="amber" />
-        <HubMetricCard title="계층_깊이" value={selectedAuthority ? "섹터_준비" : "대기"} icon={Compass} color="indigo" />
-        <HubMetricCard title="보안_상태" value="최적" icon={Lock} color="emerald" status="동기화됨" />
+        <HubMetricCard title="?�성_?�키�??? value={authorities.length} icon={Database} color="primary" />
+        <HubMetricCard title="범위_???�드_?? value={rawMenus.length} icon={LayoutGrid} color="amber" />
+        <HubMetricCard title="계층_깊이" value={selectedAuthority ? "?�터_준�? : "?��?} icon={Compass} color="indigo" />
+        <HubMetricCard title="보안_?�태" value="최적" icon={Lock} color="emerald" status="?�기?�됨" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
         {/* Authority Selection Sidebar */}
         <div className="col-span-12 lg:col-span-4 h-full space-y-8">
-            <HubSectionCard title="역할 식별 데이터 선택" description="분석할 보안 컨텍스트 또는 시스템 그룹 권한을 식별하세요." icon={Lock}>
+            <HubSectionCard title="??�� ?�별 ?�이???�택" description="분석??보안 컨텍?�트 ?�는 ?�스??그룹 권한???�별?�세??" icon={Lock}>
                 <div className="space-y-8">
                     <div className="space-y-4 pt-4">
-                        <label className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase ml-2">보안 역할 사양 (Access Role)</label>
+                        <label className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase ml-2">보안 ??�� ?�양 (Access Role)</label>
                         <Select value={selectedAuthority} onValueChange={setSelectedAuthority}>
                             <SelectTrigger className="h-16 px-8 rounded-2xl bg-slate-50/50 border-none shadow-inner text-sm font-black tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
                                 <div className="flex items-center gap-4">
                                      <Fingerprint size={20} className="text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
-                                     <SelectValue placeholder="보안 역할을 선택하십시오..." />
+                                     <SelectValue placeholder="보안 ??��???�택?�십?�오..." />
                                 </div>
                             </SelectTrigger>
                             <SelectContent className="rounded-2xl border-none shadow-2xl p-2 bg-slate-900 text-white">
@@ -237,17 +236,17 @@ export default function MenuByAuthorityPage() {
                                 <Activity size={28} className="text-primary" />
                             </div>
                             <div className="space-y-3">
-                                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase">토폴로지<br />인텔리전스</h4>
-                                <p className="text-[9px] text-white/40 font-black tracking-[0.3em] uppercase leading-relaxed font-mono">실시간 권한 스트림 활성화 ✓</p>
+                                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase">?�폴로�?<br />?�텔리전??/h4>
+                                <p className="text-[9px] text-white/40 font-black tracking-[0.3em] uppercase leading-relaxed font-mono">?�시�?권한 ?�트�??�성????/p>
                             </div>
                             {selectedAuthority && (
                                 <div className="pt-6 border-t border-white/5 space-y-4">
                                     <div className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase text-white/30">
-                                        <span>선택된_ID</span>
+                                        <span>?�택??ID</span>
                                         <span className="text-primary">{selectedAuthority}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase text-white/30">
-                                        <span>클러스터_노드_수</span>
+                                        <span>?�러?�터_?�드_??/span>
                                         <span className="text-white">{rawMenus.length}</span>
                                     </div>
                                 </div>
@@ -261,19 +260,19 @@ export default function MenuByAuthorityPage() {
         {/* Menu Tree Center */}
         <div className="col-span-12 lg:col-span-8 h-full">
             <HubSectionCard 
-                title={currentAuth ? `[${currentAuth.authorNm}] 내비게이션 아키텍처` : "아키텍처 토폴로지 분석"} 
-                description="할당된 모든 시스템 기능과 데이터 진입점에 대한 위계적 청사진입니다." 
+                title={currentAuth ? `[${currentAuth.authorNm}] ?�비게이???�키?�처` : "?�키?�처 ?�폴로�? 분석"} 
+                description="?�당??모든 ?�스??기능�??�이??진입?�에 ?�???�계??�?��진입?�다." 
                 icon={Network}
             >
                 <div className="space-y-8">
                     <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-8">
                         <div>
-                            <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">기능 노드 트리 스트림 (Functional Node Tree)</span>
+                            <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">기능 ?�드 ?�리 ?�트�?(Functional Node Tree)</span>
                         </div>
                         <div className="flex items-center gap-4">
                              {isMenuLoading && <Loader2 className="h-6 w-6 animate-spin text-primary opacity-40" />}
                              <Button variant="ghost" size="sm" className="h-12 rounded-2xl px-6 text-[10px] font-black tracking-widest gap-2 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
-                                 <SearchCode size={16} className="group-hover:rotate-12 transition-transform" /> 노드 분석
+                                 <SearchCode size={16} className="group-hover:rotate-12 transition-transform" /> ?�드 분석
                             </Button>
                         </div>
                     </div>
@@ -289,8 +288,8 @@ export default function MenuByAuthorityPage() {
                                     <div className="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200 shadow-inner mb-8 group-hover:scale-110 transition-transform duration-1000">
                                         <Milestone size={48} className="opacity-20" />
                                     </div>
-                                    <h3 className="text-2xl font-black text-slate-300 tracking-tighter uppercase mb-4">역할 미선택</h3>
-                                    <p className="text-[10px] font-black text-slate-200 tracking-[0.5em] uppercase max-w-[240px] leading-relaxed">역할을 식별하여 시스템 위계 데이터의 시각적 분석을 시작하십시오.</p>
+                                    <h3 className="text-2xl font-black text-slate-300 tracking-tighter uppercase mb-4">??�� 미선??/h3>
+                                    <p className="text-[10px] font-black text-slate-200 tracking-[0.5em] uppercase max-w-[240px] leading-relaxed">??��???�별?�여 ?�스???�계 ?�이?�의 ?�각??분석???�작?�십?�오.</p>
                                 </motion.div>
                             ) : isMenuLoading ? (
                                 <motion.div 
@@ -299,7 +298,7 @@ export default function MenuByAuthorityPage() {
                                     className="absolute inset-0 flex flex-col items-center justify-center gap-6"
                                 >
                                     <Loader2 size={48} className="text-primary animate-spin opacity-40" />
-                                    <span className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">토폴로지 매핑 중...</span>
+                                    <span className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">?�폴로�? 매핑 �?..</span>
                                 </motion.div>
                             ) : menuTree.length === 0 ? (
                                 <motion.div 
@@ -309,8 +308,8 @@ export default function MenuByAuthorityPage() {
                                 >
                                     <ShieldAlert size={64} className="text-rose-500/20" />
                                     <div className="space-y-2 text-center">
-                                        <h4 className="text-lg font-black tracking-tighter text-slate-400 uppercase">활성 노드 없음</h4>
-                                        <p className="text-[9px] font-black text-slate-300 tracking-[0.3em] uppercase">해당 권한에 할당된 기능적 엔드포인트가 식별되지 않았습니다.</p>
+                                        <h4 className="text-lg font-black tracking-tighter text-slate-400 uppercase">?�성 ?�드 ?�음</h4>
+                                        <p className="text-[9px] font-black text-slate-300 tracking-[0.3em] uppercase">?�당 권한???�당??기능???�드?�인?��? ?�별?��? ?�았?�니??</p>
                                     </div>
                                 </motion.div>
                             ) : (

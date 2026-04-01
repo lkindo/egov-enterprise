@@ -23,17 +23,17 @@ const InsertAddressBookPage = () => {
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault();
  if (!formData.adbkNm.trim()) {
- alert('이름을 입력해주세요.');
+ alert('?�름???�력?�주?�요.');
  return;
  }
 
  setLoading(true);
  try {
  await addressbookUserService.createAddressBook(formData);
- alert('등록되었습니다.');
+ alert('?�록?�었?�니??');
  router.push('/admin/collaboration/address-book/selectAddressBookList');
  } catch (error: any) {
- alert(error.response?.data?.message || '등록에 실패했습니다.');
+ alert(error.response?.data?.message || '?�록???�패?�습?�다.');
  } finally {
  setLoading(false);
  }
@@ -44,18 +44,17 @@ const InsertAddressBookPage = () => {
  {/* Breadcrumb */}
  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg w-fit">
  <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
- <Home className="w-4 h-4" /> 홈
- </Link>
+ <Home className="w-4 h-4" /> ?? </Link>
  <ChevronRight className="w-4 h-4" />
- <Link href="/admin/collaboration/address-book/selectAddressBookList" className="hover:text-foreground transition-colors">주소록관리</Link>
+ <Link href="/admin/collaboration/address-book/selectAddressBookList" className="hover:text-foreground transition-colors">주소록�?�?/Link>
  <ChevronRight className="w-4 h-4" />
- <span className="text-foreground font-medium">등록</span>
+ <span className="text-foreground font-medium">?�록</span>
  </div>
 
  <Card className="shadow-xl border-none">
  <CardHeader className="border-b bg-muted/10 pb-6 rounded-t-xl">
  <CardTitle className="text-2xl font-bold flex items-center gap-3">
- <User className="w-6 h-6 text-primary" /> 주소록 신규 등록
+ <User className="w-6 h-6 text-primary" /> 주소�??�규 ?�록
  </CardTitle>
  </CardHeader>
  <form onSubmit={handleSubmit}>
@@ -64,11 +63,11 @@ const InsertAddressBookPage = () => {
  <div className="space-y-6">
  <div className="space-y-2">
  <Label htmlFor="adbkNm" className="text-sm font-semibold flex items-center gap-2">
- <span className="text-destructive">*</span> <User className="w-4 h-4" /> 이름
+ <span className="text-destructive">*</span> <User className="w-4 h-4" /> ?�름
  </Label>
  <Input
  id="adbkNm"
- placeholder="이름을 입력하세요"
+ placeholder="?�름???�력?�세??
  className="h-12 text-base shadow-sm focus-visible:ring-primary/20"
  value={formData.adbkNm}
  onChange={(e) => setFormData({ ...formData, adbkNm: e.target.value })}
@@ -77,7 +76,7 @@ const InsertAddressBookPage = () => {
  </div>
  <div className="space-y-2">
  <Label htmlFor="telNo" className="text-sm font-semibold flex items-center gap-2">
- <Phone className="w-4 h-4" /> 전화번호
+ <Phone className="w-4 h-4" /> ?�화번호
  </Label>
  <Input
  id="telNo"
@@ -92,8 +91,7 @@ const InsertAddressBookPage = () => {
  <div className="space-y-6">
  <div className="space-y-2">
  <Label htmlFor="email" className="text-sm font-semibold flex items-center gap-2">
- <Mail className="w-4 h-4" /> 이메일
- </Label>
+ <Mail className="w-4 h-4" /> ?�메?? </Label>
  <Input
  id="email"
  type="email"
@@ -109,7 +107,7 @@ const InsertAddressBookPage = () => {
  </Label>
  <Input
  id="adres"
- placeholder="상세 주소를 입력하세요"
+ placeholder="?�세 주소�??�력?�세??
  className="h-12 text-base shadow-sm"
  value={formData.adres}
  onChange={(e) => setFormData({ ...formData, adres: e.target.value })}
@@ -119,9 +117,9 @@ const InsertAddressBookPage = () => {
  </div>
 
  <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg flex items-start gap-3">
- <div className="text-primary mt-0.5">💡</div>
+ <div className="text-primary mt-0.5">?��</div>
  <p className="text-sm text-primary/80 leading-relaxed font-medium">
- 주소록에 등록된 연락처는 협업 시스템 내에서 공유 및 관리됩니다. 정확한 정보를 입력해 주세요.
+ 주소록에 ?�록???�락처는 ?�업 ?�스???�에??공유 �?관리됩?�다. ?�확???�보�??�력??주세??
  </p>
  </div>
  </CardContent>
@@ -133,10 +131,10 @@ const InsertAddressBookPage = () => {
  </Link>
  <Button type="submit" className="h-12 px-12 gap-2 font-bold shadow-lg transition-all active:scale-95" disabled={loading}>
  {loading ? (
- <span className="flex items-center gap-2">처리중...</span>
+ <span className="flex items-center gap-2">처리�?..</span>
  ) : (
  <>
- <Send className="w-4 h-4" /> 등록하기
+ <Send className="w-4 h-4" /> ?�록?�기
  </>
  )}
  </Button>
