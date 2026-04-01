@@ -1,8 +1,8 @@
-import { AxiosRequestConfig } from 'axios';
+﻿import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 
 /**
- * 통계 관리 서비스 (Admin)
+ * 통계 愿由님쒕퉬님(Admin)
  */
 export interface StatsDto {
   statsDate: string;
@@ -20,7 +20,7 @@ class StatsAdminService extends AdminService {
     super('/statistics');
   }
 
-  /** 요약 통계 조회 */
+  /** ?붿빟 통계 조회 */
   async getSummary(config?: AxiosRequestConfig) {
     return this.get<Record<string, unknown>>('/summary', config);
   }
@@ -30,32 +30,32 @@ class StatsAdminService extends AdminService {
     return this.get<StatsDto[]>('/connect', { ...config, params });
   }
 
-  /** 게시판 통계 조회 */
+  /** 寃뚯떆님통계 조회 */
   async getBbsStats(params?: { fromDate?: string; toDate?: string; statsKind?: string }, config?: AxiosRequestConfig) {
     return this.get<StatsDto[]>('/bbs', { ...config, params });
   }
 
-  /** 사용자 통계 조회 */
+  /** ?ъ슜님통계 조회 */
   async getUserStats(params?: { fromDate?: string; toDate?: string; statsKind?: string }, config?: AxiosRequestConfig) {
     return this.get<StatsDto[]>('/user', { ...config, params });
   }
 
-  /** 요청(화면) 통계 조회 */
+  /** 요청(?붾㈃) 통계 조회 */
   async getScreenStats(params?: { fromDate?: string; toDate?: string; statsKind?: string }, config?: AxiosRequestConfig) {
     return this.get<StatsDto[]>('/screen', { ...config, params });
   }
 
-  /** 보고서 통계 조회 */
+  /** 蹂닿퀬님통계 조회 */
   async getReportStats(params?: { fromDate?: string; toDate?: string }, config?: AxiosRequestConfig) {
     return this.get<StatsDto[]>('/report', { ...config, params });
   }
 
-  /** 자료이용현황 통계 조회 */
+  /** ?먮즺?댁슜현황 통계 조회 */
   async getDataUsageStats(params?: { fromDate?: string; toDate?: string }, config?: AxiosRequestConfig) {
     return this.get<StatsDto[]>('/data-usage', { ...config, params });
   }
 
-  /** 메뉴 통계 조회 */
+  /** 硫붾돱 통계 조회 */
   async getMenuStats(config?: AxiosRequestConfig) {
     return this.get<Record<string, unknown>[]>('/menu', config);
   }

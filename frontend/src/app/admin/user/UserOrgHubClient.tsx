@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -66,14 +66,14 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
   // --- Queries ---
   const { data: usersData, isLoading: isUsersLoading, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', searchKeyword, userPage],
-    queryFn: () => userAdminService.getUserList({ page번호: userPage, searchKeyword }),
+    queryFn: () => userAdminService.getUserList({ page踰덊샇: userPage, searchKeyword }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES'
   });
   const users = usersData?.list || [];
 
   const { data: deptsData, isLoading: isDeptsLoading, error: deptsError, refetch: refetchDepts } = useQuery({
     queryKey: ['admin-depts', searchKeyword, deptPage],
-    queryFn: () => deptAdminService.getDeptList({ page번호: deptPage, searchKeyword }),
+    queryFn: () => deptAdminService.getDeptList({ page踰덊샇: deptPage, searchKeyword }),
     enabled: activeTab === 'DEPTS'
   });
   const departments = deptsData?.list || [];
@@ -134,14 +134,14 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="조직 ?�키?�처 거버?�스"
-        breadcrumbs={[{ label: '?�용?��?�? }, { label: '조직 ?�합 ?�브' }]}
+        title="議곗쭅 ?꾪궎?띿쿂 嫄곕쾭?뚯뒪"
+        breadcrumbs={[{ label: '?ъ슜?먭?由? }, { label: '議곗쭅 ?듯빀 ?덈툕' }]}
       />
 
       <HubHeader
-        title="?�이?�티??
+        title="?꾩씠?댄떚님
         highlight="Fabric"
-        subtitle="?�사 ?�적 ?�원 매트�?�� �?조직??계층 ?�폴로�? ?�합 ?��??�트?�이???�터"
+        subtitle="?꾩궗 ?몄쟻 ?먯썝 留ㅽ듃由?뒪 諛?議곗쭅님怨꾩링 ?좏뤃濡쒖? ?듯빀 ?ㅼ님ㅽ듃?덉씠님?쇳꽣"
         icon={UserCog}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -177,8 +177,8 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                 <Activity size={32} className="text-primary" />
               </div>
               <div className="space-y-4">
-                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase">?�이?�티??br />?�텔리전??/h4>
-                <p className="text-[10px] text-white/30 font-black tracking-[0.4em] uppercase leading-relaxed">Active Directory (AD)<br />?�기???�료</p>
+                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase">?꾩씠?댄떚님br />?명뀛由ъ쟾님/h4>
+                <p className="text-[10px] text-white/30 font-black tracking-[0.4em] uppercase leading-relaxed">Active Directory (AD)<br />?숆린님?꾨즺</p>
               </div>
             </div>
           </div>
@@ -187,14 +187,14 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
         {/* --- Center Column: Data Stream --- */}
         <div className="col-span-12 lg:col-span-4 h-full flex flex-col gap-8">
           <HubSectionCard
-            title={activeTab === 'DEPTS' ? "조직 ?�드 ?�폴로�? ?�트�? : "?�적 ?�원 ?�이?�티??매트�?��"}
-            description="?�사 ?�합 ?�렉?�리?�서 ?�시간으�??�기?�되??개체 ?�로�?�?보안 ?�태 명세?�니??"
+            title={activeTab === 'DEPTS' ? "議곗쭅 노드 ?좏뤃濡쒖? ?ㅽ듃由? : "?몄쟻 ?먯썝 ?꾩씠?댄떚님留ㅽ듃由?뒪"}
+            description="?꾩궗 ?듯빀 ?붾젆?좊━?먯꽌 ?ㅼ떆媛꾩쑝濡님숆린?붾릺님媛쒖껜 ?꾨줈釉?諛?보안 ?곹깭 紐낆꽭?낅땲님"
             icon={activeTab === 'DEPTS' ? Network : Users}
           >
             <div className="space-y-8">
               <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-8">
                 <div>
-                  <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono">?�시�??�렉?�리 ?�기??/span>
+                  <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono">?ㅼ떆媛님붾젆?좊━ ?숆린님/span>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-12 rounded-2xl px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
                   <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> SYNCHRONIZE
@@ -233,7 +233,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                         if (id) setSelectedItemId(id);
                       }}
                       keyField={(activeTab === 'DEPTS' ? 'orgnztId' : 'esntlId') as any}
-                      emptyMessage="검?�된 개체가 존재?��? ?�습?�다."
+                      emptyMessage="寃?됰맂 媛쒖껜媛 議댁옱?섏? ?딆뒿?덈떎."
                       isPremium={false}
                       className="border-none shadow-none bg-transparent"
                       pagination={{
@@ -279,10 +279,10 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                         </h2>
                         <div className="flex gap-4">
                           <span className="bg-primary/5 text-primary text-[10px] font-black px-6 py-2 rounded-xl tracking-widest uppercase border border-primary/10 shadow-sm flex items-center gap-2">
-                            <ShieldCheck size={14} /> ?�원 ?�인??                          </span>
+                            <ShieldCheck size={14} /> ?좎썝 ?뺤씤님                          </span>
                           {activeTab === 'ABSENCES' && (
                             <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-6 py-2 rounded-xl tracking-widest uppercase border border-amber-200 shadow-sm animate-pulse">
-                              부??�?                            </span>
+                              遺님以?                            </span>
                           )}
                         </div>
                       </div>
@@ -308,8 +308,8 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                             <ShieldCheck size={20} />
                           </div>
                           <div>
-                            <h4 className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono leading-none mb-1">권한 부???�로?�콜</h4>
-                            <p className="text-sm font-black text-foreground tracking-tighter uppercase">?�성 권한 매트�?��</p>
+                            <h4 className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono leading-none mb-1">沅뚰븳 遺님?꾨줈?좎퐳</h4>
+                            <p className="text-sm font-black text-foreground tracking-tighter uppercase">활성 沅뚰븳 留ㅽ듃由?뒪</p>
                           </div>
                         </div>
                         <Button variant="ghost" className="h-12 px-6 rounded-2xl bg-slate-50 text-[10px] font-black text-primary gap-3 uppercase tracking-widest hover:bg-primary hover:text-white transition-all">MANAGE_MATRIX <ChevronRight size={14} /></Button>
@@ -340,7 +340,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                   <Contact2 size={64} className="opacity-20 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <h3 className="text-4xl font-black text-slate-200 tracking-tighter uppercase ">Idle_Probe_State</h3>
-                <p className="text-[12px] font-black text-slate-300 tracking-[0.6em] mt-6 uppercase leading-relaxed max-w-[280px]">?�텔리전???�기?��? ?�작?�려�??�폴로�? ?�트림에???�터?��? ?�택?�세??/p>
+                <p className="text-[12px] font-black text-slate-300 tracking-[0.6em] mt-6 uppercase leading-relaxed max-w-[280px]">?명뀛由ъ쟾님?숆린?붾? ?쒖옉?섎젮硫님좏뤃濡쒖? ?ㅽ듃由쇱뿉님?뷀꽣?곕? ?좏깮?섏꽭님/p>
                 <div className="mt-12 flex gap-4 opacity-10 grayscale">
                   <Fingerprint size={32} />
                   <Database size={32} />
@@ -400,3 +400,4 @@ function InfoBlock({ icon, label, value }: { icon: React.ReactNode, label: strin
     </div>
   );
 }
+

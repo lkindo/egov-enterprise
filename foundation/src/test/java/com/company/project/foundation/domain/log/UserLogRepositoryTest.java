@@ -1,21 +1,18 @@
 package com.company.project.foundation.domain.log;
 
-import com.company.project.foundation.TestApplication;
+import com.company.foundation.support.IntegrationTest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest
-@ContextConfiguration(classes = TestApplication.class)
+@IntegrationTest
 @DisplayName("UserLog 리포지토리 테스트")
 class UserLogRepositoryTest {
 
@@ -28,14 +25,16 @@ class UserLogRepositoryTest {
     @BeforeEach
     @Transactional
     void setupMockView() {
-        // Create Mock table for COMVNUSERMASTER (which is actually a view in real DB)
-        entityManager.createNativeQuery("CREATE TABLE IF NOT EXISTS COMVNUSERMASTER (" +
-                "ESNTL_ID VARCHAR(20) NOT NULL, " +
+        // Create Mock table for NEMPLYRINFO (where User entity is mapped)
+        entityManager.createNativeQuery("CREATE TABLE IF NOT EXISTS NEMPLYRINFO (" +
+                "EMPLYR_ID VARCHAR(60) NOT NULL, " +
+                "ESNTL_ID VARCHAR(20) NOT NULL UNIQUE, " +
                 "USER_NM VARCHAR(180) NOT NULL, " +
-                "PRIMARY KEY (ESNTL_ID))").executeUpdate();
+                "PASSWORD VARCHAR(600) NOT NULL, " +
+                "PRIMARY KEY (EMPLYR_ID))").executeUpdate();
         
         // Insert mock user
-        entityManager.createNativeQuery("INSERT INTO COMVNUSERMASTER (ESNTL_ID, USER_NM) VALUES ('USR-MOCK-001', '홍길동')")
+        entityManager.createNativeQuery("INSERT INTO NEMPLYRINFO (EMPLYR_ID, ESNTL_ID, USER_NM, PASSWORD) VALUES ('MOCK-USER', 'USR-MOCK-001', '홍길동', 'pwd')")
                 .executeUpdate();
     }
 

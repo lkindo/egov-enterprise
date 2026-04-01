@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -12,7 +12,7 @@ interface VirtualScrollListProps<T> {
 }
 
 /**
- * ?�?�의 ?�이?��? ?�율?�으�?보여주기 ?�한 가?�화 리스?? */
+ * ??됱쓽 ?곗씠?곕? ?⑥쑉?곸쑝濡?蹂댁뿬二쇨린 ?꾪븳 媛?곹솕 由ъ뒪님 */
 export function VirtualScrollList<T>({
  items,
  itemHeight,
@@ -27,11 +27,11 @@ export function VirtualScrollList<T>({
  setScrollTop(e.currentTarget.scrollTop);
  };
 
- const start번호 = Math.max(0, Math.floor(scrollTop / itemHeight) - 2);
- const end번호 = Math.min(items.length - 1, Math.floor((scrollTop + containerHeight) / itemHeight) + 2);
+ const start踰덊샇 = Math.max(0, Math.floor(scrollTop / itemHeight) - 2);
+ const end踰덊샇 = Math.min(items.length - 1, Math.floor((scrollTop + containerHeight) / itemHeight) + 2);
 
  const visibleItems = [];
- for (let i = start번호; i <= end번호; i++) {
+ for (let i = start踰덊샇; i <= end踰덊샇; i++) {
  visibleItems.push(
  <div
  key={i}
@@ -60,3 +60,4 @@ export function VirtualScrollList<T>({
  </div>
  );
 }
+

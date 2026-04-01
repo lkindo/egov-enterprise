@@ -1,12 +1,12 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { networkAdminService, Network } from '@/services/foundation/system/NetworkAdminService';
 import NetworkAdminClient from './NetworkAdminClient';
 import { Loader2 } from 'lucide-react';
 
 export const metadata = {
- title: '?�트?�크 ?�프??지?�형 관�?�?최적??| ?�자?��? ?��??�레?�워??,
- description: '?�스???�반???�트?�크 ?�폴로�? ?�보�?관리하�?최적???�결?�을 보장?�니??',
+ title: '?ㅽ듃?뚰겕 ?명봽님吏?ν삎 愿由?諛?理쒖쟻님| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+ description: '?쒖뒪님?꾨컲님?ㅽ듃?뚰겕 ?좏뤃濡쒖? ?뺣낫瑜?愿由ы븯怨?理쒖쟻님?곌껐?깆쓣 蹂댁옣?⑸땲님',
 };
 
 export default async function AdminNetworkPage() {
@@ -14,7 +14,7 @@ export default async function AdminNetworkPage() {
  const accessToken = cookieStore.get('accessToken')?.value;
  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- // [Eliminating Waterfalls] ?�버 ?�이??초기 ?�이???�칭
+ // [Eliminating Waterfalls] ?쒕쾭 ?ъ씠님珥덇린 ?곗씠님?⑥묶
  let initialNetworks: Network[] = [];
 
  try {
@@ -46,3 +46,4 @@ function NetworkAdminLoading() {
  </div>
  );
 }
+

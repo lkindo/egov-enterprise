@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { History, Terminal, FileText, Calendar } from 'lucide-react';
 
 const UserLogAdminPage = () => {
     const [params, setParams] = useState<SearchParams>({
-        page번호: 1,
+        page踰덊샇: 1,
         size: 10,
         searchKeyword: '',
     });
@@ -19,7 +19,7 @@ const UserLogAdminPage = () => {
     const { data, isLoading } = useQuery<PageResponse<UserLog>>({
         queryKey: ['admin-logs-user', params],
         queryFn: () => systemLogAdminService.getUserLogs({
-            page번호: Number(params.page번호) || 1,
+            page踰덊샇: Number(params.page踰덊샇) || 1,
             size: params.size,
             searchKeyword: params.searchKeyword,
         }),
@@ -30,7 +30,7 @@ const UserLogAdminPage = () => {
 
     const columns: Column<UserLog>[] = [
         {
-            header: '발생?�자',
+            header: '諛쒖깮?쇱옄',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
@@ -40,7 +40,7 @@ const UserLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '?�비?�명',
+            header: '?쒕퉬?ㅻ챸',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
@@ -49,7 +49,7 @@ const UserLogAdminPage = () => {
             )
         },
         {
-            header: '메서?�명',
+            header: '硫붿꽌?쒕챸',
             accessor: (item: UserLog) => (
                 <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-[10px] text-slate-600">
                     {item.methodNm}
@@ -57,7 +57,7 @@ const UserLogAdminPage = () => {
             )
         },
         {
-            header: '?�청?�ID',
+            header: '요청?륤D',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-full w-fit shadow-sm">
                     <span className="text-xs font-black text-slate-700">{item.rqesterId}</span>
@@ -66,7 +66,7 @@ const UserLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '?�록?�시',
+            header: '등록?쇱떆',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/80 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
@@ -79,22 +79,22 @@ const UserLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="?�용??로그" breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }, { label: '?�용??로그' }]} />
+            <PageHeader title="?ъ슜님濡쒓렇" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }, { label: '?ъ슜님濡쒓렇' }]} />
 
-            <HubHeader title="?�정 ?�력" highlight="?�용??로그" subtitle="?�스???�용?�의 ?�비??모듈�??�호?�용 �??�업 ?�행 ?�력??명확?�게 관리합?�다." icon={History} />
+            <HubHeader title="?됱젙 ?대젰" highlight="?ъ슜님濡쒓렇" subtitle="?쒖뒪님?ъ슜?먯쓽 ?쒕퉬님紐⑤뱢蹂님곹샇?묒슜 諛님묒뾽 ?섑뻾 ?대젰님紐낇솗?섍쾶 愿由ы빀?덈떎." icon={History} />
 
             <StandardDataTable
                 columns={columns}
                 data={logs}
                 loading={isLoading}
                 pagination={{
-                    currentPage: (params.page번호 || 1) as number,
+                    currentPage: (params.page踰덊샇 || 1) as number,
                     totalPages: data?.totalPage || pagination?.totalPageCount || 1,
-                    onPageChange: (page: number) => setParams({ ...params, page번호: page }),
+                    onPageChange: (page: number) => setParams({ ...params, page踰덊샇: page }),
                 }}
                 search={{
-                    placeholder: '?�비?�명, ?�청??검??..',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page번호: 1 }),
+                    placeholder: '?쒕퉬?ㅻ챸, 요청님寃님..',
+                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 }),
                 }}
             />
         </div>
@@ -102,3 +102,4 @@ const UserLogAdminPage = () => {
 };
 
 export default UserLogAdminPage;
+

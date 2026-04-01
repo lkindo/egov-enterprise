@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -12,7 +12,7 @@ export interface AuditLog {
 }
 
 /**
- * 감사 로그 관리 서비스 (Admin)
+ * 媛먯궗 濡쒓렇 愿由님쒕퉬님(Admin)
  */
 class AuditAdminService extends AdminService {
   constructor() {
@@ -20,7 +20,7 @@ class AuditAdminService extends AdminService {
   }
 
  /**
- * 감사 로그 목록 조회
+ * 媛먯궗 濡쒓렇 紐⑸줉 조회
  */
  async getAuditLogs(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<AuditLog>> {
  return this.get<PageResponse<AuditLog>>('', { ...config, params });

@@ -1,4 +1,4 @@
-vi.mock('next/config', () => ({
+﻿vi.mock('next/config', () => ({
   default: () => ({
     publicRuntimeConfig: {},
     serverRuntimeConfig: {},
@@ -22,8 +22,8 @@ describe('exportUtils', () => {
  { id: 2, name: 'Bob' }
  ];
  const columns = [
- { header: '아이디', accessorKey: 'id' },
- { header: '이름', accessorKey: 'name' }
+ { header: '?꾩씠님, accessorKey: 'id' },
+ { header: '?대쫫', accessorKey: 'name' }
  ];
 
  const appendChildSpy = vi.spyOn(document.body, 'appendChild');

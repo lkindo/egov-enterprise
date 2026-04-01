@@ -1,10 +1,10 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { operationAdminService } from '@/services/foundation/operation/OperationAdminService';
 import ExternalHrClient from './ExternalHrClient';
 
 export const metadata = {
-    title: '?��??�사?�보 관�?| ?�자?��? ?��??�레?�워??,
-    description: '?�사 관???��??�사 ?�보�?관리합?�다.',
+    title: '?몃님몄궗?뺣낫 愿由?| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+    description: '?됱궗 愿님?몃님몄궗 ?뺣낫瑜?愿由ы빀?덈떎.',
 };
 
 export default async function ExternalHrPage() {
@@ -17,8 +17,9 @@ export default async function ExternalHrPage() {
     }
 
     return (
-        <Suspense fallback={<div>로딩 �?..</div>}>
+        <Suspense fallback={<div>濡쒕뵫 以?..</div>}>
             <ExternalHrClient initialData={initialData} />
         </Suspense>
     );
 }
+

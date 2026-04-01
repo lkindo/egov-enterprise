@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
@@ -18,7 +18,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
  const [activeMenuNo, setActiveMenuNo] = useState<number>(0);
  const pathname = usePathname();
 
- // 페이지 이동 시 사이드바 닫기 (모바일)
+ // ?섏씠吏 ?대룞 님?ъ씠?쒕컮 ?リ린 (紐⑤컮님
  useEffect(() => {
  setSidebarOpen(false);
  }, [pathname]);
@@ -45,3 +45,4 @@ export function useLayout() {
  }
  return context;
 }
+

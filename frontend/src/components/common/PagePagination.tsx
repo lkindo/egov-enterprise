@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import {
  Pagination,
  PaginationContent,
@@ -19,9 +19,9 @@ interface PagePaginationProps {
 }
 
 export function PagePagination({ pagination, total, page, size, onPageChange }: PagePaginationProps) {
- const totalRecordCount = total ?? pagination?.totalRecordCount ?? 0;
- const recordCountPerPage = size ?? pagination?.recordCountPerPage ?? 10;
- const currentPageNo = page ?? pagination?.currentPageNo ?? 1;
+ const totalRecordCount = total 님 pagination?.totalRecordCount 님 0;
+ const recordCountPerPage = size 님 pagination?.recordCountPerPage 님 10;
+ const currentPageNo = page 님 pagination?.currentPageNo 님 1;
  const totalPageCount = total !== undefined && size !== undefined 
  ? Math.ceil(total / size) 
  : (pagination?.totalPageCount || 0);

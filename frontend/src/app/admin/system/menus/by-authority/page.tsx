@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -76,7 +76,7 @@ export default function MenuByAuthorityPage() {
 
   const { data: authorData } = useQuery({
     queryKey: ['admin-authorities-all'],
-    queryFn: () => authorAdminService.getAuthorList({ page번호: 1, searchCondition: '1', searchKeyword: '' } as any),
+    queryFn: () => authorAdminService.getAuthorList({ page踰덊샇: 1, searchCondition: '1', searchKeyword: '' } as any),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -168,14 +168,14 @@ export default function MenuByAuthorityPage() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="권한 기반 ?�비게이???�폴로�?"
-        breadcrumbs={[{ label: '?�스?��?�? }, { label: '메뉴관�? }, { label: '권한�?메뉴' }]}
+        title="沅뚰븳 湲곕컲 ?대퉬寃뚯씠님?좏뤃濡쒖?"
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '硫붾돱愿由? }, { label: '沅뚰븳蹂?硫붾돱' }]}
       />
 
       <HubHeader 
-        title="계층 구조" 
-        highlight="감사" 
-        subtitle="?�정 보안 ??��(Role)???�당??기능???�드 계층 구조 �??�근 경로 매트�?�� ?�각?? 
+        title="怨꾩링 援ъ“" 
+        highlight="媛먯궗" 
+        subtitle="?뱀젙 보안 님븷(Role)님?좊떦님湲곕뒫님노드 怨꾩링 援ъ“ 諛님묎렐 寃쎈줈 留ㅽ듃由?뒪 ?쒓컖님 
         icon={Workflow} 
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -187,30 +187,30 @@ export default function MenuByAuthorityPage() {
                 <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
             <Button className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
-                <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> ??�� ?�벤?�리 관�?            </Button>
+                <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> 님븷 ?몃깽?좊━ 愿由?            </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="?�성_?�키�??? value={authorities.length} icon={Database} color="primary" />
-        <HubMetricCard title="범위_???�드_?? value={rawMenus.length} icon={LayoutGrid} color="amber" />
-        <HubMetricCard title="계층_깊이" value={selectedAuthority ? "?�터_준�? : "?��?} icon={Compass} color="indigo" />
-        <HubMetricCard title="보안_?�태" value="최적" icon={Lock} color="emerald" status="?�기?�됨" />
+        <HubMetricCard title="활성_?ㅽ궎留님? value={authorities.length} icon={Database} color="primary" />
+        <HubMetricCard title="踰붿쐞_님노드_님 value={rawMenus.length} icon={LayoutGrid} color="amber" />
+        <HubMetricCard title="怨꾩링_源딆씠" value={selectedAuthority ? "?뱁꽣_以鍮? : "?湲?} icon={Compass} color="indigo" />
+        <HubMetricCard title="보안_?곹깭" value="理쒖쟻" icon={Lock} color="emerald" status="?숆린?붾맖" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
         {/* Authority Selection Sidebar */}
         <div className="col-span-12 lg:col-span-4 h-full space-y-8">
-            <HubSectionCard title="??�� ?�별 ?�이???�택" description="분석??보안 컨텍?�트 ?�는 ?�스??그룹 권한???�별?�세??" icon={Lock}>
+            <HubSectionCard title="님븷 ?앸퀎 ?곗씠님?좏깮" description="분석님보안 而⑦뀓?ㅽ듃 ?먮뒗 ?쒖뒪님洹몃９ 沅뚰븳님?앸퀎?섏꽭님" icon={Lock}>
                 <div className="space-y-8">
                     <div className="space-y-4 pt-4">
-                        <label className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase ml-2">보안 ??�� ?�양 (Access Role)</label>
+                        <label className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase ml-2">보안 님븷 ?ъ뼇 (Access Role)</label>
                         <Select value={selectedAuthority} onValueChange={setSelectedAuthority}>
                             <SelectTrigger className="h-16 px-8 rounded-2xl bg-slate-50/50 border-none shadow-inner text-sm font-black tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
                                 <div className="flex items-center gap-4">
                                      <Fingerprint size={20} className="text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
-                                     <SelectValue placeholder="보안 ??��???�택?�십?�오..." />
+                                     <SelectValue placeholder="보안 님븷님?좏깮?섏떗?쒖삤..." />
                                 </div>
                             </SelectTrigger>
                             <SelectContent className="rounded-2xl border-none shadow-2xl p-2 bg-slate-900 text-white">
@@ -236,17 +236,17 @@ export default function MenuByAuthorityPage() {
                                 <Activity size={28} className="text-primary" />
                             </div>
                             <div className="space-y-3">
-                                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase">?�폴로�?<br />?�텔리전??/h4>
-                                <p className="text-[9px] text-white/40 font-black tracking-[0.3em] uppercase leading-relaxed font-mono">?�시�?권한 ?�트�??�성????/p>
+                                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase">?좏뤃濡쒖?<br />?명뀛由ъ쟾님/h4>
+                                <p className="text-[9px] text-white/40 font-black tracking-[0.3em] uppercase leading-relaxed font-mono">실시간沅뚰븳 ?ㅽ듃由님쒖꽦님님/p>
                             </div>
                             {selectedAuthority && (
                                 <div className="pt-6 border-t border-white/5 space-y-4">
                                     <div className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase text-white/30">
-                                        <span>?�택??ID</span>
+                                        <span>?좏깮님ID</span>
                                         <span className="text-primary">{selectedAuthority}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase text-white/30">
-                                        <span>?�러?�터_?�드_??/span>
+                                        <span>?대윭?ㅽ꽣_노드_님/span>
                                         <span className="text-white">{rawMenus.length}</span>
                                     </div>
                                 </div>
@@ -260,19 +260,19 @@ export default function MenuByAuthorityPage() {
         {/* Menu Tree Center */}
         <div className="col-span-12 lg:col-span-8 h-full">
             <HubSectionCard 
-                title={currentAuth ? `[${currentAuth.authorNm}] ?�비게이???�키?�처` : "?�키?�처 ?�폴로�? 분석"} 
-                description="?�당??모든 ?�스??기능�??�이??진입?�에 ?�???�계??�?��진입?�다." 
+                title={currentAuth ? `[${currentAuth.authorNm}] ?대퉬寃뚯씠님?꾪궎?띿쿂` : "?꾪궎?띿쿂 ?좏뤃濡쒖? 분석"} 
+                description="?좊떦님紐⑤뱺 ?쒖뒪님湲곕뒫怨님곗씠님吏꾩엯?먯뿉 ?님?꾧퀎님泥?궗吏꾩엯?덈떎." 
                 icon={Network}
             >
                 <div className="space-y-8">
                     <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-8">
                         <div>
-                            <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">기능 ?�드 ?�리 ?�트�?(Functional Node Tree)</span>
+                            <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">湲곕뒫 노드 ?몃━ ?ㅽ듃由?(Functional Node Tree)</span>
                         </div>
                         <div className="flex items-center gap-4">
                              {isMenuLoading && <Loader2 className="h-6 w-6 animate-spin text-primary opacity-40" />}
                              <Button variant="ghost" size="sm" className="h-12 rounded-2xl px-6 text-[10px] font-black tracking-widest gap-2 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
-                                 <SearchCode size={16} className="group-hover:rotate-12 transition-transform" /> ?�드 분석
+                                 <SearchCode size={16} className="group-hover:rotate-12 transition-transform" /> 노드 분석
                             </Button>
                         </div>
                     </div>
@@ -288,8 +288,8 @@ export default function MenuByAuthorityPage() {
                                     <div className="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200 shadow-inner mb-8 group-hover:scale-110 transition-transform duration-1000">
                                         <Milestone size={48} className="opacity-20" />
                                     </div>
-                                    <h3 className="text-2xl font-black text-slate-300 tracking-tighter uppercase mb-4">??�� 미선??/h3>
-                                    <p className="text-[10px] font-black text-slate-200 tracking-[0.5em] uppercase max-w-[240px] leading-relaxed">??��???�별?�여 ?�스???�계 ?�이?�의 ?�각??분석???�작?�십?�오.</p>
+                                    <h3 className="text-2xl font-black text-slate-300 tracking-tighter uppercase mb-4">님븷 誘몄꽑님/h3>
+                                    <p className="text-[10px] font-black text-slate-200 tracking-[0.5em] uppercase max-w-[240px] leading-relaxed">님븷님?앸퀎?섏뿬 ?쒖뒪님?꾧퀎 ?곗씠?곗쓽 ?쒓컖님분석님?쒖옉?섏떗?쒖삤.</p>
                                 </motion.div>
                             ) : isMenuLoading ? (
                                 <motion.div 
@@ -298,7 +298,7 @@ export default function MenuByAuthorityPage() {
                                     className="absolute inset-0 flex flex-col items-center justify-center gap-6"
                                 >
                                     <Loader2 size={48} className="text-primary animate-spin opacity-40" />
-                                    <span className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">?�폴로�? 매핑 �?..</span>
+                                    <span className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">?좏뤃濡쒖? 매핑 以?..</span>
                                 </motion.div>
                             ) : menuTree.length === 0 ? (
                                 <motion.div 
@@ -308,8 +308,8 @@ export default function MenuByAuthorityPage() {
                                 >
                                     <ShieldAlert size={64} className="text-rose-500/20" />
                                     <div className="space-y-2 text-center">
-                                        <h4 className="text-lg font-black tracking-tighter text-slate-400 uppercase">?�성 ?�드 ?�음</h4>
-                                        <p className="text-[9px] font-black text-slate-300 tracking-[0.3em] uppercase">?�당 권한???�당??기능???�드?�인?��? ?�별?��? ?�았?�니??</p>
+                                        <h4 className="text-lg font-black tracking-tighter text-slate-400 uppercase">활성 노드 ?놁쓬</h4>
+                                        <p className="text-[9px] font-black text-slate-300 tracking-[0.3em] uppercase">?대떦 沅뚰븳님?좊떦님湲곕뒫님?붾뱶?ъ씤?멸? ?앸퀎?섏? ?딆븯?듬땲님</p>
                                     </div>
                                 </motion.div>
                             ) : (
@@ -332,3 +332,4 @@ export default function MenuByAuthorityPage() {
     </div>
   );
 }
+

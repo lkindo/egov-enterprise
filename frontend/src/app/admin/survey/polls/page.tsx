@@ -1,9 +1,9 @@
-import { onlinePollAdminService } from '@/services/foundation/system/OnlinePollAdminService';
+﻿import { onlinePollAdminService } from '@/services/foundation/system/OnlinePollAdminService';
 import { cookies } from 'next/headers';
 import OnlinePollAdminClient from './OnlinePollAdminClient';
 
 export const metadata = {
-  title: '?�라???�문 관�?| ?�문관�?,
+  title: '온라인설문 愿由?| 설문愿由?,
 };
 
 export default async function OnlinePollAdminPage({
@@ -28,3 +28,4 @@ export default async function OnlinePollAdminPage({
     <OnlinePollAdminClient initialPolls={initialPolls} />
   );
 }
+

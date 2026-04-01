@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import {
@@ -28,7 +28,7 @@ export function NotificationSender() {
  const simulateAIGenerate = () => {
  setIsGenerating(true);
  setTimeout(() => {
- setMessage("[?�림] ?�스???��?보수 ?�내\n?�활???�비???�공???�해 ?�래?� 같이 ?�기 ?��???진행???�정?�니??\n\n- ?�시: 2026??2??28??01:00 ~ 05:00\n- ?�향: ?��? ?�간 ??모든 ?�비???�시 중단\n\n중요???�이?�는 미리 ?�?�해 주시�?바랍?�다.");
+ setMessage("[?뚮┝] ?쒖뒪님?좎?蹂댁닔 ?덈궡\n?먰솢님?쒕퉬님?쒓났님?꾪빐 ?꾨옒? 媛숈씠 ?뺢린 ?먭님?吏꾪뻾님?덉젙?낅땲님\n\n- ?쇱떆: 2026님2님28님01:00 ~ 05:00\n- ?곹뼢: ?먭? ?쒓컙 님紐⑤뱺 ?쒕퉬님?쇱떆 以묐떒\n\n以묒슂님?곗씠?곕뒗 誘몃━ ??ν빐 二쇱떆湲?諛붾엻?덈떎.");
  setIsGenerating(false);
  }, 1500);
  };
@@ -46,19 +46,19 @@ export function NotificationSender() {
  <div className="p-3 bg-primary rounded-2xl text-white shadow-xl shadow-primary/30">
  <Target size={24} />
  </div>
- <h2 className="text-3xl font-black tracking-tighter ">발송 ?�어 ?�터</h2>
+ <h2 className="text-3xl font-black tracking-tighter ">諛쒖넚 ?쒖뼱 ?쇳꽣</h2>
  </div>
  <p className="text-sm font-bold text-muted-foreground opacity-60 leading-relaxed max-w-sm">
- ?�?�자?�게 최적??채널???�해 중요??메시지�??�달?�니?? AI ?�진??문맥??맞는 ?�앤매너�?추천?�니??
+ ??곸옄?먭쾶 理쒖쟻님梨꾨꼸님?듯빐 以묒슂님硫붿떆吏瑜님꾨떖?⑸땲님 AI ?붿쭊님臾몃㎘님留욌뒗 ?ㅼ븻留ㅻ꼫瑜?異붿쿇?⑸땲님
  </p>
  </div>
 
  <div className="space-y-6">
- <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">발송 채널 ?�택</label>
+ <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">諛쒖넚 梨꾨꼸 ?좏깮</label>
  <div className="grid grid-cols-3 gap-4">
  {[
- { id: 'system', icon: <Bell />, label: '?�스?? },
- { id: 'mail', icon: <Mail />, label: '?�메?? },
+ { id: 'system', icon: <Bell />, label: '?쒖뒪님 },
+ { id: 'mail', icon: <Mail />, label: '?대찓님 },
  { id: 'sms', icon: <MessageSquare />, label: 'SMS' },
  ].map(item => (
  <button
@@ -82,15 +82,15 @@ export function NotificationSender() {
  </div>
 
  <div className="space-y-4">
- <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">?�신 ?�?�자 ?�분??/label>
+ <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">?섏떊 ??곸옄 ?몃텇님/label>
  <div className="p-6 rounded-[2.5rem] bg-muted/40 border-2 border-dashed border-primary/10 flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group/target">
  <div className="flex items-center gap-4">
  <div className="w-12 h-12 rounded-2xl bg-white border flex items-center justify-center shadow-inner group-hover/target:scale-110 transition-transform">
  <Users className="text-muted-foreground" size={20} />
  </div>
  <div>
- <p className="text-sm font-black text-foreground">?�체 ?�직??(Active)</p>
- <p className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">1,204명의 ?�신???�인??/p>
+ <p className="text-sm font-black text-foreground">?꾩껜 ?꾩쭅님(Active)</p>
+ <p className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">1,204紐낆쓽 ?섏떊님?뺤씤님/p>
  </div>
  </div>
  <UserCheck className="text-primary opacity-0 group-hover/target:opacity-100 transition-opacity" size={24} />
@@ -101,9 +101,9 @@ export function NotificationSender() {
  <div className="flex-1 p-6 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10">
  <div className="flex items-center gap-2 text-indigo-600 mb-2">
  <ShieldCheck size={16} />
- <span className="text-[9px] font-black tracking-tight leading-none">무결??검�??�과</span>
+ <span className="text-[9px] font-black tracking-tight leading-none">臾닿껐님寃利님듦낵</span>
  </div>
- <p className="text-[10px] font-bold text-indigo-900/40">??메시지??중복 발송 방�? ?�터???�해 ?�전?�게 보호?�고 ?�습?�다.</p>
+ <p className="text-[10px] font-bold text-indigo-900/40">님硫붿떆吏님以묐났 諛쒖넚 諛⑹? ?꾪꽣님?섑빐 ?덉쟾?섍쾶 蹂댄샇?섍퀬 ?덉뒿?덈떎.</p>
  </div>
  </div>
  </div>
@@ -114,7 +114,7 @@ export function NotificationSender() {
  <div className="flex items-center justify-between mb-8">
  <div className="flex items-center gap-4">
  <div className="p-3 bg-primary/10 rounded-xl text-primary"><Layers size={18} /></div>
- <span className="text-sm font-black tracking-tight">콘텐�??�집�?/span>
+ <span className="text-sm font-black tracking-tight">肄섑뀗痢님몄쭛湲?/span>
  </div>
  <Button
  variant="ghost"
@@ -123,14 +123,14 @@ export function NotificationSender() {
  className="rounded-xl h-10 px-6 gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-black text-[10px] tracking-tight shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all"
  >
  {isGenerating ? <Zap size={14} className="animate-spin" /> : <Sparkles size={14} />}
- AI 콘텐�?초안 ?�성
+ AI 肄섑뀗痢?珥덉븞 ?앹꽦
 
  </Button>
  </div>
 
  <textarea
  className="flex-1 w-full bg-transparent border-none outline-none resize-none text-xl font-bold placeholder:text-muted-foreground/10 custom-scrollbar leading-relaxed"
- placeholder="메시지 ?�용???�력?�거??AI ?�래?�트�??�용?�세??.."
+ placeholder="硫붿떆吏 ?댁슜님?낅젰?섍굅님AI ?쒕옒?꾪듃瑜님쒖슜?섏꽭님.."
  value={message}
  onChange={(e) => setMessage(e.target.value)}
  />
@@ -143,7 +143,7 @@ export function NotificationSender() {
  <div className="flex items-center gap-3">
  <span className="text-[10px] font-black text-muted-foreground opacity-40">Words: {message.length}</span>
  <Button className="h-14 px-10 rounded-2xl font-black text-sm tracking-[0.2em] shadow-2xl shadow-primary/30 gap-3 group/send">
- 메시지 ?�괄 발송 <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+ 硫붿떆吏 ?쇨큵 諛쒖넚 <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
  </Button>
  </div>
  </div>
@@ -162,8 +162,8 @@ export function NotificationSender() {
  <Zap size={18} className="text-yellow-400" />
  </div>
  <div>
- <p className="text-[10px] font-black tracking-tight opacity-60">비주??미리보기</p>
- <p className="text-sm font-bold">모바???�금?�면 ?�젯 (목업)</p>
+ <p className="text-[10px] font-black tracking-tight opacity-60">鍮꾩＜님誘몃━蹂닿린</p>
+ <p className="text-sm font-bold">紐⑤컮님?좉툑?붾㈃ ?꾩젽 (紐⑹뾽)</p>
  </div>
  </div>
  <div className="w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -175,3 +175,4 @@ export function NotificationSender() {
  </div>
  );
 }
+

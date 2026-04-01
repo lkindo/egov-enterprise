@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
 
 export interface MyPageContent {
@@ -11,29 +11,29 @@ export interface MyPageContent {
 }
 
 /**
- * 마이페이지 콘텐츠 관리 서비스 (Admin)
+ * 留덉씠?섏씠吏 肄섑뀗痢?愿由님쒕퉬님(Admin)
  */
 class MyPageAdminService extends AdminService {
  constructor() {
  super('/workspace/mypage/contents');
  }
 
- /** 마이페이지 콘텐츠 목록 조회 */
+ /** 留덉씠?섏씠吏 肄섑뀗痢?紐⑸줉 조회 */
  async getContents(params?: { all?: boolean }, config?: AxiosRequestConfig): Promise<MyPageContent[]> {
  return this.get<MyPageContent[]>('', { ...config, params });
  }
 
- /** 마이페이지 콘텐츠 등록 */
+ /** 留덉씠?섏씠吏 肄섑뀗痢?등록 */
  async createContent(data: Partial<MyPageContent>, config?: AxiosRequestConfig): Promise<string> {
  return this.post<string>('', data, config);
  }
 
- /** 마이페이지 콘텐츠 수정 */
+ /** 留덉씠?섏씠吏 肄섑뀗痢님섏젙 */
  async updateContent(id: string, data: Partial<MyPageContent>, config?: AxiosRequestConfig): Promise<void> {
  return this.put<void>(`/${id}`, data, config);
  }
 
- /** 마이페이지 콘텐츠 삭제 */
+ /** 留덉씠?섏씠吏 肄섑뀗痢님?젣 */
  async deleteContent(id: string, config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>(`/${id}`, config);
  }

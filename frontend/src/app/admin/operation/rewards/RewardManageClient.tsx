@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -25,7 +25,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
     queryKey: ['admin-rewards', searchKeyword, page],
     queryFn: () => operationAdminService.getRewardList({
       searchKeyword,
-      page번호: page,
+      page踰덊샇: page,
       pageSize: size
     }),
     initialData: { list: initialData, total: initialData.length, totalPage: Math.ceil(initialData.length / size), page: 1, size },
@@ -77,12 +77,12 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
           {item.confmAt === 'Y' ? (
             <>
               <CheckCircle2 size={12} className="animate-pulse" />
-              <span>?�기???�인??/span>
+              <span>?숆린님?뺤씤님/span>
             </>
           ) : (
             <>
               <RefreshCcw size={12} className="animate-spin-slow" />
-              <span>?��?�?/span>
+              <span>?湲?以?/span>
             </>
           )}
         </div>
@@ -104,14 +104,14 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="?�훈 �??�상 관�?체계"
-        breadcrumbs={[{ label: '?�영지?? }, { label: '?�훈관�? }, { label: '?�상관�? }]}
+        title="?곹썕 諛님ъ긽 愿由?泥닿퀎"
+        breadcrumbs={[{ label: '?댁쁺吏님 }, { label: '?곹썕愿由? }, { label: '?ъ긽愿由? }]}
       />
 
       <HubHeader
         title="Reward &"
         highlight="Honor"
-        subtitle="조직 ???�수???�과 �?공헌???�???�상 기록???��??�게 ?�래?�하�??�인 ?�로?�스�?관리하???�제?�입?�다."
+        subtitle="議곗쭅 님?곗닔님?깃낵 諛?怨듯뿄님?님?ъ긽 湲곕줉님?뺣님섍쾶 ?몃옒?뱁븯怨님뱀씤 ?꾨줈?몄뒪瑜?愿由ы븯님?듭젣?ㅼ엯?덈떎."
         icon={Trophy}
         actions={
           <div className="flex gap-4">
@@ -123,22 +123,22 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
               <RefreshCcw size={22} className="hover:rotate-180 transition-transform duration-700" />
             </Button>
             <Button className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase hover:bg-primary transition-all hover:-translate-y-1 gap-3 shadow-2xl">
-              <Plus size={20} /> ?�상 기록 ?�규 ?�장
+              <Plus size={20} /> ?ъ긽 湲곕줉 신규 ?ㅼ옣
             </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="?�상 ?�황" value={totalItems} icon={Layers} color="amber" />
-        <HubMetricCard title="?�기???�태" value="?�인?? icon={Zap} color="emerald" status="?�기?�됨" />
-        <HubMetricCard title="?�성 ?�코?? value={rewards.length} icon={Activity} color="primary" />
-        <HubMetricCard title="감시 ?�로�? value="?�전?? icon={Filter} color="indigo" />
+        <HubMetricCard title="?ъ긽 현황" value={totalItems} icon={Layers} color="amber" />
+        <HubMetricCard title="?숆린님?곹깭" value="?뺤씤님 icon={Zap} color="emerald" status="?숆린?붾맖" />
+        <HubMetricCard title="활성 ?덉퐫님 value={rewards.length} icon={Activity} color="primary" />
+        <HubMetricCard title="媛먯떆 ?꾨줈釉? value="?덉쟾님 icon={Filter} color="indigo" />
       </HubMetricGrid>
 
       <HubSectionCard
-        title="?�상 ?�카?�브 매트�?��"
-        description="?�사?�으�?관리되???�훈 �??�상 ?�이???�닛???�시�??�트�?�??�세 ?�세 명세?�니??"
+        title="?ъ긽 ?꾩뭅?대툕 留ㅽ듃由?뒪"
+        description="?꾩궗?곸쑝濡?愿由щ릺님?곹썕 諛님ъ긽 ?곗씠님?좊떅님?ㅼ떆媛님ㅽ듃由?諛님곸꽭 ?곸꽭 紐낆꽭?낅땲님"
         icon={Trophy}
       >
         <div className="space-y-8">
@@ -146,7 +146,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
             <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
               <Input
-                placeholder="?�상 명칭 ?�는 ?�?�자 ?�별?�로 분석..."
+                placeholder="?ъ긽 紐낆묶 ?먮뒗 ??곸옄 ?앸퀎?먮줈 분석..."
                 className="h-16 pl-16 rounded-2xl border-2 bg-slate-50/50 text-sm font-black tracking-tight shadow-inner"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
@@ -163,7 +163,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
               columns={columns}
               data={rewards}
               loading={isLoading}
-              emptyMessage="?�별???�상 ?�랍 ?�코?��? 존재?��? ?�습?�다."
+              emptyMessage="?앸퀎님?ъ긽 ?꾨엻 ?덉퐫?쒓? 議댁옱?섏? ?딆뒿?덈떎."
               className="border-none bg-transparent shadow-none"
               pagination={{
                 currentPage: page,
@@ -177,3 +177,4 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
     </div>
   );
 }
+

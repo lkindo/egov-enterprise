@@ -1,4 +1,4 @@
-'use client';
+ï»¿'use client';
 
 import React, { useState } from 'react';
 import { X, ZoomIn, Download } from 'lucide-react';
@@ -29,7 +29,7 @@ export function ImageLightbox({ src, alt, isOpen, onClose }: ImageLightboxProps)
  <div className="relative max-w-[90vw] max-h-[90vh] w-full h-[85vh]">
  <Image
  src={src}
- alt={alt || "?•ë? ?´ë?ì§€"}
+ alt={alt || "?ëº£? ?ëŒ€?ï§žÂ€"}
  fill
  className="object-contain max-w-full max-h-[85vh] rounded-lg shadow-2xl animate-in zoom-in-95 duration-300"
  />
@@ -42,3 +42,4 @@ export function ImageLightbox({ src, alt, isOpen, onClose }: ImageLightboxProps)
  </div>
  );
 }
+

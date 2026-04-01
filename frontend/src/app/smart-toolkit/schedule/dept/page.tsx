@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useCallback, useEffect } from 'react';
 
@@ -34,7 +34,7 @@ import { DeptSchedule, ScheduleSearchParams } from '@/types/business/schedule';
 export default function DeptSchedulePage() {
  const [schedules, setSchedules] = useState<DeptSchedule[]>([]);
  const [params, setParams] = useState<ScheduleSearchParams>({
- page번호: 1,
+ page踰덊샇: 1,
  schdulNm: '',
  });
  const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -45,7 +45,7 @@ export default function DeptSchedulePage() {
  schdulBgnde: '',
  schdulEndde: '',
  schdulPlace: '',
- schdulIpcrCode: 'A', // A: ?�체, B: 부?? C: 개인
+ schdulIpcrCode: 'A', // A: ?꾩껜, B: 遺님 C: 媛쒖씤
  });
 
  const fetchList = useCallback(async () => {
@@ -68,7 +68,7 @@ export default function DeptSchedulePage() {
 
  const handleSearch = (e: React.FormEvent) => {
  e.preventDefault();
- setParams(prev => ({ ...prev, page번호: 1 }));
+ setParams(prev => ({ ...prev, page踰덊샇: 1 }));
  };
 
  const handleCreate = () => {
@@ -91,16 +91,12 @@ export default function DeptSchedulePage() {
  };
 
  const handleDelete = async (schdulId: string) => {
- if (!confirm('?�말 ??��?�시겠습?�까?')) return;
+ if (!confirm('?뺣쭚 님젣?섏떆寃좎뒿?덇퉴?')) return;
  try {
  await deleteDeptSchedule(schdulId);
  fetchList();
  } catch {
-<<<<<<< HEAD
- alert('삭제 중 오류가 발생했습니다.');
-=======
- alert('??�� �??�류가 발생?�습?�다.');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+ alert('님젣 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
  }
  };
 
@@ -114,27 +110,23 @@ export default function DeptSchedulePage() {
  setIsDialogOpen(false);
  fetchList();
  } catch {
-<<<<<<< HEAD
- alert('저장 중 오류가 발생했습니다.');
-=======
- alert('?�??�??�류가 발생?�습?�다.');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+ alert('?님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
  }
  };
 
  return (
  <div className="space-y-6">
  <div className="flex justify-between items-center">
- <h2 className="text-2xl font-bold tracking-tight">부?�일??관�?/h2>
+ <h2 className="text-2xl font-bold tracking-tight">遺?쒖씪님愿由?/h2>
  <Button onClick={handleCreate}>
  <Plus className="mr-2 h-4 w-4" />
- ?�정 ?�록
+ ?쇱젙 등록
  </Button>
  </div>
 
  <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
  <Input
- placeholder="?�정�??�는 ?�용?�로 검??
+ placeholder="?쇱젙紐님먮뒗 ?댁슜?쇰줈 寃님
  className="max-w-sm"
  value={params.schdulNm}
  onChange={(e) => setParams(prev => ({ ...prev, schdulNm: e.target.value }))}
@@ -146,19 +138,19 @@ export default function DeptSchedulePage() {
  <Table>
  <TableHeader>
  <TableRow>
- <TableHead className="w-[80px]">?�번</TableHead>
- <TableHead>?�정�?/TableHead>
- <TableHead>?�시</TableHead>
- <TableHead>?�소</TableHead>
- <TableHead>?�당??/TableHead>
- <TableHead className="w-[120px]">관�?/TableHead>
+ <TableHead className="w-[80px]">?쒕쾲</TableHead>
+ <TableHead>?쇱젙紐?/TableHead>
+ <TableHead>?쇱떆</TableHead>
+ <TableHead>?μ냼</TableHead>
+ <TableHead>?대떦님/TableHead>
+ <TableHead className="w-[120px]">愿由?/TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
  {schedules.length === 0 ? (
  <TableRow>
  <TableCell colSpan={6} className="h-24 text-center">
- ?�이?��? ?�습?�다.
+ ?곗씠?곌? ?놁뒿?덈떎.
  </TableCell>
  </TableRow>
  ) : (
@@ -191,11 +183,11 @@ export default function DeptSchedulePage() {
  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
  <DialogContent className="max-w-md">
  <DialogHeader>
- <DialogTitle>{editingSchedule ? '?�정 ?�정' : '?�정 ?�록'}</DialogTitle>
+ <DialogTitle>{editingSchedule ? '?쇱젙 ?섏젙' : '?쇱젙 등록'}</DialogTitle>
  </DialogHeader>
  <div className="space-y-4 py-4">
  <div className="space-y-2">
- <Label htmlFor="schdulNm">?�정�?/Label>
+ <Label htmlFor="schdulNm">?쇱젙紐?/Label>
  <Input
  id="schdulNm"
  value={formData.schdulNm}
@@ -203,7 +195,7 @@ export default function DeptSchedulePage() {
  />
  </div>
  <div className="space-y-2">
- <Label htmlFor="schdulCn">?�용</Label>
+ <Label htmlFor="schdulCn">?댁슜</Label>
  <Textarea
  id="schdulCn"
  value={formData.schdulCn}
@@ -211,7 +203,7 @@ export default function DeptSchedulePage() {
  />
  </div>
  <div className="space-y-2">
- <Label htmlFor="schdulPlace">?�소</Label>
+ <Label htmlFor="schdulPlace">?μ냼</Label>
  <Input
  id="schdulPlace"
  value={formData.schdulPlace || ''}
@@ -220,11 +212,12 @@ export default function DeptSchedulePage() {
  </div>
  </div>
  <DialogFooter>
- <Button variant="outline" onClick={() => setIsDialogOpen(false)}>취소</Button>
- <Button onClick={handleSubmit}>?�??/Button>
+ <Button variant="outline" onClick={() => setIsDialogOpen(false)}>痍⑥냼</Button>
+ <Button onClick={handleSubmit}>?님/Button>
  </DialogFooter>
  </DialogContent>
  </Dialog>
  </div>
  );
 }
+

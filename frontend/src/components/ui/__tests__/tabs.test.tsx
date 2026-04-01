@@ -1,4 +1,4 @@
-vi.mock('next/config', () => ({
+﻿vi.mock('next/config', () => ({
   default: () => ({
     publicRuntimeConfig: {},
     serverRuntimeConfig: {},
@@ -15,13 +15,13 @@ describe('Tabs Component', () => {
  render(
  <Tabs defaultValue="tab1">
  <TabsList>
- <TabsTrigger value="tab1">탭 1</TabsTrigger>
+ <TabsTrigger value="tab1">님1</TabsTrigger>
  </TabsList>
- <TabsContent value="tab1">콘텐츠 1</TabsContent>
+ <TabsContent value="tab1">肄섑뀗痢?1</TabsContent>
  </Tabs>
  );
 
- expect(screen.getByText('탭 1')).toBeInTheDocument();
- expect(screen.getByText('콘텐츠 1')).toBeInTheDocument();
+ expect(screen.getByText('님1')).toBeInTheDocument();
+ expect(screen.getByText('肄섑뀗痢?1')).toBeInTheDocument();
  });
 });

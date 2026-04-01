@@ -1,9 +1,8 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * 파일 관리 서비스
- * 연결: com.company.project.api.controller.file.FileController
+ * ?뚯씪 愿由님쒕퉬님 * ?곌껐: com.company.project.api.controller.file.FileController
  */
 export interface SharedFileDetail {
  atchFileId: string;
@@ -20,12 +19,12 @@ export interface SharedFileDetail {
 const BASE_URL = '/files';
 
 export const fileMngService = {
- /** 파일 목록 조회 (Admin 전용) */
+ /** ?뚯씪 紐⑸줉 조회 (Admin ?꾩슜) */
  getFiles: async (params?: Record<string, unknown>): Promise<PageResponse<SharedFileDetail>> => {
  return client.get<PageResponse<SharedFileDetail>>(BASE_URL, { params });
  },
 
- /** 파일 업로드 (Multipart) */
+ /** ?뚯씪 ?낅줈님(Multipart) */
  uploadFiles: async (files: File[]): Promise<string> => {
  const formData = new FormData();
  files.forEach(file => formData.append('files', file));
@@ -35,12 +34,12 @@ export const fileMngService = {
  });
  },
 
- /** 첨부파일 목록 조회 */
+ /** 泥⑤님뚯씪 紐⑸줉 조회 */
  getFileList: async (atchFileId: string): Promise<SharedFileDetail[]> => {
  return client.get<SharedFileDetail[]>(`${BASE_URL}/${atchFileId}`);
  },
 
- /** 파일 다운로드 URL 생성 */
+ /** ?뚯씪 ?ㅼ슫濡쒕뱶 URL ?앹꽦 */
  getDownloadUrl: (atchFileId: string, fileSn: number): string => {
  const baseUrl = typeof window === 'undefined'
  ? process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'
@@ -48,7 +47,7 @@ export const fileMngService = {
  return `${baseUrl}${BASE_URL}/${atchFileId}/${fileSn}`;
  },
 
- /** 파일 삭제 (개별 삭제 처리) */
+ /** ?뚯씪 님젣 (媛쒕퀎 님젣 泥섎━) */
  deleteFile: async (atchFileId: string, fileSn: number): Promise<void> => {
  return client.delete<void>(`${BASE_URL}/${atchFileId}/${fileSn}`);
  },

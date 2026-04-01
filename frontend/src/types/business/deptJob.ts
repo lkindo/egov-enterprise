@@ -1,12 +1,11 @@
-export interface DeptJobVO {
+﻿export interface DeptJobVO {
  deptJobId?: string;
- deptJobNm: string; // 업무명
- deptJobCn: string; // 업무내용
- deptJobBxId?: string; // 부서업무함ID
+ deptJobNm: string; // 업무紐? deptJobCn: string; // 업무?댁슜
+ deptJobBxId?: string; // 遺?쒖뾽臾댄븿ID
  deptJobBxNm?: string;
- chargerId?: string; // 담당자ID
+ chargerId?: string; // ?대떦?륤D
  chargerNm?: string;
- priort: string; // 우선순위 (1:높음, 2:보통, 3:낮음)
+ priort: string; // ?곗꽑?쒖쐞 (1:?믪쓬, 2:蹂댄넻, 3:님쓬)
  frstRegisterId?: string;
  frstRegistPnttm?: string;
 }
@@ -19,8 +18,8 @@ export interface DeptJobBxVO {
 }
 
 export interface DeptJobSearchParams {
- page번호?: number;
+ page踰덊샇?: number;
  searchCondition?: string;
  searchKeyword?: string;
- searchDeptJobBxId?: string; // 업무함 필터
+ searchDeptJobBxId?: string; // 업무님?꾪꽣
 }

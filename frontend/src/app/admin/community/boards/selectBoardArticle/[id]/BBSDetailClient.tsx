@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, Suspense, useActionState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -53,12 +53,12 @@ const InsertBBSContent = () => {
 
  return (
  <div className="flex flex-col gap-8 p-6 max-w-5xl mx-auto w-full pb-32 animate-in fade-in duration-700">
-  {/* Breadcrumb - 동적 메뉴 관리 적용 */}
+  {/* Breadcrumb - ?숈쟻 硫붾돱 愿由님곸슜 */}
   <DynamicBreadcrumb 
     customItems={[
-      { name: pathname.includes('/admin/system') ? '시스템 관리' : '커뮤니티 및 콘텐츠' },
-      { name: '게시판 상세' },
-      { name: '작성' }
+      { name: pathname.includes('/admin/system') ? '?쒖뒪님愿由? : '而ㅻ님덊떚 諛?肄섑뀗痢? },
+      { name: '寃뚯떆님?곸꽭' },
+      { name: '?묒꽦' }
     ]}
   />
 
@@ -78,13 +78,13 @@ const InsertBBSContent = () => {
  </div>
  <CardTitle className="text-3xl md:text-3xl font-black tracking-tighter leading-tight ">
     {pathname.includes('insertBoardArticle') ? (
-      <>새로운 소식을 <br /><span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">기록하세요</span></>
+      <>?덈줈님?뚯떇님<br /><span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">湲곕줉?섏꽭님/span></>
     ) : (
-      <>게시글 내용을 <br /><span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">확인하세요</span></>
+      <>寃뚯떆湲 ?댁슜님<br /><span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">?뺤씤?섏꽭님/span></>
     )}
   </CardTitle>
  <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed">
-    팀과 공유할 가치 있는 정보를 정성스럽게 작성하여 <br className="hidden md:block" />소통의 폭을 넓혀보세요.
+    ?怨?怨듭쑀님媛移님덈뒗 ?뺣낫瑜님뺤꽦?ㅻ읇寃님묒꽦?섏뿬 <br className="hidden md:block" />?뚰넻님님쓣 ?볧?蹂댁꽭님
   </p>
  </div>
  <div className="hidden lg:block relative">
@@ -105,14 +105,14 @@ const InsertBBSContent = () => {
  <div className="space-y-6 group">
  <div className="flex items-center justify-between">
   <Label htmlFor="nttSj" className="text-[10px] font-black tracking-[0.3em] text-slate-400 group-focus-within:text-primary transition-all flex items-center gap-3 uppercase">
-  <span className="w-2 h-2 rounded-full bg-primary" /> 게시글 제목 (Title)
+  <span className="w-2 h-2 rounded-full bg-primary" /> 寃뚯떆湲 ?쒕ぉ (Title)
   </Label>
- <span className="text-[10px] font-bold text-primary/40 tracking-tight">필수</span>
+ <span className="text-[10px] font-bold text-primary/40 tracking-tight">?꾩닔</span>
  </div>
  <Input
  id="nttSj"
  name="nttSj"
- placeholder="매력적이고 명확한 제목을 입력하세요"
+ placeholder="留ㅻ젰?곸씠怨?紐낇솗님?쒕ぉ님?낅젰?섏꽭님
  className={cn(
  "h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[1.75rem] px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
  state?.field === 'nttSj' && "border-rose-500 bg-rose-50"
@@ -125,15 +125,15 @@ const InsertBBSContent = () => {
  <div className="space-y-6 group">
  <div className="flex items-center justify-between">
  <Label htmlFor="nttCn" className="text-[11px] font-black tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3">
- <FileText className="w-4 h-4" /> 02. 본문 내용
+ <FileText className="w-4 h-4" /> 02. 蹂몃Ц ?댁슜
  </Label>
- <span className="text-[10px] font-bold text-primary/40 tracking-tight">필수</span>
+ <span className="text-[10px] font-bold text-primary/40 tracking-tight">?꾩닔</span>
  </div>
  <div className="relative">
  <Textarea
  id="nttCn"
  name="nttCn"
- placeholder="전달하고자 하는 내용을 상세히 작성하세요..."
+ placeholder="?꾨떖?섍퀬님?섎뒗 ?댁슜님?곸꽭님?묒꽦?섏꽭님.."
  className={cn(
  "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[2.5rem] bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
  state?.field === 'nttCn' && "border-rose-500 bg-rose-50"
@@ -141,15 +141,14 @@ const InsertBBSContent = () => {
  required
  />
  <div className="absolute bottom-8 right-10 flex items-center gap-2.5 text-[10px] font-black text-muted-foreground/40 tracking-[0.2em] pointer-events-none bg-muted/50 px-4 py-2 rounded-full border border-primary/5 backdrop-blur-sm">
- <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 임시 저장 중
- </div>
+ <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> ?꾩떆 ?님以? </div>
  </div>
  </div>
 
  {/* File Attachment Area */}
  <div className="space-y-6 group">
  <Label className="text-[11px] font-black tracking-[0.3em] text-muted-foreground flex items-center gap-3">
- <Paperclip className="w-4 h-4" /> 03. 첨부 파일
+ <Paperclip className="w-4 h-4" /> 03. 泥⑤? ?뚯씪
  </Label>
  <div className="p-8 rounded-[2.5rem] border-2 border-dashed border-primary/10 bg-muted/20 hover:border-primary/30 transition-all">
  <StandardFileUploader
@@ -167,9 +166,9 @@ const InsertBBSContent = () => {
  <CheckCircle2 className="w-8 h-8 text-primary" />
  </div>
  <div className="space-y-3 relative z-10 text-center md:text-left">
-  <p className="font-black text-2xl text-slate-900 tracking-tight ">보안 준수 사항</p>
+  <p className="font-black text-2xl text-slate-900 tracking-tight ">보안 以님?ы빆</p>
   <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[450px]">
-  작성하신 정보는 프로젝트 자산으로 등록됩니다. <br />민감한 개인정보나 기밀이 포함되지 않도록 주의해 주세요.
+  ?묒꽦?섏떊 ?뺣낫님?꾨줈?앺듃 ?먯궛?쇰줈 등록?⑸땲님 <br />誘쇨컧님媛쒖씤?뺣낫님湲곕님님ы븿?섏? ?딅룄濡?二쇱쓽님二쇱꽭님
   </p>
  </div>
  </div>
@@ -182,7 +181,7 @@ const InsertBBSContent = () => {
       onClick={() => router.back()}
       className="h-20 px-16 font-black tracking-[0.3em] text-sm text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition-all rounded-2xl active:scale-95 border-2 border-transparent"
     >
-      <ArrowLeft className="w-5 h-5 mr-4" /> 취소
+      <ArrowLeft className="w-5 h-5 mr-4" /> 痍⑥냼
     </Button>
     <Button
       type="submit"
@@ -191,12 +190,11 @@ const InsertBBSContent = () => {
     >
       {isPending ? (
         <span className="flex items-center gap-3 animate-pulse">
-          <div className="w-3 h-3 bg-white rounded-full" /> 저장 중...
+          <div className="w-3 h-3 bg-white rounded-full" /> ?님以?..
         </span>
       ) : (
         <>
-          <Send className="w-5 h-5" /> 저장
-        </>
+          <Send className="w-5 h-5" /> ?님        </>
       )}
     </Button>
   </CardFooter>
@@ -211,7 +209,7 @@ const InsertBoardArticlePage = () => {
  <Suspense fallback={
  <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
  <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
- <p className="font-black text-muted-foreground animate-pulse">에디터 로드 중...</p>
+ <p className="font-black text-muted-foreground animate-pulse">?먮뵒님濡쒕뱶 以?..</p>
  </div>
  }>
  <InsertBBSContent />

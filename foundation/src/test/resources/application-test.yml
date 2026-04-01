@@ -1,41 +1,59 @@
 # Test Profile Configuration
-# Used for integration tests with Testcontainers
+# Used for integration tests with H2 (In-memory) - No Docker required
 
-# Database (Testcontainers auto-configures via @ServiceConnection)
-spring.datasource.url=jdbc:postgresql://localhost:5432/testdb
-spring.datasource.username=test
-spring.datasource.password=test
-spring.datasource.driver-class-name=org.postgresql.Driver
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
 
-# JPA / Hibernate
-spring.jpa.hibernate.ddl-auto=create-drop
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.format_sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+    # Disable lazy loading for tests to avoid LazyInitializationException
+    open-in-view: true
 
-# Disable lazy loading for tests to avoid LazyInitializationException
-spring.jpa.open-in-view=true
+  # H2 Console for debugging if needed
+  h2:
+    console:
+      enabled: true
+
+  # Cache (disable for tests)
+  cache:
+    type: none
+
+  # Email (disable for tests)
+  mail:
+    host: localhost
+    port: 25
+
+  # File Upload
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 # Logging
-logging.level.root=INFO
-logging.level.com.company=DEBUG
-logging.level.org.hibernate.SQL=DEBUG
-logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+logging:
+  level:
+    root: INFO
+    com.company: DEBUG
+    org.hibernate.SQL: DEBUG
 
 # Actuator (disable in tests)
-management.endpoints.web.exposure.include=none
+management:
+  endpoints:
+    web:
+      exposure:
+        include: none
 
 # JWT (test secret)
-jwt.secret=test-secret-key-for-integration-testing-minimum-32-chars
-jwt.expiration=3600000
-
-# Cache (disable for tests)
-spring.cache.type=none
-
-# Email (disable for tests)
-spring.mail.host=localhost
-spring.mail.port=25
-
-# File Upload
-spring.servlet.multipart.max-file-size=10MB
-spring.servlet.multipart.max-request-size=10MB
+jwt:
+  secret: test-secret-key-for-integration-testing-minimum-32-chars
+  expiration: 3600000

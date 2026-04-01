@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import UnifiedDashboardClient from './UnifiedDashboardClient';
 import client from '@/lib/api/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -8,7 +9,12 @@ import { DashboardResponse, DashboardNoti, DashboardTask } from '@/types/foundat
 async function getDashboardData() {
  const cookieStore = await cookies();
  const accessToken = cookieStore.get('accessToken')?.value;
- const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+ if (!accessToken) {
+  redirect('/login');
+ }
+
+ const axiosConfig = { headers: { Authorization: `Bearer ${accessToken}` } };
 
  try {
  const dashboardRes = await client.get<any>('/dashboard', axiosConfig);

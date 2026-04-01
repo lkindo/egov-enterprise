@@ -1,6 +1,6 @@
-export interface Schedule {
+﻿export interface Schedule {
  schdulId: string;
- schdulSe: string; // 1: 부서, 2: 개인
+ schdulSe: string; // 1: 遺님 2: 媛쒖씤
  schdulDeptId?: string;
  schdulKindCode?: string;
  schdulBgnde: string; // yyyyMMddHHmm
@@ -19,7 +19,7 @@ export interface Schedule {
 export interface ScheduleResponse {
  resultList: Schedule[];
  totalCount: number;
- page번호: number;
+ page踰덊샇: number;
  totalPages: number;
 }
 
@@ -39,7 +39,7 @@ export interface ScheduleSearchParams {
  schdulBgnde?: string;
  schdulEndde?: string;
  schdulNm?: string;
- page번호?: number;
+ page踰덊샇?: number;
  size?: number;
 }
 
@@ -61,6 +61,6 @@ export interface ReportSearchParams {
  reportNm?: string;
  writngBgnde?: string;
  writngEndde?: string;
- page번호?: number;
+ page踰덊샇?: number;
  size?: number;
 }

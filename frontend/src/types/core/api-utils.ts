@@ -1,14 +1,14 @@
-/**
+﻿/**
  * Generated API Types Utility
  *
- * openapi-typescript로 생성된 types/generated-api.d.ts를 기반으로
- * API 요청/응답 타입을 간결하게 추출하여 사용하는 헬퍼입니다.
+ * openapi-typescript濡님앹꽦님types/generated-api.d.ts瑜?湲곕컲?쇰줈
+ * API 요청/?묐떟 ??낆쓣 媛꾧껐?섍쾶 異붿텧?섏뿬 ?ъ슜?섎뒗 ?ы띁?낅땲님
  */
 
 import { paths, components } from '../generated/generated-api';
 
 /**
- * 특정 엔드포인트의 응답 데이터 타입을 추출합니다.
+ * ?뱀젙 ?붾뱶?ъ씤?몄쓽 ?묐떟 ?곗씠님??낆쓣 異붿텧?⑸땲님
  * @example
  * type UserInfo = ApiResponseData<'/api/v1/users/{id}', 'get'>;
  */
@@ -20,7 +20,7 @@ export type ApiResponseData<
  : never;
 
 /**
- * 특정 엔드포인트의 요청 데이터(Body) 타입을 추출합니다.
+ * ?뱀젙 ?붾뱶?ъ씤?몄쓽 요청 ?곗씠님Body) ??낆쓣 異붿텧?⑸땲님
  */
 export type ApiRequestBody<
  Path extends keyof paths,
@@ -30,6 +30,6 @@ export type ApiRequestBody<
  : never;
 
 /**
- * 스키마 컴포넌트(DTO)를 직접 참조합니다.
+ * ?ㅽ궎留?而댄룷?뚰듃(DTO)瑜?吏곸젒 李몄“?⑸땲님
  */
 export type SchemaDTO<Name extends keyof components['schemas']> = components['schemas'][Name];

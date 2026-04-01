@@ -6,28 +6,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { 
   Plus, 
-  ArrowRight, 
   Clock, 
   CheckCircle2, 
   Zap, 
   Bell, 
   ShieldCheck, 
-  BarChart3, 
-  TrendingUp, 
-  TrendingDown,
-  AlertCircle,
-  Sparkles
+  BarChart3
 } from 'lucide-react';
 import { Skeleton } from '@/app/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { statsAdminService, StatsDto } from '@/services/foundation/system/StatsAdminService';
-import { BannerSlider } from '@/app/components/dashboard/BannerSlider';
-import { PopupManager } from '@/app/components/dashboard/PopupManager';
-import { ActivityFeed } from '@/app/components/dashboard/ActivityFeed';
-import { RealTimeDashboard } from '@/components/features/dashboard/RealTimeDashboard';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { useMessage } from '@/hooks/useMessage';
 
 // Hub Common Components & Animations
@@ -38,6 +27,20 @@ import { HubChartCard } from '@/components/ui/hub/HubChartCard';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { DashboardTask } from '@/types/foundation/dashboard';
 
+// Optimization: Priority 2 - Dynamic Imports for heavy components
+const BannerSlider = dynamic(() => import('@/app/components/dashboard/BannerSlider').then(mod => mod.BannerSlider), { 
+  loading: () => <Skeleton className="h-[400px] w-full rounded-[3.5rem]" />,
+  ssr: false 
+});
+const PopupManager = dynamic(() => import('@/app/components/dashboard/PopupManager').then(mod => mod.PopupManager), { ssr: false });
+const ActivityFeed = dynamic(() => import('@/app/components/dashboard/ActivityFeed').then(mod => mod.ActivityFeed), { 
+  loading: () => <div className="space-y-4 pt-10"><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /></div>,
+  ssr: false 
+});
+const RealTimeDashboard = dynamic(() => import('@/components/features/dashboard/RealTimeDashboard').then(mod => mod.RealTimeDashboard), {
+  loading: () => <Skeleton className="h-[150px] w-full rounded-[4rem]" />,
+  ssr: false
+});
 const DashboardVisitorChart = dynamic(
   () => import('@/app/components/dashboard/DashboardCharts').then((mod) => mod.DashboardVisitorChart),
   {
@@ -65,14 +68,14 @@ export default function UnifiedDashboardClient({
   const [taskList] = useState<DashboardTask[]>(initialTaskList);
   const [pendingCount] = useState<number>(pendingApprovalCount);
 
-  // ?�속 ?�계 ?�이??조회 (최근 7??
+  // 접속 통계 데이터 조회 (최근 7일)
   const { data: connectStats = [] } = useQuery<StatsDto[]>({
     queryKey: ['dashboard', 'stats', 'connect'],
     queryFn: () => statsAdminService.getConnectStats({ statsKind: 'SERVICE' }),
     enabled: !!user
   });
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (Server-side redirect is also in page.tsx)
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -92,14 +95,15 @@ export default function UnifiedDashboardClient({
     >
       <PopupManager />
 
-      {/* Header Section with Industrial Luxury Feel */}
+      {/* Header Section */}
       <motion.div variants={hubItemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
         <div className="space-y-2">
           <HubInsightBadge label={t('dashboard.badge')} />
           <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-foreground leading-tight">
-            {t('dashboard.greeting')} <span className="text-primary ">{user.name}</span>??          </h1>
+            {t('dashboard.greeting')} <span className="text-primary ">{user.name}</span>님
+          </h1>
           <p className="text-lg text-muted-foreground font-medium max-w-xl">
-            ?�늘??<span className="text-foreground font-bold underline decoration-primary/30 underline-offset-4">주요 ?�사?�트</span>?� ?�시�?지?��? 분석?�습?�다.
+            오늘은 <span className="text-foreground font-bold underline decoration-primary/30 underline-offset-4">주요 인사이트</span> 및 실시간 지표를 분석했습니다.
           </p>
         </div>
 
@@ -110,16 +114,17 @@ export default function UnifiedDashboardClient({
             onClick={() => router.push('/admin/community/boards')}
             className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-slate-900 dark:text-white dark:border-white/10 rounded-[2rem] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
           >
-            <Plus size={20} /> ???�스??          </motion.button>
+            <Plus size={20} /> 새 포스팅
+          </motion.button>
         </div>
       </motion.div>
 
-      {/* Banner with Glassmorphism Overlay handled inside BannerSlider or here */}
+      {/* Banner */}
       <motion.div variants={hubItemVariants} className="relative rounded-[3.5rem] overflow-hidden shadow-2xl">
         <BannerSlider />
       </motion.div>
 
-      {/* Real-time Insights & Connectivity */}
+      {/* Real-time Insights */}
       <motion.div variants={hubItemVariants} className="p-4 md:p-8 border-2 border-primary/5 rounded-[4rem] bg-slate-50 dark:bg-slate-900/50 shadow-inner">
         <RealTimeDashboard />
       </motion.div>
@@ -128,7 +133,7 @@ export default function UnifiedDashboardClient({
       <motion.div variants={hubContainerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <HubSummaryCard
           key="summary-tasks"
-          title="???�무 ?�황"
+          title="업무 현황"
           value={taskList.length.toString().padStart(2, '0')}
           description={t('dashboard.newTasks', { count: taskList.filter((t: DashboardTask) => t.isNew).length })}
           icon={<Zap size={24} />}
@@ -137,16 +142,16 @@ export default function UnifiedDashboardClient({
         />
         <HubSummaryCard
           key="summary-notifications"
-          title="결재 ?��?
+          title="결재 대기"
           value={pendingCount.toString().padStart(2, '0')}
-          description="?�재 ?�기중??결재 ?�청?�니??"
+          description="현재 대기 중인 결재 요청입니다."
           icon={<Bell size={24} />}
           trend={pendingCount > 0 ? 10 : 0}
           color="purple"
         />
         <HubSummaryCard
           key="summary-security"
-          title="보안 지??
+          title="보안 지수"
           value={t('dashboard.securityStatus.safe')}
           description={t('dashboard.securityStatus.desc')}
           icon={<ShieldCheck size={24} />}
@@ -155,9 +160,9 @@ export default function UnifiedDashboardClient({
         />
         <HubSummaryCard
           key="summary-visitors"
-          title="?�늘??방문??
+          title="오늘의 방문자"
           value={connectStats.length > 0 ? connectStats[connectStats.length-1].statsCo.toString() : '0'}
-          description="?�시�??�속 ?�이??기반"
+          description="실시간 접속 데이터 기반"
           icon={<BarChart3 size={24} />}
           trend={5}
           color="blue"
@@ -167,22 +172,20 @@ export default function UnifiedDashboardClient({
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
         <div className="xl:col-span-2 space-y-12">
-          {/* Main Chart Card */}
           <HubChartCard
             key="main-visitor-chart"
-            title="?�래???�이??분석"
-            subtitle="?�스???�시�?방문??분포 지??
+            title="트래픽 데이터 분석"
+            subtitle="시스템 실시간 방문자 분포 지표"
             icon={<BarChart3 size={24} />}
             color="blue"
           >
             <DashboardVisitorChart data={connectStats} />
           </HubChartCard>
 
-          {/* Secondary Lists */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <HubListCard
               key="list-notices"
-              title="최근 공�??�항"
+              title="최근 공지사항"
               items={notiList}
               icon={<Bell size={20} />}
               moreHref="/admin/community/boards"
@@ -190,7 +193,7 @@ export default function UnifiedDashboardClient({
             />
             <HubListCard
               key="list-tasks"
-              title="배정???�무"
+              title="배정된 업무"
               items={taskList}
               icon={<CheckCircle2 size={20} />}
               moreHref="/admin/community/boards"
@@ -210,7 +213,7 @@ export default function UnifiedDashboardClient({
               <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
                 <Clock size={22} className="text-primary" />
               </div>
-              ?�시�??�드
+              실시간 피드
             </h3>
             <div className="relative z-10">
               <ActivityFeed />
@@ -224,12 +227,13 @@ export default function UnifiedDashboardClient({
             <div className="flex items-center justify-between mb-8">
               <h3 className="hub-label-accent flex items-center gap-3">
                 <div className="w-2 h-2 bg-primary rounded-full animate-ping" />
-                ?�스???�성 지??              </h3>
+                시스템 활성 지표
+              </h3>
             </div>
             <div className="space-y-8">
                <div className="space-y-2">
                  <div className="flex justify-between text-sm font-black">
-                   <span className="opacity-40">CPU ?�용??/span>
+                   <span className="opacity-40">CPU 사용률</span>
                    <span className="text-primary">24%</span>
                  </div>
                  <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
@@ -242,7 +246,7 @@ export default function UnifiedDashboardClient({
                </div>
                <div className="space-y-2">
                  <div className="flex justify-between text-sm font-black">
-                   <span className="opacity-40">메모�?/span>
+                   <span className="opacity-40">메모리</span>
                    <span className="text-emerald-500">42%</span>
                  </div>
                  <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">

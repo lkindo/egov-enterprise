@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { QustnrRespondInfo } from '@/types/business/survey';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -34,13 +34,13 @@ import {
 } from 'lucide-react';
 
 export default function SurveyResponseListPage() {
- const [page번호, setPage번호] = useState(1);
+ const [page踰덊샇, setPage踰덊샇] = useState(1);
  const [searchKeyword, setSearchKeyword] = useState('');
  const queryClient = useQueryClient();
 
  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
- queryKey: ['survey-responses', page번호, searchKeyword],
- queryFn: () => getQustnrRespondInfoList({ page: page번호, size: 10, keyword: searchKeyword }),
+ queryKey: ['survey-responses', page踰덊샇, searchKeyword],
+ queryFn: () => getQustnrRespondInfoList({ page: page踰덊샇, size: 10, keyword: searchKeyword }),
  retry: false,
  }) as any;
 
@@ -48,20 +48,20 @@ export default function SurveyResponseListPage() {
  mutationFn: (id: string) => deleteQustnrRespondInfo(id),
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['survey-responses'] });
- alert('??��?�었?�니??');
+ alert('님젣?섏뿀?듬땲님');
  },
  onError: (err) => {
- alert(`??�� ?�패: ${err instanceof Error ? err.message : '?????�는 ?�류'}`);
+ alert(`님젣 ?ㅽ뙣: ${err instanceof Error ? err.message : '님님?녿뒗 ?ㅻ쪟'}`);
  }
  });
 
  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
  setSearchKeyword(e.target.value);
- setPage번호(1);
+ setPage踰덊샇(1);
  };
 
  const handleDelete = (id: string, name: string) => {
- if (confirm(`${name}?�의 ?�답????��?�시겠습?�까?`)) {
+ if (confirm(`${name}?섏쓽 ?묐떟님님젣?섏떆寃좎뒿?덇퉴?`)) {
  deleteMutation.mutate(id);
  }
  };
@@ -70,16 +70,16 @@ export default function SurveyResponseListPage() {
  <div className="container mx-auto py-8 max-w-6xl space-y-6">
  <div className="flex justify-between items-end">
  <div>
- <h1 className="text-3xl font-bold tracking-tight">?�문조사 ?�답 관�?/h1>
+ <h1 className="text-3xl font-bold tracking-tight">설문조사 ?묐떟 愿由?/h1>
  <p className="text-muted-foreground mt-1">
- ?�스?�에 ?�록???�문조사 ?�답 ?�황???�인?�고 관리합?�다.
+ ?쒖뒪?쒖뿉 등록님설문조사 ?묐떟 현황님?뺤씤?섍퀬 愿由ы빀?덈떎.
  </p>
  </div>
  <div className="flex space-x-2">
  <Link href="/survey/stats">
  <Button variant="outline" size="sm">
  <BarChart3 className="mr-2 h-4 w-4" />
- ?�계 보기
+ 통계 蹂닿린
  </Button>
  </Link>
  <Button
@@ -89,7 +89,7 @@ export default function SurveyResponseListPage() {
  disabled={isFetching}
  >
  <RotateCcw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
- ?�로고침
+ ?덈줈怨좎묠
  </Button>
  </div>
  </div>
@@ -97,12 +97,12 @@ export default function SurveyResponseListPage() {
  <Card className="shadow-sm">
  <CardHeader className="pb-3">
  <div className="flex items-center justify-between">
- <CardTitle className="text-lg font-medium">?�답 목록</CardTitle>
+ <CardTitle className="text-lg font-medium">?묐떟 紐⑸줉</CardTitle>
  <div className="relative w-64">
  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
  <Input
  type="search"
- placeholder="?�답???�름 검??.."
+ placeholder="?묐떟님?대쫫 寃님.."
  value={searchKeyword}
  onChange={handleSearch}
  className="pl-9"
@@ -110,7 +110,7 @@ export default function SurveyResponseListPage() {
  </div>
  </div>
  <CardDescription>
- �?{data?.totalElements || 0}건의 ?�답??조회?�었?�니??
+ 珥?{data?.totalElements || 0}嫄댁쓽 ?묐떟님조회?섏뿀?듬땲님
  </CardDescription>
  </CardHeader>
  <CardContent>
@@ -118,10 +118,10 @@ export default function SurveyResponseListPage() {
  <Table>
  <TableHeader>
  <TableRow className="bg-muted/50">
- <TableHead className="w-[150px] font-semibold">?�답??/TableHead>
- <TableHead className="font-semibold">?�답 ?�용</TableHead>
- <TableHead className="w-[180px] font-semibold">?�록 ?�시</TableHead>
- <TableHead className="w-[120px] font-semibold text-center">관�?/TableHead>
+ <TableHead className="w-[150px] font-semibold">?묐떟님/TableHead>
+ <TableHead className="font-semibold">?묐떟 ?댁슜</TableHead>
+ <TableHead className="w-[180px] font-semibold">등록 ?쇱떆</TableHead>
+ <TableHead className="w-[120px] font-semibold text-center">愿由?/TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
@@ -130,20 +130,20 @@ export default function SurveyResponseListPage() {
  <TableCell colSpan={4} className="h-48 text-center">
  <div className="flex flex-col items-center justify-center space-y-2">
  <Loader2 className="h-8 w-8 animate-spin text-primary" />
- <p className="text-muted-foreground">?�이?��? 불러?�는 중입?�다...</p>
+ <p className="text-muted-foreground">?곗씠?곕? 遺덈윭?ㅻ뒗 以묒엯?덈떎...</p>
  </div>
  </TableCell>
  </TableRow>
  ) : isError ? (
  <TableRow>
  <TableCell colSpan={4} className="h-48 text-center text-destructive">
- ?�결 ?�류: {error instanceof Error ? error.message : '?�이?��? 가?�올 ???�습?�다.'}
+ ?곌껐 ?ㅻ쪟: {error instanceof Error ? error.message : '?곗씠?곕? 媛?몄삱 님?놁뒿?덈떎.'}
  </TableCell>
  </TableRow>
  ) : data?.content?.length === 0 ? (
  <TableRow>
  <TableCell colSpan={4} className="h-48 text-center text-muted-foreground">
- 검??결과가 ?�습?�다.
+ 寃님寃곌낵媛 ?놁뒿?덈떎.
  </TableCell>
  </TableRow>
  ) : (
@@ -183,24 +183,24 @@ export default function SurveyResponseListPage() {
  {/* Pagination */}
  <div className="mt-4 flex items-center justify-between">
  <p className="text-sm text-muted-foreground">
- ?�재 {page번호}?�이지
+ 현재 {page踰덊샇}?섏씠吏
  </p>
  <div className="flex items-center space-x-2">
  <Button
  variant="outline"
  size="sm"
- disabled={page번호 === 1 || isFetching}
- onClick={() => setPage번호(p => Math.max(1, p - 1))}
+ disabled={page踰덊샇 === 1 || isFetching}
+ onClick={() => setPage踰덊샇(p => Math.max(1, p - 1))}
  >
- <ChevronLeft className="h-4 w-4 mr-1" /> ?�전
+ <ChevronLeft className="h-4 w-4 mr-1" /> ?댁쟾
  </Button>
  <Button
  variant="outline"
  size="sm"
  disabled={data?.content?.length < 10 || isFetching}
- onClick={() => setPage번호(p => p + 1)}
+ onClick={() => setPage踰덊샇(p => p + 1)}
  >
- ?�음 <ChevronRight className="h-4 w-4 ml-1" />
+ ?ㅼ쓬 <ChevronRight className="h-4 w-4 ml-1" />
  </Button>
  </div>
  </div>
@@ -209,3 +209,4 @@ export default function SurveyResponseListPage() {
  </div>
  );
 }
+

@@ -1,9 +1,9 @@
-import { Metadata } from 'next';
+﻿import { Metadata } from 'next';
 import MemoReportManagementClient from './MemoReportManagementClient';
 
 export const metadata: Metadata = {
-  title: '메모보고 관�?| eGov Enterprise System',
-  description: '?�고�??�터?�라?�즈 ?�합 커�??��??�션 �?비정??보고 관�??�터',
+  title: '硫붾え蹂닿퀬 愿由?| eGov Enterprise System',
+  description: '?먭퀬釉님뷀꽣?꾨씪?댁쫰 ?듯빀 而ㅻ님덉님댁뀡 諛?鍮꾩젙님蹂닿퀬 愿由님쇳꽣',
 };
 
 export default function MemoReportPage() {
@@ -13,3 +13,4 @@ export default function MemoReportPage() {
     </div>
   );
 }
+

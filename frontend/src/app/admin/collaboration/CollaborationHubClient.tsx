@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -97,7 +97,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
             </div>
             <div className="space-y-1">
               <h4 className={cn("text-sm font-black ", selectedItemId === note.noteId ? "text-white" : "text-slate-900 tracking-tight")}>{note.noteSj}</h4>
-              <p className="text-[8px] font-black tracking-tight opacity-40">보낸 ?�람: {note.trnsmitterNm || note.trnsmitterId}</p>
+              <p className="text-[8px] font-black tracking-tight opacity-40">보냄 ?щ엺: {note.trnsmitterNm || note.trnsmitterId}</p>
             </div>
           </div>
           {note.openYn === 'N' && <div className="w-2 h-2 rounded-full bg-primary" />}
@@ -124,7 +124,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           </div>
           <div className="space-y-1">
             <h4 className="text-sm font-black tracking-tight">{address.adbkNm}</h4>
-            <p className="text-[10px] opacity-40">{address.email || '?�메???�음'}</p>
+            <p className="text-[10px] opacity-40">{address.email || '?대찓님?놁쓬'}</p>
           </div>
         </Card>
       ))}
@@ -135,7 +135,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
     <div className="space-y-3">
       {scraps.length === 0 ? (
         <div className="p-10 text-center opacity-30 font-black tracking-[0.3em]">
-          ?�크?�이 ?�습?�다
+          ?ㅽ겕?⑹씠 ?놁뒿?덈떎
         </div>
       ) : (
         scraps.map((scrap: any) => (
@@ -158,7 +158,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
               </div>
               <div className="space-y-1">
                 <h4 className={cn("text-sm font-black ", selectedItemId === scrap.scrapId ? "text-white" : "text-slate-900 tracking-tight")}>{scrap.scrapNm}</h4>
-                <p className="text-[8px] font-black tracking-tight opacity-40">?�크???�짜: {scrap.createdDate?.substring(0, 10) || '?????�음'}</p>
+                <p className="text-[8px] font-black tracking-tight opacity-40">?ㅽ겕님?좎쭨: {scrap.createdDate?.substring(0, 10) || '님님?놁쓬'}</p>
               </div>
             </div>
           </div>
@@ -177,19 +177,19 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           </div>
           <div>
             <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
-              ?�업 ?�합 ?�브
+              ?묒뾽 ?듯빀 ?덈툕
             </h2>
             <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
-              ?�합 기업???�털 ?�비???�터
+              ?듯빀 湲곗뾽님?ы꽭 ?쒕퉬님?쇳꽣
             </p>
           </div>
         </div>
         <div className="flex gap-4">
           <Button variant="outline" className="h-14 px-6 rounded-2xl border-2 font-black tracking-tight gap-2">
-            <Mail size={18} /> 쪽�? ?�기
+            <Mail size={18} /> 履쎌? ?곌린
           </Button>
           <Button className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition-all gap-2">
-            <Plus size={20} /> ?�락�?추�?
+            <Plus size={20} /> ?곕씫泥?異붽?
           </Button>
         </div>
       </div>
@@ -199,16 +199,16 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
         {/* --- Left Column: Navigation (20%) --- */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
           <Card className="rounded-[3rem] border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100 overflow-hidden">
-            <NavButton icon={<Inbox size={20} />} label="메시지" active={activeTab === 'MESSAGES'} onClick={() => { setActiveTab('MESSAGES'); setSelectedItemId(null); }} />
-            <NavButton icon={<Users size={20} />} label="?�체 ?�락�? active={activeTab === 'ADDRESS_BOOK'} onClick={() => { setActiveTab('ADDRESS_BOOK'); setSelectedItemId(null); }} />
-            <NavButton icon={<Bookmark size={20} />} label="?�크??관�? active={activeTab === 'SCRAPS'} onClick={() => { setActiveTab('SCRAPS'); setSelectedItemId(null); }} />
+            <NavButton icon={<Inbox size={20} />} label="硫붿떆吏" active={activeTab === 'MESSAGES'} onClick={() => { setActiveTab('MESSAGES'); setSelectedItemId(null); }} />
+            <NavButton icon={<Users size={20} />} label="?꾩껜 ?곕씫泥? active={activeTab === 'ADDRESS_BOOK'} onClick={() => { setActiveTab('ADDRESS_BOOK'); setSelectedItemId(null); }} />
+            <NavButton icon={<Bookmark size={20} />} label="?ㅽ겕님愿由? active={activeTab === 'SCRAPS'} onClick={() => { setActiveTab('SCRAPS'); setSelectedItemId(null); }} />
           </Card>
 
           <Card className="rounded-[3rem] border-0 bg-primary text-white p-10 space-y-6 shadow-2xl relative overflow-hidden group">
             <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
             <Zap size={48} className="text-white/20 absolute -right-4 -top-4 rotate-12" />
             <div className="space-y-2 relative z-10">
-              <h4 className="text-[10px] font-black tracking-tight opacity-60">?�답�?/h4>
+              <h4 className="text-[10px] font-black tracking-tight opacity-60">?묐떟瑜?/h4>
               <p className="text-3xl font-black tracking-tighter">98.2%</p>
             </div>
           </Card>
@@ -220,17 +220,17 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
             <CardHeader className="bg-slate-50/50 border-b p-10 space-y-8">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.4em] leading-tight">
-                  {activeTab === 'MESSAGES' ? '보안 채널' : activeTab === 'ADDRESS_BOOK' ? '?�체 주소�? : '?�크???�?�소'}
+                  {activeTab === 'MESSAGES' ? '보안 梨꾨꼸' : activeTab === 'ADDRESS_BOOK' ? '?꾩껜 二쇱냼濡? : '?ㅽ겕님??μ냼'}
                 </CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-8 text-[9px] font-black tracking-tight gap-2">
-                  <RefreshCcw size={12} /> ?�기??                </Button>
+                  <RefreshCcw size={12} /> ?숆린님                </Button>
               </div>
               <div className="flex gap-4">
                 <div className="relative flex-1 group">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                   <Input
                     className="pl-12 h-14 bg-white border-slate-100 rounded-2xl text-sm font-bold shadow-sm"
-                    placeholder="?�름, 부?? ?�사�?검??."
+                    placeholder="?대쫫, 遺님 ?뚯궗紐?寃님."
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
                   />
@@ -239,7 +239,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                   onClick={() => queryClient.invalidateQueries({ queryKey: ['collab-addressbook'] })}
                   className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-black tracking-tighter shadow-xl hover:-translate-y-1 transition-all"
                 >
-                  검???�행
+                  寃님?ㅽ뻾
                 </Button>
               </div>
             </CardHeader>
@@ -274,7 +274,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                 <Card className="flex-1 rounded-[3.5rem] border-0 bg-white shadow-2xl flex flex-col ring-1 ring-slate-100 overflow-hidden">
                   <CardHeader className="bg-slate-50/50 p-10 border-b">
                     <h2 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight">
-                      ?�세 ?�보
+                      ?곸꽭 ?뺣낫
                     </h2>
                   </CardHeader>
                   <CardContent className="flex-1 p-10 space-y-12">
@@ -286,7 +286,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                       </div>
                     </div>
                     <div className="flex gap-4">
-                      <Button className="flex-1 h-14 rounded-2xl bg-slate-900 text-white font-black tracking-tight text-[9px]">?�장 / ?�기</Button>
+                      <Button className="flex-1 h-14 rounded-2xl bg-slate-900 text-white font-black tracking-tight text-[9px]">?듭옣 / ?곌린</Button>
                       <Button variant="outline" className="h-14 w-14 rounded-2xl border-2"><Trash2 size={20} /></Button>
                     </div>
                   </CardContent>
@@ -296,8 +296,8 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
               <Card className="h-full rounded-[3.5rem] border-2 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center p-20 text-center grayscale opacity-30">
                 <Share2 size={64} className="mb-8" />
                 <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight">
-                  ??��???�택?�세??                </h3>
-                <p className="text-[10px] mt-4 font-black tracking-tight">??��???�택?�여 ?�용???�인?�세??</p>
+                  님ぉ님?좏깮?섏꽭님                </h3>
+                <p className="text-[10px] mt-4 font-black tracking-tight">님ぉ님?좏깮?섏뿬 ?댁슜님?뺤씤?섏꽭님</p>
               </Card>
             )}
           </AnimatePresence>
@@ -330,3 +330,4 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
     </button>
   );
 }
+

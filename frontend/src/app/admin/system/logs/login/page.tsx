@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -14,7 +14,7 @@ import type { LoginLog } from '@/services/foundation/system/SystemLogAdminServic
 
 const LoginLogAdminPage = () => {
     const [params, setParams] = useState<SearchParams>({
-        page번호: 1,
+        page踰덊샇: 1,
         size: 10,
         searchKeyword: '',
     });
@@ -22,7 +22,7 @@ const LoginLogAdminPage = () => {
     const { data, isLoading } = useQuery<PageResponse<LoginLog>>({
         queryKey: ['admin-logs-login', params],
         queryFn: () => systemLogAdminService.getLoginLogs({ 
-            page: (Number(params.page번호) || 1) - 1, 
+            page: (Number(params.page踰덊샇) || 1) - 1, 
             size: params.size, 
             searchWrd: params.searchKeyword 
         }),
@@ -33,7 +33,7 @@ const LoginLogAdminPage = () => {
 
     const columns: Column<LoginLog>[] = [
         {
-            header: '로그ID',
+            header: '濡쒓렇ID',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
@@ -43,7 +43,7 @@ const LoginLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '발생?�점',
+            header: '諛쒖깮?쒖젏',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
@@ -53,7 +53,7 @@ const LoginLogAdminPage = () => {
             className: 'w-52'
         },
         {
-            header: '?�청??,
+            header: '요청님,
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-full w-fit shadow-sm">
                     <span className="text-xs font-black text-slate-700">{item.loginNm}</span>
@@ -63,7 +63,7 @@ const LoginLogAdminPage = () => {
             className: 'w-48'
         },
         {
-            header: '?�속IP',
+            header: '접속IP',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/80 tabular-nums">
                     <Globe size={12} className="opacity-30" />
@@ -73,7 +73,7 @@ const LoginLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '구분',
+            header: '援щ텇',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center justify-center">
                     <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border uppercase tracking-tighter ${
@@ -89,22 +89,22 @@ const LoginLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="로그??로그" breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }, { label: '로그??로그' }]} />
+            <PageHeader title="濡쒓렇님濡쒓렇" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }, { label: '濡쒓렇님濡쒓렇' }]} />
 
-            <HubHeader title="계정 가?�언" highlight="로그??로그" subtitle="?�스???�속 �?로그??로그?�웃 ?�력???�명?�게 관리하??보안 ?�고�?미연??방�??�니??" icon={KeyRound} />
+            <HubHeader title="怨꾩젙 媛?붿뼵" highlight="濡쒓렇님濡쒓렇" subtitle="?쒖뒪님접속 諛?濡쒓렇님濡쒓렇?꾩썐 ?대젰님?щ챸?섍쾶 愿由ы븯님보안 ?ш퀬瑜?誘몄뿰님諛⑹님⑸땲님" icon={KeyRound} />
 
             <StandardDataTable
                 columns={columns}
                 data={logs}
                 loading={isLoading}
                 pagination={{
-                    currentPage: (params.page번호 || 1) as number,
+                    currentPage: (params.page踰덊샇 || 1) as number,
                     totalPages: data?.totalPage || pagination?.totalPageCount || 1,
-                    onPageChange: (page: number) => setParams({ ...params, page번호: page }),
+                    onPageChange: (page: number) => setParams({ ...params, page踰덊샇: page }),
                 }}
                 search={{
-                    placeholder: '?�청?�명, ID 검??..',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page번호: 1 }),
+                    placeholder: '요청?먮챸, ID 寃님..',
+                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 }),
                 }}
             />
         </div>
@@ -112,3 +112,4 @@ const LoginLogAdminPage = () => {
 };
 
 export default LoginLogAdminPage;
+

@@ -1,8 +1,8 @@
-import { AxiosRequestConfig } from 'axios';
+﻿import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 
 /**
- * 정책 정보 DTO
+ * ?뺤콉 ?뺣낫 DTO
  */
 export interface PolicyDto {
   type: string;
@@ -15,12 +15,12 @@ class PolicyAdminService extends AdminService {
     super('/policies');
   }
 
-  /** 정책 내용 조회 */
+  /** ?뺤콉 ?댁슜 조회 */
   async getPolicy(type: 'privacy' | 'copyright', config?: AxiosRequestConfig) {
     return this.get<PolicyDto>(`/${type}`, config);
   }
 
-  /** 정책 내용 수정 */
+  /** ?뺤콉 ?댁슜 ?섏젙 */
   async updatePolicy(type: 'privacy' | 'copyright', dto: Partial<PolicyDto>, config?: AxiosRequestConfig) {
     return this.put<void>(`/${type}`, dto, config);
   }

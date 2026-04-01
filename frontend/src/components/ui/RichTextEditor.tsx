@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -54,7 +54,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
       CharacterCount,
     ],
     content: value,
-    immediatelyRender: false, // SSR Hydration 오류 방지를 위해 필수 설정
+    immediatelyRender: false, // SSR Hydration ?ㅻ쪟 諛⑹?瑜님꾪빐 ?꾩닔 ?ㅼ젙
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -191,12 +191,11 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
       {/* --- Footer Status --- */}
       <div className="px-8 py-4 bg-slate-50/50 dark:bg-muted/30 border-t border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className="text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase">모드: 리치 텍스트 에디터 v1.0</span>
-          <span className="text-[10px] font-black tracking-widest text-primary uppercase bg-primary/5 px-2 py-0.5 rounded leading-none">작성 내용 실시간 동기화 중...</span>
+          <span className="text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase">紐⑤뱶: 由ъ튂 ?띿뒪님?먮뵒님v1.0</span>
+          <span className="text-[10px] font-black tracking-widest text-primary uppercase bg-primary/5 px-2 py-0.5 rounded leading-none">?묒꽦 ?댁슜 ?ㅼ떆媛님숆린님以?..</span>
         </div>
         <div className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest whitespace-nowrap">
-          {editor.storage.characterCount?.words?.() || 0} 단어 • 고품질 포맷팅
-        </div>
+          {editor.storage.characterCount?.words?.() || 0} ?⑥뼱 님怨좏뭹吏님щ㎎님        </div>
       </div>
     </div>
   );

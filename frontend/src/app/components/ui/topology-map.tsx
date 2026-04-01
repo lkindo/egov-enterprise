@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -222,7 +222,7 @@ export const TopologyMap = () => {
           >
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h4 className="text-lg font-black text-white tracking-tighter uppercase italic">?�드 ?�시�?지??/h4>
+                <h4 className="text-lg font-black text-white tracking-tighter uppercase italic">노드 실시간吏님/h4>
                 <Activity size={18} className="text-primary animate-pulse" />
               </div>
               
@@ -288,3 +288,4 @@ export const TopologyMap = () => {
     </div>
   );
 };
+

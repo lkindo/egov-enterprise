@@ -1,10 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
+﻿import type { Meta, StoryObj } from '@storybook/react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './card';
 
 /**
- * Card 컴포넌트 스토리
- * 
- * 컨테이너형 카드 컴포넌트의 다양한 활용 예시를 확인할 수 있습니다.
+ * Card 而댄룷?뚰듃 ?ㅽ넗由? * 
+ * 而⑦뀒?대꼫님移대뱶 而댄룷?뚰듃님?ㅼ뼇님?쒖슜 ?덉떆瑜님뺤씤님님?덉뒿?덈떎.
  */
 
 const meta = {
@@ -26,7 +25,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// 기본 카드
+// 湲곕낯 移대뱶
 export const Default: Story = {
   render: () => (
     <Card className="w-[350px]">
@@ -44,7 +43,7 @@ export const Default: Story = {
   ),
 };
 
-// 통계 카드
+// 통계 移대뱶
 export const StatCard: Story = {
   render: () => (
     <Card className="w-[350px]">
@@ -56,14 +55,14 @@ export const StatCard: Story = {
       <CardContent>
         <div className="text-3xl font-bold">2,543</div>
         <p className="text-xs text-green-600 mt-2">
-          ↑ 20.1% from last month
+          님20.1% from last month
         </p>
       </CardContent>
     </Card>
   ),
 };
 
-// 알림 카드
+// ?뚮┝ 移대뱶
 export const NotificationCard: Story = {
   render: () => (
     <Card className="w-[350px] border-l-4 border-l-blue-500">
@@ -90,7 +89,7 @@ export const NotificationCard: Story = {
   ),
 };
 
-// 에러 카드
+// ?먮윭 移대뱶
 export const ErrorCard: Story = {
   render: () => (
     <Card className="w-[350px] border-l-4 border-l-red-500">
@@ -115,7 +114,7 @@ export const ErrorCard: Story = {
   ),
 };
 
-// 프로필 카드
+// ?꾨줈님移대뱶
 export const ProfileCard: Story = {
   render: () => (
     <Card className="w-[350px]">

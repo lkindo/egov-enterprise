@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { GripVertical, GripHorizontal } from 'lucide-react';
@@ -19,29 +19,29 @@ export function ReorderableList<T>({
  keyExtractor,
  className
 }: ReorderableListProps<T>) {
- const [dragged번호, setDragged번호] = useState<number | null>(null);
+ const [dragged踰덊샇, setDragged踰덊샇] = useState<number | null>(null);
 
  const onDragStart = (e: React.DragEvent, index: number) => {
- setDragged번호(index);
+ setDragged踰덊샇(index);
  e.dataTransfer.effectAllowed = 'move';
- // ?�래�???고스???��?지 ?��??�을 ?�해 ?�명??조절 ?�을 ?????�습?�다.
+ // ?쒕옒洹님?怨좎뒪님?대?吏 ?ㅽ님쇱쓣 ?꾪빐 ?щ챸님議곗젅 ?깆쓣 님님?덉뒿?덈떎.
  };
 
  const onDragOver = (e: React.DragEvent, index: number) => {
  e.preventDefault();
- if (dragged번호 === null || dragged번호 === index) return;
+ if (dragged踰덊샇 === null || dragged踰덊샇 === index) return;
 
  const newItems = [...items];
- const draggedItem = newItems[dragged번호];
- newItems.splice(dragged번호, 1);
+ const draggedItem = newItems[dragged踰덊샇];
+ newItems.splice(dragged踰덊샇, 1);
  newItems.splice(index, 0, draggedItem);
 
- setDragged번호(index);
+ setDragged踰덊샇(index);
  onReorder(newItems);
  };
 
  const onDragEnd = () => {
- setDragged번호(null);
+ setDragged踰덊샇(null);
  };
 
  return (
@@ -55,7 +55,7 @@ export function ReorderableList<T>({
  onDragEnd={onDragEnd}
  className={cn(
  "flex items-center gap-3 p-3 border rounded-lg bg-card transition-all",
- dragged번호 === idx ? "opacity-40 scale-[0.98] border-primary shadow-inner" : "hover:shadow-md",
+ dragged踰덊샇 === idx ? "opacity-40 scale-[0.98] border-primary shadow-inner" : "hover:shadow-md",
  "cursor-grab active:cursor-grabbing"
  )}
  >
@@ -68,3 +68,4 @@ export function ReorderableList<T>({
  </ul>
  );
 }
+

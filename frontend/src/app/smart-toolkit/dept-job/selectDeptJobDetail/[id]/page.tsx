@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -23,7 +23,7 @@ const InsertDeptJobPage = () => {
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault();
  if (!formData.deptJobNm.trim()) {
- alert('업무제목을 입력해 주세요.');
+ alert('업무?쒕ぉ님?낅젰님二쇱꽭님');
  return;
  }
 
@@ -35,7 +35,7 @@ const InsertDeptJobPage = () => {
  router.push('/smart-toolkit/dept-job/selectDeptJobList');
  }
  } catch (error: any) {
- alert(error.response?.data?.message || '등록에 실패하였습니다.');
+ alert(error.response?.data?.message || '등록님?ㅽ뙣?섏님듬땲님');
  } finally {
  setLoading(false);
  }
@@ -46,12 +46,11 @@ const InsertDeptJobPage = () => {
  {/* Breadcrumb */}
  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-2xl w-fit border border-slate-100">
  <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
- <Home className="w-4 h-4" /> 홈
- </Link>
+ <Home className="w-4 h-4" /> 님 </Link>
  <ChevronRight className="w-4 h-4" />
- <Link href="/smart-toolkit/dept-job/selectDeptJobList" className="hover:text-foreground transition-colors font-bold">부서업무 관리</Link>
+ <Link href="/smart-toolkit/dept-job/selectDeptJobList" className="hover:text-foreground transition-colors font-bold">遺?쒖뾽臾?愿由?/Link>
  <ChevronRight className="w-4 h-4" />
- <span className="text-foreground font-black">새 업무 등록</span>
+ <span className="text-foreground font-black">님업무 등록</span>
  </div>
 
  <Card className="shadow-[0_64px_128px_-32px_rgba(0,0,0,0.15)] border-none overflow-hidden rounded-[3.5rem] bg-white ring-1 ring-slate-100">
@@ -63,13 +62,13 @@ const InsertDeptJobPage = () => {
  <div className="space-y-4">
  <div className="flex items-center justify-center md:justify-start gap-3 px-4 py-1.5 bg-white/10 w-fit rounded-full border border-white/10 mx-auto md:mx-0">
  <Activity className="w-3.5 h-3.5 text-primary-foreground animate-pulse" />
- <span className="text-[10px] font-black tracking-[0.25em] text-white/80">워크플로우 시스템 2.0</span>
+ <span className="text-[10px] font-black tracking-[0.25em] text-white/80">?뚰겕?뚮줈님?쒖뒪님2.0</span>
  </div>
  <CardTitle className="text-3xl font-black tracking-tighter leading-none ">
  Dispatch New Task
  </CardTitle>
  <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed mx-auto md:mx-0">
- 부서의 새로운 업무를 정의하고 할당합니다. <br />명확한 목표 설정을 통해 효율적인 작업을 시작하세요.
+ 遺?쒖쓽 ?덈줈님업무瑜님뺤쓽?섍퀬 ?좊떦?⑸땲님 <br />紐낇솗님紐⑺몴 ?ㅼ젙님?듯빐 ?⑥쑉?곸씤 ?묒뾽님?쒖옉?섏꽭님
  </p>
  </div>
  </div>
@@ -83,7 +82,7 @@ const InsertDeptJobPage = () => {
  </Label>
  <Input
  id="deptJobNm"
- placeholder="수행해야 할 핵심 업무 제목을 입력하세요"
+ placeholder="?섑뻾?댁빞 님?듭떖 업무 ?쒕ぉ님?낅젰?섏꽭님
  className="h-20 text-3xl font-black border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-[1.5rem] px-10 bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl"
  value={formData.deptJobNm}
  onChange={(e) => setFormData({ ...formData, deptJobNm: e.target.value })}
@@ -125,7 +124,7 @@ const InsertDeptJobPage = () => {
  </Label>
  <Textarea
  id="deptJobCn"
- placeholder="업무의 상세 목표, 수행 방법, 요청 사항 등을 구체적으로 서술하세요.."
+ placeholder="업무님?곸꽭 紐⑺몴, ?섑뻾 諛⑸쾿, 요청 ?ы빆 ?깆쓣 援ъ껜?곸쑝濡님쒖닠?섏꽭님."
  className="min-h-[350px] p-12 text-xl font-medium leading-[1.8] border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-[3.5rem] bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl resize-none scrollbar-thin scrollbar-thumb-slate-200"
  value={formData.deptJobCn}
  onChange={(e) => setFormData({ ...formData, deptJobCn: e.target.value })}
@@ -139,9 +138,9 @@ const InsertDeptJobPage = () => {
  <CheckCircle className="w-10 h-10 text-primary-foreground" />
  </div>
  <div className="space-y-1">
- <p className="font-black text-2xl text-slate-900 tracking-tight ">유효성 검사 필요</p>
+ <p className="font-black text-2xl text-slate-900 tracking-tight ">?좏슚님寃님?꾩슂</p>
  <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-[450px]">
- 등록된 업무는 부서 전체 대시보드에 즉시 노출됩니다. 기입된 내용이 부서 운영 가이드라인을 준수하는지 확인해 주세요.
+ 등록님업무님遺님?꾩껜 ??쒕낫?쒖뿉 利됱떆 ?몄텧?⑸땲님 湲곗엯님?댁슜님遺님?댁쁺 媛?대뱶?쇱씤님以?섑븯?붿? ?뺤씤님二쇱꽭님
  </p>
  </div>
  </div>

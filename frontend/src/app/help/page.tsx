@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -29,11 +29,7 @@ export default function HelpCenterPage() {
  setQnas(res.list || []);
  }
  } catch {
-<<<<<<< HEAD
- toast('데이터를 불러오지 못했습니다.', 'error');
-=======
- toast('?�이?��? 불러?��? 못했?�니??', 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+ toast('?곗씠?곕? 遺덈윭?ㅼ? 紐삵뻽?듬땲님', 'error');
  } finally {
  setLoading(false);
  }
@@ -43,20 +39,20 @@ export default function HelpCenterPage() {
 
  const qnaColumns = [
  {
- header: '?�목',
+ header: '?쒕ぉ',
  accessor: (item: QNA) => item.qestnSj,
  className: 'font-bold'
  },
  {
- header: '?�성??,
+ header: '?묒꽦님,
  accessor: (item: QNA) => item.wrterNm
  },
  {
- header: '?�록??,
+ header: '등록님,
  accessor: (item: QNA) => item.writngDe
  },
  {
- header: '?�태',
+ header: '?곹깭',
  accessor: (item: QNA) => (
  <StatusBadge status={item.qnaProcessSttusCode === '3' ? 'Y' : 'R'} />
  )
@@ -66,19 +62,19 @@ export default function HelpCenterPage() {
  return (
  <div className="max-w-5xl mx-auto space-y-8 pb-20">
  <PageHeader
- title="?��?�??�터"
- breadcrumbs={[{ label: '지?�서비스' }, { label: '?��?말센?? }]}
+ title="?꾩?留님쇳꽣"
+ breadcrumbs={[{ label: '吏?먯꽌鍮꾩뒪' }, { label: '?꾩?留먯꽱님 }]}
  />
 
  {/* Hero Section */}
  <div className="bg-primary rounded-3xl p-12 text-white text-center shadow-xl space-y-4">
- <h2 className="text-3xl font-black">무엇???��??�릴까요?</h2>
- <p className="opacity-80 text-sm font-medium">?�주 묻는 질문???�인?�거??1:1 문의�??�겨주세??</p>
+ <h2 className="text-3xl font-black">臾댁뾿님?꾩님쒕┫源뚯슂?</h2>
+ <p className="opacity-80 text-sm font-medium">?먯＜ 臾삳뒗 吏덈Ц님?뺤씤?섍굅님1:1 臾몄쓽瑜님④꺼二쇱꽭님</p>
  <div className="max-w-xl mx-auto relative mt-8">
  <Search className="absolute left-4 top-3.5 text-primary" size={20} />
  <input
  type="text"
- placeholder="?�워?�로 검?�하?�요"
+ placeholder="?ㅼ썙?쒕줈 寃?됲븯?몄슂"
  className="w-full h-14 pl-12 pr-4 rounded-2xl bg-white text-black text-sm outline-none focus:ring-4 focus:ring-white/20"
  />
  </div>
@@ -90,13 +86,13 @@ export default function HelpCenterPage() {
  active={tab === 'faq'}
  onClick={() => setTab('faq')}
  icon={<HelpCircle size={20} />}
- label="?�주 묻는 질문 (FAQ)"
+ label="?먯＜ 臾삳뒗 吏덈Ц (FAQ)"
  />
  <TabButton
  active={tab === 'qna'}
  onClick={() => setTab('qna')}
  icon={<MessageCircle size={20} />}
- label="1:1 Q&A 문의"
+ label="1:1 Q&A 臾몄쓽"
  />
  </div>
 
@@ -104,7 +100,7 @@ export default function HelpCenterPage() {
  <div className="space-y-4">
  {tab === 'faq' ? (
  faqs.length === 0 ? (
- <div className="text-center py-20 text-muted-foreground ">?�주 묻는 질문???�습?�다.</div>
+ <div className="text-center py-20 text-muted-foreground ">?먯＜ 臾삳뒗 吏덈Ц님?놁뒿?덈떎.</div>
  ) : (
  faqs.map((faq) => (
  <div key={faq.faqId} className="bg-card border rounded-2xl overflow-hidden transition-all hover:border-primary/20">
@@ -131,14 +127,14 @@ export default function HelpCenterPage() {
  <div className="space-y-4">
  <div className="flex justify-end">
  <button className="flex items-center gap-2 text-primary font-bold text-sm hover:underline">
- <PlusCircle size={18} /> 문의?�기
+ <PlusCircle size={18} /> 臾몄쓽?섍린
  </button>
  </div>
  <StandardDataTable
  columns={qnaColumns}
  data={qnas}
  loading={loading}
- emptyMessage="?�록??Q&A가 ?�습?�다."
+ emptyMessage="등록님Q&A媛 ?놁뒿?덈떎."
  />
  </div>
  )}
@@ -163,3 +159,4 @@ function TabButton({ active, onClick, icon, label }: any) {
  </button>
  );
 }
+

@@ -1,11 +1,11 @@
-import React from 'react';
+﻿import React from 'react';
 import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { getInitialBoardData } from './BoardListServer';
 import { Skeleton } from "@/components/ui/skeleton";
 import { redirect } from 'next/navigation';
 
-// ?�라?�언??컴포?�트�?지??로딩?�여 ?�버/?�라?�언??경계�?명확????const BoardListClient = dynamic(() => import('./BoardListClient').then(mod => mod.BoardListClient), {
+// ?대씪?댁뼵님而댄룷?뚰듃瑜?吏님濡쒕뵫?섏뿬 ?쒕쾭/?대씪?댁뼵님寃쎄퀎瑜?紐낇솗님님const BoardListClient = dynamic(() => import('./BoardListClient').then(mod => mod.BoardListClient), {
  ssr: true,
  loading: () => (
  <div className="flex flex-col gap-6 p-6">
@@ -20,18 +20,18 @@ import { redirect } from 'next/navigation';
 });
 
 export const metadata: Metadata = {
- title: '?�체 게시글 - ?�자?��? ?�레?�워???��???,
- description: '?�자?��? ?�프?�웨???�레?�워???��????�로?�트???�체 게시글 목록?�니??',
+ title: '?꾩껜 寃뚯떆湲 - ?꾩옄?뺣? ?꾨젅?꾩썙님?꾨님?,
+ description: '?꾩옄?뺣? ?뚰봽?몄썾님?꾨젅?꾩썙님?꾨님님꾨줈?앺듃님?꾩껜 寃뚯떆湲 紐⑸줉?낅땲님',
 };
 
 /**
- * ?�버 컴포?�트: ?�이지 진입?? */
+ * ?쒕쾭 而댄룷?뚰듃: ?섏씠吏 吏꾩엯님 */
 export default async function BoardListPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
  const resolvedSearchParams = await searchParams;
 
- // ?�라미터 준�? const params = {
+ // 파라미터 以鍮? const params = {
  bbsId: (resolvedSearchParams.bbsId as string) || 'BBSMSTR_AAAAAAAAAAAA',
- page번호: Number(resolvedSearchParams.page번호) || 1,
+ page踰덊샇: Number(resolvedSearchParams.page踰덊샇) || 1,
  searchWrd: (resolvedSearchParams.searchWrd as string) || '',
  searchCnd: (resolvedSearchParams.searchCnd as string) || '0',
  orderBy: (resolvedSearchParams.orderBy as string) || 'date',
@@ -39,7 +39,7 @@ export default async function BoardListPage({ searchParams }: { searchParams: Pr
  endDate: (resolvedSearchParams.endDate as string) || undefined,
  };
 
- // ?�버 ?�용 ?�수�??�해 ?�이???�칭
+ // ?쒕쾭 ?꾩슜 ?⑥닔瑜님듯빐 ?곗씠님?섏묶
  let initialData;
  try {
   initialData = await getInitialBoardData(params);
@@ -54,3 +54,4 @@ export default async function BoardListPage({ searchParams }: { searchParams: Pr
  <BoardListClient initialData={initialData} params={params} />
  );
 }
+

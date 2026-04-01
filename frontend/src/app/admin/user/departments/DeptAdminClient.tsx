@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -59,11 +59,7 @@ export default function DeptAdminClient({
       setDepts(res.list);
       setTotalCount(res.total);
     } catch {
-<<<<<<< HEAD
-      toast.error('조직 체계 스트림 로드에 실패했습니다.');
-=======
-      toast.error('조직 체계 ?�트�?로드???�패?�습?�다.');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+      toast.error('議곗쭅 泥닿퀎 ?ㅽ듃由?濡쒕뱶님?ㅽ뙣?덉뒿?덈떎.');
     } finally {
       setLoading(false);
     }
@@ -83,7 +79,7 @@ export default function DeptAdminClient({
 
   const handleSubmit = async () => {
     if (!form.orgnztNm) {
-      toast.error('?�효??조직 명칭???�요?�니??');
+      toast.error('?좏슚님議곗쭅 紐낆묶님?꾩슂?⑸땲님');
       return;
     }
 
@@ -91,38 +87,30 @@ export default function DeptAdminClient({
     try {
       if (selectedDept?.orgnztId) {
         await deptAdminService.updateDept(selectedDept.orgnztId, form);
-        toast.success('조직 ?�키?�처가 ?�공?�으�??�데?�트?�었?�니??');
+        toast.success('議곗쭅 ?꾪궎?띿쿂媛 ?깃났?곸쑝濡님낅뜲?댄듃?섏뿀?듬땲님');
       } else {
         await deptAdminService.createDept(form);
-        toast.success('?�규 조직 ?�드가 배포?�었?�니??');
+        toast.success('신규 議곗쭅 노드媛 諛고룷?섏뿀?듬땲님');
       }
       setIsAddOpen(false);
       handleRefresh();
     } catch {
-<<<<<<< HEAD
-      toast.error('데이터 정합성 오류로 저장이 취소되었습니다.');
-=======
-      toast.error('?�이???�합???�류�??�?�이 취소?�었?�니??');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+      toast.error('?곗씠님?뺥빀님?ㅻ쪟濡님?μ씠 痍⑥냼?섏뿀?듬땲님');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (deptId: string) => {
-    if (!confirm('?�당 조직 ?�드�??�구?�으�??�거?�시겠습?�까? 관???�이?��? ?�실?????�습?�다.')) return;
+    if (!confirm('?대떦 議곗쭅 노드瑜님곴뎄?곸쑝濡님쒓굅?섏떆寃좎뒿?덇퉴? 愿님?곗씠?곌? ?뚯떎님님?덉뒿?덈떎.')) return;
 
     setLoading(true);
     try {
       await deptAdminService.deleteDept(deptId);
-      toast.success('조직 ?�산????��?�었?�니??');
+      toast.success('議곗쭅 ?먯궛님님젣?섏뿀?듬땲님');
       handleRefresh();
     } catch {
-<<<<<<< HEAD
-      toast.error('권한 부족 또는 시스템 오류로 삭제를 수행하지 못했습니다.');
-=======
-      toast.error('권한 부�??�는 ?�스???�류�???���??�행?��? 못했?�니??');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+      toast.error('沅뚰븳 遺議님먮뒗 ?쒖뒪님?ㅻ쪟濡님?젣瑜님섑뻾?섏? 紐삵뻽?듬땲님');
     } finally {
       setLoading(false);
     }
@@ -130,7 +118,7 @@ export default function DeptAdminClient({
 
   const columns: Column<DeptDto>[] = [
     {
-      header: '조직 ?�이?�티??,
+      header: '議곗쭅 ?꾩씠?댄떚님,
       accessor: (item: DeptDto) => (
         <div className="flex flex-col gap-1 py-4">
           <span className="font-black font-mono text-muted-foreground/40 text-[9px] tracking-[0.4em] uppercase italic leading-none mb-1">NODE_UID: {item.orgnztId}</span>
@@ -145,18 +133,18 @@ export default function DeptAdminClient({
       className: 'w-72'
     },
     {
-      header: '?�키?�처 명세 (Metadata)',
+      header: '?꾪궎?띿쿂 紐낆꽭 (Metadata)',
       accessor: (item: DeptDto) => (
         <div className="max-w-[400px]">
           <span className="text-xs font-bold text-muted-foreground/60 leading-relaxed block italic py-2">
-            {item.orgnztDc || '명세?��? ?��? 조직 ?�적 ?�이?�입?�다.'}
+            {item.orgnztDc || '紐낆꽭?섏? ?딆? 議곗쭅 ?뺤쟻 ?곗씠?곗엯?덈떎.'}
           </span>
         </div>
       )
     },
     {
-      header: '?�태',
-      accessor: (item: DeptDto) => <HubStatusBadge status="?�성" />,
+      header: '?곹깭',
+      accessor: (item: DeptDto) => <HubStatusBadge status="활성" />,
       className: 'w-32'
     },
     {
@@ -178,14 +166,14 @@ export default function DeptAdminClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="조직 ?�키?�처 거버?�스"
-        breadcrumbs={[{ label: '?�스?��?�? }, { label: '부??관�? }]}
+        title="議곗쭅 ?꾪궎?띿쿂 嫄곕쾭?뚯뒪"
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '遺님愿由? }]}
       />
 
       <HubHeader
         title="Organization"
         highlight="Topology"
-        subtitle="?�사 비즈?�스 조직 체계 �?계층??부??구조???�시�?관�??�스??
+        subtitle="?꾩궗 鍮꾩쫰?덉뒪 議곗쭅 泥닿퀎 諛?怨꾩링님遺님援ъ“님실시간愿由님쒖뒪님
         icon={Network}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -201,7 +189,7 @@ export default function DeptAdminClient({
               size="lg"
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
             >
-              <Plus size={20} /> ?�규 조직 ?�드 구성
+              <Plus size={20} /> 신규 議곗쭅 노드 援ъ꽦
             </Button>
           </div>
         }
@@ -226,7 +214,7 @@ export default function DeptAdminClient({
                 <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                   <Building2 size={32} className="text-primary" />
                 </div>
-                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">조직<br />?�프??/h4>
+                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">議곗쭅<br />?명봽님/h4>
               </div>
 
               <div className="space-y-8">
@@ -238,7 +226,7 @@ export default function DeptAdminClient({
                       onChange={(e) => setSearchKeyword(e.target.value)}
                       value={searchKeyword}
                       className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
-                      placeholder="조직 ?�는 부???�별??
+                      placeholder="議곗쭅 ?먮뒗 遺님?앸퀎님
                     />
                   </div>
                 </div>
@@ -246,7 +234,7 @@ export default function DeptAdminClient({
 
               <div className="pt-8 border-t border-white/5 flex items-center justify-between">
                 <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 max-w-[200px]">
-                  * ?�로비�??�된 모든 조직 ?�산?� ?�시간으�??�용??매트�?��?� ?�기?�됩?�다.
+                  * ?꾨줈鍮꾩님앸맂 紐⑤뱺 議곗쭅 ?먯궛? ?ㅼ떆媛꾩쑝濡님ъ슜님留ㅽ듃由?뒪? ?숆린?붾맗?덈떎.
                 </p>
                 <Button
                   onClick={handleRefresh}
@@ -262,8 +250,8 @@ export default function DeptAdminClient({
         {/* Structural Assets Stream */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
           <HubSectionCard
-            title="조직 ?�산 ?�렉?�리 ?�벤?�리"
-            description="?�스???�폴로�? ?�에 구성???�사 비즈?�스 조직 ?�위???�시�??�태 명세?�니??"
+            title="議곗쭅 ?먯궛 ?붾젆?좊━ ?몃깽?좊━"
+            description="?쒖뒪님?좏뤃濡쒖? ?댁뿉 援ъ꽦님?꾩궗 鍮꾩쫰?덉뒪 議곗쭅 ?⑥쐞님?ㅼ떆媛님곹깭 紐낆꽭?낅땲님"
             icon={SearchCode}
           >
             <div className="overflow-hidden">
@@ -271,7 +259,7 @@ export default function DeptAdminClient({
                 columns={columns}
                 data={depts}
                 loading={loading}
-                emptyMessage="조회??조직 구조 ?�이?��? 존재?��? ?�습?�다."
+                emptyMessage="조회님議곗쭅 援ъ“ ?곗씠?곌? 議댁옱?섏? ?딆뒿?덈떎."
                 className="border-none bg-transparent"
               />
             </div>
@@ -282,23 +270,23 @@ export default function DeptAdminClient({
       <StandardModal
         isOpen={isFormOpen}
         onClose={() => setIsAddOpen(false)}
-        title={selectedDept ? '조직 ?�드 ?�펙 ?�정' : '?�규 부???�산 ?�로비�???}
+        title={selectedDept ? '議곗쭅 노드 ?ㅽ럺 ?섏젙' : '신규 遺님?먯궛 ?꾨줈鍮꾩님?}
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">痍⑥냼</Button>
             <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group">
-              <Zap size={18} className="group-hover:animate-pulse" /> {selectedDept ? '조직 ?�정' : '부??배포'}
+              <Zap size={18} className="group-hover:animate-pulse" /> {selectedDept ? '議곗쭅 ?섏젙' : '遺님諛고룷'}
             </Button>
           </div>
         }
       >
         <div className="space-y-10 pt-4">
-          <FormField label="조직 �?부??명칭" required description="?�스???�반???�출??조직???��? 명칭">
+          <FormField label="議곗쭅 諛?遺님紐낆묶" required description="?쒖뒪님?꾨컲님?몄텧님議곗쭅님?쒖? 紐낆묶">
             <div className="relative group/name">
               <Building2 size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/name:opacity-100 transition-opacity" />
               <Input
-                placeholder="조직 ?�이?�티???�력"
+                placeholder="議곗쭅 ?꾩씠?댄떚님?낅젰"
                 value={form.orgnztNm}
                 onChange={(e) => setForm(prev => ({ ...prev, orgnztNm: e.target.value }))}
                 className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
@@ -306,11 +294,11 @@ export default function DeptAdminClient({
             </div>
           </FormField>
 
-          <FormField label="조직 ?�키?�처 명세" description="?�당 조직??주요 ??�� �?메�??�이???�의">
+          <FormField label="議곗쭅 ?꾪궎?띿쿂 紐낆꽭" description="?대떦 議곗쭅님二쇱슂 님븷 諛?硫뷀님곗씠님?뺤쓽">
             <div className="relative group/dc">
               <Pencil size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
               <Textarea
-                placeholder="조직 ?�세 명세 ?�력"
+                placeholder="議곗쭅 ?곸꽭 紐낆꽭 ?낅젰"
                 value={form.orgnztDc}
                 onChange={(e) => setForm(prev => ({ ...prev, orgnztDc: e.target.value }))}
                 className="min-h-[160px] pl-16 p-6 rounded-[2rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all resize-none shadow-inner"
@@ -324,7 +312,7 @@ export default function DeptAdminClient({
             </div>
             <div className="space-y-1">
               <h6 className="text-[10px] font-black text-indigo-900 tracking-widest uppercase">Structural_Integrity_Check</h6>
-              <p className="text-[10px] font-bold text-indigo-700/60 leading-relaxed italic uppercase">?�규 조직 ?�드 ?�성 ??계층 구조 ?�동 검�??�로?�콜???�행?�니??</p>
+              <p className="text-[10px] font-bold text-indigo-700/60 leading-relaxed italic uppercase">신규 議곗쭅 노드 ?앹꽦 님怨꾩링 援ъ“ ?먮룞 寃利님꾨줈?좎퐳님?섑뻾?⑸땲님</p>
             </div>
           </div>
         </div>
@@ -332,3 +320,4 @@ export default function DeptAdminClient({
     </div>
   );
 }
+

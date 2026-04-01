@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import InstitutionCodeClient from './InstitutionCodeClient';
 import { cookies } from 'next/headers';
@@ -7,8 +7,8 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { Building2 } from 'lucide-react';
 
 export const metadata = {
-  title: '공공기�? ?�스?�스 거버?�스 | Sentinel Registry',
-  description: '?�국 ?�정 기�? �?공공 기�????�스???�별 코드�??�기?�하�?관리합?�다.',
+  title: '怨듦났湲곌? ?몄뒪?댁뒪 嫄곕쾭?뚯뒪 | Sentinel Registry',
+  description: '?꾧뎅 ?됱젙 湲곌? 諛?怨듦났 湲곌님님쒖뒪님?앸퀎 肄붾뱶瑜님숆린?뷀븯怨?愿由ы빀?덈떎.',
 };
 
 export default async function InstitutionCodePage() {
@@ -18,7 +18,7 @@ export default async function InstitutionCodePage() {
 
   let initialData: any = { list: [], total: 0 };
   try {
-   initialData = await codeAdminService.getInstitutionCodeList({ page번호: 1, pageUnit: 10 }, axiosConfig);
+   initialData = await codeAdminService.getInstitutionCodeList({ page踰덊샇: 1, pageUnit: 10 }, axiosConfig);
   } catch (error: any) {
    if (error.response?.status === 401) {
     redirect('/login?expired=true&redirect=/admin/system/codes/institution');
@@ -29,8 +29,8 @@ export default async function InstitutionCodePage() {
   return (
     <div className="space-y-12">
       <PageHeader
-        title="공공기�? ?�드 ?�텔리전??
-        breadcrumbs={[{ label: '?�스?��?�? }, { label: '코드관�? }, { label: '기�?코드' }]}
+        title="怨듦났湲곌? 노드 ?명뀛由ъ쟾님
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '肄붾뱶愿由? }, { label: '湲곌?肄붾뱶' }]}
       />
       
       <Suspense fallback={
@@ -49,3 +49,4 @@ export default async function InstitutionCodePage() {
     </div>
   );
 }
+

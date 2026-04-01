@@ -1,4 +1,4 @@
-export interface PaginationInfo {
+﻿export interface PaginationInfo {
  currentPageNo?: number;
  recordCountPerPage?: number;
  pageSize?: number;
@@ -6,30 +6,23 @@ export interface PaginationInfo {
  totalPageCount?: number;
  firstPageNoOnPageList?: number;
  lastPageNoOnPageList?: number;
- firstRecord번호?: number;
- lastRecord번호?: number;
+ firstRecord踰덊샇?: number;
+ lastRecord踰덊샇?: number;
 }
 
 /**
- * 백엔드 신규 페이징 응답 포맷 (PageResponse)
- * - list/content: 현재 페이지 데이터
- * - total/totalElements: 전체 레코드 수
- * - page: 현재 페이지 번호 (1-based)
- * - size: 페이지당 항목 수
- * - totalPage: 전체 페이지 수
- */
+ * 諛깆뿏님신규 ?섏씠吏님묐떟 ?щ㎎ (PageResponse)
+ * - list/content: 현재 ?섏씠吏 ?곗씠님 * - total/totalElements: ?꾩껜 ?덉퐫님님 * - page: 현재 ?섏씠吏 踰덊샇 (1-based)
+ * - size: ?섏씠吏님님ぉ 님 * - totalPage: ?꾩껜 ?섏씠吏 님 */
 export interface PageResponse<T = unknown> {
  list: T[];
  content?: T[]; // Spring Data JPA
- resultList?: T[]; // eGovFrame Legacy 대응
- total: number;
+ resultList?: T[]; // eGovFrame Legacy ?님 total: number;
  totalElements?: number; // Spring Data JPA
  page: number;
  size: number;
  totalPage: number;
- paginationInfo?: PaginationInfo; // eGovFrame Legacy 대응
- totalCount?: number; // eGovFrame Legacy 대응
-  [key: string]: unknown; // 모든 추가 필드 허용
+ paginationInfo?: PaginationInfo; // eGovFrame Legacy ?님 totalCount?: number; // eGovFrame Legacy ?님  [key: string]: unknown; // 紐⑤뱺 異붽? ?꾨뱶 ?덉슜
 }
 
 export interface ApiResponse<T = unknown> {
@@ -45,25 +38,25 @@ export interface ApiResponse<T = unknown> {
 export interface PaginationResponse<T> {
  success?: boolean;
  list?: T[];
- content?: T[]; // Spring Data JPA 대응 추가
+ content?: T[]; // Spring Data JPA ?님異붽?
  totalRecordCount?: number;
- totalElements?: number; // Spring Data JPA 대응 추가
+ totalElements?: number; // Spring Data JPA ?님異붽?
  resultList?: T[];
  paginationInfo?: PaginationInfo;
 }
 
 export interface SearchParams {
-  page번호?: number;
+  page踰덊샇?: number;
   page?: number;
  size?: number;
  searchCondition?: string;
  searchKeyword?: string;
- searchWrd?: string; // 추가
- ntwrkId?: string; // 추가
- codeId?: string; // 추가
- pageUnit?: number; // 추가
- sbscrbSttus?: string; // 사용자 가입 상태 필터 추가
-  [key: string]: unknown; // 모든 추가 필드 허용
+ searchWrd?: string; // 異붽?
+ ntwrkId?: string; // 異붽?
+ codeId?: string; // 異붽?
+ pageUnit?: number; // 異붽?
+ sbscrbSttus?: string; // ?ъ슜님媛님?곹깭 ?꾪꽣 異붽?
+  [key: string]: unknown; // 紐⑤뱺 異붽? ?꾨뱶 ?덉슜
 }
 
 // Common Code

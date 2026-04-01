@@ -1,84 +1,63 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { MessageSquare, UserPlus, FileText, CheckCircle2, Clock } from 'lucide-react';
 
 const activities = [
- {
- id: 1,
- type: 'post',
- user: '?�길??,
- action: '??공�??�항???�록?�습?�다.',
- target: '2026???�반�??�스???��? ?�내',
- time: '10�???,
- icon: <MessageSquare size={14} className="text-blue-500" />,
- bg: 'bg-blue-50'
- },
- {
- id: 2,
- type: 'user',
- user: '?�스??,
- action: '?�로???�용?��? ?�인?�었?�니??',
- target: '?�순??과장 (?�업지?��?)',
- time: '1?�간 ??,
- icon: <UserPlus size={14} className="text-green-500" />,
- bg: 'bg-green-50'
- },
- {
- id: 3,
- type: 'file',
- user: '김철수',
- action: '?�일???�로?�했?�니??',
- target: '결과보고??v1.2.pdf',
- time: '3?�간 ??,
- icon: <FileText size={14} className="text-orange-500" />,
- bg: 'bg-orange-50'
- },
- {
- id: 4,
- type: 'task',
- user: '박�???,
- action: '?�무�??�료�??�시?�습?�다.',
- target: '?�자??가?�드?�인 검??,
- time: '?�제',
- icon: <CheckCircle2 size={14} className="text-purple-500" />,
- bg: 'bg-purple-50'
- }
+  {
+    id: 1,
+    type: 'post',
+    user: '홍길동',
+    action: '님이 공지사항을 등록했습니다.',
+    target: '2026년 상반기 시스템 점검 안내',
+    time: '10분 전',
+    icon: <MessageSquare size={14} className="text-blue-500" />,
+    bg: 'bg-blue-50'
+  },
+  {
+    id: 2,
+    type: 'user',
+    user: '이순신',
+    action: '새로운 사용자가 승인되었습니다.',
+    target: '이순신 과장 (영업지원팀)',
+    time: '1시간 전',
+    icon: <UserPlus size={14} className="text-green-500" />,
+    bg: 'bg-green-50'
+  }
 ];
 
 export function ActivityFeed() {
- return (
- <div className="space-y-6">
- {activities.map((activity, idx) => (
- <div key={`activity-${activity.id}`} className="relative flex gap-4">
- {/* Timeline Line */}
- {idx !== activities.length - 1 && (
- <div className="absolute left-[17px] top-9 bottom-[-24px] w-px bg-slate-200" />
- )}
+  return (
+    <div className="space-y-6">
+      {activities.map((activity, idx) => (
+        <div key={`activity-${activity.id}`} className="relative flex gap-4">
+          {idx !== activities.length - 1 && (
+            <div className="absolute left-[17px] top-9 bottom-[-24px] w-px bg-slate-200" />
+          )}
 
- <div className={cn(
- "w-9 h-9 rounded-full flex items-center justify-center shrink-0 z-10",
- activity.bg
- )}>
- {activity.icon}
- </div>
+          <div className={cn(
+            "w-9 h-9 rounded-full flex items-center justify-center shrink-0 z-10",
+            activity.bg
+          )}>
+            {activity.icon}
+          </div>
 
- <div className="flex flex-col gap-0.5 pb-2">
- <div className="flex items-center gap-2">
- <span className="text-sm font-bold text-foreground">{activity.user}</span>
- <span className="text-sm text-muted-foreground">{activity.action}</span>
- </div>
- <p className="text-sm font-medium text-primary hover:underline cursor-pointer">
- {activity.target}
- </p>
- <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
- <Clock size={10} />
- {activity.time}
- </div>
- </div>
- </div>
- ))}
- </div>
- );
+          <div className="flex flex-col gap-0.5 pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-foreground">{activity.user}</span>
+              <span className="text-sm text-muted-foreground">{activity.action}</span>
+            </div>
+            <p className="text-sm font-medium text-primary hover:underline cursor-pointer">
+              {activity.target}
+            </p>
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
+              <Clock size={10} />
+              {activity.time}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }

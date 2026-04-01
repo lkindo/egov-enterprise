@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "N_USER_NOTIFICATION")
 @Getter
-@Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Notification {
@@ -50,13 +49,9 @@ public class Notification {
     @Column(name = "LAST_UPDT_PNTTM")
     private LocalDateTime lastModifiedDate;
 
-<<<<<<< HEAD
     @Builder
     public Notification(String ntfcNo, String ntfcSj, String ntfcCn, String receiverId, String isRead, String linkUrl,
             LocalDateTime createdDate) {
-=======
-    public Notification(String ntfcNo, String ntfcSj, String ntfcCn, String receiverId, String linkUrl) {
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
         this.ntfcNo = ntfcNo;
         this.ntfcSj = ntfcSj;
         this.ntfcCn = ntfcCn;

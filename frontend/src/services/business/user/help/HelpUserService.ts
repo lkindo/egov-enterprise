@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+﻿import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -19,24 +19,24 @@ export interface QNA {
  writngPassword?: string;
  wrterNm: string;
  writngDe: string;
- qnaProcessSttusCode: string; // 1: 접수, 2: 처리중, 3: 답변완료
+ qnaProcessSttusCode: string; // 1: ?묒닔, 2: 泥섎━以? 3: ?듬님꾨즺
 }
 
 /**
- * 도움말 센터 서비스 (User)
+ * ?꾩?留님쇳꽣 ?쒕퉬님(User)
  */
 class HelpUserService extends UserService {
  constructor() {
  super('');
  }
 
- /** FAQ 목록 조회 */
+ /** FAQ 紐⑸줉 조회 */
  async getFaqs(params: { searchWrd?: string }, config?: AxiosRequestConfig): Promise<FAQ[]> {
- // FAQ는 보통 전체 목록을 가져오는 경우가 많음 (배경 구조에 따라 PageResponse일 수도 있으나 현재 UI는 배열 기대)
+ // FAQ님蹂댄넻 ?꾩껜 紐⑸줉님媛?몄삤님寃쎌슦媛 留롮쓬 (諛곌꼍 援ъ“님?곕씪 PageResponse님?섎룄 ?덉쑝님현재 UI님諛곗뿴 湲곕?)
  return this.get<FAQ[]>('/faqs', { ...config, params });
  }
 
- /** Q&A 목록 조회 (페이징) */
+ /** Q&A 紐⑸줉 조회 (?섏씠吏? */
  async getQnas(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<QNA>> {
  return this.get<PageResponse<QNA>>('/qnas', { ...config, params });
  }

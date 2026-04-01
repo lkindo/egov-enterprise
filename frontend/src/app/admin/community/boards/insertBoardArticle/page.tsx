@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -24,7 +24,7 @@ export default function InsertBoardArticlePage() {
     bbsId: bbsId,
     nttSj: '',
     nttCn: '',
-    ntcrNm: '관리자',
+    ntcrNm: '愿由ъ옄',
     password: '1',
     parntsId: parntsId,
     replyAt: parntsId ? 'Y' : 'N',
@@ -36,7 +36,7 @@ export default function InsertBoardArticlePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nttCn || form.nttCn === '<p></p>') {
-      toast('?�용???�력?�주?�요.', 'error');
+      toast('?댁슜님?낅젰?댁＜?몄슂.', 'error');
       return;
     }
 
@@ -52,13 +52,13 @@ export default function InsertBoardArticlePage() {
 
       const result = await saveBoardArticle(null, formData);
       if (result.success) {
-        toast('지???�산???�공?�으�??�록?�었?�니??', 'success');
+        toast('吏님?먯궛님?깃났?곸쑝濡?등록?섏뿀?듬땲님', 'success');
         router.push(`/admin/help?bbsId=${bbsId}`);
       } else {
-        toast(result.message || '?�록 ?�패', 'error');
+        toast(result.message || '등록 ?ㅽ뙣', 'error');
       }
     } catch {
-      toast('?�록 �??�류가 발생?�습?�다.', 'error');
+      toast('등록 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -100,7 +100,7 @@ export default function InsertBoardArticlePage() {
               value={form.nttSj}
               onChange={(e) => setForm({ ...form, nttSj: e.target.value })}
               className="h-20 bg-transparent border-none text-white text-3xl font-black placeholder:text-white/10 focus-visible:ring-0 p-0 tracking-tight"
-              placeholder="?�목???�력?�십?�오..."
+              placeholder="?쒕ぉ님?낅젰?섏떗?쒖삤..."
               autoFocus
               required
             />
@@ -113,17 +113,17 @@ export default function InsertBoardArticlePage() {
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
               <Package size={18} className="text-primary" />
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">지???�드 콘텐�?/h3>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">吏님노드 肄섑뀗痢?/h3>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">?�시�??�기??준비됨</span>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">?ㅼ떆媛님숆린님以鍮꾨맖</span>
             </div>
           </div>
           <RichTextEditor
             value={form.nttCn || ''}
             onChange={(content) => setForm({ ...form, nttCn: content })}
-            placeholder="?�세 ?�용??기술?�십?�오..."
+            placeholder="?곸꽭 ?댁슜님湲곗닠?섏떗?쒖삤..."
           />
         </div>
 
@@ -171,9 +171,10 @@ export default function InsertBoardArticlePage() {
       <div className="text-center">
         <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-50 rounded-full border border-border/50">
           <Monitor size={14} className="text-muted-foreground/40" />
-          <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">Enterprise Command Node ??Unit Version 2.4.0</span>
+          <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">Enterprise Command Node 님Unit Version 2.4.0</span>
         </div>
       </div>
     </div>
   );
 }
+

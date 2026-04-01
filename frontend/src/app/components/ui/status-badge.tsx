@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+﻿import { cn } from "@/lib/utils";
 
 interface StatusBadgeProps {
  status: string;
@@ -6,10 +6,10 @@ interface StatusBadgeProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
- 'Y': { label: '?�인', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
- 'N': { label: '반려', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
- 'R': { label: '?��?, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
- 'C': { label: '?�료', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
+ 'Y': { label: '?뱀씤', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+ 'N': { label: '諛섎젮', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+ 'R': { label: '?湲?, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+ 'C': { label: '?꾨즺', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
@@ -25,3 +25,4 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
  </span>
  );
 }
+

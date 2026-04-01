@@ -1,10 +1,10 @@
-import { AxiosRequestConfig } from 'axios';
+﻿import { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
 import { Survey, SurveyQuestion, SurveyResultStats } from '@/types/business/survey';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * 설문 관리 서비스 (Admin)
+ * 설문 愿由님쒕퉬님(Admin)
  */
 class SurveyAdminService extends ApiService {
   constructor() {
@@ -12,35 +12,35 @@ class SurveyAdminService extends ApiService {
   }
 
   /**
-   * 설문 목록 조회
+   * 설문 紐⑸줉 조회
    */
   async getSurveys(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<Survey>> {
     return this.get<PageResponse<Survey>>('', { ...config, params });
   }
 
   /**
-   * 설문 상세 정보 조회
+   * 설문 ?곸꽭 ?뺣낫 조회
    */
   async getSurvey(id: string, config?: AxiosRequestConfig): Promise<Survey> {
     return this.get<Survey>(`/${id}`, config);
   }
 
   /**
-   * 설문 문항 목록 조회
+   * 설문 臾명빆 紐⑸줉 조회
    */
   async getQuestions(surveyId: string, config?: AxiosRequestConfig): Promise<SurveyQuestion[]> {
     return this.get<SurveyQuestion[]>(`/${surveyId}/questions`, config);
   }
 
   /**
-   * 설문 응답 제출
+   * 설문 ?묐떟 ?쒖텧
    */
   async submitAnswers(surveyId: string, answers: Record<string, unknown>, config?: AxiosRequestConfig): Promise<void> {
     return this.post<void>(`/${surveyId}/respond`, answers, config);
   }
 
   /**
-   * 설문 결과 통계 조회
+   * 설문 寃곌낵 통계 조회
    */
   async getStats(surveyId: string, config?: AxiosRequestConfig): Promise<SurveyResultStats> {
     return this.get<SurveyResultStats>(`/${surveyId}/stats`, config);

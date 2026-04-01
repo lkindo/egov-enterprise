@@ -1,9 +1,9 @@
-import { AxiosRequestConfig } from 'axios';
+﻿import { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * 온라인 매뉴얼 DTO
+ * ?⑤씪님留ㅻ돱님DTO
  */
 export interface ManualDto {
   onlineMnlId?: string;
@@ -19,27 +19,27 @@ class ManualAdminService extends ApiService {
     super('/api/v1/help');
   }
 
-  /** 매뉴얼 목록 조회 */
+  /** 留ㅻ돱님紐⑸줉 조회 */
   async getManualList(params?: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig) {
     return this.get<PageResponse<ManualDto>>('/manuals', { ...config, params });
   }
 
-  /** 매뉴얼 상세 조회 */
+  /** 留ㅻ돱님?곸꽭 조회 */
   async getManual(mnlId: string, config?: AxiosRequestConfig) {
     return this.get<ManualDto>(`/manuals/${mnlId}`, config);
   }
 
-  /** 매뉴얼 등록 */
+  /** 留ㅻ돱님등록 */
   async createManual(dto: ManualDto, config?: AxiosRequestConfig) {
     return this.post<string>('/manuals', dto, config);
   }
 
-  /** 매뉴얼 수정 */
+  /** 留ㅻ돱님?섏젙 */
   async updateManual(mnlId: string, dto: ManualDto, config?: AxiosRequestConfig) {
     return this.put<void>(`/manuals/${mnlId}`, dto, config);
   }
 
-  /** 매뉴얼 삭제 */
+  /** 留ㅻ돱님님젣 */
   async deleteManual(mnlId: string, config?: AxiosRequestConfig) {
     return this.delete<void>(`/manuals/${mnlId}`, config);
   }

@@ -1,5 +1,5 @@
-/**
- * 데이터를 CSV 형식으로 변환하여 다운로드합니다.
+﻿/**
+ * ?곗씠?곕? CSV ?뺤떇?쇰줈 蹂?섑븯님?ㅼ슫濡쒕뱶?⑸땲님
  */
 export function exportToCsv<T>(data: T[], columns: { header: string; accessorKey: keyof T | string }[], fileName: string) {
  if (!data || !data.length) return;

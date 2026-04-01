@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -13,19 +13,19 @@ export interface CommentDetail {
 }
 
 /**
- * 댓글 관리 서비스 (Admin)
+ * ?볤? 愿由님쒕퉬님(Admin)
  */
 class CommentAdminService extends AdminService {
  constructor() {
  super('/comments');
  }
 
- /** 전체 댓글 목록 조회 */
+ /** ?꾩껜 ?볤? 紐⑸줉 조회 */
  async getComments(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
  return this.get<PageResponse<CommentDetail>>('', { ...config, params });
  }
 
- /** 댓글 삭제 */
+ /** ?볤? 님젣 */
  async deleteComment(commentNo: number, config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>(`/${commentNo}`, config);
  }

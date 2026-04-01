@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,8 +50,8 @@ interface SecurityMatrixVisualizerProps {
 }
 
 /**
- * 보안 권한 매트�?�� ?�각??(Access Control Grid)
- * ??��(X�?�?메뉴(Y�???관계�? ?�트�??��??�의 격자�??�각?�하?? * ?�스???�체??보안 ?�면???�눈??조감?�고 ?�어?????�게 ?�니??
+ * 보안 沅뚰븳 留ㅽ듃由?뒪 ?쒓컖님(Access Control Grid)
+ * 님븷(X異?怨?硫붾돱(Y異님?愿怨꾨? ?덊듃留님ㅽ님쇱쓽 寃⑹옄濡님쒓컖?뷀븯님 * ?쒖뒪님?꾩껜님보안 ?됰㈃님?쒕늿님議곌컧?섍퀬 ?쒖뼱님님?덇쾶 ?⑸땲님
  */
 export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> = ({ 
   authors, 
@@ -66,7 +66,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
 
   const filteredMenus = menus.filter(m => m.menuNm.toLowerCase().includes(searchMenu.toLowerCase()));
 
-  // ?�계 계산
+  // 통계 怨꾩궛
   const totalCells = authors.length * menus.length;
   const activeCells = Array.from(mappings.values()).reduce((acc, set) => acc + set.size, 0);
   const coverage = totalCells > 0 ? (activeCells / totalCells) * 100 : 0;
@@ -132,7 +132,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={20} />
                   <Input 
                       className="h-16 pl-16 rounded-2xl border-none shadow-xl text-md font-black tracking-tight focus:ring-8 focus:ring-primary/5"
-                      placeholder="메뉴 ?�드 검??(명칭, ID)..."
+                      placeholder="硫붾돱 노드 寃님(紐낆묶, ID)..."
                       value={searchMenu}
                       onChange={(e) => setSearchMenu(e.target.value)}
                   />
@@ -243,10 +243,11 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
           <div className="space-y-1">
              <p className="text-sm font-black text-slate-900 tracking-tight leading-none italic uppercase underline decoration-primary/20 decoration-4 underline-offset-4">Governance_Protocol_Guide</p>
              <p className="text-[11px] font-medium text-slate-400">
-                �?격자(Cell)�??�릭?�여 ?�당 ??��???�??메뉴 ?�근 권한???��??�니?? 변경사??? ?�측 ?�단??<span className="text-slate-900 font-black">COMMIT_CHANGES</span> 버튼???�러???�제 ?�키?�처??반영?�니??
+                媛?寃⑹옄(Cell)瑜님대┃?섏뿬 ?대떦 님븷님?님硫붾돱 ?묎렐 沅뚰븳님?좉님⑸땲님 蹂寃쎌궗님? ?곗륫 ?곷떒님<span className="text-slate-900 font-black">COMMIT_CHANGES</span> 踰꾪듉님?뚮윭님?ㅼ젣 ?꾪궎?띿쿂님諛섏쁺?⑸땲님
              </p>
           </div>
        </div>
     </div>
   );
 };
+

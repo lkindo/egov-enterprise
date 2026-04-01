@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -50,11 +50,7 @@ export default function ApprovalInboxPage() {
  setSelectedItem(null);
  }
  } catch {
-<<<<<<< HEAD
- toast('결재 목록을 불러오지 못했습니다.', 'error');
-=======
- toast('결재 목록??불러?��? 못했?�니??', 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+ toast('寃곗옱 紐⑸줉님遺덈윭?ㅼ? 紐삵뻽?듬땲님', 'error');
  } finally {
  setLoading(false);
  }
@@ -65,10 +61,10 @@ export default function ApprovalInboxPage() {
  }, [loadData]);
 
  const handleAction = async (item: Approval, status: 'Y' | 'N') => {
- const actionNm = status === 'Y' ? '?�인' : '반려';
+ const actionNm = status === 'Y' ? '?뱀씤' : '諛섎젮';
  const isConfirmed = await confirm({
- title: `결재 ${actionNm}`,
- message: `[${item.approvalId}] ?�청??${actionNm}?�시겠습?�까?`,
+ title: `寃곗옱 ${actionNm}`,
+ message: `[${item.approvalId}] 요청님${actionNm}?섏떆寃좎뒿?덇퉴?`,
  variant: status === 'N' ? 'destructive' : 'default'
  });
 
@@ -76,20 +72,16 @@ export default function ApprovalInboxPage() {
 
  try {
  await approvalUserService.confirm(item.approvalId, status);
- toast(`?�공?�으�?${actionNm}?�었?�니??`, 'success');
+ toast(`?깃났?곸쑝濡?${actionNm}?섏뿀?듬땲님`, 'success');
  loadData();
  } catch {
-<<<<<<< HEAD
- toast(`${actionNm} 처리 중 오류가 발생했습니다.`, 'error');
-=======
- toast(`${actionNm} 처리 �??�류가 발생?�습?�다.`, 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+ toast(`${actionNm} 泥섎━ 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.`, 'error');
  }
  };
 
  const columns = [
  {
- header: '결재 ?�보',
+ header: '寃곗옱 ?뺣낫',
  accessor: (item: Approval) => (
  <div className="flex items-center gap-3">
  <div className={cn(
@@ -102,14 +94,14 @@ export default function ApprovalInboxPage() {
  <div className="flex flex-col overflow-hidden">
  <span className="font-black text-sm tracking-tight truncate">{item.approvalId}</span>
  <span className="text-[10px] font-bold text-muted-foreground tracking-tight">
- {item.jobType === '1' ? '주간보고' : item.jobType === '01' ? '?�차' : '?�반 결재'}
+ {item.jobType === '1' ? '二쇨컙蹂닿퀬' : item.jobType === '01' ? '?곗감' : '?쇰컲 寃곗옱'}
  </span>
  </div>
  </div>
  )
  },
  {
- header: '?�청??,
+ header: '?좎껌님,
  accessor: (item: Approval) => (
  <div className="flex items-center gap-2">
  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0">
@@ -119,17 +111,17 @@ export default function ApprovalInboxPage() {
  </div>
  )
  },
- { header: '?�태', accessor: (item: Approval) => <StatusBadge status={item.status} /> }
+ { header: '?곹깭', accessor: (item: Approval) => <StatusBadge status={item.status} /> }
  ];
 
  const workflowSteps = useMemo(() => {
  if (!selectedItem) return [];
  return [
- { label: '기안', user: selectedItem.applicantId, status: 'completed' as const, date: selectedItem.requestDate },
- { label: '검??, user: '?�순??과장', status: selectedItem.status === 'R' ? 'current' as const : 'completed' as const },
+ { label: '湲곗븞', user: selectedItem.applicantId, status: 'completed' as const, date: selectedItem.requestDate },
+ { label: '寃님, user: '?댁닚님怨쇱옣', status: selectedItem.status === 'R' ? 'current' as const : 'completed' as const },
  {
- label: '최종 ?�인',
- user: '관리자',
+ label: '理쒖쥌 ?뱀씤',
+ user: '愿由ъ옄',
  status: selectedItem.status === 'Y' ? 'completed' as const :
  selectedItem.status === 'N' ? 'rejected' as const : 'pending' as const
  }
@@ -139,11 +131,11 @@ export default function ApprovalInboxPage() {
  return (
  <div className="space-y-8 pb-20 animate-in fade-in duration-700">
  <PageHeader
- title="?�자결재 관???�터"
- breadcrumbs={[{ label: '?�무지?? }, { label: '?�자결재' }]}
+ title="?꾩옄寃곗옱 愿님?쇳꽣"
+ breadcrumbs={[{ label: '업무吏님 }, { label: '?꾩옄寃곗옱' }]}
  actions={
  <Button className="rounded-xl h-11 px-6 font-black shadow-lg shadow-primary/20 gap-2">
- <ClipboardCheck size={18} /> ??결재 기안
+ <ClipboardCheck size={18} /> 님寃곗옱 湲곗븞
  </Button>
  }
  />
@@ -154,14 +146,14 @@ export default function ApprovalInboxPage() {
  active={tab === 'received'}
  onClick={() => setTab('received')}
  icon={<Inbox size={18} />}
- label="받�? 결재??
+ label="諛쏆? 寃곗옱님
  count={tab === 'received' ? data.length : 3}
  />
  <TabButton
  active={tab === 'sent'}
  onClick={() => setTab('sent')}
  icon={<Send size={18} />}
- label="보낸 결재??
+ label="보냄 寃곗옱님
  />
  </div>
 
@@ -172,10 +164,10 @@ export default function ApprovalInboxPage() {
  <div className="px-8 py-6 border-b border-primary/5 flex items-center justify-between bg-muted/5">
  <h3 className="font-black text-lg flex items-center gap-2.5">
  <History size={20} className="text-primary" />
- {tab === 'received' ? '미처�??�청' : '기안 ?�력'}
+ {tab === 'received' ? '誘몄쿂由님붿껌' : '湲곗븞 ?대젰'}
  </h3>
  <span className="text-[10px] font-bold bg-primary/10 text-primary px-3 py-1 rounded-full ">
- 				{data.length} �?
+ 				{data.length} 嫄?
  </span>
  </div>
  <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
@@ -184,7 +176,7 @@ export default function ApprovalInboxPage() {
  data={data}
  loading={loading}
  onRowClick={setSelectedItem}
- emptyMessage={tab === 'received' ? "?��?중인 결재 ?�청???�습?�다." : "보낸 결재 ?�력???�습?�다."}
+ emptyMessage={tab === 'received' ? "?湲?以묒씤 결재 요청님?놁뒿?덈떎." : "보냄 寃곗옱 ?대젰님?놁뒿?덈떎."}
  className="border-none shadow-none rounded-none"
  />
  </div>
@@ -200,12 +192,12 @@ export default function ApprovalInboxPage() {
  <div className="space-y-2">
  <div className="flex items-center gap-3">
  <div className="px-3 py-1 bg-primary text-white text-[10px] font-black rounded-lg tracking-tight shadow-lg shadow-primary/20">
-   ?�세 보기
+   ?곸꽭 蹂닿린
  </div>
  <span className="text-sm font-bold text-muted-foreground font-mono">#{selectedItem.approvalId}</span>
  </div>
  <h3 className="text-3xl font-black tracking-tight">
- {selectedItem.jobType === '1' ? '2026??2??주간보고 결재 �? : '?�차 ?�급 ?��? ?�청??�?}
+ {selectedItem.jobType === '1' ? '2026님2님二쇨컙蹂닿퀬 寃곗옱 嫄? : '?곗감 ?좉툒 ?닿? ?좎껌님嫄?}
  </h3>
  </div>
  {tab === 'received' && selectedItem.status === 'R' && (
@@ -214,14 +206,14 @@ export default function ApprovalInboxPage() {
  onClick={() => handleAction(selectedItem, 'Y')}
  className="h-14 px-8 rounded-2xl font-black bg-emerald-500 hover:bg-emerald-600 shadow-xl shadow-emerald-500/20 gap-2"
  >
- <Check size={20} /> ?�인 처리
+ <Check size={20} /> ?뱀씤 泥섎━
  </Button>
  <Button
  variant="destructive"
  onClick={() => handleAction(selectedItem, 'N')}
  className="h-14 px-8 rounded-2xl font-black shadow-xl shadow-red-500/20 gap-2"
  >
- <X size={20} /> 반려
+ <X size={20} /> 諛섎젮
  </Button>
  </div>
  )}
@@ -230,8 +222,8 @@ export default function ApprovalInboxPage() {
  <div className="bg-background/50 rounded-[2rem] p-8 border-2 border-primary/5 shadow-inner">
  <div className="flex items-center justify-between mb-6">
  <h4 className="text-sm font-black text-muted-foreground tracking-[0.2em] flex items-center gap-2">
-   <Zap size={14} className="text-primary" /> 결재 ?�크?�로?? </h4>
-   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">?�시�??�데?�트</span>
+   <Zap size={14} className="text-primary" /> 寃곗옱 ?뚰겕?뚮줈님 </h4>
+   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">?ㅼ떆媛님낅뜲?댄듃</span>
 
  </div>
  <ApprovalStepper steps={workflowSteps} />
@@ -240,18 +232,18 @@ export default function ApprovalInboxPage() {
 
  <div className="p-10 space-y-10 flex-1 overflow-y-auto custom-scrollbar">
  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
- <DetailSection icon={<User size={16} />} title="기안???�보" value={selectedItem.applicantId} desc="기술지?��? / ?��? />
- <DetailSection icon={<Calendar size={16} />} title="기안 ?�시" value={selectedItem.requestDate} desc="최종 ?�정: 2026-02-17 10:00" />
+ <DetailSection icon={<User size={16} />} title="湲곗븞님?뺣낫" value={selectedItem.applicantId} desc="湲곗닠吏?먮? / ?由? />
+ <DetailSection icon={<Calendar size={16} />} title="湲곗븞 ?쇱떆" value={selectedItem.requestDate} desc="理쒖쥌 ?섏젙: 2026-02-17 10:00" />
  </div>
 
  <div className="space-y-4">
  <h4 className="text-sm font-black text-muted-foreground tracking-[0.2em] flex items-center gap-2">
- <Info size={14} className="text-primary" /> ?�세 ?�신 ?�용
+ <Info size={14} className="text-primary" /> ?곸꽭 ?곸떊 ?댁슜
  </h4>
  <div className="p-8 bg-muted/20 rounded-[2rem] border-2 border-primary/5 min-h-[200px]">
  <p className="text-base font-medium leading-relaxed text-foreground/80">
- �?결재 건�? ?�스???��????�로?�트??주간 보고 ?�용?�며, 주요 ?�프??교체 �?UI ?��????�업???�???�인???�청?�립?�다. <br /><br />
- ?��? ?�용?� 첨�???'2026_Weekly_Report_Feb.pdf' ?�일??참조?�시�?바랍?�다.
+ 蹂?寃곗옱 嫄댁? ?쒖뒪님?꾨님님꾨줈?앺듃님二쇨컙 蹂닿퀬 ?댁슜?대ŉ, 二쇱슂 ?명봽님援먯껜 諛?UI ?쒖님님묒뾽님?님?뱀씤님요청?쒕┰?덈떎. <br /><br />
+ ?몃? ?댁슜? 泥⑤님?'2026_Weekly_Report_Feb.pdf' ?뚯씪님李몄“?섏떆湲?諛붾엻?덈떎.
  </p>
  </div>
  </div>
@@ -259,7 +251,7 @@ export default function ApprovalInboxPage() {
 
  <div className="p-8 bg-muted/5 border-t border-primary/5 flex items-center justify-center">
  <p className="text-[10px] font-bold text-muted-foreground/40 tracking-[0.3em]">
-   ?�자결재 ?�증 ?�스??v5.0
+   ?꾩옄寃곗옱 ?몄쬆 ?쒖뒪님v5.0
  </p>
  </div>
  </div>
@@ -268,8 +260,8 @@ export default function ApprovalInboxPage() {
  <div className="w-24 h-24 bg-muted rounded-[2.5rem] flex items-center justify-center mb-6">
  <ClipboardCheck size={48} className="text-muted-foreground/20" />
  </div>
- <h3 className="text-xl font-black text-muted-foreground/60">결재 ??��???�택?�주?�요</h3>
- <p className="text-sm text-muted-foreground/40 mt-2 max-w-xs">좌측 목록?�서 ?�세 ?�용???�인?�고 ?��? 결재 건을 ?�택?�세??</p>
+ <h3 className="text-xl font-black text-muted-foreground/60">寃곗옱 님ぉ님?좏깮?댁＜?몄슂</h3>
+ <p className="text-sm text-muted-foreground/40 mt-2 max-w-xs">醫뚯륫 紐⑸줉?먯꽌 ?곸꽭 ?댁슜님?뺤씤?섍퀬 ?띠? 寃곗옱 嫄댁쓣 ?좏깮?섏꽭님</p>
  </div>
  )}
  </div>
@@ -321,3 +313,4 @@ function DetailSection({ icon, title, value, desc }: any) {
  </div>
  );
 }
+

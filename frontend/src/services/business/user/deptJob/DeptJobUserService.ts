@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+﻿import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -6,19 +6,19 @@ export interface DeptJob {
  deptJobId: string;
  deptJobNm: string;
  deptJobCn: string;
- deptJobSe: string; // 1:주요업무, 2:일반업무
+ deptJobSe: string; // 1:二쇱슂업무, 2:?쇰컲업무
  deptId: string;
  deptNm?: string;
  chargerId: string;
  chargerNm?: string;
- priort: string; // 1:긴급, 2:보통, 3:여유
- sttus: string; // 1:진행중, 2:완료
+ priort: string; // 1:湲닿툒, 2:蹂댄넻, 3:?ъ쑀
+ sttus: string; // 1:吏꾪뻾以? 2:?꾨즺
  frstRegisterId: string;
  createdDate: string;
 }
 
 /**
- * 부서 업무 관리 서비스 (User)
+ * 遺님업무 愿由님쒕퉬님(User)
  */
 class DeptJobUserService extends UserService {
  constructor() {
@@ -26,21 +26,21 @@ class DeptJobUserService extends UserService {
  }
 
  /**
- * 부서업무 목록 조회
+ * 遺?쒖뾽臾?紐⑸줉 조회
  */
  async getDeptJobs(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<DeptJob>> {
  return this.get<PageResponse<DeptJob>>('', { ...config, params });
  }
 
  /**
- * 부서업무 상세 조회
+ * 遺?쒖뾽臾님곸꽭 조회
  */
  async getDeptJob(id: string, config?: AxiosRequestConfig): Promise<DeptJob> {
  return this.get<DeptJob>(`/${id}`, config);
  }
 
  /**
- * 부서업무 등록/수정
+ * 遺?쒖뾽臾?등록/?섏젙
  */
  async saveDeptJob(data: Partial<DeptJob>, config?: AxiosRequestConfig): Promise<void> {
  if (data.deptJobId) {
@@ -50,7 +50,7 @@ class DeptJobUserService extends UserService {
  }
 
  /**
- * 상태 변경 (완료 처리 등)
+ * ?곹깭 蹂寃?(?꾨즺 泥섎━ 님
  */
  async updateStatus(id: string, sttus: string, config?: AxiosRequestConfig): Promise<void> {
  return this.patch<void>(`/${id}/status`, { sttus }, config);

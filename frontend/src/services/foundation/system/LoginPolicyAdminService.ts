@@ -1,4 +1,4 @@
-import { AxiosRequestConfig } from 'axios';
+﻿import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 
@@ -13,36 +13,36 @@ export interface LoginPolicy {
 }
 
 /**
- * 로그인 정책 관리 서비스 (Admin)
+ * 濡쒓렇님?뺤콉 愿由님쒕퉬님(Admin)
  */
 class LoginPolicyAdminService extends AdminService {
   constructor() {
     super('/login-policies');
   }
 
-  /** 로그인 정책 목록 조회 */
+  /** 濡쒓렇님?뺤콉 紐⑸줉 조회 */
   async getLoginPolicyList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginPolicy>> {
     return this.get<PageResponse<LoginPolicy>>('', {
       ...config,
       params: {
         ...params,
-        page번호: params?.page번호 || (params?.page ? params.page + 1 : 1),
+        page踰덊샇: params?.page踰덊샇 || (params?.page ? params.page + 1 : 1),
         searchKeyword: params?.searchKeyword || params?.searchWrd || '',
       },
     });
   }
 
-  /** 로그인 정책 상세 조회 */
+  /** 濡쒓렇님?뺤콉 ?곸꽭 조회 */
   async getLoginPolicy(emplyrId: string, config?: AxiosRequestConfig): Promise<LoginPolicy> {
     return this.get<LoginPolicy>(`/${emplyrId}`, config);
   }
 
-  /** 로그인 정책 저장 (등록/수정) */
+  /** 濡쒓렇님?뺤콉 ?님(등록/?섏젙) */
   async saveLoginPolicy(emplyrId: string, data: Partial<LoginPolicy>, config?: AxiosRequestConfig): Promise<void> {
     return this.put(`/${emplyrId}`, data, config);
   }
 
-  /** 로그인 정책 삭제 */
+  /** 濡쒓렇님?뺤콉 님젣 */
   async deleteLoginPolicy(emplyrId: string, config?: AxiosRequestConfig): Promise<void> {
     return this.delete(`/${emplyrId}`, config);
   }

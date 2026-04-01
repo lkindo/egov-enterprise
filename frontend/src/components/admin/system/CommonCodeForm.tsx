@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,11 +32,11 @@ import { CmmnCode } from '@/types/foundation/system';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 
 const formSchema = z.object({
- codeId: z.string().min(1, { message: "코드ID는 필수입니다." }),
- codeIdNm: z.string().min(1, { message: "코드ID명은 필수입니다." }),
+ codeId: z.string().min(1, { message: "肄붾뱶ID님?꾩닔?낅땲님" }),
+ codeIdNm: z.string().min(1, { message: "肄붾뱶ID紐낆? ?꾩닔?낅땲님" }),
  codeIdDc: z.string().optional(),
  useAt: z.enum(['Y', 'N']),
- clCode: z.string().min(1, { message: "분류코드는 필수입니다." }),
+ clCode: z.string().min(1, { message: "遺꾨쪟肄붾뱶님?꾩닔?낅땲님" }),
 });
 
 interface CommonCodeFormProps {
@@ -71,20 +71,20 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
  onOpenChange(false);
  } catch {
  console.error(error);
- alert('저장 중 오류가 발생했습니다.');
+ alert('?님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
  }
  };
 
  const handleDelete = async () => {
  if (!data?.codeId) return;
- if (confirm('정말로 삭제하시겠습니까?')) {
+ if (confirm('?뺣쭚濡님?젣?섏떆寃좎뒿?덇퉴?')) {
  try {
  await codeAdminService.deleteCmmnCode(data.codeId);
  onSuccess();
  onOpenChange(false);
  } catch {
  console.error(error);
- alert('삭제 중 오류가 발생했습니다.');
+ alert('님젣 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
  }
  }
  };
@@ -93,9 +93,9 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
  <Dialog open={open} onOpenChange={onOpenChange}>
  <DialogContent className="sm:max-w-[425px]">
  <DialogHeader>
- <DialogTitle>{isEdit ? '공통코드 수정' : '공통코드 등록'}</DialogTitle>
+ <DialogTitle>{isEdit ? '怨듯넻肄붾뱶 ?섏젙' : '怨듯넻肄붾뱶 등록'}</DialogTitle>
  <DialogDescription>
- 공통코드 정보를 {isEdit ? '수정' : '입력'}합니다.
+ 怨듯넻肄붾뱶 ?뺣낫瑜?{isEdit ? '?섏젙' : '?낅젰'}?⑸땲님
  </DialogDescription>
  </DialogHeader>
  <Form {...form}>
@@ -105,11 +105,11 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
  name="clCode"
  render={({ field }) => (
  <FormItem>
- <FormLabel>분류코드</FormLabel>
+ <FormLabel>遺꾨쪟肄붾뱶</FormLabel>
  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isEdit}>
  <FormControl>
  <SelectTrigger>
- <SelectValue placeholder="분류코드 선택" />
+ <SelectValue placeholder="遺꾨쪟肄붾뱶 ?좏깮" />
  </SelectTrigger>
  </FormControl>
  <SelectContent>
@@ -129,9 +129,9 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
  name="codeId"
  render={({ field }) => (
  <FormItem>
- <FormLabel>코드ID</FormLabel>
+ <FormLabel>肄붾뱶ID</FormLabel>
  <FormControl>
- <Input placeholder="코드ID" {...field} readOnly={isEdit} />
+ <Input placeholder="肄붾뱶ID" {...field} readOnly={isEdit} />
  </FormControl>
  <FormMessage />
  </FormItem>
@@ -142,9 +142,9 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
  name="codeIdNm"
  render={({ field }) => (
  <FormItem>
- <FormLabel>코드ID명</FormLabel>
+ <FormLabel>肄붾뱶ID紐?/FormLabel>
  <FormControl>
- <Input placeholder="코드ID명" {...field} />
+ <Input placeholder="肄붾뱶ID紐? {...field} />
  </FormControl>
  <FormMessage />
  </FormItem>
@@ -155,9 +155,9 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
  name="codeIdDc"
  render={({ field }) => (
  <FormItem>
- <FormLabel>설명</FormLabel>
+ <FormLabel>?ㅻ챸</FormLabel>
  <FormControl>
- <Input placeholder="설명" {...field} />
+ <Input placeholder="?ㅻ챸" {...field} />
  </FormControl>
  <FormMessage />
  </FormItem>
@@ -168,16 +168,16 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
  name="useAt"
  render={({ field }) => (
  <FormItem>
- <FormLabel>사용여부</FormLabel>
+ <FormLabel>?ъ슜?щ?</FormLabel>
  <Select onValueChange={field.onChange} defaultValue={field.value}>
  <FormControl>
  <SelectTrigger>
- <SelectValue placeholder="사용여부" />
+ <SelectValue placeholder="?ъ슜?щ?" />
  </SelectTrigger>
  </FormControl>
  <SelectContent>
- <SelectItem value="Y">사용 (Y)</SelectItem>
- <SelectItem value="N">미사용 (N)</SelectItem>
+ <SelectItem value="Y">?ъ슜 (Y)</SelectItem>
+ <SelectItem value="N">誘몄궗님(N)</SelectItem>
  </SelectContent>
  </Select>
  <FormMessage />
@@ -187,10 +187,10 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
  <DialogFooter>
  {isEdit && (
  <Button type="button" variant="destructive" onClick={handleDelete}>
- 삭제
+ 님젣
  </Button>
  )}
- <Button type="submit">저장</Button>
+ <Button type="submit">?님/Button>
  </DialogFooter>
  </form>
  </Form>
@@ -198,3 +198,4 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
  </Dialog>
  );
 }
+

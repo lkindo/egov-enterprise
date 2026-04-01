@@ -1,12 +1,12 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { ismAdminService, InfrmlSanctn } from '@/services/foundation/system/IsmAdminService';
 import IsmClient from './IsmClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 
 export const metadata = {
- title: '?�식결재 �??�인 관�?| ?�자?��? ?��??�레?�워??,
- description: '?�스????발생?�는 ?�식 결재 ?�청???�인 ?�는 반려 처리?�니??',
+ title: '?쎌떇寃곗옱 諛님뱀씤 愿由?| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+ description: '?쒖뒪님님諛쒖깮?섎뒗 ?쎌떇 결재 요청님?뱀씤 ?먮뒗 諛섎젮 泥섎━?⑸땲님',
 };
 
 export default async function InformalSanctionPage() {
@@ -45,3 +45,4 @@ function IsmLoading() {
  </div>
  );
 }
+

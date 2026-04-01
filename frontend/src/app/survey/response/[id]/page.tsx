@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -23,7 +23,7 @@ export default function WorkReportListPage() {
  const res = await reportService.getReports({ page: 0, size: 20 });
  setReports(res.list || []);
  } catch {
- toast('보고서 목록을 불러오지 못했습니다.', 'error');
+ toast('蹂닿퀬님紐⑸줉님遺덈윭?ㅼ? 紐삵뻽?듬땲님', 'error');
  } finally {
  setLoading(false);
  }
@@ -38,7 +38,7 @@ export default function WorkReportListPage() {
                 const res = await reportService.getReports({ page: 0, size: 20 });
                 setReports(res.list || []);
             } catch {
-                toast('보고서 목록을 불러오지 못했습니다.', 'error');
+                toast('蹂닿퀬님紐⑸줉님遺덈윭?ㅼ? 紐삵뻽?듬땲님', 'error');
             } finally {
                 setLoading(false);
             }
@@ -49,7 +49,7 @@ export default function WorkReportListPage() {
 
     const columns = [
         {
-            header: '유형',
+            header: '?좏삎',
             accessor: (item: WorkReport) => (
                 <span className="text-[10px] font-black px-2 py-0.5 bg-muted rounded">
                     {item.reprtSe === '1' ? 'WEEKLY' : 'MONTHLY'}
@@ -58,21 +58,21 @@ export default function WorkReportListPage() {
             className: 'w-24'
         },
         {
-            header: '제목',
+            header: '?쒕ぉ',
             accessor: (item: WorkReport) => item.reprtSj,
             className: 'font-bold'
         },
         {
-            header: '보고일',
+            header: '蹂닿퀬님,
             accessor: (item: WorkReport) => item.reprtDe,
             className: 'text-sm text-muted-foreground'
         },
         {
-            header: '작성자',
+            header: '?묒꽦님,
             accessor: (item: WorkReport) => item.wrterId
         },
         {
-            header: '상태',
+            header: '?곹깭',
             accessor: (item: WorkReport) => <StatusBadge status={item.confmDt ? 'Y' : 'R'} />
         },
         {
@@ -92,11 +92,11 @@ export default function WorkReportListPage() {
     return (
         <div className="space-y-6 pb-12">
             <PageHeader
-                title="업무 보고 센터"
-                breadcrumbs={[{ label: '작업지원' }, { label: '주간/월간보고' }]}
+                title="업무 蹂닿퀬 ?쇳꽣"
+                breadcrumbs={[{ label: '?묒뾽吏님 }, { label: '二쇨컙/?붽컙蹂닿퀬' }]}
                 actions={
                     <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">
-                        <Plus size={18} /> 새 보고서 작성
+                        <Plus size={18} /> 님蹂닿퀬님?묒꽦
                     </button>
                 }
             />
@@ -106,7 +106,7 @@ export default function WorkReportListPage() {
                     columns={columns}
                     data={reports}
                     loading={loading}
-                    emptyMessage="등록된 보고서가 없습니다."
+                    emptyMessage="등록님蹂닿퀬?쒓? ?놁뒿?덈떎."
                     className="border-none rounded-none"
                 />
             </div>

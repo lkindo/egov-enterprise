@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo, memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
@@ -147,7 +147,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   data,
   loading,
   onRowClick,
-  emptyMessage = "?�이?��? ?�습?�다.",
+  emptyMessage = "?곗씠?곌? ?놁뒿?덈떎.",
   enableSelection = false,
   bulkActions = [],
   keyField = 'id' as keyof T,
@@ -195,7 +195,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
         <form onSubmit={handleSearchSubmit} className="relative group max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
           <Input
-            placeholder={search.placeholder || '검?�어 ?�력...'}
+            placeholder={search.placeholder || '寃?됱뼱 ?낅젰...'}
             className="h-12 pl-12 rounded-xl border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
@@ -211,8 +211,8 @@ export function StandardDataTable<T extends { [key: string]: any }>({
         >
           <div className="flex items-center gap-6">
             <div className="flex flex-col">
-              <span className="text-[10px] font-black opacity-60 tracking-widest uppercase">?�택 모드</span>
-              <span className="text-sm font-black">{selectedIds.size}개의 ??�� ?�택??/span>
+              <span className="text-[10px] font-black opacity-60 tracking-widest uppercase">?좏깮 紐⑤뱶</span>
+              <span className="text-sm font-black">{selectedIds.size}媛쒖쓽 님ぉ ?좏깮님/span>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div className="flex gap-2">
@@ -236,7 +236,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             onClick={() => setSelectedIds(new Set())}
             className="text-xs font-black h-9 px-4 hover:bg-white/10 text-white/80"
           >
-            ?�택 ?�제
+            ?좏깮 ?댁젣
           </Button>
         </div>
       )}
@@ -383,14 +383,14 @@ function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => v
         <AlertCircle size={40} className="text-rose-500" />
       </div>
       <div className="space-y-2">
-        <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">?�이??로드 ?�패</p>
+        <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">?곗씠님濡쒕뱶 ?ㅽ뙣</p>
         <div className="p-4 bg-rose-50/50 rounded-xl border border-rose-100 inline-block">
           <p className="text-[10px] font-black font-mono text-rose-800 tracking-tight opacity-70">
             ERROR_STREAM: {error.message || 'UNKNOWN_EXEPTION'}
           </p>
         </div>
         <p className="text-xs text-muted-foreground font-black tracking-tight max-w-[360px] mx-auto leading-relaxed opacity-60 mt-4">
-          ?�이?�베?�스 ?�션?�로부??개체 ?�보�??�신?��? 못했?�니?? <br />?�트?�크 ?�결 ?�태�??�인?�거???�래 버튼???�해 ?�시?�하??��??
+          ?곗씠?곕쿋?댁뒪 ?몄뀡?쇰줈遺님媛쒖껜 ?뺣낫瑜님섏떊?섏? 紐삵뻽?듬땲님 <br />?ㅽ듃?뚰겕 ?곌껐 ?곹깭瑜님뺤씤?섍굅님?꾨옒 踰꾪듉님?듯빐 ?ъ떆?꾪븯님떆님
         </p>
       </div>
       <div className="flex gap-4 mt-6">
@@ -420,7 +420,7 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
       <div className="space-y-2">
         <p className="text-xl font-black text-foreground tracking-tighter uppercase">{emptyMessage}</p>
         <p className="text-xs text-muted-foreground font-black tracking-tight max-w-[320px] mx-auto leading-relaxed opacity-60">
-          ?�스?�에???�이?��? 조회?��? 못했?�니?? <br />검??조건??조정?�거???�시 초기?�해 보십?�오.
+          ?쒖뒪?쒖뿉님?곗씠?곕? 조회?섏? 紐삵뻽?듬땲님 <br />寃님議곌굔님議곗젙?섍굅님?ㅼ떆 珥덇린?뷀빐 蹂댁떗?쒖삤.
         </p>
       </div>
       <Button
@@ -430,8 +430,9 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
         onClick={() => typeof window !== 'undefined' && window.location.reload()}
       >
         <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
-        ?�체 ?�로고침
+        ?꾩껜 ?덈줈怨좎묠
       </Button>
     </div>
   );
 }
+

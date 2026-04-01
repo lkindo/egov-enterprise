@@ -1,4 +1,4 @@
-export default function GlobalLoading() {
+﻿export default function GlobalLoading() {
  return (
  <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-md transition-all duration-500">
  <div className="relative">
@@ -16,13 +16,13 @@ export default function GlobalLoading() {
 
  {/* Loading Text */}
  <div className="mt-8 flex flex-col items-center gap-2">
- <h3 className="text-xl font-black tracking-tighter text-primary">?�터?�라?�즈 ?��???/h3>
+ <h3 className="text-xl font-black tracking-tighter text-primary">?뷀꽣?꾨씪?댁쫰 ?꾨님?/h3>
  <div className="flex items-center gap-1.5">
  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[bounce_1s_infinite_0ms]" />
  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[bounce_1s_infinite_200ms]" />
  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[bounce_1s_infinite_400ms]" />
  </div>
- <p className="text-[10px] font-bold text-muted-foreground tracking-[0.3em] mt-2 opacity-50">?�시�?기다?�주?�요</p>
+ <p className="text-[10px] font-bold text-muted-foreground tracking-[0.3em] mt-2 opacity-50">?좎떆留?湲곕떎?ㅼ＜?몄슂</p>
  </div>
 
  {/* Background Accent */}

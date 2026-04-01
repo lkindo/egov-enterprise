@@ -1,10 +1,11 @@
-import PolicyAdminClient from './PolicyAdminClient';
+﻿import PolicyAdminClient from './PolicyAdminClient';
 
 export const metadata = {
-  title: '?�스???�책 관�?- ?�드�?,
-  description: '?�?�권, 개인?�보처리방침 ???�스???�책??관리합?�다.',
+  title: '?쒖뒪님?뺤콉 愿由?- ?대뱶誘?,
+  description: '??묎텒, 媛쒖씤?뺣낫泥섎━諛⑹묠 님?쒖뒪님?뺤콉님愿由ы빀?덈떎.',
 };
 
 export default function PolicyAdminPage() {
   return <PolicyAdminClient />;
 }
+

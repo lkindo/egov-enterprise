@@ -1,9 +1,9 @@
-import { Metadata } from 'next';
+﻿import { Metadata } from 'next';
 import RoughMapManagementClient from './RoughMapManagementClient';
 
 export const metadata: Metadata = {
-  title: '?�도 관�?| eGov Enterprise System',
-  description: '?�고�??�터?�라?�즈 공간 ?�텔리전??�??�도 관�??�터',
+  title: '?쎈룄 愿由?| eGov Enterprise System',
+  description: '?먭퀬釉님뷀꽣?꾨씪?댁쫰 怨듦컙 ?명뀛由ъ쟾님諛님쎈룄 愿由님쇳꽣',
 };
 
 export default function RoughMapPage() {
@@ -13,3 +13,4 @@ export default function RoughMapPage() {
     </div>
   );
 }
+

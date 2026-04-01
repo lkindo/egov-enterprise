@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,7 @@ interface PremiumSearchInputProps extends React.InputHTMLAttributes<HTMLInputEle
 }
 
 export function PremiumSearchInput({
-  placeholder = "자산 검색...",
+  placeholder = "?먯궛 寃님..",
   className,
   onSearch,
   ...props
@@ -41,3 +41,4 @@ export function PremiumSearchInput({
     </div>
   );
 }
+

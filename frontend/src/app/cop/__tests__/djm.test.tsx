@@ -1,4 +1,4 @@
-vi.mock('next/config', () => ({
+﻿vi.mock('next/config', () => ({
   default: () => ({
     publicRuntimeConfig: {},
     serverRuntimeConfig: {},
@@ -32,9 +32,9 @@ describe('DeptJobListPage', () => {
  resultList: [
  {
  deptJobId: 'JOB_0001',
- deptJobNm: '주간 보고 ?�성',
+ deptJobNm: '二쇨컙 蹂닿퀬 ?묒꽦',
  priort: '1', // High
- frstRegisterNm: '?�??,
+ frstRegisterNm: '?님,
  frstRegisterPnttm: '2024-06-01'
  }
  ],
@@ -47,8 +47,10 @@ describe('DeptJobListPage', () => {
  render(<DeptJobListPage />);
 
  await waitFor(() => {
- expect(screen.getByText('주간 보고 ?�성')).toBeDefined();
- expect(screen.getByText('?�음')).toBeDefined();
+ expect(screen.getByText('二쇨컙 蹂닿퀬 ?묒꽦')).toBeDefined();
+ expect(screen.getByText('?믪쓬')).toBeDefined();
  });
  });
 });
+
+

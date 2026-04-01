@@ -31,7 +31,7 @@ public class User extends BaseEntity implements Serializable {
     @NonNull
     private String userId;
 
-    @Column(name = "ESNTL_ID", nullable = false, length = 20)
+    @Column(name = "ESNTL_ID", nullable = false, length = 20, unique = true)
     @NonNull
     private String esntlId;
 

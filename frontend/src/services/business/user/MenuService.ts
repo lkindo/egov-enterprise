@@ -1,4 +1,4 @@
-import { AxiosRequestConfig } from 'axios';
+﻿import { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
 import { MenuInfo } from '@/types/foundation/menu';
 
@@ -8,7 +8,7 @@ class MenuService extends ApiService {
   }
 
   /**
-   * GNB(Head) 메뉴 목록 조회
+   * GNB(Head) 硫붾돱 紐⑸줉 조회
    */
   async getHeadMenus(config?: AxiosRequestConfig): Promise<MenuInfo[]> {
     try {
@@ -21,7 +21,7 @@ class MenuService extends ApiService {
   }
 
   /**
-   * LNB(Left) 메뉴 목록 조회 - 상위 메뉴 번호 기준
+   * LNB(Left) 硫붾돱 紐⑸줉 조회 - ?곸쐞 硫붾돱 踰덊샇 湲곗?
    */
   async getLeftMenus(menuNo: number, config?: AxiosRequestConfig): Promise<MenuInfo[]> {
     try {

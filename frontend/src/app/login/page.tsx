@@ -35,8 +35,7 @@ export default function LoginPage() {
         setIsSubmitting(true);
         try {
             await login({ id, password });
-            // AuthContext ??user ?íƒœ ?…ë°?´íŠ¸ê°€ ?„ë£Œ???Œê¹Œì§€ ? ì‹œ ?€ê¸?            await new Promise(resolve => setTimeout(resolve, 100));
-            // router.push ?¬ìš© (?˜ì´ì§€ ?„ì „ ë¦¬ë¡œ??ë°©ì?)
+            await new Promise(resolve => setTimeout(resolve, 100));
             router.push(redirectUrl);
         } catch (err: any) {
             console.error(err);
@@ -52,7 +51,7 @@ export default function LoginPage() {
 
             <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md">
                 <CardHeader className="space-y-1 text-center">
-                    <CardTitle className="text-2xl font-bold tracking-tight text-primary">?„ì?•ë? ?”í„°?„ë¼?´ì¦ˆ</CardTitle>
+                    <CardTitle className="text-2xl font-bold tracking-tight text-primary">ì „ìì •ë¶€ ì—”í„°í”„ë¼ì´ì¦ˆ</CardTitle>
                     <CardDescription>
                         {t('login.title')}
                     </CardDescription>
@@ -120,7 +119,7 @@ export default function LoginPage() {
                         )}
                     </CardContent>
                     <CardFooter>
-                        <Button className="w-full h-11 text-base" type="submit" isLoading={isSubmitting}>
+                        <Button className="w-full h-11 text-base" type="submit" disabled={isSubmitting}>
                             {isSubmitting ? t('login.submitting') : (
                                 <>
                                     <LogIn className="mr-2 h-4 w-4" /> {t('login.submit')}

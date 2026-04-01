@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -53,16 +53,16 @@ export default function MemoReportManagementClient() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000 font-sans">
       <HubHeader 
-        title="메모 보고 매트�?��" 
+        title="硫붾え 蹂닿퀬 留ㅽ듃由?뒪" 
         highlight="Report Node" 
-        subtitle="?�고�??�터?�라?�즈??비정??보고 �?지?�사???�달???�한 ?�합 커�??��??�션 ?�터?�니??" 
+        subtitle="?먭퀬釉님뷀꽣?꾨씪?댁쫰님鍮꾩젙님蹂닿퀬 諛?吏?쒖궗님?꾨떖님?꾪븳 ?듯빀 而ㅻ님덉님댁뀡 ?쇳꽣?낅땲님" 
         icon={Mail} 
         actions={
           <div className="flex gap-4">
              <Button className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-900 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
-               <History size={18} /> ?�전 리포??             </Button>
+               <History size={18} /> ?댁쟾 由ы룷님             </Button>
              <Button className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
-               <Plus size={18} /> ?�규 보고 ?�성
+               <Plus size={18} /> 신규 蹂닿퀬 ?묒꽦
              </Button>
           </div>
         }
@@ -84,7 +84,7 @@ export default function MemoReportManagementClient() {
                    value={searchKeyword}
                    onChange={(e) => setSearchKeyword(e.target.value)}
                    className="h-11 bg-white border-2 border-slate-50 rounded-xl pl-11 font-black text-xs focus:border-primary/20 transition-all" 
-                   placeholder="리포???�캐??.." 
+                   placeholder="由ы룷님?ㅼ틦님.." 
                  />
               </div>
            </div>
@@ -176,7 +176,7 @@ export default function MemoReportManagementClient() {
                        
                        <CardHeader className="p-12 border-b border-white/5 flex flex-row items-center justify-between relative z-10 bg-white/5 backdrop-blur-3xl">
                           <div className="space-y-1">
-                             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] leading-none">리포??분석�?(Analytical View)</span>
+                             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] leading-none">由ы룷님분석湲?(Analytical View)</span>
                              <h3 className="text-2xl font-black tracking-tighter italic">{selectedReport.reprtSj}</h3>
                           </div>
                           <div className="flex items-center gap-3">
@@ -189,28 +189,28 @@ export default function MemoReportManagementClient() {
                           <div className="flex items-center justify-between pb-8 border-b border-white/5">
                              <div className="flex items-center gap-8">
                                 <div className="space-y-1">
-                                   <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">?�성???�드</p>
+                                   <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">?묒꽦님노드</p>
                                    <div className="flex items-center gap-3 font-black text-lg italic tracking-tighter">
                                       <div className="w-6 h-6 rounded-full bg-primary" /> {selectedReport.wrterNm}
                                    </div>
                                 </div>
                                 <div className="w-[1px] h-10 bg-white/5" />
                                 <div className="space-y-1">
-                                   <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">?�신 ?�??/p>
+                                   <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">?섏떊 ?님/p>
                                    <div className="flex items-center gap-3 font-black text-lg italic tracking-tighter">
                                       <User size={20} className="text-primary" /> {selectedReport.recptnNm}
                                    </div>
                                 </div>
                              </div>
                              <div className="text-right">
-                                <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">?�영 ?�짜</p>
+                                <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">?댁쁺 ?좎쭨</p>
                                 <p className="text-lg font-black tabular-nums tracking-tighter">{selectedReport.reprtDe}</p>
                              </div>
                           </div>
 
                           <div className="space-y-4">
                              <div className="flex items-center gap-3 text-[10px] font-black text-primary tracking-[0.3em] uppercase">
-                                <Layers size={14} /> 보고 ?�용 ?�이???�닛 (Report Core)
+                                <Layers size={14} /> 蹂닿퀬 ?댁슜 ?곗씠님?좊떅 (Report Core)
                              </div>
                              <div className="p-8 bg-white/5 border border-white/5 rounded-[3rem] text-sm font-bold text-white/70 leading-relaxed tracking-tight italic">
                                 {selectedReport.reprtCn}
@@ -220,7 +220,7 @@ export default function MemoReportManagementClient() {
                           {selectedReport.drctMatter && (
                              <div className="space-y-4 pt-4">
                                 <div className="flex items-center gap-3 text-[10px] font-black text-emerald-400 tracking-[0.3em] uppercase">
-                                   <Zap size={14} /> ?�스??지?�사??(Direct Matter)
+                                   <Zap size={14} /> ?쒖뒪님吏?쒖궗님(Direct Matter)
                                 </div>
                                 <div className="p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-[3rem] text-sm font-black text-emerald-400 tracking-tight flex items-start gap-4">
                                    <MessageSquare size={20} className="shrink-0 animate-pulse mt-1" />
@@ -231,8 +231,8 @@ export default function MemoReportManagementClient() {
                        </CardContent>
 
                        <div className="p-12 border-t border-white/5 bg-white/5 backdrop-blur-3xl flex gap-6 relative z-10">
-                          <Button className="h-16 flex-1 rounded-[2rem] bg-white text-slate-900 font-black tracking-[0.2em] text-[10px] hover:scale-105 transition-all shadow-2xl">?�세 ?�정</Button>
-                          <Button className="h-16 flex-[2] rounded-[2rem] bg-primary text-white font-black tracking-[0.4em] text-[10px] hover:scale-105 transition-all shadow-2xl shadow-primary/40 uppercase italic">지?�사???�록</Button>
+                          <Button className="h-16 flex-1 rounded-[2rem] bg-white text-slate-900 font-black tracking-[0.2em] text-[10px] hover:scale-105 transition-all shadow-2xl">?곸꽭 ?섏젙</Button>
+                          <Button className="h-16 flex-[2] rounded-[2rem] bg-primary text-white font-black tracking-[0.4em] text-[10px] hover:scale-105 transition-all shadow-2xl shadow-primary/40 uppercase italic">吏?쒖궗님등록</Button>
                        </div>
                     </Card>
                  </motion.div>
@@ -240,7 +240,7 @@ export default function MemoReportManagementClient() {
                  <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none bg-white rounded-[4rem] border-2 border-dashed border-slate-200">
                     <History size={64} className="mb-8" />
                     <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">SELECT REPORT NODE</h3>
-                    <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2 leading-relaxed">?�이???�름???�인?�려�?br />좌측 ?�트림에??리포?��? ?�택?�세??/p>
+                    <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2 leading-relaxed">?곗씠님?먮쫫님?뺤씤?섎젮硫?br />醫뚯륫 ?ㅽ듃由쇱뿉님由ы룷?몃? ?좏깮?섏꽭님/p>
                  </div>
               )}
            </AnimatePresence>
@@ -266,3 +266,4 @@ function NavTab({ active, icon, label, onClick }: any) {
     </button>
   );
 }
+

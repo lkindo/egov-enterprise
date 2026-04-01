@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,7 @@ interface MasterDetailLayoutProps {
 
 /**
  * Precision Workspace - Master-Detail Layout
- * 분할 ?�복 기반???��? ?�이?�웃 컴포?�트
+ * 遺꾪븷 ?뺣났 湲곕컲님?뺣? ?덉씠?꾩썐 而댄룷?뚰듃
  */
 export const MasterDetailLayout = ({
  master,
@@ -56,7 +56,7 @@ export const MasterDetailLayout = ({
  animate={{ opacity: 1 }}
  className="h-full w-full flex items-center justify-center text-muted-foreground p-8"
  >
- <p className="text-sm tracking-tight ">??��???�택?�여 ?�세?�보�??�인?�세??/p>
+ <p className="text-sm tracking-tight ">님ぉ님?좏깮?섏뿬 ?곸꽭?뺣낫瑜님뺤씤?섏꽭님/p>
  </motion.div>
  )}
  </AnimatePresence>

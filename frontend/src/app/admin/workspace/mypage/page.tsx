@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -17,11 +17,7 @@ export default function MyPageManagement() {
  const data = await myPageAdminService.getContents({ all: true });
  setContents(data);
  } catch {
-<<<<<<< HEAD
- toast('콘텐츠 정보를 불러오지 못했습니다.', 'error');
-=======
- toast('콘텐�??�보�?불러?��? 못했?�니??', 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+ toast('肄섑뀗痢님뺣낫瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲님', 'error');
  } finally {
  setLoading(false);
  }
@@ -34,23 +30,17 @@ export default function MyPageManagement() {
  try {
  await myPageAdminService.updateContent(item.cntntsId, { ...item, cntntsUseAt: newStatus });
  setContents(contents.map(c => c.cntntsId === item.cntntsId ? { ...c, cntntsUseAt: newStatus } : c));
-<<<<<<< HEAD
- toast(`${item.cntntsNm} 상태가 변경되었습니다.`);
+ toast(`${item.cntntsNm} ?곹깭媛 蹂寃쎈릺?덉뒿?덈떎.`);
  } catch {
- toast('상태 변경 중 오류가 발생했습니다.', 'error');
-=======
- toast(`${item.cntntsNm} ?�태가 변경되?�습?�다.`);
- } catch {
- toast('?�태 변�?�??�류가 발생?�습?�다.', 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+ toast('?곹깭 蹂寃?以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
  }
  };
 
  return (
  <div className="space-y-6">
  <PageHeader
- title="마이?�이지 ?�정"
- breadcrumbs={[{ label: '?�크?�페?�스' }, { label: '마이?�이지 ?�정' }]}
+ title="留덉씠?섏씠吏 ?ㅼ젙"
+ breadcrumbs={[{ label: '?뚰겕?ㅽ럹?댁뒪' }, { label: '留덉씠?섏씠吏 ?ㅼ젙' }]}
  />
 
  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -82,7 +72,7 @@ export default function MyPageManagement() {
  </button>
  </div>
  <h3 className="text-lg font-bold text-foreground">{item.cntntsNm}</h3>
- <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.cntntsDc || '?�명???�습?�다.'}</p>
+ <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.cntntsDc || '?ㅻ챸님?놁뒿?덈떎.'}</p>
  <div className="mt-4 flex items-center gap-2 text-[11px] font-mono text-slate-400 bg-slate-50 p-2 rounded-lg">
  <span>{item.cntcUrl}</span>
  </div>
@@ -90,10 +80,11 @@ export default function MyPageManagement() {
  ))
  ) : (
  <div className="col-span-full py-20 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
- <p className="text-slate-400">?�록??마이?�이지 콘텐츠�? ?�습?�다.</p>
+ <p className="text-slate-400">등록님留덉씠?섏씠吏 肄섑뀗痢좉? ?놁뒿?덈떎.</p>
  </div>
  )}
  </div>
  </div>
  );
 }
+

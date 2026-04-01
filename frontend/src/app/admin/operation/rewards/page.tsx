@@ -1,10 +1,10 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { operationAdminService } from '@/services/foundation/operation/OperationAdminService';
 import RewardManageClient from './RewardManageClient';
 
 export const metadata = {
- title: '?�상 관�?| ?�자?��? ?��??�레?�워??,
- description: '?�직???�상 �??�훈 ?�보�?관리합?�다.',
+ title: '?ъ긽 愿由?| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+ description: '?꾩쭅님?ъ긽 諛님곹썕 ?뺣낫瑜?愿由ы빀?덈떎.',
 };
 
 export default async function RewardManagePage() {
@@ -17,8 +17,9 @@ export default async function RewardManagePage() {
  }
 
  return (
- <Suspense fallback={<div>로딩 �?..</div>}>
+ <Suspense fallback={<div>濡쒕뵫 以?..</div>}>
  <RewardManageClient initialData={initialData} />
  </Suspense>
  );
 }
+

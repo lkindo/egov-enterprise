@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { PageHeader } from './page-header';
@@ -19,22 +19,22 @@ interface StandardAdminLayoutProps<T extends { [key: string]: any }> {
  data: T[];
  keyField: keyof T;
 
- /** ?�체 ?�코????*/
+ /** ?꾩껜 ?덉퐫님님*/
  totalCount?: number;
- /** ?�이지????�� ??(기본 10) */
+ /** ?섏씠吏님님ぉ 님(湲곕낯 10) */
  pageSize?: number;
- /** ?�재 ?�이지 번호 (1-based) */
+ /** 현재 ?섏씠吏 踰덊샇 (1-based) */
  currentPage?: number;
- /** ?�이지 변�?콜백 */
+ /** ?섏씠吏 蹂寃?肄쒕갚 */
  onPageChange?: (page: number) => void;
 
  actionButton?: React.ReactNode;
- children?: React.ReactNode; // 모달 ??추�? ?�소
+ children?: React.ReactNode; // 紐⑤떖 님異붽? ?붿냼
 }
 
 /**
- * ?��? 관리자 ?�이지 ?�이?�웃 컴포?�트
- * - 검???�터, ?�이??그리?? ?�이지 ?�더�??�합???��? ?�턴
+ * ?쒖? 愿由ъ옄 ?섏씠吏 ?덉씠?꾩썐 而댄룷?뚰듃
+ * - 寃님?꾪꽣, ?곗씠님洹몃━님 ?섏씠吏 ?ㅻ뜑瑜님듯빀님?쒖? ?⑦꽩
  */
 export function StandardAdminLayout<T extends { [key: string]: any }>({
  title,
@@ -103,3 +103,4 @@ export function StandardAdminLayout<T extends { [key: string]: any }>({
  </div>
  );
 }
+

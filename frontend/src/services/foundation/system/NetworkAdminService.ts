@@ -1,9 +1,9 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 import { SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 /**
- * 네트워크 인프라 관리 서비스 (Admin)
+ * ?ㅽ듃?뚰겕 ?명봽님愿由님쒕퉬님(Admin)
  */
 export interface Network {
  ntwrkId: string;
@@ -21,22 +21,22 @@ class NetworkAdminService extends AdminService {
  super('/network');
  }
 
- /** 네트워크 목록 조회 */
+ /** ?ㅽ듃?뚰겕 紐⑸줉 조회 */
  async getNetworks(params?: SearchParams, config?: AxiosRequestConfig): Promise<Network[]> {
  return this.get<Network[]>('', { ...config, params });
  }
 
- /** 네트워크 등록 */
+ /** ?ㅽ듃?뚰겕 등록 */
  async createNetwork(data: Network, config?: AxiosRequestConfig): Promise<void> {
  return this.post('', data, config);
  }
 
- /** 네트워크 수정 */
+ /** ?ㅽ듃?뚰겕 ?섏젙 */
  async updateNetwork(id: string, data: Partial<Network>, config?: AxiosRequestConfig): Promise<void> {
  return this.put(`/${id}`, data, config);
  }
 
- /** 네트워크 삭제 */
+ /** ?ㅽ듃?뚰겕 님젣 */
  async deleteNetwork(id: string, config?: AxiosRequestConfig): Promise<void> {
  return this.delete(`/${id}`, config);
  }

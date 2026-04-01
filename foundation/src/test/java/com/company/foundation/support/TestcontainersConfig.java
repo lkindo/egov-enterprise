@@ -14,14 +14,10 @@ import org.testcontainers.utility.DockerImageName;
  */
 @TestConfiguration(proxyBeanMethods = false)
 @Testcontainers
-@Profile("test")
+@Profile("docker-test")
 public class TestcontainersConfig {
 
-<<<<<<< HEAD
-    @Bean
-=======
     @Bean(destroyMethod = "stop")
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
     @SuppressWarnings("resource")
     public PostgreSQLContainer<?> postgresContainer() {
         return new PostgreSQLContainer<>(DockerImageName.parse("postgres:16"))

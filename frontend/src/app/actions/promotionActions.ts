@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -30,9 +30,9 @@ export async function saveBannerAction(prevState: unknown, { mode, data, id }: S
         }
 
         revalidatePath('/admin/system/banner');
-        return { success: true, message: `배너가 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
+        return { success: true, message: `諛곕꼫媛 ${mode === 'create' ? '등록' : '?섏젙'}?섏뿀?듬땲님` };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '저장 중 오류 발생';
+        const errorMessage = error instanceof Error ? error.message : '?님以님ㅻ쪟 諛쒖깮';
         console.error('Save Banner Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -47,9 +47,9 @@ export async function deleteBannerAction(prevState: unknown, id: string): Promis
         await client.delete(`/banners/${id}`, axiosConfig);
 
         revalidatePath('/admin/system/banner');
-        return { success: true, message: '배너가 삭제되었습니다.' };
+        return { success: true, message: '諛곕꼫媛 님젣?섏뿀?듬땲님' };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
+        const errorMessage = error instanceof Error ? error.message : '님젣 以님ㅻ쪟 諛쒖깮';
         console.error('Delete Banner Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -69,9 +69,9 @@ export async function savePopupAction(prevState: unknown, { mode, data, id }: Sa
         }
 
         revalidatePath('/admin/system/banner');
-        return { success: true, message: `팝업이 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
+        return { success: true, message: `?앹뾽님${mode === 'create' ? '등록' : '?섏젙'}?섏뿀?듬땲님` };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '저장 중 오류 발생';
+        const errorMessage = error instanceof Error ? error.message : '?님以님ㅻ쪟 諛쒖깮';
         console.error('Save Popup Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -86,9 +86,9 @@ export async function deletePopupAction(prevState: unknown, id: string): Promise
         await client.delete(`/popups/${id}`, axiosConfig);
 
         revalidatePath('/admin/system/banner');
-        return { success: true, message: '팝업이 삭제되었습니다.' };
+        return { success: true, message: '?앹뾽님님젣?섏뿀?듬땲님' };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
+        const errorMessage = error instanceof Error ? error.message : '님젣 以님ㅻ쪟 諛쒖깮';
         console.error('Delete Popup Error:', error);
         return { success: false, message: errorMessage };
     }

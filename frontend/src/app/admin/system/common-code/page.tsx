@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
@@ -6,8 +6,8 @@ import { CmmnClCode, CmmnCode, CmmnDetailCode, PageResponse } from '@/types/foun
 import CommonCodeHubClient from './CommonCodeHubClient';
 
 export const metadata = {
-  title: '?�합 코드 ?�브 | ?�자?��? ?��??�레?�워??,
-  description: '공통코드, ?�정코드, 기�?코드 ???�스???�반??메�??�이?��? ?�합 관리합?�다.',
+  title: '?듯빀 肄붾뱶 ?덈툕 | ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+  description: '怨듯넻肄붾뱶, ?됱젙肄붾뱶, 湲곌?肄붾뱶 님?쒖뒪님?꾨컲님硫뷀님곗씠?곕? ?듯빀 愿由ы빀?덈떎.',
 };
 
 export default async function CommonCodePage({
@@ -77,3 +77,4 @@ function CommonCodeLoading() {
  </div>
  );
 }
+

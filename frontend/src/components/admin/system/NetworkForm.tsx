@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
@@ -30,27 +30,27 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
  return (
  <StandardForm onSubmit={handleSubmit} className="border-none shadow-none rounded-none p-0">
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
- <FormField label="관리 항목" required>
+ <FormField label="愿由님?ぉ" required>
  <input
  type="text"
  value={formData.manageIem || ''}
  onChange={(e) => setFormData({ ...formData, manageIem: e.target.value })}
- placeholder="예: 내부망 서버실"
+ placeholder="님 ?대?留님쒕쾭님
  className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
  required
  />
  </FormField>
- <FormField label="사용자/관리자" required>
+ <FormField label="?ъ슜님愿由ъ옄" required>
  <input
  type="text"
  value={formData.userNm || ''}
  onChange={(e) => setFormData({ ...formData, userNm: e.target.value })}
- placeholder="관리자 성명"
+ placeholder="愿由ъ옄 ?깅챸"
  className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
  required
  />
  </FormField>
- <FormField label="IP 주소" required>
+ <FormField label="IP 二쇱냼" required>
  <input
  type="text"
  value={formData.ntwrkIp || ''}
@@ -60,7 +60,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
  required
  />
  </FormField>
- <FormField label="서브넷 마스크" required>
+ <FormField label="?쒕툕님留덉뒪님 required>
  <input
  type="text"
  value={formData.subnet || ''}
@@ -70,7 +70,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
  required
  />
  </FormField>
- <FormField label="게이트웨이" required>
+ <FormField label="寃뚯씠?몄썾님 required>
  <input
  type="text"
  value={formData.gtwy || ''}
@@ -80,7 +80,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
  required
  />
  </FormField>
- <FormField label="DNS 서버">
+ <FormField label="DNS ?쒕쾭">
  <input
  type="text"
  value={formData.domnServer || ''}
@@ -90,23 +90,23 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
  />
  </FormField>
  </div>
- <FormField label="사용 여부" required>
+ <FormField label="?ъ슜 ?щ?" required>
  <select
  value={formData.useAt}
  onChange={(e) => setFormData({ ...formData, useAt: e.target.value as 'Y' | 'N' })}
  className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
  >
- <option value="Y">사용 중</option>
- <option value="N">미사용/중지</option>
+ <option value="Y">?ъ슜 以?/option>
+ <option value="N">誘몄궗님以묒?</option>
  </select>
  </FormField>
 
  <div className="flex justify-end gap-2 pt-4">
- <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg font-bold">취소</button>
+ <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg font-bold">痍⑥냼</button>
  <button type="submit" className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all">
- 저장하기
- </button>
+ ??ν븯湲? </button>
  </div>
  </StandardForm>
  );
 }
+

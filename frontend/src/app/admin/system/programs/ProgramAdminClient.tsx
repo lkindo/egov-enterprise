@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -68,15 +68,15 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
   const loadData = async (wrd: string = currentSearchWrd, page: number = 1) => {
     try {
       setLoading(true);
-      const res = await programAdminService.getProgramList({ page번호: page, size: 10, searchWrd: wrd });
+      const res = await programAdminService.getProgramList({ page踰덊샇: page, size: 10, searchWrd: wrd });
 
       const list = res.list || res.content || res.resultList || [];
-      const totalCount = (res.total ?? res.totalElements ?? res.totalRecordCount ?? 0) as number;
+      const totalCount = (res.total 님 res.totalElements 님 res.totalRecordCount 님 0) as number;
 
       setData(list);
       setTotal(totalCount);
     } catch (error: unknown) {
-      toast('?�이?��? 불러?�는 �??�류가 발생?�습?�다.', 'error');
+      toast('?곗씠?곕? 遺덈윭?ㅻ뒗 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
     } finally {
       setLoading(false);
     }
@@ -108,8 +108,8 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
   const handleDelete = async (name: string) => {
     const isConfirmed = await confirm({
-      title: '?�로그램 ??�� ?�인',
-      message: `[${name}] ?�로그램????��?�시겠습?�까? ?�당 ?�로그램�??�결??모든 메뉴 ?�동???�제?????�습?�다.`,
+      title: '?꾨줈洹몃옩 님젣 ?뺤씤',
+      message: `[${name}] ?꾨줈洹몃옩님님젣?섏떆寃좎뒿?덇퉴? ?대떦 ?꾨줈洹몃옩怨님곌껐님紐⑤뱺 硫붾돱 ?곕룞님?댁젣님님?덉뒿?덈떎.`,
       variant: 'destructive'
     });
     if (isConfirmed) {
@@ -125,7 +125,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
   const columns: Column<Program>[] = [
     {
-      header: '?�로그램 ?�산 명칭',
+      header: '?꾨줈洹몃옩 ?먯궛 紐낆묶',
       accessor: (item: Program) => (
         <div className="flex items-center gap-4 py-3">
           <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
@@ -139,7 +139,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       )
     },
     {
-      header: '?�별 ?�일�?,
+      header: '?앸퀎 ?뚯씪紐?,
       accessor: (item: Program) => (
         <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg w-fit">
           <span className="text-[10px] font-black text-primary tracking-tight font-mono">{item.progrmFileNm}</span>
@@ -148,7 +148,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       className: 'w-48'
     },
     {
-      header: '?�드?�인??(API/URL)',
+      header: '?붾뱶?ъ씤님(API/URL)',
       accessor: (item: Program) => (
         <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/70 tracking-tighter italic">
           <LinkIcon size={12} className="text-primary opacity-40" />
@@ -158,7 +158,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       className: 'w-64'
     },
     {
-      header: '관�?,
+      header: '愿由?,
       className: 'text-right w-32',
       accessor: (item: Program) => (
         <div className="flex justify-end gap-2 pr-4">
@@ -176,14 +176,14 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="?�스???�산 거버?�스"
-        breadcrumbs={[{ label: '?�스?��?�? }, { label: '?�로그램 관�? }]}
+        title="?쒖뒪님?먯궛 嫄곕쾭?뚯뒪"
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '?꾨줈洹몃옩 愿由? }]}
       />
 
       <HubHeader
-        title="?�로그램"
-        highlight="?�산 관�?
-        subtitle="?�스?�을 구성?�는 모든 ?�리???�로그램 모듈 �?API ?�드?�인?�의 ?�명주기 관�?
+        title="?꾨줈洹몃옩"
+        highlight="?먯궛 愿由?
+        subtitle="?쒖뒪?쒖쓣 援ъ꽦?섎뒗 紐⑤뱺 ?쇰━님?꾨줈洹몃옩 紐⑤뱢 諛?API ?붾뱶?ъ씤?몄쓽 ?앸챸二쇨린 愿由?
         icon={Box}
         actions={
           <Button
@@ -191,25 +191,25 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             size="lg"
             className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
           >
-            <Plus size={20} /> ?�규 ?�록
+            <Plus size={20} /> 신규 등록
           </Button>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="?�성_?�로그램_?? value={total} icon={Layers} color="primary" />
-        <HubMetricCard title="?�스??무결?? value="?�상" icon={ShieldCheck} color="emerald" status="?�인?? />
-        <HubMetricCard title="?�비??가?�시�? value="99.9%" icon={Zap} color="amber" />
-        <HubMetricCard title="?��??�트�??�기?? value="?�시�? icon={RefreshCcw} color="indigo" />
+        <HubMetricCard title="활성_?꾨줈洹몃옩_님 value={total} icon={Layers} color="primary" />
+        <HubMetricCard title="?쒖뒪님臾닿껐님 value="?뺤긽" icon={ShieldCheck} color="emerald" status="?뺤씤님 />
+        <HubMetricCard title="?쒕퉬님媛?숈떆媛? value="99.9%" icon={Zap} color="amber" />
+        <HubMetricCard title="?덉님ㅽ듃由님숆린님 value="실시간 icon={RefreshCcw} color="indigo" />
       </HubMetricGrid>
 
-      <HubSectionCard title="?�프?�웨???�포지?�리" description="?�재 ?�스?�에 ?�록?�어 ?�작 중인 모든 ?�프?�웨???�산??명세 �??�터?�이???�보?�니??" icon={SearchCode}>
+      <HubSectionCard title="?뚰봽?몄썾님?덊룷吏?좊━" description="현재 ?쒖뒪?쒖뿉 등록?섏뼱 ?숈옉 以묒씤 紐⑤뱺 ?뚰봽?몄썾님?먯궛님紐낆꽭 諛님명꽣?섏씠님?뺣낫?낅땲님" icon={SearchCode}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
           <div className="flex-1 max-w-2xl">
             <div className="relative group/search">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
               <Input
-                placeholder="?�로그램�??�는 ?�일명을 ?�력?�여 검??.."
+                placeholder="?꾨줈洹몃옩紐님먮뒗 ?뚯씪紐낆쓣 ?낅젰?섏뿬 寃님.."
                 value={currentSearchWrd}
                 onChange={(e) => setCurrentSearchWrd(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && loadData()}
@@ -218,7 +218,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             </div>
           </div>
           <Button onClick={() => loadData()} size="lg" className="h-16 px-10 rounded-[1.25rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2">
-            <Search size={18} /> 검??          </Button>
+            <Search size={18} /> 寃님          </Button>
         </div>
 
         <div className="overflow-hidden">
@@ -226,7 +226,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             columns={columns}
             data={data}
             loading={loading}
-            emptyMessage="?�스?�에 ?�록???�로그램 ?�산??존재?��? ?�습?�다."
+            emptyMessage="?쒖뒪?쒖뿉 등록님?꾨줈洹몃옩 ?먯궛님議댁옱?섏? ?딆뒿?덈떎."
             className="border-none bg-transparent"
           />
         </div>
@@ -235,39 +235,39 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       <StandardModal
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
-        title={mode === 'create' ? '?�규 ?�로그램 ?�록' : '?�로그램 ?�보 ?�정'}
+        title={mode === 'create' ? '신규 ?꾨줈洹몃옩 등록' : '?꾨줈洹몃옩 ?뺣낫 ?섏젙'}
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">痍⑥냼</Button>
             <Button onClick={handleSave} className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest shadow-xl">
-              {mode === 'create' ? '?�규 ?�록' : '?�??}
+              {mode === 'create' ? '신규 등록' : '?님}
             </Button>
           </div>
         }
       >
         <div className="space-y-8 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <FormField label="?�스???�별 ?�일�? required description="?? EgovMain (고유 ?�값)">
+            <FormField label="?쒖뒪님?앸퀎 ?뚯씪紐? required description="님 EgovMain (怨좎쑀 ?ㅺ컪)">
               <Input
                 value={formData.progrmFileNm || ''}
                 onChange={(e) => setFormData({ ...formData, progrmFileNm: e.target.value })}
                 readOnly={mode === 'edit'}
                 className={cn("h-14 rounded-2xl text-xs font-mono font-black tracking-widest uppercase shadow-inner", mode === 'edit' && "bg-muted/50 border-none")}
-                placeholder="고유 ?�산 ID"
+                placeholder="怨좎쑀 ?먯궛 ID"
               />
             </FormField>
-            <FormField label="?�로그램 ?��? 명칭" required>
+            <FormField label="?꾨줈洹몃옩 ?쒓? 紐낆묶" required>
               <Input
                 value={formData.progrmKoreanNm || ''}
                 onChange={(e) => setFormData({ ...formData, progrmKoreanNm: e.target.value })}
                 className="h-14 rounded-2xl text-sm font-black tracking-tight"
-                placeholder="?�국???�산 명칭 ?�력"
+                placeholder="?쒓뎅님?먯궛 紐낆묶 ?낅젰"
               />
             </FormField>
           </div>
 
-          <FormField label="?�터?�이???�드?�인??(URL)" required description="?�제 ?�비?��? ?�공?�는 ??주소 ?�는 API 경로">
+          <FormField label="?명꽣?섏씠님?붾뱶?ъ씤님(URL)" required description="?ㅼ젣 ?쒕퉬?ㅺ? ?쒓났?섎뒗 님二쇱냼 ?먮뒗 API 寃쎈줈">
             <Input
               value={formData.url || ''}
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
@@ -276,7 +276,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             />
           </FormField>
 
-          <FormField label="물리???�??경로" description="?�버 ???�일 ?�?�소 ?�리 경로 (Optional)">
+          <FormField label="臾쇰━님?님寃쎈줈" description="?쒕쾭 님?뚯씪 ??μ냼 ?쇰━ 寃쎈줈 (Optional)">
             <Input
               value={formData.progrmStrePath || ''}
               onChange={(e) => setFormData({ ...formData, progrmStrePath: e.target.value })}
@@ -285,12 +285,12 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             />
           </FormField>
 
-          <FormField label="?�세 기능 명세">
+          <FormField label="?곸꽭 湲곕뒫 紐낆꽭">
             <textarea
               value={formData.progrmDc || ''}
               onChange={(e) => setFormData({ ...formData, progrmDc: e.target.value })}
               className="w-full min-h-[140px] p-6 rounded-2xl border-2 border-border bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
-              placeholder="?�로그램????�� �?관??모듈 ?�명"
+              placeholder="?꾨줈洹몃옩님님븷 諛?愿님紐⑤뱢 ?ㅻ챸"
             />
           </FormField>
         </div>
@@ -298,3 +298,4 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
     </div>
   );
 }
+

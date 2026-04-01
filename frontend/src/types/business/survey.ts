@@ -1,4 +1,4 @@
-export interface Survey {
+﻿export interface Survey {
  qestnrId: string;
  qestnrSj: string;
  qestnrPurps: string;
@@ -14,8 +14,7 @@ export interface Survey {
 export interface SurveyQuestion {
  qestnrQesitmId: string;
  qestnCn: string;
- qestnTyCode: string; // 1: 객관식, 2: 주관식
- mxmmChoiseCo: number;
+ qestnTyCode: string; // 1: 媛앷님? 2: 二쇨님? mxmmChoiseCo: number;
 }
 
 export interface SurveyAnswer {
@@ -45,7 +44,7 @@ export interface QustnrRespondInfo {
 export interface QustnrRespondInfoVO {
  qustnrRespondInfo: QustnrRespondInfo;
  answers: SurveyAnswer[];
-  page번호?: number;
+  page踰덊샇?: number;
  size?: number;
  respondNm?: string;
 }

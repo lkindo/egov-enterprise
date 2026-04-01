@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
@@ -20,15 +20,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = useCallback(async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
-    // 토큰이 없으면 인증 확인을 건너뜁니다.
+    // ?좏겙님?놁쑝硫님몄쬆 ?뺤씤님嫄대꼫?곷땲님
     if (!token) {
       setUser(null);
       setLoading(false);
       return;
     }
 
-    // 토큰이 만료되었더라도 interceptor 에서 reissue 를 시도할 것이므로
-    // /auth/me 를 호출하여 최종 유효성을 검증합니다.
+    // ?좏겙님留뚮즺?섏뿀?붾씪님interceptor ?먯꽌 reissue 瑜님쒕룄님寃껋씠誘濡?    // /auth/me 瑜님몄텧?섏뿬 理쒖쥌 ?좏슚?깆쓣 寃利앺빀?덈떎.
     try {
       const userData = await authService.getCurrentUser();
       if (userData) {
@@ -37,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
     } catch {
-      // 401 에러는 interceptor 가 토큰 재발급 실패 시 최종적으로 던집니다.
+      // 401 ?먮윭님interceptor 媛 ?좏겙 ?щ컻湲님ㅽ뙣 님理쒖쥌?곸쑝濡님섏쭛?덈떎.
       setUser(null);
       if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');
@@ -50,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (credentials: Record<string, string>) => {
     try {
-      // 백엔드 기대 필드명 변환: id → userId
+      // 諛깆뿏님湲곕? ?꾨뱶紐?蹂님 id 님userId
       const loginData = {
         userId: credentials.id,
         password: credentials.password,
@@ -58,30 +57,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await authService.login(loginData);
 
       if (data && data.accessToken) {
-        // 1. localStorage 에 저장 (우선)
+        // 1. localStorage 님?님(?곗꽑)
         localStorage.setItem('accessToken', data.accessToken);
 
-        // 2. 쿠키에 저장 (middleware 및 SSR 용)
+        // 2. 荑좏궎님?님(middleware 諛?SSR 님
         document.cookie = `accessToken=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
         if (data.role) {
           document.cookie = `userRole=${data.role}; path=/; max-age=86400; SameSite=Lax`;
         }
 
-        // 3. 전역 상태 업데이트 (즉시 반영)
+        // 3. ?꾩뿭 ?곹깭 ?낅뜲?댄듃 (利됱떆 諛섏쁺)
         const userData = await authService.getCurrentUser();
         setUser(userData);
 
-        // 4. 디버깅: 저장 확인
+        // 4. ?붾쾭源? ?님?뺤씤
         if (process.env.NODE_ENV === 'development') {
           console.log('[AuthContext] Login successful, user set to:', userData);
           console.log('[AuthContext] Cookies set:', document.cookie);
           console.log('[AuthContext] localStorage:', localStorage.getItem('accessToken'));
         }
       } else {
-        throw new Error('인증 정보가 올바르지 않습니다.');
+        throw new Error('?몄쬆 ?뺣낫媛 ?щ컮瑜댁? ?딆뒿?덈떎.');
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.';
+      const message = error instanceof Error ? error.message : '濡쒓렇님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.';
       console.error('Login process error:', message);
       throw new Error(message);
     }
@@ -120,3 +119,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

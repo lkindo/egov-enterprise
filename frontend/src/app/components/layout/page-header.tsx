@@ -25,7 +25,7 @@ export function PageHeader({ title, breadcrumbs, actions, className }: PageHeade
         <nav className="flex items-center text-[10px] md:text-[11px] font-black text-muted-foreground/40 gap-1.5 ml-0.5 uppercase tracking-[0.2em]">
           <Link href="/" className="hover:text-primary transition-colors flex items-center gap-1.5 group">
             <Home size={12} className="group-hover:scale-110 transition-transform" />
-            <span>??/span>
+            <span>HOME</span>
           </Link>
           {breadcrumbs.map((item, idx) => (
             <React.Fragment key={`breadcrumb-${idx}`}>

@@ -1,9 +1,9 @@
-import { AxiosRequestConfig } from 'axios';
+﻿import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * 부서 정보 DTO
+ * 遺님?뺣낫 DTO
  */
 export interface DeptDto {
   orgnztId?: string;
@@ -16,27 +16,27 @@ class DeptAdminService extends AdminService {
     super('/depts');
   }
 
-  /** 부서 목록 페이징 조회 */
+  /** 遺님紐⑸줉 ?섏씠吏?조회 */
   async getDeptList(params?: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig) {
     return this.get<PageResponse<DeptDto>>('', { ...config, params });
   }
 
-  /** 부서 상세 조회 */
+  /** 遺님?곸꽭 조회 */
   async getDept(deptId: string, config?: AxiosRequestConfig) {
     return this.get<DeptDto>(`/${deptId}`, config);
   }
 
-  /** 부서 등록 */
+  /** 遺님등록 */
   async createDept(dto: DeptDto, config?: AxiosRequestConfig) {
     return this.post<void>('', dto, config);
   }
 
-  /** 부서 수정 */
+  /** 遺님?섏젙 */
   async updateDept(deptId: string, dto: DeptDto, config?: AxiosRequestConfig) {
     return this.put<void>(`/${deptId}`, dto, config);
   }
 
-  /** 부서 삭제 */
+  /** 遺님님젣 */
   async deleteDept(deptId: string, config?: AxiosRequestConfig) {
     return this.delete<void>(`/${deptId}`, config);
   }

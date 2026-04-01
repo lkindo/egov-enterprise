@@ -3,7 +3,7 @@ import type { AxiosRequestConfig } from 'axios';
 
 /**
  * 기본 API 서비스 클래스
- * 모든 서비스는 특정 기본 경로 (basePath) 를 가지고 이를 기반으로 요청을 보낸다.
+ * 모든 서비스는 특정 기본 경로 (basePath) 를 가지며 이를 기반으로 요청을 보냅니다.
  */
 export abstract class ApiService {
   protected basePath: string;
@@ -21,7 +21,7 @@ export abstract class ApiService {
       // 0-based page -> 1-based pageIndex
       if (params.page !== undefined && params.pageIndex === undefined) {
         params.pageIndex = (Number(params.page) || 0) + 1;
-        delete params.page; // page 제거 (pageIndex 만 전송)
+        delete params.page; // page 제거 (pageIndex 전송)
       }
       // page 번호 -> pageIndex
       if (params['page 번호'] !== undefined && params.pageIndex === undefined) {
@@ -55,21 +55,21 @@ export abstract class ApiService {
 }
 
 /**
- * 사용자 전용 서비스 클래스
+ * 사용자용 서비스 클래스
  */
 export abstract class UserService extends ApiService {
   constructor(domainPath: string) {
-    // baseURL 에 이어지는 상대 경로로 변경 (슬래시 제거)
+    // baseURL에 이어지는 상대 경로로 변경 (슬래시 제거)
     super(`${domainPath.replace(/^\//, '')}`);
   }
 }
 
 /**
- * 관리자 전용 서비스 클래스
+ * 관리자용 서비스 클래스
  */
 export abstract class AdminService extends ApiService {
   constructor(domainPath: string) {
-    // baseURL 에 이어지는 상대 경로로 변경 (슬래시 제거)
+    // baseURL에 이어지는 상대 경로로 변경 (슬래시 제거)
     // /admin/system 대신 admin/system 사용
     super(`admin/system${domainPath}`);
   }

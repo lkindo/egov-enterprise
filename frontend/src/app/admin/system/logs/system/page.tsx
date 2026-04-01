@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 
 const SystemLogAdminPage = () => {
     const [params, setParams] = useState<SearchParams>({
-        page번호: 1,
+        page踰덊샇: 1,
         size: 10,
         searchKeyword: '',
     });
@@ -20,7 +20,7 @@ const SystemLogAdminPage = () => {
     const { data, isLoading } = useQuery<PageResponse<SysLog>>({
         queryKey: ['admin-logs-system', params],
         queryFn: () => systemLogAdminService.getSystemLogs({ 
-            page: (Number(params.page번호) || 1) - 1, 
+            page: (Number(params.page踰덊샇) || 1) - 1, 
             size: params.size,
             searchWrd: params.searchKeyword
         }),
@@ -31,7 +31,7 @@ const SystemLogAdminPage = () => {
 
     const columns: Column<SysLog>[] = [
         {
-            header: '?�청ID',
+            header: '요청ID',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
@@ -41,7 +41,7 @@ const SystemLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '발생?�자',
+            header: '諛쒖깮?쇱옄',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     {(item as any).occcrrncDe || '-'}
@@ -50,7 +50,7 @@ const SystemLogAdminPage = () => {
             className: 'w-52'
         },
         {
-            header: '?�비?�명',
+            header: '?쒕퉬?ㅻ챸',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
@@ -59,7 +59,7 @@ const SystemLogAdminPage = () => {
             )
         },
         {
-            header: '메서?�명',
+            header: '硫붿꽌?쒕챸',
             accessor: (item: SysLog) => (
                 <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-[10px] text-slate-600">
                     {item.methodNm}
@@ -67,7 +67,7 @@ const SystemLogAdminPage = () => {
             )
         },
         {
-            header: '?�답?�간',
+            header: '?묐떟?쒓컙',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-1.5 font-bold text-slate-600">
                     <Clock size={12} className="opacity-30" />
@@ -78,7 +78,7 @@ const SystemLogAdminPage = () => {
             className: 'w-24'
         },
         {
-            header: '?�태',
+            header: '?곹깭',
             accessor: (_item: SysLog) => (
                 <div className="flex items-center justify-center">
                     <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-md border border-emerald-100 uppercase tracking-tighter">SUCCESS</span>
@@ -90,12 +90,12 @@ const SystemLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="?�스??로그" breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }, { label: '?�스??로그' }]} />
+            <PageHeader title="?쒖뒪님濡쒓렇" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }, { label: '?쒖뒪님濡쒓렇' }]} />
 
-            <HubHeader title="?�스???�사?�트" highlight="?�스??로그" subtitle="?�버???�시�??�작 ?�태?� 모듈�??�행 ?�력??명확?�게 추적?�니??" icon={Activity} 
+            <HubHeader title="?쒖뒪님인사이트" highlight="?쒖뒪님濡쒓렇" subtitle="?쒕쾭님?ㅼ떆媛님숈옉 ?곹깭? 紐⑤뱢蹂님ㅽ뻾 ?대젰님紐낇솗?섍쾶 異붿쟻?⑸땲님" icon={Activity} 
                 actions={
                     <div className="flex gap-4 p-2 items-center">
-                        <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">?�시�?모니?�링</Button>
+                        <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">실시간紐⑤땲?곕쭅</Button>
                     </div>
                 }
             />
@@ -105,13 +105,13 @@ const SystemLogAdminPage = () => {
                 data={logs}
                 loading={isLoading}
                 pagination={{
-                    currentPage: (params.page번호 || 1) as number,
+                    currentPage: (params.page踰덊샇 || 1) as number,
                     totalPages: data?.totalPage || pagination?.totalPageCount || 1,
-                    onPageChange: (page: number) => setParams({ ...params, page번호: page }),
+                    onPageChange: (page: number) => setParams({ ...params, page踰덊샇: page }),
                 }}
                 search={{
-                    placeholder: '?�비?�명, ?�청ID 검??..',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page번호: 1 }),
+                    placeholder: '?쒕퉬?ㅻ챸, 요청ID 寃님..',
+                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 }),
                 }}
             />
         </div>
@@ -119,3 +119,4 @@ const SystemLogAdminPage = () => {
 };
 
 export default SystemLogAdminPage;
+

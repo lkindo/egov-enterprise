@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -77,19 +77,19 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  </div>
  <div>
   <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
-  Intelligence <span className="text-primary">?�브</span>
+  Intelligence <span className="text-primary">?덈툕</span>
   </h2>
  <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
- ?�텔리전???�브 ??거버?�스 ?�사?�트 �??�이??분석
+ ?명뀛由ъ쟾님?덈툕 님嫄곕쾭?뚯뒪 인사이트 諛님곗씠님분석
  </p>
  </div>
  </div>
  <div className="flex gap-4">
  <Button variant="outline" className="h-14 px-6 rounded-2xl border-2 font-black tracking-tight gap-2">
- <Download size={18} /> ?�이?�셋 ?�보?�기
+ <Download size={18} /> ?곗씠?곗뀑 ?대낫?닿린
  </Button>
  <Button className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition-all gap-2">
- <RefreshCcw size={20} /> 강제 ?�로고침
+ <RefreshCcw size={20} /> 媛뺤젣 ?덈줈怨좎묠
  </Button>
  </div>
  </div>
@@ -99,23 +99,23 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  {/* --- Left Column: Navigation (20%) --- */}
  <div className="col-span-12 lg:col-span-3 space-y-6">
  <Card className="rounded-[3rem] border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100">
- <NavButton icon={<LayoutDashboard size={20} />} label="글로벌 개요" active={activeTab === 'DASHBOARD'} onClick={() => setActiveTab('DASHBOARD')} />
- <NavButton icon={<Users size={20} />} label="?�용??" active={activeTab === 'USER_STATS'} onClick={() => setActiveTab('USER_STATS')} />
- <NavButton icon={<Box size={20} />} label="콘텐�?지?? active={activeTab === 'CONTENT_STATS'} onClick={() => setActiveTab('CONTENT_STATS')} />
- <NavButton icon={<Database size={20} />} label="?�스??" active={activeTab === 'SYSTEM_STATS'} onClick={() => setActiveTab('SYSTEM_STATS')} />
- <NavButton icon={<Vote size={20} />} label="?�문조사 " active={activeTab === 'SURVEYS'} onClick={() => setActiveTab('SURVEYS')} />
- <NavButton icon={<FileText size={20} />} label="?�영 보고?? active={activeTab === 'REPORTS'} onClick={() => setActiveTab('REPORTS')} />
+ <NavButton icon={<LayoutDashboard size={20} />} label="湲濡쒕쾶 媛쒖슂" active={activeTab === 'DASHBOARD'} onClick={() => setActiveTab('DASHBOARD')} />
+ <NavButton icon={<Users size={20} />} label="?ъ슜님" active={activeTab === 'USER_STATS'} onClick={() => setActiveTab('USER_STATS')} />
+ <NavButton icon={<Box size={20} />} label="肄섑뀗痢?吏님 active={activeTab === 'CONTENT_STATS'} onClick={() => setActiveTab('CONTENT_STATS')} />
+ <NavButton icon={<Database size={20} />} label="?쒖뒪님" active={activeTab === 'SYSTEM_STATS'} onClick={() => setActiveTab('SYSTEM_STATS')} />
+ <NavButton icon={<Vote size={20} />} label="설문조사 " active={activeTab === 'SURVEYS'} onClick={() => setActiveTab('SURVEYS')} />
+ <NavButton icon={<FileText size={20} />} label="?댁쁺 蹂닿퀬님 active={activeTab === 'REPORTS'} onClick={() => setActiveTab('REPORTS')} />
  </Card>
 
  <Card className="rounded-[3rem] border-0 bg-slate-900 text-white shadow-2xl p-10 space-y-8 relative overflow-hidden group">
  <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
  <div className="relative z-10 space-y-6">
- <h4 className="text-[10px] font-black text-white/40 tracking-tight leading-tight">?�상 ?�율??/h4>
+ <h4 className="text-[10px] font-black text-white/40 tracking-tight leading-tight">?덉긽 ?⑥쑉님/h4>
  <div className="flex items-center gap-4">
  <span className="text-3xl font-black tracking-tighter tabular-nums">+{userStats?.length || 24}%</span>
  <Zap size={32} className="text-primary fill-primary" />
  </div>
- <p className="text-[11px] text-white/30 font-bold tracking-tight">?�텔리전???�진 v4.2 최적??/p>
+ <p className="text-[11px] text-white/30 font-bold tracking-tight">?명뀛由ъ쟾님?붿쭊 v4.2 理쒖쟻님/p>
  </div>
  </Card>
  </div>
@@ -124,27 +124,27 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  <div className="col-span-12 lg:col-span-9 space-y-8">
  
  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
- <StatSummaryCard icon={<Activity size={24} />} label="?�성 " value={`${userStats?.length || 0}`} trend="+12%" />
- <StatSummaryCard icon={<Monitor size={24} />} label="?�면 ?�청" value={`${screenStats?.length || 0}k`} trend="+5.4k" color="primary" />
- <StatSummaryCard icon={<Database size={24} />} label="?�이???�용?? value={`${dataUsage?.length || 0}GB`} trend="-2.1%" />
+ <StatSummaryCard icon={<Activity size={24} />} label="활성 " value={`${userStats?.length || 0}`} trend="+12%" />
+ <StatSummaryCard icon={<Monitor size={24} />} label="?붾㈃ 요청" value={`${screenStats?.length || 0}k`} trend="+5.4k" color="primary" />
+ <StatSummaryCard icon={<Database size={24} />} label="?곗씠님?ъ슜님 value={`${dataUsage?.length || 0}GB`} trend="-2.1%" />
  </div>
 
  <Card className="rounded-[3.5rem] border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100 min-h-[500px] flex flex-col">
  <CardHeader className="bg-slate-50/50 border-b p-10 flex flex-row items-center justify-between">
  <div className="space-y-1">
- <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] ">?�층 분석 뷰포??/h3>
+ <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] ">?ъ링 분석 酉고룷님/h3>
  <CardTitle className="text-2xl font-black text-slate-900 tracking-tighter ">
- {activeTab === 'DASHBOARD' ? '글로벌 개요' : 
- activeTab === 'USER_STATS' ? '?�용???�계' :
- activeTab === 'CONTENT_STATS' ? '콘텐�?지??분석' :
- activeTab === 'SYSTEM_STATS' ? '?�스???�성 지?? :
- activeTab === 'SURVEYS' ? '?�문조사 분석' :
- activeTab === 'REPORTS' ? '?�영 보고??분석' : activeTab}
+ {activeTab === 'DASHBOARD' ? '湲濡쒕쾶 媛쒖슂' : 
+ activeTab === 'USER_STATS' ? '?ъ슜님통계' :
+ activeTab === 'CONTENT_STATS' ? '肄섑뀗痢?吏님분석' :
+ activeTab === 'SYSTEM_STATS' ? '?쒖뒪님활성 吏님 :
+ activeTab === 'SURVEYS' ? '설문조사 분석' :
+ activeTab === 'REPORTS' ? '?댁쁺 蹂닿퀬님분석' : activeTab}
  </CardTitle>
  </div>
  <div className="flex gap-4">
- <Button variant="outline" className="rounded-xl h-10 px-4 text-[9px] font-black tracking-tight">최근 30??/Button>
- <Button size="icon" variant="ghost" className="rounded-xl"><Filter size={18} /> ?�터</Button>
+ <Button variant="outline" className="rounded-xl h-10 px-4 text-[9px] font-black tracking-tight">최근 30님/Button>
+ <Button size="icon" variant="ghost" className="rounded-xl"><Filter size={18} /> ?꾪꽣</Button>
  </div>
  </CardHeader>
  <CardContent className="flex-1 overflow-y-auto p-12">
@@ -158,7 +158,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  >
  {activeTab === 'SURVEYS' ? (
  <div className="space-y-6">
- {isSurveyLoading && <div className="p-10 text-center opacity-40 ">?�문 ?�?�소 ?�기??�?..</div>}
+ {isSurveyLoading && <div className="p-10 text-center opacity-40 ">설문 ??μ냼 ?숆린님以?..</div>}
  {surveys?.list?.map((s: any) => (
  <div key={s.qestnrId} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all">
  <div className="flex items-center gap-6">
@@ -170,11 +170,11 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  {s.qestnrSj}
  </h4>
  <p className="text-[10px] font-bold text-slate-400 tracking-tight">
- Status: {s.qestnrEndde > new Date().toISOString() ? '?�성' : '보�???} ??{s.qestnrEndde}
+ Status: {s.qestnrEndde > new Date().toISOString() ? '활성' : '蹂닿님?} 님{s.qestnrEndde}
  </p>
  </div>
  </div>
- <Button variant="ghost" className="rounded-xl h-10 text-[9px] font-black tracking-tight gap-2">분석 보기 <ChevronRight size={14} /></Button>
+ <Button variant="ghost" className="rounded-xl h-10 text-[9px] font-black tracking-tight gap-2">분석 蹂닿린 <ChevronRight size={14} /></Button>
  </div>
  ))}
  </div>
@@ -188,10 +188,10 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
  </div>
  <div className="space-y-4">
  <h4 className="text-3xl font-black tracking-tighter text-slate-900">
- {isUserLoading || isBbsLoading || isScreenLoading ? '?�텔리전??처리 �?..' : '?�이?�셋 ?�기???�료'}
+ {isUserLoading || isBbsLoading || isScreenLoading ? '?명뀛由ъ쟾님泥섎━ 以?..' : '?곗씠?곗뀑 ?숆린님?꾨즺'}
  </h4>
  <p className="text-[10px] font-black text-slate-400 tracking-[0.5em]">
- 거버?�스 ?�이??검�?�?최적???�료
+ 嫄곕쾭?뚯뒪 ?곗씠님寃利?諛?理쒖쟻님?꾨즺
  </p>
  </div>
  </div>
@@ -252,3 +252,4 @@ function StatSummaryCard({ icon, label, value, trend, color = 'slate' }: { icon:
  </Card>
  );
 }
+

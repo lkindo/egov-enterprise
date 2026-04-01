@@ -1,4 +1,4 @@
-vi.mock('next/config', () => ({
+﻿vi.mock('next/config', () => ({
   default: () => ({
     publicRuntimeConfig: {},
     serverRuntimeConfig: {},
@@ -27,9 +27,9 @@ vi.mock('@/services/business/community/communityService', () => ({
  resultList: [
  {
  cmmntyId: 'CMM_0001',
- cmmntyNm: '개발?� 커�??�티',
- cmmntyIntrcn: '개발 관???�의',
- frstRegisterNm: '?�스??,
+ cmmntyNm: '媛쒕컻? 而ㅻ님덊떚',
+ cmmntyIntrcn: '媛쒕컻 愿님?쇱쓽',
+ frstRegisterNm: '?뚯뒪님,
  frstRegisterPnttm: '2024-05-01'
  }
  ],
@@ -48,9 +48,9 @@ describe('CommunityListPage', () => {
  resultList: [
  {
  cmmntyId: 'CMM_0001',
- cmmntyNm: '개발?� 커�??�티',
- cmmntyIntrcn: '개발 관???�의',
- frstRegisterNm: '?�스??,
+ cmmntyNm: '媛쒕컻? 而ㅻ님덊떚',
+ cmmntyIntrcn: '媛쒕컻 愿님?쇱쓽',
+ frstRegisterNm: '?뚯뒪님,
  frstRegisterPnttm: '2024-05-01'
  }
  ],
@@ -60,7 +60,9 @@ describe('CommunityListPage', () => {
  render(<CommunityListPage />);
 
  await waitFor(() => {
- expect(screen.getByText('개발?� 커�??�티')).toBeDefined();
+ expect(screen.getByText('媛쒕컻? 而ㅻ님덊떚')).toBeDefined();
  });
  });
 });
+
+

@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { BoardMakerWizard } from './components/BoardMakerWizard';
 
 /**
- * 게시??빌더 마법???�이지 (Admin)
+ * 寃뚯떆님鍮뚮뜑 留덈쾿님?섏씠吏 (Admin)
  * /admin/community/boards/maker
  */
 export default function BoardMakerPage() {
@@ -14,3 +14,4 @@ export default function BoardMakerPage() {
     </div>
   );
 }
+

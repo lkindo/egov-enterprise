@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,11 +38,11 @@ import { programAdminService } from '@/services/foundation/system/ProgramAdminSe
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
- progrmFileNm: z.string().min(1, { message: "프로그램파일명은 필수입니다." }),
- progrmStrePath: z.string().min(1, { message: "저장경로는 필수입니다." }),
- progrmKoreanNm: z.string().min(1, { message: "프로그램한글명은 필수입니다." }),
+ progrmFileNm: z.string().min(1, { message: "?꾨줈洹몃옩?뚯씪紐낆? ?꾩닔?낅땲님" }),
+ progrmStrePath: z.string().min(1, { message: "??κ꼍濡쒕뒗 ?꾩닔?낅땲님" }),
+ progrmKoreanNm: z.string().min(1, { message: "?꾨줈洹몃옩?쒓?紐낆? ?꾩닔?낅땲님" }),
  progrmDc: z.string().optional(),
- url: z.string().min(1, { message: "URL은 필수입니다." }),
+ url: z.string().min(1, { message: "URL? ?꾩닔?낅땲님" }),
 });
 
 interface ProgramFormProps {
@@ -76,20 +76,20 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
       onOpenChange(false);
     } catch (error: unknown) {
       console.error(error);
-      alert('저장 중 오류가 발생했습니다.');
+      alert('?님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
     }
   };
 
  const handleDelete = async () => {
  if (!data?.progrmFileNm) return;
- if (confirm('정말로 삭제하시겠습니까?')) {
+ if (confirm('?뺣쭚濡님?젣?섏떆寃좎뒿?덇퉴?')) {
  try {
  await programAdminService.deleteProgram(data.progrmFileNm);
  onSuccess();
  onOpenChange(false);
  } catch {
  console.error(error);
- alert('삭제 중 오류가 발생했습니다.');
+ alert('님젣 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
  }
  }
  };
@@ -102,10 +102,10 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  {isEdit ? <Pencil size={28} /> : <Plus size={28} />}
  </div>
  <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter text-center">
- {isEdit ? '프로그램 로직 수정' : '신규 프로그램 에셋 등록'}
+ {isEdit ? '?꾨줈洹몃옩 濡쒖쭅 ?섏젙' : '신규 ?꾨줈洹몃옩 ?먯뀑 등록'}
  </DialogTitle>
  <DialogDescription className="text-center font-bold text-slate-400 text-sm">
- 인프라스트럭처의 핵심 프로그램을 {isEdit ? '수정' : '정의'}합니다.
+ ?명봽?쇱뒪?몃윮泥섏쓽 ?듭떖 ?꾨줈洹몃옩님{isEdit ? '?섏젙' : '?뺤쓽'}?⑸땲님
  </DialogDescription>
  </DialogHeader>
 
@@ -117,11 +117,10 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <FileCode size={12} className="text-primary" /> 프로그램 파일명
- </FormLabel>
+ <FileCode size={12} className="text-primary" /> ?꾨줈洹몃옩 ?뚯씪紐? </FormLabel>
  <FormControl>
  <Input 
- placeholder="파일명.exe 또는 경로" 
+ placeholder="?뚯씪紐?exe ?먮뒗 寃쎈줈" 
  {...field} 
  readOnly={isEdit} 
  className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
@@ -139,11 +138,11 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <Type size={12} className="text-primary" /> 프로그램 실명
+ <Type size={12} className="text-primary" /> ?꾨줈洹몃옩 ?ㅻ챸
  </FormLabel>
  <FormControl>
  <Input 
- placeholder="검색용 명칭" 
+ placeholder="寃?됱슜 紐낆묶" 
  {...field} 
  className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
@@ -158,8 +157,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <LinkIcon size={12} className="text-primary" /> 액세스 엔드포인트
- </FormLabel>
+ <LinkIcon size={12} className="text-primary" /> ?≪꽭님?붾뱶?ъ씤님 </FormLabel>
  <FormControl>
  <Input 
  placeholder="/api/v1/..." 
@@ -179,7 +177,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <FolderOpen size={12} className="text-primary" /> 물리적 저장 저장소
+ <FolderOpen size={12} className="text-primary" /> 臾쇰━님?님??μ냼
  </FormLabel>
  <FormControl>
  <Input 
@@ -199,11 +197,11 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <Settings2 size={12} className="text-primary" /> 비즈니스 로직 설명
+ <Settings2 size={12} className="text-primary" /> 鍮꾩쫰?덉뒪 濡쒖쭅 ?ㅻ챸
  </FormLabel>
  <FormControl>
  <Input 
- placeholder="프로그램의 역할과 기능을 기술하세요..." 
+ placeholder="?꾨줈洹몃옩님님븷怨?湲곕뒫님湲곗닠?섏꽭님.." 
  {...field} 
  className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
@@ -221,15 +219,14 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  onClick={() => onOpenChange(false)}
  className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all flex-1"
  >
- 취소
+ 痍⑥냼
  </Button>
  <Button 
  type="submit"
  className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
  >
  <Save size={18} />
- 시스템 동기화
- </Button>
+ ?쒖뒪님?숆린님 </Button>
  </div>
  {isEdit && (
  <Button 
@@ -248,3 +245,4 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  </Dialog>
  );
 }
+

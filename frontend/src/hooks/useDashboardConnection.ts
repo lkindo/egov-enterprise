@@ -1,24 +1,23 @@
-'use client';
+﻿'use client';
 
 import { useEffect } from 'react';
 import { useWebSocket } from '@/contexts/websocket-context';
 
 /**
- * 실시간 대시보드 접속 추적 훅
- */
+ * ?ㅼ떆媛님?쒕낫님접속 異붿쟻 님 */
 export function useDashboardConnection() {
  const { client, isConnected } = useWebSocket();
 
   useEffect(() => {
     if (!client || !isConnected) return;
 
-    // 접속 알림 발송
+    // 접속 ?뚮┝ 諛쒖넚
     client.publish({
       destination: '/app/user.connect',
       body: JSON.stringify({ timestamp: new Date().toISOString() })
     });
 
-    // 연결 종료 시 알림
+    // ?곌껐 醫낅즺 님?뚮┝
     return () => {
       if (client.connected) {
         client.publish({

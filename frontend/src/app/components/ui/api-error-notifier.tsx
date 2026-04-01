@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect } from 'react';
 import { useToast } from './toast';
@@ -14,7 +14,7 @@ export function ApiErrorNotifier() {
  // Don't show toast for 401 as it's handled by redirection or reissue
  if (status === 401) return;
 
- toast(message || '?�청 처리 �??�류가 발생?�습?�다.', 'error');
+ toast(message || '요청 泥섎━ 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
  };
 
  window.addEventListener('api-error', handleApiError);
@@ -23,3 +23,4 @@ export function ApiErrorNotifier() {
 
  return null;
 }
+

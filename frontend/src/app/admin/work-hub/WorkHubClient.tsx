@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -72,7 +72,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
           {icon}
         </div>
         <HubStatusBadge
-          label="?�시�??�기??
+          label="?ㅼ떆媛님숆린님
           variant={selected ? 'default' : 'success'}
           className={selected ? 'border-white/20' : 'text-[8px] font-black tracking-widest'}
         />
@@ -98,13 +98,13 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
   const renderJobList = () => (
     <div className="space-y-4">
       {jobs.length === 0 ? (
-        <div className="p-10 text-center opacity-30 font-black text-xs tracking-widest border-2 border-dashed border-border rounded-3xl">?�록???�무가 ?�습?�다.</div>
+        <div className="p-10 text-center opacity-30 font-black text-xs tracking-widest border-2 border-dashed border-border rounded-3xl">등록님업무媛 ?놁뒿?덈떎.</div>
       ) : jobs.map((item) => (
         <WorkListItem
           key={item.deptJobBxId}
           id={item.deptJobBxId}
           title={item.deptJobBxNm}
-          subtitle={`부?? ${item.deptId || '글로벌'} ??ID: ${item.deptJobBxId}`}
+          subtitle={`遺님 ${item.deptId || '湲濡쒕쾶'} 님ID: ${item.deptJobBxId}`}
           icon={<ClipboardList size={22} />}
           selected={selectedItemId === item.deptJobBxId}
           onClick={() => setSelectedItemId(item.deptJobBxId)}
@@ -116,13 +116,13 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
   const renderReportList = () => (
     <div className="space-y-4">
       {reports.length === 0 ? (
-        <div className="p-10 text-center opacity-30 font-black text-xs tracking-widest border-2 border-dashed border-border rounded-3xl">?�록??보고?��? ?�습?�다.</div>
+        <div className="p-10 text-center opacity-30 font-black text-xs tracking-widest border-2 border-dashed border-border rounded-3xl">등록님蹂닿퀬?쒓? ?놁뒿?덈떎.</div>
       ) : reports.map((item) => (
         <WorkListItem
           key={item.reprtId}
           id={item.reprtId}
           title={item.reprtSj}
-          subtitle={`?�성?? ${item.wrterNm} ??${item.reprtDe}`}
+          subtitle={`?묒꽦님 ${item.wrterNm} 님${item.reprtDe}`}
           icon={<FileText size={22} />}
           selected={selectedItemId === item.reprtId}
           onClick={() => setSelectedItemId(item.reprtId)}
@@ -135,18 +135,18 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="p-8 rounded-[2rem] bg-white border-2 border-slate-100 shadow-xl space-y-8">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-black tracking-tighter uppercase">?�합 ?�마??캘린??/h3>
+          <h3 className="text-xl font-black tracking-tighter uppercase">?듯빀 ?ㅻ쭏님罹섎┛님/h3>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="rounded-full text-[9px] font-black">개인 ?�정</Button>
-            <Button size="sm" variant="default" className="rounded-full text-[9px] font-black bg-slate-900 text-white">부???�정</Button>
+            <Button size="sm" variant="outline" className="rounded-full text-[9px] font-black">媛쒖씤 ?쇱젙</Button>
+            <Button size="sm" variant="default" className="rounded-full text-[9px] font-black bg-slate-900 text-white">遺님?쇱젙</Button>
           </div>
         </div>
         <div className="aspect-[4/3] bg-slate-50 rounded-[2.5rem] flex flex-col items-center justify-center border-2 border-dashed border-slate-100 p-12 space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center text-primary mb-2">
             <Calendar size={32} />
           </div>
-          <p className="text-sm font-black text-slate-900 tracking-tighter uppercase">?�?�형 ?��?줄링 ?�스??/p>
-          <p className="text-[10px] font-bold text-slate-400 max-w-[200px] text-center leading-relaxed">준비된 캘린???�진??비즈?�스 ?�정???�시간으�??�기?�합?�다.</p>
+          <p className="text-sm font-black text-slate-900 tracking-tighter uppercase">??뷀삎 ?ㅼ?以꾨쭅 ?쒖뒪님/p>
+          <p className="text-[10px] font-bold text-slate-400 max-w-[200px] text-center leading-relaxed">以鍮꾨맂 罹섎┛님?붿쭊님鍮꾩쫰?덉뒪 ?쇱젙님?ㅼ떆媛꾩쑝濡님숆린?뷀빀?덈떎.</p>
         </div>
       </div>
     </div>
@@ -155,22 +155,22 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="?�크?�로???�브"
-        breadcrumbs={[{ label: '?�무관�? }, { label: '메인 ?�크?�테?�션' }]}
+        title="?뚰겕?뚮줈님?덈툕"
+        breadcrumbs={[{ label: '업무愿由? }, { label: '硫붿씤 ?뚰겕?ㅽ뀒?댁뀡' }]}
       />
 
       <HubHeader
-        title="?�무 �??�텔리전??
-        highlight="?�브"
-        subtitle="?�사 부???�무 처리 �?비즈?�스 ?�이???�산 ?�합 관�??�터"
+        title="업무 諛님명뀛由ъ쟾님
+        highlight="?덈툕"
+        subtitle="?꾩궗 遺님업무 泥섎━ 諛?鍮꾩쫰?덉뒪 ?곗씠님?먯궛 ?듯빀 愿由님쇳꽣"
         icon={Briefcase}
         actions={
           <div className="flex gap-4 p-2">
             <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">
-              <Filter size={16} /> 뷰포???�터
+              <Filter size={16} /> 酉고룷님?꾪꽣
             </Button>
             <Button size="lg" className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest air-shadow-primary hover:-translate-y-1 transition-all gap-2 bg-slate-900 text-white border-none">
-              <Plus size={18} /> ???�무 ?�성
+              <Plus size={18} /> 님업무 ?앹꽦
             </Button>
           </div>
         }
@@ -245,14 +245,14 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
           <HubSectionCard
             title={selectedItemId ? "ASSET DEEP ANALYSIS" : activeTab === 'calendar' ? "SCHEDULE INTELLIGENCE" : "WAITING FOR FOCUS"}
             description={selectedItemId
-              ? `?�출???�티??#${selectedItemId})???�???�시�??�동 �?비즈?�스 로직 분석???�성?�되?�습?�다.`
-              : activeTab === 'calendar' ? "?�사 �?개인 ?�정???�합?�여 비즈?�스 가?�성???�눈???�악?�니??"
-                : "?�쪽 리스?�에??분석???�무 개체 ?�는 보고 ?�료�??�택?�여 ?�이???�약???�작?�십?�오."}
+              ? `?좎텧님?뷀떚님#${selectedItemId})님?님?ㅼ떆媛님곕룞 諛?鍮꾩쫰?덉뒪 濡쒖쭅 분석님활성?붾릺?덉뒿?덈떎.`
+              : activeTab === 'calendar' ? "?꾩궗 諛?媛쒖씤 ?쇱젙님?듯빀?섏뿬 鍮꾩쫰?덉뒪 媛?⑹꽦님?쒕늿님?뚯븙?⑸땲님"
+                : "?쇱そ 由ъ뒪?몄뿉님분석님업무 媛쒖껜 ?먮뒗 蹂닿퀬 ?먮즺瑜님좏깮?섏뿬 ?곗씠님?붿빟님?쒖옉?섏떗?쒖삤."}
             icon={selectedItemId ? Sparkles : activeTab === 'calendar' ? Calendar : Activity}
             statusBadges={
               <>
-                <HubStatusBadge label="?�스???�상" icon={CheckCircle2} variant="success" className="text-[9px] font-black tracking-widest" />
-                <HubStatusBadge label="?�트리밍 ?�성" icon={Clock} variant="default" className="text-[9px] font-black tracking-widest" />
+                <HubStatusBadge label="?쒖뒪님?뺤긽" icon={CheckCircle2} variant="success" className="text-[9px] font-black tracking-widest" />
+                <HubStatusBadge label="?ㅽ듃由щ컢 활성" icon={Clock} variant="default" className="text-[9px] font-black tracking-widest" />
               </>
             }
           >
@@ -270,8 +270,8 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
                     <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center shadow-xl border border-border/20 mb-6 relative z-10 transition-transform group-hover:rotate-12">
                       <Database size={32} className="text-primary" />
                     </div>
-                    <p className="text-xs font-black text-muted-foreground tracking-[0.4em] uppercase relative z-10">?�텔리전???�진 ?�각??/p>
-                    <p className="text-xl font-black text-foreground tracking-tighter mt-4 max-w-sm relative z-10">?�이??구조 분석 �??�크?�로???�각??컴포?�트 준비됨</p>
+                    <p className="text-xs font-black text-muted-foreground tracking-[0.4em] uppercase relative z-10">?명뀛由ъ쟾님?붿쭊 ?쒓컖님/p>
+                    <p className="text-xl font-black text-foreground tracking-tighter mt-4 max-w-sm relative z-10">?곗씠님援ъ“ 분석 諛님뚰겕?뚮줈님?쒓컖님而댄룷?뚰듃 以鍮꾨맖</p>
                   </div>
                   <Button className="w-full h-18 text-base rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-black tracking-[0.4em] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all uppercase">
                     Launch Full Analytics
@@ -283,7 +283,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
                     <Briefcase size={48} />
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">{activeTab === 'calendar' ? 'Ready to Sync' : '?�스???��?}</h3>
+                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">{activeTab === 'calendar' ? 'Ready to Sync' : '?쒖뒪님?湲?}</h3>
                     <p className="text-[11px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed">
                       {activeTab === 'calendar' ? 'Connect Calendar Service for Insights' : 'Select Object to Capture Stream'}
                     </p>
@@ -298,7 +298,7 @@ export default function WorkHubClient({ jobs = [], reports = [], defaultTab = 'j
               title="ACTIVE WORKFLOWS"
               value="12"
               icon={<Activity size={24} />}
-              status="?�정"
+              status="?덉젙"
               color="text-emerald-500"
             />
             <SummaryBlock
@@ -334,3 +334,4 @@ function SummaryBlock({ title, value, icon, status, color }: any) {
     </div>
   );
 }
+

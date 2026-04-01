@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import {
@@ -69,29 +69,29 @@ export default function AdminDashboardPage() {
   // Intelligence Data Fetching
   const { data: usersData } = useQuery({
     queryKey: ['admin-dashboard-users'],
-    queryFn: () => userAdminService.getUserList({ page번호: 1, size: 1 }),
+    queryFn: () => userAdminService.getUserList({ page踰덊샇: 1, size: 1 }),
     retry: 1,
     retryDelay: 5000,
   });
 
   const { data: authorsData } = useQuery({
     queryKey: ['admin-dashboard-authors'],
-    queryFn: () => authorAdminService.getAuthorList({ page번호: 1, size: 1 }),
+    queryFn: () => authorAdminService.getAuthorList({ page踰덊샇: 1, size: 1 }),
     retry: 1,
     retryDelay: 5000,
   });
 
   const recentLogs: UIAuditLog[] = (auditData?.list || []).map(log => ({
     id: log.histId,
-    action: log.histCn.includes('?�성') || log.histCn.includes('?�록') ? 'CREATE' :
-      log.histCn.includes('??��') ? 'DELETE' :
-        log.histCn.includes('복원') ? 'RESTORE' : 'UPDATE',
+    action: log.histCn.includes('?앹꽦') || log.histCn.includes('등록') ? 'CREATE' :
+      log.histCn.includes('님젣') ? 'DELETE' :
+        log.histCn.includes('蹂듭썝') ? 'RESTORE' : 'UPDATE',
     entityName: log.histCn,
     performedBy: log.frstRegisterId,
     timestamp: log.frstRegisterPnttm,
     ipAddress: log.sysNm || 'Unknown Subsystem',
-    severity: log.histCn.includes('?�류') || log.histCn.includes('?�패') || log.histCn.includes('??��') ? 'high' :
-      log.histCn.includes('보안') || log.histCn.includes('권한') ? 'medium' : 'low'
+    severity: log.histCn.includes('?ㅻ쪟') || log.histCn.includes('?ㅽ뙣') || log.histCn.includes('님젣') ? 'high' :
+      log.histCn.includes('보안') || log.histCn.includes('沅뚰븳') ? 'medium' : 'low'
   }));
 
   return (
@@ -99,17 +99,17 @@ export default function AdminDashboardPage() {
       <HubHeader
         title="Admin"
         highlight="Intelligence Center"
-        subtitle="?�스???�반???�퍼?�이???�태, 지?�형 ?�이??분석 �?보안 거버?�스 ?�합 관???�?�보??
+        subtitle="?쒖뒪님?꾨컲님?ㅽ띁?덉씠님?곹깭, 吏?ν삎 ?곗씠님분석 諛?보안 嫄곕쾭?뚯뒪 ?듯빀 愿님??쒕낫님
         icon={LayoutDashboard}
         actions={
           <div className="flex gap-4 p-2 items-center">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 italic font-black text-[9px] tracking-widest shadow-sm">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              ?�스???�태: ?�상
+              ?쒖뒪님?곹깭: ?뺤긽
             </div>
             <Button size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
               <Sparkles size={20} className="text-primary group-hover:rotate-12 transition-transform" />
-              ?�기??조정??            </Button>
+              ?숆린님議곗젙님            </Button>
           </div>
         }
       />
@@ -125,7 +125,7 @@ export default function AdminDashboardPage() {
           trend="+PROBING"
           color="blue"
           link="/admin/user/manage"
-          description="?�용??�?조직 ?�합 매트�?��"
+          description="?ъ슜님諛?議곗쭅 ?듯빀 留ㅽ듃由?뒪"
         />
         <DashboardStatCard
           title="Security Governance"
@@ -134,7 +134,7 @@ export default function AdminDashboardPage() {
           trend="STABLE"
           color="emerald"
           link="/admin/security/authority"
-          description="RBAC 기반 ?�근 ?�책 거버?�스"
+          description="RBAC 湲곕컲 ?묎렐 ?뺤콉 嫄곕쾭?뚯뒪"
         />
         <DashboardStatCard
           title="System Topology"
@@ -143,7 +143,7 @@ export default function AdminDashboardPage() {
           trend="HEALTHY"
           color="amber"
           link="/admin/system/programs"
-          description="모듈 �?리소???��??�트?�이??
+          description="紐⑤뱢 諛?由ъ냼님?ㅼ님ㅽ듃?덉씠님
         />
         <DashboardStatCard
           title="Audit Streams"
@@ -152,7 +152,7 @@ export default function AdminDashboardPage() {
           trend="REALTIME"
           color="rose"
           link="/admin/system/audit"
-          description="?�시�?보안 감사 ?�트�?분석"
+          description="실시간보안 媛먯궗 ?ㅽ듃由?분석"
         />
       </div>
 
@@ -166,11 +166,11 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <h3 className="text-lg font-black text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">Activity Intelligence</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">?�스???�래??�??�메???�동 분석</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">?쒖뒪님?몃옒님諛님꾨찓님?쒕룞 분석</p>
               </div>
             </div>
           </div>
-          <ActivityAreaChart data={MOCK_ACTIVITY_DATA} title="최근 7?�간 ?�스???�속 ?�로?? color="#6366F1" />
+          <ActivityAreaChart data={MOCK_ACTIVITY_DATA} title="최근 7?쇨컙 ?쒖뒪님접속 ?꾨줈님 color="#6366F1" />
         </div>
 
         {/* User Distribution */}
@@ -182,12 +182,12 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <h3 className="text-lg font-black text-foreground tracking-tight">Identity Cluster</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">?�용??권한 그룹 분포</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">?ъ슜님沅뚰븳 洹몃９ 분포</p>
               </div>
             </div>
           </div>
           <div className="flex-1 min-h-[300px]">
-            <DistributionPieChart data={MOCK_DISTRIBUTION_DATA} title="RBAC ?�용??분석" />
+            <DistributionPieChart data={MOCK_DISTRIBUTION_DATA} title="RBAC ?섏슜님분석" />
           </div>
         </div>
       </div>
@@ -202,13 +202,13 @@ export default function AdminDashboardPage() {
                   <Cpu size={20} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">컴퓨???�드 ?�스체크</h3>
-                  <p className="text-[10px] font-medium text-muted-foreground mt-0.5">?�시�?리소???�비 모니?�링</p>
+                  <h3 className="text-sm font-bold text-foreground">而댄벂님노드 ?ъ뒪泥댄겕</h3>
+                  <p className="text-[10px] font-medium text-muted-foreground mt-0.5">실시간由ъ냼님?뚮퉬 紐⑤땲?곕쭅</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">?�균 부??/p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">?됯퇏 遺님/p>
                   <p className="text-lg font-bold tabular-nums">18.4%</p>
                 </div>
                 <div className="w-px h-8 bg-border/50" />
@@ -231,7 +231,7 @@ export default function AdminDashboardPage() {
                   <div className="p-2 bg-muted rounded-xl text-muted-foreground">
                     <Database size={18} />
                   </div>
-                  <span className="text-sm font-bold text-foreground">?�이???�스</span>
+                  <span className="text-sm font-bold text-foreground">?곗씠님?뚯뒪</span>
                 </div>
                 <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] font-bold px-3 py-1">HEALTHY</Badge>
               </div>
@@ -254,7 +254,7 @@ export default function AdminDashboardPage() {
                   <div className="p-2 bg-muted rounded-xl text-muted-foreground">
                     <Globe size={18} />
                   </div>
-                  <span className="text-sm font-bold text-foreground">글로벌 지?�시�?/span>
+                  <span className="text-sm font-bold text-foreground">湲濡쒕쾶 吏?곗떆媛?/span>
                 </div>
                 <div className="flex items-center gap-1 text-emerald-500">
                   <TrendingUp size={12} />
@@ -353,3 +353,4 @@ function Badge({ children, className }: any) {
     </span>
   );
 }
+

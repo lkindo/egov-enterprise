@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -86,15 +86,15 @@ export default function DeptAuthorityPage() {
         allMembers: true
       }),
     onSuccess: () => {
-      toast('부???�체 ?�용?�에�?보안 ?�책???�괄 ?�용?�었?�니??', 'success');
+      toast('遺님?꾩껜 ?ъ슜?먯뿉寃?보안 ?뺤콉님?쇨큵 ?곸슜?섏뿀?듬땲님', 'success');
       setSelectedAuthorCode(null);
     },
-    onError: () => toast('보안 ?�책 반영 �??�셉?�이 발생?�습?�다.', 'error')
+    onError: () => toast('보안 ?뺤콉 諛섏쁺 以님듭뀎?섏씠 諛쒖깮?덉뒿?덈떎.', 'error')
   });
 
   const columns: Column<AuthorInfo>[] = [
     {
-      header: '?�책 ?�로?�콜 ID',
+      header: '?뺤콉 ?꾨줈?좎퐳 ID',
       accessor: (item: AuthorInfo) => (
           <div className="flex flex-col gap-0.5">
               <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic leading-none mb-1">POLICY_UID</span>
@@ -104,7 +104,7 @@ export default function DeptAuthorityPage() {
       className: 'w-48'
     },
     {
-      header: '권한 ?�키?�처 명칭',
+      header: '沅뚰븳 ?꾪궎?띿쿂 紐낆묶',
       accessor: (item: AuthorInfo) => (
           <div className="flex flex-col gap-0.5 py-2">
               <span className="font-black text-foreground tracking-tight text-md uppercase leading-tight">{item.authorNm}</span>
@@ -140,13 +140,13 @@ export default function DeptAuthorityPage() {
 
   const handleSave = () => {
     if (!selectedDept) {
-      return toast('?�??조직(Department)??먼�? ?�별??주세??', 'info');
+      return toast('?님議곗쭅(Department)님癒쇱? ?앸퀎님二쇱꽭님', 'info');
     }
     if (!selectedAuthorCode) {
-      return toast('?�괄 배포??보안 권한???�택??주세??', 'info');
+      return toast('?쇨큵 諛고룷님보안 沅뚰븳님?좏깮님二쇱꽭님', 'info');
     }
 
-    if (confirm(`?�택??조직??모든 ?�별?�에�?'${selectedAuthorCode}' 보안 ?�책???�역?�으�?강제 ?�용?�시겠습?�까?`)) {
+    if (confirm(`?좏깮님議곗쭅님紐⑤뱺 ?ㅻ퀎?먯뿉寃?'${selectedAuthorCode}' 보안 ?뺤콉님?꾩뿭?곸쑝濡?媛뺤젣 ?곸슜?섏떆寃좎뒿?덇퉴?`)) {
       saveMutation.mutate(selectedAuthorCode);
     }
   };
@@ -156,14 +156,14 @@ export default function DeptAuthorityPage() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="조직 기반 권한 ?�괄 ?�로비�???
-        breadcrumbs={[{ label: '보안관�? }, { label: '조직권한' }, { label: '?�괄관�? }]}
+        title="議곗쭅 湲곕컲 沅뚰븳 ?쇨큵 ?꾨줈鍮꾩님?
+        breadcrumbs={[{ label: '보안愿由? }, { label: '議곗쭅沅뚰븳' }, { label: '?쇨큵愿由? }]}
       />
 
       <HubHeader 
         title="Department" 
         highlight="Batch" 
-        subtitle="조직 ?�위??보안 ??�� 강제 배포 �?계정 권한 집합 ?�폴로�? ?�합 관�? 
+        subtitle="議곗쭅 ?⑥쐞님보안 님븷 媛뺤젣 諛고룷 諛?怨꾩젙 沅뚰븳 吏묓빀 ?좏뤃濡쒖? ?듯빀 愿由? 
         icon={Building2} 
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -178,7 +178,7 @@ export default function DeptAuthorityPage() {
               onClick={handleSave}
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
-              <Save size={20} className="group-hover:scale-110 transition-transform duration-500" /> ?�책 마스??배포
+              <Save size={20} className="group-hover:scale-110 transition-transform duration-500" /> ?뺤콉 留덉뒪님諛고룷
             </Button>
           </div>
         }
@@ -194,12 +194,12 @@ export default function DeptAuthorityPage() {
       <div className="grid grid-cols-12 gap-12 min-h-[850px]">
         {/* Left: Department Explorer */}
         <div className="col-span-12 lg:col-span-4 h-full flex flex-col gap-8">
-            <HubSectionCard title="조직 ?�키?�처 ?�별" description="권한 ?�책???�괄 배포???�스???�위 조직???�별?�세??" icon={Building2}>
+            <HubSectionCard title="議곗쭅 ?꾪궎?띿쿂 ?앸퀎" description="沅뚰븳 ?뺤콉님?쇨큵 諛고룷님?쒖뒪님?섏쐞 議곗쭅님?앸퀎?섏꽭님" icon={Building2}>
                 <div className="space-y-8 pt-4">
                     <div className="relative group/search">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                         <Input
-                            placeholder="조직(부?? 명칭 검??.."
+                            placeholder="議곗쭅(遺님 紐낆묶 寃님.."
                             className="pl-12 h-14 bg-slate-50/50 border-none rounded-2xl text-sm font-black tracking-tight shadow-inner"
                             value={searchKeyword}
                             onChange={(e) => setSearchKeyword(e.target.value)}
@@ -268,8 +268,8 @@ export default function DeptAuthorityPage() {
         {/* Right: Policy Matrix Selection */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-10 h-full">
             <HubSectionCard 
-                title={currentDept ? `[${currentDept.orgnztNm}] 보안 마스???�책 배포` : "보안 메트�?�� ?�택"} 
-                description="?�별??조직??모든 계정???�기?�할 마스??권한 ?�키?�처�??�택?�십?�오." 
+                title={currentDept ? `[${currentDept.orgnztNm}] 보안 留덉뒪님?뺤콉 諛고룷` : "보안 硫뷀듃由?뒪 ?좏깮"} 
+                description="?앸퀎님議곗쭅님紐⑤뱺 怨꾩젙님?숆린?뷀븷 留덉뒪님沅뚰븳 ?꾪궎?띿쿂瑜님좏깮?섏떗?쒖삤." 
                 icon={ShieldCheck}
             >
                 <div className="relative h-full flex flex-col pt-4">
@@ -285,7 +285,7 @@ export default function DeptAuthorityPage() {
                                 </div>
                                 <div className="space-y-4">
                                     <h3 className="text-3xl font-black text-slate-200 uppercase tracking-tighter italic">Selection_Required</h3>
-                                    <p className="text-[11px] font-black text-slate-200 tracking-[0.4em] uppercase leading-relaxed font-mono max-w-xs mx-auto">?�별??부?�의 보안 거버?�스 구성???�해 좌측 리스?��? ?�로브하??��??</p>
+                                    <p className="text-[11px] font-black text-slate-200 tracking-[0.4em] uppercase leading-relaxed font-mono max-w-xs mx-auto">?앸퀎님遺?쒖쓽 보안 嫄곕쾭?뚯뒪 援ъ꽦님?꾪빐 醫뚯륫 由ъ뒪?몃? ?꾨줈釉뚰븯님떆님</p>
                                 </div>
                             </motion.div>
                         ) : (
@@ -307,7 +307,7 @@ export default function DeptAuthorityPage() {
                                             <h4 className="text-3xl font-black tracking-tighter leading-none">{currentDept?.orgnztNm}</h4>
                                             <span className="text-xs font-black text-white/40 tracking-widest font-mono">[{selectedDept}]</span>
                                         </div>
-                                        <p className="text-[10px] font-black text-primary/80 tracking-widest uppercase mt-2">??부?�의 모든 ?�별?�에�??�역 ?�책???�장?????�는 ?�태?�니????/p>
+                                        <p className="text-[10px] font-black text-primary/80 tracking-widest uppercase mt-2">님遺?쒖쓽 紐⑤뱺 ?ㅻ퀎?먯뿉寃님꾩뿭 ?뺤콉님?ㅼ옣님님?덈뒗 ?곹깭?낅땲님님/p>
                                     </div>
                                 </div>
 
@@ -317,7 +317,7 @@ export default function DeptAuthorityPage() {
                                         data={roles}
                                         loading={loading}
                                         keyField="authorCode"
-                                        emptyMessage="보안 ?�키?�처 ?�보가 ?�스?�에 ?�록?��? ?�았?�니??"
+                                        emptyMessage="보안 ?꾪궎?띿쿂 ?뺣낫媛 ?쒖뒪?쒖뿉 등록?섏? ?딆븯?듬땲님"
                                         onRowClick={(item) => setSelectedAuthorCode(item.authorCode)}
                                         className="border-none bg-transparent"
                                     />
@@ -329,9 +329,9 @@ export default function DeptAuthorityPage() {
                                     </div>
                                     <div className="space-y-1">
                                          <p className="text-[11px] font-black text-slate-800 tracking-tight leading-relaxed">
-                                            ?�역 ?�책 강제 배포(Batch Deployment) ?? ?�당 조직 구성?�이 보유??기존??모든 개별 권한?� <span className="text-rose-500 underline decoration-2 underline-offset-4 font-black italic">?�구?�으�??�기</span>?�고 마스???�책?�로 ?�면 교체?�니??
+                                            ?꾩뿭 ?뺤콉 媛뺤젣 諛고룷(Batch Deployment) 님 ?대떦 議곗쭅 援ъ꽦?먯씠 蹂댁쑀님湲곗〈님紐⑤뱺 媛쒕퀎 沅뚰븳? <span className="text-rose-500 underline decoration-2 underline-offset-4 font-black italic">?곴뎄?곸쑝濡님뚭린</span>?섍퀬 留덉뒪님?뺤콉?쇰줈 ?꾨㈃ 援먯껜?⑸땲님
                                         </p>
-                                        <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase opacity-60">?�키?�처 ?�정??주의</span>
+                                        <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase opacity-60">?꾪궎?띿쿂 ?ъ젙님二쇱쓽</span>
                                     </div>
                                 </div>
                             </motion.div>
@@ -344,3 +344,4 @@ export default function DeptAuthorityPage() {
     </div>
   );
 }
+

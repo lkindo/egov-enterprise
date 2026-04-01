@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 import type { AxiosRequestConfig } from 'axios';
 
 export interface SystemPolicy {
@@ -9,24 +9,24 @@ export interface SystemPolicy {
 }
 
 /**
- * 시스템 정책 관리 서비스 (Admin)
+ * ?쒖뒪님?뺤콉 愿由님쒕퉬님(Admin)
  */
 class PolicyAdminService extends AdminService {
   constructor() {
     super('/policies');
   }
 
-  /** 정책 목록 조회 */
+  /** ?뺤콉 紐⑸줉 조회 */
   async getPolicies(config?: AxiosRequestConfig): Promise<SystemPolicy[]> {
     return this.get<SystemPolicy[]>('', config);
   }
 
-  /** 정책 상세 조회 */
+  /** ?뺤콉 ?곸꽭 조회 */
   async getPolicy(type: string, config?: AxiosRequestConfig): Promise<SystemPolicy> {
     return this.get<SystemPolicy>(`/${type}`, config);
   }
 
-  /** 정책 수정 */
+  /** ?뺤콉 ?섏젙 */
   async updatePolicy(type: string, data: Partial<SystemPolicy>, config?: AxiosRequestConfig): Promise<void> {
     return this.put(`/${type}`, data, config);
   }

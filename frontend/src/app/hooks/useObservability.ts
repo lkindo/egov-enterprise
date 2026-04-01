@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 
@@ -10,7 +10,7 @@ export function useObservability() {
  activeThreads: 0,
  healthScore: 0,
  radarData: [
- { subject: '가용성', A: 98 },
+ { subject: '媛?⑹꽦', A: 98 },
  { subject: 'Security', A: 95 },
  { subject: 'Performance', A: 88 },
  { subject: 'Stability', A: 92 },
@@ -19,7 +19,7 @@ export function useObservability() {
  });
 
  useEffect(() => {
- // 초기 데이터 생성
+ // 珥덇린 ?곗씠님?앹꽦
  const initialHistory = Array.from({ length: 20 }, () => ({ value: Math.floor(Math.random() * 30) + 10 }));
 
  setMetrics(prev => ({

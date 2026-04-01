@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -51,16 +51,12 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
   const loadListData = async (wrd: string = searchWrd, page: number = pageNo) => {
     try {
       setLoading(true);
-      const res = await codeAdminService.getInstitutionCodeList({ searchWrd: wrd, page번호: page });
+      const res = await codeAdminService.getInstitutionCodeList({ searchWrd: wrd, page踰덊샇: page });
       setData(res.list || []);
       setTotal(res.total || 0);
       setPageNo(page);
     } catch {
-<<<<<<< HEAD
-      toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
-=======
-      toast('?�이?��? 불러?�는 �??�류가 발생?�습?�다.', 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+      toast('?곗씠?곕? 遺덈윭?ㅻ뒗 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
     } finally {
       setLoading(false);
     }
@@ -69,23 +65,19 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
   const loadReceptionData = async (wrd: string = searchWrd, page: number = pageNo) => {
     try {
       setLoading(true);
-      const res = await codeAdminService.getInstitutionCodeRecptnList({ searchWrd: wrd, page번호: page });
+      const res = await codeAdminService.getInstitutionCodeRecptnList({ searchWrd: wrd, page踰덊샇: page });
       setReceptionData(res.list || []);
       setTotal(res.total || 0);
       setPageNo(page);
     } catch {
-<<<<<<< HEAD
-      toast('수신 내역을 불러오는 중 오류가 발생했습니다.', 'error');
-=======
-      toast('?�신 ?�역??불러?�는 �??�류가 발생?�습?�다.', 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+      toast('?섏떊 ?댁뿭님遺덈윭?ㅻ뒗 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const handleProcess = async (item: InstitutionCodeRecptn) => {
-    if (!confirm(`${item.allInsttNm} 코드�?반영?�시겠습?�까?`)) return;
+    if (!confirm(`${item.allInsttNm} 肄붾뱶瑜?諛섏쁺?섏떆寃좎뒿?덇퉴?`)) return;
     
     try {
       await codeAdminService.processInstitutionCodeRecptn({
@@ -93,14 +85,10 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
         insttCode: item.insttCode,
         opertSn: item.opertSn
       });
-      toast('?�공?�으�?반영?�었?�니??', 'success');
+      toast('?깃났?곸쑝濡?諛섏쁺?섏뿀?듬땲님', 'success');
       loadReceptionData();
     } catch {
-<<<<<<< HEAD
-      toast('반영 처리 중 오류가 발생했습니다.', 'error');
-=======
-      toast('반영 처리 �??�류가 발생?�습?�다.', 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+      toast('諛섏쁺 泥섎━ 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
     }
   };
 
@@ -114,7 +102,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
 
   const listColumns: Column<InstitutionCode>[] = [
     { 
-      header: '기�? ?�티??, 
+      header: '湲곌? ?뷀떚님, 
       accessor: (item: InstitutionCode) => (
         <div className="flex items-center gap-4 py-3">
           <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
@@ -122,19 +110,19 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
           </div>
           <div>
             <span className="font-black tracking-tighter text-foreground block text-lg uppercase leading-none">{item.insttCode}</span>
-            <span className="text-[9px] font-black text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-40">기�? ?�별??/span>
+            <span className="text-[9px] font-black text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-40">湲곌? ?앸퀎님/span>
           </div>
         </div>
       )
     },
     { 
-      header: '기�? 명칭 (?�로??', 
+      header: '湲곌? 紐낆묶 (?꾨줈님', 
       accessor: (item: InstitutionCode) => (
         <span className="font-black text-foreground text-sm tracking-tight">{item.allInsttNm}</span>
       )
     },
     { 
-      header: '최하???�벨', 
+      header: '理쒗븯님?덈꺼', 
       accessor: (item: InstitutionCode) => (
         <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg w-fit">
             <span className="text-[10px] font-black text-primary tracking-tight font-mono">{item.lowestInsttNm}</span>
@@ -143,7 +131,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       className: 'w-48'
     },
     { 
-      header: '?�트?�크 ?�점', 
+      header: '?ㅽ듃?뚰겕 ?묒젏', 
       accessor: (item: InstitutionCode) => (
         <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tracking-tighter tabular-nums">
             <Network size={12} className="opacity-30" />
@@ -153,7 +141,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       className: 'w-40' 
     },
     { 
-      header: '?�태', 
+      header: '?곹깭', 
       accessor: (item: InstitutionCode) => (
         <div className={cn(
           "flex items-center gap-2 px-4 py-1.5 rounded-full border w-fit shadow-sm",
@@ -162,7 +150,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             : "bg-slate-100 text-slate-400 border-border/50"
         )}>
           {item.ablEnnc === '0' ? <Activity size={12} className="animate-pulse" /> : <ShieldCheck size={12} className="opacity-40" />}
-          <span className="text-[9px] font-black tracking-[0.2em] uppercase">{item.ablEnnc === '0' ? '?�성' : '??��??}</span>
+          <span className="text-[9px] font-black tracking-[0.2em] uppercase">{item.ablEnnc === '0' ? '활성' : '님젣님}</span>
         </div>
       ),
       className: 'w-32 text-center'
@@ -171,7 +159,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
 
   const receptionColumns: Column<InstitutionCodeRecptn>[] = [
     { 
-      header: '?�신 ?�?�스?�프', 
+      header: '?섏떊 ??꾩뒪?ы봽', 
       accessor: (item: InstitutionCodeRecptn) => (
         <div className="flex items-center gap-2 font-mono text-[11px] font-black text-muted-foreground/60 tracking-tighter italic">
           <History size={14} className="text-primary opacity-40" />
@@ -181,7 +169,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       className: 'w-48' 
     },
     { 
-        header: '?�???�별??, 
+        header: '?님?앸퀎님, 
         accessor: (item: InstitutionCodeRecptn) => (
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 shadow-inner">
@@ -192,14 +180,14 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
         ),
         className: 'w-40' 
     },
-    { header: '기�? ?�로??, accessor: 'allInsttNm', className: 'font-black' },
+    { header: '湲곌? ?꾨줈님, accessor: 'allInsttNm', className: 'font-black' },
     { 
-      header: '?�기??구분', 
+      header: '?숆린님援щ텇', 
       accessor: (item: InstitutionCodeRecptn) => {
         const typeMap: any = {
-            '1': { label: '?�규 ?�록', color: 'bg-primary/20 text-primary border-primary/20', icon: <Plus size={12} /> },
-            '2': { label: '?�치 ?�데?�트', color: 'bg-amber-500/20 text-amber-600 border-amber-500/20', icon: <RefreshCw size={12} /> },
-            '3': { label: '?�이???�제', color: 'bg-rose-500/20 text-rose-600 border-rose-500/20', icon: <ShieldCheck size={12} /> }
+            '1': { label: '신규 등록', color: 'bg-primary/20 text-primary border-primary/20', icon: <Plus size={12} /> },
+            '2': { label: '?⑥튂 ?낅뜲?댄듃', color: 'bg-amber-500/20 text-amber-600 border-amber-500/20', icon: <RefreshCw size={12} /> },
+            '3': { label: '?곗씠님?뺤젣', color: 'bg-rose-500/20 text-rose-600 border-rose-500/20', icon: <ShieldCheck size={12} /> }
         };
         const config = typeMap[item.changeSeCode] || typeMap['1'];
         return (
@@ -212,7 +200,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       className: 'w-40'
     },
     { 
-      header: '?�이?�라??결과', 
+      header: '?뚯씠?꾨씪님寃곌낵', 
       accessor: (item: InstitutionCodeRecptn) => (
         <div className={cn(
             "flex items-center gap-2 px-4 py-1.5 rounded-full border w-fit shadow-sm",
@@ -221,7 +209,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
               : "bg-amber-500/10 text-amber-600 border-amber-500/20"
           )}>
             {item.processSe === '1' ? <CheckCircle2 size={12} /> : <Clock size={12} className="animate-spin duration-[3s]" />}
-            <span className="text-[9px] font-black tracking-[0.2em] uppercase">{item.processSe === '1' ? '?�기?�됨' : '?��?�?}</span>
+            <span className="text-[9px] font-black tracking-[0.2em] uppercase">{item.processSe === '1' ? '?숆린?붾맖' : '?湲?以?}</span>
           </div>
       ),
       className: 'w-32'
@@ -234,7 +222,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             onClick={() => handleProcess(item)}
             className="h-10 px-6 rounded-xl bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition-all gap-2"
           >
-            <MonitorCheck size={14} /> 반영 ?�용
+            <MonitorCheck size={14} /> 諛섏쁺 ?곸슜
           </Button>
         )
       ),
@@ -248,8 +236,8 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       {/* Sub-Hub Mode Switcher */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-slate-100 pb-10">
         <div className="space-y-1">
-            <h4 className="text-3xl font-black tracking-tighter text-foreground uppercase">{activeTab === 'list' ? '기�? ?��??�트�? : '?�기???�이?�라??}</h4>
-            <p className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">{activeTab === 'list' ? '?�성 ?�드 ?�벤?�리 �??�별 체계 관�? : '?�시�??�이???�집 �?충돌 ?�결'}</p>
+            <h4 className="text-3xl font-black tracking-tighter text-foreground uppercase">{activeTab === 'list' ? '湲곌? ?덉님ㅽ듃由? : '?숆린님?뚯씠?꾨씪님}</h4>
+            <p className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">{activeTab === 'list' ? '활성 노드 ?몃깽?좊━ 諛님앸퀎 泥닿퀎 愿由? : '?ㅼ떆媛님곗씠님?섏쭛 諛?異⑸룎 ?닿껐'}</p>
         </div>
         <div className="flex bg-slate-100/80 backdrop-blur-md p-2 rounded-2xl border border-slate-200/50 shadow-inner">
             <button 
@@ -258,7 +246,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
                     "px-8 h-12 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
                     activeTab === 'list' ? "bg-white text-slate-900 shadow-xl ring-1 ring-slate-100" : "text-muted-foreground hover:bg-white/50"
                 )}>
-                <Server size={14} /> ?�드 ?�벤?�리
+                <Server size={14} /> 노드 ?몃깽?좊━
             </button>
             <button 
                 onClick={() => setActiveTab('reception')}
@@ -266,20 +254,20 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
                     "px-8 h-12 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
                     activeTab === 'reception' ? "bg-white text-slate-900 shadow-xl ring-1 ring-slate-100" : "text-muted-foreground hover:bg-white/50"
                 )}>
-                <History size={14} /> ?�신 ?�이?�라??            </button>
+                <History size={14} /> ?섏떊 ?뚯씠?꾨씪님            </button>
         </div>
       </div>
 
       <HubMetricGrid>
-        <HubMetricCard title="?�티??총합" value={total} icon={Database} color="primary" />
-        <HubMetricCard title="?�성 ?�드 ?? value={data.filter(i => i.ablEnnc === '0').length || 1} icon={ShieldCheck} color="emerald" />
-        <HubMetricCard title="?��?중인 커밋" value={receptionData.filter(i => i.processSe !== '1').length || 0} icon={Clock} color="amber" status={receptionData.filter(i => i.processSe !== '1').length > 0 ? "주의" : "?�상"} />
-        <HubMetricCard title="?�기??처리?? value="?�전" icon={Zap} color="indigo" />
+        <HubMetricCard title="?뷀떚님珥앺빀" value={total} icon={Database} color="primary" />
+        <HubMetricCard title="활성 노드 님 value={data.filter(i => i.ablEnnc === '0').length || 1} icon={ShieldCheck} color="emerald" />
+        <HubMetricCard title="?湲?以묒씤 而ㅻ컠" value={receptionData.filter(i => i.processSe !== '1').length || 0} icon={Clock} color="amber" status={receptionData.filter(i => i.processSe !== '1').length > 0 ? "二쇱쓽" : "?뺤긽"} />
+        <HubMetricCard title="?숆린님泥섎━님 value="?덉쟾" icon={Zap} color="indigo" />
       </HubMetricGrid>
 
       <HubSectionCard
-        title={activeTab === 'list' ? "기�? ?�벤?�리 ?�이�??�트�? : "?�이???�집 ?�이?�라??감사"}
-        description={activeTab === 'list' ? "?�스???�반?�서 참조?�는 모든 공공기�? ?�드 ?�별?�의 ?�성 마스??리스?�입?�다." : "?��? ?�스???�동???�해 지?�적?�로 ?�입?�는 코드 변???�이?�의 ?�신 �?반영 ?�력?�니??"}
+        title={activeTab === 'list' ? "湲곌? ?몃깽?좊━ ?쇱씠釉님ㅽ듃由? : "?곗씠님?섏쭛 ?뚯씠?꾨씪님媛먯궗"}
+        description={activeTab === 'list' ? "?쒖뒪님?꾨컲?먯꽌 李몄“?섎뒗 紐⑤뱺 怨듦났湲곌? 노드 ?앸퀎?먯쓽 활성 留덉뒪님由ъ뒪?몄엯?덈떎." : "?몃? ?쒖뒪님?곕룞님?듯빐 吏?띿쟻?쇰줈 ?좎엯?섎뒗 肄붾뱶 蹂님?곗씠?곗쓽 ?섏떊 諛?諛섏쁺 ?대젰?낅땲님"}
         icon={activeTab === 'list' ? Globe : Zap}
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
@@ -287,7 +275,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             <div className="relative group/search max-w-xl">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                 <Input
-                  placeholder="?�성 ?�드 �??�이?�라??기록 검??.."
+                  placeholder="활성 노드 諛님뚯씠?꾨씪님湲곕줉 寃님.."
                   value={searchWrd}
                   onChange={(e) => setSearchWrd(e.target.value)}
                   onKeyDown={(e) => {
@@ -300,7 +288,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             </div>
           </div>
           <Button variant="outline" size="lg" className="h-16 px-10 rounded-[1.25rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2 hover:bg-slate-50 transition-all group">
-            <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> ?�이???�보?�기
+            <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> ?곗씠님?대낫?닿린
           </Button>
         </div>
 
@@ -309,7 +297,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             columns={(activeTab === 'list' ? listColumns : receptionColumns) as any}
             data={(activeTab === 'list' ? data : receptionData) as any}
             loading={loading}
-            emptyMessage={activeTab === 'list' ? "?�이?��? ?�색?????�습?�다." : "?�신???�기??로그가 존재?��? ?�습?�다."}
+            emptyMessage={activeTab === 'list' ? "?곗씠?곕? ?먯깋님님?놁뒿?덈떎." : "?섏떊님?숆린님濡쒓렇媛 議댁옱?섏? ?딆뒿?덈떎."}
             className="border-none bg-transparent"
           />
         </div>
@@ -334,3 +322,4 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
     </div>
   );
 }
+

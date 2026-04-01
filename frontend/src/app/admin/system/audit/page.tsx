@@ -1,9 +1,10 @@
-import React from 'react';
+﻿import React from 'react';
 import { AuditTimelineClient } from './AuditTimelineClient';
 
 /**
- * 보안 감사 ?�?�라???�이지
- * ?�사 ?�프???�의 ?�위 추적 �?무결??검증을 ?�한 ?�텔리전??뷰포?? */
+ * 보안 媛먯궗 ??꾨씪님?섏씠吏
+ * ?꾩궗 ?명봽님?댁쓽 ?됱쐞 異붿쟻 諛?臾닿껐님寃利앹쓣 ?꾪븳 ?명뀛由ъ쟾님酉고룷님 */
 export default function AuditTimelinePage() {
   return <AuditTimelineClient />;
 }
+

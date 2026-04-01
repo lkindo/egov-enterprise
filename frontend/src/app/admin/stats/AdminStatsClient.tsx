@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -65,7 +65,7 @@ export default function AdminStatsClient({
 
   const menuColumns = [
     {
-      header: '?�텔리전???�드',
+      header: '?명뀛由ъ쟾님노드',
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-4 py-2">
           <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110">
@@ -79,7 +79,7 @@ export default function AdminStatsClient({
       )
     },
     {
-      header: '?�호?�용 ?�수',
+      header: '?곹샇?묒슜 ?잛닔',
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-primary opacity-40 italic" />
@@ -88,7 +88,7 @@ export default function AdminStatsClient({
       )
     },
     {
-      header: '?�향??매트�?��',
+      header: '?곹뼢님留ㅽ듃由?뒪',
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-6 min-w-[240px]">
           <div className="flex-1 h-3 bg-slate-100 dark:bg-muted/30 rounded-full overflow-hidden shadow-inner border border-border/10">
@@ -106,14 +106,14 @@ export default function AdminStatsClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <PageHeader
-        title="?�텔리전???�터"
-        breadcrumbs={[{ label: '?�스?��?�? }, { label: '분석 ?�?�보?? }]}
+        title="?명뀛由ъ쟾님?쇳꽣"
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '분석 ??쒕낫님 }]}
       />
 
       <HubHeader
-        title="?�스??분석"
-        highlight="매트�?��"
-        subtitle="?�체 ?�스?�의 ?�시�??�래??�??�메???�호?�용 ?�계 ?�텔리전??
+        title="?쒖뒪님분석"
+        highlight="留ㅽ듃由?뒪"
+        subtitle="?꾩껜 ?쒖뒪?쒖쓽 ?ㅼ떆媛님몃옒님諛님꾨찓님?곹샇?묒슜 통계 ?명뀛由ъ쟾님
         icon={BarChart3}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -134,9 +134,9 @@ export default function AdminStatsClient({
               <DataExportExcel
                 data={initialMenuData}
                 headers={[
-                  { label: '메뉴�?, key: 'menuNm' },
-                  { label: '?�용?�수', key: 'count' },
-                  { label: '비중(%)', key: 'percentage' }
+                  { label: '硫붾돱紐?, key: 'menuNm' },
+                  { label: '?ъ슜?잛닔', key: 'count' },
+                  { label: '鍮꾩쨷(%)', key: 'percentage' }
                 ]}
                 filename="system_intelligence_stats"
               />
@@ -146,16 +146,16 @@ export default function AdminStatsClient({
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-2">
-        <LuxuryStatCard title="?�적 ?�이???�드" value={initialSummary?.totalUsers} icon={<Database size={26} />} trend="+2.5%" color="slate" />
-        <LuxuryStatCard title="?�시�??�성 ?�션" value={initialSummary?.todayConnects} icon={<CloudLightning size={26} />} trend="+12%" color="primary" />
-        <LuxuryStatCard title="?�스???�속???�산" value={initialSummary?.totalPosts} icon={<ShieldCheck size={26} />} trend="+0.8%" color="indigo" />
+        <LuxuryStatCard title="?꾩쟻 ?곗씠님노드" value={initialSummary?.totalUsers} icon={<Database size={26} />} trend="+2.5%" color="slate" />
+        <LuxuryStatCard title="?ㅼ떆媛님쒖꽦 ?몄뀡" value={initialSummary?.todayConnects} icon={<CloudLightning size={26} />} trend="+12%" color="primary" />
+        <LuxuryStatCard title="?쒖뒪님?곸냽님?먯궛" value={initialSummary?.totalPosts} icon={<ShieldCheck size={26} />} trend="+0.8%" color="indigo" />
       </div>
 
       <div className="grid grid-cols-12 gap-10 px-2 mt-4">
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-10">
           <HubSectionCard
-            title="?�트?�크 ?�래??진화"
-            description="?�스???�반??걸친 ?�이???�트림의 ?�름 �?진화 ?�상 분석?�니??"
+            title="?ㅽ듃?뚰겕 ?몃옒님吏꾪솕"
+            description="?쒖뒪님?꾨컲님嫄몄튇 ?곗씠님?ㅽ듃由쇱쓽 ?먮쫫 諛?吏꾪솕 ?묒긽 분석?낅땲님"
             icon={Activity}
           >
             <div className="p-4 bg-slate-50/50 rounded-[3rem] border border-border/30 overflow-hidden group">
@@ -174,8 +174,8 @@ export default function AdminStatsClient({
 
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-10">
           <HubSectionCard
-            title="?�경 기기 분포"
-            description="?�용???�속 ?�경???�로?�일�?�?기기�??�션 비중?�니??"
+            title="?섍꼍 湲곌린 분포"
+            description="?ъ슜님접속 ?섍꼍님?꾨줈?뚯씪留?諛?湲곌린蹂님몄뀡 鍮꾩쨷?낅땲님"
             icon={Monitor}
           >
             <div className="bg-slate-900 text-white rounded-[3.5rem] p-8 shadow-2xl relative overflow-hidden group min-h-[440px] flex items-center justify-center">
@@ -200,8 +200,8 @@ export default function AdminStatsClient({
       <div className="grid grid-cols-12 gap-10 px-2">
         <div className="col-span-12 lg:col-span-6 flex flex-col gap-10">
           <HubSectionCard
-            title="최다 ?�호?�용 ?�비??
-            description="?�용?�의 ?�도가 가??밀집된 ?�심 ?�호?�용 지??분석?�니??"
+            title="理쒕떎 ?곹샇?묒슜 ?쒕퉬님
+            description="?ъ슜?먯쓽 ?섎룄媛 媛님諛吏묐맂 ?듭떖 ?곹샇?묒슜 吏님분석?낅땲님"
             icon={Target}
           >
             <div className="p-8 bg-slate-50 rounded-[3rem] border border-border/30 shadow-inner">
@@ -218,8 +218,8 @@ export default function AdminStatsClient({
         </div>
         <div className="col-span-12 lg:col-span-6 flex flex-col gap-10">
           <HubSectionCard
-            title="지리적 ?�래??분포"
-            description="?�명?�된 ?�이??기반???�트?�크 지리적 기원지 매핑?�니??"
+            title="吏由ъ쟻 ?몃옒님분포"
+            description="?듬챸?붾맂 ?곗씠님湲곕컲님?ㅽ듃?뚰겕 吏由ъ쟻 湲곗썝吏 매핑?낅땲님"
             icon={Globe}
           >
             <div className="p-4 bg-white rounded-[3rem] border-2 border-slate-50 flex items-center justify-center min-h-[480px] shadow-sm relative overflow-hidden">
@@ -231,11 +231,11 @@ export default function AdminStatsClient({
       </div>
 
       <HubSectionCard
-        title="?�층 매트�?�� 보고??
-        description="?�스???�반??걸친 마이?�로 ?�호?�용 ?�드?�의 ?��? ?�이??보고?�입?�다."
+        title="?ъ링 留ㅽ듃由?뒪 蹂닿퀬님
+        description="?쒖뒪님?꾨컲님嫄몄튇 留덉씠?щ줈 ?곹샇?묒슜 노드?ㅼ쓽 ?몃? ?곗씠님蹂닿퀬?쒖엯?덈떎."
         icon={Cpu}
         statusBadges={
-          <HubStatusBadge label="고충?�도 ?�트�? variant="success" className="bg-emerald-500/10 text-emerald-500 border-none animate-pulse text-[8px] font-black tracking-widest" />
+          <HubStatusBadge label="怨좎땐?ㅻ룄 ?ㅽ듃由? variant="success" className="bg-emerald-500/10 text-emerald-500 border-none animate-pulse text-[8px] font-black tracking-widest" />
         }
       >
         <div className="px-2 overflow-x-auto">
@@ -243,7 +243,7 @@ export default function AdminStatsClient({
             columns={menuColumns}
             data={initialMenuData.slice(0, 10)}
             loading={loading}
-            emptyMessage="?�스???�턴 분석 �?.."
+            emptyMessage="?쒖뒪님?⑦꽩 분석 以?.."
             className="border-none rounded-none bg-transparent min-w-[700px]"
           />
         </div>
@@ -255,14 +255,14 @@ export default function AdminStatsClient({
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
           <div className="space-y-10 flex-1 text-center lg:text-left">
             <div className="space-y-4">
-              <h2 className="text-[11px] font-black tracking-[0.6em] text-white/30 uppercase leading-none">?�스??무결???�약</h2>
+              <h2 className="text-[11px] font-black tracking-[0.6em] text-white/30 uppercase leading-none">?쒖뒪님臾닿껐님?붿빟</h2>
               <h3 className="text-5xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] uppercase tabular-nums">
                 Optimized <br />
-                <span className="text-primary italic">?�텔리전??/span> Core
+                <span className="text-primary italic">?명뀛由ъ쟾님/span> Core
               </h3>
             </div>
             <p className="text-lg lg:text-xl text-white/40 font-bold max-w-3xl leading-relaxed tracking-tight">
-              ?�스???�원??99.9%가 ?�율?�으�?관리되�??�습?�다. ?�텔리전???�진?� ?�시�??�메???�벤?��? 추적?�여 최적???�능 ?�로?�일???�적?�로 ?�성?�고 ?�습?�다.
+              ?쒖뒪님?먯썝님99.9%媛 ?⑥쑉?곸쑝濡?愿由щ릺怨님덉뒿?덈떎. ?명뀛由ъ쟾님?붿쭊? ?ㅼ떆媛님꾨찓님?대깽?몃? 異붿쟻?섏뿬 理쒖쟻님?깅뒫 ?꾨줈?뚯씪님?숈쟻?쇰줈 ?앹꽦?섍퀬 ?덉뒿?덈떎.
             </p>
           </div>
           <div className="shrink-0">
@@ -313,7 +313,7 @@ function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
         )}
       </div>
       <div className="relative z-10">
-        <h4 className="text-4xl font-black tracking-tighter tabular-nums leading-none text-foreground">{value?.toLocaleString() ?? 0}</h4>
+        <h4 className="text-4xl font-black tracking-tighter tabular-nums leading-none text-foreground">{value?.toLocaleString() 님 0}</h4>
         <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] mt-5 flex items-center gap-3 uppercase leading-none">
           <span className="w-6 h-0.5 bg-current opacity-20" />
           {title}
@@ -325,3 +325,4 @@ function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
     </div>
   );
 }
+

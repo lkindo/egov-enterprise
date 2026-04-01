@@ -1,148 +1,74 @@
-vi.mock('next/config', () => ({
-  default: () => ({
-    publicRuntimeConfig: {},
-    serverRuntimeConfig: {},
-  }),
-}));
-
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import UnifiedDashboardClient from './UnifiedDashboardClient';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import DashboardPage from './page';
+import client from '@/lib/api/client';
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
-// Mock dependencies
-vi.mock('@/services/admin/system/StatsAdminService', () => ({
- statsAdminService: {
- getConnectStats: vi.fn().mockResolvedValue([]),
- getBbsStats: vi.fn().mockResolvedValue([]),
- getUserStats: vi.fn().mockResolvedValue([]),
- }
-}));
-
-vi.mock('@/lib/api/client', () => ({
- default: {
- get: vi.fn().mockResolvedValue([]),
- post: vi.fn().mockResolvedValue({}),
- interceptors: {
- request: { use: vi.fn() },
- response: { use: vi.fn() }
- }
- }
-}));
-
+// Mock Next.js navigation and headers
 vi.mock('next/navigation', () => ({
- useRouter: () => ({ push: vi.fn() }),
- usePathname: () => '/',
- useSearchParams: () => new URLSearchParams(),
+  redirect: vi.fn(),
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock AuthContext
-vi.mock('@/contexts/AuthContext', () => ({
- useAuth: () => ({
- user: { id: 'test', name: 'Test User', role: 'ROLE_USER' },
- loading: false,
- checkAuth: vi.fn(),
- }),
- AuthProvider: ({ children }: any) => <>{children}</>,
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(),
 }));
 
-// Mock framer-motion
-vi.mock('framer-motion', () => ({
- motion: {
- div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
- button: ({ children, className, ...props }: any) => <button className={className} {...props}>{children}</button>,
- h1: ({ children, className, ...props }: any) => <h1 className={className} {...props}>{children}</h1>,
- h4: ({ children, className, ...props }: any) => <h4 className={className} {...props}>{children}</h4>,
- span: ({ children, className, ...props }: any) => <span className={className} {...props}>{children}</span>,
- },
- AnimatePresence: ({ children }: any) => <>{children}</>,
+// Mock API client
+vi.mock('@/lib/api/client', () => ({
+  default: {
+    get: vi.fn(),
+  },
 }));
 
-// Mock RealTimeDashboard
-vi.mock('@/components/features/dashboard/RealTimeDashboard', () => ({
- RealTimeDashboard: () => <div data-testid="real-time-dashboard" />,
+// Mock UnifiedDashboardClient
+vi.mock('./UnifiedDashboardClient', () => ({
+  default: ({ initialNotiList, pendingApprovalCount }: any) => (
+    <div data-testid="dashboard-client">
+      <div>Notis: {initialNotiList.length}</div>
+      <div>Pending: {pendingApprovalCount}</div>
+    </div>
+  )
 }));
 
-// Mock BannerSlider
-vi.mock('@/app/components/dashboard/BannerSlider', () => ({
- BannerSlider: () => <div data-testid="banner-slider" />,
-}));
+describe('DashboardPage Server Component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-// Mock PopupÍ¥ÄÎ¶¨Ïûê
-vi.mock('@/app/components/dashboard/PopupÍ¥ÄÎ¶¨Ïûê', () => ({
- PopupÍ¥ÄÎ¶¨Ïûê: () => null,
-}));
+  it('redirects to /login if no access token', async () => {
+    vi.mocked(cookies).mockResolvedValue({
+      get: vi.fn().mockReturnValue(null),
+    } as any);
 
-// Mock ActivityFeed
-vi.mock('@/app/components/dashboard/ActivityFeed', () => ({
- ActivityFeed: () => <div data-testid="activity-feed" />,
-}));
+    try {
+      await DashboardPage();
+    } catch (e) {
+      // Catch redirect throw
+    }
 
-// Mock dynamic charts
-vi.mock('@/app/components/dashboard/DashboardCharts', () => ({
- DashboardVisitorChart: () => <div data-testid="visitor-chart" />,
- DashboardPostChart: () => <div data-testid="post-chart" />,
-}));
+    expect(redirect).toHaveBeenCalledWith('/login');
+  });
 
-describe('DashboardPage', () => {
- const queryClient = new QueryClient({
- defaultOptions: { queries: { retry: false } },
- });
+  it('renders dashboard with data if authenticated', async () => {
+    vi.mocked(cookies).mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: 'mock-token' }),
+    } as any);
 
- beforeEach(() => {
- vi.clearAllMocks();
- });
+    vi.mocked(client.get).mockResolvedValue({
+      notiList: [{ nttId: 1, nttSj: 'Mock Noti' }],
+      taskList: [],
+      pendingApprovalCount: 10
+    });
 
- const renderDashboard = (props: any) => {
- return render(
- <QueryClientProvider client={queryClient}>
- <UnifiedDashboardClient {...props} />
- </QueryClientProvider>
- );
- };
+    const result = await DashboardPage();
+    render(result);
 
- it('renders dashboard data correctly', async () => {
- const props = {
- initialNotiList: [{ nttId: 1, nttSj: 'Í≥µÏ??¨Ìï≠ ?åÏä§?? }],
- initialTaskList: [{ nttId: 2, nttSj: '?†Ïùº ?åÏä§?? }],
- pendingApprovalCount: 5
- };
-
- renderDashboard(props);
-
- await waitFor(() => {
- expect(screen.getByText(/Í≥µÏ??¨Ìï≠ ?åÏä§??)).toBeInTheDocument();
- expect(screen.getByText(/?†Ïùº ?åÏä§??)).toBeInTheDocument();
- });
- });
-
- it('renders accessible elements', async () => {
- const props = {
- initialLeave: { remndrYrycCo: 10 },
- initialNotiList: [],
- initialTaskList: [],
- pendingApprovalCount: 0
- };
-
- renderDashboard(props);
-
- await waitFor(() => {
- expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
- });
- });
-
- it('handles empty states gracefully', async () => {
- const props = {
- initialLeave: null,
- initialNotiList: [],
- initialTaskList: [],
- pendingApprovalCount: 0
- };
-
- renderDashboard(props);
-
- await waitFor(() => {
- expect(screen.getAllByText(/?∞Ïù¥?∞Í? ?ÜÏäµ?àÎã§/i).length).toBeGreaterThan(0);
- });
- });
+    expect(screen.getByTestId('dashboard-client')).toBeInTheDocument();
+    expect(screen.getByText('Notis: 1')).toBeInTheDocument();
+    expect(screen.getByText('Pending: 10')).toBeInTheDocument();
+  });
 });

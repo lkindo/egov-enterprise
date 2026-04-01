@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
@@ -14,7 +14,7 @@ export function PopupManager() {
  async function fetchPopups() {
  try {
  const popups = await popupService.getActivePopups();
- // ?�터�? "?�늘 ?�루 보�? ?�기" 체크???�업 ?�외
+ // ?꾪꽣留? "?ㅻ뒛 ?섎（ 蹂댁? ?딄린" 泥댄겕님?앹뾽 ?쒖쇅
  const filteredPopups = (popups || []).filter(popup => {
  const expireDate = localStorage.getItem(`popup_hide_${popup.popupId}`);
  if (expireDate) {
@@ -77,7 +77,7 @@ export function PopupManager() {
 
  {/* Content */}
  <div className="relative w-full h-[calc(100%-80px)] overflow-auto">
- {/* ?�업 ?�용??HTML?�거???��?지?????�음. ?�기?�는 ?��?지�?가?�하거나 iframe ?�용 가??*/}
+ {/* ?앹뾽 ?댁슜님HTML?닿굅님?대?吏님님?덉쓬. ?ш린?쒕뒗 ?대?吏濡?媛?뺥븯嫄곕굹 iframe ?ъ슜 媛님*/}
  <div className="relative w-full min-h-[300px] h-full">
  <Image
  src={popup.fileUrl || '/api/placeholder/400/300'}
@@ -94,13 +94,13 @@ export function PopupManager() {
  onClick={() => closePopupForDay(popup.popupId)}
  className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 font-medium"
  >
- ?�늘 ?�루 보�? ?�기
+ ?ㅻ뒛 ?섎（ 蹂댁? ?딄린
  </button>
  <button
  onClick={() => closePopup(popup.popupId)}
  className="text-[11px] font-bold text-slate-700 hover:text-black"
  >
- ?�기
+ ?リ린
  </button>
  </div>
  </div>
@@ -109,3 +109,4 @@ export function PopupManager() {
  </>
  );
 }
+

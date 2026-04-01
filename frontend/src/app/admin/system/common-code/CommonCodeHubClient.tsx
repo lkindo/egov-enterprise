@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -46,13 +46,13 @@ export default function CommonCodeHubClient({
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader title="마스???�이??거버?�스" breadcrumbs={[{ label: '?�스?��?�? }, { label: '코드관�? }, { label: '?�합 코드 ?�브' }]} />
+      <PageHeader title="留덉뒪님?곗씠님嫄곕쾭?뚯뒪" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '肄붾뱶愿由? }, { label: '?듯빀 肄붾뱶 ?덈툕' }]} />
 
       <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-10">
         <HubHeader 
-          title="코드" 
-          highlight="?�합 ?�브" 
-          subtitle="?�스???�반???��? 코드, ?�정 ?��? �?기�? ?�드 ?�별 체계???�???�합 거버?�스 관�? 
+          title="肄붾뱶" 
+          highlight="?듯빀 ?덈툕" 
+          subtitle="?쒖뒪님?꾨컲님?쒖? 肄붾뱶, ?됱젙 ?쒖? 諛?湲곌? 노드 ?앸퀎 泥닿퀎님?님?듯빀 嫄곕쾭?뚯뒪 愿由? 
           icon={Database} 
         />
 
@@ -60,19 +60,19 @@ export default function CommonCodeHubClient({
         <div className="bg-slate-100/80 backdrop-blur-md p-2 rounded-[2.5rem] flex flex-wrap gap-2 border border-slate-200/50 shadow-inner">
           <HubTabButton 
             icon={FileCode} 
-            label="?��? 코드" 
+            label="?쒖? 肄붾뱶" 
             active={activeTab === 'STANDARD'} 
             onClick={() => setActiveTab('STANDARD')} 
           />
           <HubTabButton 
             icon={MapPin} 
-            label="?�정 ?��?" 
+            label="?됱젙 ?쒖?" 
             active={activeTab === 'ADMINIST'} 
             onClick={() => setActiveTab('ADMINIST')} 
           />
           <HubTabButton 
             icon={Building2} 
-            label="기�? ?�드" 
+            label="湲곌? 노드" 
             active={activeTab === 'INSTITUTION'} 
             onClick={() => setActiveTab('INSTITUTION')} 
           />
@@ -81,10 +81,10 @@ export default function CommonCodeHubClient({
 
       {/* Code Metrics Section */}
       <HubMetricGrid>
-        <HubMetricCard title="?�재 ?�록 코드" value={groups.length + details.length} icon={Code2} color="primary" />
-        <HubMetricCard title="?��? ?�태 가?�성" value="?�성" icon={ShieldCheck} color="emerald" status="?�기?�됨" />
-        <HubMetricCard title="메�??�이??건전?? value="99.8%" icon={Zap} color="amber" />
-        <HubMetricCard title="?�드 ?�동 ?�도" value="1.2s" icon={Timer} color="indigo" />
+        <HubMetricCard title="현재 등록 肄붾뱶" value={groups.length + details.length} icon={Code2} color="primary" />
+        <HubMetricCard title="?쒖? ?곹깭 媛?⑹꽦" value="활성" icon={ShieldCheck} color="emerald" status="?숆린?붾맖" />
+        <HubMetricCard title="硫뷀님곗씠님嫄댁쟾님 value="99.8%" icon={Zap} color="amber" />
+        <HubMetricCard title="노드 ?곕룞 ?띾룄" value="1.2s" icon={Timer} color="indigo" />
       </HubMetricGrid>
 
       {/* --- Viewport Content --- */}
@@ -160,3 +160,4 @@ function HubTabButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon
     </button>
   );
 }
+

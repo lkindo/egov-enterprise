@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -29,13 +29,13 @@ const CommunityListPage = () => {
  const [list, setList] = useState<Community[]>([]);
  const [totalCount, setTotalCount] = useState(0);
  const [totalPages, setTotalPages] = useState(0);
- const [page번호, setPage번호] = useState(1);
+ const [page踰덊샇, setPage踰덊샇] = useState(1);
  const [loading, setLoading] = useState(false);
 
  const fetchList = async () => {
  setLoading(true);
  try {
- const params = { page번호, pageUnit: 10 };
+ const params = { page踰덊샇, pageUnit: 10 };
  const data = await getCommunityList(params);
  setList((data.resultList as any) || []);
  setTotalCount(data.totalCount || 0);
@@ -50,7 +50,7 @@ const CommunityListPage = () => {
 
  useEffect(() => {
  fetchList();
- }, [page번호]);
+ }, [page踰덊샇]);
 
  return (
  <div className="flex flex-col gap-6 p-6">
@@ -61,15 +61,15 @@ const CommunityListPage = () => {
  <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-br from-blue-600 to-indigo-700 pb-12 pt-12 px-10 text-white">
  <div className="space-y-2">
  <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-4">
- <Users className="w-10 h-10 text-blue-200" /> 커�??�티 공간
+ <Users className="w-10 h-10 text-blue-200" /> 而ㅻ님덊떚 怨듦컙
  </CardTitle>
-  <p className="text-blue-100/70 font-medium text-lg">?�크?�페?�스 ?�의 ?�양???�모?�과 커�??�티 공간??만나보세??</p>
+  <p className="text-blue-100/70 font-medium text-lg">?뚰겕?ㅽ럹?댁뒪 ?댁쓽 ?ㅼ뼇님?뚮え?꾧낵 而ㅻ님덊떚 怨듦컙님留뚮굹蹂댁꽭님</p>
  </div>
  </CardHeader>
  <CardContent className="pt-12 px-10">
  <div className="mb-8 flex items-center bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 w-fit">
  <div className="text-sm font-black text-blue-700 flex items-center gap-3">
- <ShieldCheck className="w-5 h-5" /> ?�성?�된 ?�체 커�??�티 <span className="text-2xl font-black ml-1 animate-pulse">{totalCount}</span>
+ <ShieldCheck className="w-5 h-5" /> 활성?붾맂 ?꾩껜 而ㅻ님덊떚 <span className="text-2xl font-black ml-1 animate-pulse">{totalCount}</span>
  </div>
  </div>
 
@@ -77,11 +77,11 @@ const CommunityListPage = () => {
  <Table>
  <TableHeader className="bg-slate-50/50">
  <TableRow className="hover:bg-transparent">
- <TableHead className="w-[80px] text-center font-black text-slate-400 text-sm py-6 tracking-tight">번호</TableHead>
- <TableHead className="w-[300px] font-black text-slate-900 text-sm py-6 tracking-tight">커�??�티�?/TableHead>
- <TableHead className="font-black text-slate-400 text-sm py-6 tracking-tight">?�개</TableHead>
- <TableHead className="w-[150px] font-black text-slate-400 text-sm py-6 text-center tracking-tight">관리자</TableHead>
- <TableHead className="w-[150px] font-black text-slate-400 text-sm py-6 text-center tracking-tight">개설??/TableHead>
+ <TableHead className="w-[80px] text-center font-black text-slate-400 text-sm py-6 tracking-tight">踰덊샇</TableHead>
+ <TableHead className="w-[300px] font-black text-slate-900 text-sm py-6 tracking-tight">而ㅻ님덊떚紐?/TableHead>
+ <TableHead className="font-black text-slate-400 text-sm py-6 tracking-tight">?뚭컻</TableHead>
+ <TableHead className="w-[150px] font-black text-slate-400 text-sm py-6 text-center tracking-tight">愿由ъ옄</TableHead>
+ <TableHead className="w-[150px] font-black text-slate-400 text-sm py-6 text-center tracking-tight">媛쒖꽕님/TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
@@ -98,14 +98,14 @@ const CommunityListPage = () => {
  ) : list.length === 0 ? (
   <TableRow>
   <TableCell colSpan={5} className="h-48 text-center text-slate-400 font-bold text-xl tracking-tighter opacity-30">
-  개설??커�??�티 공간???�습?�다.
+  媛쒖꽕님而ㅻ님덊떚 怨듦컙님?놁뒿?덈떎.
   </TableCell>
   </TableRow>
  ) : (
  list.map((item, idx) => (
  <TableRow key={item.cmmntyId} className="hover:bg-blue-50/30 transition-all border-b last:border-0 group">
  <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
- {totalCount - ((page번호 - 1) * 10) - idx}
+ {totalCount - ((page踰덊샇 - 1) * 10) - idx}
  </TableCell>
  <TableCell className="py-6">
  <Link href={`/admin/community/${item.cmmntyId}`} className="flex items-center gap-4 group/item">
@@ -119,7 +119,7 @@ const CommunityListPage = () => {
  </TableCell>
  <TableCell className="py-6">
  <p className="text-base text-slate-500 font-medium line-clamp-1 leading-relaxed ">
- "{item.cmmntyIntrcn || '?�록???�개 기능???�습?�다.'}"
+ "{item.cmmntyIntrcn || '등록님?뚭컻 湲곕뒫님?놁뒿?덈떎.'}"
  </p>
  </TableCell>
  <TableCell className="text-center py-6">
@@ -145,25 +145,25 @@ const CommunityListPage = () => {
  <Button
  variant="ghost"
  size="lg"
- onClick={() => setPage번호(p => Math.max(1, p - 1))}
- disabled={page번호 === 1}
+ onClick={() => setPage踰덊샇(p => Math.max(1, p - 1))}
+ disabled={page踰덊샇 === 1}
  className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-blue-600 transition-all tracking-tight text-sm"
  >
- ?�전
+ ?댁쟾
  </Button>
  <div className="bg-slate-900 text-white px-10 py-4 rounded-[2rem] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex items-center gap-4 border-4 border-white ring-8 ring-slate-100">
- <span className="text-2xl font-black">{page번호}</span>
+ <span className="text-2xl font-black">{page踰덊샇}</span>
  <div className="h-6 w-px bg-white/20" />
  <span className="text-sm font-bold text-white/40">{totalPages}</span>
  </div>
  <Button
  variant="ghost"
  size="lg"
- onClick={() => setPage번호(p => Math.min(totalPages, p + 1))}
- disabled={page번호 === totalPages}
+ onClick={() => setPage踰덊샇(p => Math.min(totalPages, p + 1))}
+ disabled={page踰덊샇 === totalPages}
  className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-blue-600 transition-all tracking-tight text-sm"
  >
- ?�음
+ ?ㅼ쓬
  </Button>
  </div>
  )}
@@ -174,3 +174,4 @@ const CommunityListPage = () => {
 };
 
 export default CommunityListPage;
+

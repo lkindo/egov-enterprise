@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -70,11 +70,7 @@ export default function OnlinePollAdminClient({
       setPolls(res.list);
       setTotalCount(res.total);
     } catch {
-<<<<<<< HEAD
-      toast.error('설문 목록을 불러오지 못했습니다.');
-=======
-      toast.error('?�문 목록??불러?��? 못했?�니??');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+      toast.error('설문 紐⑸줉님遺덈윭?ㅼ? 紐삵뻽?듬땲님');
     } finally {
       setLoading(false);
     }
@@ -96,22 +92,18 @@ export default function OnlinePollAdminClient({
 
   const handleAdd = async () => {
     if (!newPoll.pollNm || !newPoll.pollItems?.every(item => item.pollIemNm)) {
-      toast.error('?�문 명과 모든 ??�� ?�용???�력?�주?�요.');
+      toast.error('설문 紐낃낵 紐⑤뱺 님ぉ ?댁슜님?낅젰?댁＜?몄슂.');
       return;
     }
 
     setLoading(true);
     try {
       await onlinePollAdminService.createPoll(newPoll);
-      toast.success('???�문???�록?�습?�다.');
+      toast.success('님설문님등록?덉뒿?덈떎.');
       setIsAddOpen(false);
       handleRefresh();
     } catch {
-<<<<<<< HEAD
-      toast.error('설문 등록에 실패했습니다.');
-=======
-      toast.error('?�문 ?�록???�패?�습?�다.');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+      toast.error('설문 등록님?ㅽ뙣?덉뒿?덈떎.');
     } finally {
       setLoading(false);
     }
@@ -119,7 +111,7 @@ export default function OnlinePollAdminClient({
 
   const columns = [
     {
-      header: '?�문 ?�티??(명칭)',
+      header: '설문 ?뷀떚님(紐낆묶)',
       accessor: (item: OnlinePollDto) => (
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-white shadow-xl transition-transform group-hover:scale-110">
@@ -133,7 +125,7 @@ export default function OnlinePollAdminClient({
       )
     },
     {
-      header: '?�용 ?�?�프?�임',
+      header: '?댁슜 ??꾪봽?덉엫',
       accessor: (item: OnlinePollDto) => (
         <div className="flex items-center gap-3 font-mono text-[11px] font-black text-muted-foreground/60 tracking-tighter italic">
           <Calendar size={14} className="text-primary opacity-40" />
@@ -142,7 +134,7 @@ export default function OnlinePollAdminClient({
       )
     },
     {
-      header: '참여 ?�이??분석',
+      header: '李몄뿬 ?곗씠님분석',
       accessor: (item: OnlinePollDto) => {
         const totalVotes = item.pollItems?.reduce((sum, i) => sum + (i.pollIemCo || 0), 0) || 0;
         return (
@@ -162,7 +154,7 @@ export default function OnlinePollAdminClient({
       }
     },
     {
-      header: '?�작 ?�태',
+      header: '?숈옉 ?곹깭',
       accessor: (item: OnlinePollDto) => (
         <div className={cn(
           "flex items-center gap-2 px-4 py-1.5 rounded-full border w-fit shadow-sm transition-all",
@@ -180,14 +172,14 @@ export default function OnlinePollAdminClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="?�견 매트�?�� ?�터"
-        breadcrumbs={[{ label: '커�??�티' }, { label: '?�문 ?�텔리전?? }]}
+        title="?섍껄 留ㅽ듃由?뒪 ?쇳꽣"
+        breadcrumbs={[{ label: '而ㅻ님덊떚' }, { label: '설문 ?명뀛由ъ쟾님 }]}
       />
 
       <HubHeader 
-        title="?�라???�문" 
-        highlight="매트�?��" 
-        subtitle="?�사 ?�용???�드�??�집 �??�이???�각??분석 ?�스?? 
+        title="온라인설문" 
+        highlight="留ㅽ듃由?뒪" 
+        subtitle="?꾩궗 ?ъ슜님피드諛님섏쭛 諛님곗씠님?쒓컖님분석 ?쒖뒪님 
         icon={Vote} 
         actions={
           <div className="flex gap-4 p-2">
@@ -197,13 +189,13 @@ export default function OnlinePollAdminClient({
               onClick={handleRefresh}
               className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2"
             >
-              <RefreshCcw size={16} className={cn(loading && "animate-spin")} /> ?�진 ?�기??            </Button>
+              <RefreshCcw size={16} className={cn(loading && "animate-spin")} /> ?붿쭊 ?숆린님            </Button>
             <Button
               size="lg"
               onClick={() => setIsAddOpen(true)}
               className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2"
             >
-              <Plus size={18} /> ?�규 ?�로?�콜 ?�성
+              <Plus size={18} /> 신규 ?꾨줈?좎퐳 ?앹꽦
             </Button>
           </div>
         }
@@ -229,21 +221,21 @@ export default function OnlinePollAdminClient({
           title="ANALYTIC NODES" 
           value={polls.length} 
           icon={<BarChart size={26} />} 
-          status="?�기?�됨"
+          status="?숆린?붾맖"
           color="text-indigo-600"
         />
       </div>
 
       {/* Main Analysis Stream */}
       <HubSectionCard
-        title="?�문 보드 ?�트�?
-        description="?�록??모든 ?�드�??�집 ?�로?�콜???�용 ?�태 �?참여 ?�이???�약?�니??"
+        title="설문 蹂대뱶 ?ㅽ듃由?
+        description="등록님紐⑤뱺 피드諛님섏쭛 ?꾨줈?좎퐳님?댁슜 ?곹깭 諛?李몄뿬 ?곗씠님?붿빟?낅땲님"
         icon={TrendingUp}
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
           <div>
-            <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">?�텔리전??게시??/h3>
-            <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2 opacity-50">글로벌 ?�드�?모니?�링</p>
+            <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">?명뀛由ъ쟾님寃뚯떆님/h3>
+            <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2 opacity-50">湲濡쒕쾶 피드諛?紐⑤땲?곕쭅</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative group/search flex-1 md:flex-none">
@@ -263,7 +255,7 @@ export default function OnlinePollAdminClient({
             columns={columns}
             data={polls}
             loading={loading}
-            emptyMessage="기록???�이???�집 ?�로?�콜???�습?�다."
+            emptyMessage="湲곕줉님?곗씠님?섏쭛 ?꾨줈?좎퐳님?놁뒿?덈떎."
             className="border-none bg-transparent"
           />
         </div>
@@ -279,7 +271,7 @@ export default function OnlinePollAdminClient({
               <Vote size={32} />
             </div>
             <div className="space-y-2">
-              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">?�로?�콜 구성</DialogTitle>
+              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">?꾨줈?좎퐳 援ъ꽦</DialogTitle>
               <DialogDescription className="text-[10px] font-black tracking-[0.4em] uppercase opacity-40">
                 New Feedback Pipeline Architecture
               </DialogDescription>
@@ -302,7 +294,7 @@ export default function OnlinePollAdminClient({
             
             <section className="grid grid-cols-2 gap-8">
               <div className="space-y-4">
-                <label className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2">?�작??/label>
+                <label className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2">?쒖옉님/label>
                 <div className="relative group">
                   <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
                   <Input
@@ -314,7 +306,7 @@ export default function OnlinePollAdminClient({
                 </div>
               </div>
               <div className="space-y-4">
-                <label className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2">종료??/label>
+                <label className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2">醫낅즺님/label>
                 <div className="relative group">
                   <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={18} />
                   <Input
@@ -352,7 +344,7 @@ export default function OnlinePollAdminClient({
                     className="flex items-center gap-4 group/item"
                   >
                     <div className="w-14 h-16 rounded-2xl bg-slate-900/5 dark:bg-muted/30 flex flex-col items-center justify-center font-black text-slate-300 dark:text-muted-foreground text-[10px] shadow-inner border border-border/10 shrink-0">
-                      <span className="opacity-40 uppercase mb-0.5">?�드</span>
+                      <span className="opacity-40 uppercase mb-0.5">노드</span>
                       <span className="text-foreground leading-none">{String(index + 1).padStart(2, '0')}</span>
                     </div>
                     <div className="flex-1 relative">
@@ -417,7 +409,7 @@ function SummaryBlock({ title, value, icon, status, color, bg }: any) {
         <HubStatusBadge label={`SYSTEM STATUS: ${status}`} variant="default" className="text-[8px] font-black tracking-widest shadow-sm" />
       </div>
       <div>
-        <h3 className="text-4xl font-black tracking-tighter text-foreground leading-none tabular-nums">{value?.toLocaleString() ?? 0}</h3>
+        <h3 className="text-4xl font-black tracking-tighter text-foreground leading-none tabular-nums">{value?.toLocaleString() 님 0}</h3>
         <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase mt-4 leading-none">{title}</p>
       </div>
       <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] group-hover:scale-125 group-hover:rotate-12 transition-all duration-1000 grayscale">
@@ -426,3 +418,4 @@ function SummaryBlock({ title, value, icon, status, color, bg }: any) {
     </div>
   );
 }
+

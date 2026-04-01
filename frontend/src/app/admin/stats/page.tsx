@@ -1,12 +1,12 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { statsAdminService } from '@/services/foundation/system/StatsAdminService';
 import AdminStatsClient from './AdminStatsClient';
 import { SummaryStats, MenuStats } from '@/types/foundation/stats';
 
 export const metadata = {
- title: '?�텔리전???�계 ?�?�보??| ?�자?��? ?��??�레?�워??,
- description: '?�스???�반???�동 ?�이?��? ?�메??지?��? ?�시간으�?분석?�니??',
+ title: '?명뀛由ъ쟾님통계 ??쒕낫님| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+ description: '?쒖뒪님?꾨컲님?쒕룞 ?곗씠?곗? ?꾨찓님吏?쒕? ?ㅼ떆媛꾩쑝濡?분석?⑸땲님',
 };
 
 export default async function AdminStatsPage() {
@@ -14,7 +14,7 @@ export default async function AdminStatsPage() {
  const accessToken = cookieStore.get('accessToken')?.value;
  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- // [Eliminating Waterfalls] 병렬 ?�이???�출
+ // [Eliminating Waterfalls] 蹂묐젹 ?곗씠님?몄텧
  let initialSummary: SummaryStats | null = null;
  let initialConnectData: any[] = [];
  let initialMenuData: MenuStats[] = [];
@@ -65,3 +65,4 @@ function AdminStatsLoading() {
  </div>
  );
 }
+

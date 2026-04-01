@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -56,7 +56,7 @@ export default function AbsenceAdminClient({
     const newStatus = !currentStatus ? 'Y' : 'N';
     try {
       await absenceAdminService.updateAbsence(emplyrId, newStatus);
-      // 로컬 ?�태 ?�데?�트
+      // 濡쒖뺄 ?곹깭 ?낅뜲?댄듃
       setAbsences(prev => {
         const existing = prev.find(a => a.emplyrId === emplyrId);
         if (existing) {
@@ -65,15 +65,15 @@ export default function AbsenceAdminClient({
           return [...prev, { emplyrId, userAbsnceAt: newStatus }];
         }
       });
-      toast.success(`${emplyrId} ?�용?�의 ?�로?�콜??${newStatus === 'Y' ? '부??모드' : '?�성 모드'}�??�환?�었?�니??`);
+      toast.success(`${emplyrId} ?ъ슜?먯쓽 ?꾨줈?좎퐳님${newStatus === 'Y' ? '遺님紐⑤뱶' : '활성 紐⑤뱶'}濡님꾪솚?섏뿀?듬땲님`);
     } catch {
-      toast.error('?�로?�콜 ?�기??�??�류가 발생?�습?�다.');
+      toast.error('?꾨줈?좎퐳 ?숆린님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
     }
   };
 
   const columns: Column<any>[] = [
     {
-      header: '?�이?�티??리소??,
+      header: '?꾩씠?댄떚님由ъ냼님,
       accessor: (item: any) => {
         const isAbsent = getAbsenceStatus(item.emplyrId);
         return (
@@ -97,7 +97,7 @@ export default function AbsenceAdminClient({
       className: 'w-72'
     },
     {
-      header: '커�??��??�션 ?�드?�인??,
+      header: '而ㅻ님덉님댁뀡 ?붾뱶?ъ씤님,
       accessor: (item: any) => (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
@@ -112,7 +112,7 @@ export default function AbsenceAdminClient({
       )
     },
     {
-      header: '가?�성 ?�로?�콜',
+      header: '媛?⑹꽦 ?꾨줈?좎퐳',
       accessor: (item: any) => {
         const isAbsent = getAbsenceStatus(item.emplyrId);
         return (
@@ -140,14 +140,14 @@ export default function AbsenceAdminClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="부??관�??�퍼?�이??
-        breadcrumbs={[{ label: '?�스?��?�? }, { label: '?�용?��?�? }, { label: '부??관�? }]}
+        title="遺님愿由님ㅽ띁?덉씠님
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '?ъ슜?먭?由? }, { label: '遺님愿由? }]}
       />
 
       <HubHeader
-        title="가?�성"
+        title="媛?⑹꽦"
         highlight="Matrix"
-        subtitle="?�사 ?�적 리소?�의 ?�시�?가?�성 �?부???�로?�콜 ?�합 ?�어 ?�스??
+        subtitle="?꾩궗 ?몄쟻 由ъ냼?ㅼ쓽 실시간媛?⑹꽦 諛?遺님?꾨줈?좎퐳 ?듯빀 ?쒖뼱 ?쒖뒪님
         icon={UserX}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -161,7 +161,7 @@ export default function AbsenceAdminClient({
               size="lg"
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
-              <Zap size={20} className="group-hover:animate-pulse" /> 가?�성 ?�로?�콜 ?�기??              <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Zap size={20} className="group-hover:animate-pulse" /> 媛?⑹꽦 ?꾨줈?좎퐳 ?숆린님              <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
           </div>
         }
@@ -170,7 +170,7 @@ export default function AbsenceAdminClient({
       <HubMetricGrid>
         <HubMetricCard title="TOTAL_RESOURCES" value={users.length} icon={User} color="primary" />
         <HubMetricCard title="OPERATIONAL_UNITS" value={users.length - totalAbsents} icon={UserCheck} color="emerald" status="ONLINE" />
-        <HubMetricCard title="STANDBY_UNITS" value={totalAbsents} icon={Ghost} color="rose" status={totalAbsents > 0 ? "ALERT" : "?�정"} />
+        <HubMetricCard title="STANDBY_UNITS" value={totalAbsents} icon={Ghost} color="rose" status={totalAbsents > 0 ? "ALERT" : "?덉젙"} />
         <HubMetricCard title="SYSTEM_INTEGRITY" value="100%" icon={ShieldCheck} color="indigo" />
       </HubMetricGrid>
 
@@ -186,7 +186,7 @@ export default function AbsenceAdminClient({
                 <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                   <Activity size={32} className="text-primary" />
                 </div>
-                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary">가?�성<br />?�텔리전??/h4>
+                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary">媛?⑹꽦<br />?명뀛由ъ쟾님/h4>
               </div>
 
               <div className="space-y-8">
@@ -198,7 +198,7 @@ export default function AbsenceAdminClient({
                       onChange={(e) => setSearchKeyword(e.target.value)}
                       value={searchKeyword}
                       className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
-                      placeholder="리소??명칭 ?�는 UID ?�터�?
+                      placeholder="由ъ냼님紐낆묶 ?먮뒗 UID ?꾪꽣留?
                     />
                   </div>
                 </div>
@@ -206,7 +206,7 @@ export default function AbsenceAdminClient({
 
               <div className="pt-8 border-t border-white/5 flex items-center justify-between">
                 <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 max-w-[200px]">
-                  * 모든 부???�로?�콜 변경사??? ?�업 매트�?��??즉시 ?�기?�됩?�다.
+                  * 紐⑤뱺 遺님?꾨줈?좎퐳 蹂寃쎌궗님? ?묒뾽 留ㅽ듃由?뒪님利됱떆 ?숆린?붾맗?덈떎.
                 </p>
                 <Button
                   className="h-12 px-8 rounded-2xl bg-white text-slate-900 border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition-all hover:-translate-y-1"
@@ -221,8 +221,8 @@ export default function AbsenceAdminClient({
         {/* Resources Availability Matrix */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
           <HubSectionCard
-            title="리소??가?�성 ?�태 매트�?��"
-            description="?�적 리소?�의 ?�시�??�성/부???�태�??�시간으�?모니?�링?�고 ?�어?�니??"
+            title="由ъ냼님媛?⑹꽦 ?곹깭 留ㅽ듃由?뒪"
+            description="?몄쟻 由ъ냼?ㅼ쓽 ?ㅼ떆媛님쒖꽦/遺님?곹깭瑜님ㅼ떆媛꾩쑝濡?紐⑤땲?곕쭅?섍퀬 ?쒖뼱?⑸땲님"
             icon={SearchCode}
           >
             <div className="overflow-hidden">
@@ -230,7 +230,7 @@ export default function AbsenceAdminClient({
                 columns={columns}
                 data={users.filter((u: any) => u.userNm.includes(searchKeyword) || u.emplyrId.includes(searchKeyword))}
                 loading={loading}
-                emptyMessage="?�재 ?�성?�된 리소???�트림이 존재?��? ?�습?�다."
+                emptyMessage="현재 활성?붾맂 由ъ냼님?ㅽ듃由쇱씠 議댁옱?섏? ?딆뒿?덈떎."
                 className="border-none bg-transparent"
               />
             </div>
@@ -240,3 +240,4 @@ export default function AbsenceAdminClient({
     </div>
   );
 }
+

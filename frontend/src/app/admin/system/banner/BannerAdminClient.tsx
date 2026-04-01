@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import Image from 'next/image';
@@ -97,10 +97,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
   const handleDelete = async (id: string) => {
     const ok = await confirm({
-      title: '?�로모션 ?�산 ??�� ?�인',
-      message: '?�당 배너 ?�는 ?�업 ?�이?��? ?�스?�에???�구?�으�???��?�시겠습?�까? 게시 중인 경우 즉시 중단?�니??',
+      title: '?꾨줈紐⑥뀡 ?먯궛 님젣 ?뺤씤',
+      message: '?대떦 諛곕꼫 ?먮뒗 ?앹뾽 ?곗씠?곕? ?쒖뒪?쒖뿉님?곴뎄?곸쑝濡님?젣?섏떆寃좎뒿?덇퉴? 寃뚯떆 以묒씤 寃쎌슦 利됱떆 以묐떒?⑸땲님',
       variant: 'destructive',
-      confirmText: '?�이????�� ?�인'
+      confirmText: '?곗씠님님젣 ?뱀씤'
     });
 
     if (!ok) return;
@@ -117,11 +117,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
         toast(res.message, 'error');
       }
     } catch {
-<<<<<<< HEAD
-      toast('자산 삭제 처리 중 예외가 발생했습니다.', 'error');
-=======
-      toast('?�산 ??�� 처리 �??�외가 발생?�습?�다.', 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+      toast('?먯궛 님젣 泥섎━ 以님덉쇅媛 諛쒖깮?덉뒿?덈떎.', 'error');
       console.error('Promotion handleDelete error:', error);
     }
   };
@@ -172,17 +168,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
         toast(res.message, 'error');
       }
     } catch {
-<<<<<<< HEAD
-      toast('저장 처리 중 데이터 무결성 오류가 발생했습니다.', 'error');
-=======
-      toast('?�??처리 �??�이??무결???�류가 발생?�습?�다.', 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+      toast('?님泥섎━ 以님곗씠님臾닿껐님?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
     }
   };
 
   const bannerColumns: Column<Banner>[] = [
     {
-      header: '비주???�산 ?�냅??,
+      header: '鍮꾩＜님?먯궛 ?ㅻ깄님,
       accessor: (item: Banner) => (
         <div className="w-56 h-24 bg-slate-900 rounded-[1.5rem] overflow-hidden border-2 border-slate-100 shadow-xl relative group/img cursor-zoom-in transition-all duration-500 hover:scale-[1.05] hover:z-50">
           <ImageIcon size={24} className="absolute inset-0 m-auto text-white/10" />
@@ -203,7 +195,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       className: 'py-6 px-4'
     },
     {
-      header: '배너 ?�산 명칭',
+      header: '諛곕꼫 ?먯궛 紐낆묶',
       accessor: (item: Banner) => (
         <div className="flex flex-col gap-1.5 py-4">
           <span className="font-black tracking-tighter text-foreground text-md uppercase leading-tight">{item.bannerNm}</span>
@@ -219,7 +211,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       )
     },
     {
-      header: '?�선?�위',
+      header: '?곗꽑?쒖쐞',
       accessor: (item: Banner) => (
         <div className="w-12 h-12 rounded-2xl bg-slate-50 border-2 border-slate-100 flex items-center justify-center shadow-inner group-hover:bg-slate-900 group-hover:text-white transition-all duration-500">
           <span className="font-black text-lg font-mono tabular-nums leading-none">
@@ -230,15 +222,15 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       className: 'w-24 text-center'
     },
     {
-      header: '게시 ?�태',
+      header: '寃뚯떆 ?곹깭',
       accessor: (item: Banner | Popup) => {
         const isLive = 'reflctAt' in item ? item.reflctAt === 'Y' : item.ntceAt === 'Y';
-        return <HubStatusBadge status={isLive ? '게시 �? : '?��?�?} />;
+        return <HubStatusBadge status={isLive ? '寃뚯떆 以? : '?湲?以?} />;
       },
       className: 'w-32'
     },
     {
-      header: '관�?,
+      header: '愿由?,
       className: 'text-right w-32',
       accessor: (item: Banner) => (
         <div className="flex justify-end gap-2 pr-4">
@@ -255,7 +247,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
   const popupColumns: Column<Popup>[] = [
     {
-      header: '?�업 명세 (Architecture)',
+      header: '?앹뾽 紐낆꽭 (Architecture)',
       accessor: (item: Popup) => (
         <div className="flex flex-col gap-2 py-4">
           <span className="font-black tracking-tighter text-foreground text-md uppercase leading-tight">{item.popupTitleNm}</span>
@@ -271,7 +263,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       )
     },
     {
-      header: '?�멘??(Resolution)',
+      header: '?붾찘님(Resolution)',
       accessor: (item: Popup) => (
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-3">
@@ -289,12 +281,12 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       className: 'w-64'
     },
     {
-      header: '게시 ?��?',
-      accessor: (item: Popup) => <HubStatusBadge status={item.ntceAt === 'Y' ? '게시 �? : '?��?�?} />,
+      header: '寃뚯떆 ?щ?',
+      accessor: (item: Popup) => <HubStatusBadge status={item.ntceAt === 'Y' ? '寃뚯떆 以? : '?湲?以?} />,
       className: 'w-32'
     },
     {
-      header: '관�?,
+      header: '愿由?,
       className: 'text-right w-32',
       accessor: (item: Popup) => (
         <div className="flex justify-end gap-2 pr-4">
@@ -312,14 +304,14 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="배너/?�업 관�?
-        breadcrumbs={[{ label: '?�스?��?�? }, { label: '?�보 관�? }]}
+        title="諛곕꼫/?앹뾽 愿由?
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '?띾낫 愿由? }]}
       />
 
       <HubHeader
-        title="?�털"
-        highlight="배너 �??�업 관�?
-        subtitle="?�사?�트???�출?�는 배너 ?�산�?공�? ?�업???�록?�고 게시 ?�태�??�어?�니??"
+        title="?ы꽭"
+        highlight="諛곕꼫 諛님앹뾽 愿由?
+        subtitle="?뱀궗?댄듃님?몄텧?섎뒗 諛곕꼫 ?먯궛怨?怨듭? ?앹뾽님등록?섍퀬 寃뚯떆 ?곹깭瑜님쒖뼱?⑸땲님"
         icon={Megaphone}
         actions={
           <Button
@@ -327,16 +319,16 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
             size="lg"
             className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
           >
-            <Plus size={20} /> ?�규 {activeTab === 'banner' ? '배너' : '?�업'} ?�록
+            <Plus size={20} /> 신규 {activeTab === 'banner' ? '諛곕꼫' : '?앹뾽'} 등록
           </Button>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="?�성 배너" value={banners.filter(b => b.reflctAt === 'Y').length} icon={ImageIcon} color="primary" />
-        <HubMetricCard title="?�성 ?�업" value={popups.filter(p => p.ntceAt === 'Y').length} icon={Monitor} color="emerald" status="게시 �? />
-        <HubMetricCard title="?�약 ?�산" value={popups.filter(p => new Date(p.ntceBgnde) > new Date()).length} icon={Calendar} color="amber" />
-        <HubMetricCard title="?�체 ?�산" value={banners.length + popups.length} icon={Layers} color="indigo" />
+        <HubMetricCard title="활성 諛곕꼫" value={banners.filter(b => b.reflctAt === 'Y').length} icon={ImageIcon} color="primary" />
+        <HubMetricCard title="활성 ?앹뾽" value={popups.filter(p => p.ntceAt === 'Y').length} icon={Monitor} color="emerald" status="寃뚯떆 以? />
+        <HubMetricCard title="?덉빟 ?먯궛" value={popups.filter(p => new Date(p.ntceBgnde) > new Date()).length} icon={Calendar} color="amber" />
+        <HubMetricCard title="?꾩껜 ?먯궛" value={banners.length + popups.length} icon={Layers} color="indigo" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
@@ -359,8 +351,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                 <ImageIcon size={22} />
               </div>
               <div className="flex flex-col text-left relative z-10">
-                <span className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-40">?�역 01</span>
-                <span className="text-md font-black tracking-tighter uppercase leading-tight">배너 ?�정</span>
+                <span className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-40">?곸뿭 01</span>
+                <span className="text-md font-black tracking-tighter uppercase leading-tight">諛곕꼫 ?ㅼ젙</span>
               </div>
               {activeTab === 'banner' && (
                 <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />
@@ -383,8 +375,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                 <Monitor size={22} />
               </div>
               <div className="flex flex-col text-left relative z-10">
-                <span className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-40">?�역 02</span>
-                <span className="text-md font-black tracking-tighter uppercase leading-tight">?�업 ?�정</span>
+                <span className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-40">?곸뿭 02</span>
+                <span className="text-md font-black tracking-tighter uppercase leading-tight">?앹뾽 ?ㅼ젙</span>
               </div>
               {activeTab === 'popup' && (
                 <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />
@@ -395,11 +387,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
               <div className="relative z-10 space-y-4">
                 <div className="flex items-center gap-3">
                   <Sparkles size={16} className="text-primary animate-pulse" />
-                  <span className="text-[10px] font-black tracking-widest uppercase text-white/40">?�스???�태</span>
+                  <span className="text-[10px] font-black tracking-widest uppercase text-white/40">?쒖뒪님?곹깭</span>
                 </div>
-                <h5 className="text-lg font-black tracking-tighter uppercase leading-none">?�로모션 관�?/h5>
+                <h5 className="text-lg font-black tracking-tighter uppercase leading-none">?꾨줈紐⑥뀡 愿由?/h5>
                 <p className="text-[9px] font-bold text-slate-400 leading-relaxed uppercase opacity-60">
-                  ?�록??모든 배너?� ?�업 ?�산?� ?�스?�에 즉시 반영?�니??
+                  등록님紐⑤뱺 諛곕꼫? ?앹뾽 ?먯궛? ?쒖뒪?쒖뿉 利됱떆 諛섏쁺?⑸땲님
                 </p>
               </div>
             </div>
@@ -417,8 +409,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
               transition={{ duration: 0.5 }}
             >
               <HubSectionCard
-                title={activeTab === 'banner' ? "배너 목록" : "?�업 목록"}
-                description={activeTab === 'banner' ? "?�털 메인 �??�브 ?�션???�출?�는 배너 목록?�니??" : "기간 ?�정 공�? �??�내�??�한 ?�업 관�?목록?�니??"}
+                title={activeTab === 'banner' ? "諛곕꼫 紐⑸줉" : "?앹뾽 紐⑸줉"}
+                description={activeTab === 'banner' ? "?ы꽭 硫붿씤 諛님쒕툕 ?뱀뀡님?몄텧?섎뒗 諛곕꼫 紐⑸줉?낅땲님" : "湲곌컙 ?쒖젙 怨듭? 諛님덈궡瑜님꾪븳 ?앹뾽 愿由?紐⑸줉?낅땲님"}
                 icon={activeTab === 'banner' ? ImageIcon : Monitor}
               >
                 <div className="overflow-hidden">
@@ -429,7 +421,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                     error={(activeTab === 'banner' ? bannersError : popupsError) as Error | null}
                     onRetry={() => activeTab === 'banner' ? refetchBanners() : refetchPopups()}
                     keyField={(activeTab === 'banner' ? 'bannerId' : 'popupId') as any}
-                    emptyMessage={`?�록??${activeTab === 'banner' ? '배너' : '?�업'} ?�산??존재?��? ?�습?�다.`}
+                    emptyMessage={`등록님${activeTab === 'banner' ? '諛곕꼫' : '?앹뾽'} ?먯궛님議댁옱?섏? ?딆뒿?덈떎.`}
                     className="border-none bg-transparent"
                   />
                 </div>
@@ -442,13 +434,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       <StandardModal
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
-        title={activeTab === 'banner' ? (editingItem ? '배너 명세 ?�정' : '?�규 비주???�산 ?�록') : (editingItem ? '?�업 ?�키?�처 ?�정' : '?�규 ?�이???�업 ?�계')}
+        title={activeTab === 'banner' ? (editingItem ? '諛곕꼫 紐낆꽭 ?섏젙' : '신규 鍮꾩＜님?먯궛 등록') : (editingItem ? '?앹뾽 ?꾪궎?띿쿂 ?섏젙' : '신규 ?덉씠님?앹뾽 설계')}
         maxWidth="3xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">痍⑥냼</Button>
             <Button form="promotion-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
-              <Zap size={18} className="group-hover:animate-pulse" /> {editingItem ? '?�산 ?�정' : '?�영 배포'}
+              <Zap size={18} className="group-hover:animate-pulse" /> {editingItem ? '?먯궛 ?섏젙' : '?댁쁺 諛고룷'}
             </Button>
           </div>
         }
@@ -458,61 +450,61 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
             <div className="space-y-8">
               {activeTab === 'banner' ? (
                 <>
-                  <FormField label="배너 명칭 (Internal Label)" required description="관리용 명칭?�니??">
-                    <Input name="bannerNm" type="text" defaultValue={(editingItem as Banner)?.bannerNm} className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner" required placeholder="배너 ?�름 ?�력" />
+                  <FormField label="諛곕꼫 紐낆묶 (Internal Label)" required description="愿由ъ슜 紐낆묶?낅땲님">
+                    <Input name="bannerNm" type="text" defaultValue={(editingItem as Banner)?.bannerNm} className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner" required placeholder="諛곕꼫 ?대쫫 ?낅젰" />
                   </FormField>
-                  <FormField label="?�딩 ?�이지 (Target URL)" description="?�릭 ???�동???�론?�엔???�우???�는 ?��? 경로">
+                  <FormField label="?쒕뵫 ?섏씠吏 (Target URL)" description="?대┃ 님?대룞님?꾨줎?몄뿏님?쇱슦님?먮뒗 ?몃? 寃쎈줈">
                     <div className="relative group/link">
                       <LinkIcon size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/link:opacity-100 transition-opacity" />
                       <Input name="linkUrl" type="text" defaultValue={(editingItem as Banner)?.linkUrl} className="h-14 pl-16 rounded-2xl font-mono text-xs font-black shadow-inner" placeholder="/pages/..." />
                     </div>
                   </FormField>
                   <div className="grid grid-cols-2 gap-8">
-                    <FormField label="?�출 ?�서 Priority" required>
+                    <FormField label="?쒖텧 ?쒖꽌 Priority" required>
                       <Input name="sortOrdr" type="number" defaultValue={(editingItem as Banner)?.sortOrdr || 0} className="h-14 rounded-2xl font-black shadow-inner" required />
                     </FormField>
-                    <FormField label="?�산 로드 ?�태">
+                    <FormField label="?먯궛 濡쒕뱶 ?곹깭">
                       <Select name="reflctAt" defaultValue={(editingItem as Banner)?.reflctAt || 'Y'}>
                         <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase shadow-inner">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl shadow-2xl">
-                          <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase">--- ?�성 (Live) ---</SelectItem>
-                          <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">--- ?��?(Staging) ---</SelectItem>
+                          <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase">--- 활성 (Live) ---</SelectItem>
+                          <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">--- ?湲?(Staging) ---</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormField>
                   </div>
-                  <FormField label="?�산 명세 �??�명 (Metadata)">
-                    <textarea name="bannerDc" defaultValue={(editingItem as Banner)?.bannerDc} className="w-full min-h-[120px] p-6 rounded-2xl border-2 border-slate-100 bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 ?�산???�도 �??�출 조건 ?�명" />
+                  <FormField label="?먯궛 紐낆꽭 諛님ㅻ챸 (Metadata)">
+                    <textarea name="bannerDc" defaultValue={(editingItem as Banner)?.bannerDc} className="w-full min-h-[120px] p-6 rounded-2xl border-2 border-slate-100 bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="諛곕꼫 ?먯궛님?⑸룄 諛님쒖텧 議곌굔 ?ㅻ챸" />
                   </FormField>
                 </>
               ) : (
                 <>
-                  <FormField label="?�업 ?�?��? (Header)" required>
-                    <Input name="popupTitleNm" type="text" defaultValue={(editingItem as Popup)?.popupTitleNm} className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner" required placeholder="?�업 ?�목 ?�력" />
+                  <FormField label="?앹뾽 ??댄? (Header)" required>
+                    <Input name="popupTitleNm" type="text" defaultValue={(editingItem as Popup)?.popupTitleNm} className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner" required placeholder="?앹뾽 ?쒕ぉ ?낅젰" />
                   </FormField>
                   <div className="grid grid-cols-2 gap-8 p-10 bg-slate-50 border-2 border-dashed border-slate-100 rounded-[2.5rem] shadow-inner">
-                    <FormField label="게시 ?�작 ?�점 (T-0)" required>
+                    <FormField label="寃뚯떆 ?쒖옉 ?쒖젏 (T-0)" required>
                       <Input name="ntceBgnde" type="date" defaultValue={(editingItem as Popup)?.ntceBgnde} className="h-14 rounded-xl text-xs font-black shadow-sm" required />
                     </FormField>
-                    <FormField label="게시 종료 ?�점 (T-End)" required>
+                    <FormField label="寃뚯떆 醫낅즺 ?쒖젏 (T-End)" required>
                       <Input name="ntceEndde" type="date" defaultValue={(editingItem as Popup)?.ntceEndde} className="h-14 rounded-xl text-xs font-black shadow-sm" required />
                     </FormField>
                   </div>
                   <div className="grid grid-cols-2 gap-8">
-                    <FormField label="가�?좌표 (X_Pivot)">
+                    <FormField label="媛濡?醫뚰몴 (X_Pivot)">
                       <Input name="popupWlc" type="number" defaultValue={(editingItem as Popup)?.popupWlc || 0} className="h-14 rounded-2xl font-black shadow-inner" required />
                     </FormField>
-                    <FormField label="?�로 좌표 (Y_Pivot)">
+                    <FormField label="?몃줈 醫뚰몴 (Y_Pivot)">
                       <Input name="popupHlc" type="number" defaultValue={(editingItem as Popup)?.popupHlc || 0} className="h-14 rounded-2xl font-black shadow-inner" required />
                     </FormField>
                   </div>
                   <div className="grid grid-cols-2 gap-8">
-                    <FormField label="가�???(W_Res)">
+                    <FormField label="媛濡님?(W_Res)">
                       <Input name="popupWSize" type="number" defaultValue={(editingItem as Popup)?.popupWSize || 400} className="h-14 rounded-2xl font-black shadow-inner" required />
                     </FormField>
-                    <FormField label="?�로 ?�이 (H_Res)">
+                    <FormField label="?몃줈 ?믪씠 (H_Res)">
                       <Input name="popupHSize" type="number" defaultValue={(editingItem as Popup)?.popupHSize || 300} className="h-14 rounded-2xl font-black shadow-inner" required />
                     </FormField>
                   </div>
@@ -521,10 +513,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
             </div>
 
             <div className="space-y-12">
-              <FormField label="미디???�산 ?�로??(Visual Payload)" required description="?�스???��? 규격 ?��?지�?준?�하??��??">
+              <FormField label="誘몃뵒님?먯궛 ?낅줈님(Visual Payload)" required description="?쒖뒪님?쒖? 洹쒓꺽 ?대?吏瑜?以?섑븯님떆님">
                 <div className="p-4 border-4 border-dashed border-slate-100 rounded-[3rem] bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-inner relative group/upload">
                   <div className="absolute inset-x-0 -top-8 flex justify-center opacity-0 group-hover/upload:opacity-100 transition-opacity">
-                    <div className="px-4 py-2 bg-slate-900 text-white rounded-full text-[9px] font-black tracking-widest uppercase animate-bounce">?�일 ?�로???�성</div>
+                    <div className="px-4 py-2 bg-slate-900 text-white rounded-full text-[9px] font-black tracking-widest uppercase animate-bounce">?뚯씪 ?낅줈님활성</div>
                   </div>
                   <StandardFileUploader
                     onFilesChange={(f) => setFormFiles(f)}
@@ -532,14 +524,14 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                   />
                   <div className="mt-4 flex items-center justify-center gap-4 text-muted-foreground/30">
                     <UploadCloud size={24} />
-                    <span className="text-[10px] font-black tracking-widest">?�기�??�일???�래그하???�로??/span>
+                    <span className="text-[10px] font-black tracking-widest">?ш린濡님뚯씪님?쒕옒洹명븯님?낅줈님/span>
                   </div>
                 </div>
               </FormField>
 
               {(editingItem as Banner)?.bannerId && (editingItem as Banner).bannerImageFile && (
                 <div className="p-8 rounded-[2rem] bg-slate-900 text-white space-y-3 shadow-2xl relative overflow-hidden group">
-                  <span className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">기존 ?�일 ?�별??/span>
+                  <span className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">湲곗〈 ?뚯씪 ?앸퀎님/span>
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform">
                       <SearchCode size={20} className="text-primary" />
@@ -555,27 +547,27 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
               {activeTab === 'popup' && (
                 <div className="grid grid-cols-1 gap-8 p-10 bg-indigo-50/30 border-2 border-indigo-100/50 rounded-[2.5rem] shadow-sm">
-                  <p className="text-[9px] font-black text-indigo-500/50 tracking-[0.4em] uppercase mb-1">?�태 ?�로?�콜</p>
+                  <p className="text-[9px] font-black text-indigo-500/50 tracking-[0.4em] uppercase mb-1">?곹깭 ?꾨줈?좎퐳</p>
                   <div className="grid grid-cols-2 gap-6">
-                    <FormField label="게시 ?��?줄링">
+                    <FormField label="寃뚯떆 ?ㅼ?以꾨쭅">
                       <Select name="ntceAt" defaultValue={(editingItem as Popup)?.ntceAt || 'Y'}>
                         <SelectTrigger className="h-14 rounded-2xl border-2 border-indigo-100 bg-white font-black text-[10px] tracking-widest uppercase shadow-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl">
-                          <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">게시 (LIVE)</SelectItem>
-                          <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase text-rose-500">?��?(STAGING)</SelectItem>
+                          <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">寃뚯떆 (LIVE)</SelectItem>
+                          <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase text-rose-500">?湲?(STAGING)</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormField>
-                    <FormField label="?�시보�??�기 처리">
+                    <FormField label="?ㅼ떆蹂댁님딄린 泥섎━">
                       <Select name="stopVewAt" defaultValue={(editingItem as Popup)?.stopVewAt || 'Y'}>
                         <SelectTrigger className="h-14 rounded-2xl border-2 border-indigo-100 bg-white font-black text-[10px] tracking-widest uppercase shadow-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl">
-                          <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">?�성 (ENABLE)</SelectItem>
-                          <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase">비활??(DISABLE)</SelectItem>
+                          <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">활성 (ENABLE)</SelectItem>
+                          <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase">鍮꾪솢님(DISABLE)</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormField>
@@ -589,3 +581,4 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
     </div>
   );
 }
+

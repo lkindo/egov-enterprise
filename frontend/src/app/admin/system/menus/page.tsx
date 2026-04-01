@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
@@ -6,8 +6,8 @@ import { programAdminService } from '@/services/foundation/system/ProgramAdminSe
 import MenuAdminClient from './MenuAdminClient';
 
 export const metadata = {
-    title: '?�스??메뉴 ?�키?�처 | ?�자?��? ?��??�레?�워??,
-    description: '?�스???�리 구조?� ?�로그램 ?�결??체계?�으�?관리합?�다.',
+    title: '?쒖뒪님硫붾돱 ?꾪궎?띿쿂 | ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+    description: '?쒖뒪님?몃━ 援ъ“? ?꾨줈洹몃옩 ?곌껐님泥닿퀎?곸쑝濡?愿由ы빀?덈떎.',
 };
 
 export default async function MenuAdminPage() {
@@ -69,3 +69,4 @@ function MenuAdminLoading() {
         </div>
     );
 }
+

@@ -1,4 +1,4 @@
-import { ApiService } from '@/services/core/ApiService';
+﻿import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 export interface Note {
@@ -19,35 +19,34 @@ class NoteService extends ApiService {
  }
 
  /**
- * 받은 쪽지 목록 조회
+ * 諛쏆? 履쎌? 紐⑸줉 조회
  */
  async getReceivedNotes(params: { page?: number; size?: number }): Promise<PageResponse<Note>> {
  return this.get<PageResponse<Note>>('/received', { params });
  }
 
  /**
- * 보낸 쪽지 목록 조회
+ * 보냄 履쎌? 紐⑸줉 조회
  */
  async getSentNotes(params: { page?: number; size?: number }): Promise<PageResponse<Note>> {
  return this.get<PageResponse<Note>>('/sent', { params });
  }
 
  /**
- * 쪽지 보내기
- */
+ * 履쎌? 蹂대궡湲? */
  async sendNote(data: { rcverId: string; noteSj: string; noteCn: string }): Promise<Note> {
  return this.post<Note>('', data);
  }
 
  /**
- * 쪽지 상세 조회 및 읽음 처리
+ * 履쎌? ?곸꽭 조회 諛님쎌쓬 泥섎━
  */
  async getNote(id: string): Promise<Note> {
  return this.get<Note>(`/${id}`);
  }
 
  /**
- * 쪽지 삭제
+ * 履쎌? 님젣
  */
  async deleteNote(id: string): Promise<void> {
  return this.delete<void>(`/${id}`);

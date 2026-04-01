@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { Search, RotateCcw, Calendar as CalendarIcon, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
@@ -58,8 +58,8 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
               <SlidersHorizontal size={20} />
             </div>
             <div>
-              <h3 className="text-base font-black text-foreground tracking-tighter leading-none uppercase">검??조건 ?�정</h3>
-              <p className="text-[10px] font-black text-muted-foreground/50 mt-1.5 uppercase tracking-widest">고급 ?�터�??�스??/p>
+              <h3 className="text-base font-black text-foreground tracking-tighter leading-none uppercase">寃님議곌굔 ?ㅼ젙</h3>
+              <p className="text-[10px] font-black text-muted-foreground/50 mt-1.5 uppercase tracking-widest">怨좉툒 ?꾪꽣留님쒖뒪님/p>
             </div>
           </div>
           <Button
@@ -70,7 +70,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
             className="rounded-xl font-black h-10 px-4 gap-2 hover:bg-muted transition-all text-muted-foreground"
           >
             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            <span className="text-[10px] tracking-widest font-black uppercase">?�터 {isExpanded ? '?�기' : '?�치�?}</span>
+            <span className="text-[10px] tracking-widest font-black uppercase">?꾪꽣 {isExpanded ? '?묎린' : '?쇱튂湲?}</span>
           </Button>
         </div>
 
@@ -88,7 +88,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
                     onValueChange={(v) => handleValueChange(field.name, v === '__ALL__' ? '' : v)}
                   >
                     <SelectTrigger className="h-12 rounded-xl border border-input bg-background focus:ring-4 focus:ring-primary/10 hover:border-primary/50 transition-all font-bold text-sm ring-offset-background shadow-sm">
-                      <SelectValue placeholder={field.placeholder || "?�체"} />
+                      <SelectValue placeholder={field.placeholder || "?꾩껜"} />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl shadow-2xl border-border bg-background p-1">
                       {field.options?.map(opt => (
@@ -123,7 +123,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
                             <span className="tracking-tight">{format(values[field.name].from, "LLL dd", { locale: ko })}</span>
                           )
                         ) : (
-                          <span className="tracking-tight uppercase text-[10px] font-black tracking-widest">?�짜 범위 ?�택</span>
+                          <span className="tracking-tight uppercase text-[10px] font-black tracking-widest">?좎쭨 踰붿쐞 ?좏깮</span>
                         )}
                       </Button>
                     </PopoverTrigger>
@@ -172,7 +172,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
             className="rounded-xl h-11 px-5 font-black gap-2 text-[10px] tracking-widest text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-all uppercase"
           >
             <RotateCcw size={16} />
-            초기??          </Button>
+            珥덇린님          </Button>
           <Button
             type="submit"
             size="sm"
@@ -188,3 +188,4 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
 }
 
 export const StandardSearchFilter = SmartSearchPanel;
+

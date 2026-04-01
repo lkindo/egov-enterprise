@@ -1,9 +1,9 @@
-import { manualAdminService } from '@/services/foundation/user/ManualAdminService';
+﻿import { manualAdminService } from '@/services/foundation/user/ManualAdminService';
 import { cookies } from 'next/headers';
 import ManualAdminClient from './ManualAdminClient';
 
 export const metadata = {
- title: '?�라??매뉴??관�?| 부가?�비??,
+ title: '온라인留ㅻ돱님愿由?| 遺媛?쒕퉬님,
 };
 
 export default async function ManualAdminPage({
@@ -31,3 +31,4 @@ export default async function ManualAdminPage({
  <ManualAdminClient initialManuals={initialManuals} />
  );
 }
+

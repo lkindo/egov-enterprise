@@ -20,9 +20,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const { toast, success } = useToast();
   const [isConnected, setIsConnected] = useState(false);
   const stompClient = useRef<Client | null>(null);
-  const isConnecting = useRef(false);  // 중복 연결 방지
+  const isConnecting = useRef(false);
 
-  // 콜백 함수 메모이제이션으로 불필요한 리렌더링 방지
   const handleNotice = useCallback((message: any) => {
     try {
       const payload = JSON.parse(message.body);
@@ -46,7 +45,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   }, [toast, success]);
 
   useEffect(() => {
-    // 사용자 없으면 연결 해제
     if (!user) {
       if (stompClient.current?.active) {
         stompClient.current.deactivate();
@@ -55,7 +53,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 중복 연결 방지
     if (isConnecting.current || stompClient.current?.active) {
       return;
     }
@@ -71,7 +68,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       debug: (str) => {
-        // 디버그 로그는 개발 환경에서만
         if (process.env.NODE_ENV === 'development') {
           console.debug('[WebSocket]', str);
         }
@@ -82,11 +78,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       console.log('Connected to WebSocket');
       setIsConnected(true);
       isConnecting.current = false;
-
-      // 1. 공통 공지사항 채널 구독
       client.subscribe('/topic/notices', handleNotice);
-
-      // 2. 사용자 개별 알림 채널 구독 (결재, 댓글 등)
       client.subscribe('/user/queue/notifications', handleNotification);
     };
 
@@ -105,7 +97,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     client.activate();
     stompClient.current = client;
 
-    // 정리 함수에서 확실히 해제
     return () => {
       if (client.active) {
         client.deactivate();
@@ -114,7 +105,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       setIsConnected(false);
       isConnecting.current = false;
     };
-  }, [user, handleNotice, handleNotification]);  // 메모이제이션된 콜백 사용
+  }, [user, handleNotice, handleNotification]);
 
   return (
     <WebSocketContext.Provider value={{ client: stompClient.current, isConnected }}>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { Home, ArrowLeft, Search } from 'lucide-react';
@@ -23,10 +23,10 @@ export default function NotFound() {
  </div>
 
  <div className="space-y-3">
- <h1 className="text-3xl font-black tracking-tighter text-foreground">길을 ?�으?�나??</h1>
+ <h1 className="text-3xl font-black tracking-tighter text-foreground">湲몄쓣 ?껋쑝?⑤굹님</h1>
  <p className="text-muted-foreground font-medium leading-relaxed">
- ?�청?�신 ?�이지�?찾을 ???�습?�다.<br />
- 주소가 ?�확?��? ?�시 ?�번 ?�인?�주?�요.
+ 요청?섏떊 ?섏씠吏瑜?李얠쓣 님?놁뒿?덈떎.<br />
+ 二쇱냼媛 ?뺥솗?쒖? ?ㅼ떆 ?쒕쾲 ?뺤씤?댁＜?몄슂.
  </p>
  </div>
 
@@ -35,13 +35,13 @@ export default function NotFound() {
  href="javascript:history.back()"
  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-2xl h-14 font-bold border-2 gap-2")}
  >
- <ArrowLeft size={18} /> ?�전?�로
+ <ArrowLeft size={18} /> ?댁쟾?쇰줈
  </Link>
  <Link
  href="/"
  className={cn(buttonVariants({ size: "lg" }), "rounded-2xl h-14 font-black shadow-xl shadow-primary/20 gap-2")}
  >
- <Home size={18} /> ?�으�??�동
+ <Home size={18} /> ?덉쑝濡님대룞
  </Link>
  </div>
 
@@ -52,3 +52,4 @@ export default function NotFound() {
  </div>
  );
 }
+

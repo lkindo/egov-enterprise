@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
@@ -33,10 +33,10 @@ export class StandardErrorBoundary extends Component<Props, State> {
  <div className="p-4 bg-destructive/10 text-destructive rounded-full mb-4">
  <AlertTriangle size={48} />
  </div>
- <h2 className="text-2xl font-bold text-foreground mb-2">?�스???�류가 발생?�습?�다</h2>
+ <h2 className="text-2xl font-bold text-foreground mb-2">?쒖뒪님?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎</h2>
  <p className="text-muted-foreground max-w-md mb-8">
- ?�상�?못한 문제가 발생?�여 ?�면???�시?????�습?�다. <br />
- ?�시 ???�시 ?�도?�거??관리자?�게 문의??주세??
+ ?덉긽移?紐삵븳 臾몄젣媛 諛쒖깮?섏뿬 ?붾㈃님?쒖떆님님?놁뒿?덈떎. <br />
+ ?좎떆 님?ㅼ떆 ?쒕룄?섍굅님愿由ъ옄?먭쾶 臾몄쓽님二쇱꽭님
  </p>
  <div className="flex gap-3">
  <button
@@ -44,14 +44,14 @@ export class StandardErrorBoundary extends Component<Props, State> {
  className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-colors"
  >
  <RefreshCcw size={18} />
- ?�시 ?�도
+ ?ㅼ떆 ?쒕룄
  </button>
  <button
  onClick={() => window.location.href = '/'}
  className="flex items-center gap-2 px-6 py-2.5 border rounded-md font-semibold hover:bg-accent transition-colors"
  >
  <Home size={18} />
- 메인?�로
+ 硫붿씤?쇰줈
  </button>
  </div>
  {process.env.NODE_ENV === 'development' && (
@@ -66,3 +66,4 @@ export class StandardErrorBoundary extends Component<Props, State> {
  return this.props.children;
  }
 }
+

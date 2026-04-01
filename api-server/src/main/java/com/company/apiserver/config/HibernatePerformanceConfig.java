@@ -46,11 +46,7 @@ public class HibernatePerformanceConfig {
         }
 
         log.info("=== Hibernate Performance Statistics ===");
-<<<<<<< HEAD
         log.info("Start Time: {}", java.util.Date.from(statistics.getStart()));
-=======
-        log.info("Current Time: {}", new java.util.Date());
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
         log.info("Transactions: {}", statistics.getTransactionCount());
         log.info("Successful Transactions: {}", statistics.getSuccessfulTransactionCount());
         log.info("Prepare Statements: {}", statistics.getPrepareStatementCount());

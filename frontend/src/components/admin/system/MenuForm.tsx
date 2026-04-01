@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,10 +39,10 @@ import { menuAdminService } from '@/services/foundation/system/MenuAdminService'
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
-  menuNo: z.coerce.number().min(1, { message: "메뉴번호는 필수입니다." }),
-  menuNm: z.string().min(1, { message: "메뉴명은 필수입니다." }),
-  progrmFileNm: z.string().min(1, { message: "프로그램파일명은 필수입니다." }),
-  menuOrdr: z.coerce.number().min(1, { message: "메뉴순서는 필수입니다." }),
+  menuNo: z.coerce.number().min(1, { message: "硫붾돱踰덊샇님?꾩닔?낅땲님" }),
+  menuNm: z.string().min(1, { message: "硫붾돱紐낆? ?꾩닔?낅땲님" }),
+  progrmFileNm: z.string().min(1, { message: "?꾨줈洹몃옩?뚯씪紐낆? ?꾩닔?낅땲님" }),
+  menuOrdr: z.coerce.number().min(1, { message: "硫붾돱?쒖꽌님?꾩닔?낅땲님" }),
   menuDc: z.string().optional(),
   upperMenuId: z.coerce.number().optional(),
   relateImageNm: z.string().optional(),
@@ -89,20 +89,20 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
       onOpenChange(false);
     } catch {
       console.error(error);
-      alert('저장 중 오류가 발생했습니다.');
+      alert('?님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
     }
   };
 
   const handleDelete = async () => {
     if (!data?.menuNo) return;
-    if (confirm('정말로 삭제하시겠습니까?')) {
+    if (confirm('?뺣쭚濡님?젣?섏떆寃좎뒿?덇퉴?')) {
       try {
         await menuAdminService.deleteMenu(data.menuNo);
         onSuccess();
         onOpenChange(false);
       } catch {
         console.error(error);
-        alert('삭제 중 오류가 발생했습니다.');
+        alert('님젣 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
       }
     }
   };
@@ -115,10 +115,10 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
             {isEdit ? <Pencil size={28} /> : <Plus size={28} />}
           </div>
           <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter text-center">
-            {isEdit ? '메뉴 프로토콜 수정' : '신규 메뉴 아키텍처 등록'}
+            {isEdit ? '硫붾돱 ?꾨줈?좎퐳 ?섏젙' : '신규 硫붾돱 ?꾪궎?띿쿂 등록'}
           </DialogTitle>
           <DialogDescription className="text-center font-bold text-slate-400 text-sm">
-            시스템 내비게이션 구조를 위한 {isEdit ? '기존 메뉴 정보를 수정' : '새로운 메뉴 노드를 정의'}합니다.
+            ?쒖뒪님?대퉬寃뚯씠님援ъ“瑜님꾪븳 {isEdit ? '湲곗〈 硫붾돱 ?뺣낫瑜님섏젙' : '?덈줈님硫붾돱 노드瑜님뺤쓽'}?⑸땲님
           </DialogDescription>
         </DialogHeader>
 
@@ -131,12 +131,12 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
-                      <Hash size={12} className="text-primary" /> 메뉴 번호
+                      <Hash size={12} className="text-primary" /> 硫붾돱 踰덊샇
                     </FormLabel>
                     <FormControl>
                       <Input 
                         inputMode="numeric" 
-                        placeholder="번호 입력" 
+                        placeholder="踰덊샇 ?낅젰" 
                         {...field} 
                         value={String(field.value)}
                         readOnly={isEdit} 
@@ -153,12 +153,12 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
-                      <Layers size={12} className="text-primary" /> 출력 순서
+                      <Layers size={12} className="text-primary" /> 異쒕젰 ?쒖꽌
                     </FormLabel>
                     <FormControl>
                       <Input 
                         inputMode="numeric" 
-                        placeholder="순서" 
+                        placeholder="?쒖꽌" 
                         {...field} 
                         value={String(field.value)}
                         className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition-all shadow-inner"
@@ -176,11 +176,11 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
-                    <Type size={12} className="text-primary" /> 메뉴 명칭
+                    <Type size={12} className="text-primary" /> 硫붾돱 紐낆묶
                   </FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="메뉴명을 입력하세요..." 
+                      placeholder="硫붾돱紐낆쓣 ?낅젰?섏꽭님.." 
                       {...field} 
                       className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                     />
@@ -197,11 +197,11 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
-                      <FileText size={12} className="text-primary" /> 연결 프로그램
+                      <FileText size={12} className="text-primary" /> ?곌껐 ?꾨줈洹몃옩
                     </FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="파일명..." 
+                        placeholder="?뚯씪紐?.." 
                         {...field} 
                         className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
                       />
@@ -216,12 +216,12 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
-                      <ChevronRight size={12} className="text-primary" /> 상위 노드 ID
+                      <ChevronRight size={12} className="text-primary" /> ?곸쐞 노드 ID
                     </FormLabel>
                     <FormControl>
                       <Input 
                         inputMode="numeric" 
-                        placeholder="상위 ID" 
+                        placeholder="?곸쐞 ID" 
                         {...field} 
                         value={String(field.value)}
                         className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition-all shadow-inner"
@@ -239,11 +239,11 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <Settings2 size={12} className="text-primary" /> 상세 설명
+ <Settings2 size={12} className="text-primary" /> ?곸꽭 ?ㅻ챸
  </FormLabel>
  <FormControl>
  <Input 
- placeholder="메뉴에 대한 상세 설명을 입력하세요..." 
+ placeholder="硫붾돱님?님?곸꽭 ?ㅻ챸님?낅젰?섏꽭님.." 
  {...field} 
  className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
@@ -261,15 +261,14 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  onClick={() => onOpenChange(false)}
  className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all flex-1"
  >
- 취소
+ 痍⑥냼
  </Button>
  <Button 
  type="submit"
  className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
  >
  <Save size={18} />
- 데이터 저장
- </Button>
+ ?곗씠님?님 </Button>
  </div>
  {isEdit && (
  <Button 
@@ -288,3 +287,4 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  </Dialog>
  );
 }
+

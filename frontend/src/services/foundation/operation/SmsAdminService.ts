@@ -1,4 +1,4 @@
-import { AxiosRequestConfig } from 'axios';
+﻿import { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
@@ -12,12 +12,12 @@ export interface SmsDto {
   trnsmitPnttm?: string;
   frstRegisterId?: string;
   frstRegistPnttm?: string;
-  recptnTelno?: string; // 발송 시 사용할 수 있음
+  recptnTelno?: string; // 諛쒖넚 님?ъ슜님님?덉쓬
   recipients?: SmsRecptnDto[];
 }
 
 /**
- * SMS 수신자 DTO
+ * SMS ?섏떊님DTO
  */
 export interface SmsRecptnDto {
   smsId: string;
@@ -31,22 +31,22 @@ class SmsAdminService extends ApiService {
     super('/admin/operation/sms');
   }
 
-  /** SMS 발송 내역 조회 */
+  /** SMS 諛쒖넚 ?댁뿭 조회 */
   async getSmsList(params?: { searchCondition?: string; searchKeyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig) {
     return this.get<PageResponse<SmsDto>>('', { ...config, params });
   }
 
-  /** SMS 상세 조회 */
+  /** SMS ?곸꽭 조회 */
   async getSms(smsId: string, config?: AxiosRequestConfig) {
     return this.get<SmsDto>(`/${smsId}`, config);
   }
 
-  /** SMS 수신자 목록 조회 */
+  /** SMS ?섏떊님紐⑸줉 조회 */
   async getSmsRecipients(smsId: string, config?: AxiosRequestConfig) {
     return this.get<SmsRecptnDto[]>(`/${smsId}/recipients`, config);
   }
 
-  /** SMS 발송 */
+  /** SMS 諛쒖넚 */
   async sendSms(smsDto: SmsDto, config?: AxiosRequestConfig) {
     return this.post<string>('', smsDto, config);
   }

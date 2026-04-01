@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -27,18 +27,18 @@ export default function BoardWritePage() {
 
     const [files, setFiles] = useState<File[]>([]);
 
-    // 자동 저장 훅 연동
+    // ?먮룞 ?님님?곕룞
     const { clear } = useAutoSave('bbs_write', formData, (data) => setFormData(data));
 
     const handleSave = async () => {
         if (!formData.nttSj.trim()) {
-            toast('제목을 입력해 주세요.', 'error');
+            toast('?쒕ぉ님?낅젰님二쇱꽭님', 'error');
             return;
         }
 
         const isConfirmed = await confirm({
-            title: '게시글 등록',
-            message: '작성하신 내용을 등록하시겠습니까?',
+            title: '寃뚯떆湲 등록',
+            message: '?묒꽦?섏떊 ?댁슜님등록?섏떆寃좎뒿?덇퉴?',
             confirmText: '등록'
         });
 
@@ -47,12 +47,12 @@ export default function BoardWritePage() {
  try {
  const res = await boardUserService.createPost(formData);
  if (res) {
- toast('성공적으로 등록되었습니다.', 'success');
- clear(); // 자동 저장 데이터 삭제
+ toast('?깃났?곸쑝濡?등록?섏뿀?듬땲님', 'success');
+ clear(); // ?먮룞 ?님?곗씠님님젣
  router.push('/admin/community/boards');
  }
  } catch {
- toast('등록 중 오류가 발생했습니다.', 'error');
+ toast('등록 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
  }
  }
  };
@@ -61,12 +61,12 @@ export default function BoardWritePage() {
             try {
                 const res = await boardUserService.createPost(formData);
                 if (res) {
-                    toast('성공적으로 등록되었습니다.', 'success');
-                    clear(); // 자동 저장 데이터 삭제
+                    toast('?깃났?곸쑝濡?등록?섏뿀?듬땲님', 'success');
+                    clear(); // ?먮룞 ?님?곗씠님님젣
                     router.push('/admin/community/boards');
                 }
             } catch {
-                toast('등록 중 오류가 발생했습니다.', 'error');
+                toast('등록 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
             }
         }
     };
@@ -75,12 +75,12 @@ export default function BoardWritePage() {
     return (
         <div className="max-w-5xl mx-auto space-y-8 pb-20">
             <PageHeader
-                title="새 게시글 작성"
-                breadcrumbs={[{ label: '게시판', href: '/admin/community/boards' }, { label: '글쓰기' }]}
+                title="님寃뚯떆湲 ?묒꽦"
+                breadcrumbs={[{ label: '寃뚯떆님, href: '/admin/community/boards' }, { label: '湲?곌린' }]}
                 actions={
                     <div className="flex gap-2">
                         <button onClick={() => router.back()} className="px-4 py-2 border rounded-lg font-bold hover:bg-accent transition-all flex items-center gap-2">
-                            <X size={18} /> 취소
+                            <X size={18} /> 痍⑥냼
                         </button>
                         <button onClick={handleSave} className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all flex items-center gap-2">
                             <Send size={18} /> 등록
@@ -92,17 +92,17 @@ export default function BoardWritePage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Form (Left) */}
                 <div className="lg:col-span-2 space-y-6">
-                    <FormField label="게시글 제목" required>
+                    <FormField label="寃뚯떆湲 ?쒕ぉ" required>
                         <input
                             type="text"
                             value={formData.nttSj}
                             onChange={(e) => setFormData({ ...formData, nttSj: e.target.value })}
-                            placeholder="제목을 입력해 주세요."
+                            placeholder="?쒕ぉ님?낅젰님二쇱꽭님"
                             className="w-full h-12 px-4 rounded-xl border bg-card text-lg font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
                         />
                     </FormField>
 
-                    <FormField label="내용 작성" required>
+                    <FormField label="?댁슜 ?묒꽦" required>
                         <StandardEditor
                             value={formData.nttCn}
                             onChange={(val) => setFormData({ ...formData, nttCn: val })}
@@ -116,18 +116,18 @@ export default function BoardWritePage() {
                     <div className="p-6 border rounded-2xl bg-card shadow-sm space-y-6">
                         <h3 className="font-bold flex items-center gap-2 border-b pb-4 mb-4">
                             <AlertCircle size={18} className="text-primary" />
-                            게시 옵션
+                            寃뚯떆 ?듭뀡
                         </h3>
 
-                        <FormField label="게시판 대상">
+                        <FormField label="寃뚯떆님?님>
                             <select
                                 value={formData.bbsId}
                                 onChange={(e) => setFormData({ ...formData, bbsId: e.target.value })}
                                 className="w-full h-10 px-3 rounded-md border bg-background text-sm outline-none"
                             >
                                 <option value="BBSMSTR_AAAAAAAAAAAA">공지사항</option>
-                                <option value="BBSMSTR_BBBBBBBBBBBB">자유게시판</option>
-                                <option value="BBSMSTR_CCCCCCCCCCCC">업무게시판</option>
+                                <option value="BBSMSTR_BBBBBBBBBBBB">?먯쑀寃뚯떆님/option>
+                                <option value="BBSMSTR_CCCCCCCCCCCC">업무寃뚯떆님/option>
                             </select>
                         </FormField>
 
@@ -139,7 +139,7 @@ export default function BoardWritePage() {
                                     onChange={(e) => setFormData({ ...formData, noticeAt: e.target.checked ? 'Y' : 'N' })}
                                     className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                                 />
-                                <span className="text-sm font-medium group-hover:text-primary transition-colors">중요 공지로 등록</span>
+                                <span className="text-sm font-medium group-hover:text-primary transition-colors">以묒슂 怨듭?濡?등록</span>
                             </label>
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <input
@@ -148,14 +148,14 @@ export default function BoardWritePage() {
                                     onChange={(e) => setFormData({ ...formData, secretAt: e.target.checked ? 'Y' : 'N' })}
                                     className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                                 />
-                                <span className="text-sm font-medium group-hover:text-primary transition-colors">비밀글로 설정</span>
+                                <span className="text-sm font-medium group-hover:text-primary transition-colors">鍮꾨?湲濡님ㅼ젙</span>
                             </label>
                         </div>
                     </div>
 
                     <div className="p-6 border rounded-2xl bg-card shadow-sm">
                         <h3 className="font-bold flex items-center gap-2 border-b pb-4 mb-4 text-sm text-muted-foreground">
-                            첨부파일
+                            泥⑤님뚯씪
                         </h3>
                         <StandardFileUploader onFilesChange={setFiles} maxFiles={3} />
                     </div>

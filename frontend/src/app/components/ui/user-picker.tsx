@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
@@ -20,7 +20,7 @@ export function UserPicker({
  isOpen,
  onClose,
  onSelect,
- title = "?�용??검??�??�택"
+ title = "?ъ슜님寃님諛님좏깮"
 }: UserPickerProps) {
  const [keyword, setKeyword] = useState('');
  const [results, setResults] = useState<NameCard[]>([]);
@@ -79,7 +79,7 @@ export function UserPicker({
  type="text"
  value={keyword}
  onChange={(e) => setKeyword(e.target.value)}
- placeholder="?�름, 부?? ID 검??.."
+ placeholder="?대쫫, 遺님 ID 寃님.."
  className="w-full h-11 pl-10 pr-4 rounded-xl border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
  autoFocus
  />
@@ -87,20 +87,20 @@ export function UserPicker({
  type="submit"
  className="absolute right-2 top-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-bold shadow-sm"
  >
- 검?? </button>
+ 寃님 </button>
  </form>
 
  {/* Results Area */}
  <div className="bg-card border rounded-2xl overflow-hidden min-h-[350px] flex flex-col">
  {loading ? (
  <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground animate-pulse font-medium">
- 검??�?..
+ 寃님以?..
  </div>
  ) : results.length === 0 ? (
  <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center space-y-2">
  <Search size={32} className="opacity-10" />
- <p className="text-sm font-bold">검??결과가 ?�습?�다.</p>
- <p className="text-[10px]">?�름?�나 부?�명???�력?�고 ?�터�??�러주세??</p>
+ <p className="text-sm font-bold">寃님寃곌낵媛 ?놁뒿?덈떎.</p>
+ <p className="text-[10px]">?대쫫?대굹 遺?쒕챸님?낅젰?섍퀬 ?뷀꽣瑜님뚮윭二쇱꽭님</p>
  </div>
  ) : (
  <VirtualScrollList
@@ -116,3 +116,4 @@ export function UserPicker({
  </StandardModal>
  );
 }
+

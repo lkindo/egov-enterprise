@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { X, CheckCircle, AlertCircle, Info, Loader2 } from 'lucide-react';
@@ -32,7 +32,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     // Failsafe: format message as string to prevent [object Event] rendering errors
     const displayMessage = typeof message === 'string'
       ? message
-      : ((message as { message?: string })?.message || JSON.stringify(message) || '?????�는 ?�류가 발생?�습?�다.');
+      : ((message as { message?: string })?.message || JSON.stringify(message) || '님님?占쎈뒗 ?占쎈쪟媛 諛쒖깮?占쎌뒿?占쎈떎.');
 
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message: displayMessage, type }]);
@@ -45,12 +45,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const success = useCallback((message: string) => toast(message, 'success'), [toast]);
   const error = useCallback((message: string) => toast(message, 'error'), [toast]);
 
-  // API ?�역 ?�러 리스??  React.useEffect(() => {
+  // API ?占쎌뿭 ?占쎈윭 由ъ뒪님  React.useEffect(() => {
     const handleApiError = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (!detail) return;
       const { message, status } = detail;
-      // 401?� ?�큰 ?�발�?로직??처리?��?�??�용?�에게는 ?�리지 ?�음
+      // 401?占님占쏀겙 ?占쎈컻占?濡쒖쭅님泥섎━?占쏙옙?占님占쎌슜?占쎌뿉寃뚮뒗 ?占쎈━吏 ?占쎌쓬
       if (status !== 401) {
         error(message);
       }

@@ -1,12 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react';
+﻿import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
 import { Button } from './button';
 
 /**
- * Button 컴포넌트 스토리
- * 
- * 다양한 variant, size, 상태의 Button 을 확인할 수 있습니다.
- * Shadcn/UI 기반의 접근성 있는 버튼 컴포넌트입니다.
+ * Button 而댄룷?뚰듃 ?ㅽ넗由? * 
+ * ?ㅼ뼇님variant, size, ?곹깭님Button 님?뺤씤님님?덉뒿?덈떎.
+ * Shadcn/UI 湲곕컲님?묎렐님?덈뒗 踰꾪듉 而댄룷?뚰듃?낅땲님
  */
 
 const meta = {
@@ -42,7 +41,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// 기본 버튼
+// 湲곕낯 踰꾪듉
 export const Default: Story = {
   args: {
     variant: 'default',
@@ -52,7 +51,7 @@ export const Default: Story = {
   },
 };
 
-// Destructive 버튼 (위험한 동작)
+// Destructive 踰꾪듉 (?꾪뿕님?숈옉)
 export const Destructive: Story = {
   args: {
     variant: 'destructive',
@@ -61,7 +60,7 @@ export const Destructive: Story = {
   },
 };
 
-// Outline 버튼
+// Outline 踰꾪듉
 export const Outline: Story = {
   args: {
     variant: 'outline',
@@ -70,7 +69,7 @@ export const Outline: Story = {
   },
 };
 
-// Secondary 버튼
+// Secondary 踰꾪듉
 export const Secondary: Story = {
   args: {
     variant: 'secondary',
@@ -79,7 +78,7 @@ export const Secondary: Story = {
   },
 };
 
-// Ghost 버튼
+// Ghost 踰꾪듉
 export const Ghost: Story = {
   args: {
     variant: 'ghost',
@@ -88,7 +87,7 @@ export const Ghost: Story = {
   },
 };
 
-// Link 버튼
+// Link 踰꾪듉
 export const Link: Story = {
   args: {
     variant: 'link',
@@ -97,7 +96,7 @@ export const Link: Story = {
   },
 };
 
-// Small 버튼
+// Small 踰꾪듉
 export const Small: Story = {
   args: {
     variant: 'default',
@@ -106,7 +105,7 @@ export const Small: Story = {
   },
 };
 
-// Large 버튼
+// Large 踰꾪듉
 export const Large: Story = {
   args: {
     variant: 'default',
@@ -115,16 +114,16 @@ export const Large: Story = {
   },
 };
 
-// Icon 버튼
+// Icon 踰꾪듉
 export const Icon: Story = {
   args: {
     variant: 'outline',
     size: 'icon',
-    children: '🔍',
+    children: '?뵇',
   },
 };
 
-// Disabled 버튼
+// Disabled 踰꾪듉
 export const Disabled: Story = {
   args: {
     variant: 'default',
@@ -134,7 +133,7 @@ export const Disabled: Story = {
   },
 };
 
-// 모든 Variant 한눈에 보기
+// 紐⑤뱺 Variant ?쒕늿님蹂닿린
 export const AllVariants: Story = {
   render: () => (
     <div className="flex flex-wrap gap-4">
@@ -148,14 +147,14 @@ export const AllVariants: Story = {
   ),
 };
 
-// 모든 Size 한눈에 보기
+// 紐⑤뱺 Size ?쒕늿님蹂닿린
 export const AllSizes: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-4">
       <Button size="sm">Small</Button>
       <Button size="default">Default</Button>
       <Button size="lg">Large</Button>
-      <Button size="icon">🔍</Button>
+      <Button size="icon">?뵇</Button>
     </div>
   ),
 };

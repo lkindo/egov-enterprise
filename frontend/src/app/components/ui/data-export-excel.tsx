@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { Download } from 'lucide-react';
@@ -11,7 +11,7 @@ interface DataExportExcelProps {
 }
 
 /**
- * ?�이�??�이?��? CSV ?�식?�로 추출?�여 ?��??�서 ?????�도�??�는 컴포?�트
+ * ?뚯씠釉님곗씠?곕? CSV ?뺤떇?쇰줈 異붿텧?섏뿬 ?묒님먯꽌 님님?덈룄濡님섎뒗 而댄룷?뚰듃
  */
 export function DataExportExcel({ data, headers, filename = "export_data", className }: DataExportExcelProps) {
  const downloadExcel = () => {
@@ -48,7 +48,7 @@ export function DataExportExcel({ data, headers, filename = "export_data", class
  className={className || "flex items-center gap-2 px-3 py-2 text-sm font-semibold border rounded-md hover:bg-accent transition-colors"}
  >
  <Download size={16} />
- ?�보?�기
+ ?대낫?닿린
  </button>
  );
 }

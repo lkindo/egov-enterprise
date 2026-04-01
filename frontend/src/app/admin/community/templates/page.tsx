@@ -1,9 +1,9 @@
-import { templateAdminService } from '@/services/foundation/system/TemplateAdminService';
+﻿import { templateAdminService } from '@/services/foundation/system/TemplateAdminService';
 import { cookies } from 'next/headers';
 import TemplateAdminClient from './TemplateAdminClient';
 
 export const metadata = {
- title: '?�플�?관�?| ?�스?��?�?,
+ title: '?쒗뵆由?愿由?| ?쒖뒪?쒓?由?,
 };
 
 export default async function TemplateAdminPage() {
@@ -17,3 +17,4 @@ export default async function TemplateAdminPage() {
  <TemplateAdminClient initialTemplates={initialTemplates} />
  );
 }
+

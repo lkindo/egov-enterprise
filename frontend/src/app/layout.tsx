@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+﻿import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from './components/theme-provider';
@@ -11,8 +11,8 @@ import { cookies } from 'next/headers';
 import { menuService } from '@/services/business/user/MenuService';
 
 export const metadata: Metadata = {
-  title: '?�자?��? ?�레?�워???��???,
-  description: 'KRDS 기반 모던 ?�사 공통 모듈',
+  title: '?꾩옄?뺣? ?꾨젅?꾩썙님?꾨님?,
+  description: 'KRDS 湲곕컲 紐⑤뜕 ?꾩궗 怨듯넻 紐⑤뱢',
 };
 
 interface MenuWithChildren {

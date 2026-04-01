@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
@@ -7,8 +7,8 @@ import { Program } from '@/types/foundation/program';
 import { PageResponse } from '@/types/foundation/system';
 
 export const metadata = {
- title: '?�스???�로그램 미들?�어 | ?�자?��? ?��??�레?�워??,
- description: '?�스???�키?�처 ?�의 �??�로그램�??�드?�인?��? ?�의?�고 관리합?�다.',
+ title: '?쒖뒪님?꾨줈洹몃옩 誘몃뱾?⑥뼱 | ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+ description: '?쒖뒪님?꾪궎?띿쿂 ?댁쓽 媛님꾨줈洹몃옩怨님붾뱶?ъ씤?몃? ?뺤쓽?섍퀬 愿由ы빀?덈떎.',
 };
 
 export default async function ProgramAdminPage({
@@ -25,7 +25,7 @@ export default async function ProgramAdminPage({
 
   let initialData: PageResponse<Program> = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
   try {
-    initialData = await programAdminService.getProgramList({ page번호: 1, size: 10, searchWrd }, axiosConfig);
+    initialData = await programAdminService.getProgramList({ page踰덊샇: 1, size: 10, searchWrd }, axiosConfig);
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'response' in error) {
       const axiosError = error as { response?: { status?: number } };
@@ -55,3 +55,4 @@ function ProgramAdminLoading() {
  </div>
  );
 }
+

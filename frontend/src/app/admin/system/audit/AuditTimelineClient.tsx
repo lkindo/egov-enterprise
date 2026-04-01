@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -37,7 +37,7 @@ export function AuditTimelineClient() {
     queryKey: ['admin-audit-timeline', searchKeyword, page],
     queryFn: () => auditAdminService.getAuditLogs({ page: page - 1, size: 20, keyword: searchKeyword }),
     placeholderData: (previousData) => previousData,
-    refetchInterval: 60000 // 1분마??리프?�시
+    refetchInterval: 60000 // 1遺꾨쭏님由ы봽?덉떆
   });
 
   const logs = auditData?.list || [];
@@ -47,12 +47,12 @@ export function AuditTimelineClient() {
     setSelectedLog(log);
   };
 
-  // ?�계 계산 (?�모 지??
+  // 통계 怨꾩궛 (?곕え 吏님
   const stats = useMemo(() => {
     return {
        total: totalItems,
-       security: logs.filter(l => l.histCn.includes('로그??)).length + 125,
-       system: logs.filter(l => l.histCn.includes('?�스??)).length + 42,
+       security: logs.filter(l => l.histCn.includes('濡쒓렇님)).length + 125,
+       system: logs.filter(l => l.histCn.includes('?쒖뒪님)).length + 42,
        recent: 8
     };
   }, [logs, totalItems]);
@@ -60,14 +60,14 @@ export function AuditTimelineClient() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="보안 감사 ?�텔리전??
-        breadcrumbs={[{ label: '?�스?��?�? }, { label: '감사 ?�?�라?? }]}
+        title="보안 媛먯궗 ?명뀛由ъ쟾님
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '媛먯궗 ??꾨씪님 }]}
       />
 
       <HubHeader 
-        title="?��?�? 
-        highlight="?�텔리전?? 
-        subtitle="?�사 ?�프????모든 관리적 ?�위 �?보안 ?�로?�콜 무결??추적 ?�트�? 
+        title="?듭?踰? 
+        highlight="?명뀛由ъ쟾님 
+        subtitle="?꾩궗 ?명봽님님紐⑤뱺 愿由ъ쟻 ?됱쐞 諛?보안 ?꾨줈?좎퐳 臾닿껐님異붿쟻 ?ㅽ듃由? 
         icon={ShieldCheck} 
         actions={
           <div className="flex gap-4 p-2">
@@ -76,24 +76,24 @@ export function AuditTimelineClient() {
                 size="lg" 
                 className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest uppercase gap-3 hover:bg-slate-50 transition-all shadow-sm group"
             >
-              <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 리포??추출
+              <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 由ы룷님異붿텧
             </Button>
             <Button 
                 size="lg" 
                 onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-audit-timeline'] })}
                 className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
-              <RefreshCcw size={20} className={cn(isFetching && "animate-spin")} /> ?�시�?리프?�시
+              <RefreshCcw size={20} className={cn(isFetching && "animate-spin")} /> 실시간由ы봽?덉떆
             </Button>
           </div>
         }
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-         <HubMetricCard title="?�체_감사_객체" value={stats.total.toLocaleString()} icon={Activity} color="primary" status="ACTIVE" />
-         <HubMetricCard title="보안_?�로?�콜" value={stats.security.toLocaleString()} icon={ShieldCheck} color="emerald" status="SAFE" />
-         <HubMetricCard title="?�스??구성_변�? value={stats.system.toLocaleString()} icon={Terminal} color="amber" />
-         <HubMetricCard title="금일_미해�??�벤?? value={stats.recent.toLocaleString()} icon={ShieldAlert} color="rose" status="WARNING" />
+         <HubMetricCard title="?꾩껜_媛먯궗_媛앹껜" value={stats.total.toLocaleString()} icon={Activity} color="primary" status="ACTIVE" />
+         <HubMetricCard title="보안_?꾨줈?좎퐳" value={stats.security.toLocaleString()} icon={ShieldCheck} color="emerald" status="SAFE" />
+         <HubMetricCard title="?쒖뒪님援ъ꽦_蹂寃? value={stats.system.toLocaleString()} icon={Terminal} color="amber" />
+         <HubMetricCard title="湲덉씪_誘명빐寃님대깽님 value={stats.recent.toLocaleString()} icon={ShieldAlert} color="rose" status="WARNING" />
       </div>
 
       <div className="grid grid-cols-12 gap-12 px-2 h-full">
@@ -102,13 +102,13 @@ export function AuditTimelineClient() {
            <div className="rounded-[3.5rem] bg-white border-2 border-slate-100 shadow-2xl p-12 space-y-10 relative overflow-hidden flex-1">
               <div className="flex items-center justify-between border-b border-slate-50 pb-8 relative z-10">
                  <div className="space-y-1">
-                    <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase">?�동 분석</h3>
-                    <p className="text-2xl font-black tracking-tighter text-slate-900 uppercase italic leading-none">감사 로드�??�트�?/p>
+                    <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase">?쒕룞 분석</h3>
+                    <p className="text-2xl font-black tracking-tighter text-slate-900 uppercase italic leading-none">媛먯궗 濡쒕뱶留님ㅽ듃由?/p>
                  </div>
                  <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 group cursor-pointer px-4 py-2 rounded-xl hover:bg-slate-50 transition-all">
                        <Calendar size={14} className="text-slate-400 group-hover:text-primary" />
-                       <span className="text-[10px] font-black tracking-widest text-slate-500 uppercase">?�체 기간</span>
+                       <span className="text-[10px] font-black tracking-widest text-slate-500 uppercase">?꾩껜 湲곌컙</span>
                     </div>
                     <div className="h-6 w-px bg-slate-100" />
                     <Filter size={18} className="text-slate-300 hover:text-slate-900 cursor-pointer transition-colors" />
@@ -119,7 +119,7 @@ export function AuditTimelineClient() {
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-200 group-focus-within:text-primary transition-colors" size={20} />
                 <Input 
                   className="pl-16 h-16 bg-slate-50 border-none rounded-[1.25rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300" 
-                  placeholder="?�위?? ?�스?�명 ?�는 ?�동 ?�세 ?�터�?.." 
+                  placeholder="?됱쐞님 ?쒖뒪?쒕챸 ?먮뒗 ?쒕룞 ?곸꽭 ?꾪꽣留?.." 
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
                 />
@@ -141,8 +141,8 @@ export function AuditTimelineClient() {
                 ) : (
                    <div className="h-80 flex flex-col items-center justify-center text-center opacity-30 select-none grayscale">
                       <Search size={100} className="text-slate-300 mb-6" />
-                      <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">검??결과가 ?�습?�다</h3>
-                      <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase mt-4">?�른 ?�터�?조건???�도??보십?�오</p>
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">寃님寃곌낵媛 ?놁뒿?덈떎</h3>
+                      <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase mt-4">?ㅻⅨ ?꾪꽣留?議곌굔님?쒕룄님蹂댁떗?쒖삤</p>
                    </div>
                 )}
               </div>
@@ -168,9 +168,9 @@ export function AuditTimelineClient() {
                        <div className="border-b border-white/5 pb-12 relative z-10 transition-transform duration-700 group-hover:-translate-y-1">
                           <div className="flex items-center gap-3 mb-6">
                               <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse" />
-                              <h3 className="text-[10px] font-black text-white/30 tracking-[0.5em] uppercase italic">?�호??분석 객체</h3>
+                              <h3 className="text-[10px] font-black text-white/30 tracking-[0.5em] uppercase italic">?뷀샇님분석 媛앹껜</h3>
                           </div>
-                          <h2 className="text-5xl font-black text-white tracking-tighter leading-none mb-6">?�위 ?�세 <br /> ?�스?�터</h2>
+                          <h2 className="text-5xl font-black text-white tracking-tighter leading-none mb-6">?됱쐞 ?곸꽭 <br /> ?몄뒪?숉꽣</h2>
                           <p className="text-[10px] font-mono font-black text-primary/80 tracking-widest uppercase">
                              HIST_ID: {selectedLog.histId}
                           </p>
@@ -193,7 +193,7 @@ export function AuditTimelineClient() {
 
                        <div className="pt-12 mt-auto border-t border-white/5 space-y-8 relative z-10">
                           <Button className="w-full h-20 bg-white text-slate-900 rounded-[2.5rem] font-black tracking-[0.4em] text-[11px] shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 uppercase group overflow-hidden">
-                             감사 보고??증명??발급
+                             媛먯궗 蹂닿퀬님利앸챸님諛쒓툒
                              <ArrowRight size={20} className="ml-4 group-hover:translate-x-2 transition-transform" />
                           </Button>
                        </div>
@@ -209,9 +209,9 @@ export function AuditTimelineClient() {
                         <Activity size={100} className="text-slate-300 group-hover:text-primary transition-colors" />
                     </div>
                     <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-tight mb-4">
-                       ?��??�스?�스 <br /> 미선??                    </h3>
+                       ?寃님몄뒪?댁뒪 <br /> 誘몄꽑님                    </h3>
                     <p className="text-[10px] font-black text-slate-400 tracking-[0.6em] uppercase leading-relaxed max-w-[240px]">
-                       분분?�할 ?�?�라????��??캡처?�십?�오
+                       遺꾨텇?앺븷 ??꾨씪님님ぉ님罹≪쿂?섏떗?쒖삤
                     </p>
                  </div>
               )}
@@ -221,3 +221,4 @@ export function AuditTimelineClient() {
     </div>
   );
 }
+

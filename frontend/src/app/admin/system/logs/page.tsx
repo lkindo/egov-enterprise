@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -32,22 +32,22 @@ import { PageResponse } from '@/types/foundation/system';
 
 // Log categories configuration
 const logCategories = [
-  { id: 'SYS', label: '?�스??로그', icon: <Terminal size={20} />, description: '?�비??�?메소???�행 ?�력', serviceMethod: 'getSystemLogs' },
-  { id: 'LGN', label: '로그??로그', icon: <Lock size={20} />, description: '?�용???�속 �??�증 기록', serviceMethod: 'getLoginLogs' },
-  { id: 'USR', label: '?�용???�동', icon: <UserCheck size={20} />, description: '?�이??변�?�?권한 추적', serviceMethod: 'getUserLogs' },
-  { id: 'WEB', label: '??로그', icon: <Globe size={20} />, description: 'HTTP ?�청 �??�이??분석', serviceMethod: 'getWebLogs' },
-  { id: 'TRS', label: '?�수??로그', icon: <Activity size={20} />, description: '?��? ?�동 �?배치 결과', serviceMethod: 'getTransferLogs' },
+  { id: 'SYS', label: '?쒖뒪님濡쒓렇', icon: <Terminal size={20} />, description: '?쒕퉬님諛?硫붿냼님?ㅽ뻾 ?대젰', serviceMethod: 'getSystemLogs' },
+  { id: 'LGN', label: '濡쒓렇님濡쒓렇', icon: <Lock size={20} />, description: '?ъ슜님접속 諛님몄쬆 湲곕줉', serviceMethod: 'getLoginLogs' },
+  { id: 'USR', label: '?ъ슜님?쒕룞', icon: <UserCheck size={20} />, description: '?곗씠님蹂寃?諛?沅뚰븳 異붿쟻', serviceMethod: 'getUserLogs' },
+  { id: 'WEB', label: '님濡쒓렇', icon: <Globe size={20} />, description: 'HTTP 요청 諛님곗씠님분석', serviceMethod: 'getWebLogs' },
+  { id: 'TRS', label: '?≪닔님濡쒓렇', icon: <Activity size={20} />, description: '?몃? ?곕룞 諛?諛곗튂 寃곌낵', serviceMethod: 'getTransferLogs' },
 ];
 
 export default function LogDashboardPage() {
   const [activeCategory, setCategory] = useState('SYS');
-  const [params, setParams] = useState({ page번호: 1, searchKeyword: '' });
+  const [params, setParams] = useState({ page踰덊샇: 1, searchKeyword: '' });
   const [selectedLog, setSelectedLog] = useState<any | null>(null);
 
   const { data, isLoading } = useQuery<PageResponse<any>>({
     queryKey: ['admin-logs-integrated', activeCategory, params],
     queryFn: async () => {
-      const apiParams = { page번호: params.page번호, size: 10, searchKeyword: params.searchKeyword };
+      const apiParams = { page踰덊샇: params.page踰덊샇, size: 10, searchKeyword: params.searchKeyword };
       switch (activeCategory) {
         case 'SYS': return systemLogAdminService.getSystemLogs(apiParams);
         case 'LGN': return systemLogAdminService.getLoginLogs(apiParams);
@@ -61,7 +61,7 @@ export default function LogDashboardPage() {
 
   const logs = data?.resultList || data?.list || [];
   const pagination = data?.paginationInfo || {
-    currentPageNo: Number(params.page번호),
+    currentPageNo: Number(params.page踰덊샇),
     recordCountPerPage: 10,
     totalRecordCount: Number(data?.totalCount || data?.total || 0),
     totalPageCount: Number(data?.totalPage || data?.totalPageCount || 1)
@@ -70,7 +70,7 @@ export default function LogDashboardPage() {
   const columns = useMemo(() => {
     const commonCols: Column<any>[] = [
       {
-        header: '발생 ?�각',
+        header: '諛쒖깮 ?쒓컖',
         accessor: (item: any) => (
           <div className="flex items-center gap-3 py-3">
             <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
@@ -89,7 +89,7 @@ export default function LogDashboardPage() {
       return [
         ...commonCols,
         {
-          header: '?�청??,
+          header: '요청님,
           accessor: (item: any) => (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center bg-white shadow-sm font-black text-[10px] text-slate-400">
@@ -100,13 +100,13 @@ export default function LogDashboardPage() {
           )
         },
         {
-          header: '?�속 IP',
+          header: '접속 IP',
           accessor: (item: any) => (
             <div className="font-mono text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1 rounded-lg border w-fit">{item.loginIp}</div>
           )
         },
         {
-          header: '구분',
+          header: '援щ텇',
           accessor: (item: any) => (
             <HubStatusBadge label={item.loginMthd} variant={item.loginMthd === 'LOGIN' ? 'success' : 'secondary'} />
           )
@@ -117,14 +117,14 @@ export default function LogDashboardPage() {
     return [
       ...commonCols,
       {
-        header: '?�청??,
+        header: '요청님,
         className: 'w-32',
         accessor: (item: any) => (
           <span className="text-xs font-bold text-slate-700">{item.rqsterNm || item.rqesterId || 'SYSTEM'}</span>
         )
       },
       {
-        header: '?�행 ?�비??/ 리소??,
+        header: '?섑뻾 ?쒕퉬님/ 由ъ냼님,
         accessor: (item: any) => (
           <div className="flex flex-col gap-0.5 max-w-md">
             <span className="text-[11px] font-black text-foreground truncate uppercase tracking-tighter italic">{item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
@@ -133,7 +133,7 @@ export default function LogDashboardPage() {
         )
       },
       {
-        header: '?�속 ?�보',
+        header: '접속 ?뺣낫',
         accessor: (item: any) => (
           <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-slate-400">
             <Globe size={11} className="opacity-40" />
@@ -147,28 +147,28 @@ export default function LogDashboardPage() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="로그 ?�합 ?�?�보??
-        breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }]}
+        title="濡쒓렇 ?듯빀 ??쒕낫님
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }]}
       />
 
       <HubHeader
-        title="?�스??
-        highlight="로그 ?�합 관�?
-        subtitle="?�스???�반?�서 발생?�는 보안, ?�속, ?�동, ???�청 로그�??�합?�으�?모니?�링?�니??"
+        title="?쒖뒪님
+        highlight="濡쒓렇 ?듯빀 愿由?
+        subtitle="?쒖뒪님?꾨컲?먯꽌 諛쒖깮?섎뒗 보안, 접속, ?쒕룞, 님요청 濡쒓렇瑜님듯빀?곸쑝濡?紐⑤땲?곕쭅?⑸땲님"
         icon={History}
         actions={
           <div className="flex gap-4">
             <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest gap-3">
-              <SearchCode size={18} /> ?�세 로그 검??            </Button>
+              <SearchCode size={18} /> ?곸꽭 濡쒓렇 寃님            </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="?�늘 ?�체 로그" value="1,492" icon={Database} color="primary" />
-        <HubMetricCard title="보안 ?�협 로그" value="3" icon={Lock} color="rose" status="?�상 징후" />
-        <HubMetricCard title="?�성 ?�션" value="84" icon={Activity} color="emerald" status="?�전" />
-        <HubMetricCard title="?�균 지???�도" value="38ms" icon={Zap} color="amber" />
+        <HubMetricCard title="?ㅻ뒛 ?꾩껜 濡쒓렇" value="1,492" icon={Database} color="primary" />
+        <HubMetricCard title="보안 ?꾪삊 濡쒓렇" value="3" icon={Lock} color="rose" status="?댁긽 吏뺥썑" />
+        <HubMetricCard title="활성 ?몄뀡" value="84" icon={Activity} color="emerald" status="?덉쟾" />
+        <HubMetricCard title="?됯퇏 吏님?띾룄" value="38ms" icon={Zap} color="amber" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
@@ -202,8 +202,8 @@ export default function LogDashboardPage() {
 
         <div className="col-span-12 lg:col-span-9">
           <HubSectionCard
-            title="?�시�?로그 ?�트�?
-            description={`${logCategories.find(c => c.id === activeCategory)?.label}?�서 ?�시간으�??�입?�는 가?�성 ?�트�??�이?�입?�다.`}
+            title="실시간濡쒓렇 ?ㅽ듃由?
+            description={`${logCategories.find(c => c.id === activeCategory)?.label}?먯꽌 ?ㅼ떆媛꾩쑝濡님좎엯?섎뒗 媛활성 ?ㅽ듃由님곗씠?곗엯?덈떎.`}
             icon={Activity}
           >
             <StandardDataTable
@@ -213,8 +213,8 @@ export default function LogDashboardPage() {
               className="border-none bg-transparent"
               onRowClick={(item) => setSelectedLog(item)}
               search={{
-                placeholder: '?�청?? IP, 메시지 ?�으�??��? 분석...',
-                onSearch: (keyword) => setParams({ ...params, searchKeyword: keyword, page번호: 1 })
+                placeholder: '요청님 IP, 硫붿떆吏 ?깆쑝濡님뺣? 분석...',
+                onSearch: (keyword) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 })
               }}
             />
 
@@ -222,7 +222,7 @@ export default function LogDashboardPage() {
               <div className="mt-12 flex justify-center">
                 <PagePagination
                   pagination={pagination}
-                  onPageChange={(page) => setParams({ ...params, page번호: page })}
+                  onPageChange={(page) => setParams({ ...params, page踰덊샇: page })}
                 />
               </div>
             )}
@@ -244,11 +244,11 @@ export default function LogDashboardPage() {
                 <Terminal size={22} />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">로그 리소???�별??/p>
-                <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || '?????�음'}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">濡쒓렇 由ъ냼님?앸퀎님/p>
+                <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || '님님?놁쓬'}</p>
               </div>
             </div>
-            <HubStatusBadge label="?�인?? variant="success" />
+            <HubStatusBadge label="?뺤씤님 variant="success" />
           </div>
 
           <div className="space-y-4">
@@ -271,3 +271,4 @@ export default function LogDashboardPage() {
     </div>
   );
 }
+

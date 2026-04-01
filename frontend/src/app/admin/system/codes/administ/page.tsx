@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import AdministCodeClient from './AdministCodeClient';
 import { cookies } from 'next/headers';
@@ -7,8 +7,8 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { Milestone } from 'lucide-react';
 
 export const metadata = {
-  title: '?�정?��?코드 거버?�스 | Sentinel Registry',
-  description: '�?? ?�정 ?��????�른 법정??�??�정??코드 체계�?관리합?�다.',
+  title: '?됱젙?쒖?肄붾뱶 嫄곕쾭?뚯뒪 | Sentinel Registry',
+  description: '援님 ?됱젙 ?쒖님님곕Ⅸ 踰뺤젙님諛님됱젙님肄붾뱶 泥닿퀎瑜?愿由ы빀?덈떎.',
 };
 
 export default async function AdministCodePage() {
@@ -18,7 +18,7 @@ export default async function AdministCodePage() {
 
   let initialData: any = { list: [], total: 0 };
   try {
-   initialData = await codeAdminService.getAdministCodeList({ page번호: 1, pageUnit: 10 }, axiosConfig);
+   initialData = await codeAdminService.getAdministCodeList({ page踰덊샇: 1, pageUnit: 10 }, axiosConfig);
   } catch (error: any) {
    if (error.response?.status === 401) {
     redirect('/login?expired=true&redirect=/admin/system/codes/administ');
@@ -29,8 +29,8 @@ export default async function AdministCodePage() {
   return (
     <div className="space-y-12">
       <PageHeader
-        title="?�정?��?코드 ?�텔리전??
-        breadcrumbs={[{ label: '?�스?��?�? }, { label: '코드관�? }, { label: '?�정코드' }]}
+        title="?됱젙?쒖?肄붾뱶 ?명뀛由ъ쟾님
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '肄붾뱶愿由? }, { label: '?됱젙肄붾뱶' }]}
       />
       
       <Suspense fallback={
@@ -49,3 +49,4 @@ export default async function AdministCodePage() {
     </div>
   );
 }
+

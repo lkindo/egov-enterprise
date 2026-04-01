@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useWebSocket } from '@/contexts/websocket-context';
@@ -43,20 +43,20 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
 
  const { user } = useAuth();
 
- // 접속 추적 훅 사용
+ // 접속 異붿쟻 님?ъ슜
  useDashboardConnection();
 
- // 실시간 통계 업데이트
+ // ?ㅼ떆媛님듦퀎 ?낅뜲?댄듃
  const handleStatsUpdate = useCallback((data: RealTimeStats) => {
  setStats(prev => ({ ...prev, ...data }));
  }, []);
 
- // 실시간 알림 처리
+ // ?ㅼ떆媛님뚮┝ 泥섎━
  const handleNotification = useCallback((notification: RealTimeNotification) => {
- setNotifications(prev => [notification, ...prev].slice(0, 50)); // 최대 50 개 보관
+ setNotifications(prev => [notification, ...prev].slice(0, 50)); // 理쒕? 50 媛?蹂닿?
  onNotification?.(notification);
 
- // 브라우저 알림
+ // 釉뚮씪?곗? ?뚮┝
  if (Notification.permission === 'granted') {
  new Notification(notification.title, {
  body: notification.message,
@@ -65,26 +65,26 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
  }
  }, [onNotification]);
 
- // WebSocket 구독
+ // WebSocket 援щ룆
  useEffect(() => {
  if (!client || !isConnected) return;
 
- // 실시간 통계 구독 (공용)
+ // ?ㅼ떆媛님듦퀎 援щ룆 (怨듭슜)
  const statsSubscription = client.subscribe('/topic/dashboard/stats', (message) => {
  const data = JSON.parse(message.body);
  handleStatsUpdate(data);
  });
 
- // 실시간 시스템 알림 구독 (공용)
+ // ?ㅼ떆媛님쒖뒪님?뚮┝ 援щ룆 (怨듭슜)
  const notificationSubscription = client.subscribe('/topic/notifications', (message) => {
  const notification = JSON.parse(message.body);
  handleNotification(notification);
  });
 
- // 사용자별 개인 알림 구독 (Private)
+ // ?ъ슜?먮퀎 媛쒖씤 ?뚮┝ 援щ룆 (Private)
  let userSubscription: any = null;
  if (user?.id) {
- // 스프링 시큐리티의 /user 전용 큐 활용
+ // ?ㅽ봽留님쒗걧由ы떚님/user ?꾩슜 님?쒖슜
  userSubscription = client.subscribe('/user/queue/notifications', (message) => {
  const notification = JSON.parse(message.body);
  handleNotification(notification);
@@ -99,7 +99,7 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
  };
  }, [client, isConnected, handleStatsUpdate, handleNotification, user?.id]);
 
- // 브라우저 알림 권한 요청
+ // 釉뚮씪?곗? ?뚮┝ 沅뚰븳 요청
  useEffect(() => {
  if ('Notification' in window && Notification.permission === 'default') {
  Notification.requestPermission();
@@ -110,7 +110,7 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
 
  return (
  <div className="space-y-4">
- {/* 실시간 연결 상태 */}
+ {/* ?ㅼ떆媛님곌껐 ?곹깭 */}
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-2">
  <div className={cn(
@@ -118,11 +118,11 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
  isConnected ? "bg-green-500 animate-pulse" : "bg-gray-300"
  )} />
  <span className="text-sm font-bold text-muted-foreground">
- {isConnected ? '실시간 연결됨' : '연결 끊김'}
+ {isConnected ? '?ㅼ떆媛님곌껐님 : '?곌껐 ?딄?'}
  </span>
  </div>
 
- {/* 알림 버튼 */}
+ {/* ?뚮┝ 踰꾪듉 */}
  <div className="relative">
  <Button
  variant="ghost"
@@ -130,7 +130,7 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
  onClick={() => setShowNotifications(!showNotifications)}
  className="relative"
  data-testid="notif-bell"
- aria-label="알림 열기"
+ aria-label="?뚮┝ ?닿린"
  >
  <Bell size={18} />
  {unreadCount > 0 && (
@@ -143,16 +143,16 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
  )}
  </Button>
 
- {/* 알림 드롭다운 */}
+ {/* ?뚮┝ ?쒕∼?ㅼ슫 */}
  {showNotifications && (
  <Card className="absolute right-0 top-12 w-80 shadow-lg z-50">
  <CardHeader className="pb-3">
- <CardTitle className="text-sm font-bold">실시간 알림</CardTitle>
+ <CardTitle className="text-sm font-bold">?ㅼ떆媛님뚮┝</CardTitle>
  </CardHeader>
  <CardContent className="max-h-96 overflow-y-auto">
  {notifications.length === 0 ? (
  <p className="text-sm text-muted-foreground text-center py-4">
- 새로운 알림이 없습니다.
+ ?덈줈님?뚮┝님?놁뒿?덈떎.
  </p>
  ) : (
  <div className="space-y-2">
@@ -182,31 +182,31 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
  </div>
  </div>
 
- {/* 실시간 통계 카드 */}
+ {/* ?ㅼ떆媛님듦퀎 移대뱶 */}
  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
  <RealTimeStatCard
- title="실시간 접속자"
+ title="?ㅼ떆媛님묒냽님
  value={stats.activeUsers}
  icon={<Users size={20} />}
- trend={`${stats.visitsPerMinute}명/분`}
+ trend={`${stats.visitsPerMinute}紐?遺?}
  color="blue"
  />
  <RealTimeStatCard
- title="분당 방문"
+ title="遺꾨떦 諛⑸Ц"
  value={stats.visitsPerMinute}
  icon={<TrendingUp size={20} />}
- trend="방문/분"
+ trend="諛⑸Ц/遺?
  color="green"
  />
  <RealTimeStatCard
- title="신규 게시글"
+ title="신규 寃뚯떆湲"
  value={stats.newPosts}
  icon={<Activity size={20} />}
- trend="오늘"
+ trend="?ㅻ뒛"
  color="purple"
  />
  <RealTimeStatCard
- title="알림"
+ title="?뚮┝"
  value={stats.alerts}
  icon={<AlertCircle size={20} />}
  isAlert
@@ -241,7 +241,7 @@ function RealTimeStatCard({ title, value, icon, trend, isAlert, color = 'blue' }
  </span>
  )}
  </div>
- <h4 className="text-2xl font-black text-foreground">{value?.toLocaleString() ?? 0}</h4>
+ <h4 className="text-2xl font-black text-foreground">{value?.toLocaleString() 님 0}</h4>
  <p className="text-[10px] font-black text-muted-foreground tracking-tight mt-1">
  {title}
  </p>
@@ -261,3 +261,4 @@ function NotificationIcon({ type }: { type: RealTimeNotification['type'] }) {
 
  return icons[type] || icons.SYSTEM;
 }
+

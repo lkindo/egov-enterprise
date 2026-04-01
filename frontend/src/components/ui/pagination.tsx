@@ -1,4 +1,4 @@
-import * as React from "react"
+﻿import * as React from "react"
 import {
  ChevronLeftIcon,
  ChevronRightIcon,
@@ -77,7 +77,7 @@ function PaginationPrevious({
  {...props}
  >
  <ChevronLeftIcon />
- <span className="hidden sm:block">이전</span>
+ <span className="hidden sm:block">?댁쟾</span>
  </PaginationLink>
  )
 }
@@ -93,7 +93,7 @@ function PaginationNext({
  className={cn("gap-1 px-2.5 sm:pr-2.5", className)}
  {...props}
  >
- <span className="hidden sm:block">다음</span>
+ <span className="hidden sm:block">?ㅼ쓬</span>
  <ChevronRightIcon />
  </PaginationLink>
  )
@@ -111,7 +111,7 @@ function PaginationEllipsis({
  {...props}
  >
  <MoreHorizontalIcon className="size-4" />
- <span className="sr-only">더 많은 페이지</span>
+ <span className="sr-only">님留롮? ?섏씠吏</span>
  </span>
  )
 }
@@ -125,3 +125,4 @@ export {
  PaginationNext,
  PaginationEllipsis,
 }
+

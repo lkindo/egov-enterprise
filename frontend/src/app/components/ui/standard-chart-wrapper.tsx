@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import {
@@ -154,7 +154,7 @@ export function StandardChartWrapper({
                             </LineChart>
                         ) : (
                             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                                차트 ?�형??지?�되지 ?�습?�다.
+                                李⑦듃 ?좏삎님吏?먮릺吏 ?딆뒿?덈떎.
                             </div>
                         )}
                     </ResponsiveContainer>
@@ -185,3 +185,4 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
     }
     return null;
 }
+

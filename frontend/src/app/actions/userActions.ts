@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -19,9 +19,9 @@ export async function createUserAction(prevState: unknown, formData: UserManage)
         await userAdminService.createUser(formData, axiosConfig);
 
         revalidatePath('/admin/user/manage');
-        return { success: true, message: '사용자가 등록되었습니다.' };
+        return { success: true, message: '?ъ슜?먭? 등록?섏뿀?듬땲님' };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '등록 중 오류 발생';
+        const errorMessage = error instanceof Error ? error.message : '등록 以님ㅻ쪟 諛쒖깮';
         console.error('Create User Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -36,9 +36,9 @@ export async function updateUserAction(prevState: unknown, formData: UserManage)
         await userAdminService.updateUser(formData.userId, formData, axiosConfig);
 
         revalidatePath('/admin/user/manage');
-        return { success: true, message: '사용자 정보가 수정되었습니다.' };
+        return { success: true, message: '?ъ슜님?뺣낫媛 ?섏젙?섏뿀?듬땲님' };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '수정 중 오류 발생';
+        const errorMessage = error instanceof Error ? error.message : '?섏젙 以님ㅻ쪟 諛쒖깮';
         console.error('Update User Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -53,9 +53,9 @@ export async function deleteUserAction(prevState: unknown, userId: string): Prom
         await userAdminService.deleteUser(userId, axiosConfig);
 
         revalidatePath('/admin/user/manage');
-        return { success: true, message: '사용자가 삭제되었습니다.' };
+        return { success: true, message: '?ъ슜?먭? 님젣?섏뿀?듬땲님' };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
+        const errorMessage = error instanceof Error ? error.message : '님젣 以님ㅻ쪟 諛쒖깮';
         console.error('Delete User Error:', error);
         return { success: false, message: errorMessage };
     }

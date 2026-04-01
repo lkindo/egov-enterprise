@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,43 +27,43 @@ interface InsightMessage {
 }
 
 /**
- * AI-Driven ?�텔리전???�사?�트 배너
- * �?기반 ?�리?�틱 ?�진???�해 ?�성??지?�형 ?�약 ?�보�?관리자?�게 ?�공?�니??
+ * AI-Driven ?명뀛由ъ쟾님인사이트 諛곕꼫
+ * 猷?湲곕컲 ?대━?ㅽ떛 ?붿쭊님?듯빐 ?앹꽦님吏?ν삎 ?붿빟 ?뺣낫瑜?愿由ъ옄?먭쾶 ?쒓났?⑸땲님
  */
 export const InsightBanner: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  // 가?�의 지?�형 ?�사?�트 ?�이??(추후 API ?�동 ?�정)
+  // 媛?곸쓽 吏?ν삎 인사이트 ?곗씠님(異뷀썑 API ?곕룞 ?덉젙)
   const insights: InsightMessage[] = [
     {
       id: '1',
       type: 'SECURITY',
       severity: 'WARNING',
-      message: "비정?�적??로그???�도 감�?: 지??10분간 US 지??IP?�서???�근??25% 급증?�습?�다.",
-      timestamp: "방금 ??,
-      action: "방화�??�책 검??
+      message: "鍮꾩젙?곸쟻님濡쒓렇님?쒕룄 媛먯?: 吏님10遺꾧컙 US 吏님IP?먯꽌님?묎렐님25% 湲됱쬆?덉뒿?덈떎.",
+      timestamp: "諛⑷툑 님,
+      action: "諛⑺솕踰님뺤콉 寃님
     },
     {
       id: '2',
       type: 'TRAFFIC',
       severity: 'INFO',
-      message: "?�프??최적???�공: 캐싱 ?�비???�입 ?�후 ?�균 ?�답 ?�도가 14.2ms 개선?�었?�니??",
-      timestamp: "12�???
+      message: "?명봽님理쒖쟻님?깃났: 罹먯떛 ?쒕퉬님?꾩엯 ?댄썑 ?됯퇏 ?묐떟 ?띾룄媛 14.2ms 媛쒖꽑?섏뿀?듬땲님",
+      timestamp: "12遺님?
     },
     {
       id: '3',
       type: 'SYSTEM',
       severity: 'CRITICAL',
-      message: "DB 커넥???� ?�계�??�달: ?�재 ?�당?�의 88%�??�유 중입?�다. ?�스?�스 ?�장??권장?�니??",
-      timestamp: "5�???,
-      action: "?��????�웃 ?�행"
+      message: "DB 而ㅻ꽖님? ?꾧퀎移님꾨떖: 현재 ?좊떦?됱쓽 88%瑜님먯쑀 以묒엯?덈떎. ?몄뒪?댁뒪 ?뺤옣님沅뚯옣?⑸땲님",
+      timestamp: "5遺님?,
+      action: "?ㅼ님님꾩썐 ?ㅽ뻾"
     },
     {
       id: '4',
       type: 'OPTIMIZATION',
       severity: 'INFO',
-      message: "?�상 가??�? ?�사 ?�스??무결??검?��? ?�료?�었?�며, 발견???�상 징후가 ?�습?�다.",
-      timestamp: "1?�간 ??
+      message: "?뺤긽 媛님以? ?꾩궗 ?쒖뒪님臾닿껐님寃?ш? ?꾨즺?섏뿀?쇰ŉ, 諛쒓껄님?댁긽 吏뺥썑媛 ?놁뒿?덈떎.",
+      timestamp: "1?쒓컙 님
     }
   ];
 
@@ -178,3 +178,4 @@ export const InsightBanner: React.FC = () => {
     </div>
   );
 };
+

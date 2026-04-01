@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -55,7 +55,7 @@ export default function GroupManagePage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [params, setParams] = useState<SearchParams>({
-    page번호: 1,
+    page踰덊샇: 1,
     searchKeyword: '',
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -84,9 +84,9 @@ export default function GroupManagePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
       setIsDialogOpen(false);
-      toast('?�규 보안 그룹 ?�키?�처가 ?�장?�었?�니??', 'success');
+      toast('신규 보안 洹몃９ ?꾪궎?띿쿂媛 ?ㅼ옣?섏뿀?듬땲님', 'success');
     },
-    onError: () => toast('그룹 ?�성 �??�스???�외가 발생?�습?�다.', 'error')
+    onError: () => toast('洹몃９ ?앹꽦 以님쒖뒪님?덉쇅媛 諛쒖깮?덉뒿?덈떎.', 'error')
   });
 
   const updateMutation = useMutation({
@@ -94,23 +94,23 @@ export default function GroupManagePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
       setIsDialogOpen(false);
-      toast('보안 그룹 명세가 ?�공?�으�??�정?�었?�니??', 'success');
+      toast('보안 洹몃９ 紐낆꽭媛 ?깃났?곸쑝濡님섏젙?섏뿀?듬땲님', 'success');
     },
-    onError: () => toast('?�보 ?�정 �??�스???�외가 발생?�습?�다.', 'error')
+    onError: () => toast('?뺣낫 ?섏젙 以님쒖뒪님?덉쇅媛 諛쒖깮?덉뒿?덈떎.', 'error')
   });
 
   const deleteMutation = useMutation({
     mutationFn: (groupId: string) => groupAdminService.deleteGroup(groupId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
-      toast('보안 그룹 ?�로?�이 ?�구?�으�??�기?�었?�니??', 'success');
+      toast('보안 洹몃９ ?꾨줈?꾩씠 ?곴뎄?곸쑝濡님뚭린?섏뿀?듬땲님', 'success');
     },
-    onError: () => toast('??�� 처리 �??�스???�외가 발생?�습?�다.', 'error')
+    onError: () => toast('님젣 泥섎━ 以님쒖뒪님?덉쇅媛 諛쒖깮?덉뒿?덈떎.', 'error')
   });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setParams(prev => ({ ...prev, page번호: 1 }));
+    setParams(prev => ({ ...prev, page踰덊샇: 1 }));
   };
 
   const handleCreate = () => {
@@ -126,7 +126,7 @@ export default function GroupManagePage() {
   };
 
   const handleDelete = async (groupId: string) => {
-    if (!confirm('?�당 보안 그룹????��?�시겠습?�까? 관???�책 ?�이?��? 모두 ?�멸?�니??')) return;
+    if (!confirm('?대떦 보안 洹몃９님님젣?섏떆寃좎뒿?덇퉴? 愿님?뺤콉 ?곗씠?곌? 紐⑤몢 ?뚮㈇?⑸땲님')) return;
     deleteMutation.mutate(groupId);
   };
 
@@ -140,7 +140,7 @@ export default function GroupManagePage() {
 
   const columns: Column<GroupManage>[] = [
     {
-      header: '?�메??그룹 ID',
+      header: '?꾨찓님洹몃９ ID',
       accessor: (item: GroupManage) => (
         <div className="flex items-center gap-4 py-3">
           <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-all duration-500">
@@ -155,7 +155,7 @@ export default function GroupManagePage() {
       className: 'w-64'
     },
     {
-      header: '그룹 ?�키?�처 명칭',
+      header: '洹몃９ ?꾪궎?띿쿂 紐낆묶',
       accessor: (item: GroupManage) => (
         <div className="flex flex-col gap-0.5">
           <span className="font-black text-foreground tracking-tight text-md uppercase leading-none mb-1">{item.groupNm}</span>
@@ -192,14 +192,14 @@ export default function GroupManagePage() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="보안 그룹 ?�키?�처 거버?�스"
-        breadcrumbs={[{ label: '보안관�? }, { label: '그룹관�? }]}
+        title="보안 洹몃９ ?꾪궎?띿쿂 嫄곕쾭?뚯뒪"
+        breadcrumbs={[{ label: '보안愿由? }, { label: '洹몃９愿由? }]}
       />
 
       <HubHeader
         title="Security"
         highlight="Group"
-        subtitle="?�스???�근 ?��????�의?�는 ?�리??보안 그룹 ?�티??�??�책 ?�카?�브 ?�합 ?�어"
+        subtitle="?쒖뒪님?묎렐 ?섏님님뺤쓽?섎뒗 ?쇰━님보안 洹몃９ ?뷀떚님諛님뺤콉 ?꾩뭅?대툕 ?듯빀 ?쒖뼱"
         icon={Users}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -214,7 +214,7 @@ export default function GroupManagePage() {
               onClick={handleCreate}
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
-              <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> ?�규 보안 그룹 ?�장
+              <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 洹몃９ ?ㅼ옣
             </Button>
           </div>
         }
@@ -223,13 +223,13 @@ export default function GroupManagePage() {
       <HubMetricGrid>
         <HubMetricCard title="ACTIVE_GROUPS" value={groups.length} icon={Database} color="indigo" />
         <HubMetricCard title="ENTITY_NODES" value={pagination?.totalRecordCount || 0} icon={LayoutGrid} color="primary" />
-        <HubMetricCard title="SYNC_STATUS" value="STEADY" icon={Activity} color="emerald" status="?�기?�됨" />
+        <HubMetricCard title="SYNC_STATUS" value="STEADY" icon={Activity} color="emerald" status="?숆린?붾맖" />
         <HubMetricCard title="SECURITY_TIER" value="TIER_1" icon={Lock} color="amber" />
       </HubMetricGrid>
 
       <HubSectionCard
-        title="보안 ?�메??그룹 매트�?��"
-        description="?�스?�의 ?�리??보안 계층??구성?�는 그룹 ?�벤?�리 �??�시�??�로비�????�태?�니??"
+        title="보안 ?꾨찓님洹몃９ 留ㅽ듃由?뒪"
+        description="?쒖뒪?쒖쓽 ?쇰━님보안 怨꾩링님援ъ꽦?섎뒗 洹몃９ ?몃깽?좊━ 諛님ㅼ떆媛님꾨줈鍮꾩님님곹깭?낅땲님"
         icon={Network}
       >
         <div className="space-y-8">
@@ -238,7 +238,7 @@ export default function GroupManagePage() {
               <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
                 <Input
-                  placeholder="그룹 UID ?�는 리터??명칭?�로 분석..."
+                  placeholder="洹몃９ UID ?먮뒗 由ы꽣님紐낆묶?쇰줈 분석..."
                   className="w-[450px] h-16 pl-16 rounded-2xl border-2 bg-slate-50/50 text-sm font-black tracking-tight shadow-inner"
                   value={params.searchKeyword || ''}
                   onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
@@ -247,7 +247,7 @@ export default function GroupManagePage() {
               </form>
             </div>
             <div>
-              <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">기능??그룹 ?�이�??�로�?/span>
+              <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">湲곕뒫님洹몃９ ?뚯씠釉님꾨줈釉?/span>
             </div>
           </div>
 
@@ -256,7 +256,7 @@ export default function GroupManagePage() {
               columns={columns}
               data={groups}
               loading={isLoading}
-              emptyMessage="?�별??보안 그룹 리소?��? 존재?��? ?�습?�다."
+              emptyMessage="?앸퀎님보안 洹몃９ 由ъ냼?ㅺ? 議댁옱?섏? ?딆뒿?덈떎."
               className="border-none bg-transparent"
             />
           </div>
@@ -265,7 +265,7 @@ export default function GroupManagePage() {
             <div className="mt-12 flex justify-center">
               <PagePagination
                 pagination={pagination}
-                onPageChange={(page) => setParams(prev => ({ ...prev, page번호: page }))}
+                onPageChange={(page) => setParams(prev => ({ ...prev, page踰덊샇: page }))}
               />
             </div>
           )}
@@ -276,12 +276,12 @@ export default function GroupManagePage() {
       <StandardModal
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        title={editingGroup ? '보안 그룹 ?�키?�처 ?�정' : '?�규 보안 ?�메??그룹 ?�장'}
+        title={editingGroup ? '보안 洹몃９ ?꾪궎?띿쿂 ?섏젙' : '신규 보안 ?꾨찓님洹몃９ ?ㅼ옣'}
         maxWidth="xl"
       >
         <div className="p-4 space-y-12">
           <div className="grid grid-cols-2 gap-10">
-            <FormField label="?�메??그룹 ?�별??(Group ID)" required description="보안 ?�이???�에???�일???�리???�별??>
+            <FormField label="?꾨찓님洹몃９ ?앸퀎님(Group ID)" required description="보안 ?덉씠님?댁뿉님?좎씪님?쇰━님?앸퀎님>
               <div className="relative group/id">
                 <Fingerprint size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                 <Input
@@ -290,11 +290,11 @@ export default function GroupManagePage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, groupId: e.target.value }))}
                   disabled={!!editingGroup}
                   className="h-16 pl-16 rounded-2xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner"
-                  placeholder="그룹 ?�별??
+                  placeholder="洹몃９ ?앸퀎님
                 />
               </div>
             </FormField>
-            <FormField label="그룹 ?�이�?명칭" required description="UI ?�에???�출??그룹??리터???�름">
+            <FormField label="洹몃９ ?덉씠釉?紐낆묶" required description="UI ?곸뿉님?몄텧님洹몃９님由ы꽣님?대쫫">
               <div className="relative group/nm">
                 <Users size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
                 <Input
@@ -302,13 +302,13 @@ export default function GroupManagePage() {
                   value={formData.groupNm || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, groupNm: e.target.value }))}
                   className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
-                  placeholder="그룹 명칭 ?�력"
+                  placeholder="洹몃９ 紐낆묶 ?낅젰"
                 />
               </div>
             </FormField>
           </div>
 
-          <FormField label="그룹 ?�책 ?�세 명세" description="?�당 보안 그룹??비즈?�스 목적 �??�이???�근 범위 명세">
+          <FormField label="洹몃９ ?뺤콉 ?곸꽭 紐낆꽭" description="?대떦 보안 洹몃９님鍮꾩쫰?덉뒪 紐⑹쟻 諛님곗씠님?묎렐 踰붿쐞 紐낆꽭">
             <div className="relative group/dc">
               <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
               <Textarea
@@ -316,16 +316,16 @@ export default function GroupManagePage() {
                 value={formData.groupDc || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, groupDc: e.target.value }))}
                 className="min-h-[160px] pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
-                placeholder="?�세 명세 ?�력..."
+                placeholder="?곸꽭 紐낆꽭 ?낅젰..."
               />
             </div>
           </FormField>
 
           <div className="flex gap-6 pt-4">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">痍⑥냼</Button>
             <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
               {(createMutation.isPending || updateMutation.isPending) ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
-              <span className="ml-2">{editingGroup ? '그룹 ?�정' : '?�규 그룹 배포'}</span>
+              <span className="ml-2">{editingGroup ? '洹몃９ ?섏젙' : '신규 洹몃９ 諛고룷'}</span>
             </Button>
           </div>
         </div>
@@ -333,3 +333,4 @@ export default function GroupManagePage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -22,40 +22,40 @@ import { Label } from '@/components/ui/label';
 
 import { useToast } from '@/app/components/ui/toast';
 
-// --- ?�자???�큰 기본�?---
+// --- ?붿옄님?좏겙 湲곕낯媛?---
 const DEFAULT_THEME_CONFIG = {
   primaryColor: '#3b82f6',
-  borderRadius: '1.5', // Rem ?�위 베이??  layoutMode: 'MODERN' as const,
+  borderRadius: '1.5', // Rem ?⑥쐞 踰좎씠님  layoutMode: 'MODERN' as const,
   sidebarWidth: 260,
 };
 
 /**
- * ?�스???�마 �??�자???�큰 ?�어 ?�터 (?�충??반영 버전)
- * - 배너 관리는 기존 '배너 �??�업관�? ?�용 메뉴�??��??�었?�니??
- * - �??�이지???�랫?�의 ?�심 ?�자??변??곡률, 컬러)�??�역?�으�??�어?�는 ?�진 ??��???�행?�니??
+ * ?쒖뒪님?뚮쭏 諛님붿옄님?좏겙 ?쒖뼱 ?쇳꽣 (?덉땐님諛섏쁺 踰꾩쟾)
+ * - 諛곕꼫 愿由щ뒗 湲곗〈 '諛곕꼫 諛님앹뾽愿由? ?꾩슜 硫붾돱濡님닿님섏뿀?듬땲님
+ * - 蹂님섏씠吏님?뚮옯?쇱쓽 ?듭떖 ?붿옄님蹂님怨〓쪧, 而щ윭)瑜님꾩뿭?곸쑝濡님쒖뼱?섎뒗 ?붿쭊 님븷님?섑뻾?⑸땲님
  */
 export default function LayoutManagerClient() {
   const { toast } = useToast();
   
-  // --- ?�자???�큰 ?�태 ---
+  // --- ?붿옄님?좏겙 ?곹깭 ---
   const [themeConfig, setThemeConfig] = useState(DEFAULT_THEME_CONFIG);
 
-  // 로컬?�토리�? �??�제 CSS 변???�용
+  // 濡쒖뺄?ㅽ넗由ъ? 諛님ㅼ젣 CSS 蹂님?곸슜
   const applyDesignTokens = (config: typeof DEFAULT_THEME_CONFIG) => {
     const root = document.documentElement;
     const baseRadius = parseFloat(config.borderRadius) || 1.5;
     
-    // ?�역 CSS 변??주입
+    // ?꾩뿭 CSS 蹂님二쇱엯
     root.style.setProperty('--radius-hub-section', `${baseRadius * 3.5}rem`);
     root.style.setProperty('--radius-hub-widget', `${baseRadius * 2.0}rem`);
     root.style.setProperty('--radius-hub-item', `${baseRadius * 1.5}rem`);
     root.style.setProperty('--primary', config.primaryColor);
     
-    // ?�구 ?�??(브라?��? ?��?)
+    // ?곴뎄 ?님(釉뚮씪?곗? ?섏?)
     localStorage.setItem('hub-theme-config', JSON.stringify(config));
   };
 
-  // 초기 로드 ???�정 ?�기??  useEffect(() => {
+  // 珥덇린 濡쒕뱶 님?ㅼ젙 ?숆린님  useEffect(() => {
     const saved = localStorage.getItem('hub-theme-config');
     if (saved) {
       try {
@@ -70,15 +70,15 @@ export default function LayoutManagerClient() {
     }
   }, []);
 
-  // --- ?�들??---
+  // --- ?몃뱾님---
   const handleThemeSave = () => {
     applyDesignTokens(themeConfig);
-    toast('?�자???�스???�기???�공: ?�정?�신 곡률�??�상???�랫???�반??UI ?�프?�에 즉각 ?�용?�었?�니??', 'success');
+    toast('?붿옄님?쒖뒪님?숆린님?깃났: ?ㅼ젙?섏떊 怨〓쪧怨님됱긽님?뚮옯님?꾨컲님UI ?명봽?쇱뿉 利됯컖 ?곸슜?섏뿀?듬땲님', 'success');
   };
 
   return (
     <div className="flex flex-col gap-8 p-10 max-w-[1600px] mx-auto min-h-screen bg-transparent">
-      {/* ?�마 관�??�더 */}
+      {/* ?뚮쭏 愿由님ㅻ뜑 */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -92,9 +92,9 @@ export default function LayoutManagerClient() {
           </div>
           <h1 className="text-4xl font-black tracking-tighter flex items-center gap-4 text-slate-900">
             <Settings2 className="w-10 h-10 text-primary" />
-            ?�스???�마 �??�자???�큰 ?�어
+            ?쒖뒪님?뚮쭏 諛님붿옄님?좏겙 ?쒖뼱
           </h1>
-          <p className="mt-3 text-slate-500 font-bold text-lg">?�랫?�의 ?�각???��??�을 ?��??�기 ?�해 ?�역 ?��?(Edge) 곡률 �?브랜??컬러 ?�큰???�의?�니??</p>
+          <p className="mt-3 text-slate-500 font-bold text-lg">?뚮옯?쇱쓽 ?쒓컖님?쇨님깆쓣 ?좎님섍린 ?꾪빐 ?꾩뿭 ?먯?(Edge) 怨〓쪧 諛?釉뚮옖님而щ윭 ?좏겙님?뺤쓽?⑸땲님</p>
         </div>
         <div className="flex items-center gap-3">
           <Button 
@@ -102,19 +102,19 @@ export default function LayoutManagerClient() {
             className="h-14 px-10 rounded-2xl font-black gap-3 shadow-2xl shadow-primary/30 text-lg bg-primary hover:scale-105 transition-transform"
           >
             <CheckCircle2 size={22} />
-            ?�체 ?�랫???�용
+            ?꾩껜 ?뚮옯님?곸슜
           </Button>
         </div>
       </motion.div>
 
       <div className="grid grid-cols-12 gap-10 mt-4">
-        {/* 좌측: ?�자???�큰 조절 ?�널 */}
+        {/* 醫뚯륫: ?붿옄님?좏겙 議곗젅 ?⑤꼸 */}
         <div className="col-span-12 lg:col-span-4 space-y-10">
           
           <section className="space-y-6">
             <h3 className="text-xl font-black flex items-center gap-2 text-slate-800">
               <Palette size={20} className="text-primary" />
-              곡률 ?�스??(Radius Scale)
+              怨〓쪧 ?쒖뒪님(Radius Scale)
             </h3>
             <Card className="rounded-[2.5rem] border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-white/60 backdrop-blur-3xl p-2 overflow-hidden">
               <CardContent className="space-y-8 pt-8">
@@ -153,7 +153,7 @@ export default function LayoutManagerClient() {
           <section className="space-y-6">
             <h3 className="text-xl font-black flex items-center gap-2 text-slate-800">
               <Brush size={20} className="text-primary" />
-              브랜???�이?�티??(Color)
+              釉뚮옖님?꾩씠?댄떚님(Color)
             </h3>
             <Card className="rounded-[2.5rem] border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-white/60 backdrop-blur-3xl p-2">
               <CardContent className="space-y-6 pt-8">
@@ -192,16 +192,16 @@ export default function LayoutManagerClient() {
           <div className="p-8 bg-amber-50 rounded-[2.5rem] border-2 border-dashed border-amber-200 space-y-3">
             <div className="flex items-center gap-2 text-amber-700 font-black">
               <Info size={18} />
-              <span>?�내 ?�항</span>
+              <span>?덈궡 ?ы빆</span>
             </div>
             <p className="text-sm font-bold text-amber-600/80 leading-relaxed">
-              �??�이지?�서 ?�정?�는 값�? ?�랫???�체???�자??가?�드?�인??즉시 ?�기?�됩?�다. <br/>
-              <b>?�로모션 배너 �??�업 ?�산</b> 관리는 ?�문 메뉴??<span className="underline decoration-2">[콘텐�??�영]</span> ??�� ?�용??주세??
+              蹂님섏씠吏?먯꽌 ?ㅼ젙?섎뒗 媛믪? ?뚮옯님?꾩껜님?붿옄님媛?대뱶?쇱씤님利됱떆 ?숆린?붾맗?덈떎. <br/>
+              <b>?꾨줈紐⑥뀡 諛곕꼫 諛님앹뾽 ?먯궛</b> 愿由щ뒗 ?꾨Ц 硫붾돱님<span className="underline decoration-2">[肄섑뀗痢님댁쁺]</span> 님쓣 ?댁슜님二쇱꽭님
             </p>
           </div>
         </div>
 
-        {/* ?�측: ?�각???��??�이??*/}
+        {/* ?곗륫: ?쒓컖님?쒕님덉씠님*/}
         <div className="col-span-12 lg:col-span-8">
           <div className="h-full min-h-[700px] bg-slate-100/40 rounded-[4rem] border-4 border-dashed border-slate-200 flex flex-col items-center justify-center p-12 relative overflow-hidden group">
             <div className="absolute top-10 left-12 flex items-center gap-4">
@@ -235,11 +235,11 @@ export default function LayoutManagerClient() {
                 
                 <div className="space-y-5">
                   <h3 className="text-5xl font-black tracking-tighter" style={{ color: themeConfig.primaryColor }}>
-                    UX ?�큰 미리보기
+                    UX ?좏겙 誘몃━蹂닿린
                   </h3>
                   <p className="text-slate-500 font-bold text-xl leading-relaxed">
-                    ?�택?�신 <span className="text-slate-900">곡률�??�마 컬러</span>가 <br/>
-                    ?�제 ?�랫??컴포?�트�?구현??모습?�니??
+                    ?좏깮?섏떊 <span className="text-slate-900">怨〓쪧怨님뚮쭏 而щ윭</span>媛 <br/>
+                    ?ㅼ젣 ?뚮옯님而댄룷?뚰듃濡?援ы쁽님紐⑥뒿?낅땲님
                   </p>
                 </div>
                 
@@ -263,15 +263,15 @@ export default function LayoutManagerClient() {
                     boxShadow: `0 25px 50px ${themeConfig.primaryColor}40`
                   }}
                 >
-                  ?��??�이???�료 �?진입 <ChevronRight size={32} strokeWidth={3} />
+                  ?쒕님덉씠님?꾨즺 諛?吏꾩엯 <ChevronRight size={32} strokeWidth={3} />
                 </Button>
               </motion.div>
             </AnimatePresence>
 
-            {/* 메�? ?�보 */}
+            {/* 硫뷀? ?뺣낫 */}
             <div className="mt-16 flex items-center gap-3 text-slate-400 font-black">
               <Info size={18} />
-              <span>?�재 ?�각?�된 ?�션 곡률 ?�치: {((parseFloat(themeConfig.borderRadius) || 0) * 3.5).toFixed(1)} rem</span>
+              <span>현재 ?쒓컖?붾맂 ?뱀뀡 怨〓쪧 ?섏튂: {((parseFloat(themeConfig.borderRadius) || 0) * 3.5).toFixed(1)} rem</span>
             </div>
           </div>
         </div>
@@ -279,3 +279,4 @@ export default function LayoutManagerClient() {
     </div>
   );
 }
+

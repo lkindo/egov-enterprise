@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -23,7 +23,7 @@ import { PagePagination } from "@/components/common/PagePagination";
 export default function PollManagePage() {
  const router = useRouter();
  const [params, setParams] = useState<PollSearchParams>({
- page번호: 1,
+ page踰덊샇: 1,
  searchKeyword: '',
  });
 
@@ -37,29 +37,29 @@ export default function PollManagePage() {
 
  const handleSearch = (e: React.FormEvent) => {
  e.preventDefault();
- setParams(prev => ({ ...prev, page번호: 1 }));
+ setParams(prev => ({ ...prev, page踰덊샇: 1 }));
  };
 
  const getStatusBadge = (endDate: string) => {
  const today = new Date();
  const end = new Date(endDate);
- if (end < today) return <Badge variant="secondary">종료??/Badge>;
- return <Badge variant="default">진행�?/Badge>;
+ if (end < today) return <Badge variant="secondary">醫낅즺님/Badge>;
+ return <Badge variant="default">吏꾪뻾以?/Badge>;
  };
 
  return (
  <div className="space-y-6">
  <div className="flex justify-between items-center">
- <h2 className="text-2xl font-bold tracking-tight">?�라???�문 관�?/h2>
+ <h2 className="text-2xl font-bold tracking-tight">온라인설문 愿由?/h2>
  <Button onClick={() => router.push('/admin/survey/manage/create')}>
  <Plus className="mr-2 h-4 w-4" />
- ?�문 ?�록
+ 설문 등록
  </Button>
  </div>
 
  <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg">
  <Input
- placeholder="?�문�?검??
+ placeholder="설문紐?寃님
  className="max-w-sm"
  value={params.searchKeyword || ''}
  onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
@@ -74,12 +74,12 @@ export default function PollManagePage() {
  <Table>
  <TableHeader>
  <TableRow>
- <TableHead className="w-[60px]">번호</TableHead>
- <TableHead>?�문�?/TableHead>
- <TableHead>기간</TableHead>
- <TableHead>?�태</TableHead>
- <TableHead>?�록??/TableHead>
- <TableHead>?�록??/TableHead>
+ <TableHead className="w-[60px]">踰덊샇</TableHead>
+ <TableHead>설문紐?/TableHead>
+ <TableHead>湲곌컙</TableHead>
+ <TableHead>?곹깭</TableHead>
+ <TableHead>등록님/TableHead>
+ <TableHead>등록님/TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
@@ -88,7 +88,7 @@ export default function PollManagePage() {
  ) : polls.length === 0 ? (
  <TableRow>
  <TableCell colSpan={6} className="h-24 text-center">
- ?�문 ?�이?��? ?�습?�다.
+ 설문 ?곗씠?곌? ?놁뒿?덈떎.
  </TableCell>
  </TableRow>
  ) : (
@@ -98,7 +98,7 @@ export default function PollManagePage() {
  className="cursor-pointer hover:bg-slate-50"
  onClick={() => router.push(`/admin/survey/manage/${poll.pollId}`)}
  >
- <TableCell>{index + 1 + ((params.page번호 || 1) - 1) * 10}</TableCell>
+ <TableCell>{index + 1 + ((params.page踰덊샇 || 1) - 1) * 10}</TableCell>
  <TableCell className="font-medium">{poll.pollNm}</TableCell>
  <TableCell>{poll.pollBeginDe} ~ {poll.pollEndDe}</TableCell>
  <TableCell>{getStatusBadge(poll.pollEndDe)}</TableCell>
@@ -114,9 +114,10 @@ export default function PollManagePage() {
  {pagination && (
  <PagePagination
  pagination={pagination}
- onPageChange={(page) => setParams(prev => ({ ...prev, page번호: page }))}
+ onPageChange={(page) => setParams(prev => ({ ...prev, page踰덊샇: page }))}
  />
  )}
  </div>
  );
 }
+

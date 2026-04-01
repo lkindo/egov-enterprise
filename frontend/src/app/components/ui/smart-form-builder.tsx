@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -43,12 +43,12 @@ export interface FormSchema {
 
 export function SmartFormBuilder() {
  const [schema, setSchema] = useState<FormSchema>({
- title: "?�규 ?�정 ?�식",
- description: "?�무 지??�?보고�??�한 ?��? ?�식?�니??",
+ title: "신규 ?됱젙 ?쒖떇",
+ description: "업무 吏님諛?蹂닿퀬瑜님꾪븳 ?쒖? ?쒖떇?낅땲님",
  fields: [
- { id: 'f1', type: 'text', label: '?�목', placeholder: '?�건 ?�목???�력?�세??, required: true, width: 'full' },
- { id: 'f2', type: 'date', label: '기한', required: true, width: 'half' },
- { id: 'f3', type: 'select', label: '중요??, options: ['긴급', '보통', '참조'], width: 'half' }
+ { id: 'f1', type: 'text', label: '?쒕ぉ', placeholder: '?덇굔 ?쒕ぉ님?낅젰?섏꽭님, required: true, width: 'full' },
+ { id: 'f2', type: 'date', label: '湲고븳', required: true, width: 'half' },
+ { id: 'f3', type: 'select', label: '以묒슂님, options: ['湲닿툒', '蹂댄넻', '李몄“'], width: 'half' }
  ]
  });
 
@@ -59,8 +59,8 @@ export function SmartFormBuilder() {
  const newField: FormField = {
  id: `f-${Date.now()}`,
  type,
- label: `?�로??${type} ?�드`,
- placeholder: '?�용???�력?�주?�요',
+ label: `?덈줈님${type} ?꾨뱶`,
+ placeholder: '?댁슜님?낅젰?댁＜?몄슂',
  width: 'full'
  };
  setSchema(prev => ({ ...prev, fields: [...prev.fields, newField] }));
@@ -94,7 +94,7 @@ export function SmartFormBuilder() {
  </div>
  <div>
  <h2 className="text-xl font-black tracking-tight text-foreground ">{schema.title}</h2>
- <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">비주?????�진 v1.0</p>
+ <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">鍮꾩＜님님?붿쭊 v1.0</p>
  </div>
  </div>
 
@@ -119,9 +119,9 @@ export function SmartFormBuilder() {
  </div>
  <div className="h-6 w-px bg-muted mx-2" />
  <Button variant="outline" className="rounded-xl font-bold h-11 px-6 border-2 hover:bg-primary/5 gap-2">
- <Eye size={18} /> ?�리�? </Button>
+ <Eye size={18} /> ?꾨━酉? </Button>
  <Button className="rounded-xl font-black h-11 px-8 shadow-xl shadow-primary/20 gap-2">
- <Save size={18} /> ?�식 ?�?? </Button>
+ <Save size={18} /> ?쒖떇 ?님 </Button>
  </div>
  </div>
 
@@ -134,12 +134,12 @@ export function SmartFormBuilder() {
  </h3>
  <div className="grid grid-cols-1 gap-2">
  {[
- { type: 'text', icon: <Type size={16} />, label: '?�스???�력' },
- { type: 'textarea', icon: <List size={16} />, label: '�?문장 ?�력' },
- { type: 'number', icon: <Hash size={16} />, label: '?�자 ?�력' },
- { type: 'date', icon: <CalendarIcon size={16} />, label: '?�짜 ?�택' },
- { type: 'select', icon: <ChevronRight size={16} />, label: '?�롭?�운' },
- { type: 'checkbox', icon: <CheckSquare size={16} />, label: '체크박스' },
+ { type: 'text', icon: <Type size={16} />, label: '?띿뒪님?낅젰' },
+ { type: 'textarea', icon: <List size={16} />, label: '湲?臾몄옣 ?낅젰' },
+ { type: 'number', icon: <Hash size={16} />, label: '?レ옄 ?낅젰' },
+ { type: 'date', icon: <CalendarIcon size={16} />, label: '?좎쭨 ?좏깮' },
+ { type: 'select', icon: <ChevronRight size={16} />, label: '?쒕∼?ㅼ슫' },
+ { type: 'checkbox', icon: <CheckSquare size={16} />, label: '泥댄겕諛뺤뒪' },
  ].map((tool) => (
  <button
  key={tool.type}
@@ -156,10 +156,10 @@ export function SmartFormBuilder() {
  <div className="mt-auto p-5 bg-primary/5 rounded-[2rem] border border-primary/10">
  <div className="flex items-center gap-2 mb-2 text-primary">
  <Info size={14} />
- <span className="text-[10px] font-black ">?�로 ??/span>
+ <span className="text-[10px] font-black ">?꾨줈 님/span>
  </div>
  <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
- ?�드�??�릭?�여 ?�성???�집?�고, ?�래그하???�서�?변경할 ???�습?�다.
+ ?꾨뱶瑜님대┃?섏뿬 ?띿꽦님?몄쭛?섍퀬, ?쒕옒洹명븯님?쒖꽌瑜?蹂寃쏀븷 님?덉뒿?덈떎.
  </p>
  </div>
  </div>
@@ -203,7 +203,7 @@ export function SmartFormBuilder() {
  </div>
 
  <div className="h-12 bg-muted/50 rounded-xl border border-primary/5 px-4 flex items-center text-sm text-muted-foreground/40 font-medium">
- {field.placeholder || `${field.label} ?�용???�력?�세??}
+ {field.placeholder || `${field.label} ?댁슜님?낅젰?섏꽭님}
  </div>
  </div>
  ))}
@@ -215,13 +215,13 @@ export function SmartFormBuilder() {
  <div className="w-80 bg-white dark:bg-slate-900 border border-primary/5 rounded-[3.5rem] p-8 flex flex-col gap-6 shadow-2xl">
  <div className="flex items-center gap-3 mb-4">
  <div className="p-2.5 bg-primary/10 rounded-xl text-primary"><Settings size={18} /></div>
- <h3 className="text-sm font-black tracking-tight">?�성</h3>
+ <h3 className="text-sm font-black tracking-tight">?띿꽦</h3>
  </div>
 
  {activeField ? (
  <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">?�벨 ?�름</label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">?쇰꺼 ?대쫫</label>
  <Input
  value={activeField.label}
  onChange={(e) => updateField(activeField.id, { label: e.target.value })}
@@ -229,7 +229,7 @@ export function SmartFormBuilder() {
  />
  </div>
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">?�레?�스?�??/label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">?뚮젅?댁뒪?님/label>
  <Input
  value={activeField.placeholder || ''}
  onChange={(e) => updateField(activeField.id, { placeholder: e.target.value })}
@@ -239,20 +239,20 @@ export function SmartFormBuilder() {
 
  <div className="grid grid-cols-2 gap-4">
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">?�비</label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">?덈퉬</label>
  <div className="bg-muted/50 p-1 rounded-xl flex gap-1 border border-primary/5">
  <button
  onClick={() => updateField(activeField.id, { width: 'half' })}
  className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all", activeField.width === 'half' ? "bg-background shadow-sm text-primary" : "text-muted-foreground")}
- >?�반</button>
+ >?덈컲</button>
  <button
  onClick={() => updateField(activeField.id, { width: 'full' })}
  className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all", activeField.width === 'full' ? "bg-background shadow-sm text-primary" : "text-muted-foreground")}
- >?�체</button>
+ >?꾩껜</button>
  </div>
  </div>
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">?�수</label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">?꾩닔</label>
  <div
  onClick={() => updateField(activeField.id, { required: !activeField.required })}
  className={cn(
@@ -267,7 +267,7 @@ export function SmartFormBuilder() {
 
  {activeField.type === 'select' && (
  <div className="space-y-3 pt-4 border-t border-primary/5">
- <label className="text-[10px] font-black text-muted-foreground px-1">?�션</label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">?듭뀡</label>
  {(activeField.options || []).map((opt, idx) => (
  <div key={`opt-${idx}`} className="flex gap-2">
  <Input
@@ -291,7 +291,7 @@ export function SmartFormBuilder() {
  <Button
  variant="outline" size="sm" className="w-full rounded-xl border-dashed py-5 border-2"
  onClick={() => updateField(activeField.id, { options: [...(activeField.options || []), 'New Option'] })}
- >+ ?�성 추�?</Button>
+ >+ ?띿꽦 異붽?</Button>
  </div>
  )}
  </div>
@@ -300,9 +300,9 @@ export function SmartFormBuilder() {
  <div className="w-16 h-16 bg-muted rounded-3xl flex items-center justify-center text-muted-foreground mb-4">
  <Info size={24} />
  </div>
- <h4 className="text-sm font-black tracking-tight text-muted-foreground/60 mb-2">?�택???�드 ?�음</h4>
+ <h4 className="text-sm font-black tracking-tight text-muted-foreground/60 mb-2">?좏깮님?꾨뱶 ?놁쓬</h4>
  <p className="text-[10px] font-medium text-muted-foreground/40 leading-relaxed">
- 캔버?�의 ?�드�??�택?�여 ?�세 ?�성???�집?�세??
+ 罹붾쾭?ㅼ쓽 ?꾨뱶瑜님좏깮?섏뿬 ?곸꽭 ?띿꽦님?몄쭛?섏꽭님
  </p>
  </div>
  )}
@@ -311,3 +311,4 @@ export function SmartFormBuilder() {
  </div>
  );
 }
+

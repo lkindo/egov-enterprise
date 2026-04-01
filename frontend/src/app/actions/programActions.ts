@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -28,9 +28,9 @@ export async function saveProgramAction(prevState: unknown, { mode, data }: Save
         }
 
         revalidatePath('/admin/system/programs');
-        return { success: true, message: `프로그램이 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
+        return { success: true, message: `?꾨줈洹몃옩님${mode === 'create' ? '등록' : '?섏젙'}?섏뿀?듬땲님` };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '저장 중 오류 발생';
+        const errorMessage = error instanceof Error ? error.message : '?님以님ㅻ쪟 諛쒖깮';
         console.error('Save Program Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -45,9 +45,9 @@ export async function deleteProgramAction(prevState: unknown, name: string): Pro
         await programAdminService.deleteProgram(name, axiosConfig);
 
         revalidatePath('/admin/system/programs');
-        return { success: true, message: '프로그램이 삭제되었습니다.' };
+        return { success: true, message: '?꾨줈洹몃옩님님젣?섏뿀?듬땲님' };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
+        const errorMessage = error instanceof Error ? error.message : '님젣 以님ㅻ쪟 諛쒖깮';
         console.error('Delete Program Error:', error);
         return { success: false, message: errorMessage };
     }

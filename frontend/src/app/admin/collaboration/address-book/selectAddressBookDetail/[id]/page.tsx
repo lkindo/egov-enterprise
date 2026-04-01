@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -23,17 +23,17 @@ const InsertAddressBookPage = () => {
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault();
  if (!formData.adbkNm.trim()) {
- alert('이름을 입력해주세요.');
+ alert('?대쫫님?낅젰?댁＜?몄슂.');
  return;
  }
 
  setLoading(true);
  try {
  await addressbookUserService.createAddressBook(formData);
- alert('등록되었습니다.');
+ alert('등록?섏뿀?듬땲님');
  router.push('/admin/collaboration/address-book/selectAddressBookList');
  } catch (error: any) {
- alert(error.response?.data?.message || '등록에 실패했습니다.');
+ alert(error.response?.data?.message || '등록님?ㅽ뙣?덉뒿?덈떎.');
  } finally {
  setLoading(false);
  }
@@ -44,10 +44,9 @@ const InsertAddressBookPage = () => {
  {/* Breadcrumb */}
  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg w-fit">
  <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
- <Home className="w-4 h-4" /> 홈
- </Link>
+ <Home className="w-4 h-4" /> 님 </Link>
  <ChevronRight className="w-4 h-4" />
- <Link href="/admin/collaboration/address-book/selectAddressBookList" className="hover:text-foreground transition-colors">주소록관리</Link>
+ <Link href="/admin/collaboration/address-book/selectAddressBookList" className="hover:text-foreground transition-colors">二쇱냼濡앷?由?/Link>
  <ChevronRight className="w-4 h-4" />
  <span className="text-foreground font-medium">등록</span>
  </div>
@@ -55,7 +54,7 @@ const InsertAddressBookPage = () => {
  <Card className="shadow-xl border-none">
  <CardHeader className="border-b bg-muted/10 pb-6 rounded-t-xl">
  <CardTitle className="text-2xl font-bold flex items-center gap-3">
- <User className="w-6 h-6 text-primary" /> 주소록 신규 등록
+ <User className="w-6 h-6 text-primary" /> 二쇱냼濡?신규 등록
  </CardTitle>
  </CardHeader>
  <form onSubmit={handleSubmit}>
@@ -64,11 +63,11 @@ const InsertAddressBookPage = () => {
  <div className="space-y-6">
  <div className="space-y-2">
  <Label htmlFor="adbkNm" className="text-sm font-semibold flex items-center gap-2">
- <span className="text-destructive">*</span> <User className="w-4 h-4" /> 이름
+ <span className="text-destructive">*</span> <User className="w-4 h-4" /> ?대쫫
  </Label>
  <Input
  id="adbkNm"
- placeholder="이름을 입력하세요"
+ placeholder="?대쫫님?낅젰?섏꽭님
  className="h-12 text-base shadow-sm focus-visible:ring-primary/20"
  value={formData.adbkNm}
  onChange={(e) => setFormData({ ...formData, adbkNm: e.target.value })}
@@ -77,7 +76,7 @@ const InsertAddressBookPage = () => {
  </div>
  <div className="space-y-2">
  <Label htmlFor="telNo" className="text-sm font-semibold flex items-center gap-2">
- <Phone className="w-4 h-4" /> 전화번호
+ <Phone className="w-4 h-4" /> ?꾪솕踰덊샇
  </Label>
  <Input
  id="telNo"
@@ -92,8 +91,7 @@ const InsertAddressBookPage = () => {
  <div className="space-y-6">
  <div className="space-y-2">
  <Label htmlFor="email" className="text-sm font-semibold flex items-center gap-2">
- <Mail className="w-4 h-4" /> 이메일
- </Label>
+ <Mail className="w-4 h-4" /> ?대찓님 </Label>
  <Input
  id="email"
  type="email"
@@ -105,11 +103,11 @@ const InsertAddressBookPage = () => {
  </div>
  <div className="space-y-2">
  <Label htmlFor="adres" className="text-sm font-semibold flex items-center gap-2">
- <MapPin className="w-4 h-4" /> 주소
+ <MapPin className="w-4 h-4" /> 二쇱냼
  </Label>
  <Input
  id="adres"
- placeholder="상세 주소를 입력하세요"
+ placeholder="?곸꽭 二쇱냼瑜님낅젰?섏꽭님
  className="h-12 text-base shadow-sm"
  value={formData.adres}
  onChange={(e) => setFormData({ ...formData, adres: e.target.value })}
@@ -119,24 +117,24 @@ const InsertAddressBookPage = () => {
  </div>
 
  <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg flex items-start gap-3">
- <div className="text-primary mt-0.5">💡</div>
+ <div className="text-primary mt-0.5">?뮕</div>
  <p className="text-sm text-primary/80 leading-relaxed font-medium">
- 주소록에 등록된 연락처는 협업 시스템 내에서 공유 및 관리됩니다. 정확한 정보를 입력해 주세요.
+ 二쇱냼濡앹뿉 등록님?곕씫泥섎뒗 ?묒뾽 ?쒖뒪님?댁뿉님怨듭쑀 諛?愿由щ맗?덈떎. ?뺥솗님?뺣낫瑜님낅젰님二쇱꽭님
  </p>
  </div>
  </CardContent>
  <CardFooter className="flex justify-center gap-4 py-10 border-t bg-muted/5 rounded-b-xl">
  <Link href="/admin/collaboration/address-book/selectAddressBookList">
  <Button type="button" variant="outline" className="h-12 px-10 gap-2 font-semibold shadow-sm hover:bg-muted transition-all">
- <ArrowLeft className="w-4 h-4" /> 취소
+ <ArrowLeft className="w-4 h-4" /> 痍⑥냼
  </Button>
  </Link>
  <Button type="submit" className="h-12 px-12 gap-2 font-bold shadow-lg transition-all active:scale-95" disabled={loading}>
  {loading ? (
- <span className="flex items-center gap-2">처리중...</span>
+ <span className="flex items-center gap-2">泥섎━以?..</span>
  ) : (
  <>
- <Send className="w-4 h-4" /> 등록하기
+ <Send className="w-4 h-4" /> 등록?섍린
  </>
  )}
  </Button>

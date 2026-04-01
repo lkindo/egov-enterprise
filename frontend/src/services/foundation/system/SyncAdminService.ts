@@ -1,8 +1,8 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
 
 /**
- * 전송/동기화 서버 관리 서비스 (Admin)
+ * ?꾩넚/?숆린님?쒕쾭 愿由님쒕퉬님(Admin)
  */
 export interface SyncServer {
  serverId: string;
@@ -17,27 +17,27 @@ class SyncAdminService extends AdminService {
  super('/sync');
  }
 
- /** 동기화 서버 목록 조회 */
+ /** ?숆린님?쒕쾭 紐⑸줉 조회 */
  async getSyncServers(config?: AxiosRequestConfig): Promise<SyncServer[]> {
  return this.get<SyncServer[]>('', config);
  }
 
- /** 동기화 서버 등록 */
+ /** ?숆린님?쒕쾭 등록 */
  async createSyncServer(data: SyncServer, config?: AxiosRequestConfig): Promise<void> {
  return this.post('', data, config);
  }
 
- /** 동기화 서버 수정 */
+ /** ?숆린님?쒕쾭 ?섏젙 */
  async updateSyncServer(id: string, data: Partial<SyncServer>, config?: AxiosRequestConfig): Promise<void> {
  return this.put(`/${id}`, data, config);
  }
 
- /** 동기화 서버 삭제 */
+ /** ?숆린님?쒕쾭 님젣 */
  async deleteSyncServer(id: string, config?: AxiosRequestConfig): Promise<void> {
  return this.delete(`/${id}`, config);
  }
 
- /** 동기화 실행 */
+ /** ?숆린님?ㅽ뻾 */
  async executeSync(id: string, config?: AxiosRequestConfig): Promise<void> {
  return this.post(`/${id}/execute`, {}, config);
  }

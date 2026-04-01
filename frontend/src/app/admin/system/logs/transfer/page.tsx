@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { Share2, Tag, Calendar, Box } from 'lucide-react';
 
 const TransferLogAdminPage = () => {
     const [params, setParams] = useState<SearchParams>({
-        page번호: 1,
+        page踰덊샇: 1,
         size: 10,
         searchKeyword: '',
     });
@@ -19,7 +19,7 @@ const TransferLogAdminPage = () => {
     const { data, isLoading } = useQuery<PageResponse<TransferLog>>({
         queryKey: ['admin-logs-transfer', params],
         queryFn: () => systemLogAdminService.getTransferLogs({
-            page번호: Number(params.page번호) || 1,
+            page踰덊샇: Number(params.page踰덊샇) || 1,
             size: params.size,
             searchKeyword: params.searchKeyword,
         }),
@@ -30,7 +30,7 @@ const TransferLogAdminPage = () => {
 
     const columns: Column<TransferLog>[] = [
         {
-            header: '로그ID',
+            header: '濡쒓렇ID',
             accessor: (item: TransferLog) => (
                 <div className="font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
                     {item.logId}
@@ -39,7 +39,7 @@ const TransferLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '?�공기�?코드',
+            header: '?쒓났湲곌?肄붾뱶',
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2">
                     <Box size={14} className="text-primary/40" />
@@ -49,7 +49,7 @@ const TransferLogAdminPage = () => {
             className: 'w-36'
         },
         {
-            header: '?�공?�스??,
+            header: '?쒓났?쒖뒪님,
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/30" />
@@ -59,7 +59,7 @@ const TransferLogAdminPage = () => {
             className: 'w-32'
         },
         {
-            header: '?�청?�스??,
+            header: '요청?쒖뒪님,
             accessor: (item: TransferLog) => (
                 <code className="px-2 py-0.5 bg-sky-50 text-sky-600 text-[10px] font-black rounded border border-sky-100">
                     {item.requstSysCode}
@@ -68,7 +68,7 @@ const TransferLogAdminPage = () => {
             className: 'w-32'
         },
         {
-            header: '결과',
+            header: '寃곌낵',
             accessor: (item: TransferLog) => (
                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border uppercase ${
                     item.result === 'SUCCESS' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100'
@@ -79,7 +79,7 @@ const TransferLogAdminPage = () => {
             className: 'w-24'
         },
         {
-            header: '?�록?�시',
+            header: '등록?쇱떆',
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     <Calendar size={14} className="opacity-30" />
@@ -92,22 +92,22 @@ const TransferLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="?�수??로그" breadcrumbs={[{ label: '?�스?��?�? }, { label: '로그관�? }, { label: '?�수??로그' }]} />
+            <PageHeader title="?≪닔님濡쒓렇" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }, { label: '?≪닔님濡쒓렇' }]} />
 
-            <HubHeader title="?�계 마스?? highlight="?�수??로그" subtitle="?��? ?�스??�??��? 모듈 간의 ?�이???�수???�력???�시간으�?모니?�링?�니??" icon={Share2} />
+            <HubHeader title="?곌퀎 留덉뒪님 highlight="?≪닔님濡쒓렇" subtitle="?몃? ?쒖뒪님諛님대? 紐⑤뱢 媛꾩쓽 ?곗씠님?≪닔님?대젰님?ㅼ떆媛꾩쑝濡?紐⑤땲?곕쭅?⑸땲님" icon={Share2} />
 
             <StandardDataTable
                 columns={columns}
                 data={logs}
                 loading={isLoading}
                 pagination={{
-                    currentPage: (params.page번호 || 1) as number,
+                    currentPage: (params.page踰덊샇 || 1) as number,
                     totalPages: data?.totalPage || pagination?.totalPageCount || 1,
-                    onPageChange: (page: number) => setParams({ ...params, page번호: page }),
+                    onPageChange: (page: number) => setParams({ ...params, page踰덊샇: page }),
                 }}
                 search={{
-                    placeholder: '기�?코드, ?�스??검??..',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page번호: 1 }),
+                    placeholder: '湲곌?肄붾뱶, ?쒖뒪님寃님..',
+                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 }),
                 }}
             />
         </div>
@@ -115,3 +115,4 @@ const TransferLogAdminPage = () => {
 };
 
 export default TransferLogAdminPage;
+

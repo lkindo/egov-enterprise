@@ -1,25 +1,24 @@
-import { ApiService } from '@/services/core/ApiService';
+﻿import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { OnlinePollManageVO, OnlinePollItemVO, OnlinePollPartcptnVO, PollSearchParams } from '@/types/business/poll';
 import { AxiosRequestConfig } from 'axios';
 
 /**
- * 온라인 설문(Poll) 서비스
- * 
- * NOTE: 이 서비스는 레거시 .do 서버 엔드포인트를 호출하는 과도기적 스펙을 유지하고 있습니다.
- * 점진적으로 AdminService 기반의 RESTful 환경으로 이행할 예정입니다.
+ * ?⑤씪님설문(Poll) ?쒕퉬님 * 
+ * NOTE: 님?쒕퉬?ㅻ뒗 ?덇굅님.do ?쒕쾭 ?붾뱶?ъ씤?몃? ?몄텧?섎뒗 怨쇰룄湲곗쟻 ?ㅽ럺님?좎님섍퀬 ?덉뒿?덈떎.
+ * ?먯쭊?곸쑝濡?AdminService 湲곕컲님RESTful ?섍꼍?쇰줈 ?댄뻾님?덉젙?낅땲님
  */
 class PollService extends ApiService {
  constructor() {
  super('/uss/olp/opm');
  }
 
- /** 설문 목록 조회 */
+ /** 설문 紐⑸줉 조회 */
  async getPollList(params: PollSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<OnlinePollManageVO>> {
  return this.get<PageResponse<OnlinePollManageVO>>('/listOnlinePollManage.do', { ...config, params });
  }
 
- /** 설문 상세 조회 */
+ /** 설문 ?곸꽭 조회 */
  async getPollDetail(pollId: string, config?: AxiosRequestConfig): Promise<OnlinePollManageVO> {
  return this.get<OnlinePollManageVO>(`/detailOnlinePollManage.do`, { ...config, params: { pollId } });
  }
@@ -29,42 +28,42 @@ class PollService extends ApiService {
  return this.post('/registOnlinePollManage.do', poll, config);
  }
 
- /** 설문 수정 */
+ /** 설문 ?섏젙 */
  async updatePoll(poll: Partial<OnlinePollManageVO>, config?: AxiosRequestConfig): Promise<void> {
  return this.post('/updtOnlinePollManage.do', poll, config);
  }
 
- /** 설문 삭제 */
+ /** 설문 님젣 */
  async deletePoll(pollId: string, config?: AxiosRequestConfig): Promise<void> {
  return this.post(`/detailOnlinePollManage.do`, null, { ...config, params: { cmd: 'del', pollId } });
  }
 
- /** 설문 항목 목록 조회 */
+ /** 설문 님ぉ 紐⑸줉 조회 */
  async getPollItemList(pollId: string, config?: AxiosRequestConfig): Promise<OnlinePollItemVO[]> {
  return this.get<OnlinePollItemVO[]>(`/listOnlinePollItem.do`, { ...config, params: { pollId } });
  }
 
- /** 설문 항목 등록 */
+ /** 설문 님ぉ 등록 */
  async createPollItem(item: Partial<OnlinePollItemVO>, config?: AxiosRequestConfig): Promise<void> {
  return this.post('/registOnlinePollItem.do', item, config);
  }
 
- /** 설문 항목 수정 */
+ /** 설문 님ぉ ?섏젙 */
  async updatePollItem(item: Partial<OnlinePollItemVO>, config?: AxiosRequestConfig): Promise<void> {
  return this.post('/updtOnlinePollItem.do', item, config);
  }
 
- /** 설문 항목 삭제 */
+ /** 설문 님ぉ 님젣 */
  async deletePollItem(pollId: string, pollIemId: string, config?: AxiosRequestConfig): Promise<void> {
  return this.post(`/delOnlinePollItem.do`, null, { ...config, params: { pollId, pollIemId } });
  }
 
- /** 설문 참여 */
+ /** 설문 李몄뿬 */
  async participatePoll(participation: OnlinePollPartcptnVO, config?: AxiosRequestConfig): Promise<void> {
  return this.post('/uss/olp/opp/registOnlinePollPartcptn.do'.replace('/uss/olp/opm', ''), participation, config); // Base path override hack if needed, or just use absolute
  }
 
-  /** 설문 통계 결과 조회 */
+  /** 설문 통계 寃곌낵 조회 */
   async getPollResult(pollId: string, config?: AxiosRequestConfig): Promise<Record<string, unknown>> {
     return this.get<Record<string, unknown>>('/uss/olp/opp/egovOnlinePollManageStatistics.do'.replace('/uss/olp/opm', ''), { ...config, params: { pollId } });
   }

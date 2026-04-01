@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -28,9 +28,9 @@ export async function saveMenuAction(prevState: unknown, { mode, data }: SaveMen
     }
 
     revalidatePath('/admin/system/menus');
-    return { success: true, message: `메뉴가 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
+    return { success: true, message: `硫붾돱媛 ${mode === 'create' ? '등록' : '?섏젙'}?섏뿀?듬땲님` };
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '저장 중 오류 발생';
+    const errorMessage = error instanceof Error ? error.message : '?님以님ㅻ쪟 諛쒖깮';
     console.error('Save Menu Error:', error);
     return { success: false, message: errorMessage };
   }
@@ -44,9 +44,9 @@ export async function updateMenuOrdersAction(menus: MenuInfo[]): Promise<ActionR
 
     await menuAdminService.updateMenuOrder(menus, axiosConfig);
 
-    return { success: true, message: '순서가 저장되었습니다.' };
+    return { success: true, message: '?쒖꽌媛 ??λ릺?덉뒿?덈떎.' };
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '순서 저장 중 오류 발생';
+    const errorMessage = error instanceof Error ? error.message : '?쒖꽌 ?님以님ㅻ쪟 諛쒖깮';
     console.error('Update Menu Orders Error:', error);
     return { success: false, message: errorMessage };
   }
@@ -61,9 +61,9 @@ export async function deleteMenuAction(prevState: unknown, id: number): Promise<
     await menuAdminService.deleteMenu(id, axiosConfig);
 
     revalidatePath('/admin/system/menus');
-    return { success: true, message: '메뉴가 삭제되었습니다.' };
+    return { success: true, message: '硫붾돱媛 님젣?섏뿀?듬땲님' };
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
+    const errorMessage = error instanceof Error ? error.message : '님젣 以님ㅻ쪟 諛쒖깮';
     console.error('Delete Menu Error:', error);
     return { success: false, message: errorMessage };
   }

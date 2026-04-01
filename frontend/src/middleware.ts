@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
     console.log(`[Middleware Check] Path: ${pathname} | hasToken: ${hasToken} | userRole: ${userRole}`);
   }
 
-  // 0. 레거시 경로 리다이렉션 (하위 호환성 및 E2E 안정성)
+  // 0. ?덇굅님寃쎈줈 由щ떎?대젆님(?섏쐞 ?명솚님諛?E2E ?덉젙님
   const legacyMap: Record<string, string> = {
     '/cop/adb': '/admin/collaboration/address-book',
     '/cop/bbs': '/admin/community/boards',
@@ -31,19 +31,19 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(legacyMap[legacyTarget], request.url));
   }
 
-  // 1. 로그인 여부 확인
+  // 1. 濡쒓렇님?щ? ?뺤씤
   if (!hasToken) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // 2. 관리자/사용자 경로 관리 (/admin 경로 보호)
+  // 2. 愿由ъ옄/?ъ슜님寃쎈줈 愿由?(/admin 寃쎈줈 蹂댄샇)
   if (pathname.startsWith('/admin')) {
     const normalizedRole = userRole?.toUpperCase() || '';
     const isAdmin = normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN';
 
-    // 시스템/사용자/보안 등 민감한 관리 경로
+    // ?쒖뒪님?ъ슜님보안 님誘쇨컧님愿由?寃쎈줈
     const isSensitivePath = pathname.startsWith('/admin/system') ||
       pathname.startsWith('/admin/user') ||
       pathname.startsWith('/admin/security') ||

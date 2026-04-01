@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -157,7 +157,7 @@ export default function SecurityHubClient() {
       authorMode === 'create' ? authorAdminService.createAuthor(data) : authorAdminService.updateAuthor(data.authorCode!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
-      toast('보안 권한 ?�키?�처가 ?�공?�으�?반영?�었?�니??', 'success');
+      toast('보안 沅뚰븳 ?꾪궎?띿쿂媛 ?깃났?곸쑝濡?諛섏쁺?섏뿀?듬땲님', 'success');
       setIsAuthorModalOpen(false);
     }
   });
@@ -172,7 +172,7 @@ export default function SecurityHubClient() {
       return userAuthorityAdminService.saveUserAuthorities(mappings);
     },
     onSuccess: () => {
-      toast('?�용??권한 ?�당 매트�?��가 ?�데?�트?�었?�니??', 'success');
+      toast('?ъ슜님沅뚰븳 ?좊떦 留ㅽ듃由?뒪媛 ?낅뜲?댄듃?섏뿀?듬땲님', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-user-authorities', selectedAuthorCode] });
     }
   });
@@ -180,7 +180,7 @@ export default function SecurityHubClient() {
   const saveMenuMappingMutation = useMutation({
     mutationFn: () => menuAdminService.saveMenuCreation(selectedAuthorCode, Array.from(tempMenuMappings)),
     onSuccess: () => {
-      toast('메뉴 ?�근 거버?�스 ?�책???�기?�되?�습?�다.', 'success');
+      toast('硫붾돱 ?묎렐 嫄곕쾭?뚯뒪 ?뺤콉님?숆린?붾릺?덉뒿?덈떎.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus', selectedAuthorCode] });
     }
   });
@@ -197,7 +197,7 @@ export default function SecurityHubClient() {
       await Promise.all(promises);
       setGlobalMappings(allMappings);
     } catch (e) {
-      toast('글로벌 매트�?�� ?�이??로드 �??�류가 발생?�습?�다.', 'error');
+      toast('湲濡쒕쾶 留ㅽ듃由?뒪 ?곗씠님濡쒕뱶 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
     } finally {
       setIsGlobalLoading(false);
     }
@@ -226,10 +226,10 @@ export default function SecurityHubClient() {
         menuAdminService.saveMenuCreation(code, Array.from(set))
       );
       await Promise.all(promises);
-      toast('글로벌 보안 ?�책???�사?�으�??�기?�되?�습?�다.', 'success');
+      toast('湲濡쒕쾶 보안 ?뺤콉님?꾩궗?곸쑝濡님숆린?붾릺?덉뒿?덈떎.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus'] });
     } catch (e) {
-      toast('글로벌 ?�책 ?�??�??�류가 발생?�습?�다.', 'error');
+      toast('湲濡쒕쾶 ?뺤콉 ?님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
     } finally {
       setIsGlobalLoading(false);
     }
@@ -271,14 +271,14 @@ export default function SecurityHubClient() {
   };
 
   const handleAuthorDelete = async (code: string) => {
-    if (!confirm('권한 ?�키?�처�???��?�시겠습?�까? 관???�당 ?�보가 모두 ?�구?�으�??�멸?�니??')) return;
+    if (!confirm('沅뚰븳 ?꾪궎?띿쿂瑜님?젣?섏떆寃좎뒿?덇퉴? 愿님?좊떦 ?뺣낫媛 紐⑤몢 ?곴뎄?곸쑝濡님뚮㈇?⑸땲님')) return;
     try {
       await authorAdminService.deleteAuthor(code);
-      toast('권한 ?�로?�이 ?�공?�으�???��?�었?�니??', 'success');
+      toast('沅뚰븳 ?꾨줈?꾩씠 ?깃났?곸쑝濡님?젣?섏뿀?듬땲님', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
       if (selectedAuthorCode === code) setSelectedAuthorCode('');
     } catch (e) {
-      toast('??�� �??�스???�외가 발생?�습?�다.', 'error');
+      toast('님젣 以님쒖뒪님?덉쇅媛 諛쒖깮?덉뒿?덈떎.', 'error');
     }
   };
 
@@ -395,14 +395,14 @@ export default function SecurityHubClient() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="?�합 보안 거버?�스 ?�브"
-        breadcrumbs={[{ label: '보안관�? }, { label: '권한 ?�정' }, { label: '?�합 콘트�? }]}
+        title="?듯빀 보안 嫄곕쾭?뚯뒪 ?덈툕"
+        breadcrumbs={[{ label: '보안愿由? }, { label: '沅뚰븳 ?ㅼ젙' }, { label: '?듯빀 肄섑듃濡? }]}
       />
 
       <HubHeader
         title="Security"
         highlight="Fabric"
-        subtitle="?�스???�반??보안 ??��(Role), ?�용???�당 매트�?�� �??�차???�근 ?�어 ?�책 ?�합 ?�키?�처"
+        subtitle="?쒖뒪님?꾨컲님보안 님븷(Role), ?ъ슜님?좊떦 留ㅽ듃由?뒪 諛님ㅼ감님?묎렐 ?쒖뼱 ?뺤콉 ?듯빀 ?꾪궎?띿쿂"
         icon={Lock}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -440,7 +440,7 @@ export default function SecurityHubClient() {
               onClick={handleOpenAuthorCreate}
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
-              <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> ?�규 보안 ?�키?�처 ?�장
+              <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 ?꾪궎?띿쿂 ?ㅼ옣
             </Button>
           </div>
         }
@@ -484,13 +484,13 @@ export default function SecurityHubClient() {
 
             {/* Left: Role Inventory */}
             <div className="col-span-12 lg:col-span-3 space-y-8 h-full">
-              <HubSectionCard title="??�� ?�벤?�리" description="?�스???�근 ?��????�의?�는 보안 ?�로??리스?�입?�다." icon={Lock}>
+              <HubSectionCard title="님븷 ?몃깽?좊━" description="?쒖뒪님?묎렐 ?섏님님뺤쓽?섎뒗 보안 ?꾨줈님由ъ뒪?몄엯?덈떎." icon={Lock}>
                 <div className="space-y-8 pt-4">
                   <div className="relative group/search">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                     <Input
                       className="pl-12 h-14 bg-slate-50/50 border-none rounded-2xl text-sm font-black tracking-tight shadow-inner"
-                      placeholder="??�� 검??(ID, 명칭)..."
+                      placeholder="님븷 寃님(ID, 紐낆묶)..."
                       value={roleSearchKeyword}
                       onChange={(e) => setRoleSearchKeyword(e.target.value)}
                     />
@@ -521,8 +521,8 @@ export default function SecurityHubClient() {
             {/* Center: Identity Matrix */}
             <div className="col-span-12 lg:col-span-4 space-y-8 h-full">
               <HubSectionCard
-                title="?�이??"
-                description="?�택????��???�당??개별 ?�별?�들???�시�??�당 ?�태?�니??"
+                title="?꾩씠님"
+                description="?좏깮님님븷님?좊떦님媛쒕퀎 ?앸퀎?먮뱾님?ㅼ떆媛님좊떦 ?곹깭?낅땲님"
                 icon={Users}
                 action={
                   <Button
@@ -540,7 +540,7 @@ export default function SecurityHubClient() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                     <Input
                       className="pl-12 h-14 bg-slate-50/50 border-none rounded-2xl text-sm font-black tracking-tight shadow-inner"
-                      placeholder="?�용??검??(ID, ?�명)..."
+                      placeholder="?ъ슜님寃님(ID, ?깅챸)..."
                       value={userSearchKeyword}
                       onChange={(e) => setUserSearchKeyword(e.target.value)}
                     />
@@ -555,7 +555,7 @@ export default function SecurityHubClient() {
                           </div>
                           <div className="space-y-2">
                             <h4 className="text-xl font-black text-slate-300 uppercase tracking-tighter">Identity_Idle</h4>
-                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 ??��???�택?�여 ?�별???�로브�? ?�성?�하??��??</p>
+                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 님븷님?좏깮?섏뿬 ?앸퀎님?꾨줈釉뚮? 활성?뷀븯님떆님</p>
                           </div>
                         </motion.div>
                       ) : (
@@ -585,8 +585,8 @@ export default function SecurityHubClient() {
             {/* Right: Policy Topology */}
             <div className="col-span-12 lg:col-span-5 h-full">
               <HubSectionCard
-                title="?�근 ?�책 ?�폴로�?"
-                description="??���??�적??메뉴 ?�드 계층 �??�키?�처 ?�근 ?��? ?�정?�니??"
+                title="?묎렐 ?뺤콉 ?좏뤃濡쒖?"
+                description="님븷蹂님숈쟻님硫붾돱 노드 怨꾩링 諛님꾪궎?띿쿂 ?묎렐 ?섏? ?ㅼ젙?낅땲님"
                 icon={Layers}
                 action={
                   <Button
@@ -610,7 +610,7 @@ export default function SecurityHubClient() {
                     <div className="relative z-10 space-y-1">
                       <span className="text-[10px] font-black text-white/30 tracking-[0.4em] uppercase font-mono">Policy_Manifest</span>
                       <div className="text-white text-lg font-black tracking-tighter leading-none">
-                        {tempMenuMappings.size} 개의 ?�성 ?�드가 <span className="text-primary">{selectedAuthorCode || 'N/A'}</span> ??매핑??                      </div>
+                        {tempMenuMappings.size} 媛쒖쓽 활성 노드媛 <span className="text-primary">{selectedAuthorCode || 'N/A'}</span> 님매핑님                      </div>
                     </div>
                   </div>
 
@@ -623,7 +623,7 @@ export default function SecurityHubClient() {
                           </div>
                           <div className="space-y-2">
                             <h4 className="text-xl font-black text-slate-300 uppercase tracking-tighter">Topology_Idle</h4>
-                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 거버?�스 ??��???�택?�여 계층 ?�드�??�로?�하??��??</p>
+                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 嫄곕쾭?뚯뒪 님븷님?좏깮?섏뿬 怨꾩링 노드瑜님꾨줈?쒗븯님떆님</p>
                           </div>
                         </motion.div>
                       ) : isMenusLoading ? (
@@ -650,12 +650,12 @@ export default function SecurityHubClient() {
       <StandardModal
         isOpen={isAuthorModalOpen}
         onClose={() => setIsAuthorModalOpen(false)}
-        title={authorMode === 'create' ? '?�규 보안 ??�� ?�로비�??? : '보안 ??�� ?�키?�처 ?�세 ?�정'}
+        title={authorMode === 'create' ? '신규 보안 님븷 ?꾨줈鍮꾩님? : '보안 님븷 ?꾪궎?띿쿂 ?곸꽭 ?섏젙'}
         maxWidth="xl"
       >
         <div className="p-4 space-y-12">
           <div className="grid grid-cols-2 gap-10">
-            <FormField label="보안 ??�� ?�별??(Role Code)" required description="?�스???�반???�용?�는 ?�일????�� 고유 코드">
+            <FormField label="보안 님븷 ?앸퀎님(Role Code)" required description="?쒖뒪님?꾨컲님?곸슜?섎뒗 ?좎씪님님븷 怨좎쑀 肄붾뱶">
               <div className="relative group/id">
                 <Key size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                 <Input
@@ -663,39 +663,39 @@ export default function SecurityHubClient() {
                   onChange={(e) => setAuthorFormData({ ...authorFormData, authorCode: e.target.value })}
                   disabled={authorMode === 'edit'}
                   className="h-16 pl-16 rounded-2xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner"
-                  placeholder="�??�별??
+                  placeholder="濡님앸퀎님
                 />
               </div>
             </FormField>
-            <FormField label="??�� ?�이�?명칭" required description="UI �?비즈?�스 ?�이?�에???�별??명문?�된 ?�름">
+            <FormField label="님븷 ?덉씠釉?紐낆묶" required description="UI 諛?鍮꾩쫰?덉뒪 ?덉씠?댁뿉님?앸퀎님紐낅Ц?붾맂 ?대쫫">
               <div className="relative group/nm">
                 <ShieldCheck size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
                 <Input
                   value={authorFormData.authorNm}
                   onChange={(e) => setAuthorFormData({ ...authorFormData, authorNm: e.target.value })}
                   className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
-                  placeholder="??�� 명칭 ?�력"
+                  placeholder="님븷 紐낆묶 ?낅젰"
                 />
               </div>
             </FormField>
           </div>
 
-          <FormField label="보안 ?�책 ?��? 명세" description="?�당 ??��???�세 목적 �??�이???�근 범위???�???��? 명세">
+          <FormField label="보안 ?뺤콉 ?뺣? 紐낆꽭" description="?대떦 님븷님?곸꽭 紐⑹쟻 諛님곗씠님?묎렐 踰붿쐞님?님?뺣? 紐낆꽭">
             <div className="relative group/dc">
               <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
               <Textarea
                 value={authorFormData.authorDc}
                 onChange={(e) => setAuthorFormData({ ...authorFormData, authorDc: e.target.value })}
                 className="min-h-[160px] pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
-                placeholder="?�세 명세 ?�력..."
+                placeholder="?곸꽭 紐낆꽭 ?낅젰..."
               />
             </div>
           </FormField>
 
           <div className="flex gap-6 pt-4">
-            <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">痍⑥냼</Button>
             <Button onClick={() => saveAuthorMutation.mutate(authorFormData)} disabled={saveAuthorMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
-              <Zap size={18} className="group-hover:animate-pulse" /> {authorMode === 'create' ? '권한 배포' : '권한 ?�정'}
+              <Zap size={18} className="group-hover:animate-pulse" /> {authorMode === 'create' ? '沅뚰븳 諛고룷' : '沅뚰븳 ?섏젙'}
             </Button>
           </div>
         </div>
@@ -703,3 +703,4 @@ export default function SecurityHubClient() {
     </div>
   );
 }
+

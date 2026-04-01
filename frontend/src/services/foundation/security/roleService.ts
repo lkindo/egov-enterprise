@@ -1,9 +1,9 @@
-import client from '@/lib/api/client';
+﻿import client from '@/lib/api/client';
 import { SearchParams, PageResponse } from '@/types/foundation/system';
 
 /**
- * 권한/롤 관리 서비스 (Admin)
- * 연결: com.company.project.api.controller.system.RoleController
+ * 沅뚰븳/濡?愿由님쒕퉬님(Admin)
+ * ?곌껐: com.company.project.api.controller.system.RoleController
  */
 export interface RoleManageInfo {
  roleCode: string;
@@ -18,32 +18,32 @@ export interface RoleManageInfo {
 const BASE_URL = '/admin/system/roles';
 
 export const roleService = {
- /** 롤 목록 조회 */
+ /** 濡?紐⑸줉 조회 */
  getRoles: async (params?: SearchParams): Promise<PageResponse<RoleManageInfo>> => {
  return client.get<PageResponse<RoleManageInfo>>(BASE_URL, { params });
  },
 
- /** 롤 상세 조회 */
+ /** 濡님곸꽭 조회 */
  getRole: async (roleCode: string): Promise<RoleManageInfo> => {
  return client.get<RoleManageInfo>(`${BASE_URL}/${roleCode}`);
  },
 
- /** 롤 등록/생성 */
+ /** 濡?등록/?앹꽦 */
  createRole: async (data: Partial<RoleManageInfo>): Promise<void> => {
  return client.post<void>(BASE_URL, data);
  },
 
- /** 롤 정보 수정 */
+ /** 濡님뺣낫 ?섏젙 */
  updateRole: async (roleCode: string, data: Partial<RoleManageInfo>): Promise<void> => {
  return client.put<void>(`${BASE_URL}/${roleCode}`, data);
  },
 
- /** 롤 삭제 */
+ /** 濡님?젣 */
  deleteRole: async (roleCode: string): Promise<void> => {
  return client.delete<void>(`${BASE_URL}/${roleCode}`);
  },
 
- /** 권한 목록 조회 (Alias) */
+ /** 沅뚰븳 紐⑸줉 조회 (Alias) */
  getAuthors: async (params?: SearchParams): Promise<PageResponse<RoleManageInfo>> => {
  return client.get<PageResponse<RoleManageInfo>>(BASE_URL, { params });
  },

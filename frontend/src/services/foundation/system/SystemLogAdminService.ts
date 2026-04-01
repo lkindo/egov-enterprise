@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams, UserLog, LoginLog as LoginLogType, WebLog, PrivacyLog, TransferLog } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -26,7 +26,7 @@ export interface LoginLog {
 }
 
 /**
- * 시스템 로그 관리 서비스 (Admin)
+ * ?쒖뒪님濡쒓렇 愿由님쒕퉬님(Admin)
  */
 class SystemLogAdminService extends AdminService {
   constructor() {
@@ -34,7 +34,7 @@ class SystemLogAdminService extends AdminService {
   }
 
   /**
-   * 시스템 로그 목록 조회
+   * ?쒖뒪님濡쒓렇 紐⑸줉 조회
    */
   async getSystemLogs(params: { page?: number; size?: number; searchWrd?: string } | SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SysLog>> {
     return this.get<PageResponse<SysLog>>('/system', {
@@ -48,14 +48,14 @@ class SystemLogAdminService extends AdminService {
   }
 
   /**
-   * 시스템 로그 상세 조회
+   * ?쒖뒪님濡쒓렇 ?곸꽭 조회
    */
   async getSystemLog(requstId: string, config?: AxiosRequestConfig): Promise<SysLog> {
     return this.get<SysLog>(`/system/${requstId}`, config);
   }
 
   /**
-   * 로그인 로그 목록 조회
+   * 濡쒓렇님濡쒓렇 紐⑸줉 조회
    */
   async getLoginLogs(params: { page?: number; size?: number; searchWrd?: string } | SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginLog>> {
     return this.get<PageResponse<LoginLog>>('/login', {
@@ -69,14 +69,14 @@ class SystemLogAdminService extends AdminService {
   }
 
   /**
-   * 로그인 로그 상세 조회
+   * 濡쒓렇님濡쒓렇 ?곸꽭 조회
    */
   async getLoginLog(logId: string, config?: AxiosRequestConfig): Promise<LoginLog> {
     return this.get<LoginLog>(`/login/${logId}`, config);
   }
 
   /**
-   * 개인정보 접근 로그 목록 조회
+   * 媛쒖씤?뺣낫 ?묎렐 濡쒓렇 紐⑸줉 조회
    */
   async getPrivacyLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<PrivacyLog>> {
     return this.get<PageResponse<PrivacyLog>>('/privacy', {
@@ -90,7 +90,7 @@ class SystemLogAdminService extends AdminService {
   }
 
   /**
-   * 사용자 로그 목록 조회 (관리자용)
+   * ?ъ슜님濡쒓렇 紐⑸줉 조회 (愿由ъ옄님
    */
   async getUserLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<UserLog>> {
     return this.get<PageResponse<UserLog>>('/user', {
@@ -104,7 +104,7 @@ class SystemLogAdminService extends AdminService {
   }
 
   /**
-   * 웹 로그 목록 조회 (HTTP 요청 등)
+   * 님濡쒓렇 紐⑸줉 조회 (HTTP 요청 님
    */
   async getWebLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<WebLog>> {
     return this.get<PageResponse<WebLog>>('/web', {
@@ -118,7 +118,7 @@ class SystemLogAdminService extends AdminService {
   }
 
   /**
-   * 송수신 로그 목록 조회
+   * ?≪닔님濡쒓렇 紐⑸줉 조회
    */
   async getTransferLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<TransferLog>> {
     return this.get<PageResponse<TransferLog>>('/transfer', {

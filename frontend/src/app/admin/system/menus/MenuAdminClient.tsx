@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -53,14 +53,14 @@ const buildMenuTree = (flatMenus: MenuInfo[] | null | undefined): MenuInfo[] => 
   try {
     flatMenus.forEach(m => {
       if (m && m.menuNo) {
-        map[m.menuNo] = { ...m, upperMenuId: m.upperMenuNo ?? m.upperMenuId ?? 0, children: [] };
+        map[m.menuNo] = { ...m, upperMenuId: m.upperMenuNo 님 m.upperMenuId 님 0, children: [] };
       }
     });
 
     flatMenus.forEach(m => {
       if (!m || !m.menuNo) return;
       const item = map[m.menuNo];
-      const parentId = m.upperMenuNo ?? m.upperMenuId ?? 0;
+      const parentId = m.upperMenuNo 님 m.upperMenuId 님 0;
 
       if (parentId === 0 || !map[parentId]) {
         roots.push(item);
@@ -104,7 +104,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   const [dropPosition, setDropPosition] = useState<'before' | 'inside' | 'after' | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
-  // ?�버 ?�이??initialMenus) ?�기??- ?�용?�의 ?�재 ?�업???�거???�래�?중이 ?�닐 ?�만 ?�데?�트
+  // ?쒕쾭 ?곗씠님initialMenus) ?숆린님- ?ъ슜?먯쓽 현재 ?묒뾽님?녾굅님?쒕옒洹?以묒씠 ?꾨땺 ?뚮쭔 ?낅뜲?댄듃
   useEffect(() => {
     if (!hasChanges && !isSaving && !draggedMenuId) {
       setTreeMenus(buildMenuTree(initialMenus));
@@ -142,8 +142,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     setMode('edit');
     setFormData({
       ...menu,
-      upperMenuId: menu.upperMenuNo ?? menu.upperMenuId ?? 0,
-      upperMenuNo: menu.upperMenuNo ?? menu.upperMenuId ?? 0,
+      upperMenuId: menu.upperMenuNo 님 menu.upperMenuId 님 0,
+      upperMenuNo: menu.upperMenuNo 님 menu.upperMenuId 님 0,
       modernRoute: menu.modernRoute || ''
     });
     setIsOpen(true);
@@ -173,12 +173,12 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       if (!items || !Array.isArray(items)) return;
 
       items.forEach((item, idx) => {
-        // ?�공 ?�력???�인??규격?�로 ?�송 (null 방식)
+        // ?깃났 ?대젰님?뺤씤님洹쒓꺽?쇰줈 ?꾩넚 (null 諛⑹떇)
         const parentNo = parentId === 0 ? null : parentId;
 
-        // ?�버 부?��? 로직 충돌 방�?�??�해 ?�심 ?�드�??�제 (Payload Sanitization)
+        // ?쒕쾭 遺?섏? 濡쒖쭅 異⑸룎 諛⑹?瑜님꾪빐 ?듭떖 ?꾨뱶留님뺤젣 (Payload Sanitization)
         flat.push({
-          id: item.menuNo, // id ?�드 ?�??          menuNo: item.menuNo,
+          id: item.menuNo, // id ?꾨뱶 ?님          menuNo: item.menuNo,
           menuOrdr: idx + 1,
           upperMenuNo: parentNo,
           upperMenuId: parentNo,
@@ -202,7 +202,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       if (res.success) {
         toast(res.message, 'success');
         setHasChanges(false);
-        // 부?�러??배경 갱신???�해 startTransition ?�용
+        // 遺?쒕윭님諛곌꼍 媛깆떊님?꾪빐 startTransition ?ъ슜
         React.startTransition(() => {
           router.refresh();
         });
@@ -211,7 +211,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       }
     } catch (err: any) {
       console.error('Critical Error in handleSaveChanges:', err);
-      toast('?�서 변??�??�기�??��? ?�류가 발생?�습?�다.', 'error');
+      toast('?쒖꽌 蹂님以님덇린移님딆? ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -219,10 +219,10 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
   const handleDelete = async (id: number) => {
     const isConfirmed = await confirm({
-      title: '메뉴 ??�� ?�인',
-      message: '?�당 메뉴�???��?�면 모든 ?�위 메뉴가 ?�께 ??��?�며 복구?????�습?�다. 계속?�시겠습?�까?',
+      title: '硫붾돱 님젣 ?뺤씤',
+      message: '?대떦 硫붾돱瑜님?젣?섎㈃ 紐⑤뱺 ?섏쐞 硫붾돱媛 ?④퍡 님젣?섎ŉ 蹂듦뎄님님?놁뒿?덈떎. 怨꾩냽?섏떆寃좎뒿?덇퉴?',
       variant: 'destructive',
-      confirmText: '??��'
+      confirmText: '님젣'
     });
     if (isConfirmed) {
       const res = await deleteMenuAction(null, id);
@@ -241,7 +241,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   // Initialize all nodes as expanded on first load
   useEffect(() => {
     const idsWithChildren = initialMenus
-      .filter(m => initialMenus.some(child => (child.upperMenuNo ?? child.upperMenuId) === m.menuNo))
+      .filter(m => initialMenus.some(child => (child.upperMenuNo 님 child.upperMenuId) === m.menuNo))
       .map(m => m.menuNo);
     setExpandedIds(new Set(idsWithChildren));
   }, [initialMenus]);
@@ -257,7 +257,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
   const handleExpandAll = () => {
     const idsWithChildren = initialMenus
-      .filter(m => initialMenus.some(child => (child.upperMenuNo ?? child.upperMenuId) === m.menuNo))
+      .filter(m => initialMenus.some(child => (child.upperMenuNo 님 child.upperMenuId) === m.menuNo))
       .map(m => m.menuNo);
     setExpandedIds(new Set(idsWithChildren));
   };
@@ -270,8 +270,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     e.dataTransfer.setData('menuId', String(id));
     e.dataTransfer.effectAllowed = 'move';
 
-    // 브라?��?가 ?�래�??�션???�전???�성??'직후'???�태�??�데?�트 (0ms 지??
-    // ?�래�??�작 즉시 DOM??변?�면 브라?��?가 ?�래그�? 강제 취소?�는 버그 ?�??    setTimeout(() => {
+    // 釉뚮씪?곗?媛 ?쒕옒洹님몄뀡님?꾩쟾님?앹꽦님'吏곹썑'님?곹깭瑜님낅뜲?댄듃 (0ms 吏님
+    // ?쒕옒洹님쒖옉 利됱떆 DOM님蹂?섎㈃ 釉뚮씪?곗?媛 ?쒕옒洹몃? 媛뺤젣 痍⑥냼?섎뒗 踰꾧렇 ?님    setTimeout(() => {
       setDraggedMenuId(id);
     }, 0);
   };
@@ -310,7 +310,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     e.preventDefault();
     e.stopPropagation();
 
-    // ?�떤 ?�황?�서???�상???��? ?�도�??�린??보장
+    // ?대뼡 ?곹솴?먯꽌님?붿긽님?⑥? ?딅룄濡님대┛님蹂댁옣
     const cleanup = () => {
       setDraggedMenuId(null);
       setDropTargetId(null);
@@ -347,11 +347,11 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     }
 
     // Helper to find parent array and index of target
-    const findParentAnd번호 = (items: MenuInfo[], id: number): { parent: MenuInfo[], index: number, parentItem: MenuInfo | null } | null => {
+    const findParentAnd踰덊샇 = (items: MenuInfo[], id: number): { parent: MenuInfo[], index: number, parentItem: MenuInfo | null } | null => {
       for (let i = 0; i < items.length; i++) {
         if (items[i].menuNo === id) return { parent: items, index: i, parentItem: null };
         if (items[i].children) {
-          const found = findParentAnd번호(items[i].children!, id);
+          const found = findParentAnd踰덊샇(items[i].children!, id);
           if (found) {
             if (found.parentItem === null) {
               return { ...found, parentItem: items[i] };
@@ -367,7 +367,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       // Drop into standard promotion area
       newTree.push({ ...draggedItem, upperMenuId: 0, upperMenuNo: 0 });
     } else {
-      const targetInfo = findParentAnd번호(newTree, targetId);
+      const targetInfo = findParentAnd踰덊샇(newTree, targetId);
       if (targetInfo) {
         const { parent, index, parentItem } = targetInfo;
         const parentId = parentItem ? parentItem.menuNo : 0;
@@ -389,7 +389,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     setDraggedMenuId(null);
     setDropTargetId(null);
     setDropPosition(null);
-    toast('메뉴 구조가 변경되?�습?�다. ?�리 ?�션 ?�단??[?�이?�웃 ?�용] 버튼???�릭?�여 ?�?�해 주세??', 'info');
+    toast('硫붾돱 援ъ“媛 蹂寃쎈릺?덉뒿?덈떎. ?몃━ ?뱀뀡 ?곷떒님[?덉씠?꾩썐 ?곸슜] 踰꾪듉님?대┃?섏뿬 ??ν빐 二쇱꽭님', 'info');
   };
 
   const MenuNode = ({ item, level = 0 }: { item: MenuInfo; level: number }) => {
@@ -531,14 +531,14 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="?�비게이???�보 ?�키?�처"
-        breadcrumbs={[{ label: '?�스?��?�? }, { label: '메뉴 관�? }]}
+        title="네비게이션?뺣낫 ?꾪궎?띿쿂"
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '硫붾돱 愿由? }]}
       />
 
       <HubHeader
-        title="메뉴"
-        highlight="?�키?�처"
-        subtitle="?�스???�반??계층??메뉴 구조 ?�계?� 권한 기반 ?�비게이???�리 관�?
+        title="硫붾돱"
+        highlight="?꾪궎?띿쿂"
+        subtitle="?쒖뒪님?꾨컲님怨꾩링님硫붾돱 援ъ“ 설계? 沅뚰븳 湲곕컲 네비게이션?몃━ 愿由?
         icon={FolderTree}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -547,22 +547,22 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               size="lg"
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
             >
-              <Plus size={20} /> ?�규 ?�록
+              <Plus size={20} /> 신규 등록
             </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="?�록???�드_?? value={(initialMenus || []).length} icon={Database} color="primary" />
-        <HubMetricCard title="계층_깊이" value={3} icon={LayoutGrid} color="indigo" />
-        <HubMetricCard title="?�성_경로_?? value={(initialMenus || []).filter(m => !!m?.modernRoute).length} icon={Network} color="emerald" />
-        <HubMetricCard title="?�기??무결?? value="최적" icon={ShieldCheck} color="amber" />
+        <HubMetricCard title="등록님노드_님 value={(initialMenus || []).length} icon={Database} color="primary" />
+        <HubMetricCard title="怨꾩링_源딆씠" value={3} icon={LayoutGrid} color="indigo" />
+        <HubMetricCard title="활성_寃쎈줈_님 value={(initialMenus || []).filter(m => !!m?.modernRoute).length} icon={Network} color="emerald" />
+        <HubMetricCard title="?숆린님臾닿껐님 value="理쒖쟻" icon={ShieldCheck} color="amber" />
       </HubMetricGrid>
 
       <HubSectionCard
-        title="?�스???�비게이???�리"
-        description="최�? 3?�계??계층 구조�?지?�합?�다. ?�래�????�롭?�로 메뉴 구조�??�계?�십?�오."
+        title="?쒖뒪님네비게이션?몃━"
+        description="理쒕? 3?④퀎님怨꾩링 援ъ“瑜?吏?먰빀?덈떎. ?쒕옒洹님님쒕∼?쇰줈 硫붾돱 援ъ“瑜?설계?섏떗?쒖삤."
         icon={SearchCode}
         action={
           <div className="flex gap-4 items-center">
@@ -572,13 +572,13 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                 onClick={handleExpandAll}
                 className="h-10 px-3 text-[10px] font-black tracking-widest uppercase hover:bg-white/20 text-white/70 hover:text-white"
               >
-                <ChevronsUpDown size={14} className="mr-2" /> ?�치�?              </Button>
+                <ChevronsUpDown size={14} className="mr-2" /> ?쇱튂湲?              </Button>
               <Button
                 variant="ghost"
                 onClick={handleCollapseAll}
                 className="h-10 px-3 text-[10px] font-black tracking-widest uppercase hover:bg-white/20 text-white/70 hover:text-white"
               >
-                <ChevronsDownUp size={14} className="mr-2" /> ?�기
+                <ChevronsDownUp size={14} className="mr-2" /> ?묎린
               </Button>
             </div>
 
@@ -593,7 +593,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                 ) : (
                   <Save size={16} />
                 )}
-                {isSaving ? '처리 �?..' : '?�??}
+                {isSaving ? '泥섎━ 以?..' : '?님}
               </Button>
             )}
           </div>
@@ -623,8 +623,8 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               <Plus size={32} />
             </div>
             <div className="text-center space-y-2">
-              <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">?�키?�처 ?�셈블리</p>
-              <p className="text-sm font-black text-muted-foreground tracking-tight group-hover:text-foreground transition-colors uppercase">?�래그한 ?�소�??�기???�으�?'최상?? ?�드�??�로모션?�니??/p>
+              <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">?꾪궎?띿쿂 ?댁뀍釉붾━</p>
+              <p className="text-sm font-black text-muted-foreground tracking-tight group-hover:text-foreground transition-colors uppercase">?쒕옒洹명븳 ?붿냼瑜님ш린님?볦쑝硫?'理쒖긽님 노드濡님꾨줈紐⑥뀡?⑸땲님/p>
             </div>
           </div>
         </div>
@@ -633,38 +633,38 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
       <StandardModal
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
-        title={mode === 'create' ? '?�규 ?�비게이???�드 ?�계' : '메뉴 ?�드 구성 ?�성 ?�정'}
+        title={mode === 'create' ? '신규 네비게이션노드 설계' : '硫붾돱 노드 援ъ꽦 ?띿꽦 ?섏젙'}
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">痍⑥냼</Button>
             <Button
               onClick={() => handleSave()}
               className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest shadow-xl"
             >
-              {mode === 'create' ? '?�?? : '?�??}
+              {mode === 'create' ? '?님 : '?님}
             </Button>
           </div>
         }
       >
         <div className="space-y-8 pt-4">
-          <FormField label="메뉴 명칭" required description="?�용???�터?�이?�에 ?�출???�벨?�니??">
+          <FormField label="硫붾돱 紐낆묶" required description="?ъ슜님?명꽣?섏씠?ㅼ뿉 ?몄텧님?쇰꺼?낅땲님">
             <Input
               value={formData.menuNm || ''}
               onChange={(e) => setFormData({ ...formData, menuNm: e.target.value })}
               className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner"
-              placeholder="메뉴 ?�름 ?�력 (?? ?�용??관�?"
+              placeholder="硫붾돱 ?대쫫 ?낅젰 (님 ?ъ슜님愿由?"
             />
           </FormField>
 
           <div className="grid grid-cols-2 gap-8">
-            <FormField label="?�위 ?�드 ?�별??>
+            <FormField label="?곸쐞 노드 ?앸퀎님>
               <div className="h-14 rounded-2xl border-2 border-slate-100 flex items-center px-6 text-[10px] font-black tracking-widest uppercase bg-slate-50/50 text-muted-foreground/60 italic overflow-hidden shadow-inner">
-                {formData.upperMenuId === 0 ? 'SYSTEM_ROOT (최상??' : `PARENT_NODE_${formData.upperMenuId}`}
+                {formData.upperMenuId === 0 ? 'SYSTEM_ROOT (理쒖긽님' : `PARENT_NODE_${formData.upperMenuId}`}
               </div>
             </FormField>
 
-            <FormField label="?�열 ?�서 (?�선?�위)" required>
+            <FormField label="?쒖뿴 ?쒖꽌 (?곗꽑?쒖쐞)" required>
               <Input
                 type="number"
                 value={formData.menuOrdr}
@@ -674,13 +674,13 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
             </FormField>
           </div>
 
-          <FormField label="?�동 ?�프?�웨???�산 (?�??모듈)">
+          <FormField label="?곕룞 ?뚰봽?몄썾님?먯궛 (?님紐⑤뱢)">
             <Select
               value={formData.progrmFileNm || ''}
               onValueChange={(v) => setFormData({ ...formData, progrmFileNm: v })}
             >
               <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase focus:ring-4 focus:ring-primary/10 transition-all shadow-inner">
-                <SelectValue placeholder="--- UNLINKED (?�동?��? ?�음) ---" />
+                <SelectValue placeholder="--- UNLINKED (?곕룞?섏? ?딆쓬) ---" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl shadow-2xl p-2">
                 {programs.map((p) => (
@@ -692,24 +692,24 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
             </Select>
           </FormField>
 
-          <FormField label="?�우???�드?�인??(경로)" description="?�자?��? ?��? ?�레?�워??기반 ?�론?�엔???�우??경로">
+          <FormField label="?쇱슦님?붾뱶?ъ씤님(寃쎈줈)" description="?꾩옄?뺣? ?쒖? ?꾨젅?꾩썙님湲곕컲 ?꾨줎?몄뿏님?쇱슦님寃쎈줈">
             <div className="relative group/route">
               <Network size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/route:opacity-100 transition-opacity" />
               <Input
                 value={formData.modernRoute || ''}
                 onChange={(e) => setFormData({ ...formData, modernRoute: e.target.value })}
                 className="h-14 pl-16 rounded-2xl text-xs font-mono font-black italic shadow-inner border-2 border-slate-100"
-                placeholder="?? /admin/system/codes"
+                placeholder="님 /admin/system/codes"
               />
             </div>
           </FormField>
 
-          <FormField label="?�드 ?�세 메�??�이??>
+          <FormField label="노드 ?곸꽭 硫뷀님곗씠님>
             <textarea
               value={formData.menuDc || ''}
               onChange={(e) => setFormData({ ...formData, menuDc: e.target.value })}
               className="w-full min-h-[140px] p-6 rounded-2xl border-2 border-border bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
-              placeholder="메뉴???�???�세 ?�명 �?주석"
+              placeholder="硫붾돱님?님?곸꽭 ?ㅻ챸 諛?二쇱꽍"
             />
           </FormField>
         </div>
@@ -717,3 +717,4 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
     </div>
   );
 }
+

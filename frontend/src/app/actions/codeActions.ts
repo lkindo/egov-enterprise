@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -20,9 +20,9 @@ export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetai
     }
 
     revalidatePath('/admin/system/common-code');
-    return { success: true, message: '상세 코드가 저장되었습니다.' };
+    return { success: true, message: '?곸꽭 肄붾뱶媛 ??λ릺?덉뒿?덈떎.' };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : '저장 중 오류 발생';
+    const message = error instanceof Error ? error.message : '?님以님ㅻ쪟 諛쒖깮';
     console.error('Save Code Detail Error:', error);
     return { success: false, message };
   }
@@ -37,9 +37,9 @@ export async function deleteCodeDetail(prevState: unknown, { codeId, code }: { c
     await codeAdminService.deleteDetailCode(codeId, code, config);
 
     revalidatePath('/admin/system/common-code');
-    return { success: true, message: '상세 코드가 삭제되었습니다.' };
+    return { success: true, message: '?곸꽭 肄붾뱶媛 님젣?섏뿀?듬땲님' };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : '삭제 중 오류 발생';
+    const message = error instanceof Error ? error.message : '님젣 以님ㅻ쪟 諛쒖깮';
     console.error('Delete Code Detail Error:', error);
     return { success: false, message };
   }
@@ -60,9 +60,9 @@ export async function saveClCode(prevState: unknown, data: Partial<CmmnClCode> &
     }
 
     revalidatePath('/admin/system/common-code');
-    return { success: true, message: '분류 코드가 저장되었습니다.' };
+    return { success: true, message: '遺꾨쪟 肄붾뱶媛 ??λ릺?덉뒿?덈떎.' };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : '저장 중 오류 발생';
+    const message = error instanceof Error ? error.message : '?님以님ㅻ쪟 諛쒖깮';
     return { success: false, message };
   }
 }
@@ -74,9 +74,9 @@ export async function deleteClCode(prevState: unknown, clCode: string) {
     const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
     await codeAdminService.deleteClCode(clCode, config);
     revalidatePath('/admin/system/common-code');
-    return { success: true, message: '분류 코드가 삭제되었습니다.' };
+    return { success: true, message: '遺꾨쪟 肄붾뱶媛 님젣?섏뿀?듬땲님' };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : '삭제 중 오류 발생';
+    const message = error instanceof Error ? error.message : '님젣 以님ㅻ쪟 諛쒖깮';
     return { success: false, message };
   }
 }
@@ -96,9 +96,9 @@ export async function saveCmmnCode(prevState: unknown, data: Partial<CmmnCode> &
     }
 
     revalidatePath('/admin/system/common-code');
-    return { success: true, message: '공통 코드가 저장되었습니다.' };
+    return { success: true, message: '怨듯넻 肄붾뱶媛 ??λ릺?덉뒿?덈떎.' };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : '저장 중 오류 발생';
+    const message = error instanceof Error ? error.message : '?님以님ㅻ쪟 諛쒖깮';
     return { success: false, message };
   }
 }
@@ -110,9 +110,9 @@ export async function deleteCmmnCode(prevState: unknown, codeId: string) {
     const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
     await codeAdminService.deleteCmmnCode(codeId, config);
     revalidatePath('/admin/system/common-code');
-    return { success: true, message: '공통 코드가 삭제되었습니다.' };
+    return { success: true, message: '怨듯넻 肄붾뱶媛 님젣?섏뿀?듬땲님' };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : '삭제 중 오류 발생';
+    const message = error instanceof Error ? error.message : '님젣 以님ㅻ쪟 諛쒖깮';
     return { success: false, message };
   }
 }

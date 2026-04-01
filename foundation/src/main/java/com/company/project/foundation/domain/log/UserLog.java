@@ -14,6 +14,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import com.company.project.foundation.domain.user.entity.User;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NUSERLOG")
@@ -22,6 +27,10 @@ import lombok.NoArgsConstructor;
 @IdClass(UserLogId.class)
 @SuperBuilder
 public class UserLog extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "RQESTER_ID", referencedColumnName = "ESNTL_ID", insertable = false, updatable = false)
+    private User comvnUserMaster;
 
     @Id
     @Column(name = "OCCRRNC_DE", length = 20)

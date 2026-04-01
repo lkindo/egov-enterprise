@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
@@ -59,26 +59,26 @@ const Header = () => {
  <div className="left_col">
  <h1 className="logo">
  <Link href="/">
- <Image src="/api/v1/images/logo.png" alt="표준프레임워크 포털 eGovFrame 샘플 포털" width={200} height={40} priority />
+ <Image src="/api/v1/images/logo.png" alt="?쒖님꾨젅?꾩썙님?ы꽭 eGovFrame ?섑뵆 ?ы꽭" width={200} height={40} priority />
  </Link>
  </h1>
  </div>
 
  <div className="top_menu">
  {loading ? (
- <span className="t">로딩중...</span>
+ <span className="t">濡쒕뵫以?..</span>
  ) : user ? (
  <>
  <span className="t">
- <span style={{ cursor: 'pointer' }}>{user.name} 님</span>
+ <span style={{ cursor: 'pointer' }}>{user.name} 님/span>
  </span>
  <button onClick={logout} className="btn btn_blue_15 w_90" style={{ border: 0, cursor: 'pointer', marginLeft: '10px' }}>
- 로그아웃
+ 濡쒓렇?꾩썐
  </button>
  </>
  ) : (
  <>
- <Link href="/login" className="btn btn_blue_15 w_90">로그인</Link>
+ <Link href="/login" className="btn btn_blue_15 w_90">濡쒓렇님/Link>
  </>
  )}
  </div>
@@ -101,7 +101,7 @@ const Header = () => {
 
  <div className="util_menu">
  <ul>
- <li><a href="#" className="allmenu" title="전체메뉴">전체메뉴</a></li>
+ <li><a href="#" className="allmenu" title="?꾩껜硫붾돱">?꾩껜硫붾돱</a></li>
  </ul>
  </div>
  </div>

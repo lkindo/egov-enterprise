@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+﻿import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -31,29 +31,29 @@ export interface SystemLog {
 }
 
 /**
- * 로그 관리 서비스 (Admin)
+ * 濡쒓렇 愿由님쒕퉬님(Admin)
  */
 class LogAdminService extends AdminService {
  constructor() {
  super('/logs');
  }
 
- /** 로그인 로그 목록 조회 */
+ /** 濡쒓렇님濡쒓렇 紐⑸줉 조회 */
  async getLoginLogList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginLog>> {
  return this.get<PageResponse<LoginLog>>('/login', { ...config, params });
  }
 
- /** 로그인 로그 상세 조회 */
+ /** 濡쒓렇님濡쒓렇 ?곸꽭 조회 */
  async getLoginLog(id: string, config?: AxiosRequestConfig): Promise<LoginLog> {
  return this.get<LoginLog>(`/login/${id}`, config);
  }
 
- /** 시스템 로그 목록 조회 */
+ /** ?쒖뒪님濡쒓렇 紐⑸줉 조회 */
  async getSystemLogList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SystemLog>> {
  return this.get<PageResponse<SystemLog>>('/system', { ...config, params });
  }
 
- /** 시스템 로그 상세 조회 */
+ /** ?쒖뒪님濡쒓렇 ?곸꽭 조회 */
  async getSystemLog(id: string, config?: AxiosRequestConfig): Promise<SystemLog> {
  return this.get<SystemLog>(`/system/${id}`, config);
  }

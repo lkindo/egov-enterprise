@@ -1,4 +1,4 @@
-import { UserService } from '@/services/core/ApiService';
+﻿import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -25,7 +25,7 @@ export interface AddressBook {
 }
 
 /**
- * 주소록 관리 서비스 (User)
+ * 二쇱냼濡?愿由님쒕퉬님(User)
  */
 class AddressbookUserService extends UserService {
  constructor() {
@@ -33,13 +33,13 @@ class AddressbookUserService extends UserService {
  }
 
  /**
- * 주소록 목록 조회
+ * 二쇱냼濡?紐⑸줉 조회
  */
- async getAddressBooks(params: { page번호?: number; pageUnit?: number; searchWrd?: string; searchCnd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<AddressBook>> {
+ async getAddressBooks(params: { page踰덊샇?: number; pageUnit?: number; searchWrd?: string; searchCnd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<AddressBook>> {
  return this.get<PageResponse<AddressBook>>('', {
  ...config,
  params: {
- page: (params.page번호 || 1) - 1,
+ page: (params.page踰덊샇 || 1) - 1,
  size: params.pageUnit || 10,
  searchWrd: params.searchWrd,
  searchCnd: params.searchCnd
@@ -48,35 +48,35 @@ class AddressbookUserService extends UserService {
  }
 
  /**
- * 주소록 상세 조회
+ * 二쇱냼濡님곸꽭 조회
  */
  async getAddressBook(adbkId: string, config?: AxiosRequestConfig): Promise<AddressBook> {
  return this.get<AddressBook>(`/${adbkId}`, config);
  }
 
  /**
- * 주소록 등록
+ * 二쇱냼濡?등록
  */
  async createAddressBook(data: Partial<AddressBook>, config?: AxiosRequestConfig): Promise<AddressBook> {
  return this.post<AddressBook>('', data, config);
  }
 
  /**
- * 주소록 수정
+ * 二쇱냼濡님섏젙
  */
  async updateAddressBook(adbkId: string, data: Partial<AddressBook>, config?: AxiosRequestConfig): Promise<void> {
  return this.put<void>(`/${adbkId}`, data, config);
  }
 
  /**
- * 주소록 삭제
+ * 二쇱냼濡님?젣
  */
  async deleteAddressBook(adbkId: string, config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>(`/${adbkId}`, config);
  }
 
  /**
- * 사용자 검색 (주소록 대상자 검색)
+ * ?ъ슜님寃님(二쇱냼濡님?곸옄 寃님
  */
  async searchUsers(searchWrd: string, config?: AxiosRequestConfig): Promise<NameCard[]> {
  return this.get<NameCard[]>('/search-users', { ...config, params: { searchWrd } });

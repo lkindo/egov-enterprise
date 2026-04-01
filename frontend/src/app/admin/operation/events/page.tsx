@@ -1,9 +1,9 @@
-import { Metadata } from 'next';
+﻿import { Metadata } from 'next';
 import EventManagementClient from './EventManagementClient';
 
 export const metadata: Metadata = {
-  title: '?�사 ?�보 관�?| eGov Enterprise System',
-  description: '?�고�??�터?�라?�즈 ?�합 ?�사 �??�영 관�??�터',
+  title: '?됱궗 ?뺣낫 愿由?| eGov Enterprise System',
+  description: '?먭퀬釉님뷀꽣?꾨씪?댁쫰 ?듯빀 ?됱궗 諛님댁쁺 愿由님쇳꽣',
 };
 
 export default function EventManagementPage() {
@@ -13,3 +13,4 @@ export default function EventManagementPage() {
     </div>
   );
 }
+

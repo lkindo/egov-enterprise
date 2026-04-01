@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -22,7 +22,7 @@ export default function NotePage() {
  const [loading, setLoading] = useState(true);
  const [notes, setNotes] = useState<Note[]>([]);
 
- // 모달 ?�태
+ // 紐⑤떖 ?곹깭
  const [isWriteModalOpen, setWriteOpen] = useState(false);
  const [isPickerOpen, setPickerOpen] = useState(false);
  const [isDetailModalOpen, setDetailOpen] = useState(false);
@@ -38,11 +38,7 @@ export default function NotePage() {
 
  setNotes(res.list || []);
  } catch {
-<<<<<<< HEAD
- toast('쪽지 목록을 불러오지 못했습니다.', 'error');
-=======
- toast('쪽�? 목록??불러?��? 못했?�니??', 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+ toast('履쎌? 紐⑸줉님遺덈윭?ㅼ? 紐삵뻽?듬땲님', 'error');
  } finally {
  setLoading(false);
  }
@@ -54,22 +50,18 @@ export default function NotePage() {
 
  const handleSend = async () => {
  if (!formData.rcverId || !formData.noteSj) {
- toast('?�신?��? ?�목???�력?�세??', 'error');
+ toast('?섏떊?먯? ?쒕ぉ님?낅젰?섏꽭님', 'error');
  return;
  }
 
  try {
  await noteService.sendNote(formData);
- toast('쪽�?가 ?�공?�으�??�송?�었?�니??', 'success');
+ toast('履쎌?媛 ?깃났?곸쑝濡님꾩넚?섏뿀?듬땲님', 'success');
  setWriteOpen(false);
  setFormData({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
  if (tab === 'sent') loadNotes();
  } catch {
-<<<<<<< HEAD
- toast('전송 중 오류가 발생했습니다.', 'error');
-=======
- toast('?�송 �??�류가 발생?�습?�다.', 'error');
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+ toast('?꾩넚 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
  }
  };
 
@@ -80,39 +72,39 @@ export default function NotePage() {
  const handleDetail = (note: Note) => {
  setSelectedNote(note);
  setDetailOpen(true);
- // ?�제 ?�음 처리 로직
+ // ?ㅼ젣 ?쎌쓬 泥섎━ 濡쒖쭅
  if (note.openYn === 'N') {
- // noteService.readNote(note.noteId); // API ?�요 ???�성?? }
+ // noteService.readNote(note.noteId); // API ?꾩슂 님활성님 }
  };
 
  const columns = [
  {
- header: '?�태',
+ header: '?곹깭',
  accessor: (item: Note) => (
  item.openYn === 'Y' ? <MailOpen size={16} className="text-muted-foreground" /> : <Mail size={16} className="text-primary animate-bounce" />
  ),
  className: 'w-12'
  },
  {
- header: '?�목',
+ header: '?쒕ぉ',
  accessor: (item: Note) => item.noteSj,
  className: 'font-bold'
  },
  {
- header: tab === 'received' ? '발신?? : '?�신??,
+ header: tab === 'received' ? '諛쒖떊님 : '?섏떊님,
  accessor: (item: Note) => tab === 'received' ? item.trnsmitterId : item.rcverId
  },
  {
- header: '?�시',
+ header: '?쇱떆',
  accessor: (item: Note) => item.sendDt,
  className: 'text-sm text-muted-foreground'
  },
  {
- header: '관�?,
+ header: '愿由?,
  className: 'text-right',
  accessor: (item: Note) => (
  <button
- onClick={(e) => { e.stopPropagation(); toast('??��?�었?�니??Mock)', 'info'); }}
+ onClick={(e) => { e.stopPropagation(); toast('님젣?섏뿀?듬땲님Mock)', 'info'); }}
  className="p-1.5 hover:bg-destructive/10 text-destructive rounded-md"
  >
  <Trash2 size={16} />
@@ -124,15 +116,15 @@ export default function NotePage() {
  return (
  <div className="space-y-6 pb-12">
  <PageHeader
- title="쪽�? ?�터"
- breadcrumbs={[{ label: '?�업지?? }, { label: '쪽�?관�? }]}
+ title="履쎌? ?쇳꽣"
+ breadcrumbs={[{ label: '?묒뾽吏님 }, { label: '履쎌?愿由? }]}
  actions={
  <button
  onClick={() => setWriteOpen(true)}
  className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
  >
  <SendHorizonal size={18} />
- 쪽�? 보내�? </button>
+ 履쎌? 蹂대궡湲? </button>
  }
  />
 
@@ -145,7 +137,7 @@ export default function NotePage() {
  tab === 'received' ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground"
  )}
  >
- <Inbox size={18} /> 받�? 쪽�??? </button>
+ <Inbox size={18} /> 諛쏆? 履쎌님? </button>
  <button
  onClick={() => setTab('sent')}
  className={cn(
@@ -153,7 +145,7 @@ export default function NotePage() {
  tab === 'sent' ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground"
  )}
  >
- <Send size={18} /> 보낸 쪽�??? </button>
+ <Send size={18} /> 보냄 履쎌님? </button>
  </div>
 
  <StandardDataTable
@@ -161,30 +153,30 @@ export default function NotePage() {
  data={notes}
  loading={loading}
  onRowClick={handleDetail}
- emptyMessage={tab === 'received' ? "받�? 쪽�?가 ?�습?�다." : "보낸 쪽�?가 ?�습?�다."}
+ emptyMessage={tab === 'received' ? "諛쏆? 履쎌?媛 ?놁뒿?덈떎." : "보냄 履쎌?媛 ?놁뒿?덈떎."}
  />
 
- {/* 쪽�? ?�성 모달 */}
+ {/* 履쎌? ?묒꽦 紐⑤떖 */}
  <StandardModal
  isOpen={isWriteModalOpen}
  onClose={() => setWriteOpen(false)}
- title="??쪽�? ?�성"
+ title="님履쎌? ?묒꽦"
  footer={
  <>
- <button onClick={() => setWriteOpen(false)} className="px-4 py-2 border rounded-lg font-bold">취소</button>
- <button onClick={handleSend} className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90">보내�?/button>
+ <button onClick={() => setWriteOpen(false)} className="px-4 py-2 border rounded-lg font-bold">痍⑥냼</button>
+ <button onClick={handleSend} className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90">蹂대궡湲?/button>
  </>
  }
  >
  <div className="space-y-6">
- <FormField label="?�신???�택" required>
+ <FormField label="?섏떊님?좏깮" required>
  <div className="flex gap-2">
  <div className="relative flex-1">
  <UserPlus size={16} className="absolute left-3 top-3 text-muted-foreground" />
  <input
  type="text"
  value={formData.rcverNm ? `${formData.rcverNm} (${formData.rcverId})` : ''}
- placeholder="?�용?��? 검?�해 주세??"
+ placeholder="?ъ슜?먮? 寃?됲빐 二쇱꽭님"
  readOnly
  className="w-full h-10 pl-10 pr-3 rounded-md border bg-muted/20 text-sm outline-none cursor-not-allowed"
  />
@@ -193,24 +185,24 @@ export default function NotePage() {
  onClick={() => setPickerOpen(true)}
  className="px-4 bg-white border border-primary text-primary rounded-md font-bold text-sm hover:bg-primary/5 transition-all flex items-center gap-2"
  >
- <Search size={14} /> 검?? </button>
+ <Search size={14} /> 寃님 </button>
  </div>
  </FormField>
- <FormField label="?�목" required>
+ <FormField label="?쒕ぉ" required>
  <input
  type="text"
  value={formData.noteSj}
  onChange={(e) => setFormData({ ...formData, noteSj: e.target.value })}
- placeholder="쪽�? ?�목???�력?�세??"
+ placeholder="履쎌? ?쒕ぉ님?낅젰?섏꽭님"
  className="w-full h-10 px-3 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
  />
  </FormField>
- <FormField label="?�용">
+ <FormField label="?댁슜">
  <textarea
  value={formData.noteCn}
  onChange={(e) => setFormData({ ...formData, noteCn: e.target.value })}
  className="w-full min-h-[150px] p-3 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none"
- placeholder="?�용???�력?�세??"
+ placeholder="?댁슜님?낅젰?섏꽭님"
  />
  </FormField>
  </div>
@@ -222,11 +214,11 @@ export default function NotePage() {
  onSelect={handleUserSelect}
  />
 
- {/* 쪽�? ?�세 모달 */}
+ {/* 履쎌? ?곸꽭 紐⑤떖 */}
  <StandardModal
  isOpen={isDetailModalOpen}
  onClose={() => setDetailOpen(false)}
- title="쪽�? ?�세 ?�용"
+ title="履쎌? ?곸꽭 ?댁슜"
  maxWidth="md"
  >
  {selectedNote && (
@@ -235,7 +227,7 @@ export default function NotePage() {
  <div>
  <h3 className="text-xl font-black text-foreground">{selectedNote.noteSj}</h3>
  <p className="text-sm text-muted-foreground mt-1">
- {tab === 'received' ? `발신: ${selectedNote.trnsmitterId}` : `?�신: ${selectedNote.rcverId}`} ??{selectedNote.sendDt}
+ {tab === 'received' ? `諛쒖떊: ${selectedNote.trnsmitterId}` : `?섏떊: ${selectedNote.rcverId}`} 님{selectedNote.sendDt}
  </p>
  </div>
  <StatusBadge status={selectedNote.openYn === 'Y' ? 'C' : 'R'} />
@@ -244,7 +236,7 @@ export default function NotePage() {
  {selectedNote.noteCn}
  </div>
  <div className="flex gap-2 justify-end">
- <button onClick={() => setDetailOpen(false)} className="px-6 py-2 bg-muted rounded-lg font-bold text-sm">?�기</button>
+ <button onClick={() => setDetailOpen(false)} className="px-6 py-2 bg-muted rounded-lg font-bold text-sm">?リ린</button>
  {tab === 'received' && (
  <button
  onClick={() => {
@@ -254,7 +246,7 @@ export default function NotePage() {
  }}
  className="px-6 py-2 bg-primary text-white rounded-lg font-bold text-sm shadow-md"
  >
- ?�장?�기
+ ?듭옣?섍린
  </button>
  )}
  </div>
@@ -264,3 +256,4 @@ export default function NotePage() {
  </div>
  );
 }
+

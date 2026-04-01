@@ -1,9 +1,8 @@
-import { UserService } from '@/services/core/ApiService';
+﻿import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * 댓글 정보 인터페이스
- */
+ * ?볤? ?뺣낫 ?명꽣?섏씠님 */
 export interface Comment {
  id: number;
  nttId: number;
@@ -21,22 +20,22 @@ class CommentService extends UserService {
  super('/comments');
  }
 
- /** 댓글 목록 조회 */
+ /** ?볤? 紐⑸줉 조회 */
  async getComments(params: { nttId: number; bbsId: string; page?: number; size?: number }): Promise<PageResponse<Comment>> {
  return this.get<PageResponse<Comment>>('', { params });
  }
 
- /** 댓글 등록 */
+ /** ?볤? 등록 */
  async createComment(data: Partial<Comment>): Promise<Comment> {
  return this.post<Comment>('', data);
  }
 
- /** 댓글 수정 */
+ /** ?볤? ?섏젙 */
  async updateComment(id: number, data: Partial<Comment>): Promise<void> {
  return this.put<void>(`/${id}`, data);
  }
 
- /** 댓글 삭제 */
+ /** ?볤? 님젣 */
  async deleteComment(id: number): Promise<void> {
  return this.delete<void>(`/${id}`);
  }
