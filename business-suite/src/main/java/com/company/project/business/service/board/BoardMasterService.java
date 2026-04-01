@@ -2,10 +2,10 @@ package com.company.project.business.service.board;
 
 import com.company.project.foundation.core.exception.BusinessException;
 import com.company.project.foundation.core.exception.ErrorCode;
+import com.company.project.foundation.core.service.BaseAbstractService;
 import com.company.project.business.domain.board.*;
 import com.company.project.business.service.board.dto.BlogDto;
 import com.company.project.business.service.board.dto.BoardMasterDto;
-import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -16,11 +16,10 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service("egovBoardMasterService")
-public class BoardMasterService extends EgovAbstractServiceImpl implements EgovBoardMasterService {
+public class BoardMasterService extends BaseAbstractService implements EgovBoardMasterService {
 
     private final BoardMasterRepository boardMasterRepository;
     private final BlogRepository blogRepository;
@@ -31,16 +30,16 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
             BlogRepository blogRepository,
             BlogUserRepository blogUserRepository,
             @Qualifier("egovBBSMstrIdGnrService") EgovIdGnrService idgenService) {
-        this.boardMasterRepository = boardMasterRepository;
-        this.blogRepository = blogRepository;
-        this.blogUserRepository = blogUserRepository;
-        this.idgenService = idgenService;
+        this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
+        this.blogRepository = required(blogRepository, "blogRepository 는 null 일 수 없습니다");
+        this.blogUserRepository = required(blogUserRepository, "blogUserRepository 는 null 일 수 없습니다");
+        this.idgenService = required(idgenService, "idgenService 는 null 일 수 없습니다");
     }
 
     @Override
     @Transactional(readOnly = true)
     public BoardMasterDto getBoardMaster(@NonNull String bbsId) {
-        BoardMaster entity = boardMasterRepository.findById(Objects.requireNonNull(bbsId))
+        BoardMaster entity = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         return BoardMasterDto.from(entity);
     }
@@ -52,7 +51,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
         condition.setSearchCnd(searchCnd);
         condition.setSearchWrd(searchWrd);
 
-        return boardMasterRepository.searchBoardMasters(condition, Objects.requireNonNull(pageable))
+        return boardMasterRepository.searchBoardMasters(condition, required(pageable, "pageable 는 null 일 수 없습니다"))
                 .map(this::convertSearchResultToDto);
     }
 
@@ -102,14 +101,14 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .optnLastUpdtPnttm(java.time.LocalDateTime.now())
                 .build();
 
-        boardMasterRepository.save(Objects.requireNonNull(entity));
+        boardMasterRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
         return bbsId;
     }
 
     @Override
     @Transactional
     public void updateBoardMaster(BoardMasterDto dto) {
-        BoardMaster entity = boardMasterRepository.findById(Objects.requireNonNull(dto.getBbsId()))
+        BoardMaster entity = boardMasterRepository.findById(required(dto.getBbsId(), "dto.getBbsId() 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.update(
@@ -128,7 +127,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
     @Override
     @Transactional
     public void deleteBoardMaster(String bbsId, String userId) {
-        BoardMaster entity = boardMasterRepository.findById(Objects.requireNonNull(bbsId))
+        BoardMaster entity = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
         entity.delete();
@@ -136,14 +135,14 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
 
     @Override
     public boolean canUseSatisfaction(String bbsId) {
-        return boardMasterRepository.findById(Objects.requireNonNull(bbsId))
+        return boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                 .map(bm -> "Y".equals(bm.getStsfdgAt()))
                 .orElse(false);
     }
 
     @Override
     public boolean canUseComment(String bbsId) {
-        return boardMasterRepository.findById(Objects.requireNonNull(bbsId))
+        return boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                 .map(bm -> "Y".equals(bm.getCommentAt()))
                 .orElse(false);
     }
@@ -152,13 +151,13 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
     @Transactional(readOnly = true)
     public Page<BlogDto> getBlogList(String searchCnd, String searchWrd, @NonNull Pageable pageable) {
         // QueryDSL 기반 검색이 필요할 수 있으나 현재는 단순 findAll로 처리 (필요시 Custom Repository 추가)
-        return blogRepository.findAll(Objects.requireNonNull(pageable)).map(BlogDto::from);
+        return blogRepository.findAll(required(pageable, "pageable 는 null 일 수 없습니다")).map(BlogDto::from);
     }
 
     @Override
     @Transactional(readOnly = true)
     public BlogDto getBlog(String blogId) {
-        return blogRepository.findById(Objects.requireNonNull(blogId)).map(BlogDto::from).orElse(null);
+        return blogRepository.findById(required(blogId, "blogId 는 null 일 수 없습니다")).map(BlogDto::from).orElse(null);
     }
 
     @Override
@@ -181,7 +180,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .createdBy(dto.getFrstRegisterId())
                 .blogAt(dto.getBlogAt())
                 .build();
-        blogRepository.save(Objects.requireNonNull(entity));
+        blogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
     }
 
     @Override
@@ -194,7 +193,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
                 .useAt("Y")
                 .createdBy(userId)
                 .build();
-        blogUserRepository.save(Objects.requireNonNull(user));
+        blogUserRepository.save(required(user, "user 는 null 일 수 없습니다"));
     }
 
     @Override
@@ -218,7 +217,7 @@ public class BoardMasterService extends EgovAbstractServiceImpl implements EgovB
     @Override
     @Transactional(readOnly = true)
     public List<BoardMasterDto> getBoardMasterListByCommunity(String cmmntyId) {
-        return boardMasterRepository.findByCmmntyIdAndUseAt(Objects.requireNonNull(cmmntyId), "Y")
+        return boardMasterRepository.findByCmmntyIdAndUseAt(required(cmmntyId, "cmmntyId 는 null 일 수 없습니다"), "Y")
                 .stream()
                 .map(BoardMasterDto::from)
                 .collect(Collectors.toList());

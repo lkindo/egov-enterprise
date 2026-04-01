@@ -46,7 +46,7 @@ public class HibernatePerformanceConfig {
         }
 
         log.info("=== Hibernate Performance Statistics ===");
-        log.info("Start Time: {}", new java.util.Date(statistics.getStartTimestamp()));
+        log.info("Current Time: {}", new java.util.Date());
         log.info("Transactions: {}", statistics.getTransactionCount());
         log.info("Successful Transactions: {}", statistics.getSuccessfulTransactionCount());
         log.info("Prepare Statements: {}", statistics.getPrepareStatementCount());
@@ -77,10 +77,10 @@ public class HibernatePerformanceConfig {
         // N+1 쿼리 감지 힌트
         long entityFetchCount = statistics.getEntityFetchCount();
         long entityLoadCount = statistics.getEntityLoadCount();
-        
+
         if (entityLoadCount > 0 && entityFetchCount > entityLoadCount * 2) {
-            log.warn("⚠️ N+1 쿼리 가능성이 감지되었습니다! (Fetch Count: {}, Load Count: {})", 
-                     entityFetchCount, entityLoadCount);
+            log.warn("⚠️ N+1 쿼리 가능성이 감지되었습니다! (Fetch Count: {}, Load Count: {})",
+                    entityFetchCount, entityLoadCount);
             log.warn("   @BatchSize 또는 JOIN FETCH 를 고려해보세요.");
         }
     }

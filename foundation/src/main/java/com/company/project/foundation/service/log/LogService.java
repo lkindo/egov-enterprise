@@ -1,31 +1,30 @@
 package com.company.project.foundation.service.log;
 
+import com.company.project.foundation.core.service.BaseAbstractService;
 import com.company.project.foundation.domain.log.LoginLog;
 import com.company.project.foundation.domain.log.LoginLogRepository;
 import com.company.project.foundation.service.log.dto.LogDto;
-import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
  * JPA 기반 로그 관리 서비스 구현체
  * - 전자정부 프레임워크 5.0 호환성 인증 요건 충실
- * - EgovAbstractServiceImpl 상속 및 EgovLogService 인터페이스 구현
+ * - BaseAbstractService 상속으로 중복 코드 제거
  */
 @Service("egovLogService")
 @Transactional(readOnly = true)
-public class LogService extends EgovAbstractServiceImpl implements EgovLogService {
+public class LogService extends BaseAbstractService implements EgovLogService {
 
     private final LoginLogRepository loginLogRepository;
 
     public LogService(LoginLogRepository loginLogRepository) {
-        this.loginLogRepository = loginLogRepository;
+        this.loginLogRepository = required(loginLogRepository, "LoginLogRepository 는 null 일 수 없습니다");
     }
 
     /**
@@ -45,7 +44,7 @@ public class LogService extends EgovAbstractServiceImpl implements EgovLogServic
                 .errorCode(errCode)
                 .creatDt(java.time.LocalDateTime.now())
                 .build();
-        loginLogRepository.save(Objects.requireNonNull(log));
+        loginLogRepository.save(required(log, "로그 엔티티는 null 일 수 없습니다"));
     }
 
     /**

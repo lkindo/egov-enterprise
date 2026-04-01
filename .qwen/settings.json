@@ -11,7 +11,10 @@
       "mcp__shrimp-task-manager__verify_task",
       "mcp__shrimp-task-manager__execute_task",
       "mcp__shrimp-task-manager__delete_task",
-      "Bash(select-string *)"
+      "Bash(select-string *)",
+      "WebFetch(github.com)",
+      "Bash(get-content *)",
+      "Bash(set-content *)"
     ]
   },
   "$version": 3
