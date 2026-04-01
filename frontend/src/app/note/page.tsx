@@ -37,7 +37,7 @@ export default function NotePage() {
  : noteService.getSentNotes({ page: 0, size: 20 }));
 
  setNotes(res.list || []);
- } catch (error) {
+ } catch {
  toast('쪽지 목록을 불러오지 못했습니다.', 'error');
  } finally {
  setLoading(false);
@@ -60,7 +60,7 @@ export default function NotePage() {
  setWriteOpen(false);
  setFormData({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
  if (tab === 'sent') loadNotes();
- } catch (error) {
+ } catch {
  toast('전송 중 오류가 발생했습니다.', 'error');
  }
  };

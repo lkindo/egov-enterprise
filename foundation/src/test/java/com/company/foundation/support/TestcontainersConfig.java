@@ -18,6 +18,7 @@ import org.testcontainers.utility.DockerImageName;
 public class TestcontainersConfig {
 
     @Bean
+    @SuppressWarnings("resource")
     public PostgreSQLContainer<?> postgresContainer() {
         return new PostgreSQLContainer<>(DockerImageName.parse("postgres:16"))
                 .withDatabaseName("testdb")

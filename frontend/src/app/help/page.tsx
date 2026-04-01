@@ -28,7 +28,7 @@ export default function HelpCenterPage() {
  const res = await helpUserService.getQnas({ page: 0, size: 10 });
  setQnas(res.list || []);
  }
- } catch (error) {
+ } catch {
  toast('데이터를 불러오지 못했습니다.', 'error');
  } finally {
  setLoading(false);

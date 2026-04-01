@@ -35,7 +35,7 @@ export default function CreateDeptJobPage() {
  await createDeptJob(formData);
  alert('업무가 등록되었습니다.');
  router.push('/smart-toolkit/dept-job');
- } catch (error) {
+ } catch {
  console.error(error);
  alert('업무 등록에 실패했습니다.');
  }

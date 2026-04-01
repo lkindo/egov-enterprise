@@ -15,8 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.cache.CacheManager;
-import org.springframework.test.context.ActiveProfiles;
-
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,13 +54,13 @@ class MenuServiceIntegrationTest {
     @DisplayName("메뉴 계층 구조 조회 - N+1 쿼리 해결 검증")
     void getMenuHierarchy_NPlusOneResolved() {
         // Given: 10 개의 메뉴와 권한 설정
-        Menu root = createMenu(1L, "루트메뉴", 0L, "System");
-        Menu child1 = createMenu(2L, "자식메뉴 1", 1L, "UserManage");
-        Menu child2 = createMenu(3L, "자식메뉴 2", 1L, "BoardManage");
+        createMenu(1L, "루트메뉴", 0L, "System");
+        createMenu(2L, "자식메뉴 1", 1L, "UserManage");
+        createMenu(3L, "자식메뉴 2", 1L, "BoardManage");
 
-        MenuAuthority auth1 = createMenuAuthority(1L, "ROLE_ADMIN");
-        MenuAuthority auth2 = createMenuAuthority(2L, "ROLE_ADMIN");
-        MenuAuthority auth3 = createMenuAuthority(3L, "ROLE_ADMIN");
+        createMenuAuthority(1L, "ROLE_ADMIN");
+        createMenuAuthority(2L, "ROLE_ADMIN");
+        createMenuAuthority(3L, "ROLE_ADMIN");
 
         entityManager.flush();
         entityManager.clear(); // 영속성 컨텍스트 초기화 (N+1 검증을 위해)
@@ -83,8 +81,8 @@ class MenuServiceIntegrationTest {
     @DisplayName("권한별 메뉴 필터링 - ADMIN 은 모든 메뉴 접근 가능")
     void getMenuHierarchy_AdminAccessAllMenus() {
         // Given: ADMIN 권한과 일부 메뉴만 권한 설정
-        Menu menu1 = createMenu(1L, "관리자메뉴", 0L, "System");
-        Menu menu2 = createMenu(2L, "일반메뉴", 0L, "Board");
+        createMenu(1L, "관리자메뉴", 0L, "System");
+        createMenu(2L, "일반메뉴", 0L, "Board");
 
         // ADMIN 권한만 메뉴 1 에 접근 가능
         createMenuAuthority(1L, "ROLE_ADMIN");
@@ -132,10 +130,10 @@ class MenuServiceIntegrationTest {
     @DisplayName("buildMenuTree - 특정 루트 메뉴의 서브트리만 조회")
     void buildMenuTree_SubTree() {
         // Given: 2 단계 메뉴 구조
-        Menu root = createMenu(1L, "루트", 0L, "System");
-        Menu child1 = createMenu(2L, "자식 1", 1L, "User");
-        Menu child2 = createMenu(3L, "자식 2", 1L, "Board");
-        Menu grandChild = createMenu(4L, "손자", 2L, "Detail");
+        createMenu(1L, "루트", 0L, "System");
+        createMenu(2L, "자식 1", 1L, "User");
+        createMenu(3L, "자식 2", 1L, "Board");
+        createMenu(4L, "손자", 2L, "Detail");
 
         createMenuAuthority(1L, "ROLE_ADMIN");
         createMenuAuthority(2L, "ROLE_ADMIN");
@@ -157,8 +155,8 @@ class MenuServiceIntegrationTest {
     @DisplayName("findAllWithAuthorities - 단일 쿼리로 메뉴와 권한 조회")
     void findAllWithAuthorities_SingleQuery() {
         // Given: 여러 메뉴와 권한
-        Menu menu1 = createMenu(1L, "메뉴 1", 0L, "System");
-        Menu menu2 = createMenu(2L, "메뉴 2", 0L, "Board");
+        createMenu(1L, "메뉴 1", 0L, "System");
+        createMenu(2L, "메뉴 2", 0L, "Board");
 
         createMenuAuthority(1L, "ROLE_ADMIN");
         createMenuAuthority(2L, "ROLE_ADMIN");

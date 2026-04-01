@@ -54,7 +54,7 @@ export default function CreatePollPage() {
  await createPoll(payload);
  alert('설문이 등록되었습니다. 상세 페이지에서 설문 항목을 추가해주세요.');
  router.push('/admin/survey/manage'); // Or redirect to detail page if we get ID back
- } catch (error) {
+ } catch {
  console.error(error);
  alert('설문 등록에 실패했습니다.');
  }

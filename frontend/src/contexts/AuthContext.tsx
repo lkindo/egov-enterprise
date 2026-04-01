@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await authService.logout();
-    } catch (error) {
+    } catch {
       console.error('Logout API call failed', error);
     } finally {
       setUser(null);

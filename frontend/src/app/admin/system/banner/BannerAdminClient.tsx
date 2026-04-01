@@ -116,7 +116,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       } else {
         toast(res.message, 'error');
       }
-    } catch (error) {
+    } catch {
       toast('자산 삭제 처리 중 예외가 발생했습니다.', 'error');
       console.error('Promotion handleDelete error:', error);
     }
@@ -167,7 +167,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       } else {
         toast(res.message, 'error');
       }
-    } catch (error) {
+    } catch {
       toast('저장 처리 중 데이터 무결성 오류가 발생했습니다.', 'error');
     }
   };

@@ -18,7 +18,7 @@ export default async function InformalSanctionPage() {
 
  try {
  rawData = await ismAdminService.getInfrmlSanctnList({ page: 0, size: 50 }, axiosConfig);
- } catch (error) {
+ } catch {
  console.error('Server-side fetch ism failed:', error);
  }
 

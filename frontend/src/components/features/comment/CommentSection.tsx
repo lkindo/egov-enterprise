@@ -29,7 +29,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
  setLoading(true);
  const result = await commentService.getComments({ nttId, bbsId, size: 100 });
  setComments(result.resultList || []);
- } catch (error) {
+ } catch {
  console.error('Failed to fetch comments', error);
  } finally {
  setLoading(false);
@@ -53,7 +53,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
  });
  setCommentCn('');
  fetchComments();
- } catch (error) {
+ } catch {
  console.error('Failed to create comment', error);
  alert('댓글 등록에 실패했습니다.');
  } finally {
@@ -66,7 +66,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
  try {
  await commentService.deleteComment(id);
  fetchComments();
- } catch (error) {
+ } catch {
  console.error('Failed to delete comment', error);
  alert('댓글 삭제에 실패했습니다.');
  }
@@ -82,7 +82,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
  });
  setEditingId(null);
  fetchComments();
- } catch (error) {
+ } catch {
  console.error('Failed to update comment', error);
  alert('댓글 수정에 실패했습니다.');
  }

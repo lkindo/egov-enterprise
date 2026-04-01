@@ -48,14 +48,15 @@ public class Notification {
     private LocalDateTime lastModifiedDate;
 
     @Builder
-    public Notification(String ntfcNo, String ntfcSj, String ntfcCn, String receiverId, String linkUrl) {
+    public Notification(String ntfcNo, String ntfcSj, String ntfcCn, String receiverId, String isRead, String linkUrl,
+            LocalDateTime createdDate) {
         this.ntfcNo = ntfcNo;
         this.ntfcSj = ntfcSj;
         this.ntfcCn = ntfcCn;
         this.receiverId = receiverId;
+        this.isRead = isRead != null ? isRead : "N";
         this.linkUrl = linkUrl;
-        this.isRead = "N";
-        this.createdDate = LocalDateTime.now();
+        this.createdDate = createdDate != null ? createdDate : LocalDateTime.now();
         this.lastModifiedDate = LocalDateTime.now();
     }
 

@@ -48,7 +48,7 @@ export default function PrivacyPolicyClient({
       await policyAdminService.updatePolicy('privacy', policy);
       toast.success('보안 정책 프레임워크가 성공적으로 커밋되었습니다.');
       setIsEditing(false);
-    } catch (error) {
+    } catch {
       toast.error('데이터 정합성 오류로 최종 저장이 중단되었습니다.');
     } finally {
       setLoading(false);

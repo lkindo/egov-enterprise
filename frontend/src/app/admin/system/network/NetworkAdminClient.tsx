@@ -78,7 +78,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                 } else {
                     toast(res.message, 'error');
                 }
-            } catch (error) {
+            } catch {
                 toast('삭제 중 시스템 정지 오류가 발생했습니다.', 'error');
             }
         }
@@ -97,7 +97,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             } else {
                 toast(res.message, 'error');
             }
-        } catch (error) {
+        } catch {
             toast('데이터 유효성 검사 및 저장에 실패했습니다.', 'error');
         }
     };

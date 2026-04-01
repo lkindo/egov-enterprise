@@ -41,7 +41,7 @@ const CommunityListPage = () => {
  setTotalCount(data.totalCount || 0);
  // Calculate total pages if not provided by backend
  setTotalPages(Math.ceil((data.totalCount || 0) / 10));
- } catch (error) {
+ } catch {
  console.error('Failed to fetch communities', error);
  } finally {
  setLoading(false);

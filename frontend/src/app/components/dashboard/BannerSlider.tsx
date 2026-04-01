@@ -16,7 +16,7 @@ export function BannerSlider() {
  try {
  const res = await bannerAdminService.getReflectedBanners();
  setBanners(res || []);
- } catch (error) {
+ } catch {
  console.error('Failed to fetch banners:', error);
  } finally {
  setLoading(false);

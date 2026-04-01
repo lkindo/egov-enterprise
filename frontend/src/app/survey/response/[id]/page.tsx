@@ -21,7 +21,7 @@ export default function WorkReportListPage() {
  setLoading(true);
  const res = await reportService.getReports({ page: 0, size: 20 });
  setReports(res.list || []);
- } catch (error) {
+ } catch {
  toast('보고서 목록을 불러오지 못했습니다.', 'error');
  } finally {
  setLoading(false);

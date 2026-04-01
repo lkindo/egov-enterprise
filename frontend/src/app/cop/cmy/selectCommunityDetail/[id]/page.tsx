@@ -39,7 +39,7 @@ function BoardListContent() {
  });
  setData(res.list || []);
  setTotal(res.total || 0);
- } catch (error) {
+ } catch {
  toast('목록을 불러오는 중 오류가 발생했습니다.', 'error');
  } finally {
  setLoading(false);

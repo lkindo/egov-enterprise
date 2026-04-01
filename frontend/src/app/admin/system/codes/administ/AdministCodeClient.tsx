@@ -50,7 +50,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
       setData(res.list || []);
       setTotal(res.total || 0);
       setPageNumber(page);
-    } catch (error) {
+    } catch {
       toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);

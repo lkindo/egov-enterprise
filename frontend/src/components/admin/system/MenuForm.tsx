@@ -87,7 +87,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
       }
       onSuccess();
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       console.error(error);
       alert('저장 중 오류가 발생했습니다.');
     }
@@ -100,7 +100,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
         await menuAdminService.deleteMenu(data.menuNo);
         onSuccess();
         onOpenChange(false);
-      } catch (error) {
+      } catch {
         console.error(error);
         alert('삭제 중 오류가 발생했습니다.');
       }

@@ -21,7 +21,7 @@ export const useTopologyData = () => {
                     status: (item.svcSttus === 'UP' || item.svcSttus === '정상') ? 'up' : 'down',
                     type: inferNodeType(item.sysNm)
                 }));
-            } catch (error) {
+            } catch {
                 console.warn('Topology data fetch failed, using fallback', error);
                 return [];
             }

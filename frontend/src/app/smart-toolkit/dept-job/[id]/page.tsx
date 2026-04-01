@@ -40,7 +40,7 @@ const DeptJobListPage = () => {
  setList(response.data.resultList || []);
  setTotalCount(response.data.totalCount || 0);
  setTotalPages(response.data.totalPages || 0);
- } catch (error) {
+ } catch {
  console.error('Failed to fetch dept jobs', error);
  } finally {
  setLoading(false);
@@ -56,7 +56,7 @@ const DeptJobListPage = () => {
  try {
  (await axios.delete(`/deptjob/${id}`)) as any;
  fetchList();
- } catch (error) {
+ } catch {
  alert('삭제에 실패했습니다.');
  }
  };

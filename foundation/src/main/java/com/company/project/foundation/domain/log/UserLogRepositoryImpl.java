@@ -22,7 +22,6 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
     private final EntityManager entityManager;
 
     @Override
-    @SuppressWarnings("unchecked")
     public Page<UserLog> searchUserLogs(String searchWrd, String searchBgnDe, String searchEndDe, Pageable pageable) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<UserLog> cq = cb.createQuery(UserLog.class);

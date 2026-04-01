@@ -58,7 +58,7 @@ export default function DeptAdminClient({
       const res = await deptAdminService.getDeptList({ keyword: searchKeyword });
       setDepts(res.list);
       setTotalCount(res.total);
-    } catch (error) {
+    } catch {
       toast.error('조직 체계 스트림 로드에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -94,7 +94,7 @@ export default function DeptAdminClient({
       }
       setIsAddOpen(false);
       handleRefresh();
-    } catch (error) {
+    } catch {
       toast.error('데이터 정합성 오류로 저장이 취소되었습니다.');
     } finally {
       setLoading(false);
@@ -109,7 +109,7 @@ export default function DeptAdminClient({
       await deptAdminService.deleteDept(deptId);
       toast.success('조직 자산이 삭제되었습니다.');
       handleRefresh();
-    } catch (error) {
+    } catch {
       toast.error('권한 부족 또는 시스템 오류로 삭제를 수행하지 못했습니다.');
     } finally {
       setLoading(false);

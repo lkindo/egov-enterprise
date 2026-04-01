@@ -50,7 +50,7 @@ export default function BoardWritePage() {
  clear(); // 자동 저장 데이터 삭제
  router.push('/admin/community/boards');
  }
- } catch (error) {
+ } catch {
  toast('등록 중 오류가 발생했습니다.', 'error');
  }
  }

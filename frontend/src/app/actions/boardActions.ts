@@ -73,8 +73,8 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
     } else {
       return { success: false, message: '저장에 실패했습니다.' };
     }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '저장 중 오류가 발생했습니다.';
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error.message || '저장 중 오류가 발생했습니다.';
     console.error('Save Action Error:', error);
     return { success: false, message: errorMessage };
   }
@@ -99,8 +99,8 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
     } else {
       return { success: false, message: '삭제에 실패했습니다.' };
     }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '삭제 중 오류가 발생했습니다.';
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error.message || '삭제 중 오류가 발생했습니다.';
     console.error('Delete Action Error:', error);
     return { success: false, message: errorMessage };
   }

@@ -49,7 +49,7 @@ export default function ApprovalInboxPage() {
  } else {
  setSelectedItem(null);
  }
- } catch (error) {
+ } catch {
  toast('결재 목록을 불러오지 못했습니다.', 'error');
  } finally {
  setLoading(false);
@@ -74,7 +74,7 @@ export default function ApprovalInboxPage() {
  await approvalUserService.confirm(item.approvalId, status);
  toast(`성공적으로 ${actionNm}되었습니다.`, 'success');
  loadData();
- } catch (error) {
+ } catch {
  toast(`${actionNm} 처리 중 오류가 발생했습니다.`, 'error');
  }
  };

@@ -67,7 +67,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  }
  onSuccess();
  onOpenChange(false);
- } catch (error) {
+ } catch {
  console.error(error);
  alert('저장 중 오류가 발생했습니다.');
  }
@@ -80,7 +80,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  await codeAdminService.deleteClCode(data.clCode);
  onSuccess();
  onOpenChange(false);
- } catch (error) {
+ } catch {
  console.error(error);
  alert('삭제 중 오류가 발생했습니다.');
  }

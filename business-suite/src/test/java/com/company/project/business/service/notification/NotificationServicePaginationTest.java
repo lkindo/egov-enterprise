@@ -13,6 +13,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.context.annotation.Import;
+import com.company.project.business.config.TestQueryDslConfig;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DataJpaTest
 @ActiveProfiles("test")
+@Import({NotificationService.class, TestQueryDslConfig.class})
 class NotificationServicePaginationTest {
 
     @Autowired
@@ -34,12 +39,15 @@ class NotificationServicePaginationTest {
     private NotificationRepository notificationRepository;
     @Autowired
     private TestEntityManager entityManager;
+    @MockitoBean
+    private SimpMessagingTemplate messagingTemplate;
 
     @BeforeEach
     void setUp() {
         // 테스트 데이터 설정
         for (int i = 1; i <= 25; i++) {
             Notification notification = Notification.builder()
+                    .ntfcNo("NTFC_" + i)
                     .ntfcSj("테스트 알림 " + i)
                     .ntfcCn("내용 " + i)
                     .receiverId("testUser")

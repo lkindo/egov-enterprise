@@ -40,7 +40,7 @@ const ScrapListPage = () => {
             setList(response.data.resultList || []);
             setTotalCount(response.data.totalCount || 0);
             setTotalPages(response.data.totalPages || 0);
-        } catch (error) {
+        } catch {
             console.error('Failed to fetch scraps', error);
         } finally {
             setLoading(false);

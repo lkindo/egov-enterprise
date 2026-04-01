@@ -60,7 +60,7 @@ export function CommandPalette() {
                     }));
 
                 setResults(searchResults);
-            } catch (error) {
+            } catch {
                 console.error('Failed to load menus:', error);
                 setResults([]);
             } finally {

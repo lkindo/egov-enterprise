@@ -72,6 +72,7 @@ class UserApiControllerTest {
         return UserDto.builder()
                 .userId(TEST_USER_ID)
                 .userNm("testNm")
+                .password("password123!") // Add password
                 .esntlId("esntl-123")
                 .role(Role.USER.name())
                 .build();

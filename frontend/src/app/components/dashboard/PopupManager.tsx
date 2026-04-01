@@ -29,7 +29,7 @@ export function PopupManager() {
 
  setActivePopups(filteredPopups);
  setVisiblePopupIds(filteredPopups.map(p => p.popupId));
- } catch (error) {
+ } catch {
  console.error('Failed to fetch popups:', error);
  }
  }

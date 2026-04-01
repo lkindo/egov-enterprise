@@ -28,7 +28,7 @@ const IntegratedSearchPage = async ({ searchParams }: { searchParams: Promise<{ 
  { name: '자유 게시판', path: '/admin/community/boards', category: '커뮤니티' }
  ].filter(m => m.name.includes(q))
  };
- } catch (error) {
+ } catch {
  console.error('Server-side search failed', error);
  }
  }

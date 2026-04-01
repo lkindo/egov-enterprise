@@ -56,7 +56,7 @@ export default function DeptSchedulePage() {
  } else {
  setSchedules([]);
  }
- } catch (error) {
+ } catch {
  console.error(error);
  setSchedules([]);
  }
@@ -95,7 +95,7 @@ export default function DeptSchedulePage() {
  try {
  await deleteDeptSchedule(schdulId);
  fetchList();
- } catch (error) {
+ } catch {
  alert('삭제 중 오류가 발생했습니다.');
  }
  };
@@ -109,7 +109,7 @@ export default function DeptSchedulePage() {
  }
  setIsDialogOpen(false);
  fetchList();
- } catch (error) {
+ } catch {
  alert('저장 중 오류가 발생했습니다.');
  }
  };

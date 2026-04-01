@@ -18,7 +18,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
  setLoading(true);
  const res = await operationAdminService.getExternalHrList({ name });
  setData(res.list || []);
- } catch (error) {
+ } catch {
  toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
  } finally {
  setLoading(false);

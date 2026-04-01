@@ -119,7 +119,7 @@ export default function CommonCodeClient({
                 ...group,
                 details: fetchedDetails
             });
-        } catch (error) {
+        } catch {
             toast('상세 코드를 불러오는 중 오류가 발생했습니다.', 'error');
         } finally {
             setDetailsLoading(false);
@@ -182,7 +182,7 @@ export default function CommonCodeClient({
                 } else {
                     toast(res.message, 'error');
                 }
-            } catch (error) {
+            } catch {
                 toast('네트워크 오류가 발생했습니다.', 'error');
             }
         }
@@ -215,7 +215,7 @@ export default function CommonCodeClient({
             } else {
                 toast(res.message, 'error');
             }
-        } catch (error) {
+        } catch {
             toast('정합성 검증에 실패했습니다.', 'error');
         }
     };

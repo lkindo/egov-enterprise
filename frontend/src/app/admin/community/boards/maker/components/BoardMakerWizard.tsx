@@ -209,7 +209,7 @@ export function BoardMakerWizard() {
       queryClient.invalidateQueries({ queryKey: ["menus"] });
 
       setIsSuccess(true);
-    } catch (error) {
+    } catch {
       console.error('Validation/Submission Error:', error);
       setStatus("Failed to reconcile system state.");
     } finally {

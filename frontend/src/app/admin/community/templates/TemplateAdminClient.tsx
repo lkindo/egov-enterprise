@@ -74,7 +74,7 @@ export default function TemplateAdminClient({
             toast.success('새 템플릿을 등록했습니다.');
             setIsAddOpen(false);
             handleRefresh();
-        } catch (error) {
+        } catch {
             toast.error('템플릿 등록에 실패했습니다.');
         } finally {
             setLoading(false);

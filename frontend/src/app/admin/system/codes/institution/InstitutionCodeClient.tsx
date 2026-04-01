@@ -55,7 +55,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       setData(res.list || []);
       setTotal(res.total || 0);
       setPageNo(page);
-    } catch (error) {
+    } catch {
       toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);
@@ -69,7 +69,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       setReceptionData(res.list || []);
       setTotal(res.total || 0);
       setPageNo(page);
-    } catch (error) {
+    } catch {
       toast('수신 내역을 불러오는 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);
@@ -87,7 +87,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       });
       toast('성공적으로 반영되었습니다.', 'success');
       loadReceptionData();
-    } catch (error) {
+    } catch {
       toast('반영 처리 중 오류가 발생했습니다.', 'error');
     }
   };

@@ -59,7 +59,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                         { name: '자유 게시판', path: '/admin/community/boards', category: '커뮤니티' }
                     ].filter(m => m.name.includes(query))
                 });
-            } catch (error) {
+            } catch {
                 console.error('Search failed', error);
             } finally {
                 setLoading(false);

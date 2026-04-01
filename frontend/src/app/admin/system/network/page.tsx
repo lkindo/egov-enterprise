@@ -20,7 +20,7 @@ export default async function AdminNetworkPage() {
  try {
  const response = await networkAdminService.getNetworks({ page: 0, size: 100 }, axiosConfig);
  initialNetworks = (response as any)?.content || (response as any)?.data?.content || (response as any) || [];
- } catch (error) {
+ } catch {
  console.error('Server-side fetch network data failed:', error);
  }
 

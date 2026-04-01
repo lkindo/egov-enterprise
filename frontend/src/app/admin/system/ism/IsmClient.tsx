@@ -66,7 +66,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
       toast(`결재 시퀀스가 ${status === 'C' ? '성공적으로 승인' : '반려'} 처리되었습니다.`, 'success');
       setIsOpen(false);
       router.refresh();
-    } catch (error) {
+    } catch {
       toast('프로세스 처리 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);

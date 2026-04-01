@@ -55,7 +55,7 @@ export default function ManualAdminClient({
  const res = await manualAdminService.getManualList({ keyword: searchKeyword });
  setManuals(res.list);
  setTotalCount(res.total);
- } catch (error) {
+ } catch {
  toast.error('매뉴얼 목록을 불러오지 못했습니다.');
  } finally {
  setLoading(false);
@@ -95,7 +95,7 @@ export default function ManualAdminClient({
  }
  setIsAddOpen(false);
  handleRefresh();
- } catch (error) {
+ } catch {
  toast.error('저장에 실패했습니다.');
  } finally {
  setLoading(false);
@@ -110,7 +110,7 @@ export default function ManualAdminClient({
  await manualAdminService.deleteManual(mnlId);
  toast.success('매뉴얼을 삭제했습니다.');
  handleRefresh();
- } catch (error) {
+ } catch {
  toast.error('삭제에 실패했습니다.');
  } finally {
  setLoading(false);

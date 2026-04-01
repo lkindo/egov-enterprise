@@ -65,7 +65,7 @@ export default function SmsAdminClient({
       const res = await smsAdminService.getSmsList({ searchKeyword });
       setSmsList(res.list);
       setTotalCount(res.total);
-    } catch (error) {
+    } catch {
       toast.error('발송 내역을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -84,7 +84,7 @@ export default function SmsAdminClient({
       toast.success('문자 메시지를 발송했습니다.');
       setIsSendOpen(false);
       handleSearch(); // 목록 갱신
-    } catch (error) {
+    } catch {
       toast.error('발송에 실패했습니다.');
     } finally {
       setLoading(false);

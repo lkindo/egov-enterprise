@@ -69,7 +69,7 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
  }
  onSuccess();
  onOpenChange(false);
- } catch (error) {
+ } catch {
  console.error(error);
  alert('저장 중 오류가 발생했습니다.');
  }
@@ -82,7 +82,7 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
  await codeAdminService.deleteCmmnCode(data.codeId);
  onSuccess();
  onOpenChange(false);
- } catch (error) {
+ } catch {
  console.error(error);
  alert('삭제 중 오류가 발생했습니다.');
  }

@@ -35,7 +35,7 @@ export default async function AdminStatsPage() {
  })) : [];
 
  initialMenuData = (Array.isArray(menuRes) ? menuRes : []) as any as MenuStats[];
- } catch (error) {
+ } catch {
  console.error('Server-side fetch stats failed:', error);
  }
 

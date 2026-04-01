@@ -39,7 +39,7 @@ const AddressBookListPage = () => {
             setList(response.list || []);
             setTotalCount(response.total || 0);
             setTotalPages(response.totalPage || 0);
-        } catch (error) {
+        } catch {
             console.error('Failed to fetch address books', error);
         } finally {
             setLoading(false);

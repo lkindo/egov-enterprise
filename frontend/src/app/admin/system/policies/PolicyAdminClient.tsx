@@ -26,7 +26,7 @@ export default function PolicyAdminClient() {
     try {
       const data = await policyAdminService.getPolicies();
       setPolicies(data);
-    } catch (error) {
+    } catch {
       console.error('Failed to fetch policies:', error);
       toast.error('정책 목록을 불러오는 데 실패했습니다.');
     } finally {
@@ -56,7 +56,7 @@ export default function PolicyAdminClient() {
       toast.success('정책이 성공적으로 수정되었습니다.');
       setIsEditModalOpen(false);
       fetchPolicies();
-    } catch (error) {
+    } catch {
       console.error('Failed to update policy:', error);
       toast.error('정책 수정에 실패했습니다.');
     } finally {

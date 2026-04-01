@@ -16,7 +16,7 @@ export default function MyPageManagement() {
  try {
  const data = await myPageAdminService.getContents({ all: true });
  setContents(data);
- } catch (error) {
+ } catch {
  toast('콘텐츠 정보를 불러오지 못했습니다.', 'error');
  } finally {
  setLoading(false);
@@ -31,7 +31,7 @@ export default function MyPageManagement() {
  await myPageAdminService.updateContent(item.cntntsId, { ...item, cntntsUseAt: newStatus });
  setContents(contents.map(c => c.cntntsId === item.cntntsId ? { ...c, cntntsUseAt: newStatus } : c));
  toast(`${item.cntntsNm} 상태가 변경되었습니다.`);
- } catch (error) {
+ } catch {
  toast('상태 변경 중 오류가 발생했습니다.', 'error');
  }
  };

@@ -23,7 +23,9 @@ describe('MenuAdminService', () => {
 
   it('getMenuList should call correct API', async () => {
     await menuAdminService.getMenuList({ page: 1 });
-    expect(client.get).toHaveBeenCalledWith('admin/system/menus', expect.objectContaining({ params: expect.objectContaining({ page: 1 }) }));
+    expect(client.get).toHaveBeenCalledWith('admin/system/menus', expect.objectContaining({ 
+      params: expect.objectContaining({ pageIndex: 2 }) 
+    }));
   });
  
   it('createMenu should call post', async () => {

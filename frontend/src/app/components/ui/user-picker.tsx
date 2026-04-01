@@ -34,7 +34,7 @@ export function UserPicker({
  setLoading(true);
  const res = await addressbookUserService.searchUsers(keyword);
  setResults(res || []);
- } catch (error) {
+ } catch {
  console.error('Search failed', error);
  } finally {
  setLoading(false);

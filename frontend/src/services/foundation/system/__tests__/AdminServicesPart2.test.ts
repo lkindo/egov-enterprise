@@ -20,20 +20,20 @@ vi.mock('@/lib/api/client', () => ({
 }));
 
 describe('Admin System Services Part 2', () => {
- beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
- it('BannerAdminService should call correct endpoints', async () => {
- await bannerAdminService.getBannerList({ page: 1 });
- expect(client.get).toHaveBeenCalledWith('admin/system/banners', expect.objectContaining({
- params: expect.objectContaining({ page: 1 })
- }));
- });
+  it('BannerAdminService should call correct endpoints', async () => {
+    await bannerAdminService.getBannerList({ page: 1 });
+    expect(client.get).toHaveBeenCalledWith('admin/system/banners', expect.objectContaining({
+      params: expect.objectContaining({ pageIndex: 2 })
+    }));
+  });
 
- it('CommunityAdminService should call correct endpoints', async () => {
- // CommunityAdminService uses AdminService which prepends /admin/system
- await communityAdminService.getCommunityList({ page: 0 });
- expect(client.get).toHaveBeenCalledWith('admin/system/communities', expect.objectContaining({
- params: { page: 0 }
- }));
- });
+  it('CommunityAdminService should call correct endpoints', async () => {
+    // CommunityAdminService uses AdminService which prepends /admin/system
+    await communityAdminService.getCommunityList({ page: 0 });
+    expect(client.get).toHaveBeenCalledWith('admin/system/communities', expect.objectContaining({
+      params: { pageIndex: 1 }
+    }));
+  });
 });

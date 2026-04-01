@@ -87,7 +87,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  await programAdminService.deleteProgram(data.progrmFileNm);
  onSuccess();
  onOpenChange(false);
- } catch (error) {
+ } catch {
  console.error(error);
  alert('삭제 중 오류가 발생했습니다.');
  }

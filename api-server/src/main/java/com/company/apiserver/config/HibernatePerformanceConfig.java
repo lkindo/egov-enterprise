@@ -46,7 +46,7 @@ public class HibernatePerformanceConfig {
         }
 
         log.info("=== Hibernate Performance Statistics ===");
-        log.info("Start Time: {}", new java.util.Date(statistics.getStartTime()));
+        log.info("Start Time: {}", java.util.Date.from(statistics.getStart()));
         log.info("Transactions: {}", statistics.getTransactionCount());
         log.info("Successful Transactions: {}", statistics.getSuccessfulTransactionCount());
         log.info("Prepare Statements: {}", statistics.getPrepareStatementCount());
