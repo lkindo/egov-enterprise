@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/app/components/ui/toast';
 import { saveBoardArticle } from '@/app/actions/boardActions';
 import RichTextEditor from '@/components/ui/RichTextEditor';
-import { BoardArticle } from '@/services/business/knowledge/knowledgeService';
+import { BoardPost } from '@/types/business/board';
 
 export default function InsertBoardArticlePage() {
   const router = useRouter();
@@ -20,11 +20,11 @@ export default function InsertBoardArticlePage() {
   const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
   const parntsId = searchParams.get('parntsId') || undefined;
 
-  const [form, setForm] = useState<Partial<BoardArticle & { password?: string; replyAt?: string; parntsId?: string }>>({
+  const [form, setForm] = useState<Partial<BoardPost & { password?: string; replyAt?: string; parntsId?: string }>>({
     bbsId: bbsId,
     nttSj: '',
     nttCn: '',
-    ntcrNm: '愿由ъ옄',
+    ntcrNm: '관리자',
     password: '1',
     parntsId: parntsId,
     replyAt: parntsId ? 'Y' : 'N',
@@ -36,7 +36,7 @@ export default function InsertBoardArticlePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nttCn || form.nttCn === '<p></p>') {
-      toast('?댁슜님?낅젰?댁＜?몄슂.', 'error');
+      toast('내용을 입력해 주세요.', 'error');
       return;
     }
 
@@ -52,20 +52,20 @@ export default function InsertBoardArticlePage() {
 
       const result = await saveBoardArticle(null, formData);
       if (result.success) {
-        toast('吏님?먯궛님?깃났?곸쑝濡?등록?섏뿀?듬땲님', 'success');
-        router.push(`/admin/help?bbsId=${bbsId}`);
+        toast('지식 자산이 성공적으로 등록되었습니다.', 'success');
+        router.push(`/admin/community/boards?bbsId=${bbsId}`);
       } else {
-        toast(result.message || '등록 ?ㅽ뙣', 'error');
+        toast(result.message || '등록 실패', 'error');
       }
     } catch {
-      toast('등록 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+      toast('등록 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 pb-24 pt-8">
+    <div className="max-w-5xl mx-auto space-y-12 pb-24 pt-8 animate-in fade-in duration-500">
       {/* Header section */}
       <div className="flex items-center gap-8 px-2">
         <Button
@@ -85,7 +85,7 @@ export default function InsertBoardArticlePage() {
 
       <form onSubmit={handleSubmit} className="space-y-10 px-2">
         {/* Title Input Area */}
-        <div className="hub-card-premium p-10 bg-slate-900 border-none shadow-2xl relative overflow-hidden group">
+        <div className="hub-card-premium p-10 bg-slate-900 border-none shadow-2xl relative overflow-hidden group rounded-[2.5rem]">
           <div className="absolute top-0 right-0 p-12 opacity-[0.05] pointer-events-none group-focus-within:opacity-10 transition-opacity">
             <Layers size={140} className="rotate-12" />
           </div>
@@ -100,7 +100,7 @@ export default function InsertBoardArticlePage() {
               value={form.nttSj}
               onChange={(e) => setForm({ ...form, nttSj: e.target.value })}
               className="h-20 bg-transparent border-none text-white text-3xl font-black placeholder:text-white/10 focus-visible:ring-0 p-0 tracking-tight"
-              placeholder="?쒕ぉ님?낅젰?섏떗?쒖삤..."
+              placeholder="제목을 입력하십시오..."
               autoFocus
               required
             />
@@ -113,17 +113,17 @@ export default function InsertBoardArticlePage() {
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
               <Package size={18} className="text-primary" />
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">吏님노드 肄섑뀗痢?/h3>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">지식 노드 콘텐츠</h3>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">?ㅼ떆媛님숆린님以鍮꾨맖</span>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">실시간 동기화 준비됨</span>
             </div>
           </div>
           <RichTextEditor
             value={form.nttCn || ''}
             onChange={(content) => setForm({ ...form, nttCn: content })}
-            placeholder="?곸꽭 ?댁슜님湲곗닠?섏떗?쒖삤..."
+            placeholder="상세 내용을 기술하십시오..."
           />
         </div>
 
@@ -171,10 +171,9 @@ export default function InsertBoardArticlePage() {
       <div className="text-center">
         <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-50 rounded-full border border-border/50">
           <Monitor size={14} className="text-muted-foreground/40" />
-          <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">Enterprise Command Node 님Unit Version 2.4.0</span>
+          <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">Enterprise Command Node - Unit Version 2.4.0</span>
         </div>
       </div>
     </div>
   );
 }
-

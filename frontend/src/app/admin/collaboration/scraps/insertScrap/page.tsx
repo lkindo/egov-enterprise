@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'스크랩명을 입력해주세요.';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -26,9 +26,9 @@ const InsertScrapPage = () => {
 
  // Basic Validation
  if (!formData.scrapNm.trim()) { alert('?ㅽ겕?⑸챸님?낅젰?댁＜?몄슂.'); return; }
- if (!formData.scrapUrl.trim()) { alert('URL님?낅젰?댁＜?몄슂.'); return; }
+ if (!formData.scrapUrl.trim()) { alert('URL을 입력해주세요.'); return; }
  if (!formData.scrapUrl.startsWith('http')) {
- alert('?щ컮瑜?URL ?뺤떇님?꾨떃?덈떎. (http:// ?먮뒗 https:// 濡님쒖옉?댁빞 ?⑸땲님');
+ alert('올바른 URL 형식이 아닙니다. (http:// 또는 https:// 로 시작해야 합니다)');
  return;
  }
 
@@ -40,7 +40,7 @@ const InsertScrapPage = () => {
  router.push('/admin/collaboration/scraps/selectScrapList');
  }
  } catch (error: any) {
- alert(error.response?.data?.message || '등록님?ㅽ뙣?덉뒿?덈떎.');
+ alert(error.response?.data?.message || '등록에 실패했습니다.');
  } finally {
  setLoading(false);
  }
@@ -110,7 +110,7 @@ const InsertScrapPage = () => {
  </Label>
  <Textarea
  id="scrapDc"
- placeholder="님?섏씠吏?먯꽌 ?살? ?곴컧?대굹 湲곗뼲?댁빞 님?댁슜님?먯쑀濡?쾶 湲곕줉?섏꽭님.."
+ placeholder="이 페이지에서 얻은 영감이나 기억해야 할 내용을 자유롭게 기록하세요..."
  className="min-h-[220px] p-8 text-lg font-medium leading-relaxed border-2 border-slate-100 focus:border-indigo-400 focus-visible:ring-indigo-50 transition-all rounded-3xl bg-slate-50/30 resize-none shadow-inner"
  value={formData.scrapDc}
  onChange={(e) => setFormData({ ...formData, scrapDc: e.target.value })}

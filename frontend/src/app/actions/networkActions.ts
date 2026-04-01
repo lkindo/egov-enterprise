@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -29,13 +29,13 @@ export async function saveNetworkAction(prevState: unknown, formData: FormData):
         if (ntwrkId) {
             await networkAdminService.updateNetwork(ntwrkId, data, axiosConfig);
         } else {
-            await networkAdminService.createNetwork(data, axiosConfig);
+            await networkAdminService.createNetwork(data as any, axiosConfig);
         }
 
         revalidatePath('/admin/system/network');
-        return { success: true, message: '?ㅽ듃?뚰겕 ?뺣낫媛 ??λ릺?덉뒿?덈떎.' };
+        return { success: true, message: '네트워크 정보가 저장되었습니다.' };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '?님以님ㅻ쪟 諛쒖깮';
+        const errorMessage = error instanceof Error ? error.message : '저장 중 오류 발생';
         console.error('Save Network Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -50,9 +50,9 @@ export async function deleteNetworkAction(id: string): Promise<ActionResponse> {
         await networkAdminService.deleteNetwork(id, axiosConfig);
 
         revalidatePath('/admin/system/network');
-        return { success: true, message: '?ㅽ듃?뚰겕 ?뺣낫媛 님젣?섏뿀?듬땲님' };
+        return { success: true, message: '네트워크 정보가 삭제되었습니다.' };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '님젣 以님ㅻ쪟 諛쒖깮';
+        const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
         console.error('Delete Network Error:', error);
         return { success: false, message: errorMessage };
     }

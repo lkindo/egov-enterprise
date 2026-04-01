@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"차세대 공공 행정 표준을 선도하는 지능형 운영 플랫폼에 오신 것을 환영합니다. 인프라 관제부터 비즈니스 워크플로우까지, 데이터 중심의 업무 환경이 당신을 기다립니다.";
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -67,13 +67,13 @@ export function SmartOnboardingHub() {
  icon: <Sparkles className="text-primary animate-pulse" size={40} />
  },
  {
- title: "?명뀛由ъ쟾님而ㅻ㎤님?쇳꽣",
- description: "紐낅졊님湲곕컲님鍮좊Ⅸ ?먯깋怨님≪뀡님寃쏀뿕?섏꽭님 留덉슦님?놁씠 CMD+K 留뚯쑝濡님쒖뒪?쒖쓽 紐⑤뱺 援ъ꽍援ъ꽍님?쒖뼱?섍퀬 ?뺣낫瑜?李얠쓣 님?덉뒿?덈떎.",
+ title: "인텔리전스 커맨드 센터",
+ description: "명령어 기반의 빠른 탐색과 액션을 경험하세요. 마우스 없이 CMD+K 만으로 시스템의 모든 구석구석을 제어하고 정보를 찾을 수 있습니다.",
  icon: <Command className="text-purple-500" size={40} />
  },
  {
- title: "?ㅼ떆媛님쒖뒪님愿痢?(Observability)",
- description: "?쒕쾭님?ъ옣諛뺣룞님?ㅼ떆媛꾩쑝濡?異붿쟻?⑸땲님 CPU, 메모리 DB 而ㅻ꽖?섏쓣 3珥?二쇨린濡님뺣? 분석?섏뿬 ?덉젙?곸씤 ?쒕퉬님?댁쁺님蹂댁옣?⑸땲님",
+ title: "실시간 시스템 관측 (Observability)",
+ description: "서버의 심장박동을 실시간으로 추적합니다. CPU, 메모리, DB 커넥션을 3초 주기로 정밀 분석하여 안정적인 서비스 운영을 보장합니다.",
  icon: <Activity className="text-rose-500" size={40} />
  },
  {
@@ -164,7 +164,7 @@ export function SmartOnboardingHub() {
  <div className="flex gap-3">
  {currentStep < steps.length - 1 ? (
  <Button onClick={nextStep} className="rounded-2xl font-black h-14 px-10 bg-primary text-white shadow-[0_15px_30px_-5px_rgba(59,130,246,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
- {currentStep === 0 ? "?뚮옯님?섎윭蹂닿린" : "?ㅼ쓬 湲곕뒫"} <ArrowRight size={18} />
+ {currentStep === 0 ? "플랫폼 둘러보기" : "?ㅼ쓬 湲곕뒫"} <ArrowRight size={18} />
  </Button>
  ) : (
  <Button onClick={handleComplete} className="rounded-2xl font-black h-14 px-12 bg-emerald-500 text-white shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">

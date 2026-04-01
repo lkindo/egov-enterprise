@@ -1,4 +1,4 @@
-﻿'use client';
+﻿/** 전체 레코드 수 */;
 
 import React from 'react';
 import { PageHeader } from './page-header';
@@ -25,7 +25,7 @@ interface StandardAdminLayoutProps<T extends { [key: string]: any }> {
  pageSize?: number;
  /** 현재 ?섏씠吏 踰덊샇 (1-based) */
  currentPage?: number;
- /** ?섏씠吏 蹂寃?肄쒕갚 */
+ /** 페이지 변경 콜백 */
  onPageChange?: (page: number) => void;
 
  actionButton?: React.ReactNode;

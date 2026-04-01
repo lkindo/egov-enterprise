@@ -22,7 +22,7 @@ describe('exportUtils', () => {
  { id: 2, name: 'Bob' }
  ];
  const columns = [
- { header: '?꾩씠님, accessorKey: 'id' },
+ { header: '아이디'id' },
  { header: '?대쫫', accessorKey: 'name' }
  ];
 

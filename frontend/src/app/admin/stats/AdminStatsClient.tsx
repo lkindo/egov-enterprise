@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'인텔리전스 노드';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -79,7 +79,7 @@ export default function AdminStatsClient({
       )
     },
     {
-      header: '?곹샇?묒슜 ?잛닔',
+      header: '상호작용 횟수',
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-primary opacity-40 italic" />
@@ -106,8 +106,8 @@ export default function AdminStatsClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <PageHeader
-        title="?명뀛由ъ쟾님?쇳꽣"
-        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '분석 ??쒕낫님 }]}
+        title="인텔리전스 시스템 아키텍처 분석"
+        breadcrumbs={[{ label: '시스템관리'분석 ??쒕낫님 }]}
       />
 
       <HubHeader
@@ -134,7 +134,7 @@ export default function AdminStatsClient({
               <DataExportExcel
                 data={initialMenuData}
                 headers={[
-                  { label: '硫붾돱紐?, key: 'menuNm' },
+                  { label: '메뉴명'menuNm' },
                   { label: '?ъ슜?잛닔', key: 'count' },
                   { label: '鍮꾩쨷(%)', key: 'percentage' }
                 ]}
@@ -147,8 +147,8 @@ export default function AdminStatsClient({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-2">
         <LuxuryStatCard title="?꾩쟻 ?곗씠님노드" value={initialSummary?.totalUsers} icon={<Database size={26} />} trend="+2.5%" color="slate" />
-        <LuxuryStatCard title="?ㅼ떆媛님쒖꽦 ?몄뀡" value={initialSummary?.todayConnects} icon={<CloudLightning size={26} />} trend="+12%" color="primary" />
-        <LuxuryStatCard title="?쒖뒪님?곸냽님?먯궛" value={initialSummary?.totalPosts} icon={<ShieldCheck size={26} />} trend="+0.8%" color="indigo" />
+        <LuxuryStatCard title="활성 " value={initialSummary?.todayConnects} icon={<CloudLightning size={26} />} trend="+12%" color="primary" />
+        <LuxuryStatCard title="데이터 영속성" value={initialSummary?.totalPosts} icon={<ShieldCheck size={26} />} trend="+0.8%" color="indigo" />
       </div>
 
       <div className="grid grid-cols-12 gap-10 px-2 mt-4">
@@ -243,7 +243,7 @@ export default function AdminStatsClient({
             columns={menuColumns}
             data={initialMenuData.slice(0, 10)}
             loading={loading}
-            emptyMessage="?쒖뒪님?⑦꽩 분석 以?.."
+            emptyMessage="시스템 패턴 분석 중..."
             className="border-none rounded-none bg-transparent min-w-[700px]"
           />
         </div>

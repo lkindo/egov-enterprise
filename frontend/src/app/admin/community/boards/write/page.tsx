@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'제목을 입력해 주세요.';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -37,8 +37,8 @@ export default function BoardWritePage() {
         }
 
         const isConfirmed = await confirm({
-            title: '寃뚯떆湲 등록',
-            message: '?묒꽦?섏떊 ?댁슜님등록?섏떆寃좎뒿?덇퉴?',
+            title: '게시글 등록',
+            message: '작성하신 내용을 등록하시겠습니까?',
             confirmText: '등록'
         });
 
@@ -46,7 +46,7 @@ export default function BoardWritePage() {
             try {
                 const res = (await boardUserService.createPost(formData)) as any;
                 if (res?.success) {
-                    toast('?깃났?곸쑝濡?등록?섏뿀?듬땲님', 'success');
+                    toast('성공적으로 등록되었습니다.', 'success');
                     clear(); // ?먮룞 ?님?곗씠님님젣
                     router.push('/admin/community/boards');
                 }
@@ -59,8 +59,8 @@ export default function BoardWritePage() {
     return (
         <div className="max-w-5xl mx-auto space-y-8 pb-20">
             <PageHeader
-                title="님寃뚯떆湲 ?묒꽦"
-                breadcrumbs={[{ label: '寃뚯떆님, href: '/admin/community/boards' }, { label: '湲?곌린' }]}
+                title="새 게시글 작성"
+                breadcrumbs={[{ label: '게시판'/admin/community/boards' }, { label: '湲?곌린' }]}
                 actions={
                     <div className="flex gap-2">
                         <button onClick={() => router.back()} className="px-4 py-2 border rounded-lg font-bold hover:bg-accent transition-all flex items-center gap-2">
@@ -76,17 +76,17 @@ export default function BoardWritePage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Form (Left) */}
                 <div className="lg:col-span-2 space-y-6">
-                    <FormField label="寃뚯떆湲 ?쒕ぉ" required>
+                    <FormField label="게시글 제목" required>
                         <input
                             type="text"
                             value={formData.nttSj}
                             onChange={(e) => setFormData({ ...formData, nttSj: e.target.value })}
-                            placeholder="?쒕ぉ님?낅젰님二쇱꽭님"
+                            placeholder="제목을 입력해 주세요."
                             className="w-full h-12 px-4 rounded-xl border bg-card text-lg font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
                         />
                     </FormField>
 
-                    <FormField label="?댁슜 ?묒꽦" required>
+                    <FormField label="내용 작성" required>
                         <StandardEditor
                             value={formData.nttCn}
                             onChange={(val) => setFormData({ ...formData, nttCn: val })}
@@ -107,7 +107,7 @@ export default function BoardWritePage() {
                             <select
                                 value={formData.bbsId}
                                 onChange={(e) => setFormData({ ...formData, bbsId: e.target.value })}
-                                className="w-full h-10 px-3 rounded-md border bg-background text-sm outline-none"
+                                className="게시판 대상"
                             >
                                 <option value="BBSMSTR_AAAAAAAAAAAA">공지사항</option>
                                 <option value="BBSMSTR_BBBBBBBBBBBB">?먯쑀寃뚯떆님/option>

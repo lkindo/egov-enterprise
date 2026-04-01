@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'테마 설정이 성공적으로 반영되었습니다.';
 
 import React, { useState, useEffect } from 'react';
 import { 

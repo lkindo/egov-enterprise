@@ -89,7 +89,7 @@ describe('CommentSection Component', () => {
 
     render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} />);
 
-    const textarea = await screen.findByPlaceholderText('메시지를 입력하세요..');
+    const textarea = await screen.findByPlaceholderText('메시지를 입력하세요...');
     const submitButton = screen.getByText(/게시하기/);
 
     fireEvent.change(textarea, { target: { value: 'New Test Comment' } });

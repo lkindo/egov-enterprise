@@ -75,7 +75,7 @@ export default function UnifiedDashboardClient({
     enabled: !!user
   });
 
-  // Redirect to login if not authenticated (Server-side redirect is also in page.tsx)
+  // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -100,7 +100,7 @@ export default function UnifiedDashboardClient({
         <div className="space-y-2">
           <HubInsightBadge label={t('dashboard.badge')} />
           <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-foreground leading-tight">
-            {t('dashboard.greeting')} <span className="text-primary ">{user.name}</span>님
+            안녕하세요, <span className="text-primary ">{user.name}</span>님
           </h1>
           <p className="text-lg text-muted-foreground font-medium max-w-xl">
             오늘은 <span className="text-foreground font-bold underline decoration-primary/30 underline-offset-4">주요 인사이트</span> 및 실시간 지표를 분석했습니다.
@@ -135,7 +135,7 @@ export default function UnifiedDashboardClient({
           key="summary-tasks"
           title="업무 현황"
           value={taskList.length.toString().padStart(2, '0')}
-          description={t('dashboard.newTasks', { count: taskList.filter((t: DashboardTask) => t.isNew).length })}
+          description={`신규 배정된 업무 ${taskList.filter((t: DashboardTask) => t.isNew).length}건이 있습니다.`}
           icon={<Zap size={24} />}
           trend={-5}
           color="orange"
@@ -152,8 +152,8 @@ export default function UnifiedDashboardClient({
         <HubSummaryCard
           key="summary-security"
           title="보안 지수"
-          value={t('dashboard.securityStatus.safe')}
-          description={t('dashboard.securityStatus.desc')}
+          value="안전"
+          description="시스템 보안 및 인증 상태가 양호합니다."
           icon={<ShieldCheck size={24} />}
           trend={0}
           color="emerald"

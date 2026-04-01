@@ -32,7 +32,7 @@ describe('DeptJobListPage', () => {
  resultList: [
  {
  deptJobId: 'JOB_0001',
- deptJobNm: '二쇨컙 蹂닿퀬 ?묒꽦',
+ deptJobNm: '주간 보고 작성',
  priort: '1', // High
  frstRegisterNm: '?님,
  frstRegisterPnttm: '2024-06-01'
@@ -47,7 +47,7 @@ describe('DeptJobListPage', () => {
  render(<DeptJobListPage />);
 
  await waitFor(() => {
- expect(screen.getByText('二쇨컙 蹂닿퀬 ?묒꽦')).toBeDefined();
+ expect(screen.getByText('주간 보고 작성')).toBeDefined();
  expect(screen.getByText('?믪쓬')).toBeDefined();
  });
  });

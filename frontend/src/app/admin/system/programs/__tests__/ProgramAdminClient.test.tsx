@@ -119,8 +119,8 @@ describe('ProgramAdminClient Component', () => {
 
   it('renders the program list correctly', () => {
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-    expect(screen.getAllByText('PROG_1').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('PROG_2').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('2 개').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/신규 프로그램 등록/).length).toBeGreaterThan(0);
     // Look for the count in the HubMetricCard
     expect(screen.getByText('2')).toBeInTheDocument();
   });
@@ -128,7 +128,7 @@ describe('ProgramAdminClient Component', () => {
   it('opens the registration modal when "신규 등록" is clicked', async () => {
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
     
-    const deployBtn = screen.getByText(/신규 등록/i);
+    const deployBtn = screen.getByText(/신규 프로그램 등록/i);
     fireEvent.click(deployBtn);
 
     const modal = await screen.findByTestId('modal');

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Briefcase, Plus, Trash2, Home, ChevronRight, FileText, User, Calendar, CheckSquare } from "lucide-react";
+import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 interface DeptJob {
     deptJobId: string;
@@ -22,101 +23,72 @@ interface DeptJob {
     deptJobCn: string;
     frstRegisterNm: string;
     frstRegisterPnttm: string;
-    priort: string; // Priority
+    priort: string;
 }
 
 const DeptJobListPage = () => {
     const [list, setList] = useState<DeptJob[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [page踰덊샇, setPage踰덊샇] = useState(1);
+    const [pageNo, setPageNo] = useState(1);
     const [loading, setLoading] = useState(false);
 
-<<<<<<< HEAD
- const fetchList = async () => {
- setLoading(true);
- try {
- const params = { page踰덊샇, pageUnit: 10 };
- const response = (await axios.get('/deptjob', { params })) as any;
- setList(response.data.resultList || []);
- setTotalCount(response.data.totalCount || 0);
- setTotalPages(response.data.totalPages || 0);
- } catch {
- console.error('Failed to fetch dept jobs', error);
- } finally {
- setLoading(false);
- }
- };
-=======
     const fetchList = async () => {
         setLoading(true);
         try {
-            const params = { page踰덊샇, pageUnit: 10 };
+            const params = { pageNo, pageUnit: 10 };
             const response = (await axios.get('/deptjob', { params })) as any;
             setList(response.data.resultList || []);
             setTotalCount(response.data.totalCount || 0);
             setTotalPages(response.data.totalPages || 0);
-        } catch {
-            console.error('Failed to fetch dept jobs');
+        } catch (error) {
+            console.error('Failed to fetch dept jobs', error);
         } finally {
             setLoading(false);
         }
     };
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
 
     useEffect(() => {
         fetchList();
-    }, [page踰덊샇]);
+    }, [pageNo]);
 
-<<<<<<< HEAD
- const handleDelete = async (id: string) => {
- if (!confirm('님젣?섏떆寃좎뒿?덇퉴?')) return;
- try {
- (await axios.delete(`/deptjob/${id}`)) as any;
- fetchList();
- } catch {
- alert('님젣님?ㅽ뙣?덉뒿?덈떎.');
- }
- };
-=======
     const handleDelete = async (id: string) => {
-        if (!confirm('님젣?섏떆寃좎뒿?덇퉴?')) return;
+        if (!confirm('삭제하시겠습니까?')) return;
         try {
             (await axios.delete(`/deptjob/${id}`)) as any;
             fetchList();
         } catch {
-            alert('님젣님?ㅽ뙣?덉뒿?덈떎.');
+            alert('삭제에 실패했습니다.');
         }
     };
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
 
     const getPriorityBadge = (priority: string) => {
         switch (priority) {
-            case '1': return <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-black rounded-md border border-rose-200">?믪쓬</span>;
-            case '2': return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-md border border-amber-200">以묎컙</span>;
-            default: return <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-md border border-slate-200">님쓬</span>;
+            case '1': return <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-black rounded-md border border-rose-200">높음</span>;
+            case '2': return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-md border border-amber-200">중간</span>;
+            default: return <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-md border border-slate-200">낮음</span>;
         }
     };
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-2xl w-fit">
                 <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
-                    <Home className="w-4 h-4" /> 님                </Link>
+                    <Home className="w-4 h-4" /> 홈
+                </Link>
                 <ChevronRight className="w-4 h-4" />
-                <span>업무</span>
+                <span>스마트 툴킷</span>
                 <ChevronRight className="w-4 h-4" />
-                <span className="text-foreground font-bold">遺?쒖뾽臾?愿由?/span>
+                <span className="text-foreground font-bold">부서업무 관리</span>
             </div>
 
             <Card className="border-none shadow-xl overflow-hidden rounded-3xl">
                 <CardHeader className="flex flex-row items-center justify-between pb-8 pt-8 px-8 border-b bg-muted/20">
                     <div className="space-y-1">
                         <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
-                            <Briefcase className="w-8 h-8 text-primary" /> 遺?쒖뾽臾?紐⑸줉
+                            <Briefcase className="w-8 h-8 text-primary" /> 부서 업무 목록
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground font-medium tracking-tight opacity-70">遺님업무 愿由님⑥쐞</p>
+                        <p className="text-sm text-muted-foreground font-medium tracking-tight opacity-70">부서 운영 및 협업을 위한 통합 태스크 리스트</p>
                     </div>
                     <CardAction>
                         <Link href="/smart-toolkit/dept-job/insertDeptJob">
@@ -130,8 +102,8 @@ const DeptJobListPage = () => {
                     <div className="mb-8 flex items-center gap-4">
                         <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 ring-8 ring-slate-50">
                             <CheckSquare className="w-5 h-5 text-primary" />
-                            <span className="text-sm font-bold opacity-60 tracking-tight">吏꾪뻾以묒씤 珥님낅Т</span>
-                            <span className="text-xl font-black">{totalCount}</span>
+                            <span className="text-sm font-bold opacity-60 tracking-tight">진행중인 총 업무</span>
+                            <span className="text-xl font-black">{totalCount}건</span>
                         </div>
                     </div>
 
@@ -139,12 +111,12 @@ const DeptJobListPage = () => {
                         <Table>
                             <TableHeader className="bg-slate-50/50">
                                 <TableRow>
-                                    <TableHead className="w-[80px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">?쒖쐞</TableHead>
-                                    <TableHead className="w-[120px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">?곗꽑?쒖쐞</TableHead>
-                                    <TableHead className="font-black text-slate-900 text-[10px] py-6 tracking-[0.2em] px-4">?묒뾽紐?/TableHead>
-                                    <TableHead className="w-[150px] font-black text-slate-400 text-[10px] py-6 text-center tracking-[0.2em]">?대떦님/TableHead>
-                                    <TableHead className="w-[150px] font-black text-slate-400 text-[10px] py-6 text-center tracking-[0.2em]">?좎쭨</TableHead>
-                                    <TableHead className="w-[100px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">?묒뾽</TableHead>
+                                    <TableHead className="w-[80px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">순위</TableHead>
+                                    <TableHead className="w-[120px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">우선순위</TableHead>
+                                    <TableHead className="font-black text-slate-900 text-[10px] py-6 tracking-[0.2em] px-4">업무 개요</TableHead>
+                                    <TableHead className="w-[150px] font-black text-slate-400 text-[10px] py-6 text-center tracking-[0.2em]">담당자</TableHead>
+                                    <TableHead className="w-[150px] font-black text-slate-400 text-[10px] py-6 text-center tracking-[0.2em]">등록일</TableHead>
+                                    <TableHead className="w-[100px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">관리</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -162,14 +134,14 @@ const DeptJobListPage = () => {
                                 ) : list.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={6} className="h-48 text-center text-slate-400 font-bold tracking-tight opacity-30">
-                                            No Department Tasks Assigned
+                                            등록된 부서 업무가 없습니다.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     list.map((item, idx) => (
                                         <TableRow key={item.deptJobId} className="hover:bg-slate-50/50 transition-all border-b last:border-0 group">
                                             <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
-                                                {totalCount - ((page踰덊샇 - 1) * 10) - idx}
+                                                {totalCount - ((pageNo - 1) * 10) - idx}
                                             </TableCell>
                                             <TableCell className="text-center py-6">
                                                 {getPriorityBadge(item.priort)}
@@ -209,31 +181,30 @@ const DeptJobListPage = () => {
                         </Table>
                     </div>
 
-                    {/* Pagination */}
                     {totalPages > 1 && (
                         <div className="flex items-center justify-center gap-6 mt-16 pb-10">
                             <Button
                                 variant="ghost"
                                 size="lg"
-                                onClick={() => setPage踰덊샇(p => Math.max(1, p - 1))}
-                                disabled={page踰덊샇 === 1}
+                                onClick={() => setPageNo(p => Math.max(1, p - 1))}
+                                disabled={pageNo === 1}
                                 className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
                             >
-                                ?댁쟾
+                                이전
                             </Button>
                             <div className="bg-slate-50 text-slate-900 border-2 border-white px-10 py-3 rounded-2xl shadow-xl flex items-center gap-4 ring-8 ring-slate-100/50">
-                                <span className="text-xl font-black">{page踰덊샇}</span>
+                                <span className="text-xl font-black">{pageNo}</span>
                                 <div className="h-4 w-px bg-slate-200" />
                                 <span className="text-sm font-bold text-slate-400">{totalPages}</span>
                             </div>
                             <Button
                                 variant="ghost"
                                 size="lg"
-                                onClick={() => setPage踰덊샇(p => Math.min(totalPages, p + 1))}
-                                disabled={page踰덊샇 === totalPages}
+                                onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
+                                disabled={pageNo === totalPages}
                                 className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
                             >
-                                ?ㅼ쓬
+                                다음
                             </Button>
                         </div>
                     )}

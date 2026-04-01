@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"내용을 입력하세요...";
 
 import React, { useRef } from 'react';
 import {

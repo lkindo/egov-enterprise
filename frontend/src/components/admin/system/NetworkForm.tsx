@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"관리 항목";
 
 import React, { useState, useEffect } from 'react';
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
@@ -40,22 +40,22 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
  required
  />
  </FormField>
- <FormField label="?ъ슜님愿由ъ옄" required>
+ <FormField label="사용자/관리자" required>
  <input
  type="text"
  value={formData.userNm || ''}
  onChange={(e) => setFormData({ ...formData, userNm: e.target.value })}
- placeholder="愿由ъ옄 ?깅챸"
+ placeholder="예: 내부망 서버실"
  className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
  required
  />
  </FormField>
- <FormField label="IP 二쇱냼" required>
+ <FormField label="IP 주소" required>
  <input
  type="text"
  value={formData.ntwrkIp || ''}
  onChange={(e) => setFormData({ ...formData, ntwrkIp: e.target.value })}
- placeholder="192.168.0.1"
+ placeholder="관리자 성명"
  className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
  required
  />
@@ -65,7 +65,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
  type="text"
  value={formData.subnet || ''}
  onChange={(e) => setFormData({ ...formData, subnet: e.target.value })}
- placeholder="255.255.255.0"
+ placeholder="예: 내부망 서버실"
  className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
  required
  />
@@ -75,12 +75,12 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
  type="text"
  value={formData.gtwy || ''}
  onChange={(e) => setFormData({ ...formData, gtwy: e.target.value })}
- placeholder="192.168.0.254"
+ placeholder="관리자 성명"
  className="w-full h-10 px-3 rounded-md border bg-background font-mono outline-none focus:ring-2 focus:ring-primary/20"
  required
  />
  </FormField>
- <FormField label="DNS ?쒕쾭">
+ <FormField label="서브넷 마스크">
  <input
  type="text"
  value={formData.domnServer || ''}
@@ -90,7 +90,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
  />
  </FormField>
  </div>
- <FormField label="?ъ슜 ?щ?" required>
+ <FormField label="사용 여부" required>
  <select
  value={formData.useAt}
  onChange={(e) => setFormData({ ...formData, useAt: e.target.value as 'Y' | 'N' })}

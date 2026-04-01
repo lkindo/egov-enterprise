@@ -1,4 +1,4 @@
-﻿'use client';
+﻿/boards?bbsId=${bbsId}`} className="hover:text-primary transition-colors font-bold">커뮤니티</;
 
 import React, { useState, Suspense, useActionState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -127,7 +127,7 @@ const InsertBBSContent = () => {
  <Textarea
  id="nttCn"
  name="nttCn"
- placeholder="?꾨떖?섍퀬님?섎뒗 ?댁슜님?곸꽭님?묒꽦?섏꽭님.."
+ placeholder="전달하고자 하는 내용을 상세히 작성하세요..."
  className={cn(
  "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[2.5rem] bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
  (state as any)?.field === 'nttCn' && "border-rose-500 bg-rose-50"

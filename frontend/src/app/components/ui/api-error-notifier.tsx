@@ -1,26 +1,25 @@
-﻿'use client';
+'use client';
 
 import { useEffect } from 'react';
 import { useToast } from './toast';
 
 export function ApiErrorNotifier() {
- const { toast } = useToast();
+    const { toast } = useToast();
 
- useEffect(() => {
-  const handleApiError = (event: any) => {
-    if (!event.detail) return;
-    const { message, status } = event.detail;
- 
- // Don't show toast for 401 as it's handled by redirection or reissue
- if (status === 401) return;
+    useEffect(() => {
+        const handleApiError = (event: any) => {
+            if (!event.detail) return;
+            const { message, status } = event.detail;
 
- toast(message || '요청 泥섎━ 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
- };
+            // Don't show toast for 401 as it's handled by auth interceptors
+            if (status === 401) return;
 
- window.addEventListener('api-error', handleApiError);
- return () => window.removeEventListener('api-error', handleApiError);
- }, [toast]);
+            toast(message || '요청 처리 중 오류가 발생했습니다.', 'error');
+        };
 
- return null;
+        window.addEventListener('api-error', handleApiError);
+        return () => window.removeEventListener('api-error', handleApiError);
+    }, [toast]);
+
+    return null;
 }
-

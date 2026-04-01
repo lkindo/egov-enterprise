@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'상세 코드 삭제';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -291,12 +291,12 @@ export default function CommonCodeClient({
                                     placeholder="洹몃９/?대쫫 寃님.."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="h-10 pl-10 pr-4 rounded-xl border-slate-200 bg-white text-xs focus:ring-4 focus:ring-primary/5 transition-all"
+                                    className="분류 코드 이름"
                                 />
                             </div>
                         </div>
 
-                        {/* Tree Area */}
+                        {/* --- 상세코드(Detail) Modal --- */}
                         <div className="flex-1 overflow-y-auto p-2 custom-scrollbar max-h-[600px]">
                             {filteredClusters.length === 0 ? (
                                 <div className="p-8 text-center space-y-4 opacity-50">
@@ -311,7 +311,7 @@ export default function CommonCodeClient({
                                         {/* Cluster Header */}
                                         <div className="px-3 py-2 text-[10px] font-black text-slate-400 tracking-widest uppercase flex items-center justify-between group">
                                             <span>{cluster.name}</span>
-                                            <div className="h-px flex-1 mx-3 bg-slate-100 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <div className="공통 코드 이름" />
                                         </div>
                                         {/* Group Items */}
                                         <div className="space-y-0.5 mt-1">
@@ -326,15 +326,15 @@ export default function CommonCodeClient({
                                                         loadGroupDetails(group);
                                                     }}
                                                     className={cn(
-                                                        "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all group/item",
+                                                        '분류 코드 삭제',
                                                         selectedGroup?.codeId === group.codeId
-                                                            ? "bg-primary/10 text-primary border-l-[3px] border-primary shadow-sm !rounded-l-none"
-                                                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                                            ? '신규 분류 코드 등록'
+                                                            : '공통 코드(그룹) 삭제'
                                                     )}
                                                 >
                                                     <div className="flex items-center gap-3 truncate">
                                                         <div className={cn(
-                                                            "w-7 h-7 rounded-lg flex items-center justify-center transition-colors shadow-sm",
+                                                            /* --- 분류코드(ClCode) Modal --- */,
                                                             selectedGroup?.codeId === group.codeId ? "bg-primary/20 text-primary" : "bg-white text-slate-300 group-hover/item:text-primary"
                                                         )}>
                                                             <Tag size={12} />
@@ -342,8 +342,8 @@ export default function CommonCodeClient({
                                                         <div className="flex flex-col truncate">
                                                             <span className="text-[11px] font-bold truncate leading-tight">{group.codeIdNm}</span>
                                                             <span className={cn(
-                                                                "text-[9px] font-mono leading-none mt-0.5",
-                                                                selectedGroup?.codeId === group.codeId ? "text-white/40" : "text-slate-400"
+                                                                '분류 코드 수정',
+                                                                selectedGroup?.codeId === group.codeId ? "text-white/40" : '상세 코드 삭제'
                                                             )}>{group.codeId}</span>
                                                         </div>
                                                     </div>
@@ -484,7 +484,7 @@ export default function CommonCodeClient({
                                     required
                                     readOnly={!!editingDetail}
                                     className="h-14 rounded-2xl font-mono text-xs font-black shadow-inner border-none bg-slate-50 focus:bg-white transition-all"
-                                    placeholder="怨좎쑀 님肄붾뱶 (님 CM001)"
+                                    placeholder="분류 코드 이름"
                                 />
                             </FormField>
                             <FormField label="?쇰━ ?덉씠釉?(Label)" required>

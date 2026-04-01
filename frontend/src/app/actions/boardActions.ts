@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
@@ -28,8 +28,8 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
   const isEdit = !!nttId && nttId !== '';
   const isReply = !!parntsId && parntsId !== '' && !isEdit;
 
-  if (!nttSj || nttSj.trim() === '') return { success: false, message: '?쒕ぉ님?낅젰?댁＜?몄슂.', field: 'nttSj' };
-  if (!nttCn || nttCn.trim() === '') return { success: false, message: '?댁슜님?낅젰?댁＜?몄슂.', field: 'nttCn' };
+  if (!nttSj || nttSj.trim() === '') return { success: false, message: '제목을 입력해주세요.', field: 'nttSj' };
+  if (!nttCn || nttCn.trim() === '') return { success: false, message: '내용을 입력해주세요.', field: 'nttCn' };
 
   try {
     const cookieStore = await cookies();
@@ -67,22 +67,20 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       const targetId = isEdit ? nttId : response as string;
       return {
         success: true,
-        message: isEdit ? '寃뚯떆湲님?깃났?곸쑝濡님섏젙?섏뿀?듬땲님' : '寃뚯떆湲님?깃났?곸쑝濡?등록?섏뿀?듬땲님',
+        message: isEdit ? '게시글이 성공적으로 수정되었습니다.' : '게시글이 성공적으로 등록되었습니다.',
         redirect: `/admin/community/boards/detail?bbsId=${bbsId}&nttId=${targetId}`
       };
     } else {
-      return { success: false, message: '??μ뿉 ?ㅽ뙣?덉뒿?덈떎.' };
+      return { success: false, message: '저장에 실패했습니다.' };
     }
   } catch (error: any) {
-    const errorMessage = error.response?.data?.message || error.message || '?님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.';
+    const errorMessage = error.response?.data?.message || error.message || '알 수 없는 오류가 발생했습니다.';
     console.error('Save Action Error:', error);
     return { success: false, message: errorMessage };
   }
 }
 
-
 export async function deleteBoardArticle(prevState: unknown, formData: FormData): Promise<ActionResponse> {
-
   const nttId = formData.get('nttId') as string;
   const bbsId = formData.get('bbsId') as string;
 
@@ -95,12 +93,12 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
 
     if (response !== undefined) {
       revalidatePath(`/admin/community/boards`);
-      return { success: true, message: '寃뚯떆湲님?깃났?곸쑝濡님?젣?섏뿀?듬땲님' };
+      return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
     } else {
-      return { success: false, message: '님젣님?ㅽ뙣?덉뒿?덈떎.' };
+      return { success: false, message: '삭제에 실패했습니다.' };
     }
   } catch (error: any) {
-    const errorMessage = error.response?.data?.message || error.message || '님젣 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.';
+    const errorMessage = error.response?.data?.message || error.message || '삭제 중 오류가 발생했습니다.';
     console.error('Delete Action Error:', error);
     return { success: false, message: errorMessage };
   }

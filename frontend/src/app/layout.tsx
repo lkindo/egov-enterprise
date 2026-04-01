@@ -1,4 +1,4 @@
-﻿import React, { Suspense } from 'react';
+import React from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from './components/theme-provider';
@@ -11,8 +11,8 @@ import { cookies } from 'next/headers';
 import { menuService } from '@/services/business/user/MenuService';
 
 export const metadata: Metadata = {
-  title: '?꾩옄?뺣? ?꾨젅?꾩썙님?꾨님?,
-  description: 'KRDS 湲곕컲 紐⑤뜕 ?꾩궗 怨듯넻 紐⑤뱢',
+  title: '전자정부 표준프레임워크 - 엔터프라이즈 포털',
+  description: 'KRDS 기반 모던 전사 공통 모듈 및 디지털 정부 혁신 플랫폼',
 };
 
 interface MenuWithChildren {
@@ -50,20 +50,16 @@ export default async function RootLayout({
     } catch (error: unknown) {
       const err = error as { response?: { status?: number }; message?: string };
       if (err.response?.status === 401) {
-        console.warn('RootLayout: Authentication token expired or invalid (401)');
-        isUnauthorized = true;
+        console.warn('RootLayout: Access token expired or invalid (401)');
       } else {
         console.error('RootLayout: Failed to pre-fetch menus', err);
       }
     }
   }
 
-  // We rely on middleware and client-side interceptors for auth redirection
-  // to avoid infinite loops and complexity in the root layout.
-
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className="antialiased" suppressHydrationWarning>
+      <body className="antialiased font-sans" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -72,9 +68,7 @@ export default async function RootLayout({
           enableColorScheme
         >
           <Providers>
-            <Suspense fallback={null}>
-              <ScrollToTop />
-            </Suspense>
+            <ScrollToTop />
             <div className="relative flex min-h-screen flex-col bg-background/50 selection:bg-primary/20 selection:text-primary transition-all duration-700">
               <Header initialMenus={initialMenus} />
               <div className="flex flex-1">

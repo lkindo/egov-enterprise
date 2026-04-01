@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'통계 대시보드';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -114,7 +114,7 @@ export function CommandPalette() {
                     <input
                         autoFocus
                         className="flex-1 bg-transparent border-none outline-none text-lg font-bold placeholder:text-muted-foreground/50 text-foreground"
-                        placeholder="臾댁뾿님李얠쑝?쒕굹님 (硫붾돱, ?ъ슜님 寃뚯떆湲...)"
+                        placeholder="무엇을 찾으시나요? (메뉴, 사용자, 게시글...)"
                         value={query}
                         onChange={(e) => {
                             setQuery(e.target.value);
@@ -166,7 +166,7 @@ export function CommandPalette() {
                                                     <button
                                                         key={result.id}
                                                         className={cn(
-                                                            "w-full flex items-center justify-between p-4 rounded-2xl transition-all group",
+                                                            '시스템 통합 분석 및 현황',
                                                             globalIdx === selectedIndex ? "bg-primary text-primary-foreground shadow-lg scale-[1.01]" : "hover:bg-muted text-foreground"
                                                         )}
                                                         onClick={() => onSelect(result.url)}
@@ -174,8 +174,8 @@ export function CommandPalette() {
                                                     >
                                                         <div className="flex items-center gap-4 text-left">
                                                             <div className={cn(
-                                                                "p-2 rounded-xl border flex items-center justify-center",
-                                                                globalIdx === selectedIndex ? "bg-white/20 border-white/10" : "bg-muted border-none"
+                                                                '사용자 관리',
+                                                                globalIdx === selectedIndex ? "bg-white/20 border-white/10" : '통계 대시보드'
                                                             )}>
                                                                 {result.icon}
                                                             </div>
@@ -183,8 +183,8 @@ export function CommandPalette() {
                                                                 <p className="text-sm font-black tracking-tight">{result.title}</p>
                                                                 {result.description && (
                                                                     <p className={cn(
-                                                                        "text-[10px] font-bold mt-0.5",
-                                                                        globalIdx === selectedIndex ? "text-primary-foreground/70" : "text-muted-foreground"
+                                                                        '권한 설정 및 사용자 목록',
+                                                                        globalIdx === selectedIndex ? "text-primary-foreground/70" : '시스템 통합 분석 및 현황'
                                                                     )}>
                                                                         {result.description}
                                                                     </p>
@@ -192,7 +192,7 @@ export function CommandPalette() {
                                                             </div>
                                                         </div>
                                                         <ArrowRight className={cn(
-                                                            "opacity-0 transition-all",
+                                                            '공지사항 게시판',
                                                             globalIdx === selectedIndex ? "opacity-100 translate-x-0" : "group-hover:opacity-100 -translate-x-2"
                                                         )} size={16} />
                                                     </button>

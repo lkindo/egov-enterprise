@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'콘텐츠 정보를 불러오지 못했습니다.';
 
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -39,8 +39,8 @@ export default function MyPageManagement() {
  return (
  <div className="space-y-6">
  <PageHeader
- title="留덉씠?섏씠吏 ?ㅼ젙"
- breadcrumbs={[{ label: '?뚰겕?ㅽ럹?댁뒪' }, { label: '留덉씠?섏씠吏 ?ㅼ젙' }]}
+ title="마이페이지 설정"
+ breadcrumbs={[{ label: '워크스페이스' }, { label: '마이페이지 설정' }]}
  />
 
  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -72,7 +72,7 @@ export default function MyPageManagement() {
  </button>
  </div>
  <h3 className="text-lg font-bold text-foreground">{item.cntntsNm}</h3>
- <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.cntntsDc || '?ㅻ챸님?놁뒿?덈떎.'}</p>
+ <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.cntntsDc || '설명이 없습니다.'}</p>
  <div className="mt-4 flex items-center gap-2 text-[11px] font-mono text-slate-400 bg-slate-50 p-2 rounded-lg">
  <span>{item.cntcUrl}</span>
  </div>

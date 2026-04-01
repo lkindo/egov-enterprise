@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import {
@@ -16,7 +16,10 @@ import {
   FileText,
   Settings,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  LayoutDashboard,
+  Box,
+  Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GaugeChart, RealtimeSparkline, ActivityAreaChart, DistributionPieChart } from '@/app/components/ui/observability-charts';
@@ -31,9 +34,7 @@ import { authorAdminService } from '@/services/foundation/system/AuthorAdminServ
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-
-
-// Mock data removed in favor of live query
+import { Badge } from '@/components/ui/badge';
 
 const MOCK_METRICS = {
   cpu: Array.from({ length: 20 }, (_, i) => ({ time: i, value: 10 + Math.random() * 20 })),
@@ -66,32 +67,31 @@ export default function AdminDashboardPage() {
     retryDelay: 5000,
   });
 
-  // Intelligence Data Fetching
   const { data: usersData } = useQuery({
     queryKey: ['admin-dashboard-users'],
-    queryFn: () => userAdminService.getUserList({ page踰덊샇: 1, size: 1 }),
+    queryFn: () => userAdminService.getUserList({ pageNo: 1, size: 1 }),
     retry: 1,
     retryDelay: 5000,
   });
 
   const { data: authorsData } = useQuery({
     queryKey: ['admin-dashboard-authors'],
-    queryFn: () => authorAdminService.getAuthorList({ page踰덊샇: 1, size: 1 }),
+    queryFn: () => authorAdminService.getAuthorList({ pageIndex: 1, size: 1 }),
     retry: 1,
     retryDelay: 5000,
   });
 
   const recentLogs: UIAuditLog[] = (auditData?.list || []).map(log => ({
     id: log.histId,
-    action: log.histCn.includes('?앹꽦') || log.histCn.includes('등록') ? 'CREATE' :
-      log.histCn.includes('님젣') ? 'DELETE' :
-        log.histCn.includes('蹂듭썝') ? 'RESTORE' : 'UPDATE',
+    action: log.histCn.includes('생성') || log.histCn.includes('등록') ? 'CREATE' :
+      log.histCn.includes('삭제') ? 'DELETE' :
+        log.histCn.includes('복원') ? 'RESTORE' : 'UPDATE',
     entityName: log.histCn,
     performedBy: log.frstRegisterId,
     timestamp: log.frstRegisterPnttm,
     ipAddress: log.sysNm || 'Unknown Subsystem',
-    severity: log.histCn.includes('?ㅻ쪟') || log.histCn.includes('?ㅽ뙣') || log.histCn.includes('님젣') ? 'high' :
-      log.histCn.includes('보안') || log.histCn.includes('沅뚰븳') ? 'medium' : 'low'
+    severity: log.histCn.includes('오류') || log.histCn.includes('실패') || log.histCn.includes('삭제') ? 'high' :
+      log.histCn.includes('보안') || log.histCn.includes('권한') ? 'medium' : 'low'
   }));
 
   return (
@@ -99,65 +99,64 @@ export default function AdminDashboardPage() {
       <HubHeader
         title="Admin"
         highlight="Intelligence Center"
-        subtitle="?쒖뒪님?꾨컲님?ㅽ띁?덉씠님?곹깭, 吏?ν삎 ?곗씠님분석 諛?보안 嫄곕쾭?뚯뒪 ?듯빀 愿님??쒕낫님
+        subtitle="시스템 전반의 오퍼레이션 상태, 지능형 데이터 분석 및 보안 거버넌스 통합 관제 패널"
         icon={LayoutDashboard}
         actions={
           <div className="flex gap-4 p-2 items-center">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 italic font-black text-[9px] tracking-widest shadow-sm">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              ?쒖뒪님?곹깭: ?뺤긽
+              시스템 상태: 정상
             </div>
             <Button size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
               <Sparkles size={20} className="text-primary group-hover:rotate-12 transition-transform" />
-              ?숆린님議곗젙님            </Button>
+              동기화 조정
+            </Button>
           </div>
         }
       />
 
       <InsightBanner />
 
-      {/* Modern Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <DashboardStatCard
-          title="Identity Registry"
+          title="ID 레지스트리"
           value={usersData?.totalRecordCount?.toLocaleString() || "IDLE"}
           icon={<Users className="w-5 h-5" />}
-          trend="+PROBING"
+          trend="+12 활성"
           color="blue"
           link="/admin/user/manage"
-          description="?ъ슜님諛?議곗쭅 ?듯빀 留ㅽ듃由?뒪"
+          description="통합 사용자 및 조직 관리"
         />
         <DashboardStatCard
-          title="Security Governance"
+          title="보안 거버넌스"
           value={`${authorsData?.totalRecordCount || 0} ROLES`}
           icon={<ShieldCheck className="w-5 h-5" />}
-          trend="STABLE"
+          trend="보호됨"
           color="emerald"
           link="/admin/security/authority"
-          description="RBAC 湲곕컲 ?묎렐 ?뺤콉 嫄곕쾭?뚯뒪"
+          description="RBAC 및 고급 권한 허브"
         />
         <DashboardStatCard
-          title="System Topology"
+          title="운영 인텔리전스"
           value="OPERATIONAL"
           icon={<Box className="w-5 h-5" />}
           trend="HEALTHY"
           color="amber"
           link="/admin/system/programs"
-          description="紐⑤뱢 諛?由ъ냼님?ㅼ님ㅽ듃?덉씠님
+          description="모듈 및 리소스 오케스트레이션"
         />
         <DashboardStatCard
-          title="Audit Streams"
+          title="업무 인텔리전스"
           value={auditData?.totalRecordCount || "LIVE"}
           icon={<Activity className="w-5 h-5" />}
           trend="REALTIME"
           color="rose"
           link="/admin/system/audit"
-          description="실시간보안 媛먯궗 ?ㅽ듃由?분석"
+          description="실시간 보안 감사 히스토리 분석"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Activity Intelligence */}
         <div className="lg:col-span-2 p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -166,14 +165,13 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <h3 className="text-lg font-black text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">Activity Intelligence</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">?쒖뒪님?몃옒님諛님꾨찓님?쒕룞 분석</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">시스템 트래픽 및 유저 활동 분석</p>
               </div>
             </div>
           </div>
-          <ActivityAreaChart data={MOCK_ACTIVITY_DATA} title="최근 7?쇨컙 ?쒖뒪님접속 ?꾨줈님 color="#6366F1" />
+          <ActivityAreaChart data={MOCK_ACTIVITY_DATA} title="최근 7일간 시스템 접속 프로필" color="#6366F1" />
         </div>
 
-        {/* User Distribution */}
         <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -182,18 +180,17 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <h3 className="text-lg font-black text-foreground tracking-tight">Identity Cluster</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">?ъ슜님沅뚰븳 洹몃９ 분포</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">사용자 권한 그룹 분포</p>
               </div>
             </div>
           </div>
           <div className="flex-1 min-h-[300px]">
-            <DistributionPieChart data={MOCK_DISTRIBUTION_DATA} title="RBAC ?섏슜님분석" />
+            <DistributionPieChart data={MOCK_DISTRIBUTION_DATA} title="RBAC 수용량 분석" />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Real-time Health Chart */}
         <div className="lg:col-span-2 space-y-8">
           <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm overflow-hidden relative group">
             <div className="flex items-center justify-between mb-8">
@@ -202,13 +199,13 @@ export default function AdminDashboardPage() {
                   <Cpu size={20} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">而댄벂님노드 ?ъ뒪泥댄겕</h3>
-                  <p className="text-[10px] font-medium text-muted-foreground mt-0.5">실시간由ъ냼님?뚮퉬 紐⑤땲?곕쭅</p>
+                  <h3 className="text-sm font-bold text-foreground">컴퓨팅 노드 헬스체크</h3>
+                  <p className="text-[10px] font-medium text-muted-foreground mt-0.5">실시간 리소스 소비 모니터링</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">?됯퇏 遺님/p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">평균 부하</p>
                   <p className="text-lg font-bold tabular-nums">18.4%</p>
                 </div>
                 <div className="w-px h-8 bg-border/50" />
@@ -224,14 +221,13 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Database Status */}
             <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-muted rounded-xl text-muted-foreground">
                     <Database size={18} />
                   </div>
-                  <span className="text-sm font-bold text-foreground">?곗씠님?뚯뒪</span>
+                  <span className="text-sm font-bold text-foreground">데이터베이스</span>
                 </div>
                 <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] font-bold px-3 py-1">HEALTHY</Badge>
               </div>
@@ -242,19 +238,18 @@ export default function AdminDashboardPage() {
                   <p className="text-[10px] font-black text-muted-foreground uppercase">Storage occupied: 64%</p>
                 </div>
                 <div className="w-20 h-20">
-                  <GaugeChart value={64} color="#3B82F6" title="Storage" />
+                  <GaugeChart value={64} color="#3B82F6" title="거버넌스 감사 추적" />
                 </div>
               </div>
             </div>
 
-            {/* Network Latency */}
             <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-muted rounded-xl text-muted-foreground">
                     <Globe size={18} />
                   </div>
-                  <span className="text-sm font-bold text-foreground">湲濡쒕쾶 吏?곗떆媛?/span>
+                  <span className="text-sm font-bold text-foreground">글로벌 지연시간</span>
                 </div>
                 <div className="flex items-center gap-1 text-emerald-500">
                   <TrendingUp size={12} />
@@ -273,9 +268,8 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Audit Timeline Sidebar */}
         <div className="space-y-8">
-          <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col h-full h-[600px]">
+          <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col h-[600px]">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-slate-900 rounded-xl text-white shadow-xl">
@@ -337,7 +331,6 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
           </p>
         </div>
 
-        {/* Subtle decorative background element */}
         <div className="absolute right-[-20px] bottom-[-20px] opacity-[0.03] rotate-12 group-hover:rotate-6 transition-transform duration-1000 pointer-events-none scale-150">
           {icon}
         </div>
@@ -345,12 +338,3 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
     </Link>
   );
 }
-
-function Badge({ children, className }: any) {
-  return (
-    <span className={cn("px-2 py-0.5 rounded-full border text-[10px] font-bold", className)}>
-      {children}
-    </span>
-  );
-}
-

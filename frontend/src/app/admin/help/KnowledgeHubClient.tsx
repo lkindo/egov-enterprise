@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"위키, FAQ 및 게시판 통합 검색...";
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -153,7 +153,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
             <div className="flex items-center justify-center gap-3 md:gap-4">
               <span className="h-[1px] md:h-[2px] w-8 md:w-12 bg-primary/30" />
               <HubInsightBadge label="Enterprise Collective Intelligence Matrix" className="text-white/40 !opacity-40 text-[8px] md:text-[9px]" />
-              <span className="h-[1px] md:h-[2px] w-8 md:w-12 bg-primary/30" />
+              <span className="위키, FAQ 및 게시판 통합 검색..." />
             </div>
           </div>
           
@@ -216,9 +216,9 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
           className="grid grid-flow-col auto-cols-[85%] sm:auto-cols-auto sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 cursor-grab active:cursor-grabbing"
         >
           <CategoryCard title="Global Wiki" desc="湲곗닠 ?ъ뼇님 icon={<Library size={28} />} count={142} color="primary" active={activeCategory === 'WIKI'} onClick={() => setActiveCategory('WIKI')} />
-          <CategoryCard title="Customer Help" desc="FAQ 媛?대뱶" icon={<BookOpen size={28} />} count={28} color="amber" active={activeCategory === 'FAQ'} onClick={() => setActiveCategory('FAQ')} />
-          <CategoryCard title="Tech Forum" desc="Q&A 분석" icon={<MessageCircleQuestion size={28} />} count={567} color="rose" active={activeCategory === 'QNA'} onClick={() => setActiveCategory('QNA')} />
-          <CategoryCard title="Community" desc="?곸떊 ?대윭?ㅽ꽣" icon={<Users size={28} />} count={12} color="emerald" active={activeCategory === 'COMMUNITY'} onClick={() => setActiveCategory('COMMUNITY')} />
+          <CategoryCard title="고객지원 " desc="빠른 답변" icon={<BookOpen size={28} />} count={28} color="amber" active={activeCategory === 'FAQ'} onClick={() => setActiveCategory('FAQ')} />
+          <CategoryCard title="기술 Q&A" desc="포럼 해결" icon={<MessageCircleQuestion size={28} />} count={567} color="rose" active={activeCategory === 'QNA'} onClick={() => setActiveCategory('QNA')} />
+          <CategoryCard title="커뮤니티" desc="활성 게시판" icon={<Users size={28} />} count={12} color="emerald" active={activeCategory === 'COMMUNITY'} onClick={() => setActiveCategory('COMMUNITY')} />
         </motion.div>
         <div className="flex justify-center mt-6 lg:hidden">
            <div className="flex gap-1.5 items-center">

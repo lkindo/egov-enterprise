@@ -231,4 +231,3 @@
      @apply text-[length:var(--font-size-hub-subtitle)] font-black tracking-[0.4em] uppercase opacity-30 group-focus-within:opacity-100 transition-opacity;
   }
 }
-

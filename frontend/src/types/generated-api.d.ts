@@ -415,7 +415,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Confirm Approval (Approve/Reject) */
+        /** 마이페이지 콘텐츠 수정 */Reject) */
         put: operations["confirm"];
         post?: never;
         delete?: never;
@@ -432,10 +432,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 留덉씠?섏씠吏 肄섑뀗痢님섏젙 */
+        /** ?림 ?음 처리 */
         put: operations["updateContent"];
         post?: never;
-        /** 留덉씠?섏씠吏 肄섑뀗痢님?젣 */
+        /** 마이페이지 콘텐츠 삭제 */
         delete: operations["deleteContent"];
         options?: never;
         head?: never;
@@ -477,7 +477,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?ъ슜님遺님?곹깭 ?곸꽭 조회 */
+        /** 게시??세 조회 */
         get: operations["getAbsence"];
         /** ?ъ슜님遺님?곹깭 ?낅뜲?댄듃 */
         put: operations["updateAbsence"];
@@ -551,7 +551,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?꾨줈洹몃옩 ?곸꽭 조회 */
+        /** 로그인 정책 상세 조회 */
         get: operations["getProgram"];
         /** ?꾨줈洹몃옩 ?뺣낫 ?섏젙 */
         put: operations["updateProgram"];
@@ -666,7 +666,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 濡쒓렇님?뺤콉 ?곸꽭 조회 */
+        /** 상세코드 상세 조회 */
         get: operations["getLoginPolicy"];
         /**
          * 濡쒓렇님?뺤콉 ?님         * @description 신규 등록 ?먮뒗 湲곗〈 ?뺣낫瑜님섏젙?⑸땲님
@@ -687,7 +687,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?쒕퉬님?덈궡 ?곸꽭 조회 */
+        /** 공통코드 상세 조회 */
         get: operations["getIsg"];
         /** ?쒕퉬님?덈궡 ?섏젙 */
         put: operations["updateIsg"];
@@ -790,12 +790,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?곸꽭肄붾뱶 ?곸꽭 조회 */
+        /** 분류코드 상세 조회 */
         get: operations["getDetailCode"];
-        /** ?곸꽭肄붾뱶 ?섏젙 */
+        /** 상세코드 수정 */
         put: operations["updateDetailCode"];
         post?: never;
-        /** ?곸꽭肄붾뱶 님젣 */
+        /** 상세코드 삭제 */
         delete: operations["deleteDetailCode"];
         options?: never;
         head?: never;
@@ -809,12 +809,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 怨듯넻肄붾뱶 ?곸꽭 조회 */
+        /** 행정코드 상세 조회 */
         get: operations["getCmmnCode"];
-        /** 怨듯넻肄붾뱶 ?섏젙 */
+        /** 공통코드 수정 */
         put: operations["updateCmmnCode"];
         post?: never;
-        /** 怨듯넻肄붾뱶 님젣 */
+        /** 공통코드 삭제 */
         delete: operations["deleteCmmnCode"];
         options?: never;
         head?: never;
@@ -828,12 +828,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 遺꾨쪟肄붾뱶 ?곸꽭 조회 */
+        /** 마이페이지 콘텐츠 목록 조회 */
         get: operations["getClCode"];
-        /** 遺꾨쪟肄붾뱶 ?섏젙 */
+        /** 분류코드 수정 */
         put: operations["updateClCode"];
         post?: never;
-        /** 遺꾨쪟肄붾뱶 님젣 */
+        /** 분류코드 삭제 */
         delete: operations["deleteClCode"];
         options?: never;
         head?: never;
@@ -847,12 +847,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?됱젙肄붾뱶 ?곸꽭 조회 */
+        /** 설문 정보 목록 페이징 조회 */
         get: operations["getAdministCodeDetail"];
-        /** ?됱젙肄붾뱶 ?섏젙 */
+        /** 행정코드 수정 */
         put: operations["updateAdministCode"];
         post?: never;
-        /** ?됱젙肄붾뱶 님젣 */
+        /** 행정코드 삭제 */
         delete: operations["deleteAdministCode"];
         options?: never;
         head?: never;
@@ -1540,10 +1540,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 留덉씠?섏씠吏 肄섑뀗痢?紐⑸줉 조회 */
+        /** 설문 문항 목록 조회 */
         get: operations["getContents"];
         put?: never;
-        /** 留덉씠?섏씠吏 肄섑뀗痢?등록 */
+        /** 마이페이지 콘텐츠 등록 */
         post: operations["createContent"];
         delete?: never;
         options?: never;
@@ -1637,10 +1637,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 설문 ?뺣낫 紐⑸줉 ?섏씠吏?조회 */
+        /** 설문 템플릿 목록 페이징 조회 */
         get: operations["getSurveys"];
         put?: never;
-        /** 설문 ?뺣낫 등록 */
+        /** 설문 정보 등록 */
         post: operations["insertSurvey"];
         delete?: never;
         options?: never;
@@ -1655,10 +1655,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 설문 臾명빆 紐⑸줉 조회 */
+        /** 게시?목록 조회 */
         get: operations["getQuestions"];
         put?: never;
-        /** 설문 臾명빆 등록 */
+        /** 설문 문항 등록 */
         post: operations["insertQuestion"];
         delete?: never;
         options?: never;
@@ -1673,10 +1673,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 설문 ?쒗뵆由?紐⑸줉 ?섏씠吏?조회 */
+        /** 상세코드 목록 조회 */
         get: operations["getTemplates"];
         put?: never;
-        /** 설문 ?쒗뵆由?등록 */
+        /** 설문 템플릿 등록 */
         post: operations["insertTemplate"];
         delete?: never;
         options?: never;
@@ -1693,7 +1693,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 설문 님ぉ 등록 */
+        /** 설문 항목 등록 */
         post: operations["insertItem"];
         delete?: never;
         options?: never;
@@ -1760,7 +1760,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?꾨줈洹몃옩 紐⑸줉 조회 */
+        /** 공통코드 목록 조회 */
         get: operations["getProgramList"];
         put?: never;
         /** ?꾨줈洹몃옩 등록 */
@@ -1802,7 +1802,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?⑤씪님설문 紐⑸줉 ?섏씠吏?조회 */
+        /** 분류코드 목록 조회 */
         get: operations["getPolls"];
         put?: never;
         /** ?⑤씪님설문 등록 */
@@ -1884,7 +1884,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?쒕퉬님?덈궡 紐⑸줉 조회 */
+        /** 행정코드 목록 조회 */
         get: operations["getIsgList"];
         put?: never;
         /** ?쒕퉬님?덈궡 등록 */
@@ -2018,10 +2018,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?곸꽭肄붾뱶 紐⑸줉 조회 */
+        /** 설문 정보 상세 조회 */
         get: operations["getDetailCodeList"];
         put?: never;
-        /** ?곸꽭肄붾뱶 등록 */
+        /** 상세코드 등록 */
         post: operations["createDetailCode"];
         delete?: never;
         options?: never;
@@ -2036,10 +2036,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 怨듯넻肄붾뱶 紐⑸줉 조회 */
+        /** 설문 템플릿 상세 조회 */
         get: operations["getCmmnCodeList"];
         put?: never;
-        /** 怨듯넻肄붾뱶 등록 */
+        /** 공통코드 등록 */
         post: operations["createCmmnCode"];
         delete?: never;
         options?: never;
@@ -2054,10 +2054,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 遺꾨쪟肄붾뱶 紐⑸줉 조회 */
+        /** ???림 목록 조회 */
         get: operations["getClCodeList"];
         put?: never;
-        /** 遺꾨쪟肄붾뱶 등록 */
+        /** 분류코드 등록 */
         post: operations["createClCode"];
         delete?: never;
         options?: never;
@@ -2072,10 +2072,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?됱젙肄붾뱶 紐⑸줉 조회 */
+        /** ?? ?? ?림 개수 조회 */
         get: operations["getAdministCodeList"];
         put?: never;
-        /** ?됱젙肄붾뱶 등록 */
+        /** 행정코드 등록 */
         post: operations["createAdministCode"];
         delete?: never;
         options?: never;
@@ -2090,7 +2090,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?곷떞 紐⑸줉 ?섏씠吏?조회 */
+        /** 메뉴 목록 ?스??- Menu ?티??직접 반환 */
         get: operations["getConsultations"];
         put?: never;
         /** ?곷떞 등록 */
@@ -2679,7 +2679,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 硫붾돱 紐⑸줉 ?뚯뒪님- Menu ?뷀떚님吏곸젒 諛섑솚 */
+        /** 메뉴 목록 ?스??- Program 조회 */
         get: operations["getRawMenus"];
         put?: never;
         post?: never;
@@ -2696,7 +2696,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 硫붾돱 紐⑸줉 ?뚯뒪님- Program 조회 */
+        /** ?정 메뉴???위 메뉴 목록 조회 */
         get: operations["getPrograms"];
         put?: never;
         post?: never;
@@ -2713,7 +2713,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?뱀젙 硫붾돱님?섏쐞 硫붾돱 紐⑸줉 조회 */
+        /** GNB ?메뉴 목록 조회 */
         get: operations["getLeftMenu"];
         put?: never;
         post?: never;
@@ -2730,7 +2730,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** GNB 硫붿씤 硫붾돱 紐⑸줉 조회 */
+        /** 로그인 정책 목록 조회 */
         get: operations["getHeadMenu"];
         put?: never;
         post?: never;
@@ -2991,7 +2991,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Pending Approvals (Inbox) */
+        /** ?용???계 조회 */
         get: operations["getPending"];
         put?: never;
         post?: never;
@@ -3008,7 +3008,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get My Approval History */
+        /** ?면(?청) ?계 조회 */
         get: operations["getMyHistory"];
         put?: never;
         post?: never;
@@ -3045,7 +3045,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?ъ슜님遺님?뺣낫 紐⑸줉 조회 */
+        /** ?속 ?계 조회 */
         get: operations["getAbsences"];
         put?: never;
         post?: never;
@@ -3082,7 +3082,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 설문 ?뺣낫 ?곸꽭 조회 */
+        /** 게시??계 조회 */
         get: operations["getSurvey"];
         put?: never;
         post?: never;
@@ -3099,7 +3099,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 설문 ?쒗뵆由님곸꽭 조회 */
+        /** 기관코드 목록 조회 */
         get: operations["getTemplate"];
         put?: never;
         post?: never;
@@ -3116,7 +3116,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?ъ슜님통계 조회 */
+        /** 기관코드 상세 조회 */
         get: operations["getUserStats"];
         put?: never;
         post?: never;
@@ -3712,7 +3712,7 @@ export interface components {
              */
             createdDate?: string;
         };
-        /** @description Description */
+        /** @description 행정 용어 DTO */
         MemoReportDto: {
             /** @description Description */
             reprtId?: string;
@@ -3769,7 +3769,7 @@ export interface components {
              */
             createdDate?: string;
         };
-        /** @description Description */
+        /** @description 메뉴 ?보 DTO */
         LeaderScheduleDto: {
             /** @description Description */
             scheduleId?: string;
@@ -3808,36 +3808,36 @@ export interface components {
             importanceCode?: string;
             scheduleType?: string;
         };
-        /** @description 鍮꾩젙님寃곗옱 DTO */
+        /** @description 비정형 결재 DTO */
         InformalSanctionDto: {
-            /** @description 鍮꾩젙님寃곗옱 ID */
+            /** @description 비정형 결재 ID */
             informalSanctionId?: string;
-            /** @description 업무 援щ텇 肄붾뱶 */
+            /** @description 업무 구분 코드 */
             jobSeCode?: string;
-            /** @description 업무 援щ텇 紐?*/
+            /** @description 업무 구분 명 */
             jobSeNm?: string;
-            /** @description ?좎껌님ID */
+            /** @description 신청자 ID */
             applicantId?: string;
-            /** @description ?좎껌님紐?*/
+            /** @description 신청자 명 */
             applicantNm?: string;
-            /** @description ?좎껌 ?쇱옄 */
+            /** @description 신청 일자 */
             requestDe?: string;
-            /** @description 寃곗옱님ID */
+            /** @description 결재자 ID */
             sanctionerId?: string;
-            /** @description 寃곗옱님紐?*/
+            /** @description 결재자 명 */
             sanctionerNm?: string;
-            /** @description 寃곗옱님議곗쭅 紐?*/
+            /** @description 결재자 조직 명 */
             sanctionerOrgnztNm?: string;
-            /** @description ?뱀씤 ?щ? */
+            /** @description 승인 여부 */
             confmAt?: string;
             /**
              * Format: date-time
              * @description 寃곗옱 ?쇱떆
              */
             sanctionDt?: string;
-            /** @description 諛섎젮 ?ъ쑀 */
+            /** @description 반려 사유 */
             returnResn?: string;
-            /** @description 등록님ID */
+            /** @description 등록자 ID */
             createdBy?: string;
             /**
              * Format: date-time
@@ -4169,31 +4169,31 @@ export interface components {
             url?: string;
             progrmDc?: string;
         };
-        /** @description ?앹뾽 ?뺣낫 */
+        /** @description 팝업 정보 */
         PopupDto: {
-            /** @description ?앹뾽 ID */
+            /** @description 팝업 ID */
             popupId?: string;
-            /** @description ?앹뾽 ?쒕ぉ */
+            /** @description 팝업 제목 */
             popupTitleName?: string;
-            /** @description ?뚯씪 URL */
+            /** @description 파일 URL */
             fileUrl?: string;
-            /** @description ?앹뾽 媛濡님꾩튂 */
+            /** @description 팝업 가로 위치 */
             popupWidthLocation?: string;
-            /** @description ?앹뾽 ?몃줈 ?꾩튂 */
+            /** @description 팝업 세로 위치 */
             popupHeightLocation?: string;
-            /** @description ?앹뾽 ?믪씠 ?ш린 */
+            /** @description 팝업 높이 크기 */
             popupHeightSize?: string;
-            /** @description ?앹뾽 ?덈퉬 ?ш린 */
+            /** @description 팝업 너비 크기 */
             popupWidthSize?: string;
-            /** @description 寃뚯떆 ?쒖옉님*/
+            /** @description 게시 시작일 */
             noticeBeginDate?: string;
-            /** @description 寃뚯떆 醫낅즺님*/
+            /** @description 게시 종료일 */
             noticeEndDate?: string;
-            /** @description 洹몃쭔蹂닿린 ?щ? */
+            /** @description 그만보기 여부 */
             isStopView?: string;
-            /** @description 寃뚯떆 ?щ? */
+            /** @description 게시 여부 */
             isNotice?: string;
-            /** @description ?앹꽦님ID */
+            /** @description 생성자 ID */
             createdBy?: string;
             /**
              * Format: date-time
@@ -4272,7 +4272,7 @@ export interface components {
              * @example admin
              */
             creatPersonId?: string;
-            /** @description ?섏쐞 硫붾돱 紐⑸줉 */
+            /** @description ?식 메뉴 목록 */
             children?: components["schemas"]["MenuDto"][];
         };
         LoginPolicyDto: {
@@ -4613,39 +4613,39 @@ export interface components {
             noteCn?: string;
             /** @description 泥⑤? ?뚯씪 ID */
             atchFileId?: string;
-            /** @description 履쎌? 諛쒖떊 ID */
+            /** @description 쪽지 발신 ID */
             noteTrnsmitId?: string;
-            /** @description 諛쒖떊님ID */
+            /** @description 발신자 ID */
             trnsmiterId?: string;
-            /** @description 諛쒖떊님紐?*/
+            /** @description 발신자 명 */
             trnsmiterNm?: string;
-            /** @description 履쎌? ?섏떊 ID */
+            /** @description 쪽지 수신 ID */
             noteRecptnId?: string;
-            /** @description ?섏떊님ID */
+            /** @description 수신자 ID */
             rcverId?: string;
-            /** @description ?섏떊님紐?*/
+            /** @description 수신자 명 */
             rcverNm?: string;
-            /** @description ?대엺 ?щ? */
+            /** @description 열람 여부 */
             openYn?: string;
-            /** @description ?섏떊 援щ텇 */
+            /** @description 수신 구분 */
             recptnSe?: string;
             /**
              * Format: date-time
              * @description 등록 ?쇱떆
              */
             regDate?: string;
-            /** @description ?섏떊님紐⑸줉 */
+            /** @description 수신자 목록 */
             recipients?: components["schemas"]["NoteRecipientDto"][];
         };
-        /** @description 履쎌? ?섏떊님?뺣낫 */
+        /** @description 쪽지 수신자 정보 */
         NoteRecipientDto: {
-            /** @description 履쎌? ?섏떊 ID */
+            /** @description 쪽지 수신 ID */
             noteRecptnId?: string;
-            /** @description ?섏떊님ID */
+            /** @description 수신자 ID */
             rcverId?: string;
-            /** @description ?섏떊님紐?*/
+            /** @description 수신자 명 */
             rcverNm?: string;
-            /** @description ?섏떊 援щ텇 (1: ?섏떊, 2: 李몄“) */
+            /** @description 수신 구분 (1: 수신, 2: 참조) */
             recptnSe?: string;
         };
         /** @description Description */
@@ -7327,7 +7327,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?쎈룄 ID */
+                /** @description 결재 ID */
                 roughMapId: string;
             };
             cookie?: never;
@@ -7398,7 +7398,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 蹂닿퀬 ID */
+                /** @description 결재 ID */
                 reprtId: string;
             };
             cookie?: never;
@@ -7469,7 +7469,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?대?吏 ID */
+                /** @description 결재 ID */
                 imageId: string;
             };
             cookie?: never;
@@ -7540,7 +7540,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?쇱젙 ID */
+                /** @description ?호??ID */
                 scheduleId: string;
             };
             cookie?: never;
@@ -7611,7 +7611,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 寃곗옱 ID */
+                /** @description ?호??ID */
                 informalSanctionId: string;
             };
             cookie?: never;
@@ -7634,7 +7634,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 寃곗옱 ID */
+                /** @description ?호??ID */
                 informalSanctionId: string;
             };
             cookie?: never;
@@ -7661,7 +7661,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 寃곗옱 ID */
+                /** @description 배너 ID */
                 informalSanctionId: string;
             };
             cookie?: never;
@@ -7684,7 +7684,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 留ㅻ돱님ID */
+                /** @description 사용자 ID */
                 mnlId: string;
             };
             cookie?: never;
@@ -7755,7 +7755,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?꾩?留?ID */
+                /** @description 사용자 ID */
                 hpcmId: string;
             };
             cookie?: never;
@@ -7826,7 +7826,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description FAQ ID */
+                /** @description 통합 링크 ID */
                 faqId: string;
             };
             cookie?: never;
@@ -7971,7 +7971,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?볤? ID */
+                /** @description 통합 링크 ID */
                 id: number;
             };
             cookie?: never;
@@ -7998,7 +7998,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?볤? ID */
+                /** @description 통합 링크 ID */
                 id: number;
             };
             cookie?: never;
@@ -8173,7 +8173,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?ъ슜님ID */
+                /** @description 팝업 ID */
                 userId: string;
             };
             cookie?: never;
@@ -8222,7 +8222,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?ъ슜님ID */
+                /** @description 팝업 ID */
                 userId: string;
             };
             cookie?: never;
@@ -8363,7 +8363,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Q&A ID */
+                /** @description 팝업 ID */
                 qaId: string;
             };
             cookie?: never;
@@ -8504,7 +8504,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?앹뾽 ID */
+                /** @description 주소록 ID */
                 popupId: string;
             };
             cookie?: never;
@@ -8527,7 +8527,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?앹뾽 ID */
+                /** @description 주소록 ID */
                 popupId: string;
             };
             cookie?: never;
@@ -8554,7 +8554,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?앹뾽 ID */
+                /** @description 주소록 ID */
                 popupId: string;
             };
             cookie?: never;
@@ -8931,7 +8931,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 遺님ID (OrgnztId) */
+                /** @description 결재 ID */
                 deptId: string;
             };
             cookie?: never;
@@ -8980,7 +8980,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 遺님ID (OrgnztId) */
+                /** @description 팝업 ID */
                 deptId: string;
             };
             cookie?: never;
@@ -9003,7 +9003,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 而ㅻ님덊떚 ID */
+                /** @description 쪽지 ID */
                 cmmntyId: string;
             };
             cookie?: never;
@@ -9026,7 +9026,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 而ㅻ님덊떚 ID */
+                /** @description 관계 ID */
                 cmmntyId: string;
             };
             cookie?: never;
@@ -9956,7 +9956,7 @@ export interface operations {
     getNotifications: {
         parameters: {
             query: {
-                /** @description 寃?됱뼱 */
+                /** @description 쪽지 구분 (recv: 수신, sent: 발신) */
                 searchWrd?: string;
                 pageable: components["schemas"]["Pageable"];
             };
@@ -12399,7 +12399,7 @@ export interface operations {
     getKnowledgeList: {
         parameters: {
             query: {
-                /** @description 寃?됱뼱 */
+                /** @description 쪽지 구분 (recv: 수신, sent: 발신) */
                 searchWrd?: string;
                 pageable: components["schemas"]["Pageable"];
             };
@@ -12869,7 +12869,7 @@ export interface operations {
             query: {
                 /** @description 履쎌? 援щ텇 (recv: ?섏떊, sent: 諛쒖떊) */
                 type: string;
-                /** @description 愿怨?ID (?섏떊ID ?먮뒗 諛쒖떊ID) */
+                /** @description 관계 ID (수신ID 또는 발신ID) */
                 relationId: string;
             };
             header?: never;

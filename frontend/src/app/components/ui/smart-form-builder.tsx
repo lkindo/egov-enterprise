@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"신규 행정 서식";
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -46,9 +46,9 @@ export function SmartFormBuilder() {
  title: "신규 ?됱젙 ?쒖떇",
  description: "업무 吏님諛?蹂닿퀬瑜님꾪븳 ?쒖? ?쒖떇?낅땲님",
  fields: [
- { id: 'f1', type: 'text', label: '?쒕ぉ', placeholder: '?덇굔 ?쒕ぉ님?낅젰?섏꽭님, required: true, width: 'full' },
- { id: 'f2', type: 'date', label: '湲고븳', required: true, width: 'half' },
- { id: 'f3', type: 'select', label: '以묒슂님, options: ['湲닿툒', '蹂댄넻', '李몄“'], width: 'half' }
+ { id: 'f1', type: 'text', label: '제목', placeholder: '안건 제목을 입력하세요'full' },
+ { id: 'f2', type: 'date', label: '기한', required: true, width: 'half' },
+ { id: 'f3', type: 'select', label: '중요도'湲닿툒', '蹂댄넻', '李몄“'], width: 'half' }
  ]
  });
 
@@ -134,12 +134,12 @@ export function SmartFormBuilder() {
  </h3>
  <div className="grid grid-cols-1 gap-2">
  {[
- { type: 'text', icon: <Type size={16} />, label: '?띿뒪님?낅젰' },
- { type: 'textarea', icon: <List size={16} />, label: '湲?臾몄옣 ?낅젰' },
- { type: 'number', icon: <Hash size={16} />, label: '?レ옄 ?낅젰' },
- { type: 'date', icon: <CalendarIcon size={16} />, label: '?좎쭨 ?좏깮' },
- { type: 'select', icon: <ChevronRight size={16} />, label: '?쒕∼?ㅼ슫' },
- { type: 'checkbox', icon: <CheckSquare size={16} />, label: '泥댄겕諛뺤뒪' },
+ { type: 'text', icon: <Type size={16} />, label: '텍스트 입력' },
+ { type: 'textarea', icon: <List size={16} />, label: '긴 문장 입력' },
+ { type: 'number', icon: <Hash size={16} />, label: '숫자 입력' },
+ { type: 'date', icon: <CalendarIcon size={16} />, label: '날짜 선택' },
+ { type: 'select', icon: <ChevronRight size={16} />, label: '드롭다운' },
+ { type: 'checkbox', icon: <CheckSquare size={16} />, label: '체크박스' },
  ].map((tool) => (
  <button
  key={tool.type}

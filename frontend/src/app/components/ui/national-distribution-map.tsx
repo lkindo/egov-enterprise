@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'서울/강원';
 
 import React from 'react';
 import { cn } from '@/lib/utils';
@@ -13,10 +13,10 @@ interface MapData {
 
 const MOCK_MAP_DATA: MapData[] = [
  { region: '?쒖슱/媛뺤썝', count: 1250, activity: 'high', coords: { x: 45, y: 25 } },
- { region: '寃쎄린/異⑹껌', count: 840, activity: 'medium', coords: { x: 35, y: 45 } },
- { region: '寃쎌긽/?援?, count: 920, activity: 'high', coords: { x: 75, y: 65 } },
- { region: '?꾨씪/愿묒＜', count: 410, activity: 'low', coords: { x: 30, y: 75 } },
- { region: '?쒖＜', count: 120, activity: 'low', coords: { x: 35, y: 95 } },
+ { region: '경기/충청', count: 840, activity: 'medium', coords: { x: 35, y: 45 } },
+ { region: '경상/대구'high', coords: { x: 75, y: 65 } },
+ { region: '전라/광주', count: 410, activity: 'low', coords: { x: 30, y: 75 } },
+ { region: '제주', count: 120, activity: 'low', coords: { x: 35, y: 95 } },
 ];
 
 export function NationalDistributionMap({ className }: { className?: string }) {

@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'필터 접기';
 
 import React, { useState } from 'react';
 import { Search, RotateCcw, Calendar as CalendarIcon, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
@@ -88,7 +88,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
                     onValueChange={(v) => handleValueChange(field.name, v === '__ALL__' ? '' : v)}
                   >
                     <SelectTrigger className="h-12 rounded-xl border border-input bg-background focus:ring-4 focus:ring-primary/10 hover:border-primary/50 transition-all font-bold text-sm ring-offset-background shadow-sm">
-                      <SelectValue placeholder={field.placeholder || "?꾩껜"} />
+                      <SelectValue placeholder={field.placeholder || "전체"} />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl shadow-2xl border-border bg-background p-1">
                       {field.options?.map(opt => (

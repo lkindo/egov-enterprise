@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'매뉴얼 목록을 불러오지 못했습니다.';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -80,7 +80,7 @@ export default function ManualAdminClient({
 
  const handleSubmit = async () => {
  if (!form.onlineMnlNm || !form.onlineMnlCours) {
- toast.error('留ㅻ돱님紐낃낵 寃쎈줈瑜님낅젰?댁＜?몄슂.');
+ toast.error('매뉴얼 명과 경로를 입력해주세요.');
  return;
  }
 
@@ -88,10 +88,10 @@ export default function ManualAdminClient({
  try {
  if (selectedManual?.onlineMnlId) {
  await manualAdminService.updateManual(selectedManual.onlineMnlId, form);
- toast.success('留ㅻ돱님?뺣낫瑜님섏젙?덉뒿?덈떎.');
+ toast.success('매뉴얼 정보를 수정했습니다.');
  } else {
  await manualAdminService.createManual(form);
- toast.success('님留ㅻ돱?쇱쓣 등록?덉뒿?덈떎.');
+ toast.success('새 매뉴얼을 등록했습니다.');
  }
  setIsAddOpen(false);
  handleRefresh();
@@ -103,12 +103,12 @@ export default function ManualAdminClient({
  };
 
  const handleDelete = async (mnlId: string) => {
- if (!confirm('?뺣쭚 님젣?섏떆寃좎뒿?덇퉴?')) return;
+ if (!confirm('정말 삭제하시겠습니까?')) return;
  
  setLoading(true);
  try {
  await manualAdminService.deleteManual(mnlId);
- toast.success('留ㅻ돱?쇱쓣 님젣?덉뒿?덈떎.');
+ toast.success('매뉴얼을 삭제했습니다.');
  handleRefresh();
  } catch {
  toast.error('님젣님?ㅽ뙣?덉뒿?덈떎.');
@@ -119,7 +119,7 @@ export default function ManualAdminClient({
 
  const columns = [
  {
- header: '留ㅻ돱님?뺣낫',
+ header: '매뉴얼 정보',
  accessor: (item: ManualDto) => (
  <div className="flex items-center gap-3">
  <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
@@ -133,7 +133,7 @@ export default function ManualAdminClient({
  )
  },
  {
- header: '?뚯뒪 寃쎈줈',
+ header: '소스 경로',
  accessor: (item: ManualDto) => (
  <div className="flex items-center gap-2 text-slate-400 font-mono text-[11px] ">
  <Code size={12} />
@@ -142,15 +142,15 @@ export default function ManualAdminClient({
  )
  },
  {
- header: '?ㅻ챸',
+ header: '설명',
  accessor: (item: ManualDto) => (
  <span className="text-[11px] font-bold text-slate-500 max-w-[200px] truncate block">
- {item.onlineMnlDc || '?ㅻ챸님?놁뒿?덈떎.'}
+ {item.onlineMnlDc || '설명이 없습니다.'}
  </span>
  )
  },
  {
- header: '?≪뀡',
+ header: '액션',
  accessor: (item: ManualDto) => (
  <div className="flex items-center gap-2">
  <Button 
@@ -177,8 +177,8 @@ export default function ManualAdminClient({
  return (
  <div className="max-w-6xl mx-auto space-y-12 px-4 md:px-0 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
  <PageHeader
- title="온라인媛?대뱶 ?꾪궎?띿쿂"
- breadcrumbs={[{ label: '遺媛?쒕퉬님 }, { label: '?⑤씪?몃ℓ?댁뼹' }]}
+ title="온라인 가이드 아키텍처"
+ breadcrumbs={[{ label: '부가서비스'?⑤씪?몃ℓ?댁뼹' }]}
  actions={
  <div className="flex items-center gap-4">
  <Button
@@ -215,7 +215,7 @@ export default function ManualAdminClient({
  <div className="relative">
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
  <Input
- placeholder="留ㅻ돱님寃님.."
+ placeholder="매뉴얼 검색..."
  value={searchKeyword}
  onChange={(e) => setSearchKeyword(e.target.value)}
  className="h-14 pl-12 pr-6 w-full md:w-[300px] rounded-2xl border-2 border-slate-100 font-black text-[10px] tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-white"
@@ -234,7 +234,7 @@ export default function ManualAdminClient({
  columns={columns}
  data={manuals}
  loading={loading}
- emptyMessage="등록님留ㅻ돱님?뺣낫媛 ?놁뒿?덈떎."
+ emptyMessage="등록된 매뉴얼 정보가 없습니다."
  className="border-none bg-slate-50/50 rounded-[3rem] p-8"
  />
  </div>
@@ -248,7 +248,7 @@ export default function ManualAdminClient({
  {selectedManual ? <Edit2 size={28} /> : <Plus size={28} />}
  </div>
  <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter text-center">
- {selectedManual ? '媛?대뱶 ?섏젙' : '媛?대뱶 등록'}
+ {selectedManual ? '가이드 수정' : '가이드 등록'}
  </DialogTitle>
  <DialogDescription className="text-center font-bold text-slate-400 text-sm">
  ?ъ슜님援먯쑁님?꾪븳 吏님?먯궛님{selectedManual ? '?섏젙' : '?뺤쓽'}?⑸땲님
@@ -259,7 +259,7 @@ export default function ManualAdminClient({
  <div className="space-y-3">
  <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">留ㅻ돱님紐낆묶</label>
  <Input
- placeholder="留ㅻ돱님紐낆쓣 ?낅젰?섏꽭님.."
+ placeholder="매뉴얼 명을 입력하세요..."
  value={form.onlineMnlNm}
  onChange={(e) => setForm(prev => ({ ...prev, onlineMnlNm: e.target.value }))}
  className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
@@ -279,7 +279,7 @@ export default function ManualAdminClient({
  <div className="space-y-3">
  <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">?곸꽭 ?ㅻ챸</label>
  <Textarea
- placeholder="留ㅻ돱님?ㅻ챸님?낅젰?섏꽭님.."
+ placeholder="매뉴얼 설명을 입력하세요..."
  value={form.onlineMnlDc}
  onChange={(e) => setForm(prev => ({ ...prev, onlineMnlDc: e.target.value }))}
  className="min-h-[120px] p-8 rounded-[2rem] border-2 border-slate-100 bg-slate-50/50 text-sm font-bold outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"

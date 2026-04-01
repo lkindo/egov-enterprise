@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"확대 이미지";
 
 import React, { useState } from 'react';
 import { X, ZoomIn, Download } from 'lucide-react';

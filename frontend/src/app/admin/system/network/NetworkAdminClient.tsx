@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'네트워크 자산 삭제';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -67,7 +67,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             title: '?명봽님노드 ?곴뎄 님젣',
             message: '?좏깮님?ㅽ듃?뚰겕 노드瑜님쒖뒪?쒖뿉님제거?섏떆寃좎뒿?덇퉴? 님?묒뾽? ?섎룎由님님놁쑝硫?愿님?곌껐님利됱떆 李⑤떒?⑸땲님',
             variant: 'destructive',
-            confirmText: '노드 제거 ?뱀씤'
+            confirmText: '자산 삭제'
         });
 
         if (ok) {

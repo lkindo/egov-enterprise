@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"사용자 검색 및 선택";
 
 import React, { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
@@ -79,7 +79,7 @@ export function UserPicker({
  type="text"
  value={keyword}
  onChange={(e) => setKeyword(e.target.value)}
- placeholder="?대쫫, 遺님 ID 寃님.."
+ placeholder="이름, 부서, ID 검색..."
  className="w-full h-11 pl-10 pr-4 rounded-xl border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
  autoFocus
  />

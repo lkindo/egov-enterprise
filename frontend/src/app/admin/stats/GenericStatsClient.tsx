@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"게시물 수";
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -72,7 +72,7 @@ export default function GenericStatsClient({
 
  const columns = [
  {
- header: '?좎쭨',
+ header: '날짜',
  accessor: (item: StatsDto) => (
  <span className="font-mono font-black text-slate-900 tracking-tighter ">
  {item.statsDate ? `${item.statsDate.substring(0, 4)}-${item.statsDate.substring(4, 6)}-${item.statsDate.substring(6, 8)}` : 'N/A'}
@@ -111,7 +111,7 @@ export default function GenericStatsClient({
  </Button>
  <DataExportExcel
  data={initialData}
- headers={[{ label: '?좎쭨', key: 'statsDate' }, { label: statsName, key: 'statsCo' }]}
+ headers={[{ label: '날짜', key: 'statsDate' }, { label: statsName, key: 'statsCo' }]}
  filename={exportFilename}
  />
  </div>
@@ -197,7 +197,7 @@ export default function GenericStatsClient({
  columns={columns}
  data={initialData}
  loading={loading}
- emptyMessage="통계 ?곗씠?곕? 분석 以묒엯?덈떎..."
+ emptyMessage="통계 데이터를 분석 중입니다..."
  className="border-none bg-slate-50/50 rounded-[2rem] md:rounded-[3rem] p-4 md:p-8"
  />
  </div>

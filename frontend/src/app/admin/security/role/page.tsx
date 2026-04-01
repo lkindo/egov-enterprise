@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -57,7 +57,7 @@ export default function RoleManagePage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [params, setParams] = useState<SearchParams>({
-    page踰덊샇: 1,
+    pageNo: 1,
     searchKeyword: '',
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -89,23 +89,23 @@ export default function RoleManagePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
       setIsDialogOpen(false);
-      toast('신규 ?몃텇님보안 濡?Role)님?깃났?곸쑝濡님ㅼ옣?섏뿀?듬땲님', 'success');
+      toast('신규 세분화 보안 롤(Role)이 성공적으로 설정되었습니다.', 'success');
     },
-    onError: () => toast('濡님앹꽦 以님쒖뒪님?덉쇅媛 諛쒖깮?덉뒿?덈떎.', 'error')
+    onError: () => toast('롤 생성 중 시스템 예외가 발생했습니다.', 'error')
   });
 
   const deleteMutation = useMutation({
     mutationFn: (roleCode: string) => roleAdminService.deleteRole(roleCode),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
-      toast('보안 濡님꾨줈?꾩씠 ?곴뎄?곸쑝濡님뚭린?섏뿀?듬땲님', 'success');
+      toast('보안 롤 프로필이 영구적으로 파기되었습니다.', 'success');
     },
-    onError: () => toast('님젣 泥섎━ 以님쒖뒪님?덉쇅媛 諛쒖깮?덉뒿?덈떎.', 'error')
+    onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error')
   });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setParams(prev => ({ ...prev, page踰덊샇: 1 }));
+    setParams(prev => ({ ...prev, pageNo: 1 }));
   };
 
   const handleCreate = () => {
@@ -121,7 +121,7 @@ export default function RoleManagePage() {
   };
 
   const handleDelete = async (roleCode: string) => {
-    if (!confirm('?대떦 보안 濡ㅼ쓣 님젣?섏떆寃좎뒿?덇퉴? ?쒖뒪님?묎렐 ?쒖뼱님利됯컖 ?곹뼢님誘몄묩?덈떎.')) return;
+    if (!confirm('정말 삭제하시겠습니까?')) return;
     deleteMutation.mutate(roleCode);
   };
 
@@ -131,7 +131,7 @@ export default function RoleManagePage() {
 
   const columns: Column<RoleManage>[] = [
     {
-      header: '보안 濡님꾨줈?좎퐳',
+      header: '보안 롤 프로파일',
       accessor: (item: RoleManage) => (
         <div className="flex items-center gap-4 py-3">
           <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-all duration-500">
@@ -146,7 +146,7 @@ export default function RoleManagePage() {
       className: 'w-64'
     },
     {
-      header: '濡?紐낆꽭 (Architecture)',
+      header: '롤 명세 (Architecture)',
       accessor: (item: RoleManage) => (
         <div className="flex flex-col gap-0.5">
           <span className="font-black text-foreground tracking-tight text-md uppercase leading-none mb-1">{item.roleNm}</span>
@@ -183,14 +183,14 @@ export default function RoleManagePage() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="?몃텇님보안 濡?Role) ?꾪궎?띿쿂"
-        breadcrumbs={[{ label: '보안愿由? }, { label: '濡ㅺ?由? }]}
+        title="세분화 보안 롤(Role) 아키텍처"
+        breadcrumbs={[{ label: '보안 관리' }, { label: '롤 관리' }]}
       />
 
       <HubHeader
         title="Access"
         highlight="Control"
-        subtitle="由ъ냼님?섏님님뺣님님묎렐 ?쒖뼱瑜님꾪븳 보안 濡님⑦꽩 諛님寃님붾뱶?ъ씤님嫄곕쾭?뚯뒪"
+        subtitle="리소스 수준의 제어와 접근 제어를 위한 보안 롤 패턴 및 가드포인트 거버넌스"
         icon={ShieldCheck}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -205,22 +205,22 @@ export default function RoleManagePage() {
               onClick={handleCreate}
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
-              <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 濡님ㅼ옣
+              <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 롤 설정
             </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="濡님뺤쓽" value={roles.length} icon={Database} color="indigo" />
-        <HubMetricCard title="?⑦꽩 노드" value={pagination?.totalRecordCount || 0} icon={Layers} color="primary" />
-        <HubMetricCard title="?꾨줈釉님곹깭" value="?뺤긽" icon={Activity} color="emerald" status="?숆린?붾맖" />
-        <HubMetricCard title="沅뚰븳 ?먮쫫" value="?뺤씤님 icon={Workflow} color="amber" />
+        <HubMetricCard title="롤 정의" value={roles.length} icon={Database} color="indigo" />
+        <HubMetricCard title="패턴 노드" value={pagination?.totalRecordCount || 0} icon={Layers} color="primary" />
+        <HubMetricCard title="프로브 상태" value="정상" icon={Activity} color="emerald" status="동기화됨" />
+        <HubMetricCard title="권한 흐름" value="확인됨" icon={Workflow} color="amber" />
       </HubMetricGrid>
 
       <HubSectionCard
-        title="보안 濡님⑦꽩 留ㅽ듃由?뒪"
-        description="?쒖뒪님?붾뱶?ъ씤님諛?URL ?⑦꽩 湲곕컲님?뺣? 보안 ?쒖뼱 紐낆꽭 諛님몃깽?좊━?낅땲님"
+        title="보안 롤 패턴 매트릭스"
+        description="시스템 가드포인트 및 URL 패턴 기반의 세부 보안 제어 명세 및 인벤토리입니다."
         icon={SearchCode}
       >
         <div className="space-y-8">
@@ -229,16 +229,16 @@ export default function RoleManagePage() {
               <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
                 <Input
-                  placeholder="濡?肄붾뱶 ?먮뒗 洹쒖튃 紐낆묶?쇰줈 분석..."
+                  placeholder="롤코드 또는 롤명으로 검색"
                   className="w-[450px] h-16 pl-16 rounded-2xl border-2 bg-slate-50/50 text-sm font-black tracking-tight shadow-inner"
                   value={params.searchKeyword || ''}
                   onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                 />
-                <Button type="submit" className="h-16 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">?⑦꽩 분석</Button>
+                <Button type="submit" className="h-16 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">패턴 분석</Button>
               </form>
             </div>
             <div>
-              <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">湲곕뒫님님븷 ?뚯씠釉님꾨줈釉?/span>
+              <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">기능 역할 테이블 프로브</span>
             </div>
           </div>
 
@@ -247,7 +247,7 @@ export default function RoleManagePage() {
               columns={columns}
               data={roles}
               loading={isLoading}
-              emptyMessage="?앸퀎님보안 濡님⑦꽩 由ъ냼?ㅺ? 議댁옱?섏? ?딆뒿?덈떎."
+              emptyMessage="식별된 보안 롤 패턴 리소스가 존재하지 않습니다."
               className="border-none bg-transparent"
             />
           </div>
@@ -256,7 +256,7 @@ export default function RoleManagePage() {
             <div className="mt-12 flex justify-center">
               <PagePagination
                 pagination={pagination}
-                onPageChange={(page) => setParams(prev => ({ ...prev, page踰덊샇: page }))}
+                onPageChange={(page) => setParams(prev => ({ ...prev, pageNo: page }))}
               />
             </div>
           )}
@@ -267,12 +267,12 @@ export default function RoleManagePage() {
       <StandardModal
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        title="신규 ?몃텇님보안 濡님ㅼ옣"
+        title="신규 세분화 보안 롤 설정"
         maxWidth="xl"
       >
         <div className="p-4 space-y-12">
           <div className="grid grid-cols-2 gap-10">
-            <FormField label="보안 濡님앸퀎님(Role Code)" required description="보안 ?덉씠님?댁뿉님?좎씪님洹쒖튃 ?앸퀎님>
+            <FormField label="보안 롤 식별값(Role Code)" required description="보안 레이어 내의 유일한 규칙 식별자">
               <div className="relative group/id">
                 <Key size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                 <Input
@@ -280,11 +280,11 @@ export default function RoleManagePage() {
                   value={formData.roleCode || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, roleCode: e.target.value }))}
                   className="h-16 pl-16 rounded-2xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner"
-                  placeholder="濡님앸퀎님
+                  placeholder="롤 식별값"
                 />
               </div>
             </FormField>
-            <FormField label="濡님덉씠釉?紐낆묶" required description="보안 ?꾩뭅?대툕?먯꽌 ?앸퀎님洹쒖튃 紐낆묶">
+            <FormField label="롤 레이블 명칭" required description="보안 아카이브에서 식별될 규칙 명칭">
               <div className="relative group/nm">
                 <Lock size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
                 <Input
@@ -292,13 +292,13 @@ export default function RoleManagePage() {
                   value={formData.roleNm || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, roleNm: e.target.value }))}
                   className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
-                  placeholder="濡?紐낆묶 ?낅젰"
+                  placeholder="롤 명칭 입력"
                 />
               </div>
             </FormField>
           </div>
 
-          <FormField label="?묎렐 ?⑦꽩 (URL/Resource Pattern)" required description="보안 ?꾪꽣媛 ?명꽣?됲듃님由ъ냼님寃쎈줈 洹쒖튃">
+          <FormField label="접근 패턴 (URL/Resource Pattern)" required description="보안 필터가 인터셉트할 리소스 경로 규칙">
             <div className="relative group/ptn">
               <Workflow size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/ptn:opacity-100 transition-opacity" />
               <Input
@@ -312,7 +312,7 @@ export default function RoleManagePage() {
           </FormField>
 
           <div className="grid grid-cols-2 gap-10">
-            <FormField label="濡님꾪궎?띿쿂 ?님 description="보안 洹쒖튃님?곸슜님湲곗닠님?덉씠님>
+            <FormField label="롤 아키텍처 타입" description="보안 규칙이 적용될 기술 레이어">
               <select
                 id="roleTyp"
                 value={formData.roleTyp || ''}
@@ -324,7 +324,7 @@ export default function RoleManagePage() {
                 <option value="api">REST_ENDPOINT</option>
               </select>
             </FormField>
-            <FormField label="?곗꽑?쒖쐞 (Sort Order)" description="보안 ?꾪꽣 泥댁씤?먯꽌님?곸슜 ?곗꽑?쒖쐞">
+            <FormField label="우선순위 (Sort Order)" description="보안 필터 체인에서의 적용 우선순위">
               <div className="relative group/sort">
                 <ListOrdered size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/sort:opacity-100 transition-opacity" />
                 <Input
@@ -339,7 +339,7 @@ export default function RoleManagePage() {
             </FormField>
           </div>
 
-          <FormField label="濡님뺤콉 ?곸꽭 紐낆꽭" description="?대떦 보안 濡ㅼ쓽 援ъ껜?곸씤 ?뺤콉 踰붿쐞 諛?鍮꾩쫰?덉뒪 ?붽굔">
+          <FormField label="롤 정책 상세 명세" description="해당 보안 롤의 구체적인 정책 범위 및 비즈니스 요건">
             <div className="relative group/dc">
               <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
               <Textarea
@@ -347,16 +347,16 @@ export default function RoleManagePage() {
                 value={formData.roleDc || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, roleDc: e.target.value }))}
                 className="min-h-[140px] pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
-                placeholder="?곸꽭 紐낆꽭 ?낅젰..."
+                placeholder="상세 명세 입력..."
               />
             </div>
           </FormField>
 
           <div className="flex gap-6 pt-4">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">痍⑥냼</Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
             <Button onClick={handleSubmit} disabled={createMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
               {createMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
-              <span className="ml-2">濡님꾪궎?띿쿂 諛고룷</span>
+              <span className="ml-2">롤 아키텍처 배포</span>
             </Button>
           </div>
         </div>
@@ -364,4 +364,3 @@ export default function RoleManagePage() {
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
@@ -21,7 +21,7 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
   const commentCn = formData.get('commentCn') as string;
 
   if (!commentCn || commentCn.trim() === '') {
-    return { success: false, message: '?볤? ?댁슜님?낅젰?댁＜?몄슂.' };
+    return { success: false, message: '댓글 내용을 입력해주세요.' };
   }
 
   try {
@@ -39,12 +39,12 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
 
     if (response) {
       revalidatePath(`/admin/community/boards/detail`);
-      return { success: true, message: '?볤님?등록?섏뿀?듬땲님' };
+      return { success: true, message: '댓글이 등록되었습니다.' };
     } else {
-      return { success: false, message: '?볤? 등록님?ㅽ뙣?덉뒿?덈떎.' };
+      return { success: false, message: '댓글 등록에 실패했습니다.' };
     }
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.';
+    const errorMessage = error instanceof Error ? error.message : '오류가 발생했습니다.';
     console.error('Comment Create Error:', error);
     return { success: false, message: errorMessage };
   }
@@ -64,12 +64,12 @@ export async function deleteComment(prevState: unknown, formData: FormData): Pro
 
     if (response !== undefined) {
       revalidatePath(`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${nttId}`);
-      return { success: true, message: '?볤님님?젣?섏뿀?듬땲님' };
+      return { success: true, message: '댓글이 삭제되었습니다.' };
     } else {
-      return { success: false, message: '님젣님?ㅽ뙣?덉뒿?덈떎.' };
+      return { success: false, message: '삭제에 실패했습니다.' };
     }
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '님젣 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.';
+    const errorMessage = error instanceof Error ? error.message : '삭제 중 오류가 발생했습니다.';
     console.error('Comment Delete Error:', error);
     return { success: false, message: errorMessage };
   }

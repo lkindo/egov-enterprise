@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"분류코드는 필수입니다.";
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -33,7 +33,7 @@ import { CmmnClCode } from '@/types/foundation/system';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 
 const formSchema = z.object({
- clCode: z.string().min(1, { message: "遺꾨쪟肄붾뱶님?꾩닔?낅땲님" }),
+ clCode: z.string().min(1, { message: "분류코드명은 필수입니다." }),
  clCodeNm: z.string().min(1, { message: "遺꾨쪟肄붾뱶紐낆? ?꾩닔?낅땲님" }),
  clCodeDc: z.string().optional(),
  useAt: z.enum(['Y', 'N']),
@@ -69,20 +69,20 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  onOpenChange(false);
  } catch {
  console.error(error);
- alert('?님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
+ alert('저장 중 오류가 발생했습니다.');
  }
  };
 
  const handleDelete = async () => {
  if (!data?.clCode) return;
- if (confirm('?뺣쭚濡님?젣?섏떆寃좎뒿?덇퉴?')) {
+ if (confirm('정말로 삭제하시겠습니까?')) {
  try {
  await codeAdminService.deleteClCode(data.clCode);
  onSuccess();
  onOpenChange(false);
  } catch {
  console.error(error);
- alert('님젣 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
+ alert('삭제 중 오류가 발생했습니다.');
  }
  }
  };
@@ -91,7 +91,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  <Dialog open={open} onOpenChange={onOpenChange}>
  <DialogContent className="sm:max-w-[425px]">
  <DialogHeader>
- <DialogTitle>{isEdit ? '怨듯넻遺꾨쪟肄붾뱶 ?섏젙' : '怨듯넻遺꾨쪟肄붾뱶 등록'}</DialogTitle>
+ <DialogTitle>{isEdit ? '공통분류코드 수정' : '공통분류코드 등록'}</DialogTitle>
  <DialogDescription>
  怨듯넻遺꾨쪟肄붾뱶 ?뺣낫瑜?{isEdit ? '?섏젙' : '?낅젰'}?⑸땲님
  </DialogDescription>
@@ -105,7 +105,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  <FormItem>
  <FormLabel>遺꾨쪟肄붾뱶</FormLabel>
  <FormControl>
- <Input placeholder="遺꾨쪟肄붾뱶" {...field} readOnly={isEdit} />
+ <Input placeholder="분류코드" {...field} readOnly={isEdit} />
  </FormControl>
  <FormMessage />
  </FormItem>
@@ -131,7 +131,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  <FormItem>
  <FormLabel>?ㅻ챸</FormLabel>
  <FormControl>
- <Input placeholder="?ㅻ챸" {...field} />
+ <Input placeholder="분류코드명" {...field} />
  </FormControl>
  <FormMessage />
  </FormItem>
@@ -146,7 +146,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  <Select onValueChange={field.onChange} defaultValue={field.value}>
  <FormControl>
  <SelectTrigger>
- <SelectValue placeholder="?ъ슜?щ?" />
+ <SelectValue placeholder="사용여부" />
  </SelectTrigger>
  </FormControl>
  <SelectContent>

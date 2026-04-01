@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"메뉴번호는 필수입니다.";
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,9 +39,9 @@ import { menuAdminService } from '@/services/foundation/system/MenuAdminService'
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
-  menuNo: z.coerce.number().min(1, { message: "硫붾돱踰덊샇님?꾩닔?낅땲님" }),
-  menuNm: z.string().min(1, { message: "硫붾돱紐낆? ?꾩닔?낅땲님" }),
-  progrmFileNm: z.string().min(1, { message: "?꾨줈洹몃옩?뚯씪紐낆? ?꾩닔?낅땲님" }),
+  menuNo: z.coerce.number().min(1, { message: "메뉴순서는 필수입니다." }),
+  menuNm: z.string().min(1, { message: "메뉴명은 필수입니다." }),
+  progrmFileNm: z.string().min(1, { message: "프로그램파일명은 필수입니다." }),
   menuOrdr: z.coerce.number().min(1, { message: "硫붾돱?쒖꽌님?꾩닔?낅땲님" }),
   menuDc: z.string().optional(),
   upperMenuId: z.coerce.number().optional(),
@@ -89,20 +89,20 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
       onOpenChange(false);
     } catch {
       console.error(error);
-      alert('?님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
+      alert('저장 중 오류가 발생했습니다.');
     }
   };
 
   const handleDelete = async () => {
     if (!data?.menuNo) return;
-    if (confirm('?뺣쭚濡님?젣?섏떆寃좎뒿?덇퉴?')) {
+    if (confirm('정말로 삭제하시겠습니까?')) {
       try {
         await menuAdminService.deleteMenu(data.menuNo);
         onSuccess();
         onOpenChange(false);
       } catch {
         console.error(error);
-        alert('님젣 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
+        alert('삭제 중 오류가 발생했습니다.');
       }
     }
   };
@@ -136,7 +136,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                     <FormControl>
                       <Input 
                         inputMode="numeric" 
-                        placeholder="踰덊샇 ?낅젰" 
+                        placeholder="메뉴번호" 
                         {...field} 
                         value={String(field.value)}
                         readOnly={isEdit} 
@@ -158,7 +158,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                     <FormControl>
                       <Input 
                         inputMode="numeric" 
-                        placeholder="?쒖꽌" 
+                        placeholder="순서" 
                         {...field} 
                         value={String(field.value)}
                         className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition-all shadow-inner"
@@ -180,7 +180,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                   </FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="硫붾돱紐낆쓣 ?낅젰?섏꽭님.." 
+                      placeholder="메뉴명" 
                       {...field} 
                       className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                     />
@@ -201,7 +201,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                     </FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="?뚯씪紐?.." 
+                        placeholder="프로그램파일명" 
                         {...field} 
                         className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
                       />
@@ -221,7 +221,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                     <FormControl>
                       <Input 
                         inputMode="numeric" 
-                        placeholder="?곸쐞 ID" 
+                        placeholder="상위메뉴번호" 
                         {...field} 
                         value={String(field.value)}
                         className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition-all shadow-inner"
@@ -243,7 +243,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  </FormLabel>
  <FormControl>
  <Input 
- placeholder="硫붾돱님?님?곸꽭 ?ㅻ챸님?낅젰?섏꽭님.." 
+ placeholder="설명" 
  {...field} 
  className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
  />

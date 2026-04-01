@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'개인정보 처리 방침이 업데이트되었습니다.';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -58,8 +58,8 @@ export default function PrivacyPolicyClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="보안 ?뺤콉 嫄곕쾭?뚯뒪"
-        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '보안愿由? }, { label: '媛쒖씤?뺣낫蹂댄샇?뺤콉' }]}
+        title="보안 정책 거버넌스"
+        breadcrumbs={[{ label: '시스템관리'보안愿由? }, { label: '媛쒖씤?뺣낫蹂댄샇?뺤콉' }]}
       />
 
       <HubHeader 

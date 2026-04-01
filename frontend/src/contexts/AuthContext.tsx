@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'인증 정보가 올바르지 않습니다.';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';

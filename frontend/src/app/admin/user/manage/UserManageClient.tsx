@@ -1,4 +1,4 @@
-'use client';
+`page번호=${page}&searchKeyword=${params.searchKeyword || ''}&searchCondition=${params.searchCondition || '0'}&sbscrbSttus=${params.sbscrbSttus || ''}`;
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';

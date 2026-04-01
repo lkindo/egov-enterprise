@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'보안 정책 변경 안내';
 
 import React, { useState } from 'react';
 import {
@@ -59,8 +59,8 @@ export function SmartNotificationHub() {
  {
  id: 'nt-003',
  type: 'sms',
- title: '?쒕쾭 怨쇰님?寃쎄퀬',
- content: '[EGov] DB ?쒕쾭 CPU ?먯쑀님95% 珥덇낵 諛쒖깮',
+ title: '서버 과부하 경고',
+ content: '[EGov] DB 서버 CPU 점유율 95% 초과 발생',
  recipient: '010-XXXX-XXXX',
  timestamp: '2026-02-23 08:45:22',
  status: 'failed',
@@ -69,8 +69,8 @@ export function SmartNotificationHub() {
  {
  id: 'nt-004',
  type: 'system',
- title: '신규 ?낅뜲?댄듃 ?꾨즺',
- content: '?뚮옯님v2.4.0 ?⑥튂媛 ?깃났?곸쑝濡님곸슜?섏뿀?듬땲님',
+ title: '신규 업데이트 완료',
+ content: '플랫폼 v2.4.0 패치가 성공적으로 적용되었습니다.',
  recipient: 'Admin.Lee',
  timestamp: '2026-02-22 23:00:00',
  status: 'sent',
@@ -106,10 +106,10 @@ export function SmartNotificationHub() {
  {/* Dynamic Stats Cards */}
  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
  {[
- { label: '?꾩껜 ?뚮┝', count: 1284, delta: '+12%', icon: <Bell />, color: 'primary' },
- { label: '?쒖뒪님怨듭?', count: 42, delta: '+2', icon: <Bot />, color: 'indigo' },
- { label: '硫붿씪 諛쒖넚', count: 856, delta: '+45', icon: <Mail />, color: 'blue' },
- { label: 'SMS ?꾩넚', count: 386, delta: '-5%', icon: <MessageSquare />, color: 'emerald' },
+ { label: '전체 알림', count: 1284, delta: '+12%', icon: <Bell />, color: 'primary' },
+ { label: '시스템 공지', count: 42, delta: '+2', icon: <Bot />, color: 'indigo' },
+ { label: '메일 발송', count: 856, delta: '+45', icon: <Mail />, color: 'blue' },
+ { label: 'SMS 전송', count: 386, delta: '-5%', icon: <MessageSquare />, color: 'emerald' },
  ].map((stat, i) => (
  <div key={`hub-stat-${i}`} className="p-8 pb-6 bg-card border-2 border-primary/5 rounded-[2.5rem] shadow-xl relative overflow-hidden group">
  <div className="flex items-center justify-between mb-4">

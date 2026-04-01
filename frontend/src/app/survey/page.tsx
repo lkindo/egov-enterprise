@@ -40,7 +40,7 @@ export default function SurveyListPage() {
           "px-2 py-1 rounded text-[10px] font-black ",
           item.status === 'OPEN' ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"
         )}>
-          {item.status === 'OPEN' ? '진행 중' : '종료'}
+          {item.status === 'OPEN' ? '진행중' : '종료'}
         </span>
       ),
       className: 'w-24'
@@ -82,8 +82,8 @@ export default function SurveyListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="온라인 설문조사"
-        breadcrumbs={[{ label: '업무 지원' }, { label: '설문조사' }]}
+        title="온라인 설문 조사"
+        breadcrumbs={[{ label: '업무지원' }, { label: '설문조사' }]}
       />
 
       <StandardSearchFilter
@@ -99,7 +99,7 @@ export default function SurveyListPage() {
           data={data}
           loading={loading}
           onRowClick={(item) => router.push(`/survey/${item.qestnrId}`)}
-          emptyMessage="등록된 설문조사가 없습니다."
+          emptyMessage="등록된 설문 조사가 없습니다."
         />
       </div>
     </div>

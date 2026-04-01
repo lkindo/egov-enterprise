@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'부재';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -112,7 +112,7 @@ export default function AbsenceAdminClient({
       )
     },
     {
-      header: '媛?⑹꽦 ?꾨줈?좎퐳',
+      header: '이메일 / 연락처',
       accessor: (item: any) => {
         const isAbsent = getAbsenceStatus(item.emplyrId);
         return (
@@ -230,7 +230,7 @@ export default function AbsenceAdminClient({
                 columns={columns}
                 data={users.filter((u: any) => u.userNm.includes(searchKeyword) || u.emplyrId.includes(searchKeyword))}
                 loading={loading}
-                emptyMessage="현재 활성?붾맂 由ъ냼님?ㅽ듃由쇱씠 議댁옱?섏? ?딆뒿?덈떎."
+                emptyMessage="리소스 데이터를 분석 중입니다..."
                 className="border-none bg-transparent"
               />
             </div>

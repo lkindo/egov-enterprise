@@ -1,4 +1,4 @@
-﻿'목록을 불러오는 중 오류가 발생했습니다.';
+'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -11,7 +11,8 @@ import { useToast } from '@/app/components/ui/toast';
 import { useSearchState } from '@/lib/hooks/use-search-state';
 import { Plus, Eye, Megaphone, Loader2 } from 'lucide-react';
 
-const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 공지사항 湲곕낯媛?
+const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 공지사항 기본값
+
 function CommunityDetailContent() {
     const router = useRouter();
     const params = useParams();
@@ -25,41 +26,16 @@ function CommunityDetailContent() {
         page: '0'
     });
 
-<<<<<<< HEAD
- useEffect(() => {
- async function loadPosts() {
- try {
- setLoading(true);
- // ?ㅼ젣濡쒕뒗 communityId님?곕Ⅸ bbsId瑜?조회?댁빞 님?섎룄 ?덉쑝님 
- // 湲곗〈 濡쒖쭅님?꾨님붾맂 寃쎈줈濡님댁떇?⑸땲님
- const res = await boardUserService.getPosts(values.bbsId, {
- page: parseInt(values.page),
- size: 10,
- searchWrd: values.searchWrd,
- searchCnd: values.searchCnd
- });
- setData(res.list || []);
- setTotal(res.total || 0);
- } catch {
- toast('紐⑸줉님遺덈윭?ㅻ뒗 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
- } finally {
- setLoading(false);
- }
- }
- loadPosts();
- }, [values, toast, communityId]);
-=======
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<BoardPost[]>([]);
     const [total, setTotal] = useState(0);
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
 
     useEffect(() => {
         async function loadPosts() {
             try {
                 setLoading(true);
-                // ?ㅼ젣濡쒕뒗 communityId님?곕Ⅸ bbsId瑜?조회?댁빞 님?섎룄 ?덉쑝님 
-                // 湲곗〈 濡쒖쭅님?꾨님붾맂 寃쎈줈濡님댁떇?⑸땲님
+                // 실질적으로는 communityId에 따른 bbsId를 조회해야 할 수도 있으나 
+                // 기존 로직에 명시된 경로를 따릅니다.
                 const res = await boardUserService.getPosts(values.bbsId, {
                     page: parseInt(values.page),
                     size: 10,
@@ -69,13 +45,13 @@ function CommunityDetailContent() {
                 setData(res.list || []);
                 setTotal(res.total || 0);
             } catch {
-                toast('紐⑸줉님遺덈윭?ㅻ뒗 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+                toast('목록을 불러오는 중 오류가 발생했습니다.', 'error');
             } finally {
                 setLoading(false);
             }
         }
         loadPosts();
-    }, [values, toast, communityId]);
+    }, [values, toast, communityId, values.bbsId, values.page, values.searchWrd, values.searchCnd]);
 
     const columns = [
         {
@@ -97,8 +73,8 @@ function CommunityDetailContent() {
             ),
             className: 'min-w-[300px]'
         },
-        { header: '작성자'?듬챸' },
-        { header: '?좎쭨', accessor: (item: BoardPost) => item.createdDate.substring(0, 10) },
+        { header: '작성자', accessor: (item: BoardPost) => item.ntcrNm || '익명' },
+        { header: '날짜', accessor: (item: BoardPost) => item.createdDate.substring(0, 10) },
         {
             header: '조회',
             accessor: (item: BoardPost) => (
@@ -113,14 +89,14 @@ function CommunityDetailContent() {
     return (
         <div className="space-y-6">
             <PageHeader
-                title="而ㅻ님덊떚 ?곸꽭 諛?寃뚯떆님
-                breadcrumbs={[{ label: '?묒뾽吏님, href: '/admin/community' }, { label: '而ㅻ님덊떚 ?곸꽭' }]}
+                title="커뮤니티 상세 및 게시글"
+                breadcrumbs={[{ label: '커뮤니티 관리', href: '/admin/community' }, { label: '커뮤니티 상세' }]}
                 actions={
                     <button
                         onClick={() => router.push('/admin/community/boards/write')}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
                     >
-                        <Plus size={18} /> 님湲 ?곌린
+                        <Plus size={18} /> 새 글 쓰기
                     </button>
                 }
             />
@@ -128,24 +104,24 @@ function CommunityDetailContent() {
             <StandardSearchFilter
                 fields={[
                     {
-                        name: '게시판 선택',
-                        label: '寃뚯떆님?좏깮',
+                        name: 'bbsId',
+                        label: '게시판 선택',
                         type: 'select',
                         options: [
                             { label: '공지사항', value: 'BBSMSTR_AAAAAAAAAAAA' },
-                            { label: '자유게시판'BBSMSTR_BBBBBBBBBBBB' },
-                            { label: '업무게시판'BBSMSTR_CCCCCCCCCCCC' }
+                            { label: '자유게시판', value: 'BBSMSTR_BBBBBBBBBBBB' },
+                            { label: '업무게시판', value: 'BBSMSTR_CCCCCCCCCCCC' }
                         ]
                     },
                     { name: 'searchWrd', label: '검색어', type: 'text', placeholder: '제목, 내용 입력...' },
                     {
-                        name: '검색 조건',
-                        label: '寃님議곌굔',
+                        name: 'searchCnd',
+                        label: '검색 조건',
                         type: 'select',
                         options: [
                             { label: '제목', value: '0' },
                             { label: '내용', value: '1' },
-                            { label: '작성자'2' }
+                            { label: '작성자', value: '2' }
                         ]
                     }
                 ]}
@@ -162,7 +138,7 @@ function CommunityDetailContent() {
 
             <div className="flex justify-center pt-4">
                 <p className="text-sm text-muted-foreground font-medium">
-                    珥?<span className="text-foreground font-bold">{total}</span> 媛쒖쓽 寃뚯떆湲님?덉뒿?덈떎.
+                    총 <span className="text-foreground font-bold">{total}</span> 개의 게시글이 있습니다.
                 </p>
             </div>
         </div>
@@ -174,7 +150,7 @@ export default function CommunityDetailPage() {
         <Suspense fallback={
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <p className="text-muted-foreground font-medium animate-pulse">而ㅻ님덊떚 ?뺣낫瑜?遺덈윭?ㅺ퀬 ?덉뒿?덈떎...</p>
+                <p className="text-muted-foreground font-medium animate-pulse">커뮤니티 정보를 불러오고 있습니다...</p>
             </div>
         }>
             <CommunityDetailContent />

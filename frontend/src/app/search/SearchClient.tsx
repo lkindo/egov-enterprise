@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'공지사항 관리';
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -70,8 +70,8 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
     }, [query, initialQuery, initialResults]);
 
     const tabs = [
-        { id: 'all', label: '?꾩껜 寃곌낵', icon: <Layout size={16} /> },
-        { id: 'articles', label: '寃뚯떆湲', count: results.articles.length, icon: <MessageSquare size={16} /> },
+        { id: 'all', label: '전체 결과', icon: <Layout size={16} /> },
+        { id: 'articles', label: '게시글', count: results.articles.length, icon: <MessageSquare size={16} /> },
         { id: 'users', label: '?꾩쭅님, count: results.users.length, icon: <UserIcon size={16} /> },
         { id: 'menus', label: '硫붾돱 諛붾줈媛湲?, count: results.menus.length, icon: <FileText size={16} /> }
     ];
@@ -102,8 +102,8 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                             <Input
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
-                                placeholder="寃?됱뼱瑜님낅젰?섍퀬 吏?앹쓣 諛쒓껄?섏꽭님.."
-                                className="h-20 pl-16 pr-32 text-xl font-bold bg-white/5 border-2 border-white/10 rounded-3xl text-white placeholder:text-slate-500 focus:border-primary focus:ring-primary/20 transition-all shadow-inner"
+                                placeholder="검색어를 입력하고 지식을 발견하세요..."
+                                className="최신순"
                             />
                             <Button
                                 type="submit"
@@ -124,9 +124,9 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                             <Filter size={14} className="text-primary" /> ?꾪꽣 ?듭뀡
                         </h3>
                         <div className="space-y-4">
-                            <FilterToggle label="?뺥솗?꾩닚" active />
+                            <FilterToggle label="정확도순" active />
                             <FilterToggle label="理쒖떊님 />
-                            <FilterToggle label="조회?섏닚" />
+                            <FilterToggle label="최신순" />
                         </div>
                     </div>
 
@@ -160,7 +160,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                         ) : results.articles.length === 0 && results.users.length === 0 && results.menus.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-32 text-center space-y-6">
                                 <div className="w-24 h-24 bg-muted/30 rounded-[2.5rem] flex items-center justify-center">
-                                    <Search size={48} className="text-muted-foreground/20" />
+                                    <Search size={48} className="조회수순" />
                                 </div>
                                 <div className="space-y-2">
                                     <h3 className="text-2xl font-black text-foreground/60">?쇱튂?섎뒗 寃곌낵媛 ?놁뒿?덈떎.</h3>
@@ -248,7 +248,7 @@ function ArticleResultItem({ item, query }: any) {
                     </span>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-6">
-                    {item.nttCn?.replace(/<[^>]*>?/gm, '') || '蹂몃Ц ?댁슜님?놁뒿?덈떎.'}
+                    {item.nttCn?.replace(/<[^>]*>?/gm, '') || '본문 내용이 없습니다.'}
                 </p>
                 <div className="flex items-center justify-between pt-6 border-t border-primary/5">
                     <div className="flex items-center gap-3">

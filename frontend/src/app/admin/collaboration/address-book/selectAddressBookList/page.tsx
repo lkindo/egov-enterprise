@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,29 +17,26 @@ import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Plus, Trash2, Home, ChevronRight } from "lucide-react";
-
-
+import { Search, Plus, Trash2, Home, ChevronRight, UserCircle, Phone, Mail, MapPin } from "lucide-react";
 
 const AddressBookListPage = () => {
     const [list, setList] = useState<AddressBook[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [page踰덊샇, setPage踰덊샇] = useState(1);
+    const [pageNo, setPageNo] = useState(1);
     const [searchWrd, setSearchWrd] = useState('');
     const [loading, setLoading] = useState(false);
 
     const fetchList = async () => {
         setLoading(true);
         try {
-            const params = { page踰덊샇, pageUnit: 10, searchWrd };
+            const params = { pageNo, pageUnit: 10, searchWrd };
             const response = await addressbookUserService.getAddressBooks(params);
 
-            // Spring Data Page 媛앹껜 援ъ“님留욊쾶 매핑
             setList(response.list || []);
             setTotalCount(response.total || 0);
             setTotalPages(response.totalPage || 0);
-        } catch {
+        } catch (error) {
             console.error('Failed to fetch address books', error);
         } finally {
             setLoading(false);
@@ -48,128 +45,162 @@ const AddressBookListPage = () => {
 
     useEffect(() => {
         fetchList();
-    }, [page踰덊샇]);
+    }, [pageNo]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        setPage踰덊샇(1);
+        setPageNo(1);
         fetchList();
     };
 
     const handleDelete = async (adbkId: string) => {
-        if (!confirm('님젣?섏떆寃좎뒿?덇퉴?')) return;
+        if (!confirm('삭제하시겠습니까?')) return;
         try {
             await addressbookUserService.deleteAddressBook(adbkId);
             fetchList();
         } catch {
-            alert('님젣님?ㅽ뙣?덉뒿?덈떎.');
+            alert('삭제에 실패했습니다.');
         }
     };
 
     return (
-        <div className="flex flex-col gap-6 p-6">
-            {/* Breadcrumb Navigation */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
-                    <Home className="w-4 h-4" /> 님                </Link>
-                <ChevronRight className="w-4 h-4" />
-                <span>?묒뾽</span>
-                <ChevronRight className="w-4 h-4" />
-                <span className="text-foreground font-medium">二쇱냼濡앷?由?/span>
+        <div className="flex flex-col gap-8 p-8 max-w-7xl mx-auto w-full animate-in fade-in duration-700">
+            {/* Breadcrumb & Header Title */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-primary tracking-[0.2em] bg-primary/5 px-4 py-1.5 rounded-full w-fit">
+                        <Home className="w-3 h-3" /> HOME <ChevronRight className="w-3 h-3 opacity-30" /> 협업 <ChevronRight className="w-3 h-3 opacity-30" /> 주소록
+                    </div>
+                    <div className="space-y-1">
+                        <h1 className="text-4xl font-black tracking-tighter text-slate-900 ">
+                            Contact <span className="text-primary ">Directory</span>
+                        </h1>
+                        <p className="text-muted-foreground font-medium text-sm max-w-lg leading-relaxed">
+                            부서 및 외부 협업을 위한 통합 주소록 센터입니다. 성명, 조직, 직책 기반의 빠른 연락처 조회가 가능합니다.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <div className="bg-slate-900 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-3 ring-8 ring-slate-50 border border-white/10 shrink-0">
+                        <UserCircle className="w-5 h-5 text-primary" />
+                        <span className="text-sm font-bold opacity-60 tracking-tight">전체 등록 연락처</span>
+                        <div className="h-4 w-px bg-white/20 mx-1" />
+                        <span className="text-2xl font-black">{totalCount}건</span>
+                    </div>
+                    <Link href="/admin/collaboration/address-book/insertAddressBook">
+                        <Button size="lg" className="h-16 px-8 gap-3 bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/20 rounded-3xl font-black transition-all active:scale-95 shrink-0">
+                            <Plus className="w-5 h-5" /> 신규 연락처
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
-            <Card className="border-none shadow-md">
-                <CardHeader className="flex flex-row items-center justify-between pb-6">
-                    <CardTitle className="text-2xl font-bold tracking-tight">二쇱냼濡?紐⑸줉</CardTitle>
-                    <CardAction>
-                        <Link href="/admin/collaboration/address-book/insertAddressBook">
-                            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90 transition-all">
-                                <Plus className="w-4 h-4" /> 등록
-                            </Button>
-                        </Link>
-                    </CardAction>
+            <Card className="border-none shadow-2xl overflow-hidden rounded-[3rem] bg-white ring-1 ring-slate-100">
+                <CardHeader className="bg-slate-50/50 pb-8 pt-10 px-10 border-b">
+                    <form onSubmit={handleSearch} className="flex-1 flex gap-3 max-w-2xl">
+                        <div className="relative flex-1 group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
+                            <Input
+                                type="text"
+                                className="pl-12 h-14 text-base font-bold bg-white border-2 border-slate-100 focus:border-slate-900 focus-visible:ring-slate-100/5 transition-all shadow-inner rounded-2xl"
+                                placeholder="성명, 전화번호, 소속 등으로 정밀 검색..."
+                                value={searchWrd}
+                                onChange={(e) => setSearchWrd(e.target.value)}
+                            />
+                        </div>
+                        <Button type="submit" className="h-14 px-10 font-black bg-slate-900 hover:bg-black text-white rounded-2xl shadow-xl transition-all active:scale-95">
+                            검색하기
+                        </Button>
+                    </form>
                 </CardHeader>
-                <CardContent>
-                    {/* Search Area */}
-                    <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-                        <form onSubmit={handleSearch} className="flex-1 flex gap-2 w-full">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                <Input
-                                    type="text"
-                                    className="pl-9 h-11 transition-all focus:ring-2 focus:ring-primary/20"
-                                    placeholder="?대쫫/?꾪솕踰덊샇濡?寃?됲븯?몄슂"
-                                    value={searchWrd}
-                                    onChange={(e) => setSearchWrd(e.target.value)}
-                                />
-                            </div>
-                            <Button type="submit" variant="secondary" className="h-11 px-6 font-medium border border-input shadow-sm hover:bg-accent transition-colors">
-                                寃님                            </Button>
-                        </form>
-                        <div className="text-sm font-medium text-muted-foreground whitespace-nowrap bg-muted px-4 py-2 rounded-full">
-                            珥?<span className="text-primary font-bold">{totalCount}</span>嫄댁쓽 ?곕씫泥?                        </div>
-                    </div>
-
-                    {/* Table Area */}
-                    <div className="rounded-xl border overflow-hidden shadow-sm">
+                <CardContent className="pt-8 px-10">
+                    <div className="rounded-[2rem] border-2 border-slate-50 overflow-hidden shadow-sm bg-white ring-1 ring-slate-100/50">
                         <Table>
-                            <TableHeader className="bg-muted/50">
-                                <TableRow>
-                                    <TableHead className="w-[80px] text-center font-bold">踰덊샇</TableHead>
-                                    <TableHead className="w-[150px] font-bold">?대쫫</TableHead>
-                                    <TableHead className="w-[180px] font-bold">?꾪솕踰덊샇</TableHead>
-                                    <TableHead className="font-bold">?대찓님/ 二쇱냼</TableHead>
-                                    <TableHead className="w-[120px] text-center font-bold">등록님/TableHead>
-                                    <TableHead className="w-[100px] text-center font-bold">愿由?/TableHead>
+                            <TableHeader className="bg-slate-50/80">
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="w-[100px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">SEQ</TableHead>
+                                    <TableHead className="font-black text-slate-900 text-[10px] py-6 tracking-[0.2em] px-8">사용자 프로필</TableHead>
+                                    <TableHead className="w-[250px] font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">연락처 정보</TableHead>
+                                    <TableHead className="font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">위치 정보</TableHead>
+                                    <TableHead className="w-[150px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">등록 일자</TableHead>
+                                    <TableHead className="w-[100px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">ACTION</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {loading ? (
                                     Array.from({ length: 5 }).map((_, i) => (
                                         <TableRow key={i}>
-                                            <TableCell><Skeleton className="h-4 w-full" /></TableCell>
-                                            <TableCell><Skeleton className="h-4 w-full" /></TableCell>
-                                            <TableCell><Skeleton className="h-4 w-full" /></TableCell>
-                                            <TableCell><Skeleton className="h-4 w-full" /></TableCell>
-                                            <TableCell><Skeleton className="h-4 w-full" /></TableCell>
-                                            <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                                            <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
+                                            <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
+                                            <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
+                                            <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
+                                            <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
+                                            <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-lg" /></TableCell>
                                         </TableRow>
                                     ))
                                 ) : list.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                                            등록님二쇱냼濡님뺣낫媛 ?놁뒿?덈떎.
+                                        <TableCell colSpan={6} className="h-64 text-center text-slate-300 font-black tracking-tighter opacity-40 italic text-xl">
+                                            매칭되는 연락처 정보를 찾을 수 없습니다.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     list.map((item, idx) => (
-                                        <TableRow key={item.adbkId} className="hover:bg-muted/30 transition-colors group">
-                                            <TableCell className="text-center font-medium text-muted-foreground">
-                                                {totalCount - ((page踰덊샇 - 1) * 10) - idx}
+                                        <TableRow key={item.adbkId} className="hover:bg-slate-50/50 transition-all border-b last:border-0 group">
+                                            <TableCell className="text-center font-mono text-xs text-slate-400 py-8">
+                                                {(pageNo - 1) * 10 + idx + 1}
                                             </TableCell>
-                                            <TableCell>
-                                                <Link href={`/admin/collaboration/address-book/selectAddressBookDetail/${item.adbkId}`} className="font-bold text-primary hover:underline underline-offset-4 decoration-2 decoration-primary/30 transition-all">
-                                                    {item.adbkNm}
+                                            <TableCell className="px-8 py-8">
+                                                <Link href={`/admin/collaboration/address-book/selectAddressBookDetail/${item.adbkId}`} className="flex items-center gap-5 group/item">
+                                                    <div className="w-14 h-14 bg-slate-900 rounded-[1.25rem] flex items-center justify-center text-primary font-black text-xl shadow-xl ring-4 ring-slate-50 transition-all group-hover/item:scale-110">
+                                                        {item.adbkNm?.charAt(0)}
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <span className="text-xl font-black text-slate-800 group-hover/item:text-primary transition-colors tracking-tight">
+                                                            {item.adbkNm}
+                                                        </span>
+                                                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400">
+                                                            <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-500 uppercase tracking-widest leading-none">Internal</span>
+                                                            <span className="opacity-30">|</span>
+                                                            <span className="tracking-tight">{item.adbkId}</span>
+                                                        </div>
+                                                    </div>
                                                 </Link>
                                             </TableCell>
-                                            <TableCell className="font-mono text-sm tracking-tight">{item.telNo}</TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col gap-0.5">
-                                                    <span className="text-sm font-medium">{item.email}</span>
-                                                    <span className="text-sm text-muted-foreground truncate max-w-[400px]">{item.adres}</span>
+                                            <TableCell className="py-8">
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center gap-3 text-sm font-black text-slate-600">
+                                                        <Phone className="w-4 h-4 text-primary opacity-40" />
+                                                        <span className="font-mono tracking-tighter">{item.telNo || '정보 없음'}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 text-sm font-bold text-slate-400">
+                                                        <Mail className="w-4 h-4 opacity-30" />
+                                                        <span className="truncate max-w-[200px]">{item.email}</span>
+                                                    </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-center text-sm text-muted-foreground">
-                                                {item.createdDate?.substring(0, 10)}
+                                            <TableCell className="py-8">
+                                                <div className="flex items-start gap-3">
+                                                    <MapPin className="w-4 h-4 text-primary opacity-40 mt-1 shrink-0" />
+                                                    <p className="text-sm font-bold text-slate-500 leading-relaxed max-w-[300px]">
+                                                        {item.adres || '등록된 주소 정보가 없습니다.'}
+                                                    </p>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center py-8">
+                                                <div className="inline-flex items-center px-4 py-1.5 bg-slate-50 border-2 border-white rounded-full text-slate-400 font-bold font-mono text-[11px] shadow-sm tracking-tight text-center">
+                                                    {item.createdDate?.substring(0, 10).replace(/-/g, '.')}
+                                                </div>
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => handleDelete(item.adbkId)}
-                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                                                    className="h-12 w-12 text-slate-300 hover:text-rose-500 hover:bg-rose-50/50 transition-all opacity-0 group-hover:opacity-100 rounded-[1.25rem] border border-transparent hover:border-rose-100 shadow-sm"
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
+                                                    <Trash2 className="w-5 h-5" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -179,31 +210,30 @@ const AddressBookListPage = () => {
                         </Table>
                     </div>
 
-                    {/* Pagination */}
                     {totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-4 mt-8 py-4 border-t border-dashed">
+                        <div className="flex items-center justify-center gap-8 mt-20 pb-10">
                             <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPage踰덊샇(p => Math.max(1, p - 1))}
-                                disabled={page踰덊샇 === 1}
-                                className="px-4 shadow-sm"
+                                variant="ghost"
+                                size="lg"
+                                onClick={() => setPageNo(p => Math.max(1, p - 1))}
+                                disabled={pageNo === 1}
+                                className="px-14 h-16 rounded-[1.5rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-[0.2em] text-[10px]"
                             >
-                                ?댁쟾
+                                PREV
                             </Button>
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-primary">{page踰덊샇}</span>
-                                <span className="text-sm text-muted-foreground">/</span>
-                                <span className="text-sm font-medium">{totalPages}</span>
+                            <div className="bg-slate-50 text-slate-900 border-2 border-white px-10 py-4 rounded-[1.5rem] shadow-xl flex items-center gap-5 ring-8 ring-slate-100/50">
+                                <span className="text-2xl font-black">{pageNo}</span>
+                                <div className="h-6 w-px bg-slate-200" />
+                                <span className="text-sm font-bold text-slate-400 opacity-60">{totalPages}</span>
                             </div>
                             <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPage踰덊샇(p => Math.min(totalPages, p + 1))}
-                                disabled={page踰덊샇 === totalPages}
-                                className="px-4 shadow-sm"
+                                variant="ghost"
+                                size="lg"
+                                onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
+                                disabled={pageNo === totalPages}
+                                className="px-14 h-16 rounded-[1.5rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-[0.2em] text-[10px]"
                             >
-                                ?ㅼ쓬
+                                NEXT
                             </Button>
                         </div>
                     )}
@@ -214,4 +244,3 @@ const AddressBookListPage = () => {
 };
 
 export default AddressBookListPage;
-

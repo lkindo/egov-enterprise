@@ -119,7 +119,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
       <div className="space-y-6">
         {comments.length === 0 ? (
           <div className="py-20 text-center border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
-            <p className="text-slate-400 font-bold tracking-tight">아직 등록된 댓글이 없습니다. 첫 번째 댓글을 남겨보세요.</p>
+            <p className="text-slate-400 font-bold tracking-tight">아직 등록된 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!</p>
           </div>
         ) : (
           comments.map((comment) => (
@@ -181,7 +181,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
               <Badge variant="secondary" className="px-3 py-1 rounded-lg bg-slate-900 text-white font-black hover:bg-slate-900">댓글</Badge>
             </div>
             <Textarea
-              placeholder="메시지를 입력하세요.."
+              placeholder="메시지를 입력하세요..."
               value={commentCn}
               onChange={(e) => setCommentCn(e.target.value)}
               className="min-h-[150px] border-none focus-visible:ring-0 text-lg font-medium text-slate-700 resize-none p-0 bg-transparent placeholder:text-slate-300"

@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -26,13 +26,13 @@ export async function saveSyncServerAction(prevState: unknown, formData: FormDat
         if (serverId) {
             await syncAdminService.updateSyncServer(serverId, data, axiosConfig);
         } else {
-            await syncAdminService.createSyncServer(data, axiosConfig);
+            await syncAdminService.createSyncServer(data as any, axiosConfig);
         }
 
         revalidatePath('/admin/system/sync-server');
-        return { success: true, message: '?쒕쾭 ?뺣낫媛 ??λ릺?덉뒿?덈떎.' };
+        return { success: true, message: '서버 정보가 저장되었습니다.' };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '?님以님ㅻ쪟 諛쒖깮';
+        const errorMessage = error instanceof Error ? error.message : '저장 중 오류 발생';
         console.error('Save Sync Server Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -47,9 +47,9 @@ export async function deleteSyncServerAction(id: string): Promise<ActionResponse
         await syncAdminService.deleteSyncServer(id, axiosConfig);
 
         revalidatePath('/admin/system/sync-server');
-        return { success: true, message: '?쒕쾭 ?뺣낫媛 님젣?섏뿀?듬땲님' };
+        return { success: true, message: '서버 정보가 삭제되었습니다.' };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '님젣 以님ㅻ쪟 諛쒖깮';
+        const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
         console.error('Delete Sync Server Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -64,9 +64,9 @@ export async function executeSyncAction(id: string): Promise<ActionResponse> {
         await syncAdminService.executeSync(id, axiosConfig);
 
         revalidatePath('/admin/system/sync-server');
-        return { success: true, message: '?숆린님紐낅졊님?꾩넚?섏뿀?듬땲님' };
+        return { success: true, message: '동기화 명령이 전송되었습니다.' };
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : '?숆린님以님ㅻ쪟 諛쒖깮';
+        const errorMessage = error instanceof Error ? error.message : '동기화 중 오류 발생';
         console.error('Execute Sync Error:', error);
         return { success: false, message: errorMessage };
     }

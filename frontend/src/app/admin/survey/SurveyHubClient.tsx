@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'2024년 상반기 직원 만족도 조사';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -63,9 +63,9 @@ export default function SurveyHubClient() {
   // --- Mock Data ---
   const surveys: SurveyItem[] = [
     { id: 1, title: '2024님?곷컲湲?吏곸썝 留뚯”님조사', participants: 450, status: '활성', startDate: '2024-03-01', endDate: '2024-03-31' },
-    { id: 2, title: '신규 湲곗뾽 보안 ?뺤콉 피드諛?, participants: 120, status: '활성', startDate: '2024-03-10', endDate: '2024-03-24' },
-    { id: 3, title: '蹂듭? ?ъ씤님?ъ슜泥님좏샇님조사', participants: 856, status: 'CLOSED', startDate: '2024-02-15', endDate: '2024-03-01' },
-    { id: 4, title: '?щ궡 ?댄븰 援먯쑁 ?섏슂 조사', participants: 32, status: 'PENDING', startDate: '2024-04-01', endDate: '2024-04-15' },
+    { id: 2, title: '신규 기업 보안 정책 피드백'활성', startDate: '2024-03-10', endDate: '2024-03-24' },
+    { id: 3, title: '복지 포인트 사용처 선호도 조사', participants: 856, status: 'CLOSED', startDate: '2024-02-15', endDate: '2024-03-01' },
+    { id: 4, title: '사내 어학 교육 수요 조사', participants: 32, status: 'PENDING', startDate: '2024-04-01', endDate: '2024-04-15' },
   ];
 
   const selectedSurvey = surveys.find(s => s.id === selectedSurveyId);
@@ -99,11 +99,11 @@ export default function SurveyHubClient() {
         {/* --- Sidebar Controller --- */}
         <div className="col-span-12 lg:col-span-3 space-y-8">
           <div className="hub-table-container p-6 bg-slate-50 shadow-inner">
-            <NavButton icon={<Layout size={20} />} label="吏꾪뻾以묒씤 설문" active={activeTab === 'SURVEYS'} onClick={() => setActiveTab('SURVEYS')} />
+            <NavButton icon={<Layout size={20} />} label="전체 " active={activeTab === 'SURVEYS'} onClick={() => setActiveTab('SURVEYS')} />
             <div className="h-4" />
-            <NavButton icon={<BookOpen size={20} />} label="설문 ?쒗뵆由? active={activeTab === 'TEMPLATES'} onClick={() => setActiveTab('TEMPLATES')} />
+            <NavButton icon={<BookOpen size={20} />} label="템플릿" active={activeTab === 'TEMPLATES'} onClick={() => setActiveTab('TEMPLATES')} />
             <div className="h-4" />
-            <NavButton icon={<BarChart3 size={20} />} label="怨좉툒 통계 분석" active={activeTab === 'STATS'} onClick={() => setActiveTab('STATS')} />
+            <NavButton icon={<BarChart3 size={20} />} label="고급 통계" active={activeTab === 'STATS'} onClick={() => setActiveTab('STATS')} />
           </div>
 
           <div className="hub-table-container p-10 bg-slate-900 border-none text-white relative overflow-hidden group">
@@ -137,7 +137,7 @@ export default function SurveyHubClient() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within:opacity-100 transition-opacity" size={16} />
               <Input
                 className="h-14 pl-12 pr-6 bg-muted/30 border-none rounded-2xl text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all pointer-events-auto"
-                placeholder="PROCURING TARGET ENTITY..."
+                placeholder="검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -241,10 +241,10 @@ export default function SurveyHubClient() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-6 pb-2">
-                      <DetailStat icon={<Users size={18} />} label="TARGET UNITS" value="2,480" color="primary" />
+                      <DetailStat icon={<Users size={18} />} label="총 " value="2,480" color="primary" />
                       <DetailStat icon={<Clock size={18} />} label="AVG DURATION" value="4M 12S" color="amber" />
-                      <DetailStat icon={<Target size={18} />} label="COMPLETION" value="78.2%" color="emerald" />
-                      <DetailStat icon={<AlertCircle size={18} />} label="BOUNCE RATE" value="12.4%" color="rose" />
+                      <DetailStat icon={<Target size={18} />} label="완료율" value="78.2%" color="emerald" />
+                      <DetailStat icon={<AlertCircle size={18} />} label="이탈률" value="12.4%" color="rose" />
                     </div>
 
                     <div className="flex gap-4 p-2">

@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'새로운 알림이 도착했습니다.';
 
 import { useState, useEffect, useCallback } from 'react';
 import { IMessage, StompSubscription } from '@stomp/stompjs';

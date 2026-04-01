@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"필수 동의 항목입니다.";
 
 import React from 'react';
 import { useForm } from 'react-hook-form';

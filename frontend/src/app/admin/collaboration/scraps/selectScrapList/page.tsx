@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'삭제하시겠습니까?';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -93,7 +93,7 @@ const ScrapListPage = () => {
                                 <TableRow>
                                     <TableHead className="w-[80px] text-center font-bold">踰덊샇</TableHead>
                                     <TableHead className="w-[250px] font-bold">?ㅽ겕?⑸챸</TableHead>
-                                    <TableHead className="font-bold">URL / ?ㅻ챸</TableHead>
+                                    <TableHead className="font-bold">URL / 설명</TableHead>
                                     <TableHead className="w-[120px] text-center font-bold">등록님/TableHead>
                                     <TableHead className="w-[100px] text-center font-bold">愿由?/TableHead>
                                 </TableRow>
@@ -132,7 +132,7 @@ const ScrapListPage = () => {
                                                         {item.scrapUrl?.length > 70 ? item.scrapUrl.substring(0, 70) + '...' : item.scrapUrl}
                                                         <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
                                                     </a>
-                                                    <span className="text-sm text-muted-foreground font-medium truncate max-w-[500px]">{item.scrapDc || '?ㅻ챸 ?놁쓬'}</span>
+                                                    <span className="text-sm text-muted-foreground font-medium truncate max-w-[500px]">{item.scrapDc || '설명 없음'}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center text-sm text-muted-foreground font-medium">

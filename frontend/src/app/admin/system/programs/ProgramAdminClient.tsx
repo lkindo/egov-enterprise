@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'데이터를 불러오는 중 오류가 발생했습니다.';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -108,7 +108,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
   const handleDelete = async (name: string) => {
     const isConfirmed = await confirm({
-      title: '?꾨줈洹몃옩 님젣 ?뺤씤',
+      title: '프로그램 삭제',
       message: `[${name}] ?꾨줈洹몃옩님님젣?섏떆寃좎뒿?덇퉴? ?대떦 ?꾨줈洹몃옩怨님곌껐님紐⑤뱺 硫붾돱 ?곕룞님?댁젣님님?덉뒿?덈떎.`,
       variant: 'destructive'
     });
@@ -125,7 +125,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
   const columns: Column<Program>[] = [
     {
-      header: '?꾨줈洹몃옩 ?먯궛 紐낆묶',
+      header: '파일명',
       accessor: (item: Program) => (
         <div className="flex items-center gap-4 py-3">
           <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
@@ -176,8 +176,8 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="?쒖뒪님?먯궛 嫄곕쾭?뚯뒪"
-        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '?꾨줈洹몃옩 愿由? }]}
+        title="시스템 프로그램 미들웨어"
+        breadcrumbs={[{ label: '시스템관리'?꾨줈洹몃옩 愿由? }]}
       />
 
       <HubHeader
@@ -235,7 +235,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       <StandardModal
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
-        title={mode === 'create' ? '신규 ?꾨줈洹몃옩 등록' : '?꾨줈洹몃옩 ?뺣낫 ?섏젙'}
+        title={mode === 'create' ? '신규 프로그램 등록' : '프로그램 정보 수정'}
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
@@ -281,7 +281,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
               value={formData.progrmStrePath || ''}
               onChange={(e) => setFormData({ ...formData, progrmStrePath: e.target.value })}
               className="h-14 rounded-2xl text-xs font-medium bg-slate-50 border-none shadow-inner"
-              placeholder="/src/egov/main..."
+              placeholder="이 모듈의 아키텍처적 영향을 설명하세요..."
             />
           </FormField>
 

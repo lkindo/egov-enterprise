@@ -1,4 +1,4 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import AdministCodeClient from './AdministCodeClient';
 import { cookies } from 'next/headers';
@@ -7,8 +7,8 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { Milestone } from 'lucide-react';
 
 export const metadata = {
-  title: '?됱젙?쒖?肄붾뱶 嫄곕쾭?뚯뒪 | Sentinel Registry',
-  description: '援님 ?됱젙 ?쒖님님곕Ⅸ 踰뺤젙님諛님됱젙님肄붾뱶 泥닿퀎瑜?愿由ы빀?덈떎.',
+  title: '행정코드 관리 | 전자정부 표준프레임워크',
+  description: '법정동 및 행정동 코드를 관리합니다.',
 };
 
 export default async function AdministCodePage() {
@@ -18,19 +18,20 @@ export default async function AdministCodePage() {
 
   let initialData: any = { list: [], total: 0 };
   try {
-   initialData = await codeAdminService.getAdministCodeList({ page踰덊샇: 1, pageUnit: 10 }, axiosConfig);
+    // 변수명 pageNo로 정규화
+    initialData = await codeAdminService.getAdministCodeList({ pageNo: 1, pageUnit: 10 }, axiosConfig);
   } catch (error: any) {
-   if (error.response?.status === 401) {
-    redirect('/login?expired=true&redirect=/admin/system/codes/administ');
-   }
-   console.error('Failed to fetch initial administ codes:', error);
+    if (error.response?.status === 401) {
+      redirect('/login?expired=true&redirect=/admin/system/codes/administ');
+    }
+    console.error('Failed to fetch initial administ codes:', error);
   }
 
   return (
     <div className="space-y-12">
       <PageHeader
-        title="?됱젙?쒖?肄붾뱶 ?명뀛由ъ쟾님
-        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '肄붾뱶愿由? }, { label: '?됱젙肄붾뱶' }]}
+        title="행정 표준코드 관리"
+        breadcrumbs={[{ label: '시스템 관리' }, { label: '코드 관리' }, { label: '행정 코드' }]}
       />
       
       <Suspense fallback={
@@ -49,4 +50,3 @@ export default async function AdministCodePage() {
     </div>
   );
 }
-

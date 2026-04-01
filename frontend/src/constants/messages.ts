@@ -27,7 +27,7 @@ export const MESSAGES = {
     inactive: '미사용',
   },
   login: {
-    title: '표준 프레임워크 엔터프라이즈 시스템',
+    title: '표준프레임워크 엔터프라이즈 시스템',
     idLabel: '아이디',
     idPlaceholder: '아이디를 입력하세요',
     pwLabel: '비밀번호',
@@ -41,7 +41,7 @@ export const MESSAGES = {
     hidePassword: '비밀번호 숨기기',
   },
   dashboard: {
-    badge: '인텔리전스 엔진',
+    badge: '인텔리전트 엔진',
     greeting: '안녕하세요',
     newTasks: '{count}개의 새로운 업무가 배정되었습니다.',
     securityStatus: {
@@ -61,9 +61,9 @@ export const MESSAGES = {
       sbscrbDe: '가입일',
       newUser: '신규 사용자 등록',
       updateUser: '사용자 정보 수정',
-      pending: '승인 대기',
+      pending: '승인대기',
       active: '정상',
-      disabled: '정지',
+      disabled: '탈퇴',
       totalAccounts: '전체 계정 수',
       pendingApproval: '승인 대기 중',
       activeRate: '활성화율',
@@ -110,7 +110,7 @@ export const MESSAGES = {
       detailId: '상세 코드 ID',
       detailNm: '상세 코드 명칭',
       statusSetting: '운영 상태 설정',
-      enterCodeDesc: '코드 및 상세 설명을 입력하세요...',
+      enterCodeDesc: '코드에 대한 상세 설명을 입력하세요...',
       saveSettings: '설정 저장하기',
       hierarchySystemDesc: '메타데이터 계층 관리 시스템',
       deleteDetailTitle: '상세 코드 삭제',

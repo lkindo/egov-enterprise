@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'발송 내역을 불러오지 못했습니다.';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -74,14 +74,14 @@ export default function SmsAdminClient({
 
   const handleSend = async () => {
     if (!sendForm.recptnTelno || !sendForm.trnsmitCn) {
-      toast.error('?섏떊踰덊샇? ?댁슜님?낅젰?댁＜?몄슂.');
+      toast.error('수신번호와 내용을 입력해주세요.');
       return;
     }
 
     setLoading(true);
     try {
       await smsAdminService.sendSms(sendForm);
-      toast.success('臾몄옄 硫붿떆吏瑜?諛쒖넚?덉뒿?덈떎.');
+      toast.success('문자 메시지를 발송했습니다.');
       setIsSendOpen(false);
       handleSearch(); // 紐⑸줉 媛깆떊
     } catch {
@@ -93,7 +93,7 @@ export default function SmsAdminClient({
 
   const columns = [
     {
-      header: '諛쒖넚 ??꾩뒪?ы봽',
+      header: '발송 일시',
       accessor: (item: SmsDto) => (
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-muted/30 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-border/50 shadow-inner">
@@ -111,7 +111,7 @@ export default function SmsAdminClient({
       )
     },
     {
-      header: '?붾뱶?ъ씤님(諛쒖떊)',
+      header: '발신 번호',
       accessor: (item: SmsDto) => (
         <div className="flex items-center gap-3">
           <Phone size={14} className="text-primary opacity-50" />
@@ -120,7 +120,7 @@ export default function SmsAdminClient({
       )
     },
     {
-      header: '?섏씠濡쒕뱶 (?댁슜)',
+      header: '메시지 내용',
       accessor: (item: SmsDto) => (
         <div className="max-w-[450px] truncate font-bold text-muted-foreground/80 lowercase tracking-tight italic">
           "{item.trnsmitCn}"
@@ -128,7 +128,7 @@ export default function SmsAdminClient({
       )
     },
     {
-      header: '?몃옖님뀡 ?곹깭',
+      header: '상태',
       accessor: () => (
         <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-full border border-emerald-500/20 w-fit shadow-sm">
           <ShieldCheck size={14} />
@@ -211,7 +211,7 @@ export default function SmsAdminClient({
             <div className="relative group/search flex-1 md:flex-none">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={16} />
               <Input
-                placeholder="PROCURING TARGET..."
+                placeholder="검색..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 className="h-14 pl-12 pr-6 w-full md:w-[320px] bg-muted/30 border-none rounded-2xl text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
@@ -225,7 +225,7 @@ export default function SmsAdminClient({
             columns={columns}
             data={smsList}
             loading={loading}
-            emptyMessage="湲곕줉님硫붿떆吏 ?꾩넚 濡쒖쭅님?놁뒿?덈떎."
+            emptyMessage="발송된 문자 메시지가 없습니다."
             className="border-none bg-transparent"
           />
         </div>
@@ -273,7 +273,7 @@ export default function SmsAdminClient({
               </label>
               <div className="relative">
                 <Textarea
-                  placeholder="보안 硫붿떆吏 ?댁슜님援ъ긽?섏떗?쒖삤..."
+                  placeholder="메시지 내용을 입력하세요..."
                   value={sendForm.trnsmitCn}
                   onChange={(e) => setSendForm(prev => ({ ...prev, trnsmitCn: e.target.value }))}
                   className="min-h-[180px] p-8 rounded-[2.5rem] border-none bg-slate-50 text-base font-bold outline-none focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"

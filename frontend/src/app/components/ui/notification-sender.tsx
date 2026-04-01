@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"[알림] 시스템 유지보수 안내\n원활한 서비스 제공을 위해 아래와 같이 정기 점검이 진행될 예정입니다.\n\n- 일시: 2026년 2월 28일 01:00 ~ 05:00\n- 영향: 점검 시간 내 모든 서비스 일시 중단\n\n중요한 데이터는 미리 저장해 주시기 바랍니다.";
 
 import React, { useState } from 'react';
 import {
@@ -58,7 +58,7 @@ export function NotificationSender() {
  <div className="grid grid-cols-3 gap-4">
  {[
  { id: 'system', icon: <Bell />, label: '?쒖뒪님 },
- { id: 'mail', icon: <Mail />, label: '?대찓님 },
+ { id: '시스템', icon: <Mail />, label: '?대찓님 },
  { id: 'sms', icon: <MessageSquare />, label: 'SMS' },
  ].map(item => (
  <button
@@ -130,7 +130,7 @@ export function NotificationSender() {
 
  <textarea
  className="flex-1 w-full bg-transparent border-none outline-none resize-none text-xl font-bold placeholder:text-muted-foreground/10 custom-scrollbar leading-relaxed"
- placeholder="硫붿떆吏 ?댁슜님?낅젰?섍굅님AI ?쒕옒?꾪듃瑜님쒖슜?섏꽭님.."
+ placeholder="메시지 내용을 입력하거나 AI 드래프트를 활용하세요..."
  value={message}
  onChange={(e) => setMessage(e.target.value)}
  />

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -8,26 +8,18 @@ import {
   File, 
   Loader2, 
   ShieldCheck, 
-  Settings, 
-  Search, 
-  LayoutGrid, 
-  Activity, 
-  Globe, 
-  Layers, 
+  Workflow, 
+  Network, 
+  Lock, 
+  Compass, 
   Database,
-  ArrowUpRight,
   ShieldAlert,
   Fingerprint,
-  Workflow,
-  Network,
-  Lock,
-  Compass,
-  Zap,
   RefreshCcw,
   Milestone,
-  Building2,
-  Contact2,
-  SearchCode
+  SearchCode,
+  LayoutGrid,
+  Activity
 } from "lucide-react";
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { MenuByAuthority } from '@/types/foundation/security';
@@ -76,7 +68,7 @@ export default function MenuByAuthorityPage() {
 
   const { data: authorData } = useQuery({
     queryKey: ['admin-authorities-all'],
-    queryFn: () => authorAdminService.getAuthorList({ page踰덊샇: 1, searchCondition: '1', searchKeyword: '' } as any),
+    queryFn: () => authorAdminService.getAuthorList({ pageNo: 1, searchCondition: '1', searchKeyword: '' } as any),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -121,8 +113,8 @@ export default function MenuByAuthorityPage() {
         >
           <div
             className={cn(
-                "flex items-center gap-4 py-4 px-6 hover:bg-slate-50 cursor-pointer rounded-2xl transition-all group relative overflow-hidden active:scale-[0.99]",
-                isExpanded && hasChildren ? "bg-slate-50/50" : ""
+                "flex items-center gap-4 py-4 px-6 hover:bg-slate-100 cursor-pointer rounded-2xl transition-all group relative overflow-hidden active:scale-[0.99]",
+                isExpanded && hasChildren ? "bg-slate-100/50" : ""
             )}
             style={{ paddingLeft: `${depth * 32 + 24}px` }}
             onClick={() => hasChildren && toggleExpand(menu.menuNo)}
@@ -147,16 +139,16 @@ export default function MenuByAuthorityPage() {
                     "font-black text-sm tracking-tight truncate",
                     hasChildren ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
                 )}>{menu.menuNm}</span>
-                <span className="text-[9px] font-black text-muted-foreground/40 tracking-[0.2em] font-mono uppercase truncate">{menu.progrmFileNm || 'TERMINAL_NODE'}</span>
+                <span className="text-[9px] font-black text-muted-foreground/40 tracking-[0.2em] font-mono uppercase truncate">{menu.progrmFileNm || 'NODE_ENDPOINT'}</span>
             </div>
             
             <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-white border border-slate-100 shadow-sm opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
-                <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase">NODE_{menu.menuNo}</span>
+                <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase">ID_{menu.menuNo}</span>
             </div>
           </div>
           {hasChildren && isExpanded && (
               <div className="relative">
-                  <div className="absolute left-[38px] top-0 bottom-0 w-px bg-slate-100 ml-[depth*32]" style={{ marginLeft: `${depth * 32}px` }} />
+                  <div className="absolute left-[38px] top-0 bottom-0 w-px bg-slate-200" style={{ marginLeft: `${depth * 32}px` }} />
                   {renderMenuTree(menu.children!, depth + 1)}
               </div>
           )}
@@ -166,16 +158,16 @@ export default function MenuByAuthorityPage() {
   };
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+    <div className="space-y-12 pb-24 animate-in fade-in duration-1000 p-8">
       <PageHeader
-        title="沅뚰븳 湲곕컲 ?대퉬寃뚯씠님?좏뤃濡쒖?"
-        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '硫붾돱愿由? }, { label: '沅뚰븳蹂?硫붾돱' }]}
+        title="권한 기반 메뉴 거버넌스"
+        breadcrumbs={[{ label: '시스템 관리' }, { label: '메뉴 관리' }, { label: '권한별 메뉴' }]}
       />
 
       <HubHeader 
-        title="怨꾩링 援ъ“" 
-        highlight="媛먯궗" 
-        subtitle="?뱀젙 보안 님븷(Role)님?좊떦님湲곕뒫님노드 怨꾩링 援ъ“ 諛님묎렐 寃쎈줈 留ㅽ듃由?뒪 ?쒓컖님 
+        title="권한별 메뉴 관리" 
+        highlight="감사" 
+        subtitle="시스템 역할별 접근 가능한 메뉴 계층 구조를 시각화하고 정합성을 검증합니다." 
         icon={Workflow} 
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -187,30 +179,30 @@ export default function MenuByAuthorityPage() {
                 <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
             <Button className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
-                <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> 님븷 ?몃깽?좊━ 愿由?            </Button>
+                <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> 권한 인벤토리
+            </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="활성_?ㅽ궎留님? value={authorities.length} icon={Database} color="primary" />
-        <HubMetricCard title="踰붿쐞_님노드_님 value={rawMenus.length} icon={LayoutGrid} color="amber" />
-        <HubMetricCard title="怨꾩링_源딆씠" value={selectedAuthority ? "?뱁꽣_以鍮? : "?湲?} icon={Compass} color="indigo" />
-        <HubMetricCard title="보안_?곹깭" value="理쒖쟻" icon={Lock} color="emerald" status="?숆린?붾맖" />
+        <HubMetricCard title="활성_권한" value={authorities.length} icon={Database} color="primary" />
+        <HubMetricCard title="할당_메뉴_수" value={rawMenus.length} icon={LayoutGrid} color="amber" />
+        <HubMetricCard title="계층_깊이" value={selectedAuthority ? "팩터_준비" : "대기"} icon={Compass} color="indigo" />
+        <HubMetricCard title="보안_상태" value="최적" icon={Lock} color="emerald" status="정상" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
-        {/* Authority Selection Sidebar */}
         <div className="col-span-12 lg:col-span-4 h-full space-y-8">
-            <HubSectionCard title="님븷 ?앸퀎 ?곗씠님?좏깮" description="분석님보안 而⑦뀓?ㅽ듃 ?먮뒗 ?쒖뒪님洹몃９ 沅뚰븳님?앸퀎?섏꽭님" icon={Lock}>
+            <HubSectionCard title="역할 선택" description="메뉴 구조를 분석할 보안 역할을 식별하세요" icon={Lock}>
                 <div className="space-y-8">
                     <div className="space-y-4 pt-4">
-                        <label className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase ml-2">보안 님븷 ?ъ뼇 (Access Role)</label>
+                        <label className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase ml-2">보안 역할 (Access Role)</label>
                         <Select value={selectedAuthority} onValueChange={setSelectedAuthority}>
                             <SelectTrigger className="h-16 px-8 rounded-2xl bg-slate-50/50 border-none shadow-inner text-sm font-black tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
                                 <div className="flex items-center gap-4">
                                      <Fingerprint size={20} className="text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
-                                     <SelectValue placeholder="보안 님븷님?좏깮?섏떗?쒖삤..." />
+                                     <SelectValue placeholder="역할을 선택하십시오..." />
                                 </div>
                             </SelectTrigger>
                             <SelectContent className="rounded-2xl border-none shadow-2xl p-2 bg-slate-900 text-white">
@@ -227,7 +219,7 @@ export default function MenuByAuthorityPage() {
                         </Select>
                     </div>
 
-                    <div className="p-8 rounded-[2.5rem] bg-slate-900 text-white relative overflow-hidden group border-none shadow-2xl min-h-[300px] flex flex-col justify-end">
+                    <div className="p-8 rounded-[2.5rem] bg-slate-950 text-white relative overflow-hidden group border-none shadow-2xl min-h-[300px] flex flex-col justify-end">
                         <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                             <ShieldAlert size={180} className="text-primary" />
                         </div>
@@ -236,43 +228,28 @@ export default function MenuByAuthorityPage() {
                                 <Activity size={28} className="text-primary" />
                             </div>
                             <div className="space-y-3">
-                                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase">?좏뤃濡쒖?<br />?명뀛由ъ쟾님/h4>
-                                <p className="text-[9px] text-white/40 font-black tracking-[0.3em] uppercase leading-relaxed font-mono">실시간沅뚰븳 ?ㅽ듃由님쒖꽦님님/p>
+                                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase">메뉴 매핑<br />인텔리전스</h4>
+                                <p className="text-[9px] text-white/40 font-black tracking-[0.3em] uppercase font-mono">Real-time Hierarchy Analysis</p>
                             </div>
-                            {selectedAuthority && (
-                                <div className="pt-6 border-t border-white/5 space-y-4">
-                                    <div className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase text-white/30">
-                                        <span>?좏깮님ID</span>
-                                        <span className="text-primary">{selectedAuthority}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase text-white/30">
-                                        <span>?대윭?ㅽ꽣_노드_님/span>
-                                        <span className="text-white">{rawMenus.length}</span>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
             </HubSectionCard>
         </div>
 
-        {/* Menu Tree Center */}
         <div className="col-span-12 lg:col-span-8 h-full">
             <HubSectionCard 
-                title={currentAuth ? `[${currentAuth.authorNm}] ?대퉬寃뚯씠님?꾪궎?띿쿂` : "?꾪궎?띿쿂 ?좏뤃濡쒖? 분석"} 
-                description="?좊떦님紐⑤뱺 ?쒖뒪님湲곕뒫怨님곗씠님吏꾩엯?먯뿉 ?님?꾧퀎님泥?궗吏꾩엯?덈떎." 
+                title={currentAuth ? `[${currentAuth.authorNm}] 메뉴 아키텍처` : "아키텍처 분석"} 
+                description="선택된 권한에 할당된 전체 메뉴의 위계적 구조입니다." 
                 icon={Network}
             >
                 <div className="space-y-8">
                     <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-8">
-                        <div>
-                            <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">湲곕뒫 노드 ?몃━ ?ㅽ듃由?(Functional Node Tree)</span>
-                        </div>
+                        <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">기능 노드 트리 (Functional Node Tree)</span>
                         <div className="flex items-center gap-4">
                              {isMenuLoading && <Loader2 className="h-6 w-6 animate-spin text-primary opacity-40" />}
                              <Button variant="ghost" size="sm" className="h-12 rounded-2xl px-6 text-[10px] font-black tracking-widest gap-2 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
-                                 <SearchCode size={16} className="group-hover:rotate-12 transition-transform" /> 노드 분석
+                                  <SearchCode size={16} className="group-hover:rotate-12 transition-transform" /> 노드 검색
                             </Button>
                         </div>
                     </div>
@@ -288,8 +265,8 @@ export default function MenuByAuthorityPage() {
                                     <div className="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200 shadow-inner mb-8 group-hover:scale-110 transition-transform duration-1000">
                                         <Milestone size={48} className="opacity-20" />
                                     </div>
-                                    <h3 className="text-2xl font-black text-slate-300 tracking-tighter uppercase mb-4">님븷 誘몄꽑님/h3>
-                                    <p className="text-[10px] font-black text-slate-200 tracking-[0.5em] uppercase max-w-[240px] leading-relaxed">님븷님?앸퀎?섏뿬 ?쒖뒪님?꾧퀎 ?곗씠?곗쓽 ?쒓컖님분석님?쒖옉?섏떗?쒖삤.</p>
+                                    <h3 className="text-2xl font-black text-slate-300 tracking-tighter uppercase mb-2">권한 미선택</h3>
+                                    <p className="text-[10px] font-black text-slate-200 tracking-[0.5em] uppercase">메뉴 구조를 분석할 역할을 먼저 선택하십시오.</p>
                                 </motion.div>
                             ) : isMenuLoading ? (
                                 <motion.div 
@@ -298,7 +275,7 @@ export default function MenuByAuthorityPage() {
                                     className="absolute inset-0 flex flex-col items-center justify-center gap-6"
                                 >
                                     <Loader2 size={48} className="text-primary animate-spin opacity-40" />
-                                    <span className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">?좏뤃濡쒖? 매핑 以?..</span>
+                                    <span className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">데이터 매핑 중...</span>
                                 </motion.div>
                             ) : menuTree.length === 0 ? (
                                 <motion.div 
@@ -307,10 +284,7 @@ export default function MenuByAuthorityPage() {
                                     className="absolute inset-0 flex flex-col items-center justify-center gap-8 py-24"
                                 >
                                     <ShieldAlert size={64} className="text-rose-500/20" />
-                                    <div className="space-y-2 text-center">
-                                        <h4 className="text-lg font-black tracking-tighter text-slate-400 uppercase">활성 노드 ?놁쓬</h4>
-                                        <p className="text-[9px] font-black text-slate-300 tracking-[0.3em] uppercase">?대떦 沅뚰븳님?좊떦님湲곕뒫님?붾뱶?ъ씤?멸? ?앸퀎?섏? ?딆븯?듬땲님</p>
-                                    </div>
+                                    <h4 className="text-lg font-black tracking-tighter text-slate-400 uppercase">할당된 메뉴 없음</h4>
                                 </motion.div>
                             ) : (
                                 <motion.div 
@@ -318,7 +292,7 @@ export default function MenuByAuthorityPage() {
                                     animate={{ opacity: 1, y: 0 }}
                                     className="space-y-4"
                                 >
-                                    <div className="p-4 rounded-[2.5rem] bg-white/50 backdrop-blur-md border-2 border-slate-50">
+                                    <div className="p-4 rounded-[2.5rem] bg-slate-50/30 border-2 border-slate-100">
                                         {renderMenuTree(menuTree)}
                                     </div>
                                 </motion.div>
@@ -332,4 +306,3 @@ export default function MenuByAuthorityPage() {
     </div>
   );
 }
-

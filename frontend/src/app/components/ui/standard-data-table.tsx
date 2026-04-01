@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"행 선택";
 
 import React, { useState, useMemo, memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
@@ -73,7 +73,7 @@ const DataRow = memo(function DataRow({
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
-            className="rounded-md border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all scale-110"
+            className="행 선택"
           />
         </td>
       )}
@@ -112,7 +112,7 @@ const MobileCard = memo(function MobileCard({
       )}
       onClick={() => onRowClick?.(item)}
     >
-      <div className="flex justify-between items-start mb-5">
+      <div className="선택 항목 작업">
         <div className="flex items-center gap-3 flex-1 overflow-hidden">
           {enableSelection && (
             <div onClick={(e) => e.stopPropagation()} className="relative z-10">
@@ -147,7 +147,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   data,
   loading,
   onRowClick,
-  emptyMessage = "?곗씠?곌? ?놁뒿?덈떎.",
+  emptyMessage = "데이터가 없습니다.",
   enableSelection = false,
   bulkActions = [],
   keyField = 'id' as keyof T,
@@ -255,7 +255,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                     <Checkbox
                       checked={data.length > 0 && selectedIds.size === data.length}
                       onCheckedChange={toggleAll}
-                      className="scale-110"
+                      className="전체 항목 선택"
                     />
                   </th>
                 )}

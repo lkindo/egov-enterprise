@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'부서 목록을 불러오지 못했습니다.';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -79,7 +79,7 @@ export default function DeptAdminClient({
 
   const handleSubmit = async () => {
     if (!form.orgnztNm) {
-      toast.error('?좏슚님議곗쭅 紐낆묶님?꾩슂?⑸땲님');
+      toast.error('부서 명을 입력해주세요.');
       return;
     }
 
@@ -87,10 +87,10 @@ export default function DeptAdminClient({
     try {
       if (selectedDept?.orgnztId) {
         await deptAdminService.updateDept(selectedDept.orgnztId, form);
-        toast.success('議곗쭅 ?꾪궎?띿쿂媛 ?깃났?곸쑝濡님낅뜲?댄듃?섏뿀?듬땲님');
+        toast.success('부서 정보를 수정했습니다.');
       } else {
         await deptAdminService.createDept(form);
-        toast.success('신규 議곗쭅 노드媛 諛고룷?섏뿀?듬땲님');
+        toast.success('새 부서를 등록했습니다.');
       }
       setIsAddOpen(false);
       handleRefresh();
@@ -102,12 +102,12 @@ export default function DeptAdminClient({
   };
 
   const handleDelete = async (deptId: string) => {
-    if (!confirm('?대떦 議곗쭅 노드瑜님곴뎄?곸쑝濡님쒓굅?섏떆寃좎뒿?덇퉴? 愿님?곗씠?곌? ?뚯떎님님?덉뒿?덈떎.')) return;
+    if (!confirm('정말 삭제하시겠습니까?')) return;
 
     setLoading(true);
     try {
       await deptAdminService.deleteDept(deptId);
-      toast.success('議곗쭅 ?먯궛님님젣?섏뿀?듬땲님');
+      toast.success('부서를 삭제했습니다.');
       handleRefresh();
     } catch {
       toast.error('沅뚰븳 遺議님먮뒗 ?쒖뒪님?ㅻ쪟濡님?젣瑜님섑뻾?섏? 紐삵뻽?듬땲님');
@@ -143,13 +143,13 @@ export default function DeptAdminClient({
       )
     },
     {
-      header: '?곹깭',
+      header: '설명',
       accessor: (item: DeptDto) => <HubStatusBadge status="활성" />,
       className: 'w-32'
     },
     {
       header: 'MANAGEMENT',
-      className: 'text-right w-32',
+      className: '부서 명',
       accessor: (item: DeptDto) => (
         <div className="flex justify-end gap-2 pr-4">
           <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)} className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-200 transition-all font-black shadow-sm">
@@ -166,8 +166,8 @@ export default function DeptAdminClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="議곗쭅 ?꾪궎?띿쿂 嫄곕쾭?뚯뒪"
-        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '遺님愿由? }]}
+        title="조직 체계 매트릭스"
+        breadcrumbs={[{ label: '시스템관리'遺님愿由? }]}
       />
 
       <HubHeader
@@ -259,7 +259,7 @@ export default function DeptAdminClient({
                 columns={columns}
                 data={depts}
                 loading={loading}
-                emptyMessage="조회님議곗쭅 援ъ“ ?곗씠?곌? 議댁옱?섏? ?딆뒿?덈떎."
+                emptyMessage="등록된 부서 정보가 없습니다."
                 className="border-none bg-transparent"
               />
             </div>

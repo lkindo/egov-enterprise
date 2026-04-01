@@ -1,4 +1,4 @@
-'use client';
+'홍길동';
 
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,7 @@ const activities = [
     id: 1,
     type: 'post',
     user: '홍길동',
-    action: '님이 공지사항을 등록했습니다.',
+    action: '새 공지사항을 등록했습니다.',
     target: '2026년 상반기 시스템 점검 안내',
     time: '10분 전',
     icon: <MessageSquare size={14} className="text-blue-500" />,
@@ -18,7 +18,7 @@ const activities = [
   {
     id: 2,
     type: 'user',
-    user: '이순신',
+    user: '시스템',
     action: '새로운 사용자가 승인되었습니다.',
     target: '이순신 과장 (영업지원팀)',
     time: '1시간 전',

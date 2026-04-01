@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"코드ID는 필수입니다.";
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,8 +32,8 @@ import { CmmnDetailCode } from '@/types/foundation/system';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 
 const formSchema = z.object({
- codeId: z.string().min(1, { message: "肄붾뱶ID님?꾩닔?낅땲님" }),
- code: z.string().min(1, { message: "肄붾뱶님?꾩닔?낅땲님" }),
+ codeId: z.string().min(1, { message: "코드는 필수입니다." }),
+ code: z.string().min(1, { message: "코드명은 필수입니다." }),
  codeNm: z.string().min(1, { message: "肄붾뱶紐낆? ?꾩닔?낅땲님" }),
  codeDc: z.string().optional(),
  useAt: z.enum(['Y', 'N']),
@@ -71,20 +71,20 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  onOpenChange(false);
  } catch {
  console.error(error);
- alert('?님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
+ alert('저장 중 오류가 발생했습니다.');
  }
  };
 
  const handleDelete = async () => {
  if (!data?.codeId || !data?.code) return;
- if (confirm('?뺣쭚濡님?젣?섏떆寃좎뒿?덇퉴?')) {
+ if (confirm('정말로 삭제하시겠습니까?')) {
  try {
  await codeAdminService.deleteDetailCode(data.codeId, data.code);
  onSuccess();
  onOpenChange(false);
  } catch {
  console.error(error);
- alert('님젣 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
+ alert('삭제 중 오류가 발생했습니다.');
  }
  }
  };
@@ -93,7 +93,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  <Dialog open={open} onOpenChange={onOpenChange}>
  <DialogContent className="sm:max-w-[425px]">
  <DialogHeader>
- <DialogTitle>{isEdit ? '怨듯넻?곸꽭肄붾뱶 ?섏젙' : '怨듯넻?곸꽭肄붾뱶 등록'}</DialogTitle>
+ <DialogTitle>{isEdit ? '공통상세코드 수정' : '공통상세코드 등록'}</DialogTitle>
  <DialogDescription>
  怨듯넻?곸꽭肄붾뱶 ?뺣낫瑜?{isEdit ? '?섏젙' : '?낅젰'}?⑸땲님
  </DialogDescription>
@@ -109,7 +109,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isEdit}>
  <FormControl>
  <SelectTrigger>
- <SelectValue placeholder="肄붾뱶ID ?좏깮" />
+ <SelectValue placeholder="코드ID 선택" />
  </SelectTrigger>
  </FormControl>
  <SelectContent>
@@ -131,7 +131,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  <FormItem>
  <FormLabel>肄붾뱶</FormLabel>
  <FormControl>
- <Input placeholder="肄붾뱶" {...field} readOnly={isEdit} />
+ <Input placeholder="코드" {...field} readOnly={isEdit} />
  </FormControl>
  <FormMessage />
  </FormItem>
@@ -157,7 +157,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  <FormItem>
  <FormLabel>?ㅻ챸</FormLabel>
  <FormControl>
- <Input placeholder="?ㅻ챸" {...field} />
+ <Input placeholder="코드명" {...field} />
  </FormControl>
  <FormMessage />
  </FormItem>
@@ -172,7 +172,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  <Select onValueChange={field.onChange} defaultValue={field.value}>
  <FormControl>
  <SelectTrigger>
- <SelectValue placeholder="?ъ슜?щ?" />
+ <SelectValue placeholder="사용여부" />
  </SelectTrigger>
  </FormControl>
  <SelectContent>

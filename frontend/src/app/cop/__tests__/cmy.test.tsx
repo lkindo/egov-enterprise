@@ -27,8 +27,8 @@ vi.mock('@/services/business/community/communityService', () => ({
  resultList: [
  {
  cmmntyId: 'CMM_0001',
- cmmntyNm: '媛쒕컻? 而ㅻ님덊떚',
- cmmntyIntrcn: '媛쒕컻 愿님?쇱쓽',
+ cmmntyNm: '개발팀 커뮤니티',
+ cmmntyIntrcn: '개발 관련 논의',
  frstRegisterNm: '?뚯뒪님,
  frstRegisterPnttm: '2024-05-01'
  }
@@ -48,8 +48,8 @@ describe('CommunityListPage', () => {
  resultList: [
  {
  cmmntyId: 'CMM_0001',
- cmmntyNm: '媛쒕컻? 而ㅻ님덊떚',
- cmmntyIntrcn: '媛쒕컻 愿님?쇱쓽',
+ cmmntyNm: '개발팀 커뮤니티',
+ cmmntyIntrcn: '개발 관련 논의',
  frstRegisterNm: '?뚯뒪님,
  frstRegisterPnttm: '2024-05-01'
  }
@@ -60,7 +60,7 @@ describe('CommunityListPage', () => {
  render(<CommunityListPage />);
 
  await waitFor(() => {
- expect(screen.getByText('媛쒕컻? 而ㅻ님덊떚')).toBeDefined();
+ expect(screen.getByText('개발팀 커뮤니티')).toBeDefined();
  });
  });
 });

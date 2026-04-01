@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"검색...";
 
 import React, { useState } from 'react';
 import {

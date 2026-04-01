@@ -1,115 +1,113 @@
-﻿'use client';
+'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { getQustnrRespondInfoDetail } from '@/lib/api/survey';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { StatusBadge } from '@/app/components/ui/status-badge';
-import { reportService, WorkReport } from '@/services/business/user/ReportService';
-import { useToast } from '@/app/components/ui/toast';
-import { FileText, Plus, Calendar, ArrowRight, UserCheck } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, ArrowLeft, User, Calendar, ClipboardCheck, MessageSquare } from 'lucide-react';
 
-export default function WorkReportListPage() {
+export default function SurveyResponseDetailPage() {
+    const params = useParams();
     const router = useRouter();
-    const { toast } = useToast();
-    const [reports, setReports] = useState<WorkReport[]>([]);
-    const [loading, setLoading] = useState(true);
+    const id = params.id as string;
 
-<<<<<<< HEAD
- useEffect(() => {
- async function loadData() {
- try {
- setLoading(true);
- const res = await reportService.getReports({ page: 0, size: 20 });
- setReports(res.list || []);
- } catch {
- toast('蹂닿퀬님紐⑸줉님遺덈윭?ㅼ? 紐삵뻽?듬땲님', 'error');
- } finally {
- setLoading(false);
- }
- }
- loadData();
- }, [toast]);
-=======
-    useEffect(() => {
-        async function loadData() {
-            try {
-                setLoading(true);
-                const res = await reportService.getReports({ page: 0, size: 20 });
-                setReports(res.list || []);
-            } catch {
-                toast('蹂닿퀬님紐⑸줉님遺덈윭?ㅼ? 紐삵뻽?듬땲님', 'error');
-            } finally {
-                setLoading(false);
-            }
-        }
-        loadData();
-    }, [toast]);
->>>>>>> 99be2886750c05e99df098d47b5b4fd8f624093f
+    const { data: response, isLoading, isError, error } = useQuery({
+        queryKey: ['survey-response-detail', id],
+        queryFn: () => getQustnrRespondInfoDetail(id),
+        enabled: !!id,
+        retry: 1
+    });
 
-    const columns = [
-        {
-            header: '?좏삎',
-            accessor: (item: WorkReport) => (
-                <span className="text-[10px] font-black px-2 py-0.5 bg-muted rounded">
-                    {item.reprtSe === '1' ? 'WEEKLY' : 'MONTHLY'}
-                </span>
-            ),
-            className: 'w-24'
-        },
-        {
-            header: '?쒕ぉ',
-            accessor: (item: WorkReport) => item.reprtSj,
-            className: 'font-bold'
-        },
-        {
-            header: '蹂닿퀬님,
-            accessor: (item: WorkReport) => item.reprtDe,
-            className: 'text-sm text-muted-foreground'
-        },
-        {
-            header: '?묒꽦님,
-            accessor: (item: WorkReport) => item.wrterId
-        },
-        {
-            header: '?곹깭',
-            accessor: (item: WorkReport) => <StatusBadge status={item.confmDt ? 'Y' : 'R'} />
-        },
-        {
-            header: '',
-            className: 'text-right',
-            accessor: (item: WorkReport) => (
-                <button
-                    onClick={() => router.push(`/smart-toolkit/work-report/${item.reprtId}`)}
-                    className="p-2 hover:bg-accent rounded-full transition-all text-primary"
-                >
-                    <ArrowRight size={18} />
-                </button>
-            )
-        }
-    ];
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-muted-foreground font-medium">응답 상세 정보를 불러오는 중입니다...</p>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="p-8 text-center space-y-4">
+                <div className="bg-destructive/10 text-destructive p-4 rounded-xl inline-block">
+                    {error instanceof Error ? error.message : '데이터를 불러오지 못했습니다.'}
+                </div>
+                <Button onClick={() => router.back()}>뒤로 가기</Button>
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6 pb-12">
-            <PageHeader
-                title="업무 蹂닿퀬 ?쇳꽣"
-                breadcrumbs={[{ label: '?묒뾽吏님 }, { label: '二쇨컙/?붽컙蹂닿퀬' }]}
-                actions={
-                    <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">
-                        <Plus size={18} /> 님蹂닿퀬님?묒꽦
-                    </button>
-                }
-            />
+        <div className="container mx-auto py-8 max-w-4xl space-y-8 animate-in fade-in duration-500">
+            <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <h1 className="text-3xl font-black tracking-tight">설문 응답 상세</h1>
+            </div>
 
-            <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
-                <StandardDataTable
-                    columns={columns}
-                    data={reports}
-                    loading={loading}
-                    emptyMessage="등록님蹂닿퀬?쒓? ?놁뒿?덈떎."
-                    className="border-none rounded-none"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="md:col-span-1 border-none shadow-lg bg-slate-900 text-white overflow-hidden relative">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
+                        <User size={120} />
+                    </div>
+                    <CardHeader>
+                        <CardTitle className="text-xs font-black uppercase tracking-[0.2em] opacity-50">응답자 정보</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6 relative z-10">
+                        <div className="space-y-1">
+                            <p className="text-3xl font-black tracking-tighter">{response?.respondNm}</p>
+                            <p className="text-xs font-bold text-slate-400">Respondent Profile</p>
+                        </div>
+                        <div className="space-y-4 pt-4 border-t border-white/10">
+                            <div className="flex items-center gap-3">
+                                <Calendar className="w-4 h-4 text-primary" />
+                                <span className="text-sm font-medium">{response?.frstRegisterPnttm}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <ClipboardCheck className="w-4 h-4 text-emerald-400" />
+                                <span className="text-sm font-medium italic underline underline-offset-4 decoration-emerald-500/30">검증된 수신</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="md:col-span-2 border-none shadow-xl">
+                    <CardHeader className="border-b bg-muted/20">
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">
+                            <MessageSquare className="w-5 h-5 text-primary" /> 설문 제목: {response?.qestnrSj || '설문 정보 없음'}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-8 space-y-8">
+                        <div className="space-y-3">
+                            <Label className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none">설문 답변 내용</Label>
+                            <div className="p-6 rounded-2xl bg-slate-50 border-2 border-slate-100 min-h-[150px] leading-relaxed font-medium text-slate-800 shadow-inner">
+                                {response?.respondAnswerCn || '응답 내용이 등록되지 않았습니다.'}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-6 border-t border-dashed">
+                            <Button variant="outline" className="rounded-xl px-8" onClick={() => router.back()}>
+                                목록으로
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
 }
+
+function Label({ children, className }: any) {
+    return (
+        <span className={cn("block mb-2 font-semibold", className)}>
+            {children}
+        </span>
+    );
+}
+
+const cn = (...inputs: any) => inputs.filter(Boolean).join(' ');

@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"오늘 하루 보지 않기";
 
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
@@ -77,7 +77,7 @@ export function PopupManager() {
 
  {/* Content */}
  <div className="relative w-full h-[calc(100%-80px)] overflow-auto">
- {/* ?앹뾽 ?댁슜님HTML?닿굅님?대?吏님님?덉쓬. ?ш린?쒕뒗 ?대?吏濡?媛?뺥븯嫄곕굹 iframe ?ъ슜 媛님*/}
+ {/* 팝업 내용이 HTML이거나 이미지일 수 있음. 여기서는 이미지로 가정하거나 iframe 사용 가능 */}
  <div className="relative w-full min-h-[300px] h-full">
  <Image
  src={popup.fileUrl || '/api/placeholder/400/300'}

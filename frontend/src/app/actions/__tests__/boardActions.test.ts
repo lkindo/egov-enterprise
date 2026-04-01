@@ -41,7 +41,7 @@ describe('boardActions', () => {
       const result = await saveBoardArticle({}, formData);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe('?쒕ぉ님?낅젰?댁＜?몄슂.');
+      expect(result.message).toBe('제목을 입력해주세요.');
       expect(result.field).toBe('nttSj');
     });
 
@@ -53,7 +53,7 @@ describe('boardActions', () => {
       const result = await saveBoardArticle({}, formData);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe('?댁슜님?낅젰?댁＜?몄슂.');
+      expect(result.message).toBe('내용을 입력해주세요.');
       expect(result.field).toBe('nttCn');
     });
 
@@ -77,7 +77,7 @@ describe('boardActions', () => {
       }));
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards');
       expect(result.success).toBe(true);
-      expect(result.message).toBe('寃뚯떆湲님?깃났?곸쑝濡?등록?섏뿀?듬땲님');
+      expect(result.message).toBe('게시글이 성공적으로 등록되었습니다.');
       expect(result.redirect).toBe('/admin/community/boards/detail?bbsId=BBS_001&nttId=100');
     });
 
@@ -134,7 +134,7 @@ describe('boardActions', () => {
       const result = await saveBoardArticle({}, formData);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe('Network Error');
+      expect(result.message).toBe('제목을 입력해주세요.');
     });
   });
 

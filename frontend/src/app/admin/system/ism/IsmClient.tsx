@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'성공적으로 승인';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -145,8 +145,8 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="?명뀛由ъ쟾님?쎌떇寃곗옱 嫄곕쾭?뚯뒪"
-        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '?쎌떇寃곗옱' }]}
+        title="인포멀 생션 아키텍처"
+        breadcrumbs={[{ label: '시스템관리'?쎌떇寃곗옱' }]}
       />
 
       <HubHeader 
@@ -230,7 +230,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
       <StandardModal
         isOpen={isModalOpen}
         onClose={() => setIsOpen(false)}
-        title="寃곗옱 ?쒗님?ㅼ님ㅽ듃?덉씠님?섑뻾"
+        title="결재 시퀀스 실행"
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
@@ -282,7 +282,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
             <textarea
               value={returnResn}
               onChange={(e) => setReturnResn(e.target.value)}
-              placeholder="?대떦 寃곗옱 ?쒗?ㅼ뿉 ?님寃利님섍껄님?꾩뭅?대툕瑜님꾪빐 湲곗닠?섏떗?쒖삤..."
+              placeholder="결재 또는 반려 사유를 입력하세요..."
               className="w-full min-h-[200px] p-10 rounded-[3rem] border-2 bg-slate-50 font-bold text-lg outline-none focus:bg-white focus:ring-[12px] focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner leading-relaxed resize-none placeholder:text-slate-300"
             />
             <div className="flex items-center gap-3 px-6 py-4 bg-amber-50 border border-amber-100 rounded-2xl">

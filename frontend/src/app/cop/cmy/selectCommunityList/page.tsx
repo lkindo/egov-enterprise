@@ -1,4 +1,4 @@
-﻿'use client';
+﻿/> 활성화된 전체 커뮤니티 <span className="text-2xl font-black ml-1 animate-pulse">{totalCount}</;
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';

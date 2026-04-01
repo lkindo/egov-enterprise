@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'김상무';
 
 import React, { useState } from 'react';
 import {
@@ -35,34 +35,34 @@ const MOCK_ORG_DATA: OrgNode = {
  id: 'o-1',
  name: '源?곷Т',
  role: 'Chief Executive Officer',
- dept: '寃쎌쁺吏?먮낯遺',
+ dept: '경영지원본부',
  email: 'ceo@company.com',
  phone: '010-1234-5678',
  status: 'online',
  children: [
  {
  id: 'o-2',
- name: '?대낯遺',
+ name: '이본부',
  role: 'Head of Technology',
- dept: '湲곗닠?꾨왂遺',
+ dept: '기술전략부',
  email: 'tech@company.com',
  phone: '010-2222-3333',
  status: 'busy',
  children: [
- { id: 'o-3', name: '諛뺥님?, role: 'Dev Lead', dept: '諛깆뿏?쒓컻諛쒗?', email: 'p@c.com', phone: '010-1', status: 'online' },
- { id: 'o-4', name: '理쒕━님, role: 'UI/UX Lead', dept: '?붿옄?명?', email: 'c@c.com', phone: '010-2', status: 'online' },
+ { id: 'o-3', name: '박팀장'Dev Lead', dept: '諛깆뿏?쒓컻諛쒗?', email: 'p@c.com', phone: '010-1', status: 'online' },
+ { id: 'o-4', name: '최리드'UI/UX Lead', dept: '?붿옄?명?', email: 'c@c.com', phone: '010-2', status: 'online' },
  ]
  },
  {
  id: 'o-5',
- name: '?뺣낯遺',
+ name: '정본부',
  role: 'Head of Operations',
- dept: '?댁쁺湲고쉷遺',
+ dept: '운영기획부',
  email: 'ops@company.com',
  phone: '010-4444-5555',
  status: 'offline',
  children: [
- { id: 'o-6', name: '媛뺥님?, role: 'Audit Lead', dept: '보안?먭님', email: 'k@c.com', phone: '010-3', status: 'online' },
+ { id: 'o-6', name: '강팀장'Audit Lead', dept: '보안?먭님', email: 'k@c.com', phone: '010-3', status: 'online' },
  ]
  }
  ]
@@ -155,7 +155,7 @@ export function VisualOrganizationChart() {
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40" size={16} />
  <input
  className="w-full bg-muted/40 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all font-medium"
- placeholder="寃님.."
+ placeholder="검색..."
  value={search}
  onChange={(e) => setSearch(e.target.value)}
  />
@@ -163,9 +163,9 @@ export function VisualOrganizationChart() {
 
  <div className="space-y-3 pt-4 border-t border-primary/5">
  {[
- { id: 'd1', name: '寃쎌쁺吏?먮낯遺', count: 12, icon: <ShieldCheck size={14} /> },
- { id: 'd2', name: '湲곗닠?꾨왂遺', count: 45, icon: <Zap size={14} /> },
- { id: 'd3', name: '?댁쁺湲고쉷遺', count: 28, icon: <ArrowUpRight size={14} /> },
+ { id: 'd1', name: '경영지원본부', count: 12, icon: <ShieldCheck size={14} /> },
+ { id: 'd2', name: '기술전략부', count: 45, icon: <Zap size={14} /> },
+ { id: 'd3', name: '운영기획부', count: 28, icon: <ArrowUpRight size={14} /> },
  ].map(dept => (
  <button key={dept.id} className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-primary/5 transition-all group">
  <div className="flex items-center gap-3">

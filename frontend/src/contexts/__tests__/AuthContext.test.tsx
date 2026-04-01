@@ -70,7 +70,7 @@ describe('AuthContext', () => {
     expect(result.current.user).toBeNull();
   });
 
-  it('초기 로드 시 토큰이 있으면 사용자 정보를 확인해야 함', async () => {
+  it('초기화 시 토큰이 있으면 사용자 정보를 확인해야 함', async () => {
     localStorage.setItem('accessToken', 'mock-token');
     const mockUser = { id: 'test', name: 'Test User' };
     (authService.getCurrentUser as any).mockResolvedValue(mockUser);

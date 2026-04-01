@@ -1,4 +1,4 @@
-﻿'use client';
+﻿'활성';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -34,7 +34,7 @@ interface ApprovalFormItem {
  id: string | number;
  title: string;
  version: string;
- status: '활성' | '珥덉븞' | '?ъ슜以묐떒';
+ status: '활성' | '초안' | '사용중단';
  usage: number;
 }
 
@@ -45,10 +45,10 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
 
  // --- Mock Data ---
  const forms: ApprovalFormItem[] = [
- { id: 'F01', title: '?쇰컲 吏異?寃곗쓽님, version: 'v2.4', status: '활성', usage: 1240 },
- { id: 'F02', title: '?곗감/?닿? ?좎껌님, version: 'v1.8', status: '활성', usage: 4500 },
- { id: 'F03', title: 'IT ?먯궛 援щℓ 요청', version: 'v3.0', status: '珥덉븞', usage: 0 },
- { id: 'F04', title: '?꾨줈?앺듃 踰뺤씤移대뱶 ?좎껌', version: 'v1.1', status: '?ъ슜以묐떒', usage: 890 },
+ { id: 'F01', title: '일반 지출 결의서'v2.4', status: '활성', usage: 1240 },
+ { id: 'F02', title: '연차/휴가 신청서'v1.8', status: '활성', usage: 4500 },
+ { id: 'F03', title: 'IT 자산 구매 요청', version: 'v3.0', status: '초안', usage: 0 },
+ { id: 'F04', title: '프로젝트 법인카드 신청', version: 'v1.1', status: '사용중단', usage: 890 },
  ];
 
  return (
@@ -84,8 +84,8 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  </CardHeader>
  <CardContent className="p-4 space-y-2">
  <NavButton icon={<FileText size={20} />} label="Sanction Forms" active={activeTab === 'FORMS'} onClick={() => setActiveTab('FORMS')} />
- <NavButton icon={<GitBranch size={20} />} label="?뚰겕?뚮줈님" active={activeTab === 'WORKFLOW'} onClick={() => setActiveTab('WORKFLOW')} />
- <NavButton icon={<Activity size={20} />} label="?쒖뒪님" active={activeTab === 'MONITOR'} onClick={() => setActiveTab('MONITOR')} />
+ <NavButton icon={<GitBranch size={20} />} label="워크플로우 " active={activeTab === 'WORKFLOW'} onClick={() => setActiveTab('WORKFLOW')} />
+ <NavButton icon={<Activity size={20} />} label="시스템 " active={activeTab === 'MONITOR'} onClick={() => setActiveTab('MONITOR')} />
  </CardContent>
  </Card>
 
@@ -118,7 +118,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  </div>
  <div className="relative">
  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
- <Input className="pl-9 h-11 bg-white border-slate-100 rounded-xl text-sm font-bold" placeholder="寃님.." />
+ <Input className="pl-9 h-11 bg-white border-slate-100 rounded-xl text-sm font-bold" placeholder="검색..." />
  </div>
  </CardHeader>
  <CardContent className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -138,7 +138,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <span className={cn(
  "w-1.5 h-1.5 rounded-full",
  form.status === '활성' ? "bg-emerald-400 animate-pulse" : 
- form.status === '珥덉븞' ? "bg-amber-400" : "bg-rose-400"
+ form.status === '초안' ? "bg-amber-400" : "bg-rose-400"
  )} />
  <span className={cn("text-[8px] font-black tracking-tight opacity-40")}>{form.status}</span>
  </div>
@@ -183,15 +183,15 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  
  <CardContent className="flex-1 p-10 relative overflow-hidden bg-slate-50/50 flex items-center justify-center">
  <div className="w-full space-y-6 relative z-10">
- <WorkflowNode type="START" label="湲곗븞님 date="臾몄꽌 ?쒖텧" />
+ <WorkflowNode type="START" label="기안자"臾몄꽌 ?쒖텧" />
  <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
- <WorkflowNode type="APPROVE" label="Dept. 愿由ъ옄" date="L1 ?뱀씤" active />
+ <WorkflowNode type="APPROVE" label="Dept. 관리자" date="L1 승인" active />
  <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
- <WorkflowNode type="APPROVE" label="?щТ ?대떦님 date="L2 寃利? />
+ <WorkflowNode type="APPROVE" label="재무 담당자"L2 寃利? />
  <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
- <WorkflowNode type="END" label="?쒖뒪님" date="?꾨즺님 />
+ <WorkflowNode type="END" label="시스템 " date="?꾨즺님 />
  </div>
- {/* Grid Overlay */}
+ {"완료됨"}
  <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
  </CardContent>
 

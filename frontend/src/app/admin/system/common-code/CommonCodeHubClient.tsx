@@ -1,4 +1,4 @@
-﻿'use client';
+﻿"표준코드";
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
