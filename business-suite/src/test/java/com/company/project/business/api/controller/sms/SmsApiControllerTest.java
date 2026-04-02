@@ -1,6 +1,5 @@
 package com.company.project.business.api.controller.sms;
 
-import com.company.project.business.TestApplication;
 import com.company.project.business.service.sms.EgovSmsService;
 import com.company.project.business.service.sms.dto.SmsDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +10,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -25,7 +23,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(SmsApiController.class)
-@ContextConfiguration(classes = TestApplication.class)
 @DisplayName("SmsApiController 테스트")
 class SmsApiControllerTest {
 

@@ -84,12 +84,15 @@ dependencies {
     // Logging bridge for Egovframe (Commons Logging -> SLF4J)
     testRuntimeOnly 'org.slf4j:jcl-over-slf4j:2.0.16'
 
+    testImplementation testFixtures(project(':foundation'))
+    
     // testFixtures - 테스트 공통 코드를 다른 모듈에서 사용할 수 있도록 함
-    testFixturesImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testFixturesImplementation 'org.springframework.security:spring-security-test'
-    testFixturesImplementation 'com.h2database:h2'
-    testFixturesImplementation platform(libs.testcontainers.bom)
-    testFixturesImplementation libs.testcontainers.postgresql
+    testFixturesApi project(':foundation')
+    testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
+    testFixturesApi 'org.springframework.security:spring-security-test'
+    testFixturesApi 'com.h2database:h2'
+    testFixturesApi platform(libs.testcontainers.bom)
+    testFixturesApi libs.testcontainers.postgresql
 }
 
 test {

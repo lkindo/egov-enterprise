@@ -1,10 +1,10 @@
 package com.company.project.openapi;
 
+import com.company.project.foundation.support.IntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,9 +17,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * OpenAPI 문서화 테스트
  * API 문서화 생성 및 검증
  */
-@SpringBootTest(properties = { "springdoc.api-docs.enabled=true", "springdoc.swagger-ui.enabled=true" })
+@IntegrationTest
 @AutoConfigureMockMvc
-@ActiveProfiles({"test", "security-test"})
+@ActiveProfiles({"test"})
+@org.springframework.test.context.TestPropertySource(properties = {
+    "springdoc.api-docs.enabled=true",
+    "springdoc.swagger-ui.enabled=true"
+})
 class OpenApiDocumentationTest {
 
   @Autowired

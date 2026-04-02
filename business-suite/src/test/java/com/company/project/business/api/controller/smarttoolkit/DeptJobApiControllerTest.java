@@ -1,6 +1,5 @@
 package com.company.project.business.api.controller.smarttoolkit;
 
-import com.company.project.business.TestApplication;
 import com.company.project.foundation.security.service.CustomUserDetails;
 import com.company.project.business.service.deptjob.EgovDeptJobBoxService;
 import com.company.project.business.service.deptjob.dto.DeptJobBoxDto;
@@ -14,7 +13,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -29,7 +27,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(DeptJobApiController.class)
-@ContextConfiguration(classes = TestApplication.class)
 @DisplayName("DeptJobApiController 테스트")
 class DeptJobApiControllerTest {
 

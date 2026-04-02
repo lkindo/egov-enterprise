@@ -10,15 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,17 +26,17 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import com.company.project.foundation.security.service.CustomUserDetails;
 
 
-import com.company.project.config.TestInfrastructureConfig;
-import org.springframework.context.annotation.Import;
+import com.company.project.foundation.support.IntegrationTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.test.context.ActiveProfiles;
 
 /**
  * 병목 지점 분석 성능 테스트
  * 성능 병목 현상을 식별하기 위한 테스트들을 포함한다.
  */
-@SpringBootTest(properties = "springdoc.api-docs.enabled=false")
+@IntegrationTest
 @AutoConfigureMockMvc
 @ActiveProfiles({"test", "bottleneck-test"})
-@Import(TestInfrastructureConfig.class)
 class BottleneckIdentificationTest {
 
   @Autowired
@@ -58,17 +51,6 @@ class BottleneckIdentificationTest {
   private ExecutorService executorService;
   private UserDto defaultUser;
   private CustomUserDetails mockPrincipal;
-
-  // 성능 저하 방지를 위한 Mock 설정
-  @TestConfiguration
-  static class BottleneckTestConfig {
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-      http.csrf(csrf -> csrf.disable())
-          .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
-      return http.build();
-    }
-  }
 
   @BeforeEach
   void setUp() {

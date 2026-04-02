@@ -10,15 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.List;
 import java.util.concurrent.*;
@@ -34,16 +27,15 @@ import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.company.project.config.TestInfrastructureConfig;
-import org.springframework.context.annotation.Import;
-
+import com.company.project.foundation.support.IntegrationTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.test.context.ActiveProfiles;
 /**
  * 스트레스 테스트 - 동시성 요청 대량 부하
  */
-@SpringBootTest(properties = "springdoc.api-docs.enabled=false")
+@IntegrationTest
 @AutoConfigureMockMvc
 @ActiveProfiles({"test", "stress-test"})
-@Import(TestInfrastructureConfig.class)
 class StressTest {
 
   @Autowired
@@ -60,17 +52,6 @@ class StressTest {
 
   private ExecutorService executorService;
   private UserDto defaultUser;
-
-  // 성능 저하 방지를 위한 Mock 설정
-  @TestConfiguration
-  static class StressTestConfig {
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-      http.csrf(csrf -> csrf.disable())
-          .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
-      return http.build();
-    }
-  }
 
   @BeforeEach
   void setUp() {

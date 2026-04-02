@@ -1,8 +1,8 @@
 package com.company.project.security;
 
+import com.company.project.foundation.support.IntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
@@ -16,7 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
  * 
  * 이 테스트는 보안 헤더 설정의 존재를 확인하는 용도로만 사용합니다.
  */
-@SpringBootTest
+@IntegrationTest
 @ActiveProfiles({"test"})
 @DisplayName("Security Headers 설정 테스트")
 public class SecurityHeadersTest {

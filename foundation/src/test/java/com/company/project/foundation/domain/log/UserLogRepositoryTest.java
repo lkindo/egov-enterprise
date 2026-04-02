@@ -1,6 +1,6 @@
 package com.company.project.foundation.domain.log;
 
-import com.company.foundation.support.IntegrationTest;
+import com.company.project.foundation.support.IntegrationTest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

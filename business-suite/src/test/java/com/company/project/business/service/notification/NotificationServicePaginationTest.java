@@ -3,7 +3,7 @@ package com.company.project.business.service.notification;
 import com.company.project.business.domain.notification.Notification;
 import com.company.project.business.domain.notification.NotificationRepository;
 import com.company.project.business.service.notification.dto.NotificationDto;
-import com.company.foundation.support.IntegrationTest;
+import com.company.project.foundation.support.IntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

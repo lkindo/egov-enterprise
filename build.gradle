@@ -64,6 +64,11 @@ allprojects {
     }
 }
 
+tasks.withType(Test) {
+    useJUnitPlatform()
+    systemProperty "spring.main.allow-bean-definition-overriding", "true"
+}
+
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'

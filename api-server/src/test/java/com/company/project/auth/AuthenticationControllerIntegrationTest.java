@@ -1,6 +1,6 @@
 package com.company.project.auth;
 
-import com.company.foundation.support.IntegrationTest;
+import com.company.project.foundation.support.IntegrationTest;
 import com.company.project.foundation.domain.user.entity.Role;
 import com.company.project.foundation.domain.user.entity.User;
 import com.company.project.foundation.domain.user.repository.UserRepository;
@@ -17,6 +17,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @IntegrationTest
 @AutoConfigureMockMvc
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.company.project")
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.company.project")
 @DisplayName("인증 컨트롤러 통합 테스트")
 public class AuthenticationControllerIntegrationTest {
 
@@ -26,14 +28,18 @@ public class AuthenticationControllerIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.company.project.foundation.security.service.EgovPasswordEncoder egovPasswordEncoder;
+
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
         User user = User.builder()
                 .userId("testuser")
-                .password("$2a$10$7p.Y/lGubU3H.TzQvP.Yle3L1U.S1.S1.S1.S1.S1.S1.S1.S1.S1") // password
+                .esntlId("USR001")
+                .password(egovPasswordEncoder.encode("password", "testuser"))
                 .userNm("테스트")
-                .role(Role.ROLE_USER)
+                .role(Role.USER)
                 .build();
         userRepository.save(user);
     }
@@ -41,9 +47,10 @@ public class AuthenticationControllerIntegrationTest {
     @Test
     @DisplayName("로그인 성공 시나리오")
     void loginSuccess() throws Exception {
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"userId\":\"testuser\", \"password\":\"password\"}"))
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
                 .andExpect(status().isOk());
     }
 }

@@ -1,6 +1,6 @@
 package com.company.project.foundation.service.user;
 
-import com.company.foundation.support.IntegrationTest;
+import com.company.project.foundation.support.IntegrationTest;
 import com.company.project.foundation.domain.auth.UserAuthority;
 import com.company.project.foundation.domain.auth.UserAuthorityRepository;
 import com.company.project.foundation.domain.user.entity.Role;
