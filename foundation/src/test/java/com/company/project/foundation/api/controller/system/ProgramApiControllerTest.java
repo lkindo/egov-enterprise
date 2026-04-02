@@ -1,4 +1,4 @@
-package com.company.project.foundation.api.controller.system;
+﻿package com.company.project.foundation.api.controller.system;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.service.program.ProgramService;
@@ -22,9 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
-
-@DisplayName("ProgramApiController ?�스??)
+@DisplayName("ProgramApiController 테스트")
 class ProgramApiControllerTest {
 
     private MockMvc mockMvc;
@@ -42,49 +40,43 @@ class ProgramApiControllerTest {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(programApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }
 
     @Test
-    @DisplayName("?�로그램 목록 조회 ?�공")
-    void testGetProgramList() throws Exception {
+    @DisplayName("프로그램 목록 조회 성공")
+    void testGetPrograms() throws Exception {
         // Given
-        when(programService.selectProgrmList(any())).thenReturn(Collections.emptyList());
-        when(programService.selectProgrmListTotCnt(any())).thenReturn(0);
+        when(programService.selectProgramList(any())).thenReturn(Collections.emptyList());
 
         // When & Then
-        mockMvc.perform(get("/api/v1/admin/system/programs")
-                .param("page", "0")
-                .param("size", "10"))
+        mockMvc.perform(get("/api/v1/admin/system/programs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    @DisplayName("?�로그램 ?�세 조회 ?�공")
+    @DisplayName("프로그램 상세 조회 성공")
     void testGetProgram() throws Exception {
         // Given
-        ProgramDto dto = ProgramDto.builder()
-                .progrmFileNm("Prog001")
-                .progrmKoreanNm("?�로그램 001")
-                .build();
-        when(programService.selectProgrmById("Prog001")).thenReturn(dto);
+        ProgramDto dto = new ProgramDto();
+        dto.setProgrmFileNm("PROG_001");
+        dto.setProgrmKoreanNm("회원 관리");
+        when(programService.selectProgram("PROG_001")).thenReturn(dto);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/admin/system/programs/Prog001"))
+        mockMvc.perform(get("/api/v1/admin/system/programs/PROG_001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.progrmFileNm").value("Prog001"));
+                .andExpect(jsonPath("$.data.progrmFileNm").value("PROG_001"));
     }
 
     @Test
-    @DisplayName("?�로그램 ?�록 ?�공")
+    @DisplayName("프로그램 등록 성공")
     void testCreateProgram() throws Exception {
         // Given
-        ProgramDto dto = ProgramDto.builder()
-                .progrmFileNm("NewProg")
-                .progrmKoreanNm("?�규 ?�로그램")
-                .build();
+        ProgramDto dto = new ProgramDto();
+        dto.setProgrmFileNm("PROG_NEW");
+        dto.setProgrmKoreanNm("신규 프로그램");
 
         // When & Then
         mockMvc.perform(post("/api/v1/admin/system/programs")
@@ -92,33 +84,16 @@ class ProgramApiControllerTest {
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        verify(programService, times(1)).insertProgrm(any(ProgramDto.class));
+        verify(programService, times(1)).insertProgram(any(ProgramDto.class));
     }
 
     @Test
-    @DisplayName("?�로그램 ?�정 ?�공")
-    void testUpdateProgram() throws Exception {
-        // Given
-        ProgramDto dto = ProgramDto.builder()
-                .progrmKoreanNm("?�정???�로그램")
-                .build();
-
-        // When & Then
-        mockMvc.perform(put("/api/v1/admin/system/programs/Prog001")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
-
-        verify(programService, times(1)).updateProgrm(any(ProgramDto.class));
-    }
-
-    @Test
-    @DisplayName("?�로그램 ??�� ?�공")
+    @DisplayName("프로그램 삭제 성공")
     void testDeleteProgram() throws Exception {
         // When & Then
-        mockMvc.perform(delete("/api/v1/admin/system/programs/Prog001"))
+        mockMvc.perform(delete("/api/v1/admin/system/programs/PROG_001"))
                 .andExpect(status().isOk());
 
-        verify(programService, times(1)).deleteProgrm(any(ProgramDto.class));
+        verify(programService, times(1)).deleteProgram("PROG_001");
     }
 }

@@ -1,28 +1,30 @@
-package com.company.project.foundation.core.exception;
+﻿package com.company.project.foundation.core.exception;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@DisplayName("BusinessException 테스트")
 class BusinessExceptionTest {
 
     @Test
-    @DisplayName("BusinessException ?�성 �?ErrorCode 매핑 ?�스??)
-    void businessExceptionTest() {
-        ErrorCode errorCode = ErrorCode.ENTITY_NOT_FOUND;
+    @DisplayName("ErrorCode 기반 예외 생성 확인")
+    void testBusinessExceptionWithErrorCode() {
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
         BusinessException exception = new BusinessException(errorCode);
 
-        assertThat(exception.getErrorCode()).isEqualTo(errorCode);
-        assertThat(exception.getMessage()).isEqualTo(errorCode.getMessage());
+        assertEquals(errorCode, exception.getErrorCode());
+        assertEquals(errorCode.getMessage(), exception.getMessage());
     }
 
     @Test
-    @DisplayName("커스?� 메시지�?가�?BusinessException ?�스??)
-    void businessExceptionWithCustomMessageTest() {
-        String customMsg = "Specific entity not found";
-        BusinessException exception = new BusinessException(customMsg, ErrorCode.ENTITY_NOT_FOUND);
+    @DisplayName("커스텀 메시지 포함 예외 생성 확인")
+    void testBusinessExceptionWithMessage() {
+        String message = "Custom error message";
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        BusinessException exception = new BusinessException(message, errorCode);
 
-        assertThat(exception.getMessage()).isEqualTo(customMsg);
-        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ENTITY_NOT_FOUND);
+        assertEquals(errorCode, exception.getErrorCode());
+        assertEquals(message, exception.getMessage());
     }
 }

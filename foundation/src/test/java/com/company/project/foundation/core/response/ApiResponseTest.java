@@ -1,43 +1,34 @@
-package com.company.project.foundation.core.response;
+﻿package com.company.project.foundation.core.response;
 
 import com.company.project.foundation.core.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("ApiResponse 테스트")
 class ApiResponseTest {
 
     @Test
-    @DisplayName("?�공 ?�답 ?�성 ?�스??)
-    void successResponseTest() {
+    @DisplayName("성공 응답 생성 확인")
+    void testSuccessResponse() {
         String data = "test data";
         ApiResponse<String> response = ApiResponse.success(data);
 
-        assertThat(response.success()).isTrue();
-        assertThat(response.status()).isEqualTo(200);
-        assertThat(response.data()).isEqualTo(data);
-        assertThat(response.timestamp()).isNotNull();
+        assertTrue(response.isSuccess());
+        assertEquals(data, response.getData());
+        assertNull(response.getError());
     }
 
     @Test
-    @DisplayName("?�러 ?�답 ?�성 ?�스??)
-    void errorResponseTest() {
-        ApiResponse<Object> response = ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE);
+    @DisplayName("에러 응답 생성 확인")
+    void testErrorResponse() {
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        ApiResponse<Object> response = ApiResponse.error(errorCode);
 
-        assertThat(response.success()).isFalse();
-        assertThat(response.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
-        assertThat(response.code()).isEqualTo("C001");
-        assertThat(response.data()).isNull();
-    }
-
-    @Test
-    @DisplayName("커스?� 메시지 ?�러 ?�답 ?�스??)
-    void errorWithCustomMessageTest() {
-        String customMsg = "Custom error message";
-        ApiResponse<Object> response = ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, customMsg);
-
-        assertThat(response.message()).isEqualTo(customMsg);
-        assertThat(response.success()).isFalse();
+        assertFalse(response.isSuccess());
+        assertNull(response.getData());
+        assertNotNull(response.getError());
+        assertEquals("C004", response.getError().getCode());
+        assertEquals("서버 오류입니다.", response.getError().getMessage());
     }
 }

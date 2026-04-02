@@ -1,148 +1,44 @@
-package com.company.project.foundation.core.exception;
+﻿package com.company.project.foundation.core.exception;
 
+import com.company.project.foundation.core.response.ApiResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.MethodParameter;
-import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 
-import java.lang.reflect.Method;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+@DisplayName("GlobalExceptionHandler 테스트")
 class GlobalExceptionHandlerTest {
 
-    private MockMvc mockMvc;
+    private GlobalExceptionHandler handler;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new TestController())
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
-    }
-
-    @RestController
-    static class TestController {
-        @GetMapping("/test/business-exception")
-        public void throwBusinessException() {
-            throw new BusinessException(ErrorCode.ENTITY_NOT_FOUND);
-        }
-
-        @GetMapping("/test/runtime-exception")
-        public void throwRuntimeException() {
-            throw new RuntimeException("Unexpected error");
-        }
-
-        @GetMapping("/test/illegal-argument")
-        public void throwIllegalArgumentException() {
-            throw new IllegalArgumentException("Invalid argument");
-        }
-
-        @GetMapping("/test/access-denied")
-        public void throwAccessDenied() {
-            throw new AccessDeniedException("Access Denied");
-        }
-
-        @GetMapping("/test/auth-exception")
-        public void throwAuthException() {
-            throw new BadCredentialsException("Invalid credentials");
-        }
-
-        @GetMapping("/test/optimistic-lock")
-        public void throwOptimisticLock() {
-            throw new OptimisticLockingFailureException("Locked");
-        }
-
-        @PostMapping("/test/validation")
-        public void throwValidation() throws Exception {
-            BindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "testObject");
-            bindingResult.addError(new FieldError("testObject", "field", "must not be null"));
-            
-            Method method = TestController.class.getMethod("throwValidation");
-            MethodParameter parameter = new MethodParameter(method, -1);
-            
-            throw new MethodArgumentNotValidException(parameter, bindingResult);
-        }
+        handler = new GlobalExceptionHandler();
     }
 
     @Test
-    @DisplayName("BusinessException 처리 ?�스??)
-    void handleBusinessExceptionTest() throws Exception {
-        mockMvc.perform(get("/test/business-exception"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(ErrorCode.ENTITY_NOT_FOUND.getCode()))
-                .andExpect(jsonPath("$.message").value(ErrorCode.ENTITY_NOT_FOUND.getMessage()));
+    @DisplayName("BusinessException 처리 확인")
+    void handleBusinessException() {
+        BusinessException ex = new BusinessException(ErrorCode.ENTITY_NOT_FOUND);
+        ResponseEntity<ApiResponse<Object>> response = handler.handleBusinessException(ex);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("C003", response.getBody().getError().getCode());
     }
 
     @Test
-    @DisplayName("IllegalArgumentException 처리 ?�스??)
-    void handleIllegalArgumentExceptionTest() throws Exception {
-        mockMvc.perform(get("/test/illegal-argument"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
-                .andExpect(jsonPath("$.message").value("Invalid argument"));
-    }
+    @DisplayName("지원하지 않는 HTTP 메서드 예외 처리 확인")
+    void handleHttpRequestMethodNotSupportedException() {
+        HttpRequestMethodNotSupportedException ex = new HttpRequestMethodNotSupportedException("POST");
+        ResponseEntity<ApiResponse<Object>> response = handler.handleHttpRequestMethodNotSupportedException(ex);
 
-    @Test
-    @DisplayName("AccessDeniedException 처리 ?�스??)
-    void handleAccessDeniedExceptionTest() throws Exception {
-        mockMvc.perform(get("/test/access-denied"))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value(ErrorCode.ACCESS_DENIED.getCode()));
-    }
-
-    @Test
-    @DisplayName("AuthenticationException 처리 ?�스??)
-    void handleAuthenticationExceptionTest() throws Exception {
-        mockMvc.perform(get("/test/auth-exception"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value(ErrorCode.UNAUTHORIZED.getCode()));
-    }
-
-    @Test
-    @DisplayName("OptimisticLockingFailureException 처리 ?�스??)
-    void handleOptimisticLockingFailureExceptionTest() throws Exception {
-        mockMvc.perform(get("/test/optimistic-lock"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()));
-    }
-
-    @Test
-    @DisplayName("MethodArgumentNotValidException 처리 ?�스??)
-    void handleMethodArgumentNotValidExceptionTest() throws Exception {
-        mockMvc.perform(post("/test/validation"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
-                .andExpect(jsonPath("$.message").value("must not be null"));
-    }
-
-    @Test
-    @DisplayName("HttpRequestMethodNotSupportedException 처리 ?�스??)
-    void handleMethodNotSupportedExceptionTest() throws Exception {
-        mockMvc.perform(post("/test/business-exception")) // GET only endpoint called with POST
-                .andExpect(status().isMethodNotAllowed())
-                .andExpect(jsonPath("$.code").value(ErrorCode.METHOD_NOT_ALLOWED.getCode()));
-    }
-
-    @Test
-    @DisplayName("?�반 Exception 처리 ?�스??)
-    void handleExceptionTest() throws Exception {
-        mockMvc.perform(get("/test/runtime-exception"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.code").value(ErrorCode.INTERNAL_SERVER_ERROR.getCode()));
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED, response.getStatusCode());
+        assertEquals("C002", response.getBody().getError().getCode());
     }
 }

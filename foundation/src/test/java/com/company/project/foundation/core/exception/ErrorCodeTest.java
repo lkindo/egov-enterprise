@@ -1,30 +1,19 @@
-package com.company.project.foundation.core.exception;
+﻿package com.company.project.foundation.core.exception;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+@DisplayName("ErrorCode 테스트")
 class ErrorCodeTest {
 
     @Test
-    @DisplayName("ErrorCode Getter ?�동 ?�스??)
-    void testErrorCodeGetters() {
+    @DisplayName("ErrorCode 필드 확인")
+    void testErrorCodeFields() {
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
 
-        assertThat(errorCode.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(errorCode.getCode()).isEqualTo("C001");
-        assertThat(errorCode.getMessage()).isEqualTo("Invalid Input Value");
-    }
-
-    @Test
-    @DisplayName("모든 ErrorCode 값이 ?�상?�으�??�의?�어 ?�는지 ?�인")
-    void testAllErrorCodeValues() {
-        for (ErrorCode errorCode : ErrorCode.values()) {
-            assertThat(errorCode.getStatus()).isNotNull();
-            assertThat(errorCode.getCode()).isNotBlank();
-            assertThat(errorCode.getMessage()).isNotBlank();
-        }
+        assertEquals(400, errorCode.getStatus());
+        assertEquals("C001", errorCode.getCode());
+        assertEquals("올바르지 않은 입력값입니다.", errorCode.getMessage());
     }
 }

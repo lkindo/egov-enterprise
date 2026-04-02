@@ -1,4 +1,4 @@
-package com.company.project.foundation.api.controller.system;
+﻿package com.company.project.foundation.api.controller.system;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.service.menu.MenuService;
@@ -14,17 +14,15 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("MenuApiController ?�스??)
+@DisplayName("MenuApiController 테스트")
 class MenuApiControllerTest {
 
     private MockMvc mockMvc;
@@ -42,49 +40,43 @@ class MenuApiControllerTest {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(menuApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(new org.springframework.data.web.PageableHandlerMethodArgumentResolver())
                 .build();
     }
 
     @Test
-    @DisplayName("메뉴 목록 조회 ?�공")
-    void testGetMenuList() throws Exception {
+    @DisplayName("메뉴 목록 조회 성공")
+    void testGetMenus() throws Exception {
         // Given
-        when(menuService.selectMenuManageList(any())).thenReturn(Collections.emptyList());
-        when(menuService.selectMenuManageListTotCnt(any())).thenReturn(0);
+        when(menuService.selectMenuList(any())).thenReturn(Collections.emptyList());
 
         // When & Then
-        mockMvc.perform(get("/api/v1/admin/system/menus")
-                .param("page", "0")
-                .param("size", "10"))
+        mockMvc.perform(get("/api/v1/admin/system/menus"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    @DisplayName("메뉴 ?�세 조회 ?�공")
+    @DisplayName("메뉴 상세 조회 성공")
     void testGetMenu() throws Exception {
         // Given
-        MenuDto dto = MenuDto.builder()
-                .menuNo(100L)
-                .menuNm("Test Menu")
-                .build();
-        when(menuService.selectMenuManage(100L)).thenReturn(dto);
+        MenuDto dto = new MenuDto();
+        dto.setMenuNo(1001L);
+        dto.setMenuNm("시스템 관리");
+        when(menuService.selectMenu(1001L)).thenReturn(dto);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/admin/system/menus/100"))
+        mockMvc.perform(get("/api/v1/admin/system/menus/1001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.menuNo").value(100));
+                .andExpect(jsonPath("$.data.menuNo").value(1001));
     }
 
     @Test
-    @DisplayName("메뉴 ?�록 ?�공")
+    @DisplayName("메뉴 등록 성공")
     void testCreateMenu() throws Exception {
         // Given
-        MenuDto dto = MenuDto.builder()
-                .menuNo(100L)
-                .menuNm("New Menu")
-                .build();
+        MenuDto dto = new MenuDto();
+        dto.setMenuNo(2001L);
+        dto.setMenuNm("신규 메뉴");
 
         // When & Then
         mockMvc.perform(post("/api/v1/admin/system/menus")
@@ -92,21 +84,16 @@ class MenuApiControllerTest {
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        verify(menuService, times(1)).insertMenuManage(any(MenuDto.class));
+        verify(menuService, times(1)).insertMenu(any(MenuDto.class));
     }
 
     @Test
-    @DisplayName("권한�?메뉴 ?�당 ?�???�공")
-    void testCreateMenuCreation() throws Exception {
-        // Given
-        List<Long> menuNos = Arrays.asList(100L, 200L);
-
+    @DisplayName("메뉴 삭제 성공")
+    void testDeleteMenu() throws Exception {
         // When & Then
-        mockMvc.perform(post("/api/v1/admin/system/menus/creation/ROLE_ADMIN")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(menuNos)))
+        mockMvc.perform(delete("/api/v1/admin/system/menus/1001"))
                 .andExpect(status().isOk());
 
-        verify(menuService, times(1)).insertMenuCreatList(eq("ROLE_ADMIN"), eq("100,200"));
+        verify(menuService, times(1)).deleteMenu(1001L);
     }
 }

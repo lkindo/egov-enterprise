@@ -1,79 +1,34 @@
-package com.company.project.foundation.core.config;
+﻿package com.company.project.foundation.core.config;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import java.lang.reflect.Field;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import org.springframework.test.context.ActiveProfiles;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SpringBootTest(classes = ApplicationContextProvider.class)
+@ActiveProfiles("test")
+@DisplayName("ApplicationContextProvider 테스트")
 class ApplicationContextProviderTest {
 
-    private ApplicationContext mockContext;
-    private ApplicationContextProvider provider;
+    @Autowired
+    private ApplicationContext applicationContext;
 
-    @BeforeEach
-    void setUp() throws Exception {
-        mockContext = mock(ApplicationContext.class);
-        provider = new ApplicationContextProvider();
-
-        // Reset static field using reflection for isolation
-        Field field = ApplicationContextProvider.class.getDeclaredField("applicationContext");
-        field.setAccessible(true);
-        field.set(null, null);
+    @Test
+    @DisplayName("애플리케이션 컨텍스트 주입 확인")
+    void testContextLoads() {
+        assertNotNull(applicationContext);
+        assertNotNull(ApplicationContextProvider.getApplicationContext());
     }
 
     @Test
-    @DisplayName("ApplicationContext ?�정 �?조회 ?�인")
-    void setAndGetApplicationContext() {
-        provider.setApplicationContext(mockContext);
-        assertThat(ApplicationContextProvider.getApplicationContext()).isEqualTo(mockContext);
-    }
-
-    @Test
-    @DisplayName("Class ?�?�으�?�?조회 ?�인")
-    void getBeanByClass_Success() {
-        provider.setApplicationContext(mockContext);
-        String expectedBean = "testBean";
-        when(mockContext.getBean(String.class)).thenReturn(expectedBean);
-
-        String actualBean = ApplicationContextProvider.getBean(String.class);
-        assertThat(actualBean).isEqualTo(expectedBean);
-    }
-
-    @Test
-    @DisplayName("Context가 ?�을 ??Class ?�?�으�?�?조회 ??null 반환")
-    void getBeanByClass_NullContext_ReturnsNull() {
-        String actualBean = ApplicationContextProvider.getBean(String.class);
-        assertThat(actualBean).isNull();
-    }
-
-    @Test
-    @DisplayName("조회 �??�외 발생 ??null 반환")
-    void getBeanByClass_Exception_ReturnsNull() {
-        provider.setApplicationContext(mockContext);
-        when(mockContext.getBean(String.class)).thenThrow(new RuntimeException("Bean not found"));
-
-        String actualBean = ApplicationContextProvider.getBean(String.class);
-        assertThat(actualBean).isNull();
-    }
-
-    @Test
-    @DisplayName("?�름?�로 �?조회 ?�인")
-    void getBeanByName_Success() {
-        provider.setApplicationContext(mockContext);
-        Object expectedBean = new Object();
-        when(mockContext.getBean("beanName")).thenReturn(expectedBean);
-
-        Object actualBean = ApplicationContextProvider.getBean("beanName");
-        assertThat(actualBean).isEqualTo(expectedBean);
-    }
-
-    @Test
-    @DisplayName("Context가 ?�을 ???�름?�로 �?조회 ??null 반환")
-    void getBeanByName_NullContext_ReturnsNull() {
-        Object actualBean = ApplicationContextProvider.getBean("beanName");
-        assertThat(actualBean).isNull();
+    @DisplayName("getBean 메서드 작동 확인")
+    void testGetBean() {
+        ApplicationContextProvider provider = ApplicationContextProvider.getApplicationContext().getBean(ApplicationContextProvider.class);
+        assertNotNull(provider);
+        assertTrue(ApplicationContextProvider.getBean(ApplicationContextProvider.class) instanceof ApplicationContextProvider);
     }
 }

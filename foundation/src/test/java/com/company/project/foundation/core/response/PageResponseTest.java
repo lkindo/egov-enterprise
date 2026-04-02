@@ -1,26 +1,31 @@
-package com.company.project.foundation.core.response;
+﻿package com.company.project.foundation.core.response;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import java.util.List;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@DisplayName("PageResponse 테스트")
 class PageResponseTest {
 
     @Test
-    @DisplayName("?�이지 ?�답 객체 ?�성 �??�이�?계산 ?�스??)
-    void pageResponseCreationTest() {
-        List<String> list = List.of("item1", "item2");
-        long total = 25;
-        int currentPage = 1;
-        int size = 10;
+    @DisplayName("Spring Data Page 전환 확인")
+    void testFromPage() {
+        List<String> content = Collections.singletonList("data");
+        Page<String> page = new PageImpl<>(content, PageRequest.of(1, 10), 100);
 
-        PageResponse<String> response = PageResponse.of(list, currentPage, size, total);
+        PageResponse<String> response = PageResponse.of(page);
 
-        assertThat(response.getList()).hasSize(2);
-        assertThat(response.getTotal()).isEqualTo(total);
-        assertThat(response.getPage()).isEqualTo(currentPage);
-        assertThat(response.getSize()).isEqualTo(size);
-        assertThat(response.getTotalPage()).isEqualTo(3); // 25 / 10 = 2.5 -> 3
+        assertEquals(content, response.getContent());
+        assertEquals(100, response.getTotalElements());
+        assertEquals(10, response.getTotalPages());
+        assertEquals(1, response.getPageNumber());
+        assertEquals(10, response.getPageSize());
     }
 }
