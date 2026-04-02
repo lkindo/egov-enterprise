@@ -29,3 +29,4 @@
 - [2026-04-02] 현재 수정된 백엔드 모듈(`:business-suite:test`)과 프론트엔드 `type-check`를 재실행 중.
 - [2026-04-02] 프론트엔드 `type-check` 통과 완료.
 - [2026-04-02] 백엔드 `initializationError` (SpringBootConfiguration 미발굴) 문제 해결을 위해 `TestApplication` 위치 이동(패키지 통합) 및 `ControllerTestSupport`에 명시적 설정 추가.
+- [2026-04-03] 백엔드 테스트 코드의 한글 깨짐(Mojibake) 복원 작업 진행 중. 주요 도메인(부서, 그룹, 메뉴, 사용자, 권한, 공통코드) 테스트 파일 복구 완료.
