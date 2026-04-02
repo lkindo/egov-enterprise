@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,43 +27,43 @@ interface InsightMessage {
 }
 
 /**
- * AI-Driven 인텔리전스인사이트 諛곕꼫
- * 猷湲곕컲 ?대━ㅽ떛 ?붿쭊님?듯빐 ?앹꽦님吏ν삎 ?붿빟 ?뺣낫瑜관리자?먭쾶 ?쒓났합니다
+ * AI-Driven 인텔리전스 인사이트 배너
+ * 로그 기반 분석 엔진을 통해 생성된 지능형 요약 정보를 관리자에게 제공합니다.
  */
 export const InsightBanner: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  // 媛곸쓽 吏ν삎 인사이트 데이터(異뷀썑 API ?곕룞 ?덉젙)
+  // 가공된 지능형 인사이트 데이터 (추후 API 연동 예정)
   const insights: InsightMessage[] = [
     {
       id: '1',
       type: 'SECURITY',
       severity: 'WARNING',
-      message: "鍮꾩젙?곸쟻님로그인?쒕룄 媛먯?: 吏님10遺꾧컙 US 吏님IP?먯꽌님?묎렐님25% 湲됱쬆있습니다.",
-      timestamp: "諛⑷툑 님,
-      action: "諛⑺솕踰님뺤콉 寃님
+      message: "비정상적인 로그인 시도 감지: 지난 10분간 특정 국가(US) IP에서의 접근이 25% 급증했습니다.",
+      timestamp: "방금 전",
+      action: "방화벽 정책 검토"
     },
     {
       id: '2',
       type: 'TRAFFIC',
       severity: 'INFO',
-      message: "?명봽님理쒖쟻님?깃났: 罹먯떛 ?쒕퉬님?꾩엯 ?댄썑 ?됯퇏 ?묐떟 ?띾룄媛 14.2ms 媛쒖꽑?섏뿀?듬땲님",
-      timestamp: "12遺님?
+      message: "인프라 최적화 성공: 캐싱 서비스 도입 이후 평균 응답 속도가 14.2ms 개선되었습니다.",
+      timestamp: "12분 전"
     },
     {
       id: '3',
       type: 'SYSTEM',
       severity: 'CRITICAL',
-      message: "DB 而ㅻ꽖님 ?꾧퀎移님꾨떖: 현재 ?좊떦?됱쓽 88%瑜님먯쑀 以묒엯?덈떎. ?몄뒪?댁뒪 ?뺤옣님沅뚯옣합니다",
-      timestamp: "5遺님?,
-      action: "ㅼ님님꾩썐 ㅽ뻾"
+      message: "DB 커넥션 풀 한계치 도달: 현재 할당량의 88%를 점유 중입니다. 인스턴스 확장을 권장합니다.",
+      timestamp: "5분 전",
+      action: "스택 트레이스 실행"
     },
     {
       id: '4',
       type: 'OPTIMIZATION',
       severity: 'INFO',
-      message: "?뺤긽 媛님以 ?꾩궗 시스템무결성寃ш 완료?섏뿀?쇰ŉ, 諛쒓껄님?댁긽 吏뺥썑媛 ?놁뒿?덈떎.",
-      timestamp: "1시간 님
+      message: "정상 가동 중: 전사 시스템 무결성 검사가 완료되었으며, 발견된 이상 징후가 없습니다.",
+      timestamp: "1시간 전"
     }
   ];
 
@@ -96,16 +96,15 @@ export const InsightBanner: React.FC = () => {
   };
 
   return (
-    <div className="relative group">
+    <div className="relative group text-left">
        <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-indigo-500/10 to-primary/20 rounded-[2.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
        
        <div className={cn(
           "relative min-h-[140px] rounded-[2.5rem] border-2 bg-white/80 backdrop-blur-3xl p-10 flex flex-col lg:flex-row items-center gap-10 transition-all duration-700 overflow-hidden shadow-2xl shadow-slate-200/50 hover:shadow-primary/5",
           getSeverityStyles(activeInsight.severity)
        )}>
-          {/* Animated Wave Background */}
+          {/* Animated Wave Background Area */}
           <div className="absolute inset-0 opacity-5 pointer-events-none overflow-hidden">
-             {/* Pure CSS Noise Implementation (No External Asset) */}
              <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml,%3Csvg%20viewBox=%220%200%20200%20200%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter%20id=%22noiseFilter%22%3E%3CfeTurbulence%20type=%22fractalNoise%22%20baseFrequency=%220.65%22%20numOctaves=%223%22%20stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect%20width=%22100%25%22%20height=%22100%25%22%20filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')]" />
              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/30 via-transparent to-transparent animate-pulse" />
           </div>
@@ -138,7 +137,7 @@ export const InsightBanner: React.FC = () => {
                    transition={{ duration: 0.6, ease: "circOut" }}
                    className="space-y-4"
                 >
-                   <p className="text-2xl font-black tracking-tighter text-slate-900 leading-tight line-clamp-2 italic">
+                   <p className="text-2xl font-black tracking-tighter text-slate-900 leading-tight line-clamp-2 italic text-left">
                       {activeInsight.message}
                    </p>
                    
@@ -178,4 +177,3 @@ export const InsightBanner: React.FC = () => {
     </div>
   );
 };
-

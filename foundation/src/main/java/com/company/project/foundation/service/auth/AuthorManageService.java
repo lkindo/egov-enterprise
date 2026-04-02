@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 沅뚰??????퉬??
+ * 沅뚰퉬??
  */
 @Service("projectAuthorManageService")
 @RequiredArgsConstructor
@@ -28,7 +28,7 @@ public class AuthorManageService {
     private final AuthorityRepository authorityRepository;
 
     /**
-     * 沅뚰?紐⑸?議고??     */
+     * 沅뚰紐⑸議고??     */
     public List<AuthorManageDto> selectAuthorList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -39,7 +39,7 @@ public class AuthorManageService {
     }
 
     /**
-     * 沅뚰?紐⑸???嫄댁??     */
+     * 沅뚰紐⑸嫄댁??     */
     public int selectAuthorListTotCnt(ComDefaultVO searchVO) {
         return (int) authorityRepository.count();
     }

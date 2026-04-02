@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 /**
- * ??뿅?臾먮뼗??Repository
+ * ??뿅臾먮뼗??Repository
  */
 public interface SurveyRespondentRepository extends JpaRepository<SurveyRespondent, String> {
 

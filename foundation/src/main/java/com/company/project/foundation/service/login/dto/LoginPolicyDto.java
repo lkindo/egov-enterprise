@@ -21,7 +21,7 @@ public class LoginPolicyDto {
     private String emplyrNm;
     /** IP ?뺣낫 */
     private String ipInfo;
-    /** 以묐??濡쒓?????슜 ??? */
+    /** 以묐濡쒓?????슜 ??? */
     private String dplctPermAt;
     /** ??븳 ??? */
     private String lmttAt;

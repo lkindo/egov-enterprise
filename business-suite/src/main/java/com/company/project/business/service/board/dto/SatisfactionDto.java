@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Builder
 public class SatisfactionDto {
     private Long satisfactionId;
-    @NotNull(message = "寃뚯?臾?ID???꾩닔??땲??")
+    @NotNull(message = "寃뚯臾ID???꾩닔??땲??")
     private Long articleId;
     @NotBlank(message = "寃뚯???ID???꾩닔??땲??")
     private String boardId;

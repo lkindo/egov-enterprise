@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 洹몃????DTO
+ * 洹몃DTO
  */
 @Getter
 @Setter

@@ -1,4 +1,5 @@
-﻿
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import {
  X,
@@ -59,29 +60,24 @@ export function StandardOnboardingTour() {
 
  const steps: TourStep[] = [
  {
- title: "eGov 5.0 ?꾨님님뚮옯?쇱뿉 ㅼ떊 寃껋쓣 ?섏쁺합니다",
- description: "援님 ?뺣낫님?쒖님님좊룄?섎뒗 새로운관리님쒖뒪?쒖엯?덈떎. 님鍮좊Ⅴ怨 님吏곴님곸씤 업무 ?섍꼍님寃쏀뿕?대낫?몄슂.",
+ title: "eGov 5.0 플랫폼에 오신 것을 환영합니다",
+ description: "차세대 공공 정보 시스템을 주도하는 새로운 관리 프레임워크입니다. 빠르고 직관적인 업무 환경을 경험해 보세요.",
  icon: <Sparkles className="text-primary" size={32} />
- },
- {
- title: "ㅻ쭏님?대퉬寃뚯씠님,
- description: "?쇱そ ъ씠?쒕컮瑜님듯빐 紐⑤뱺 업무 紐⑤뱢님鍮좊Ⅴ寃님묎렐님님있습니다. 怨꾩링님硫붾돱 ?꾨님곸씤 ?꾩씠肄섏쑝濡님먰븯님硫붾돱瑜님쎄쾶 李얠븘蹂댁꽭님",
- icon: <Layout className="text-blue-500" size={32} />
  },
  {
  title: "스마트 내비게이션",
  description: "왼쪽 사이드바를 통해 모든 업무 모듈에 빠르게 접근할 수 있습니다. 계층형 메뉴와 현대적인 아이콘으로 원하는 메뉴를 쉽게 찾아보세요.",
- icon: <Command className="text-purple-500" size={32} />
+ icon: <Layout className="text-blue-500" size={32} />
  },
  {
  title: "글로벌 커맨드 센터 (Ctrl+K)",
  description: "마우스 클릭 없이 키보드만으로 어디든 이동하세요. 단축키 Ctrl+K를 눌러 메뉴 검색, 사용자 찾기, 빠른 액션을 실행할 수 있습니다.",
- icon: <Bell className="text-orange-500" size={32} />
+ icon: <Command className="text-purple-500" size={32} />
  },
  {
  title: "실시간 지능형 알림",
  description: "상단 종 모양 아이콘을 통해 실시간 업무 알림을 받아보세요. 새로운 결재 요청이나 공지사항이 등록되면 즉시 알려드립니다.",
- icon: <User className="text-emerald-500" size={32} />
+ icon: <Bell className="text-orange-500" size={32} />
  }
  ];
 
@@ -141,22 +137,22 @@ export function StandardOnboardingTour() {
  )}
  aria-label="이전 단계로 이동"
  >
- <ChevronLeft size={18} /> ?댁쟾
+ <ChevronLeft size={18} /> 이전
  </Button>
 
  <div className="flex gap-2">
  {currentStep < steps.length - 1 ? (
  <>
  <Button variant="ghost" onClick={handleComplete} className="rounded-xl font-bold h-12 px-6 text-muted-foreground" aria-label="가이드 건너뛰기">
- 嫄대꼫?곌린
+ 건너뛰기
  </Button>
  <Button onClick={nextStep} className="rounded-xl font-black h-12 px-8 gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all" aria-label="다음 단계로 이동">
- ㅼ쓬 媛대뱶 <ChevronRight size={18} />
+ 다음 가이드 <ChevronRight size={18} />
  </Button>
  </>
  ) : (
  <Button onClick={handleComplete} className="rounded-xl font-black h-12 px-10 gap-2 shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white hover:scale-105 transition-all" aria-label="가이드 완료 및 시작하기">
- 시작?섍린 <CheckCircle2 size={18} />
+ 시작하기 <CheckCircle2 size={18} />
  </Button>
  )}
  </div>
@@ -165,11 +161,10 @@ export function StandardOnboardingTour() {
 
  <div className="bg-muted/20 px-10 py-4 border-t border-primary/5 text-center">
  <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.3em]">
- Step {currentStep + 1} of {steps.length} 님User Onboarding Experience
+ Step {currentStep + 1} of {steps.length} User Onboarding Experience
  </p>
  </div>
  </div>
  </div>
  );
 }
-

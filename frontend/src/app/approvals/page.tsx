@@ -47,7 +47,7 @@ export default function ApprovalInboxPage() {
       } else {
         setSelectedItem(null);
       }
-    } catch {
+    } catch (error) {
       toast('결재 목록을 불러오지 못했습니다.', 'error');
     } finally {
       setLoading(false);
@@ -72,7 +72,7 @@ export default function ApprovalInboxPage() {
       await approvalUserService.confirm(item.approvalId, status);
       toast(`성공적으로 ${actionNm}되었습니다.`, 'success');
       loadData();
-    } catch {
+    } catch (error) {
       toast(`${actionNm} 처리 중 오류가 발생했습니다.`, 'error');
     }
   };
@@ -116,7 +116,7 @@ export default function ApprovalInboxPage() {
     if (!selectedItem) return [];
     return [
       { label: '기안', user: selectedItem.applicantId, status: 'completed' as const, date: selectedItem.requestDate },
-      { label: '검토 (이순신 과장)', status: selectedItem.status === 'R' ? 'current' as const : 'completed' as const },
+      { label: '검토 (이순신 과장)', user: '이순신 과장', status: selectedItem.status === 'R' ? 'current' as const : 'completed' as const },
       {
         label: '최종 승인',
         user: '관리자',

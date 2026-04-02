@@ -29,17 +29,17 @@ public class FileItem extends BaseTimeEntity {
     private Integer fileSn; // ???뵬 ??뺤쓰
 
     @Column(nullable = false)
-    private String fileStreCours; // ???뵬 ????野껋럥以?
+    private String fileStreCours; // ???뵬 野껋럥以
 
     @Column(nullable = false)
-    private String streFileNm; // ???貫留????뵬筌?
+    private String streFileNm; // 貫留뵬筌
 
     @Column(nullable = false)
-    private String orignlFileNm; // ?癒?궚 ???뵬筌?
+    private String orignlFileNm; // 癒궚 ???뵬筌
 
-    private String fileExtsn; // ???뵬 ?類ㅼ삢??
+    private String fileExtsn; // ???뵬 類ㅼ삢??
 
-    private Long fileSize; // ???뵬 ??由?
+    private Long fileSize; // ???뵬 由
 
     public FileItem(FileGroup fileGroup, Integer fileSn, String fileStreCours, String streFileNm, String orignlFileNm,
             String fileExtsn, Long fileSize) {

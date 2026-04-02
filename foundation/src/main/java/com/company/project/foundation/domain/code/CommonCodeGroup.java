@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * ?⑤벏???꾨뗀諭?域밸챶竊??酉???(CCMMNCODE ???뵠??筌띲끋釉?
+ * ⑤벏???꾨뗀諭域밸챶竊酉(CCMMNCODE ???뵠筌띲끋釉
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

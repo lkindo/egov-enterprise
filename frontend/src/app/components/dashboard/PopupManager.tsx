@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { popupService } from '@/services/business/user/PopupService';
@@ -28,7 +28,7 @@ export function PopupManager() {
 
  setActivePopups(filteredPopups);
  setVisiblePopupIds(filteredPopups.map(p => p.popupId));
- } catch {
+ } catch (error) {
  console.error('Failed to fetch popups:', error);
  }
  }

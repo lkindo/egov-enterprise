@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -33,7 +33,7 @@ interface CommandItem {
   name: string;
   url?: string;
   action?: () => void;
-  category: '硫붾돱' | '≪뀡' | '시스템 | '寃님;
+  category: '메뉴' | '액션' | '시스템' | '검색';
   icon?: React.ReactNode;
   description?: string;
 }
@@ -41,7 +41,7 @@ interface CommandItem {
 export function GlobalCommandCenter() {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [selected踰덊샇, setSelected踰덊샇] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [menus, setMenus] = useState<CommandItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -49,19 +49,19 @@ export function GlobalCommandCenter() {
   const { logout } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 1. ⑥텞님등록 (CMD/Ctrl+K)
+  // 1. 단축키 등록 (CMD/Ctrl+K)
   useShortcut('k', true, () => {
     setIsOpen(prev => {
       const next = !prev;
       if (next) {
-        setSelected踰덊샇(0);
+        setSelectedIndex(0);
         setSearch('');
       }
       return next;
     });
   });
 
-  // 2. 珥덇린 硫붾돱 데이터濡쒕뱶
+  // 2. 초기 메뉴 데이터 로드
   useEffect(() => {
     async function fetchAllMenus() {
       if (!isOpen) return;
@@ -80,7 +80,7 @@ export function GlobalCommandCenter() {
 
           setMenus(allHead);
 
-          // 하위 硫붾돱 濡쒕뱶
+          // 하위 메뉴 로드
           for (const m of head) {
             menuService.getLeftMenus(m.menuNo).then(left => {
               if (left && left.length > 0) {
@@ -107,38 +107,40 @@ export function GlobalCommandCenter() {
       }
     }
     if (isOpen && menus.length === 0) fetchAllMenus();
-  }, [isOpen, menus.length]);  // menus.length ?섏〈님異붽?
+  }, [isOpen, menus.length]); 
 
-  // 3. 怨좎젙 ≪뀡 ?뺤쓽
+  // 3. 고정 액션 정의
   const quickActions: CommandItem[] = [
     { id: 'act-notif', name: '스마트 메시징 센터', url: '/admin/notifications', icon: <Bell size={16} />, category: '메뉴', description: '전사 알림 통합 모니터링 및 AI 디스패치' },
-    { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '조직도 및 지능형 회의/?먯썝 관리 },
-    { id: 'act-audit', name: '보안 감사 타임머신'/admin/system/audit', icon: <HistoryIcon size={16} />, category: '메뉴', description: '데이터 변경 이력 추적 및 시각적 감사 분석' },
-    { id: 'act-workflow', name: '프로세스 캔버스'/admin/workflow', icon: <GitBranch size={16} />, category: '硫붾돱'메뉴'鍮꾩쫰?덉뒪 워크플로우설계 및 紐⑤땲?곕쭅' },
-    { id: 'act-form', name: '스마트 서식 엔진', url: '/admin/sanctn/forms', icon: <FileText size={16} />, category: '메뉴', description: '?됱젙 ?쒖떇 설계 및 臾몄꽌 ?먮룞님관리 },
+    { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '조직도 및 지능형 회의/자원 관리' },
+    { id: 'act-audit', name: '보안 감사 타임머신', url: '/admin/system/audit', icon: <HistoryIcon size={16} />, category: '메뉴', description: '데이터 변경 이력 추적 및 시각적 감사 분석' },
+    { id: 'act-workflow', name: '프로세스 캔버스', url: '/admin/workflow', icon: <GitBranch size={16} />, category: '메뉴', description: '비즈니스 워크플로우 설계 및 모니터링' },
+    { id: 'act-form', name: '스마트 서식 엔진', url: '/admin/sanctn/forms', icon: <FileText size={16} />, category: '메뉴', description: '행정 서식 설계 및 문서 자동화 관리' },
     { id: 'act-create-post', name: '새 게시글 작성', url: '/admin/community/boards/insertBoardArticle', icon: <FileText size={16} />, category: '액션', description: '공지사항 및 갤러리 게시글 신규 등록' },
-    { id: 'sys-1', name: '마이페이지', url: '/mypage', icon: <User size={16} />, category: '시스템 },
-    { id: '시스템', name: '?섍꼍ㅼ젙', url: '/admin/system/settings', icon: <Settings size={16} />, category: '시스템 },
-    { id: '시스템', name: '로그?꾩썐', action: logout, icon: <LogOut size={16} />, category: '시스템 },
+    { id: 'sys-1', name: '마이페이지', url: '/mypage', icon: <User size={16} />, category: '시스템' },
+    { id: 'sys-settings', name: '환경 설정', url: '/admin/system/settings', icon: <Settings size={16} />, category: '시스템' },
+    { id: 'sys-logout', name: '로그아웃', action: logout, icon: <LogOut size={16} />, category: '시스템' },
   ];
 
-  '시스템' 4. ?듯빀 寃님?꾪꽣留  const filteredItems = useMemo(() => {
+  // 4. 통합 검색 필터링
+  const filteredItems = useMemo(() => {
     const combined = [...quickActions, ...menus];
 
-    // 寃됱뼱媛 ?덉쓣 寃쎌슦 ?꾪꽣留    let results = search
+    // 검색어가 있을 경우 필터링
+    let results = search
       ? combined.filter(item =>
         item.name.toLowerCase().includes(search.toLowerCase()) ||
         item.category.toLowerCase().includes(search.toLowerCase())
       )
       : combined;
 
-    // 留뚯빟 ?쇱튂?섎뒗寃님녿떎硫님꾩뿭 寃님?쒖븞 異붽?
+    // 만약 일치하는 게 없다면 광역 검색 제안 추가
     if (search && results.length === 0) {
       results = [{
         id: 'global-search',
-        name: `"${search}" 寃됱뼱濡님ъ씠님?꾩껜 寃님,
+        name: `"${search}" 검색어로 사이트 전체 검색`,
         url: `/search?q=${encodeURIComponent(search)}`,
-        category: '寃님,
+        category: '검색',
         icon: <Search size={16} />
       }];
     }
@@ -146,7 +148,8 @@ export function GlobalCommandCenter() {
     return results.slice(0, 10);
   }, [search, menus, quickActions]);
 
-  // 5. ?몃뱾님諛님대퉬寃뚯씠님  useEffect(() => {
+  // 5. 핸들바 및 포커스 관리
+  useEffect(() => {
     if (isOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
@@ -166,13 +169,13 @@ export function GlobalCommandCenter() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelected踰덊샇(prev => (prev + 1) % filteredItems.length);
+      setSelectedIndex(prev => (prev + 1) % filteredItems.length);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelected踰덊샇(prev => (prev - 1 + filteredItems.length) % filteredItems.length);
+      setSelectedIndex(prev => (prev - 1 + filteredItems.length) % filteredItems.length);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      handleSelect(filteredItems[selected踰덊샇]);
+      handleSelect(filteredItems[selectedIndex]);
     } else if (e.key === 'Escape') {
       setIsOpen(false);
     }
@@ -203,11 +206,11 @@ export function GlobalCommandCenter() {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setSelected踰덊샇(0);
+              setSelectedIndex(0);
             }}
           />
           <div className="hidden sm:flex items-center gap-3">
-            <div className="px-3 py-1.5 bg-muted rounded-xl border text-[10px] font-black text-muted-foreground tracking-tight">ESC濡님リ린</div>
+            <div className="px-3 py-1.5 bg-muted rounded-xl border text-[10px] font-black text-muted-foreground tracking-tight">ESC로 닫기</div>
           </div>
         </div>
 
@@ -215,7 +218,7 @@ export function GlobalCommandCenter() {
         <div className="max-h-[500px] overflow-y-auto p-6 scrollbar-hide">
           {filteredItems.length > 0 ? (
             <div className="space-y-6">
-              {['메뉴', '액션', '시스템'寃님].map(cat => {
+              {['메뉴', '액션', '시스템', '검색'].map(cat => {
                 const catItems = filteredItems.filter(item => item.category === cat);
                 if (catItems.length === 0) return null;
 
@@ -227,8 +230,8 @@ export function GlobalCommandCenter() {
                     </p>
                     <div className="grid grid-cols-1 gap-1">
                       {catItems.map((item) => {
-                        const global踰덊샇 = filteredItems.indexOf(item);
-                        const isFocused = global踰덊샇 === selected踰덊샇;
+                        const globalIndex = filteredItems.indexOf(item);
+                        const isFocused = globalIndex === selectedIndex;
 
                         return (
                           <button
@@ -240,7 +243,7 @@ export function GlobalCommandCenter() {
                                 : "hover:bg-primary/5 text-foreground"
                             )}
                             onClick={() => handleSelect(item)}
-                            onMouseEnter={() => setSelected踰덊샇(global踰덊샇)}
+                            onMouseEnter={() => setSelectedIndex(globalIndex)}
                           >
                             <div className="flex items-center gap-5">
                               <div className={cn(
@@ -281,8 +284,8 @@ export function GlobalCommandCenter() {
                 <Zap size={32} className="text-muted-foreground/20" />
               </div>
               <div>
-                <p className="text-xl font-black text-foreground">寃곌낵瑜李얠쓣 님?놁뒿?덈떎.</p>
-                <p className="text-sm text-muted-foreground font-bold mt-1">?꾩님님꾩슂?섏떆硫님쒖뒪님관리자?먭쾶 臾몄쓽?섏꽭님</p>
+                <p className="text-xl font-black text-foreground">결과를 찾을 수 없습니다.</p>
+                <p className="text-sm text-muted-foreground font-bold mt-1">도움이 필요하시면 시스템 관리자에게 문의하세요.</p>
               </div>
             </div>
           )}
@@ -292,12 +295,12 @@ export function GlobalCommandCenter() {
         <div className="bg-muted px-10 py-6 border-t border-primary/10 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2">
-              <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">?묅넃</kbd>
-              <span className="text-[10px] font-black text-muted-foreground opacity-60">?대룞</span>
+              <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">이동</kbd>
+              <span className="text-[10px] font-black text-muted-foreground opacity-60">이동</span>
             </div>
             <div className="flex items-center gap-2">
-              <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">?낅젰</kbd>
-              <span className="text-[10px] font-black text-muted-foreground opacity-60">?좏깮</span>
+              <kbd className="px-2 py-1 bg-background border rounded-lg text-[10px] font-black">입력</kbd>
+              <span className="text-[10px] font-black text-muted-foreground opacity-60">선택</span>
             </div>
           </div>
 
@@ -306,7 +309,7 @@ export function GlobalCommandCenter() {
             <div className="flex items-center gap-3">
               <Globe size={14} className="text-emerald-500 animate-pulse" />
               <span className="text-[10px] font-black text-muted-foreground tracking-tight tracking-tighter">
-                시스템?곹깭: <span className="text-emerald-500">理쒖쟻?붾맖</span>
+                시스템 상태: <span className="text-emerald-500">최적화됨</span>
               </span>
             </div>
           </div>
@@ -315,4 +318,3 @@ export function GlobalCommandCenter() {
     </div>
   );
 }
-

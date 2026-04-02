@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import {
@@ -45,7 +45,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
     keyField,
     className,
     onDataChange,
-    title = "데이터인텔리전스
+    title = "데이터 인텔리전스"
 }: UltimateDataGridProps<T>) {
     const [data, setData] = useState<T[]>(initialData);
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }[]>([]);
@@ -142,7 +142,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                     </div>
                     <div>
                         <h3 className="text-lg font-black tracking-tight text-foreground ">{title}</h3>
-                        <p className="text-[10px] font-bold text-muted-foreground tracking-tight leading-none">怨좎꽦님인텔리전스洹몃━님/p>
+                        <p className="text-[10px] font-bold text-muted-foreground tracking-tight leading-none">고성능 인텔리전스 그리드</p>
                     </div>
                 </div>
 
@@ -151,7 +151,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40" size={16} />
                         <input
                             className="w-full bg-muted/30 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all font-sans"
-                            placeholder="?꾩뿭 寃님.."
+                            placeholder="전역 검색.."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -216,7 +216,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                                     </tr>
                                 ))
                             ) : filteredData.map((item, rowIdx) => (
-                                <tr key={`row-${item[keyField] 님 rowIdx}`} className="group hover:bg-primary/[0.02] transition-colors">
+                                <tr key={`row-${item[keyField] || rowIdx}`} className="group hover:bg-primary/[0.02] transition-colors">
                                     {sortedColumns.map((col, colIdx) => {
                                         const isEditing = editingCell?.rowId === item[keyField] && editingCell?.colId === col.id;
                                         const value = typeof col.accessor === 'function' ? col.accessor(item) : item[col.accessor as keyof T];
@@ -279,25 +279,24 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[10px] font-black text-muted-foreground tracking-tight">?쇱씠釉님붿쭊 활성님/span>
+                        <span className="text-[10px] font-black text-muted-foreground tracking-tight">라이브 엔진 활성</span>
                     </div>
                     <div className="h-4 w-px bg-muted" />
                     <span className="text-[10px] font-black text-muted-foreground opacity-50 underline decoration-primary/30 underline-offset-4">
-                        {filteredData.length}媛님덉퐫님寃됰맖
+                        {filteredData.length}개의 레코드 검색됨
                     </span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight disabled:opacity-30">?댁쟾</Button>
+                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight disabled:opacity-30">이전</Button>
                     <div className="flex items-center gap-1">
                         {[1, 2, 3].map(p => (
                             <Button key={`page-${p}`} variant={p === 1 ? "default" : "ghost"} size="sm" className="w-9 h-9 rounded-xl text-[10px] font-black p-0 shadow-sm">{p}</Button>
                         ))}
                     </div>
-                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight">ㅼ쓬</Button>
+                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight">다음</Button>
                 </div>
             </div>
         </div>
     );
 }
-

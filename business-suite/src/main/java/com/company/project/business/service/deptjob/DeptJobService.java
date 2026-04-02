@@ -63,8 +63,8 @@ public class DeptJobService extends BaseAbstractService implements EgovDeptJobSe
         }
 
         if (keyword != null && !keyword.isEmpty()) {
-            if ("0".equals(searchCondition)) { // ???뾽??? builder.and(deptJob.deptJobNm.contains(keyword));
-            } else if ("1".equals(searchCondition)) { // ???뾽????
+            if ("0".equals(searchCondition)) { // 뾽??? builder.and(deptJob.deptJobNm.contains(keyword));
+            } else if ("1".equals(searchCondition)) { // 뾽????
                 builder.and(deptJob.deptJobCn.contains(keyword));
             } else if ("2".equals(searchCondition)) { // ?????
                 builder.and(deptJob.chargerId.contains(keyword));

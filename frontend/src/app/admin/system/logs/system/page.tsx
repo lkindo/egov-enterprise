@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 
 const SystemLogAdminPage = () => {
     const [params, setParams] = useState<SearchParams>({
-        page踰덊샇: 1,
+        page: 1,
         size: 10,
         searchKeyword: '',
     });
@@ -20,20 +20,20 @@ const SystemLogAdminPage = () => {
     const { data, isLoading } = useQuery<PageResponse<SysLog>>({
         queryKey: ['admin-logs-system', params],
         queryFn: () => systemLogAdminService.getSystemLogs({ 
-            page: (Number(params.page踰덊샇) || 1) - 1, 
-            size: params.size,
+            page: (Number(params.page) || 1) - 1, 
+            size: params.size || 10,
             searchWrd: params.searchKeyword
         }),
     });
 
-    const logs: SysLog[] = data?.resultList || data?.list || [];
-    const pagination = data?.paginationInfo;
+    const logs = (data?.resultList || data?.list || []) as SysLog[];
+    const totalPageCount = data?.totalPage || data?.paginationInfo?.totalPageCount || 1;
 
     const columns: Column<SysLog>[] = [
         {
             header: '요청ID',
             accessor: (item: SysLog) => (
-                <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
+                <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums text-left">
                     <Terminal size={12} className="opacity-30" />
                     {item.requstId}
                 </div>
@@ -41,7 +41,7 @@ const SystemLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '諛쒖깮?쇱옄',
+            header: '발생일자',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     {(item as any).occcrrncDe || '-'}
@@ -50,24 +50,26 @@ const SystemLogAdminPage = () => {
             className: 'w-52'
         },
         {
-            header: '?쒕퉬설명',
+            header: '서비스설명',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
-                    <span className="font-bold text-slate-700 tracking-tight">{item.srvcNm}</span>
+                    <span className="font-bold text-slate-700 tracking-tight text-left">{item.srvcNm}</span>
                 </div>
             )
         },
         {
-            header: '硫붿꽌?쒕챸',
+            header: '메소드명',
             accessor: (item: SysLog) => (
-                <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-[10px] text-slate-600">
-                    {item.methodNm}
-                </code>
+                <div className="text-left">
+                    <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-[10px] text-slate-600">
+                        {item.methodNm}
+                    </code>
+                </div>
             )
         },
         {
-            header: '?묐떟시간',
+            header: '응답시간',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-1.5 font-bold text-slate-600">
                     <Clock size={12} className="opacity-30" />
@@ -78,7 +80,7 @@ const SystemLogAdminPage = () => {
             className: 'w-24'
         },
         {
-            header: '?곹깭',
+            header: '상태',
             accessor: (_item: SysLog) => (
                 <div className="flex items-center justify-center">
                     <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-md border border-emerald-100 uppercase tracking-tighter">SUCCESS</span>
@@ -90,12 +92,21 @@ const SystemLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="시스템로그" breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '로그관리 }, { label: '시스템로그' }]} />
+            <PageHeader 
+                title="시스템 로그" 
+                breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '시스템 로그' }]} 
+            />
 
-            <HubHeader title="시스템인사이트" highlight="시스템로그" subtitle="?쒕쾭님실시간숈옉 ?곹깭 紐⑤뱢蹂님ㅽ뻾 ?대젰님紐낇솗?섍쾶 異붿쟻합니다" icon={Activity} 
+            <HubHeader 
+                title="시스템 인사이트" 
+                highlight="시스템 로그" 
+                subtitle="서버의 실시간 동작 상태와 모듈별 수행 이력을 명확하게 추적합니다." 
+                icon={Activity} 
                 actions={
                     <div className="flex gap-4 p-2 items-center">
-                        <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">실시간紐⑤땲?곕쭅</Button>
+                        <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">
+                            실시간 모니터링
+                        </Button>
                     </div>
                 }
             />
@@ -105,13 +116,13 @@ const SystemLogAdminPage = () => {
                 data={logs}
                 loading={isLoading}
                 pagination={{
-                    currentPage: (params.page踰덊샇 || 1) as number,
-                    totalPages: data?.totalPage || pagination?.totalPageCount || 1,
-                    onPageChange: (page: number) => setParams({ ...params, page踰덊샇: page }),
+                    currentPage: (params.page || 1) as number,
+                    totalPages: totalPageCount,
+                    onPageChange: (page: number) => setParams({ ...params, page: page }),
                 }}
                 search={{
-                    placeholder: '?쒕퉬설명, 요청ID 寃님..',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 }),
+                    placeholder: '서비스설명, 요청ID 검색..',
+                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page: 1 }),
                 }}
             />
         </div>
@@ -119,4 +130,3 @@ const SystemLogAdminPage = () => {
 };
 
 export default SystemLogAdminPage;
-

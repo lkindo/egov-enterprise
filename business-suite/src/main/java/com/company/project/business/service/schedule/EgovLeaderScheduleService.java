@@ -17,7 +17,7 @@ public interface EgovLeaderScheduleService {
 
     void deleteLeaderSchedule(String scheduleId);
 
-    // 媛꾨? ?곹깭 ???
+    // 媛꾨? ?곹깭 
     Page<LeaderStatusDto> getLeaderStatusList(String searchKeyword, Pageable pageable);
 
     LeaderStatusDto getLeaderStatus(String leaderId);

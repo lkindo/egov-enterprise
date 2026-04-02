@@ -1,84 +1,84 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface Menu {
- menuNo: number;
- menuNm: string;
- progrmFileNm: string;
- upperMenuNo: number;
- menuOrdr: number;
- menuDc: string;
- relateImagePath: string;
- relateImageNm: string;
- modernRoute?: string;
+  menuNo: number;
+  menuNm: string;
+  progrmFileNm: string;
+  upperMenuNo: number;
+  menuOrdr: number;
+  menuDc: string;
+  relateImagePath: string;
+  relateImageNm: string;
+  modernRoute?: string;
 }
 
 export interface MenuCreate {
- authorCode: string;
- menuNo: number;
- creatPersonId: string;
+  authorCode: string;
+  menuNo: number;
+  creatPersonId: string;
 }
 
 /**
- * 硫붾돱 관리님쒕퉬님(Admin)
+ * 메뉴 관리 서비스 (Admin)
  */
 class MenuAdminService extends AdminService {
- constructor() {
- super('/menus');
- }
+  constructor() {
+    super('/menus');
+  }
 
- /** 硫붾돱 紐⑸줉 조회 */
- async getMenuList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Menu>> {
- return this.get<PageResponse<Menu>>('', {
- ...config,
- params: {
- ...params,
- searchWrd: params?.searchKeyword || params?.searchWrd || '',
- },
- });
- }
+  /** 메뉴 목록 조회 */
+  async getMenuList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Menu>> {
+    return this.get<PageResponse<Menu>>('', {
+      ...config,
+      params: {
+        ...params,
+        searchWrd: params?.searchKeyword || params?.searchWrd || '',
+      },
+    });
+  }
 
- /** 硫붾돱 ?꾩껜 ?몃━님조회 */
- async getAllMenus(config?: AxiosRequestConfig): Promise<Menu[]> {
- return this.get<Menu[]>('/all', config);
- }
+  /** 메뉴 전체 트리 조회 */
+  async getAllMenus(config?: AxiosRequestConfig): Promise<Menu[]> {
+    return this.get<Menu[]>('/all', config);
+  }
 
- /** 硫붾돱 상세 조회 */
- async getMenu(menuNo: number, config?: AxiosRequestConfig): Promise<Menu> {
- return this.get<Menu>(`/${menuNo}`, config);
- }
+  /** 메뉴 상세 조회 */
+  async getMenu(menuNo: number, config?: AxiosRequestConfig): Promise<Menu> {
+    return this.get<Menu>(`/${menuNo}`, config);
+  }
 
- /** 硫붾돱 등록 */
- async createMenu(data: Partial<Menu>, config?: AxiosRequestConfig): Promise<void> {
- return this.post('', data, config);
- }
+  /** 메뉴 등록 */
+  async createMenu(data: Partial<Menu>, config?: AxiosRequestConfig): Promise<void> {
+    return this.post('', data, config);
+  }
 
- /** 硫붾돱 ?섏젙 */
- async updateMenu(menuNo: number, data: Partial<Menu>, config?: AxiosRequestConfig): Promise<void> {
- return this.put(`/${menuNo}`, data, config);
- }
+  /** 메뉴 수정 */
+  async updateMenu(menuNo: number, data: Partial<Menu>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put(`/${menuNo}`, data, config);
+  }
 
-  /** 硫붾돱 ?쒖꽌 ?쇨큵 ?섏젙 - API 紐낆꽭님?곕Ⅸ 경로 ?섏젙 (/batch-order) */
+  /** 메뉴 순서 일괄 수정 - API 명세에 따른 경로 수정 (/batch-order) */
   async updateMenuOrder(data: Partial<Menu>[], config?: AxiosRequestConfig): Promise<void> {
-    // 80ш컻님硫붾돱 ?낅뜲?댄듃 遺섎? 怨좊젮?섏뿬 꾩븘님120珥덈줈 님?곗옣
+    // 다량의 메뉴 업데이트 부하를 고려하여 타임아웃 120초로 연장
     return this.put('/batch-order', data, { ...config, timeout: 120000 });
   }
 
- /** 硫붾돱 님젣 */
- async deleteMenu(menuNo: number, config?: AxiosRequestConfig): Promise<void> {
- return this.delete(`/${menuNo}`, config);
- }
+  /** 메뉴 삭제 */
+  async deleteMenu(menuNo: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete(`/${menuNo}`, config);
+  }
 
- /** 沅뚰븳蹂硫붾돱 ?앹꽦 관리紐⑸줉 조회 */
- async getMenuCreationManageList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<MenuCreate>> {
- return this.get<PageResponse<MenuCreate>>('/creation-manage', { ...config, params });
- }
+  /** 권한별 메뉴 생성 관리 목록 조회 */
+  async getMenuCreationManageList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<MenuCreate>> {
+    return this.get<PageResponse<MenuCreate>>('/creation-manage', { ...config, params });
+  }
 
- /** 沅뚰븳蹂硫붾돱 ?좊떦 님*/
- async saveMenuCreation(authorCode: string, menuNos: number[], config?: AxiosRequestConfig): Promise<void> {
- return this.post(`/creation/${authorCode}`, menuNos, config);
- }
+  /** 권한별 메뉴 할당 저장 */
+  async saveMenuCreation(authorCode: string, menuNos: number[], config?: AxiosRequestConfig): Promise<void> {
+    return this.post(`/creation/${authorCode}`, menuNos, config);
+  }
 }
 
 export const menuAdminService = new MenuAdminService();

@@ -1,38 +1,54 @@
-﻿import { UserService } from '@/services/core/ApiService';
+import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface Event {
- eventId: string;
- eventNm: string;
- eventPurps: string;
- eventBeginDe: string;
- eventEndDe: string;
- eventPlace: string;
- eventCn: string;
- ctgryCode: string; // 1:援먯쑁/?됱궗, 2:罹좏럹님}
+  eventId: string;
+  eventNm: string;
+  eventPurps: string;
+  eventBeginDe: string;
+  eventEndDe: string;
+  eventPlace: string;
+  eventCn: string;
+  ctgryCode: string; // 1:교육/행사, 2:캠페인
+}
 
 /**
- * ?대깽님?됱궗 관리님쒕퉬님(User)
+ * 이벤트/행사 관리 서비스 (User)
  */
 class EventUserService extends UserService {
- constructor() {
- super('/events');
- }
+  constructor() {
+    super('/events');
+  }
 
- /**
- * ?대깽님紐⑸줉 조회
- */
- async getEvents(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<Event>> {
- return this.get<PageResponse<Event>>('', { ...config, params });
- }
+  /**
+   * 이벤트 목록 조회
+   */
+  async getEvents(
+    params: { 
+      page?: number; 
+      pageNo?: number;
+      size?: number; 
+      searchWrd?: string 
+    }, 
+    config?: AxiosRequestConfig
+  ): Promise<PageResponse<Event>> {
+    const page = params.page ?? (params.pageNo ? params.pageNo - 1 : 0);
+    return this.get<PageResponse<Event>>('', { 
+      ...config, 
+      params: { 
+        ...params, 
+        page 
+      } 
+    });
+  }
 
- /**
- * ?대깽님상세 조회
- */
- async getEvent(id: string, config?: AxiosRequestConfig): Promise<Event> {
- return this.get<Event>(`/${id}`, config);
- }
+  /**
+   * 이벤트 상세 조회
+   */
+  async getEvent(id: string, config?: AxiosRequestConfig): Promise<Event> {
+    return this.get<Event>(`/${id}`, config);
+  }
 }
 
 export const eventUserService = new EventUserService();

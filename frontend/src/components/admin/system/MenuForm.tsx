@@ -1,4 +1,5 @@
-﻿
+'use client';
+
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -34,14 +35,13 @@ import {
 } from 'lucide-react';
 import { MenuManage } from '@/types/foundation/system';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
-
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
-  menuNo: z.coerce.number().min(1, { message: "메뉴순서는 필수입니다." }),
+  menuNo: z.coerce.number().min(1, { message: "메뉴번호는 필수입니다." }),
   menuNm: z.string().min(1, { message: "메뉴명은 필수입니다." }),
   progrmFileNm: z.string().min(1, { message: "프로그램파일명은 필수입니다." }),
-  menuOrdr: z.coerce.number().min(1, { message: "硫붾돱?쒖꽌님?꾩닔?낅땲님" }),
+  menuOrdr: z.coerce.number().min(1, { message: "메뉴순서는 필수입니다." }),
   menuDc: z.string().optional(),
   upperMenuId: z.coerce.number().optional(),
   relateImageNm: z.string().optional(),
@@ -86,7 +86,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
       }
       onSuccess();
       onOpenChange(false);
-    } catch {
+    } catch (error) {
       console.error(error);
       alert('저장 중 오류가 발생했습니다.');
     }
@@ -99,7 +99,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
         await menuAdminService.deleteMenu(data.menuNo);
         onSuccess();
         onOpenChange(false);
-      } catch {
+      } catch (error) {
         console.error(error);
         alert('삭제 중 오류가 발생했습니다.');
       }
@@ -114,10 +114,10 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
             {isEdit ? <Pencil size={28} /> : <Plus size={28} />}
           </div>
           <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter text-center">
-            {isEdit ? '硫붾돱 ?꾨줈?좎퐳 ?섏젙' : '신규 硫붾돱 ?꾪궎?띿쿂 등록'}
+            {isEdit ? '메뉴 프로필 수정' : '신규 메뉴 아키텍처 등록'}
           </DialogTitle>
           <DialogDescription className="text-center font-bold text-slate-400 text-sm">
-            시스템?대퉬寃뚯씠님援ъ“瑜님꾪븳 {isEdit ? '湲곗〈 硫붾돱 ?뺣낫瑜님섏젙' : '새로운硫붾돱 노드瑜님뺤쓽'}합니다
+            시스템 네비게이션 구조를 위한 {isEdit ? '기존 메뉴 정보를 수정' : '새로운 메뉴 노드를 정의'}합니다
           </DialogDescription>
         </DialogHeader>
 
@@ -130,7 +130,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
-                      <Hash size={12} className="text-primary" /> 硫붾돱 踰덊샇
+                      <Hash size={12} className="text-primary" /> 메뉴 번호
                     </FormLabel>
                     <FormControl>
                       <Input 
@@ -152,7 +152,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
-                      <Layers size={12} className="text-primary" /> 異쒕젰 ?쒖꽌
+                      <Layers size={12} className="text-primary" /> 출력 순서
                     </FormLabel>
                     <FormControl>
                       <Input 
@@ -175,7 +175,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
-                    <Type size={12} className="text-primary" /> 硫붾돱 紐낆묶
+                    <Type size={12} className="text-primary" /> 메뉴 명칭
                   </FormLabel>
                   <FormControl>
                     <Input 
@@ -196,7 +196,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
-                      <FileText size={12} className="text-primary" /> ?곌껐 ?꾨줈洹몃옩
+                      <FileText size={12} className="text-primary" /> 연결 프로그램
                     </FormLabel>
                     <FormControl>
                       <Input 
@@ -215,7 +215,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
-                      <ChevronRight size={12} className="text-primary" /> ?곸쐞 노드 ID
+                      <ChevronRight size={12} className="text-primary" /> 상위 노드 ID
                     </FormLabel>
                     <FormControl>
                       <Input 
@@ -232,58 +232,58 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
               />
             </div>
 
- <FormField
- control={form.control}
- name="menuDc"
- render={({ field }) => (
- <FormItem className="space-y-3">
- <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <Settings2 size={12} className="text-primary" /> 상세 설명
- </FormLabel>
- <FormControl>
- <Input 
- placeholder="설명" 
- {...field} 
- className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
- />
- </FormControl>
- <FormMessage />
- </FormItem>
- )}
- />
+            <FormField
+              control={form.control}
+              name="menuDc"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
+                    <Settings2 size={12} className="text-primary" /> 상세 설명
+                  </FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="설명" 
+                      {...field} 
+                      className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
- <DialogFooter className="pt-6 gap-3 sm:justify-between">
- <div className="flex gap-3 flex-1">
- <Button
- type="button"
- variant="outline"
- onClick={() => onOpenChange(false)}
- className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all flex-1"
- >
- 취소
- </Button>
- <Button 
- type="submit"
- className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
- >
- <Save size={18} />
- 데이터님 </Button>
- </div>
- {isEdit && (
- <Button 
- type="button" 
- variant="ghost" 
- onClick={handleDelete}
- className="h-16 w-16 rounded-2xl text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm"
- >
- <Trash2 size={24} />
- </Button>
- )}
- </DialogFooter>
- </form>
- </Form>
- </DialogContent>
- </Dialog>
- );
+            <DialogFooter className="pt-6 gap-3 sm:justify-between">
+              <div className="flex gap-3 flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all flex-1"
+                >
+                  취소
+                </Button>
+                <Button 
+                  type="submit"
+                  className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
+                >
+                  <Save size={18} />
+                  데이터 저장
+                </Button>
+              </div>
+              {isEdit && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  onClick={handleDelete}
+                  className="h-16 w-16 rounded-2xl text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm"
+                >
+                  <Trash2 size={24} />
+                </Button>
+              )}
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
 }
-

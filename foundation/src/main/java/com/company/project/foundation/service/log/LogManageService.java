@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 濡쒓???????퉬??
+ * 濡쒓퉬??
  */
 @Service("logManageService")
 @RequiredArgsConstructor
@@ -47,7 +47,7 @@ public class LogManageService {
     }
 
     /**
-     * ??뒪??濡쒓??紐⑸?議고??     */
+     * ??뒪濡쒓紐⑸議고??     */
     public List<SysLogDto> selectSysLogList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -62,7 +62,7 @@ public class LogManageService {
     }
 
     /**
-     * ??뒪??濡쒓??紐⑸???嫄댁??     */
+     * ??뒪濡쒓紐⑸嫄댁??     */
     public int selectSysLogListTotCnt(ComDefaultVO searchVO) {
         return (int) sysLogRepository.searchSysLogs(
                 searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "",
@@ -72,7 +72,7 @@ public class LogManageService {
     }
 
     /**
-     * ??뒪??濡쒓???곸꽭 議고??     */
+     * ??뒪濡쒓???곸꽭 議고??     */
     public SysLogDto selectSysLog(String requstId) {
         return sysLogRepository.findById(Objects.requireNonNull(requstId))
                 .map(this::toSysLogDto)

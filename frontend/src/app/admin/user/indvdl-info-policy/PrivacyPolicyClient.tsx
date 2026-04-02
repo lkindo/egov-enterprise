@@ -1,4 +1,5 @@
-﻿
+'use client';
+
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -8,13 +9,7 @@ import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { policyAdminService, PolicyDto } from '@/services/foundation/user/PolicyAdminService';
 import {
   ShieldCheck,
-  Save,
   RefreshCcw,
-  FileText,
-  Lock,
-  Eye,
-  History,
-  AlertCircle,
   Zap,
   ShieldAlert,
   Fingerprint,
@@ -25,12 +20,10 @@ import {
   ClipboardCheck,
   SearchCode
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PrivacyPolicyClient({ 
   initialPolicy 
@@ -45,10 +38,10 @@ export default function PrivacyPolicyClient({
     setLoading(true);
     try {
       await policyAdminService.updatePolicy('privacy', policy);
-      toast.success('보안 ?뺤콉 ?꾨젅?꾩썙ш ?깃났?곸쑝濡而ㅻ컠?섏뿀?듬땲님');
+      toast.success('보안 정책 프레임워크가 성공적으로 커밋되었습니다.');
       setIsEditing(false);
     } catch {
-      toast.error('데이터?뺥빀님ㅻ쪟濡理쒖쥌 μ씠 以묐떒?섏뿀?듬땲님');
+      toast.error('데이터 정합성 오류로 최종 서명이 중단되었습니다.');
     } finally {
       setLoading(false);
     }
@@ -58,13 +51,13 @@ export default function PrivacyPolicyClient({
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
         title="보안 정책 거버넌스"
-        breadcrumbs={[{ label: '시스템관리'보안관리 }, { label: '媛쒖씤?뺣낫보호?뺤콉' }]}
+        breadcrumbs={[{ label: '시스템관리' }, { label: '보안관리' }, { label: '개인정보보호정책' }]}
       />
 
       <HubHeader 
-        title="?꾨씪?대쾭님 
+        title="프라이버시" 
         highlight="Compliance" 
-        subtitle="?꾩궗 데이터보호 洹쒖젙 및 媛쒖씤?뺣낫 泥섎━ 諛⑹묠님실시간嫄곕쾭?뚯뒪 관리님쒖뒪님 
+        subtitle="전사 데이터 보호 규정 및 개인정보 처리 방침 실시간 거버넌스 관리 시스템" 
         icon={ShieldCheck} 
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -108,7 +101,7 @@ export default function PrivacyPolicyClient({
 
       <div className="grid grid-cols-12 gap-12">
         {/* Statistics & Search Panel */}
-        <div className="col-span-12 lg:col-span-4 h-full">
+        <div className="col-span-12 lg:col-span-4 h-full text-left">
             <div className="rounded-[3.5rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
                 <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                     <Shield size={240} className="text-primary" />
@@ -118,23 +111,23 @@ export default function PrivacyPolicyClient({
                         <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                             <Fingerprint size={32} className="text-primary" />
                         </div>
-                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">?꾨씪?대쾭님br />?뷀샇님肄붿뼱</h4>
+                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-left">프라이버시<br />보호 코어</h4>
                     </div>
 
                     <div className="space-y-8">
                          <div className="space-y-3">
-                            <label className="text-[10px] font-black text-white/30 tracking-[0.4em] px-2 uppercase font-mono">Governance_Probing</label>
+                            <label className="text-[10px] font-black text-white/30 tracking-[0.4em] px-2 uppercase font-mono text-left block text-left">Governance_Probing</label>
                             <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">留덉留而ㅻ컠</span>
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">마지막 커밋</span>
                                     <span className="text-[9px] font-black text-primary font-mono tracking-widest uppercase ">2026-03-18_1433</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">⑸쾿님寃님/span>
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">규범 검증</span>
                                     <span className="text-[9px] font-black text-emerald-400 font-mono tracking-widest uppercase ">ISO_27001_OK</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">媛활성</span>
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">가용성</span>
                                     <span className="text-[9px] font-black text-indigo-400 font-mono tracking-widest uppercase ">PUBLIC_SYNC</span>
                                 </div>
                             </div>
@@ -142,8 +135,8 @@ export default function PrivacyPolicyClient({
                     </div>
 
                     <div className="pt-8 border-t border-white/5 space-y-4">
-                        <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60">
-                            * 蹂님뺤콉 紐낆꽭님蹂寃쎌? ?꾩궗 ?쒕퉬님및 怨꾩빟 ?꾨줈?좎퐳님利됯컖?곸씤 踰뺤쟻 ⑤젰님諛쒗쐶합니다
+                        <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 text-left">
+                          * 본 정책 명세 변경 시 전사 서비스 및 계약 프로토콜에 즉각적인 법적 효력을 발생시킵니다.
                         </p>
                         <HubStatusBadge status="활성" className="bg-emerald-500/10 text-emerald-500 border-none px-6 py-2 rounded-xl text-[9px] tracking-widest font-black" />
                     </div>
@@ -152,10 +145,10 @@ export default function PrivacyPolicyClient({
         </div>
 
         {/* Policy Content Stream */}
-        <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
+        <div className="col-span-12 lg:col-span-8 flex flex-col gap-8 text-left">
             <HubSectionCard 
-                title="데이터보호 ?꾨줈?좎퐳 紐낆꽭" 
-                description="?꾩궗?곸쑝濡님곸슜?섎뒗 媛쒖씤?뺣낫 泥섎━ 및 보안 洹쒖젙님님상세 ?꾪궎?띿쿂 紐낆꽭?낅땲님" 
+                title="데이터 보호 프로토콜 명세" 
+                description="전사적으로 적용되는 개인정보 처리 및 보안 규정에 대한 상세 아키텍처 명세입니다." 
                 icon={FileCode}
                 className="flex-1"
             >
@@ -163,38 +156,38 @@ export default function PrivacyPolicyClient({
                     <div className="space-y-4">
                         <div className="flex items-center gap-3 px-2">
                             <div className="w-2 h-2 rounded-full bg-primary" />
-                            <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono">Policy_Identifier_Title</label>
+                            <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono text-left block">Policy_Identifier_Title</label>
                         </div>
                         {isEditing ? (
                             <Input
                                 value={policy.title}
                                 onChange={(e) => setPolicy(prev => ({ ...prev, title: e.target.value }))}
                                 className="h-16 px-10 rounded-2xl border-2 border-slate-100 bg-slate-50/50 text-xl font-black tracking-tight focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase"
-                                placeholder="?꾨줈?좎퐳 紐낆묶 ?뺤쓽"
+                                placeholder="프로토콜 명칭 정의"
                             />
                         ) : (
-                            <h3 className="text-4xl font-black text-slate-900 px-2 tracking-tighter leading-none uppercase">{policy.title}</h3>
+                            <h3 className="text-4xl font-black text-slate-900 px-2 tracking-tighter leading-none uppercase text-left">{policy.title}</h3>
                         )}
                     </div>
 
                     <div className="space-y-4 pt-4 border-t border-slate-100">
                         <div className="flex items-center gap-3 px-2">
                              <div className="w-2 h-2 rounded-full bg-primary" />
-                            <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono">Policy_Raw_Specification</label>
+                            <label className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono text-left block">Policy_Raw_Specification</label>
                         </div>
                         {isEditing ? (
                             <Textarea
                                 value={policy.content}
                                 onChange={(e) => setPolicy(prev => ({ ...prev, content: e.target.value }))}
-                                className="min-h-[550px] p-12 rounded-[3.5rem] border-2 border-slate-100 bg-slate-50/50 text-base font-bold leading-[2] focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner custom-scrollbar"
-                                placeholder="데이터보호 洹쒖젙님상세 紐낆꽭瑜님낅젰?섏떗?쒖삤..."
+                                className="min-h-[550px] p-12 rounded-[3.5rem] border-2 border-slate-100 bg-slate-50/50 text-base font-bold leading-[2] focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner custom-scrollbar text-left font-sans"
+                                placeholder="데이터 보호 규정 상세 명세를 입력하십시오..."
                             />
                         ) : (
-                            <div className="p-16 rounded-[4rem] bg-white border-2 border-slate-100/50 text-slate-600 leading-[2.2] font-semibold whitespace-pre-wrap shadow-2xl text-lg relative overflow-hidden group">
+                            <div className="p-16 rounded-[4rem] bg-white border-2 border-slate-100/50 text-slate-600 leading-[2.2] font-semibold whitespace-pre-wrap shadow-2xl text-lg relative overflow-hidden group text-left">
                                 <div className="absolute top-0 right-0 p-12 opacity-[0.01] scale-[2] pointer-events-none group-hover:rotate-12 transition-transform duration-1000">
                                     <Shield size={240} className="text-primary" />
                                 </div>
-                                <div className="relative z-10">
+                                <div className="relative z-10 font-sans">
                                     {policy.content}
                                 </div>
                             </div>
@@ -207,4 +200,3 @@ export default function PrivacyPolicyClient({
     </div>
   );
 }
-

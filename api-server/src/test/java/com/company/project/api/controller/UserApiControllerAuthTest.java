@@ -4,13 +4,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * UserApiController ?몄쬆 ?뚯뒪???ㅼ젙
- * Note: Security 愿???꾪꽣 ?깅줉 諛??몄쬆 ?덉감 ?ㅼ젙 ?뚯뒪?? */
+ * UserApiController 인증 테스트 설정
+ * Note: Security 관련 필터 등록 및 인증 절차 설정 테스트
+ */
 class UserApiControllerAuthTest {
 
     @Test
-    @DisplayName("POST /api/v1/users/signup - ?뚯썝媛??API ?몄쬆 ?ㅼ젙 ?뺤씤")
+    @DisplayName("POST /api/v1/users/signup - 회원가입 API 인증 확인")
     void signup_test() {
-        // Note: Security ?ㅼ젙 鍮꾪솢?깊솕 ?곹깭?먯꽌???숈옉 ?뺤씤
+        // Note: Security 설정 비활성화 상태에서의 동작 확인
     }
 }

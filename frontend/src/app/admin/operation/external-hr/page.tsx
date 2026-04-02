@@ -1,10 +1,10 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { operationAdminService } from '@/services/foundation/operation/OperationAdminService';
 import ExternalHrClient from './ExternalHrClient';
 
 export const metadata = {
-    title: '?몃님몄궗?뺣낫 관리| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
-    description: '?됱궗 愿님?몃님몄궗 ?뺣낫瑜관리ы빀?덈떎.',
+    title: '외부인사정보 관리 | 전자정부 프레임워크',
+    description: '운영 관리 외부인사 정보를 관리합니다.',
 };
 
 export default async function ExternalHrPage() {
@@ -12,14 +12,13 @@ export default async function ExternalHrPage() {
     try {
         const res = await operationAdminService.getExternalHrList();
         initialData = res.list || [];
-    } catch {
-        console.error('Failed to fetch initial external HR info:');
+    } catch (error) {
+        console.error('Failed to fetch initial external HR info');
     }
 
     return (
-        <Suspense fallback={<div>濡쒕뵫 중..</div>}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]">로딩 중..</div>}>
             <ExternalHrClient initialData={initialData} />
         </Suspense>
     );
 }
-

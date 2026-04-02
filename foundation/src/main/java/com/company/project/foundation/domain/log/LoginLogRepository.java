@@ -4,14 +4,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 /**
- * 嚥≪뮄???嚥≪뮄??JPA Repository
+ * 嚥≪뮄嚥≪뮄??JPA Repository
  */
 @Repository
 public interface LoginLogRepository extends JpaRepository<LoginLog, String>, LoginLogRepositoryCustom {
         java.util.List<LoginLog> findTop100ByOrderByCreatDtDesc();
 
         /**
-         * 揶쏆뮇?ㅸ퉪?????鈺곌퀬??(?袁⑤즲癰?筌욌쵌??
+         * 揶쏆뮇ㅸ퉪鈺곌퀬??(袁⑤즲癰筌욌쵌??
          */
         @org.springframework.data.jpa.repository.Query(value = """
                         SELECT COUNT(CONECT_ID) AS statsCo,
@@ -30,7 +30,7 @@ public interface LoginLogRepository extends JpaRepository<LoginLog, String>, Log
                         @org.springframework.data.repository.query.Param("detailStatsKind") String detailStatsKind);
 
         /**
-         * 揶쏆뮇?ㅸ퉪?????鈺곌퀬??(?遺얩?筌욌쵌??
+         * 揶쏆뮇ㅸ퉪鈺곌퀬??(遺얩筌욌쵌??
          */
         @org.springframework.data.jpa.repository.Query(value = """
                         SELECT COUNT(CONECT_ID) AS statsCo,
@@ -49,7 +49,7 @@ public interface LoginLogRepository extends JpaRepository<LoginLog, String>, Log
                         @org.springframework.data.repository.query.Param("detailStatsKind") String detailStatsKind);
 
         /**
-         * 揶쏆뮇?ㅸ퉪?????鈺곌퀬??(??고?筌욌쵌??
+         * 揶쏆뮇ㅸ퉪鈺곌퀬??(??고筌욌쵌??
          */
         @org.springframework.data.jpa.repository.Query(value = """
                         SELECT COUNT(CONECT_ID) AS statsCo,

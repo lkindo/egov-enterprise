@@ -1,8 +1,9 @@
-﻿import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { networkService } from '@/services/foundation/system/networkService';
 
 /**
- * 실시간좏뤃濡쒖? 데이터?곕룞 님 */
+ * 실시간 토폴로지 데이터 연동용 후크
+ */
 export const useTopologyData = () => {
     return useQuery({
         queryKey: ['topology-data'],
@@ -11,16 +12,16 @@ export const useTopologyData = () => {
                 const response = await networkService.getStatus({ page: 0, size: 50 });
                 const rawData = response.list || [];
                 
-                // ㅼ젣 ?곗씠?곕? 湲곕컲?쇰줈 노드 ?곹깭 매핑
+                // 실제 데이터를 기반으로 노드 상태 매핑
                 return rawData.map(item => ({
                     id: item.sysNm,
                     label: item.sysNm,
                     ip: item.sysIp,
                     port: item.sysPort,
-                    status: (item.svcSttus === 'UP' || item.svcSttus === '?뺤긽') ? 'up' : 'down',
+                    status: (item.svcSttus === 'UP' || item.svcSttus === '정상') ? 'up' : 'down',
                     type: inferNodeType(item.sysNm)
                 }));
-            } catch {
+            } catch (error) {
                 console.warn('Topology data fetch failed, using fallback', error);
                 return [];
             }

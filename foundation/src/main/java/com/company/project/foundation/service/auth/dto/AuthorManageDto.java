@@ -11,7 +11,7 @@ import lombok.Setter;
 import org.springframework.lang.NonNull;
 
 /**
- * 沅뚰????DTO
+ * 沅뚰DTO
  */
 @Getter
 @Setter
@@ -26,7 +26,7 @@ public class AuthorManageDto extends ComDefaultVO {
     private String authorCode;
 
     /** 沅뚰??*/
-    @NotBlank(message = "沅뚰?紐낆? ?꾩닔 ??젰 ?????땲??")
+    @NotBlank(message = "沅뚰紐낆? ?꾩닔 ??젰 ?????땲??")
     @Size(max = 60)
     @NonNull
     private String authorNm;

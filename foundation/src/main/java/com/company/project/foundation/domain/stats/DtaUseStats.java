@@ -13,7 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * ?癒?┷??곸뒠?袁れ넺 ????JPA Entity
+ * 癒┷곸뒠袁れ넺 JPA Entity
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

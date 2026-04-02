@@ -1,4 +1,5 @@
-﻿
+'use client';
+
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 
@@ -19,14 +20,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = useCallback(async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
-    // ?좏겙님?놁쑝硫님몄쬆 확인님嫄대꼫?곷땲님
+    // 토큰이 없으면 인증 확인 건너뜀
     if (!token) {
       setUser(null);
       setLoading(false);
       return;
     }
 
-    // ?좏겙님留뚮즺?섏뿀?붾씪님interceptor ?먯꽌 reissue 瑜님쒕룄님寃껋씠誘濡    // /auth/me 瑜님몄텧?섏뿬 理쒖쥌 ?좏슚?깆쓣 寃利앺빀?덈떎.
+    // 토큰이 만료되었더라도 interceptor에서 reissue를 시도하므로
+    // /auth/me를 호출하여 최종 유효성을 검증합니다.
     try {
       const userData = await authService.getCurrentUser();
       if (userData) {
@@ -34,8 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUser(null);
       }
-    } catch {
-      // 401 ?먮윭님interceptor 媛 ?좏겙 щ컻湲님ㅽ뙣 님理쒖쥌?곸쑝濡님섏쭛?덈떎.
+    } catch (error) {
+      // 401 에러가 interceptor 가 토큰 재발급 실패 후 최종적으로 남겨집니다.
       setUser(null);
       if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');
@@ -48,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (credentials: Record<string, string>) => {
     try {
-      // 諛깆뿏님湲곕? ?꾨뱶紐蹂님 id 님userId
+      // 백엔드 기대 필드명 변환: id -> userId
       const loginData = {
         userId: credentials.id,
         password: credentials.password,
@@ -56,30 +58,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await authService.login(loginData);
 
       if (data && data.accessToken) {
-        // 1. localStorage 님님(?곗꽑)
+        // 1. localStorage 저장 (우선)
         localStorage.setItem('accessToken', data.accessToken);
 
-        // 2. 荑좏궎님님(middleware 및 SSR 님
+        // 2. 쿠키 저장 (middleware 및 SSR용)
         document.cookie = `accessToken=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
         if (data.role) {
           document.cookie = `userRole=${data.role}; path=/; max-age=86400; SameSite=Lax`;
         }
 
-        // 3. ?꾩뿭 ?곹깭 ?낅뜲?댄듃 (利됱떆 諛섏쁺)
+        // 3. 전역 상태 업데이트 (즉시 반영)
         const userData = await authService.getCurrentUser();
         setUser(userData);
 
-        // 4. ?붾쾭源 님확인
+        // 4. 디버깅 로그 확인
         if (process.env.NODE_ENV === 'development') {
           console.log('[AuthContext] Login successful, user set to:', userData);
-          console.log('[AuthContext] Cookies set:', document.cookie);
-          console.log('[AuthContext] localStorage:', localStorage.getItem('accessToken'));
         }
       } else {
-        throw new Error('?몄쬆 ?뺣낫媛 щ컮瑜댁? ?딆뒿?덈떎.');
+        throw new Error('인증 정보가 올바르지 않습니다.');
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '로그인以님ㅻ쪟媛 諛쒖깮있습니다.';
+      const message = error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.';
       console.error('Login process error:', message);
       throw new Error(message);
     }
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await authService.logout();
-    } catch {
+    } catch (error) {
       console.error('Logout API call failed', error);
     } finally {
       setUser(null);
@@ -118,4 +118,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

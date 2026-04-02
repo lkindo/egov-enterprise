@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, Info, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -32,7 +32,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     // Failsafe: format message as string to prevent [object Event] rendering errors
     const displayMessage = typeof message === 'string'
       ? message
-      : ((message as { message?: string })?.message || JSON.stringify(message) || '님님占쎈뒗 占쎈쪟媛 諛쒖깮占쎌뒿占쎈떎.');
+      : ((message as { message?: string })?.message || JSON.stringify(message) || '알 수 없는 오류가 발생했습니다.');
 
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message: displayMessage, type }]);
@@ -45,12 +45,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const success = useCallback((message: string) => toast(message, 'success'), [toast]);
   const error = useCallback((message: string) => toast(message, 'error'), [toast]);
 
-  // API 占쎌뿭 占쎈윭 由ъ뒪님  React.useEffect(() => {
+  // API 오류 이벤트 리스너 등록
+  useEffect(() => {
     const handleApiError = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (!detail) return;
       const { message, status } = detail;
-      // 401占님占쏀겙 占쎈컻占濡쒖쭅님泥섎━占쏙옙占님占쎌슜占쎌뿉寃뚮뒗 占쎈━吏 占쎌쓬
+      // 401(인증) 오류는 로그인 처리 영역에서 핸들링하므로 호출하지 않음
       if (status !== 401) {
         error(message);
       }
@@ -97,4 +98,3 @@ export const useToast = () => {
   if (!context) throw new Error('useToast must be used within ToastProvider');
   return context;
 };
- 

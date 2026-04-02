@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 /**
- * ?꾩룄?←몭?Repository
+ * ?꾩룄←몭?Repository
  */
 public interface BannerRepository extends JpaRepository<Banner, String> {
     Page<Banner> findByBannerNmContaining(String bannerNm, Pageable pageable);

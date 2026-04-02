@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -25,13 +25,13 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
         
         if (!Array.isArray(menus)) return;
         
-        // 寃뚯떆님ID(bbsId)媛 荑쇰━ ㅽ듃留곸뿉 ?덈뒗 寃쎌슦, ?대떦 硫붾돱瑜님곗꽑 ?먯깋
+        // 게시판 ID(bbsId)가 쿼리 스트링에 있는 경우, 해당 메뉴를 우선 탐색
         const bbsIdParam = searchParams.get('bbsId');
         
-        // 1. 硫붾돱 ?몃━먯꽌 현재 경로 또는 BBS ID媛 ?곌껐님硫붾돱 李얘린
+        // 1. 메뉴 트리에서 현재 경로 또는 BBS ID가 연결된 메뉴 찾기
         const findPath = (menuList: any[], targetPath: string, searchBbsId?: string | null): boolean => {
           for (const menu of menuList) {
-            // ?꾨님붾맂 ?쇱슦님modernRoute)媛 ?덇퀬, 현재 경로 ?쇱튂?섍굅님            // ?대떦 硫붾돱님荑쇰━ ㅽ듃留곸뿉 bbsId媛 ы븿?섏뼱 ?덈뒗吏 확인
+            // 정의된 라우트(modernRoute)가 있고, 현재 경로와 일치하거나 해당 메뉴의 쿼리 스트링에 bbsId가 포함되어 있는지 확인
             const isMatch = (menu.modernRoute && (targetPath === menu.modernRoute || targetPath.startsWith(menu.modernRoute + '/'))) 
                           || (searchBbsId && menu.modernRoute?.includes(`bbsId=${searchBbsId}`));
 
@@ -49,10 +49,10 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
 
         findPath(menus, pathname, bbsIdParam);
         
-        // 留뚯빟 硫붾돱 ?몃━먯꽌 紐李얠븯ㅻ㈃ (관리자/?뱀닔 ?섏씠吏 님
+        // 만약 메뉴 트리에서 못 찾았다면 (관리자/특수 페이지 등)
         if (path.length === 0) {
-          if (pathname.includes('/admin/system')) path.push({ name: '시스템관리 });
-          if (pathname.includes('/community/boards')) path.push({ name: '而ㅻ님덊떚 및 肄섑뀗痢 });
+          if (pathname.includes('/admin/system')) path.push({ name: '시스템 관리' });
+          if (pathname.includes('/community/boards')) path.push({ name: '커뮤니티 및 콘텐츠' });
         }
 
         setItems(path);
@@ -64,13 +64,13 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
     fetchPath();
   }, [pathname]);
 
-  // 而ㅼ뒪 ?꾩씠?쒖씠 ?덉쑝硫異붽? (님 게시글 제목 님
   const finalItems = customItems.length > 0 ? customItems : items;
 
   return (
     <nav className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-3 px-5 rounded-full w-fit mb-4 border border-primary/5 shadow-sm">
       <Link href="/" className="hover:text-foreground flex items-center gap-1.5 transition-colors">
-        <Home className="w-4 h-4" /> 님      </Link>
+        <Home className="w-4 h-4" /> 홈
+      </Link>
       
       {finalItems.map((item, index) => (
         <React.Fragment key={`${item.name}-${index}`}>
@@ -89,4 +89,3 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
     </nav>
   );
 }
-

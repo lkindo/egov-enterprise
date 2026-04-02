@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LayoutGrid, BarChart3, HelpCircle, Users, FileStack, Settings2 } from "lucide-react";
 
 // Components extracted from existing pages (for now we will put placeholders or import if possible)
-// In a real scenario, we should move the Logic from manage/page.tsx, stats/page.tsx to shared components.
 import PollManagePage from '../manage/page';
 import SurveyStatsPage from '../stats/page';
 
@@ -27,20 +26,22 @@ export function SurveyHubClient() {
       <div className="bg-slate-50/50 p-2 rounded-[1.5rem] border border-slate-100 shadow-sm inline-flex">
         <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
           <TabsTrigger value="manage" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <LayoutGrid size={16} /> 설문 관리          </TabsTrigger>
+            <LayoutGrid size={16} /> 설문 관리
+          </TabsTrigger>
           <TabsTrigger value="stats" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <BarChart3 size={16} /> 寃곌낵 통계
+            <BarChart3 size={16} /> 결과 통계
           </TabsTrigger>
           <TabsTrigger value="questions" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <HelpCircle size={16} /> 吏덈Ц/臾명빆
+            <HelpCircle size={16} /> 질문/문항
           </TabsTrigger>
           <TabsTrigger value="respondents" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <Users size={16} /> ?묐떟님洹몃９
+            <Users size={16} /> 응답 그룹
           </TabsTrigger>
           <TabsTrigger value="templates" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <FileStack size={16} /> ?쒗뵆由관리          </TabsTrigger>
+            <FileStack size={16} /> 템플릿 관리
+          </TabsTrigger>
           <TabsTrigger value="settings" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <Settings2 size={16} /> ?곕룞 ㅼ젙
+            <Settings2 size={16} /> 연동 설정
           </TabsTrigger>
         </TabsList>
       </div>
@@ -54,19 +55,19 @@ export function SurveyHubClient() {
       </TabsContent>
 
       <TabsContent value="questions" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="吏덈Ц 및 臾명빆 ?쇱씠釉뚮윭由 description="설문님ы븿님?듭떖 吏덈Ц怨님좏깮 님ぉ님援ъ“뷀븯님관리ы빀?덈떎." icon={HelpCircle} />
+        <PlaceholderCard title="질문 및 문항 라이브러리" description="설문 구성을 위한 핵심 질문 및 선택지 구조를 관리합니다." icon={HelpCircle} />
       </TabsContent>
 
       <TabsContent value="respondents" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="?묐떟님洹몃９ 관리 description="설문 조사님곸씠 님사용자吏묐떒 諛님멸렇癒쇳듃瑜님뺤쓽합니다" icon={Users} />
+        <PlaceholderCard title="응답 그룹 관리" description="설문 조사 대상인 사용자 집단 및 세그먼트를 정의합니다." icon={Users} />
       </TabsContent>
 
       <TabsContent value="templates" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="설문 ?쒗뵆由님쒖뒪님 description="?쒖님붾맂 설문 ?묒떇님?앹꽦?섍퀬 ъ궗님媛ν븳 紐낆꽭瑜관리ы빀?덈떎." icon={FileStack} />
+        <PlaceholderCard title="설문 템플릿 관리" description="표준화된 설문 양식을 생성하고 재사용 가능한 설문 세트를 관리합니다." icon={FileStack} />
       </TabsContent>
 
        <TabsContent value="settings" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="멸린愿 ?곕룞 ㅼ젙" description="?몃? ы꽭?대굹  ?쒖뒪?쒓낵님설문 데이터?곕룞 ?꾨줈?좎퐳님관리ы빀?덈떎." icon={Settings2} />
+        <PlaceholderCard title="대외 기관 연동 설정" description="시스템 간의 설문 데이터 연동 프로토콜을 관리합니다." icon={Settings2} />
       </TabsContent>
     </Tabs>
   );
@@ -90,4 +91,3 @@ function PlaceholderCard({ title, description, icon: Icon }: any) {
     </Card>
   );
 }
-

@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 public interface EgovFaqService {
 
     /**
-     * FAQ 紐⑸?議고??     */
+     * FAQ 紐⑸議고??     */
     Page<FaqDto> getFaqList(String keyword, Pageable pageable);
 
     /**
@@ -32,7 +32,7 @@ public interface EgovFaqService {
     void deleteFaq(String faqId, String userId);
 
     /**
-     * 議고???利앷?
+     * 議고利앷?
      */
     void increaseViewCount(String faqId);
 }

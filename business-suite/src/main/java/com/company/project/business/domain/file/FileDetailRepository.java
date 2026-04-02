@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * ???뵬 ?怨멸쉭 JPA Repository
+ * ???뵬 怨멸쉭 JPA Repository
  */
 @Repository
 public interface FileDetailRepository extends JpaRepository<FileDetail, FileDetailId> {

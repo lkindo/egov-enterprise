@@ -32,21 +32,15 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { menuService } from '@/services/foundation/system/MenuAdminService';
+import { menuService } from '@/services/business/user/MenuService';
 import { useLayout } from '@/contexts/LayoutContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { MenuInfo } from '@/types/foundation/menu';
 
-interface MenuItem {
-  menuNo: number;
-  menuNm: string;
-  upperMenuId: number;
-  chkURL?: string;
-  progrmFileNm?: string;
-  modernRoute?: string;
-  children?: MenuItem[];
-}
+
+
 
 const ICON_MAP: Record<string, any> = {
   '대시보드': LayoutDashboard,
@@ -87,7 +81,7 @@ const DOMAIN_ICON_MAP: Record<number, any> = {
   3000000: Sparkles, // Service & Operation (New Domain Layout)
 };
 
-const NavItem = ({ item, depth = 0 }: { item: MenuItem; depth?: number }) => {
+const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
   const pathname = usePathname();
   const { setSidebarOpen } = useLayout();
   const hasChildren = item.children && item.children.length > 0;
@@ -234,10 +228,10 @@ const MobileDomainNode = ({
   menus,
   loading
 }: {
-  domain: any;
+  domain: MenuInfo;
   isActive: boolean;
   onSelect: () => void;
-  menus: MenuItem[];
+  menus: MenuInfo[];
   loading: boolean;
 }) => {
   const Icon = DOMAIN_ICON_MAP[domain.menuNo] || CircleDot;
@@ -300,7 +294,7 @@ const MobileDomainNode = ({
   );
 };
 
-export function Sidebar({ initialMenus = [] }: { initialMenus?: any[] }) {
+export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
   const { isSidebarOpen, setSidebarOpen, activeMenuNo, setActiveMenuNo } = useLayout();
   const queryClient = useQueryClient();
 

@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState } from 'react';
 import { Search, RotateCcw, Calendar as CalendarIcon, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -57,8 +57,8 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
               <SlidersHorizontal size={20} />
             </div>
             <div>
-              <h3 className="text-base font-black text-foreground tracking-tighter leading-none uppercase">寃님議곌굔 ㅼ젙</h3>
-              <p className="text-[10px] font-black text-muted-foreground/50 mt-1.5 uppercase tracking-widest">怨좉툒 ?꾪꽣留님쒖뒪님/p>
+              <h3 className="text-base font-black text-foreground tracking-tighter leading-none uppercase">검색 조건 설정</h3>
+              <p className="text-[10px] font-black text-muted-foreground/50 mt-1.5 uppercase tracking-widest">고급 필터링 시스템</p>
             </div>
           </div>
           <Button
@@ -69,7 +69,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
             className="rounded-xl font-black h-10 px-4 gap-2 hover:bg-muted transition-all text-muted-foreground"
           >
             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            <span className="text-[10px] tracking-widest font-black uppercase">?꾪꽣 {isExpanded ? '?묎린' : '?쇱튂湲}</span>
+            <span className="text-[10px] tracking-widest font-black uppercase">필터 {isExpanded ? '접기' : '펼치기'}</span>
           </Button>
         </div>
 
@@ -77,7 +77,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
             {fields.map((field) => (
               <div key={field.name} className="space-y-2 group/field">
-                <label className="hub-subtitle-label opacity-40 ml-1 group-focus-within/field:opacity-100 transition-opacity">
+                <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] ml-1 group-focus-within/field:opacity-100 transition-opacity">
                   {field.label.toUpperCase()}
                 </label>
 
@@ -122,7 +122,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
                             <span className="tracking-tight">{format(values[field.name].from, "LLL dd", { locale: ko })}</span>
                           )
                         ) : (
-                          <span className="tracking-tight uppercase text-[10px] font-black tracking-widest">?좎쭨 踰붿쐞 ?좏깮</span>
+                          <span className="tracking-tight uppercase text-[10px] font-black tracking-widest">날짜 범위 선택</span>
                         )}
                       </Button>
                     </PopoverTrigger>
@@ -171,7 +171,8 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
             className="rounded-xl h-11 px-5 font-black gap-2 text-[10px] tracking-widest text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-all uppercase"
           >
             <RotateCcw size={16} />
-            珥덇린님          </Button>
+            초기화
+          </Button>
           <Button
             type="submit"
             size="sm"
@@ -187,4 +188,3 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
 }
 
 export const StandardSearchFilter = SmartSearchPanel;
-

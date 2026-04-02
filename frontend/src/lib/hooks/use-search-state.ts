@@ -1,16 +1,17 @@
-﻿'use client';
+'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 
 /**
- * 寃님議곌굔님URL 荑쇰━ 파라미터 ?숆린?뷀븯님님 */
+ * 검색 조건을 URL 쿼리 파라미터와 동기화하는 훅
+ */
 export function useSearchState<T extends Record<string, string>>(initialValues: T) {
- const router = useRouter();
- const pathname = usePathname();
- const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // 현재 URL?먯꽌 媛믪쓣 ?쎌뼱님(?놁쑝硫珥덇린媛
+  // 현재 URL에서 값을 읽어옴 (없으면 초기값)
   const getSearchValues = useCallback(() => {
     const values = { ...initialValues } as Record<string, string>;
     searchParams.forEach((value, key) => {
@@ -21,24 +22,25 @@ export function useSearchState<T extends Record<string, string>>(initialValues: 
     return values as T;
   }, [searchParams, initialValues]);
 
- // 새로운寃님議곌굔?쇰줈 URL ?낅뜲?댄듃
- const setSearchValues = useCallback((newValues: Partial<T>) => {
- const params = new URLSearchParams(searchParams.toString());
- Object.entries(newValues).forEach(([key, value]) => {
- if (value) {
- params.set(key, value as string);
- } else {
- params.delete(key);
- }
- });
- // ?섏씠吏 踰덊샇媛 ы븿?섏뼱 ?덈떎硫寃님님1?섏씠吏濡由ъ뀑?섎뒗 寃껋씠 ?쇰컲님 if (params.has('page') && !newValues.page) {
- params.set('page', '0');
- }
- router.push(`${pathname}?${params.toString()}`);
- }, [router, pathname, searchParams]);
+  // 새로운 검색 조건으로 URL 업데이트
+  const setSearchValues = useCallback((newValues: Partial<T>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(newValues).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value as string);
+      } else {
+        params.delete(key);
+      }
+    });
+    // 페이지 번호가 포함되어 있다면 검색 시 1페이지(0)로 리세팅
+    if (params.has('page') && !newValues.page) {
+      params.set('page', '0');
+    }
+    router.push(`${pathname}?${params.toString()}`);
+  }, [router, pathname, searchParams]);
 
- return {
- values: getSearchValues(),
- setSearchValues,
- };
+  return {
+    values: getSearchValues(),
+    setSearchValues,
+  };
 }

@@ -8,7 +8,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * ??쀫탣???類ｋ궖 ?酉???
+ * ??쀫탣類ｋ궖 酉
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity

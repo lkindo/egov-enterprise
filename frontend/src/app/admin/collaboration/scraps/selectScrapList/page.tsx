@@ -1,4 +1,5 @@
-﻿
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import axios from '@/lib/api/client';
@@ -28,18 +29,18 @@ const ScrapListPage = () => {
     const [list, setList] = useState<Scrap[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [page踰덊샇, setPage踰덊샇] = useState(1);
+    const [pageNo, setPageNo] = useState(1);
     const [loading, setLoading] = useState(false);
 
     const fetchList = async () => {
         setLoading(true);
         try {
-            const params = { page踰덊샇, pageUnit: 10 };
+            const params = { pageIndex: pageNo, pageUnit: 10 };
             const response = (await axios.get('/scrap', { params })) as any;
             setList(response.data.resultList || []);
             setTotalCount(response.data.totalCount || 0);
             setTotalPages(response.data.totalPages || 0);
-        } catch {
+        } catch (error) {
             console.error('Failed to fetch scraps', error);
         } finally {
             setLoading(false);
@@ -48,15 +49,15 @@ const ScrapListPage = () => {
 
     useEffect(() => {
         fetchList();
-    }, [page踰덊샇]);
+    }, [pageNo]);
 
     const handleDelete = async (id: string) => {
-        if (!confirm('삭제섏떆寃좎뒿?덇퉴?')) return;
+        if (!confirm('삭제하시겠습니까?')) return;
         try {
-            (await axios.delete(`/scrap/${id}`)) as any;
+            await axios.delete(`/scrap/${id}`);
             fetchList();
-        } catch {
-            alert('삭제ㅽ뙣있습니다.');
+        } catch (error) {
+            alert('삭제에 실패했습니다.');
         }
     };
 
@@ -65,35 +66,34 @@ const ScrapListPage = () => {
             <DynamicBreadcrumb />
 
             <Card className="border-none shadow-md overflow-hidden">
-                <CardHeader className="flex flex-row items-center justify-between pb-6 bg-gradient-to-r from-muted/50 to-transparent border-b">
+                <CardHeader className="flex flex-row items-center justify-between pb-6 bg-gradient-to-r from-muted/50 to-transparent border-b px-10 pt-10">
                     <div className="space-y-1">
                         <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                            <Bookmark className="w-6 h-6 text-primary" /> 스크랩紐⑸줉
+                            <Bookmark className="w-6 h-6 text-primary" /> 스크랩 목록
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">나중에ㅼ떆 蹂以묒슂님님?섏씠吏 ?뺣낫ㅼ쓣 관리ы븯?몄슂.</p>
+                        <p className="text-sm text-muted-foreground">나중에 다시 볼 중요한 페이지와 정보를 관리하세요.</p>
                     </div>
-                    <CardAction>
-                        <Link href="/admin/collaboration/scraps/insertScrap">
-                            <Button size="sm" className="gap-2 shadow-sm font-bold">
-                                <Plus className="w-4 h-4" /> 신규 등록
-                            </Button>
-                        </Link>
-                    </CardAction>
+                    <Link href="/admin/collaboration/scraps/insertScrap">
+                        <Button size="sm" className="gap-2 shadow-sm font-bold">
+                            <Plus className="w-4 h-4" /> 신규 등록
+                        </Button>
+                    </Link>
                 </CardHeader>
-                <CardContent className="pt-8">
+                <CardContent className="p-10 pt-8">
                     <div className="mb-6 flex items-center justify-between">
                         <div className="bg-muted px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 border">
-                            ?꾩껜 <span className="text-primary font-black">{totalCount}</span>嫄댁쓽 스크랩                        </div>
+                            전체 <span className="text-primary font-black">{totalCount}</span>건의 스크랩
+                        </div>
                     </div>
 
                     <div className="rounded-xl border shadow-sm overflow-hidden bg-white">
                         <Table>
                             <TableHeader className="bg-muted/30">
                                 <TableRow>
-                                    <TableHead className="w-[80px] text-center font-bold">踰덊샇</TableHead>
+                                    <TableHead className="w-[80px] text-center font-bold">번호</TableHead>
                                     <TableHead className="w-[250px] font-bold">스크랩명</TableHead>
                                     <TableHead className="font-bold">URL / 설명</TableHead>
-                                    <TableHead className="w-[120px] text-center font-bold">등록님/TableHead>
+                                    <TableHead className="w-[120px] text-center font-bold">등록일</TableHead>
                                     <TableHead className="w-[100px] text-center font-bold">관리</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -111,14 +111,14 @@ const ScrapListPage = () => {
                                 ) : list.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium">
-                                            λ맂 ㅽ겕⑹씠 ?놁뒿?덈떎. ?뱀쓽 ?좎슜님?뺣낫瑜님ν빐 蹂댁꽭님
+                                            저장된 스크랩이 없습니다. 유익한 정보를 저장해보세요.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     list.map((item, idx) => (
                                         <TableRow key={item.scrapId} className="hover:bg-muted/20 transition-colors group">
                                             <TableCell className="text-center text-muted-foreground font-medium">
-                                                {totalCount - ((page踰덊샇 - 1) * 10) - idx}
+                                                {totalCount - ((pageNo - 1) * 10) - idx}
                                             </TableCell>
                                             <TableCell>
                                                 <Link href={`/admin/collaboration/scraps/selectScrapDetail/${item.scrapId}`} className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2">
@@ -160,25 +160,25 @@ const ScrapListPage = () => {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setPage踰덊샇(p => Math.max(1, p - 1))}
-                                disabled={page踰덊샇 === 1}
+                                onClick={() => setPageNo(p => Math.max(1, p - 1))}
+                                disabled={pageNo === 1}
                                 className="px-6 font-bold shadow-sm"
                             >
-                                ?댁쟾
+                                이전
                             </Button>
                             <div className="flex items-center gap-2 px-6 py-2 bg-muted rounded-full">
-                                <span className="text-sm font-black text-primary">{page踰덊샇}</span>
+                                <span className="text-sm font-black text-primary">{pageNo}</span>
                                 <span className="text-sm font-bold text-muted-foreground">/</span>
                                 <span className="text-sm font-bold text-muted-foreground">{totalPages}</span>
                             </div>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setPage踰덊샇(p => Math.min(totalPages, p + 1))}
-                                disabled={page踰덊샇 === totalPages}
+                                onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
+                                disabled={pageNo === totalPages}
                                 className="px-6 font-bold shadow-sm"
                             >
-                                ㅼ쓬
+                                다음
                             </Button>
                         </div>
                     )}
@@ -189,4 +189,3 @@ const ScrapListPage = () => {
 };
 
 export default ScrapListPage;
-

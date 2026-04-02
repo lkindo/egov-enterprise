@@ -1,4 +1,4 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
@@ -6,8 +6,8 @@ import { CmmnClCode, CmmnCode, CmmnDetailCode, PageResponse } from '@/types/foun
 import CommonCodeHubClient from './CommonCodeHubClient';
 
 export const metadata = {
-  title: '?듯빀 肄붾뱶 ?덈툕 | ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
-  description: '怨듯넻肄붾뱶, ?됱젙肄붾뱶, 湲곌肄붾뱶 님시스템?꾨컲님硫뷀님곗씠?곕? ?듯빀 관리ы빀?덈떎.',
+  title: '통합 코드 허브 | 전자정부 프레임워크',
+  description: '공통코드, 행정코드, 기업코드 등 시스템 전반의 메타데이터를 통합 관리합니다.',
 };
 
 export default async function CommonCodePage({
@@ -46,35 +46,34 @@ export default async function CommonCodePage({
     }
   }
 
- return (
- <Suspense fallback={<CommonCodeLoading />}>
- <CommonCodeHubClient
- clCodes={clCodes}
- groups={groups}
- details={details}
- selectedGroupId={groupId}
- />
- </Suspense>
- );
+  return (
+    <Suspense fallback={<CommonCodeLoading />}>
+      <CommonCodeHubClient
+        clCodes={clCodes}
+        groups={groups}
+        details={details}
+        selectedGroupId={groupId}
+      />
+    </Suspense>
+  );
 }
 
 function CommonCodeLoading() {
- return (
- <div className="space-y-12 animate-pulse p-8">
- <div className="flex items-center gap-6 mb-12">
- <div className="h-16 w-16 bg-slate-100 rounded-[2rem]" />
- <div className="space-y-4">
- <div className="h-10 w-64 bg-slate-100 rounded-xl" />
- <div className="h-4 w-48 bg-slate-100 rounded-lg opacity-40" />
- </div>
- </div>
- <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
- <div className="lg:col-span-1 space-y-6">
- {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-slate-50 rounded-[1.5rem]" />)}
- </div>
- <div className="lg:col-span-3 h-[700px] bg-slate-50 rounded-[3.5rem]" />
- </div>
- </div>
- );
+  return (
+    <div className="space-y-12 animate-pulse p-8">
+      <div className="flex items-center gap-6 mb-12">
+        <div className="h-16 w-16 bg-slate-100 rounded-[2rem]" />
+        <div className="space-y-4">
+          <div className="h-10 w-64 bg-slate-100 rounded-xl" />
+          <div className="h-4 w-48 bg-slate-100 rounded-lg opacity-40" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+        <div className="lg:col-span-1 space-y-6">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-slate-50 rounded-[1.5rem]" />)}
+        </div>
+        <div className="lg:col-span-3 h-[700px] bg-slate-50 rounded-[3.5rem]" />
+      </div>
+    </div>
+  );
 }
-

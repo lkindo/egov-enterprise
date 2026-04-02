@@ -28,9 +28,9 @@ import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { scheduleService } from '@/services/user/ScheduleService';
+import { scheduleService } from '@/services/business/user/ScheduleService';
 import { getDeptJobList } from '@/services/deptJob/deptJobService';
-import { reportService } from '@/services/user/ReportService';
+import { reportService } from '@/services/business/user/ReportService';
 
 interface WorkHubClientProps {
   jobs?: any[];
@@ -64,7 +64,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   // --- Queries ---
   const { data: scheduleData } = useQuery({
     queryKey: ['work-schedule', searchKeyword],
-    queryFn: () => scheduleService.getScheduleList({ page번호: 1 }),
+    queryFn: () => scheduleService.getScheduleList({ pageNo: 1 }),
     enabled: activeTab === 'calendar'
   });
   const schedules = scheduleData?.list || [];
@@ -280,7 +280,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
         {/* --- Detail/Dashboard Column --- */}
         <div className="col-span-12 lg:col-span-7 space-y-10">
           <HubSectionCard
-            title={selectedItemId ? "ASSET DEEP ANALYSIS" : activeTab === 'calendar' ? "SCHEDULE INTELLIGENCE" : "WAITING FOR FOCUS"}
+          title={selectedItemId ? "ASSET DEEP ANALYSIS" : activeTab === 'calendar' ? "SCHEDULE INTELLIGENCE" : "WAITING FOR FOCUS"}
             description={selectedItemId
               ? `자산 엔티티 #${selectedItemId}에 대한 실시간 연동 및 비즈니스 로직 분석이 활성화되었습니다.`
               : activeTab === 'calendar' ? "전사 및 개인 일정을 통합하여 비즈니스 가용성을 한눈에 파악합니다."
@@ -369,7 +369,7 @@ function SummaryBlock({ title, value, icon, status, color }: any) {
         <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase mt-4">{title}</p>
       </div>
       <div className="absolute bottom-[-10%] right-[-10%] opacity-[0.02] group-hover:scale-125 transition-transform duration-1000">
-        {React.cloneElement(icon as React.ReactElement, { size: 100 })}
+        {React.cloneElement(icon as React.ReactElement<any>, { size: 100 })}
       </div>
     </div>
   );

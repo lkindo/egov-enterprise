@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 濡쒓???濡쒓???????퉬??
+ * 濡쒓濡쒓퉬??
  */
 @Service("loginLogManageService")
 @RequiredArgsConstructor
@@ -26,7 +26,7 @@ public class LoginLogManageService {
     private final LoginLogRepository loginLogRepository;
 
     /**
-     * 濡쒓???濡쒓??紐⑸?議고??     */
+     * 濡쒓濡쒓紐⑸議고??     */
     public List<LoginLogDto> selectLoginLogList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -37,13 +37,13 @@ public class LoginLogManageService {
     }
 
     /**
-     * 濡쒓???濡쒓??紐⑸???嫄댁??     */
+     * 濡쒓濡쒓紐⑸嫄댁??     */
     public int selectLoginLogListTotCnt(ComDefaultVO searchVO) {
         return (int) loginLogRepository.count();
     }
 
     /**
-     * 濡쒓???濡쒓???곸꽭 議고??     */
+     * 濡쒓濡쒓???곸꽭 議고??     */
     public LoginLogDto selectLoginLog(String logId) {
         return loginLogRepository.findById(Objects.requireNonNull(logId))
                 .map(this::toDto)

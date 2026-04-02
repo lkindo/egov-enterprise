@@ -1,4 +1,5 @@
-﻿
+'use client';
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -87,7 +88,7 @@ export default function CommonCodeClient({
 
     const [selectedCluster, setSelectedCluster] = useState<DomainCluster>(
         initialClusters[0] || {
-            id: '', name: '?꾩껜', groups: [],
+            id: '', name: '전체', groups: [],
             clCode: '', clCodeNm: '', clCodeDc: '', useAt: 'N'
         }
     );
@@ -100,7 +101,6 @@ export default function CommonCodeClient({
             setDetailsLoading(true);
 
             // 1. Fetch details from API with robust filtering parameters
-            // Providing multiple common parameter names for EgovFrame compatibility
             const res = await codeAdminService.getDetailCodeList({
                 codeId: group.codeId,
                 searchKeyword: group.codeId,
@@ -116,31 +116,30 @@ export default function CommonCodeClient({
             // 2. Update state directly
             setSelectedGroup({
                 ...group,
-                details: fetchedDetails
+                details: fetchedDetails as CodeDetail[]
             });
-        } catch {
-            toast('상세 肄붾뱶瑜遺덈윭ㅻ뒗 以님ㅻ쪟媛 諛쒖깮있습니다.', 'error');
+        } catch (error) {
+            toast('상세 코드를 불러오는 중 오류가 발생했습니다.', 'error');
         } finally {
             setDetailsLoading(false);
         }
     };
 
-    // Synchronize initial state from props ONLY ONCE or when selectedGroupId from server actually changes
+    // Synchronize initial state from props
     useEffect(() => {
         if (selectedGroupId && initialClusters.length > 0) {
-            // Only sync if current selectedGroup is different or null
             if (!selectedGroup || selectedGroup.codeId !== selectedGroupId) {
                 const cluster = initialClusters.find(c => c.groups.some(g => g.codeId === selectedGroupId));
                 if (cluster) {
                     const group = cluster.groups.find(g => g.codeId === selectedGroupId);
                     if (group) {
                         setSelectedCluster(cluster);
-                        setSelectedGroup({ ...group, details: details });
+                        setSelectedGroup({ ...group, details: details as CodeDetail[] });
                     }
                 }
             }
         }
-    }, [selectedGroupId, details, initialClusters]); // Keep dependencies but guard inside
+    }, [selectedGroupId, details, initialClusters, selectedGroup]);
 
     // Filtered Tree Data
     const filteredClusters = React.useMemo(() => {
@@ -167,10 +166,10 @@ export default function CommonCodeClient({
         if (!selectedGroup) return;
 
         const ok = await confirm({
-            title: '상세 肄붾뱶 紐낆꽭 님젣',
-            message: '님肄붾뱶 ?뺣낫瑜님곗씠?곕쿋?댁뒪?먯꽌 ?곴뎄님삭제섏떆寃좎뒿?덇퉴?',
+            title: '상세 코드 명세 삭제',
+            message: '해당 코드 정보를 데이터베이스에서 영구히 삭제하시겠습니까?',
             variant: 'destructive',
-            confirmText: '님젣'
+            confirmText: '삭제'
         });
 
         if (ok) {
@@ -181,15 +180,15 @@ export default function CommonCodeClient({
                 } else {
                     toast(res.message, 'error');
                 }
-            } catch {
-                toast('ㅽ듃?뚰겕 ㅻ쪟媛 諛쒖깮있습니다.', 'error');
+            } catch (error) {
+                toast('네트워크 오류가 발생했습니다.', 'error');
             }
         }
     };
 
     const handleCreateDetail = () => {
         if (!selectedGroup) {
-            toast('肄붾뱶 紐낆꽭瑜등록님洹몃９ 肄붾뱶瑜癒쇱? ?좏깮?섏떗?쒖삤.', 'info');
+            toast('코드 명세를 등록할 그룹 코드를 먼저 선택하십시오.', 'info');
             return;
         }
         setEditingDetail(null);
@@ -214,19 +213,19 @@ export default function CommonCodeClient({
             } else {
                 toast(res.message, 'error');
             }
-        } catch {
-            toast('?뺥빀님寃利앹뿉 ㅽ뙣있습니다.', 'error');
+        } catch (error) {
+            toast('적합성 검증에 실패했습니다.', 'error');
         }
     };
 
     const columns: Column<CodeDetail>[] = [
         {
-            header: '肄붾뱶',
+            header: '코드',
             accessor: (item: CodeDetail) => <span className="font-mono font-bold text-slate-700">{item.code}</span>,
             className: 'w-24'
         },
         {
-            header: '肄붾뱶 紐낆묶',
+            header: '코드 명칭',
             accessor: (item: CodeDetail) => (
                 <div className="flex flex-col">
                     <span className="font-semibold text-slate-900">{item.codeNm}</span>
@@ -235,12 +234,12 @@ export default function CommonCodeClient({
             )
         },
         {
-            header: 'ъ슜 여부',
-            accessor: (item: CodeDetail) => <HubStatusBadge status={item.useAt === 'Y' ? 'ъ슜以 : '誘몄궗님} />,
+            header: '사용 여부',
+            accessor: (item: CodeDetail) => <HubStatusBadge status={item.useAt === 'Y' ? '사용 중' : '미사용'} />,
             className: 'w-24'
         },
         {
-            header: '관리,
+            header: '관리',
             className: 'text-right w-28',
             accessor: (item: CodeDetail) => (
                 <div className="flex justify-end gap-1">
@@ -269,13 +268,10 @@ export default function CommonCodeClient({
 
     return (
         <div className="space-y-8">
-            {/* Master-Detail Layout Wrapper */}
             <div className="flex flex-col lg:flex-row gap-8 min-h-[700px]">
-
                 {/* --- Left Sidebar: Code Tree --- */}
                 <aside className="w-full lg:w-96 flex flex-col gap-4">
                     <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] border border-slate-200/50 shadow-sm overflow-hidden flex flex-col h-full ring-1 ring-slate-100/50">
-                        {/* Sidebar Header & Search */}
                         <div className="p-5 border-b border-slate-100 bg-slate-50/50 space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-xs font-black tracking-widest text-slate-900 flex items-center gap-2">
@@ -287,32 +283,28 @@ export default function CommonCodeClient({
                             <div className="relative group">
                                 <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
                                 <Input
-                                    placeholder="洹몃９/?대쫫 寃님.."
+                                    placeholder="그룹/이름 검색.."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="분류 코드 이름"
+                                    className="h-10 pl-10 bg-white border-transparent rounded-xl text-xs font-bold shadow-inner"
                                 />
                             </div>
                         </div>
 
-                        {/* --- 상세코드(Detail) Modal --- */}
                         <div className="flex-1 overflow-y-auto p-2 custom-scrollbar max-h-[600px]">
                             {filteredClusters.length === 0 ? (
                                 <div className="p-8 text-center space-y-4 opacity-50">
                                     <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto text-slate-300">
                                         <SearchSlash size={24} />
                                     </div>
-                                    <p className="text-[10px] font-black tracking-widest uppercase">寃곌낵 ?놁쓬</p>
+                                    <p className="text-[10px] font-black tracking-widest uppercase">결과 없음</p>
                                 </div>
                             ) : (
                                 filteredClusters.map((cluster) => (
                                     <div key={cluster.id} className="mb-2">
-                                        {/* Cluster Header */}
                                         <div className="px-3 py-2 text-[10px] font-black text-slate-400 tracking-widest uppercase flex items-center justify-between group">
                                             <span>{cluster.name}</span>
-                                            <div className="공통 코드 이름" />
                                         </div>
-                                        {/* Group Items */}
                                         <div className="space-y-0.5 mt-1">
                                             {cluster.groups.map(group => (
                                                 <button
@@ -325,24 +317,24 @@ export default function CommonCodeClient({
                                                         loadGroupDetails(group);
                                                     }}
                                                     className={cn(
-                                                        '분류 코드 삭제',
+                                                        'w-full flex items-center justify-between p-3 rounded-2xl transition-all group/item',
                                                         selectedGroup?.codeId === group.codeId
-                                                            ? '신규 분류 코드 등록'
-                                                            : '공통 코드(그룹) 삭제'
+                                                            ? 'bg-slate-900 text-white shadow-lg scale-[1.02]'
+                                                            : 'hover:bg-slate-50 text-slate-600'
                                                     )}
                                                 >
                                                     <div className="flex items-center gap-3 truncate">
                                                         <div className={cn(
-                                                            /* --- 분류코드(ClCode) Modal --- */,
-                                                            selectedGroup?.codeId === group.codeId ? "bg-primary/20 text-primary" : "bg-white text-slate-300 group-hover/item:text-primary"
+                                                            "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
+                                                            selectedGroup?.codeId === group.codeId ? "bg-primary/20 text-primary" : "bg-white text-slate-300 group-hover/item:text-primary shadow-sm"
                                                         )}>
                                                             <Tag size={12} />
                                                         </div>
-                                                        <div className="flex flex-col truncate">
+                                                        <div className="flex flex-col truncate items-start">
                                                             <span className="text-[11px] font-bold truncate leading-tight">{group.codeIdNm}</span>
                                                             <span className={cn(
-                                                                '분류 코드 수정',
-                                                                selectedGroup?.codeId === group.codeId ? "text-white/40" : '상세 코드 삭제'
+                                                                'text-[9px] font-mono font-bold tracking-tighter opacity-40',
+                                                                selectedGroup?.codeId === group.codeId ? "text-white/40" : 'text-slate-400'
                                                             )}>{group.codeId}</span>
                                                         </div>
                                                     </div>
@@ -363,8 +355,6 @@ export default function CommonCodeClient({
                 <main className="flex-1 space-y-6">
                     {selectedGroup ? (
                         <div className="space-y-6">
-
-                            {/* Summary Header Card */}
                             <div className="p-8 rounded-[2.5rem] bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 ring-1 ring-slate-100">
                                 <div className="flex items-center gap-6">
                                     <div className="w-16 h-16 rounded-3xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
@@ -380,7 +370,7 @@ export default function CommonCodeClient({
                                             </div>
                                         </div>
                                         <p className="text-xs font-bold text-slate-400 italic">
-                                            {selectedGroup.codeIdDc || '?뺤쓽님?섏쭛 紐낆꽭媛 ?놁뒿?덈떎.'}
+                                            {selectedGroup.codeIdDc || '정의된 명세가 없습니다.'}
                                         </p>
                                     </div>
                                 </div>
@@ -391,7 +381,6 @@ export default function CommonCodeClient({
                                 </div>
                             </div>
 
-                            {/* Data Table Area */}
                             <div className={cn(
                                 "bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden ring-1 ring-slate-100 transition-all",
                                 detailsLoading ? "opacity-30 pointer-events-none scale-[0.99] grayscale" : "opacity-100"
@@ -401,16 +390,16 @@ export default function CommonCodeClient({
                                         <div className="w-10 h-10 rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center text-primary shadow-sm">
                                             {detailsLoading ? <RefreshCcw size={18} className="animate-spin" /> : <Layers size={18} />}
                                         </div>
-                                        <div>
-                                            <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase">시스템援ъ꽦 紐낆꽭</h3>
-                                            <p className="text-[10px] font-bold text-slate-400">
-                                                {detailsLoading ? '?쒕쾭濡쒕님紐낆꽭瑜님쎌뼱ㅻ뒗 중..' : `珥${selectedGroup.details?.length || 0}媛쒖쓽 파라미터媛 ?뺤쓽님}
+                                        <div className="text-left">
+                                            <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase leading-none mb-1.5">시스템 구성 명세</h3>
+                                            <p className="text-[10px] font-bold text-slate-400 leading-none">
+                                                {detailsLoading ? '서버로부터 명세를 읽어오는 중..' : `총 ${selectedGroup.details?.length || 0}개의 파라미터가 정의됨`}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
+                                    <div>
                                         <div className="flex flex-col items-end pr-4 text-right">
-                                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1.5">무결성/span>
+                                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1.5">무결성</span>
                                             <div className="flex items-center gap-1">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                                 <span className="text-[10px] font-black text-emerald-500 font-mono">99.9%</span>
@@ -422,7 +411,7 @@ export default function CommonCodeClient({
                                     <StandardDataTable<CodeDetail>
                                         columns={columns}
                                         data={selectedGroup.details || []}
-                                        emptyMessage="?좏깮님洹몃９님상세 肄붾뱶媛 議댁옱?섏? ?딆뒿?덈떎."
+                                        emptyMessage="선택된 그룹에 상세 코드가 존재하지 않습니다."
                                         className="border-none"
                                         isPremium={false}
                                     />
@@ -430,22 +419,22 @@ export default function CommonCodeClient({
                             </div>
                         </div>
                     ) : (
-                        <div className="h-full flex flex-col items-center justify-center p-12 rounded-[3.5rem] bg-white border border-slate-200 shadow-sm ring-1 ring-slate-100">
+                        <div className="h-full flex flex-col items-center justify-center p-12 rounded-[3.5rem] bg-white border border-slate-200 shadow-sm ring-1 ring-slate-100 min-h-[500px]">
                             <div className="w-24 h-24 rounded-[2.5rem] bg-slate-50 flex items-center justify-center text-slate-300 mb-8 border border-slate-100 shadow-inner">
                                 <Database size={40} className="animate-pulse" />
                             </div>
-                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase mb-4">留덉뒪님데이터μ냼</h3>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase mb-4">마스터 데이터 저장소</h3>
                             <p className="text-xs font-bold text-slate-400 text-center max-w-sm leading-relaxed mb-10">
-                                ?쇱そ 肄붾뱶 ?듭뒪?뚮줈ъ뿉님관리님곸쓣 ?좏깮?섏떗?쒖삤.<br />
-                                ?꾨찓님怨꾩링蹂紐⑤뱺 留덉뒪님?곗씠?곌? ?닿납님?쒖텧합니다
+                                왼쪽 코드 익스플로러에서 관리 대상을 선택하십시오.<br />
+                                도메인 계층별 모든 마스터 데이터가 이곳에 노출됩니다.
                             </p>
                             <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
-                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col gap-2">
-                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">?꾨찓님?대윭ㅽ꽣</span>
+                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
+                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">도메인 클러스터</span>
                                     <span className="text-2xl font-black text-slate-900 font-mono italic">{initialClusters.length}</span>
                                 </div>
-                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col gap-2">
-                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">활성 洹몃９ ?쒗님/span>
+                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
+                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">활성 그룹 수</span>
                                     <span className="text-2xl font-black text-slate-900 font-mono italic">{groups.length}</span>
                                 </div>
                             </div>
@@ -458,41 +447,42 @@ export default function CommonCodeClient({
             <StandardModal
                 isOpen={isModalOpen}
                 onClose={() => setIsOpen(false)}
-                title={editingDetail ? '?꾪궎?띿쿂 紐낆꽭 ?섏젙' : '신규 紐낆꽭 등록'}
+                title={editingDetail ? '아키텍처 명세 수정' : '신규 명세 등록'}
                 maxWidth="3xl"
                 footer={
                     <div className="flex w-full gap-4">
                         <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
                         <Button form="code-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group">
-                            <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 님                        </Button>
+                            <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 저장
+                        </Button>
                     </div>
                 }
             >
                 <form id="code-form" onSubmit={handleSubmitDetail} className="space-y-10 pt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="space-y-8">
-                            <FormField label="?곸쐞 洹몃９ ?앸퀎님>
+                            <FormField label="상위 그룹 식별자">
                                 <div className="h-14 flex items-center px-6 rounded-2xl bg-slate-100 border-none font-mono text-xs font-black shadow-inner text-slate-500">
                                     {selectedGroup?.codeId}
                                 </div>
                             </FormField>
-                            <FormField label="肄붾뱶 ?앸퀎님(Unique ID)" required>
+                            <FormField label="코드 식별자 (Unique ID)" required>
                                 <Input
                                     name="code"
                                     defaultValue={editingDetail?.code}
                                     required
                                     readOnly={!!editingDetail}
-                                    className="h-14 rounded-2xl font-mono text-xs font-black shadow-inner border-none bg-slate-50 focus:bg-white transition-all"
-                                    placeholder="분류 코드 이름"
+                                    className="h-14 rounded-2xl font-mono text-xs font-black shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
+                                    placeholder="Unique code indicator"
                                 />
                             </FormField>
-                            <FormField label="?쇰━ ?덉씠釉(Label)" required>
-                                <Input name="codeNm" defaultValue={editingDetail?.codeNm} required className="h-14 rounded-2xl text-sm font-black tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all" placeholder="?쒓?/?곷Ц 肄붾뱶 ?대쫫" />
+                            <FormField label="표기 레이블 (Label)" required>
+                                <Input name="codeNm" defaultValue={editingDetail?.codeNm} required className="h-14 rounded-2xl text-sm font-black tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left" placeholder="레이블 명칭 입력" />
                             </FormField>
                         </div>
 
                         <div className="space-y-8">
-                            <FormField label="활성 ?곹깭 ?꾨줈?좎퐳">
+                            <FormField label="활성 상태 프로토콜">
                                 <Select
                                     key={editingDetail ? `edit-${editingDetail.code}` : 'new'}
                                     name="useAt"
@@ -503,16 +493,16 @@ export default function CommonCodeClient({
                                     </SelectTrigger>
                                     <SelectContent className="rounded-2xl shadow-xl z-[9999]">
                                         <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-emerald-500">
-                                            --- ъ슜以(ACTIVE) ---
+                                            --- 사용 중 (ACTIVE) ---
                                         </SelectItem>
                                         <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">
-                                            --- 誘몄궗님(INACTIVE) ---
+                                            --- 미사용 (INACTIVE) ---
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </FormField>
-                            <FormField label="硫뷀님곗씠님而⑦뀓ㅽ듃 설명">
-                                <textarea name="codeDc" defaultValue={editingDetail?.codeDc} className="w-full min-h-[160px] p-6 rounded-[2rem] border-none bg-slate-50 text-[11px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner" placeholder="肄붾뱶 ъ슜泥諛님쒖뒪님?쒖빟 議곌굔 설명..." />
+                            <FormField label="메타데이터 컨텍스트 설명">
+                                <textarea name="codeDc" defaultValue={editingDetail?.codeDc} className="w-full min-h-[160px] p-6 rounded-[2rem] border-none bg-slate-50 text-[11px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner text-left" placeholder="코드 사용처 및 시스템 제약 조건 설명..." />
                             </FormField>
                         </div>
                     </div>
@@ -521,5 +511,3 @@ export default function CommonCodeClient({
         </div>
     );
 }
-
-

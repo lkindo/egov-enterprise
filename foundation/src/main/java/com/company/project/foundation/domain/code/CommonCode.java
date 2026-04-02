@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * ?⑤벏???怨멸쉭 ?꾨뗀諭??酉???(CCMMNDETAILCODE ???뵠??筌띲끋釉?
+ * ⑤벏怨멸쉭 ?꾨뗀諭酉(CCMMNDETAILCODE ???뵠筌띲끋釉
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -29,14 +29,14 @@ public class CommonCode implements Serializable {
     @Id
     @Column(name = "CODE", length = 45)
     @NonNull
-    private String code; // ?怨멸쉭 ?꾨뗀諭?
+    private String code; // 怨멸쉭 ?꾨뗀諭
 
     @Column(name = "CODE_NM", length = 180)
     @NonNull
     private String codeNm; // ?꾨뗀諭띰쭗?
 
     @Column(name = "CODE_DC", length = 600)
-    private String codeDc; // ?꾨뗀諭???살구
+    private String codeDc; // ?꾨뗀諭살구
 
     @Column(name = "USE_AT", length = 1)
     private String useAt; // ??????? (Y/N)

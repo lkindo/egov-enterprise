@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * ??????퉬??
+ * 퉬??
  */
 @Service("projectRoleManageService")
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class RoleManageService {
     private final RoleInfoRepository roleInfoRepository;
 
     /**
-     * ?紐⑸?議고??     */
+     * 紐⑸議고??     */
     public List<RoleManageDto> selectRoleList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -38,7 +38,7 @@ public class RoleManageService {
     }
 
     /**
-     * ?紐⑸???嫄댁??     */
+     * 紐⑸嫄댁??     */
     public int selectRoleListTotCnt(ComDefaultVO searchVO) {
         return (int) roleInfoRepository.count();
     }

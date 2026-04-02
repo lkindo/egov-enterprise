@@ -10,12 +10,12 @@ import org.springframework.lang.NonNull;
 import java.util.List;
 
 /**
- * ?듯???붾??????퉬???명꽣??씠??(??ъ옄??
- * - ?꾩옄???꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ?⑹????꾪븳 ?명꽣??씠???꾨?? */
+ * ?듯???붾퉬???명꽣??씠??(ъ옄??
+ * - ?꾩옄???꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ⑹꾪븳 ?명꽣??씠???꾨?? */
 public interface EgovCommonCodeService {
 
     /**
-     * 洹몃９蹂??붾?紐⑸?議고??     */
+     * 洹몃９蹂붾紐⑸議고??     */
     List<CommonCodeDto> getCodesByGroup(@NonNull String codeGroupId);
 
     /**
@@ -23,7 +23,7 @@ public interface EgovCommonCodeService {
      */
     CommonCodeDto createCode(@NonNull CommonCodeSaveRequest request);
 
-    // --- ?듯?遺꾨쪟?붾?(CmmnClCode) ---
+    // --- ?듯遺꾨쪟?붾?(CmmnClCode) ---
     List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull ComDefaultVO searchVO);
 
     int selectCmmnClCodeListTotCnt(@NonNull ComDefaultVO searchVO);
@@ -36,7 +36,7 @@ public interface EgovCommonCodeService {
 
     void deleteCmmnClCode(@NonNull CmmnClCodeDto dto);
 
-    // --- ?듯?肄붾뱶(洹몃? (CmmnCode) ---
+    // --- ?듯肄붾뱶(洹몃? (CmmnCode) ---
     List<CmmnCodeDto> selectCmmnCodeList(@NonNull ComDefaultVO searchVO);
 
     int selectCmmnCodeListTotCnt(@NonNull ComDefaultVO searchVO);

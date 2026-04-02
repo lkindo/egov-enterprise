@@ -46,11 +46,11 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
   const loadData = async (wrd: string = searchWrd, page: number = pageNumber) => {
     try {
       setLoading(true);
-      const res = await codeAdminService.getAdministCodeList({ searchWrd: wrd, page번호: page });
+      const res = await codeAdminService.getAdministCodeList({ searchWrd: wrd, pageNo: page });
       setData(res.list || []);
       setTotal(res.total || 0);
       setPageNumber(page);
-    } catch {
+    } catch (error) {
       toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);

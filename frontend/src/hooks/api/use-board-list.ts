@@ -4,7 +4,7 @@ import { BoardPost, BoardResponse } from '@/types/business/board';
 
 export interface BoardListParams {
   bbsId: string;
-  page번호: number;
+  page: number;
   pageUnit: number;
   searchWrd: string;
   searchCnd: string;
@@ -18,9 +18,9 @@ export const useBoardList = (params: BoardListParams, initialData?: { resultList
     queryKey: ['boardList', params],
     initialData,
     queryFn: async () => {
-      const { bbsId, page번호, pageUnit, ...restParams } = params;
+      const { bbsId, page, pageUnit, ...restParams } = params;
       const queryParams = {
-        page: page번호 - 1,
+        page: page - 1, // Zero-based index for backend
         size: pageUnit || 10,
         ...restParams
       };

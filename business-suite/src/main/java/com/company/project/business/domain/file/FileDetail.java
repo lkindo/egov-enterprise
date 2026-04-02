@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * ???뵬 ?怨멸쉭 ?酉???(NFILEDETAIL ???뵠??筌띲끋釉?
+ * ???뵬 怨멸쉭 酉(NFILEDETAIL ???뵠筌띲끋釉
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -34,19 +34,19 @@ public class FileDetail extends BaseEntity {
     private Integer fileSn;
 
     @Column(name = "FILE_STRE_COURS", length = 6000)
-    private String fileStreCours; // ????野껋럥以?
+    private String fileStreCours; // 野껋럥以
 
     @Column(name = "STRE_FILE_NM", length = 765)
-    private String streFileNm; // ???????뵬筌?
+    private String streFileNm; // ???????뵬筌
 
     @Column(name = "ORIGNL_FILE_NM", length = 765)
-    private String orignlFileNm; // ?癒?궚 ???뵬筌?
+    private String orignlFileNm; // 癒궚 ???뵬筌
 
     @Column(name = "FILE_EXTSN", length = 60)
-    private String fileExtsn; // ?類ㅼ삢??
+    private String fileExtsn; // 類ㅼ삢??
 
     @Column(name = "FILE_SIZE")
-    private Long fileMg; // ???뵬 ??由?
+    private Long fileMg; // ???뵬 由
 
     @Column(name = "FILE_CN")
     private String fileCn; // ???뵬 ??살구

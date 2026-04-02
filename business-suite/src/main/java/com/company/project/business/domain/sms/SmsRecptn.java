@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * SMS ??뤿뻿 ?類ｋ궖 JPA Entity
+ * SMS ??뤿뻿 類ｋ궖 JPA Entity
  * ??뉕탢?????뵠?? COMTNSMSRECPTN
  */
 @Entity

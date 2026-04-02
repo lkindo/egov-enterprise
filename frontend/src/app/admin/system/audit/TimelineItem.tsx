@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -26,9 +26,9 @@ interface TimelineItemProps {
 }
 
 export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspect, isSelected }) => {
-  const isSecurity = log.histCn.includes('로그인) || log.histCn.includes('보안');
-  const isSystem = log.histCn.includes('시스템) || log.histCn.includes('諛고룷');
-  const isError = log.histCn.includes('ㅻ쪟') || log.histCn.includes('ㅽ뙣');
+  const isSecurity = log.histCn.includes('로그인') || log.histCn.includes('보안');
+  const isSystem = log.histCn.includes('시스템') || log.histCn.includes('배포');
+  const isError = log.histCn.includes('오류') || log.histCn.includes('실패');
   
   const getIcon = () => {
     if (isError) return <AlertCircle size={20} />;
@@ -89,12 +89,12 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
         {isSecurity && <ShieldAlert size={120} className="absolute -right-8 -bottom-8 text-indigo-50/30 rotate-12" />}
         {isError && <AlertCircle size={120} className="absolute -right-8 -bottom-8 text-rose-50/30 rotate-12" />}
 
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4 relative z-10">
-          <div className="space-y-1">
-             <span className="text-[10px] font-black tracking-[0.3em] text-slate-400 uppercase leading-none italic">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4 relative z-10 text-left">
+          <div className="space-y-1 text-left">
+             <span className="text-[10px] font-black tracking-[0.3em] text-slate-400 uppercase leading-none italic block text-left">
                 {log.frstRegisterPnttm}
              </span>
-             <h4 className="text-lg font-black tracking-tighter text-slate-800 uppercase italic">
+             <h4 className="text-lg font-black tracking-tighter text-slate-800 uppercase italic text-left">
                 {log.histCn}
              </h4>
           </div>

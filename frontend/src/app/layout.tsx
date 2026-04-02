@@ -9,17 +9,15 @@ import { Footer } from './components/layout/footer';
 import { ScrollToTop } from './components/layout/scroll-to-top';
 import { cookies } from 'next/headers';
 import { menuService } from '@/services/business/user/MenuService';
+import { MenuInfo } from '@/types/foundation/menu';
+
 
 export const metadata: Metadata = {
   title: '전자정부 표준프레임워크 - 엔터프라이즈 포털',
   description: 'KRDS 기반 모던 전사 공통 모듈 및 디지털 정부 혁신 플랫폼',
 };
 
-interface MenuWithChildren {
-  menuNo: number;
-  children?: MenuWithChildren[];
-  [key: string]: unknown;
-}
+
 
 export default async function RootLayout({
   children,
@@ -31,7 +29,7 @@ export default async function RootLayout({
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
   // Fetch Sidebar Menus on Server to eliminate waterfall
-  let initialMenus: MenuWithChildren[] = [];
+  let initialMenus: MenuInfo[] = [];
 
   // Only attempt to fetch menus if we have a token (avoid 401 for guests/login page)
   if (accessToken) {

@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 
 /**
- * ???뾽?댄???퉬???ы쁽?
+ * 뾽?댄???퉬ы쁽?
  */
 @Service("deptJobBoxService")
 @RequiredArgsConstructor

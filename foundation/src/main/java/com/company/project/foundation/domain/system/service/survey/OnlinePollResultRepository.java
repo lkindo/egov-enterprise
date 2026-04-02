@@ -6,7 +6,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 /**
- * ??ㅼ뵬????紐?野껉퀗??Repository
+ * ㅼ뵬紐野껉퀗??Repository
  */
 public interface OnlinePollResultRepository extends JpaRepository<OnlinePollResult, String> {
     long countByPollIemId(String pollIemId);

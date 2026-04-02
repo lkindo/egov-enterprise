@@ -29,7 +29,7 @@ public class ReportStatsService {
     // ========== 蹂닿???????==========
 
     /**
-     * 蹂닿???????紐⑸?議고??     */
+     * 蹂닿紐⑸議고??     */
     public Page<ReprtStats> getReprtStatsList(String reprtTy, String fromDate, String toDate, int page, int size) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
@@ -45,7 +45,7 @@ public class ReportStatsService {
     }
 
     /**
-     * ?깅줉???蹂닿???????     */
+     * ?깅줉蹂닿???????     */
     public List<Object[]> getReprtStatsByDate(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
@@ -90,7 +90,7 @@ public class ReportStatsService {
     // ========== ????슜?꾪솴 ????==========
 
     /**
-     * ????슜?꾪솴 ????紐⑸?議고??     */
+     * ????슜?꾪솴 紐⑸議고??     */
     public Page<DtaUseStats> getDtaUseStatsList(String fromDate, String toDate, int page, int size) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";

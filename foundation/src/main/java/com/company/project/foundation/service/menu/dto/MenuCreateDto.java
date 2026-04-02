@@ -10,14 +10,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MenuCreateDto {
-    /** 硫붾?踰?샇 */
+    /** 硫붾踰샇 */
     private int menuNo;
     /** 留듭?켌D */
     private String mapCreatId;
     /** 沅뚰븳肄붾뱶 */
     private String authorCode;
 
-    /** 沅뚰븳紐?*/
+    /** 沅뚰븳紐*/
     private String authorNm;
     /** 沅뚰??챸 */
     private String authorDc;

@@ -20,7 +20,7 @@ public class ProjectCryptoConfig {
         EgovPasswordEncoder encoder = new EgovPasswordEncoder();
         encoder.setAlgorithm("SHA-256");
 
-        // algorithmKey????곷뻻??뤿연 verification??뱀몵嚥???쇱젟
+        // algorithmKey????곷뻻??뤿연 verification??뱀몵嚥쇱젟
         String hashedPassword = encoder.encryptPassword(algorithmKey);
         encoder.setHashedPassword(hashedPassword);
 

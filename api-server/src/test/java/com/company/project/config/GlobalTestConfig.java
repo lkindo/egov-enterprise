@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 
 /**
- * api-server ?뚯뒪???섍꼍?먯꽌 怨듯넻?쇰줈 ?ъ슜?섎뒗 鍮??ㅼ젙
+ * api-server 테스트 환경에서 공통으로 사용하는 빈 설정
  */
 @TestConfiguration
 @Profile("mock-test")

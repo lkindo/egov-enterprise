@@ -12,7 +12,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
- * API ?출 ?력??기록?는 ?영 감사 ?터?터
+ * API 호출 이력을 기록하는 운영 감사 인터셉터
  */
 @Slf4j
 @Component

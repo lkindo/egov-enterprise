@@ -1,4 +1,5 @@
-﻿
+'use client';
+
 import React, { useState, useMemo } from 'react';
 import {
  Plus,
@@ -42,12 +43,12 @@ export interface FormSchema {
 
 export function SmartFormBuilder() {
  const [schema, setSchema] = useState<FormSchema>({
- title: "신규 ?됱젙 ?쒖떇",
- description: "업무 吏님및 蹂닿퀬瑜님꾪븳 ?쒖? ?쒖떇?낅땲님",
+ title: "신규 행정 서식",
+ description: "업무 지시 및 보고를 위한 표준 서식입니다",
  fields: [
- { id: 'f1', type: 'text', label: '제목', placeholder: '안건 제목을 입력하세요'full' },
+ { id: 'f1', type: 'text', label: '제목', placeholder: '안건 제목을 입력하세요', width: 'full' },
  { id: 'f2', type: 'date', label: '기한', required: true, width: 'half' },
- { id: 'f3', type: 'select', label: '중요도'湲닿툒', '蹂댄넻', '李몄“'], width: 'half' }
+ { id: 'f3', type: 'select', label: '중요도', options: ['긴급', '보통', '참조'], width: 'half' }
  ]
  });
 
@@ -58,8 +59,8 @@ export function SmartFormBuilder() {
  const newField: FormField = {
  id: `f-${Date.now()}`,
  type,
- label: `새로운${type} ?꾨뱶`,
- placeholder: '이용님입력해주세요',
+ label: `새로운 ${type} 필드`,
+ placeholder: '내용을 입력해주세요',
  width: 'full'
  };
  setSchema(prev => ({ ...prev, fields: [...prev.fields, newField] }));
@@ -93,7 +94,7 @@ export function SmartFormBuilder() {
  </div>
  <div>
  <h2 className="text-xl font-black tracking-tight text-foreground ">{schema.title}</h2>
- <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">鍮꾩＜님님?붿쭊 v1.0</p>
+ <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">비주얼 엔진 v1.0</p>
  </div>
  </div>
 
@@ -118,9 +119,9 @@ export function SmartFormBuilder() {
  </div>
  <div className="h-6 w-px bg-muted mx-2" />
  <Button variant="outline" className="rounded-xl font-bold h-11 px-6 border-2 hover:bg-primary/5 gap-2">
- <Eye size={18} /> ?꾨━뷰? </Button>
+ <Eye size={18} /> 프리뷰 </Button>
  <Button className="rounded-xl font-black h-11 px-8 shadow-xl shadow-primary/20 gap-2">
- <Save size={18} /> ?쒖떇 님 </Button>
+ <Save size={18} /> 서식 저장 </Button>
  </div>
  </div>
 
@@ -155,10 +156,10 @@ export function SmartFormBuilder() {
  <div className="mt-auto p-5 bg-primary/5 rounded-[2rem] border border-primary/10">
  <div className="flex items-center gap-2 mb-2 text-primary">
  <Info size={14} />
- <span className="text-[10px] font-black ">?꾨줈 님/span>
+ <span className="text-[10px] font-black ">프로 팁</span>
  </div>
  <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
- ?꾨뱶瑜님대┃섏뿬 ?띿꽦님?몄쭛?섍퀬, ?쒕옒洹명븯님?쒖꽌瑜蹂寃쏀븷 님있습니다.
+ 필드를 클릭하여 속성을 편집하고, 드래그하여 순서를 변경할 수 있습니다.
  </p>
  </div>
  </div>
@@ -202,7 +203,7 @@ export function SmartFormBuilder() {
  </div>
 
  <div className="h-12 bg-muted/50 rounded-xl border border-primary/5 px-4 flex items-center text-sm text-muted-foreground/40 font-medium">
- {field.placeholder || `${field.label} 이용님입력하세요}
+ {field.placeholder || `${field.label} 내용을 입력하세요`}
  </div>
  </div>
  ))}
@@ -214,13 +215,13 @@ export function SmartFormBuilder() {
  <div className="w-80 bg-white dark:bg-slate-900 border border-primary/5 rounded-[3.5rem] p-8 flex flex-col gap-6 shadow-2xl">
  <div className="flex items-center gap-3 mb-4">
  <div className="p-2.5 bg-primary/10 rounded-xl text-primary"><Settings size={18} /></div>
- <h3 className="text-sm font-black tracking-tight">?띿꽦</h3>
+ <h3 className="text-sm font-black tracking-tight">속성</h3>
  </div>
 
  {activeField ? (
  <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">?쇰꺼 ?대쫫</label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">라벨 이름</label>
  <Input
  value={activeField.label}
  onChange={(e) => updateField(activeField.id, { label: e.target.value })}
@@ -228,7 +229,7 @@ export function SmartFormBuilder() {
  />
  </div>
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">?뚮젅?댁뒪님/label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">플레이스홀더</label>
  <Input
  value={activeField.placeholder || ''}
  onChange={(e) => updateField(activeField.id, { placeholder: e.target.value })}
@@ -238,20 +239,20 @@ export function SmartFormBuilder() {
 
  <div className="grid grid-cols-2 gap-4">
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">?덈퉬</label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">너비</label>
  <div className="bg-muted/50 p-1 rounded-xl flex gap-1 border border-primary/5">
  <button
  onClick={() => updateField(activeField.id, { width: 'half' })}
  className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all", activeField.width === 'half' ? "bg-background shadow-sm text-primary" : "text-muted-foreground")}
- >?덈컲</button>
+ >절반</button>
  <button
  onClick={() => updateField(activeField.id, { width: 'full' })}
  className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all", activeField.width === 'full' ? "bg-background shadow-sm text-primary" : "text-muted-foreground")}
- >?꾩껜</button>
+ >전체</button>
  </div>
  </div>
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">?꾩닔</label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">필수</label>
  <div
  onClick={() => updateField(activeField.id, { required: !activeField.required })}
  className={cn(
@@ -266,7 +267,7 @@ export function SmartFormBuilder() {
 
  {activeField.type === 'select' && (
  <div className="space-y-3 pt-4 border-t border-primary/5">
- <label className="text-[10px] font-black text-muted-foreground px-1">?듭뀡</label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">옵션</label>
  {(activeField.options || []).map((opt, idx) => (
  <div key={`opt-${idx}`} className="flex gap-2">
  <Input
@@ -290,7 +291,7 @@ export function SmartFormBuilder() {
  <Button
  variant="outline" size="sm" className="w-full rounded-xl border-dashed py-5 border-2"
  onClick={() => updateField(activeField.id, { options: [...(activeField.options || []), 'New Option'] })}
- >+ ?띿꽦 異붽?</Button>
+ >+ 속성 추가</Button>
  </div>
  )}
  </div>
@@ -299,9 +300,9 @@ export function SmartFormBuilder() {
  <div className="w-16 h-16 bg-muted rounded-3xl flex items-center justify-center text-muted-foreground mb-4">
  <Info size={24} />
  </div>
- <h4 className="text-sm font-black tracking-tight text-muted-foreground/60 mb-2">?좏깮님?꾨뱶 ?놁쓬</h4>
+ <h4 className="text-sm font-black tracking-tight text-muted-foreground/60 mb-2">선택된 필드 없음</h4>
  <p className="text-[10px] font-medium text-muted-foreground/40 leading-relaxed">
- 罹붾쾭ㅼ쓽 ?꾨뱶瑜님좏깮?섏뿬 상세 ?띿꽦님?몄쭛?섏꽭님
+ 캔버스의 필드를 선택하여 상세 속성을 편집하세요
  </p>
  </div>
  )}
@@ -310,4 +311,3 @@ export function SmartFormBuilder() {
  </div>
  );
 }
-

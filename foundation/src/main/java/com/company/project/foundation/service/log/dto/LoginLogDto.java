@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 濡쒓???濡쒓??DTO
+ * 濡쒓濡쒓??DTO
  */
 @Getter
 @Setter
@@ -21,7 +21,7 @@ public class LoginLogDto {
     private String loginId;
     /** ?묒냽 IP */
     private String loginIp;
-    /** ?묒냽 諛⑸?*/
+    /** ?묒냽 諛⑸*/
     private String loginMthd;
     /** ?? 諛쒖???? */
     private String errOccrrAt;

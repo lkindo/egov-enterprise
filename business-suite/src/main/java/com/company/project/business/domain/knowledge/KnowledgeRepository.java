@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 /**
- * 筌왖?????Repository
+ * 筌왖Repository
  */
 public interface KnowledgeRepository extends JpaRepository<Knowledge, String> {
 

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -26,9 +26,9 @@ export default function PolicyAdminClient() {
     try {
       const data = await policyAdminService.getPolicies();
       setPolicies(data);
-    } catch {
+    } catch (error) {
       console.error('Failed to fetch policies:', error);
-      toast.error('?뺤콉 紐⑸줉님遺덈윭ㅻ뒗 님ㅽ뙣있습니다.');
+      toast.error('정책 목록을 불러오는 데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -53,12 +53,12 @@ export default function PolicyAdminClient() {
         title: editTitle,
         content: editContent
       });
-      toast.success('?뺤콉님성공적으로수정되었습니다');
+      toast.success('정책이 성공적으로 수정되었습니다');
       setIsEditModalOpen(false);
       fetchPolicies();
-    } catch {
+    } catch (error) {
       console.error('Failed to update policy:', error);
-      toast.error('?뺤콉 ?섏젙님ㅽ뙣있습니다.');
+      toast.error('정책 수정에 실패했습니다.');
     } finally {
       setIsSaving(false);
     }
@@ -66,7 +66,7 @@ export default function PolicyAdminClient() {
 
   const columns: Column<SystemPolicy>[] = [
     {
-      header: '?뺤콉 ?좏삎(ID)',
+      header: '정책 유형(ID)',
       accessor: (item) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -77,50 +77,52 @@ export default function PolicyAdminClient() {
       )
     },
     {
-      header: '?뺤콉 제목',
-      accessor: (item) => <span className="font-medium">{item.title}</span>
+      header: '정책 제목',
+      accessor: (item) => <span className="font-bold text-slate-700 text-left block">{item.title}</span>
     },
     {
-      header: '이용 ?붿빟',
+      header: '내용 요약',
       accessor: (item) => (
-        <div className="max-w-xs truncate text-muted-foreground opacity-60">
+        <div className="max-w-xs truncate text-muted-foreground opacity-60 text-left">
           {item.content.replace(/<[^>]*>?/gm, '').substring(0, 50)}...
         </div>
       )
     },
     {
-      header: '관리,
+      header: '관리',
       className: 'text-right',
       accessor: (item) => (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => handleEdit(item)}
-          className="hover:bg-primary/10 hover:text-primary rounded-xl"
-        >
-          <Edit2 size={14} className="mr-2" /> ?섏젙
-        </Button>
+        <div className="flex justify-end">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => handleEdit(item)}
+            className="hover:bg-primary/10 hover:text-primary rounded-xl"
+          >
+            <Edit2 size={14} className="mr-2" /> 수정
+          </Button>
+        </div>
       )
     }
   ];
 
   return (
-    <div className="p-10 space-y-10">
+    <div className="p-10 space-y-10 animate-in fade-in duration-1000">
       <HubHeader 
-        title="시스템?뺤콉" 
-        highlight="관리 
-        subtitle="SYSTEM POLICY MANAGEMENT" 
+        title="시스템 정책" 
+        highlight="관리" 
+        subtitle="전사 서비스 운영을 위한 법적, 관리적 정책 아키텍처를 통합 관리합니다." 
         icon={FileText} 
       />
 
       <div className="hub-table-container">
-        <div className="flex items-center justify-between mb-8 px-4">
-          <div className="space-y-1">
-            <h3 className="text-xl font-black tracking-tight">?쒕퉬님?뺤콉 紐⑸줉</h3>
-            <p className="text-sm text-muted-foreground">로그인 媛쒖씤?뺣낫泥섎갑移 묎텒 님寃뚯떆님?몄쓽 시스템?뺤콉님관리ы빀?덈떎.</p>
+        <div className="flex items-center justify-between mb-8 px-4 text-left">
+          <div className="space-y-1 text-left">
+            <h3 className="text-xl font-black tracking-tight text-left">서비스 정책 목록</h3>
+            <p className="text-sm text-muted-foreground text-left">로그인, 개인정보 처리 방침 등 시스템 전반에서 통용되는 정책 기반 정보를 인덱싱합니다.</p>
           </div>
-          <Button onClick={fetchPolicies} variant="outline" size="sm" className="rounded-xl">
-            ?덈줈怨좎묠
+          <Button onClick={fetchPolicies} variant="outline" size="sm" className="rounded-xl border-2 font-black text-[10px] tracking-widest uppercase">
+            새로고침
           </Button>
         </div>
 
@@ -129,7 +131,7 @@ export default function PolicyAdminClient() {
           data={policies} 
           loading={loading}
           keyField="type"
-          emptyMessage="등록님시스템?뺤콉님?놁뒿?덈떎."
+          emptyMessage="등록된 시스템 정책이 없습니다."
         />
       </div>
 
@@ -139,27 +141,27 @@ export default function PolicyAdminClient() {
           <div className="bg-slate-900 p-8 text-white flex items-center justify-between">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black flex items-center gap-3">
-                <Edit2 className="text-primary" /> ?뺤콉 ?섏젙 : <span className="opacity-50 tracking-widest uppercase">{selectedPolicy?.id || selectedPolicy?.type}</span>
+                <Edit2 className="text-primary" /> 정책 수정 : <span className="opacity-50 tracking-widest uppercase">{selectedPolicy?.id || selectedPolicy?.type}</span>
               </DialogTitle>
             </DialogHeader>
             <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase">
-              <CheckCircle2 size={14} className="text-primary" /> 실시간님紐⑤뱶
+              <CheckCircle2 size={14} className="text-primary" /> 실시간 편집 모드
             </div>
           </div>
 
-          <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar text-left">
             <div className="space-y-3">
-              <Label className="text-sm font-black tracking-widest uppercase opacity-40 ml-2">?뺤콉 제목</Label>
+              <Label className="text-sm font-black tracking-widest uppercase opacity-40 ml-2">정책 제목</Label>
               <Input 
                 value={editTitle} 
                 onChange={(e) => setEditTitle(e.target.value)} 
-                placeholder="?뺤콉 제목님입력하세요
-                className="h-14 rounded-2xl border-2 border-border/50 focus:border-primary/50 bg-slate-50/50"
+                placeholder="정책 제목을 입력하세요"
+                className="h-14 rounded-2xl border-2 border-border/50 focus:border-primary/50 bg-slate-50/50 font-black text-lg"
               />
             </div>
 
             <div className="space-y-3">
-              <Label className="text-sm font-black tracking-widest uppercase opacity-40 ml-2">?뺤콉 이용</Label>
+              <Label className="text-sm font-black tracking-widest uppercase opacity-40 ml-2">정책 내용</Label>
               <RichTextEditor 
                 value={editContent} 
                 onChange={setEditContent} 
@@ -169,17 +171,17 @@ export default function PolicyAdminClient() {
           </div>
 
           <DialogFooter className="p-8 bg-slate-50 border-t border-border/50 flex items-center justify-between">
-             <div className="text-xs text-muted-foreground font-medium italic">
-                * ?섏젙 利됱떆 ?꾨줎?몄뿏님?명꽣 諛님뺤콉 ?섏씠吏님諛섏쁺합니다
+             <div className="text-[10px] text-muted-foreground font-bold italic uppercase tracking-wider">
+                * 수정 즉시 프론트엔드 인터페이스 및 정책 페이지에 반영됩니다.
              </div>
              <div className="flex gap-3">
-                <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} className="rounded-xl h-12 px-8">취소</Button>
+                <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} className="rounded-xl h-12 px-8 font-black text-[10px] tracking-widest uppercase">취소</Button>
                 <Button 
                   onClick={handleSave} 
                   disabled={isSaving}
-                  className="rounded-xl h-12 px-8 bg-primary hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
+                  className="rounded-xl h-12 px-8 bg-slate-900 hover:bg-primary text-white transition-all shadow-lg font-black text-[10px] tracking-widest uppercase"
                 >
-                  {isSaving ? '님중..' : '蹂寃쎌궗님ν븯湲}
+                  {isSaving ? '저장 중...' : '변경 사항 반영하기'}
                 </Button>
              </div>
           </DialogFooter>
@@ -188,4 +190,3 @@ export default function PolicyAdminClient() {
     </div>
   );
 }
-

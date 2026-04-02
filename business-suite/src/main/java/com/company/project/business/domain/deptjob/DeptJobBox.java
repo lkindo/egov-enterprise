@@ -6,9 +6,9 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 /**
- * ?봔??뽯씜?얜똾釉??酉???
+ * ?봔뽯씜?얜똾釉酉
  *
- * @see NDEPTJOBBX ???뵠??筌띲끋釉?
+ * @see NDEPTJOBBX ???뵠筌띲끋釉
  */
 @Entity
 @Table(name = "ndeptjobbx")

@@ -1,4 +1,5 @@
-﻿
+'use client';
+
 import React, { useState } from 'react';
 import {
  Users,
@@ -32,7 +33,7 @@ export interface OrgNode {
 
 const MOCK_ORG_DATA: OrgNode = {
  id: 'o-1',
- name: '源곷Т',
+ name: '김상무',
  role: 'Chief Executive Officer',
  dept: '경영지원본부',
  email: 'ceo@company.com',
@@ -48,8 +49,8 @@ const MOCK_ORG_DATA: OrgNode = {
  phone: '010-2222-3333',
  status: 'busy',
  children: [
- { id: 'o-3', name: '박팀장'Dev Lead', dept: '諛깆뿏?쒓컻諛쒗?', email: 'p@c.com', phone: '010-1', status: 'online' },
- { id: 'o-4', name: '최리드'UI/UX Lead', dept: '?붿옄?명?', email: 'c@c.com', phone: '010-2', status: 'online' },
+ { id: 'o-3', name: '박팀장', role: 'Dev Lead', dept: '백엔드 개발팀', email: 'p@c.com', phone: '010-1', status: 'online' },
+ { id: 'o-4', name: '최리드', role: 'UI/UX Lead', dept: '디자인팀', email: 'c@c.com', phone: '010-2', status: 'online' },
  ]
  },
  {
@@ -61,7 +62,7 @@ const MOCK_ORG_DATA: OrgNode = {
  phone: '010-4444-5555',
  status: 'offline',
  children: [
- { id: 'o-6', name: '강팀장'Audit Lead', dept: '보안?먭님', email: 'k@c.com', phone: '010-3', status: 'online' },
+ { id: 'o-6', name: '강팀장', role: 'Audit Lead', dept: '보안 점검팀', email: 'k@c.com', phone: '010-3', status: 'online' },
  ]
  }
  ]
@@ -145,7 +146,7 @@ export function VisualOrganizationChart() {
  <div className="flex items-center gap-3">
  <div className="p-2.5 bg-primary/10 rounded-xl text-primary"><Users size={20} /></div>
  <div>
- <h3 className="text-sm font-black tracking-tight">湲濡쒕쾶 ?붾젆?좊━</h3>
+ <h3 className="text-sm font-black tracking-tight">글로벌 디렉터리</h3>
  <p className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">Organization & Hierarchy</p>
  </div>
  </div>
@@ -181,14 +182,14 @@ export function VisualOrganizationChart() {
  <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-125 transition-transform">
  <Building2 size={80} />
  </div>
- <h4 className="relative z-10 text-sm font-black tracking-tight opacity-80 mb-2">湲곗뾽 통계</h4>
+ <h4 className="relative z-10 text-sm font-black tracking-tight opacity-80 mb-2">기업 통계</h4>
  <div className="relative z-10 grid grid-cols-2 gap-4 mt-6">
  <div>
- <p className="text-[10px] font-black opacity-60">珥吏곸썝</p>
+ <p className="text-[10px] font-black opacity-60">총 직원</p>
  <p className="text-2xl font-black tracking-tighter">1,204</p>
  </div>
  <div>
- <p className="text-[10px] font-black opacity-60">遺님/p>
+ <p className="text-[10px] font-black opacity-60">부서</p>
  <p className="text-2xl font-black tracking-tighter">24</p>
  </div>
  </div>
@@ -228,7 +229,7 @@ export function VisualOrganizationChart() {
  <h2 className="text-2xl font-black tracking-tighter">{selectedNode.name}</h2>
  <span className="text-[10px] font-black text-emerald-500 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20 tracking-tight">{selectedNode.status}</span>
  </div>
- <p className="text-sm font-bold text-primary tracking-wide">{selectedNode.role} 님<span className="text-muted-foreground opacity-60">{selectedNode.dept}</span></p>
+ <p className="text-sm font-bold text-primary tracking-wide">{selectedNode.role} 님 <span className="text-muted-foreground opacity-60">{selectedNode.dept}</span></p>
  </div>
  </div>
 
@@ -253,4 +254,3 @@ export function VisualOrganizationChart() {
  </div>
  );
 }
-

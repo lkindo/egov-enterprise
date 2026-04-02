@@ -43,7 +43,7 @@ public class RestdeRepositoryImpl implements RestdeRepositoryCustom {
 
         if ("1".equals(searchCondition)) { // ??곸뵬??깆쁽
             return restde.restdeDe.eq(searchKeyword);
-        } else if ("2".equals(searchCondition)) { // ??곸뵬筌?
+        } else if ("2".equals(searchCondition)) { // ??곸뵬筌
             return restde.restdeNm.contains(searchKeyword);
         }
 

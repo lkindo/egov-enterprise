@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { ShieldAlert, Calendar, User, Tag } from 'lucide-react';
 
 const PrivacyLogAdminPage = () => {
     const [params, setParams] = useState<SearchParams>({
-        page踰덊샇: 1,
+        page: 1,
         size: 10,
         searchKeyword: '',
     });
@@ -19,27 +19,27 @@ const PrivacyLogAdminPage = () => {
     const { data, isLoading } = useQuery<PageResponse<PrivacyLog>>({
         queryKey: ['admin-logs-privacy', params],
         queryFn: () => systemLogAdminService.getPrivacyLogs({
-            page踰덊샇: Number(params.page踰덊샇) || 1,
-            size: params.size,
+            pageNo: Number(params.page) || 1,
+            size: params.size || 10,
             searchKeyword: params.searchKeyword,
         }),
     });
 
-    const logs: PrivacyLog[] = data?.resultList || data?.list || [];
-    const pagination = data?.paginationInfo;
+    const logs = (data?.resultList || data?.list || []) as PrivacyLog[];
+    const totalPageCount = data?.totalPage || data?.paginationInfo?.totalPageCount || 1;
 
     const columns: Column<PrivacyLog>[] = [
         {
             header: '로그ID',
             accessor: (item: PrivacyLog) => (
-                <div className="font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
+                <div className="font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums text-left">
                     {item.logId}
                 </div>
             ),
             className: 'w-40'
         },
         {
-            header: '곷챸',
+            header: '대상명',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <User size={14} className="text-primary/40" />
@@ -49,7 +49,7 @@ const PrivacyLogAdminPage = () => {
             )
         },
         {
-            header: '곸쑀님,
+            header: '대상 구분',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/40" />
@@ -61,7 +61,7 @@ const PrivacyLogAdminPage = () => {
             className: 'w-32'
         },
         {
-            header: '泥섎━援щ텇',
+            header: '처리 구분',
             accessor: (item: PrivacyLog) => (
                 <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-[10px] font-black rounded-md border border-orange-100">
                     {item.processSeCode}
@@ -70,7 +70,7 @@ const PrivacyLogAdminPage = () => {
             className: 'w-24'
         },
         {
-            header: '요청?륤D',
+            header: '요청자ID',
             accessor: (item: PrivacyLog) => (
                 <div className="px-3 py-1 bg-white border rounded-full w-fit shadow-sm text-xs font-black text-slate-700">
                     {item.rqesterId}
@@ -79,7 +79,7 @@ const PrivacyLogAdminPage = () => {
             className: 'w-36'
         },
         {
-            header: '등록?쇱떆',
+            header: '등록일시',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     <Calendar size={14} className="opacity-30" />
@@ -92,22 +92,30 @@ const PrivacyLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="媛쒖씤?뺣낫 ?묎렐 로그" breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '로그관리 }, { label: '媛쒖씤?뺣낫 ?묎렐 로그' }]} />
+            <PageHeader 
+                title="개인정보 접근 로그" 
+                breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '개인정보 접근 로그' }]} 
+            />
 
-            <HubHeader title="?꾨씪?대쾭님媛님 highlight="媛쒖씤?뺣낫 ?묎렐 로그" subtitle="媛쒖씤?뺣낫 ?묎렐 및 泥섎━ ?대젰님異붿쟻?섏뿬 데이터보호 而댄뵆?쇱씠?몄뒪瑜蹂댁옣합니다" icon={ShieldAlert} />
+            <HubHeader 
+                title="프라이버시 가드" 
+                highlight="개인정보 접근 로그" 
+                subtitle="개인정보 접근 및 처리 이력을 추적하여 데이터 보호 컴플라이언스를 보장합니다." 
+                icon={ShieldAlert} 
+            />
 
             <StandardDataTable
                 columns={columns}
                 data={logs}
                 loading={isLoading}
                 pagination={{
-                    currentPage: (params.page踰덊샇 || 1) as number,
-                    totalPages: data?.totalPage || pagination?.totalPageCount || 1,
-                    onPageChange: (page: number) => setParams({ ...params, page踰덊샇: page }),
+                    currentPage: (params.page || 1) as number,
+                    totalPages: totalPageCount,
+                    onPageChange: (page: number) => setParams({ ...params, page: page }),
                 }}
                 search={{
-                    placeholder: '곷챸, 요청님寃님..',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 }),
+                    placeholder: '대상명, 요청자 검색..',
+                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page: 1 }),
                 }}
             />
         </div>
@@ -115,4 +123,3 @@ const PrivacyLogAdminPage = () => {
 };
 
 export default PrivacyLogAdminPage;
-

@@ -1,4 +1,4 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
@@ -6,8 +6,8 @@ import { programAdminService } from '@/services/foundation/system/ProgramAdminSe
 import MenuAdminClient from './MenuAdminClient';
 
 export const metadata = {
-    title: '시스템硫붾돱 ?꾪궎?띿쿂 | ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
-    description: '시스템?몃━ 援ъ“ ?꾨줈洹몃옩 ?곌껐님泥닿퀎?곸쑝濡관리ы빀?덈떎.',
+    title: '시스템 메뉴 아키텍처 | 전자정부 표준프레임워크',
+    description: '시스템 트리 구조와 프로그램 연결 체계를 통합 관리합니다.',
 };
 
 export default async function MenuAdminPage() {
@@ -17,7 +17,7 @@ export default async function MenuAdminPage() {
     if (process.env.NODE_ENV === 'development') {
         console.log(`[MenuAdminPage] AccessToken present: ${!!accessToken}`);
         if (!accessToken) {
-            console.log(`[MenuAdminPage] All cookies: ${JSON.stringify(cookieStore.getAll().map(c => c.name))}`);
+            console.log(`[MenuAdminPage] All cookies: ${JSON.stringify((await cookies()).getAll().map(c => c.name))}`);
         }
     }
 
@@ -34,7 +34,7 @@ export default async function MenuAdminPage() {
             programAdminService.getProgramList({ page: 0, size: 1000 }, axiosConfig)
         ]);
 
-        menus = menuData || [];
+        menus = Array.isArray(menuData) ? menuData : (menuData as any)?.list || [];
         programs = programData?.list || [];
     } catch (error: any) {
         if (error.response?.status === 401) {
@@ -45,28 +45,22 @@ export default async function MenuAdminPage() {
     }
 
     if (isUnauthorized) {
-        redirect('/login?expired=true');
+        redirect(`/login?expired=true&redirect=/admin/system/menus`);
     }
 
     return (
-        <Suspense fallback={<MenuAdminLoading />}>
-            <MenuAdminClient initialMenus={menus} programs={programs} />
-        </Suspense>
-    );
-}
-
-function MenuAdminLoading() {
-    return (
-        <div className="max-w-5xl mx-auto space-y-10 animate-pulse">
-            <div className="h-14 w-80 bg-slate-100 rounded-2xl" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[1, 2, 3].map(i => <div key={i} className="h-40 bg-slate-50 rounded-[2.5rem]" />)}
-            </div>
-            <div className="h-40 w-full bg-slate-100/50 rounded-[3rem]" />
-            <div className="space-y-4">
-                {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-24 bg-slate-50 rounded-[2rem]" />)}
-            </div>
+        <div className="p-8 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+            <Suspense fallback={
+                <div className="animate-pulse space-y-12">
+                    <div className="h-20 bg-slate-100 rounded-[2rem] w-1/3" />
+                    <div className="grid grid-cols-12 gap-8">
+                        <div className="col-span-12 lg:col-span-5 h-[800px] bg-slate-100 rounded-[3rem]" />
+                        <div className="col-span-12 lg:col-span-7 h-[800px] bg-slate-100 rounded-[3rem]" />
+                    </div>
+                </div>
+            }>
+                <MenuAdminClient initialMenus={menus} programs={programs} />
+            </Suspense>
         </div>
     );
 }
-

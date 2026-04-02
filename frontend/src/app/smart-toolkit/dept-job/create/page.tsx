@@ -13,14 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createDeptJob } from '@/services/deptJob/deptJobService';
-import { DeptJobVO } from '@/types/business/deptJob';
+import { deptJobUserService, DeptJob } from '@/services/business/user/deptJob/DeptJobUserService';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, ArrowLeft, Send, Sparkles } from "lucide-react";
 
 export default function CreateDeptJobPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState<DeptJobVO>({
+  const [formData, setFormData] = useState<Partial<DeptJob>>({
     deptJobNm: '',
     deptJobCn: '',
     priort: '2', // Default: 보통
@@ -34,7 +33,7 @@ export default function CreateDeptJobPage() {
     }
 
     try {
-      await createDeptJob(formData);
+      await deptJobUserService.saveDeptJob(formData);
       alert('업무가 성공적으로 등록되었습니다.');
       router.push('/smart-toolkit/dept-job/selectDeptJobList');
     } catch (error) {

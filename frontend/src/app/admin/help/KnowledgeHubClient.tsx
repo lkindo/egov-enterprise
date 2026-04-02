@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -26,14 +26,13 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { user } = useAuth(); // Auth context ?곕룞
+  const { user } = useAuth();
   
-  const isAdmin = user?.role === 'ADMIN'; // 관리자 沅뚰븳 여부
+  const isAdmin = user?.role === 'ADMIN'; 
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('latest'); // 'latest' | 'views'
+  const [sortBy, setSortBy] = useState('latest'); 
   const [isScanning, setIsScanning] = useState(false);
   
-  // URL님bbsId 파라미터님?곕씪 珥덇린 移댄뀒怨좊━ ㅼ젙
   const getInitialCategory = () => {
     const bbsId = searchParams.get('bbsId');
     if (bbsId === 'BBSMSTR_CCCCCCCCCCCC') return 'COMMUNITY';
@@ -45,7 +44,6 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
   const currentBbsId = activeCategory === 'COMMUNITY' ? 'BBSMSTR_CCCCCCCCCCCC' : 'BBSMSTR_AAAAAAAAAAAA';
 
-  // 沅뚰븳 ?꾨컲 여부 泥댄겕 (WIKI님FAQ님관리자留
   const isAccessRestricted = !isAdmin && (activeCategory === 'WIKI' || activeCategory === 'FAQ');
 
   // --- Data Fetching ---
@@ -105,9 +103,9 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
         <div className="space-y-1.5 md:space-y-2">
           <div className="flex items-center gap-2 md:gap-3">
              <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-primary animate-pulse" />
-             <span className="text-[8px] md:text-[10px] font-black tracking-[0.3em] md:tracking-[0.5em] text-primary uppercase leading-none">인텔리전스?덈툕 肄섏넄</span>
+             <span className="text-[8px] md:text-[10px] font-black tracking-[0.3em] md:tracking-[0.5em] text-primary uppercase leading-none">인텔리전스 허브 콘솔</span>
           </div>
-          <h2 className="text-2xl md:text-4xl font-black text-foreground tracking-tighter uppercase italic leading-none">?뷀꽣?꾨씪?댁쫰 吏님/h2>
+          <h2 className="text-2xl md:text-4xl font-black text-foreground tracking-tighter uppercase italic leading-none">엔터프라이즈 지식 매트릭스</h2>
         </div>
         <div className="flex items-center gap-3 md:gap-4 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
            {isAdmin && (
@@ -127,8 +125,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
            </Button>
            <div className="h-10 md:h-16 w-[1px] md:w-[2px] bg-border/40 mx-1 md:mx-2 hidden sm:block" />
            <div className="hidden sm:flex flex-col items-end">
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">?대? ?묎렐 ?꾩슜</span>
-              <span className="text-xs font-bold text-slate-800 tracking-tight mt-1 underline decoration-primary/30 decoration-2">관리자 猷⑦듃</span>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">외부 접근 전용</span>
+              <span className="text-xs font-bold text-slate-800 tracking-tight mt-1 underline decoration-primary/30 decoration-2">관리자 루트</span>
            </div>
         </div>
       </motion.div>
@@ -148,11 +146,11 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
         <div className="relative z-20 text-center w-full max-w-4xl space-y-8 md:space-y-12 px-2 font-sans">
           <div className="space-y-3 md:space-y-4">
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none uppercase italic">吏님ы꽭</h1>
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none uppercase italic">지식 베이스</h1>
             <div className="flex items-center justify-center gap-3 md:gap-4">
               <span className="h-[1px] md:h-[2px] w-8 md:w-12 bg-primary/30" />
               <HubInsightBadge label="Enterprise Collective Intelligence Matrix" className="text-white/40 !opacity-40 text-[8px] md:text-[9px]" />
-              <span className="위키, FAQ 및 게시판 통합 검색..." />
+              <span className="h-[1px] md:h-[2px] w-8 md:w-12 bg-primary/30" />
             </div>
           </div>
           
@@ -167,7 +165,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-16 md:h-24 bg-white/5 border-2 border-white/5 rounded-[2rem] md:rounded-[3rem] px-16 md:px-24 text-white text-lg md:text-3xl font-black placeholder:text-white/10 focus:bg-white focus:text-slate-900 transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] focus:ring-[16px] md:focus:ring-[24px] focus:ring-primary/10 tracking-tight"
-                placeholder="吏님인텔리전스ㅼ틦님.."
+                placeholder="지식 인텔리전스 검색..."
               />
             </div>
 
@@ -207,33 +205,24 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
         />
       </motion.div>
 
-      {/* 4. Category Matrix - Mobile Swiper Enabled */}
+      {/* 4. Category Matrix */}
       <motion.div variants={hubItemVariants} className="px-2 overflow-hidden">
         <motion.div 
           drag="x"
           dragConstraints={{ left: -300, right: 0 }}
           className="grid grid-flow-col auto-cols-[85%] sm:auto-cols-auto sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 cursor-grab active:cursor-grabbing"
         >
-          <CategoryCard title="Global Wiki" desc="湲곗닠 ъ뼇님 icon={<Library size={28} />} count={142} color="primary" active={activeCategory === 'WIKI'} onClick={() => setActiveCategory('WIKI')} />
-          <CategoryCard title="고객지원 " desc="빠른 답변" icon={<BookOpen size={28} />} count={28} color="amber" active={activeCategory === 'FAQ'} onClick={() => setActiveCategory('FAQ')} />
+          <CategoryCard title="Global Wiki" desc="기술 사양" icon={<Library size={28} />} count={142} color="primary" active={activeCategory === 'WIKI'} onClick={() => setActiveCategory('WIKI')} />
+          <CategoryCard title="고객지원" desc="빠른 답변" icon={<BookOpen size={28} />} count={28} color="amber" active={activeCategory === 'FAQ'} onClick={() => setActiveCategory('FAQ')} />
           <CategoryCard title="기술 Q&A" desc="포럼 해결" icon={<MessageCircleQuestion size={28} />} count={567} color="rose" active={activeCategory === 'QNA'} onClick={() => setActiveCategory('QNA')} />
           <CategoryCard title="커뮤니티" desc="활성 게시판" icon={<Users size={28} />} count={12} color="emerald" active={activeCategory === 'COMMUNITY'} onClick={() => setActiveCategory('COMMUNITY')} />
         </motion.div>
-        <div className="flex justify-center mt-6 lg:hidden">
-           <div className="flex gap-1.5 items-center">
-              <div className={cn("w-1.5 h-1.5 rounded-full transition-all", activeCategory === 'WIKI' ? "bg-primary w-4" : "bg-border")} />
-              <div className={cn("w-1.5 h-1.5 rounded-full transition-all", activeCategory === 'FAQ' ? "bg-primary w-4" : "bg-border")} />
-              <div className={cn("w-1.5 h-1.5 rounded-full transition-all", activeCategory === 'QNA' ? "bg-primary w-4" : "bg-border")} />
-              <div className={cn("w-1.5 h-1.5 rounded-full transition-all", activeCategory === 'COMMUNITY' ? "bg-primary w-4" : "bg-border")} />
-           </div>
-        </div>
       </motion.div>
 
       {/* 5. Main Content Matrix */}
       <motion.div variants={hubItemVariants} className="grid grid-cols-12 gap-10 px-2 mt-4 relative z-0">
-        {/* Main Stream Area */}
         <div className="col-span-12 lg:col-span-8 space-y-10">
-          <HubSectionCard title="Knowledge Stream" description="실시간꾩쑝濡님좎엯?섎뒗 吏님데이터?좊떅?낅땲님" icon={Layers}>
+          <HubSectionCard title="Knowledge Stream" description="실시간으로 유입되는 지식 데이터 스트림입니다." icon={Layers}>
             <div className="space-y-6">
               <AnimatePresence mode="popLayout">
                 {isAccessRestricted ? (
@@ -246,8 +235,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                       <ShieldAlert size={48} />
                     </div>
                     <div className="text-center space-y-4 max-w-sm">
-                      <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">≪꽭님매트릭스 嫄곕님</h3>
-                      <p className="text-sm font-bold text-muted-foreground/60 leading-relaxed uppercase tracking-tighter">洹섏쓽 현재 노드 沅뚰븳?쇰줈님Wiki 및 FAQ 데이터셋님?묎렐님님?놁뒿?덈떎. 시스템관리자?먭쾶 ?곸쐞 보안 ?대━대윴ㅻ 요청?섏떗?쒖삤.</p>
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">액세스 매트릭스 거부</h3>
+                      <p className="text-sm font-bold text-muted-foreground/60 leading-relaxed uppercase tracking-tighter">귀하의 현재 노드 권한으로는 Wiki 및 FAQ 데이터셋에 접근할 수 없습니다. 시스템 관리자에게 상위 보안 티어 승인을 요청하십시오.</p>
                     </div>
                     <Button 
                        onClick={() => setActiveCategory('COMMUNITY')}
@@ -260,11 +249,11 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                 ) : (
                   <>
                     {isLoading ? (
-                      <div className="p-12 text-center text-muted-foreground animate-pulse">吏님ㅽ듃由쇱쓣 동기화以묒엯?덈떎...</div>
+                      <div className="p-12 text-center text-muted-foreground animate-pulse">지식 스트림을 동기화 중입니다...</div>
                     ) : displayItems.length === 0 ? (
                       <div className="flex flex-col items-center justify-center p-20 space-y-4 border-2 border-dashed rounded-[3rem] border-border/50">
                         <Hash size={40} className="text-muted-foreground/20" />
-                        <p className="text-muted-foreground font-black text-sm uppercase tracking-widest text-center">吏님湲곕줉님李얠쓣 님?놁쓬</p>
+                        <p className="text-muted-foreground font-black text-sm uppercase tracking-widest text-center">지식 기록을 찾을 수 없음</p>
                       </div>
                     ) : displayItems.map((item: any) => (
                       <motion.div 
@@ -277,12 +266,12 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                       >
                         <div className="flex gap-4 md:gap-6 items-start">
                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1.2rem] md:rounded-[1.5rem] bg-slate-50 flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors shrink-0">
-                              <span className="text-[8px] md:text-[10px] font-black text-muted-foreground/40 leading-none">?먯닔</span>
+                              <span className="text-[8px] md:text-[10px] font-black text-muted-foreground/40 leading-none">점수</span>
                               <span className="text-sm md:text-xl font-black text-slate-800 leading-none mt-1">{Math.floor(Math.random() * 20) + 80}</span>
                            </div>
                            <div className="space-y-1 md:space-y-2 min-w-0">
                               <div className="flex items-center gap-2 md:gap-3">
-                                 <span className="text-[8px] md:text-[9px] font-black text-primary uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded leading-none whitespace-nowrap text-ellipsis overflow-hidden">?듭떖 ⑥쐞</span>
+                                 <span className="text-[8px] md:text-[9px] font-black text-primary uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded leading-none whitespace-nowrap text-ellipsis overflow-hidden">핵심 단위</span>
                                  <span className="text-[8px] md:text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.1em] md:tracking-[0.2em]">{item.frstRegisterPnttmStr}</span>
                               </div>
                               <h4 className="text-lg md:text-2xl font-black text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.nttSj}</h4>
@@ -293,13 +282,9 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                            </div>
                         </div>
                         <div className="mt-4 sm:mt-0 flex items-center justify-between sm:justify-end gap-4">
-                           <div className="sm:hidden flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              <span className="text-[9px] font-black text-emerald-500 uppercase">?숆린?붾맖</span>
-                           </div>
                            <div className="hidden sm:flex flex-col items-end">
-                              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">설정?곹깭</span>
-                              <span className="text-xs font-black text-emerald-500 mt-1 uppercase">동기화완료</span>
+                              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">설정 상태</span>
+                              <span className="text-xs font-black text-emerald-500 mt-1 uppercase">동기화 완료</span>
                            </div>
                            <ArrowRight className="text-muted-foreground/20 group-hover:text-primary group-hover:translate-x-2 transition-all w-5 h-5 md:w-6 md:h-6" />
                         </div>
@@ -312,9 +297,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
           </HubSectionCard>
         </div>
 
-        {/* Sidebar Insights Matrix */}
         <div className="col-span-12 lg:col-span-4 space-y-10">
-          <HubSectionCard title="Trending Radar" description="?멸쾶?댁癒쇳듃媛 ?믪? 데이터吏님 icon={TrendingUp}>
+          <HubSectionCard title="Trending Radar" description="인게이지먼트가 높은 데이터 지식" icon={TrendingUp}>
             <div className="space-y-4">
               {hotItems.map((item: any, idx: number) => (
                 <div key={item.id} onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.id}`)} className="flex items-center gap-5 p-4 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group">
@@ -323,7 +307,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                     <p className="text-sm font-black text-slate-800 tracking-tight truncate leading-none uppercase">{item.nttSj}</p>
                     <div className="flex items-center gap-2 mt-2">
                        <TrendingUp size={10} className="text-rose-500" />
-                       <span className="text-[9px] font-black text-rose-500 uppercase">?곹뼢님?먯닔 ?믪쓬</span>
+                       <span className="text-[9px] font-black text-rose-500 uppercase">영향 수치 높음</span>
                     </div>
                   </div>
                   <ChevronRight size={16} className="text-muted-foreground/20" />
@@ -332,7 +316,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
             </div>
           </HubSectionCard>
 
-          <HubSectionCard title="활성 " description="실시간吏님ㅽ듃?뚰겕 ?쒕룞" icon={History} className="bg-slate-900 border-none text-white shadow-2xl overflow-hidden relative">
+          <HubSectionCard title="활동 지식 엔진" description="실시간 지식 네트워크 활동" icon={History} className="bg-slate-900 border-none text-white shadow-2xl overflow-hidden relative">
             <div className="absolute top-0 right-0 p-8 opacity-[0.05] pointer-events-none grayscale rotate-12">
                <History size={120} />
             </div>
@@ -360,8 +344,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                 <Sparkles size={32} />
              </div>
              <div>
-                <h4 className="text-xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">인텔리전스?붿쭊</h4>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-2">활성 데이터매트릭스 ㅼ틪 以</p>
+                <h4 className="text-xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">인텔리전스 엔진</h4>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-2">활성 데이터 매트릭스 스캔 중</p>
              </div>
              <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
                 <motion.div initial={{ width: 0 }} animate={{ width: '84%' }} transition={{ duration: 2 }} className="h-full bg-primary" />
@@ -372,8 +356,6 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
     </motion.div>
   );
 }
-
-// --- Internal Helper Components ---
 
 function HubInsightBadge({ label, className }: { label: string, className?: string }) {
   return (
@@ -470,7 +452,7 @@ function HubSectionCard({ title, description, icon: Icon, children, className }:
         <div className="flex items-center gap-4">
            <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[9px] font-black opacity-20 tracking-widest">?쇱씠釉님곗씠님피드</span>
+              <span className="text-[9px] font-black opacity-20 tracking-widest">라이브 데이터 피드</span>
            </div>
         </div>
       </div>
@@ -478,4 +460,3 @@ function HubSectionCard({ title, description, icon: Icon, children, className }:
     </div>
   );
 }
-

@@ -69,7 +69,7 @@ export default function OnlinePollAdminClient({
             const res = await onlinePollAdminService.getPollList({ keyword: searchKeyword });
             setPolls(res.list);
             setTotalCount(res.total);
-        } catch {
+        } catch (error) {
             toast.error('설문 목록을 불러오지 못했습니다.');
         } finally {
             setLoading(false);
@@ -102,7 +102,7 @@ export default function OnlinePollAdminClient({
             toast.success('새 설문을 등록했습니다.');
             setIsAddOpen(false);
             handleRefresh();
-        } catch {
+        } catch (error) {
             toast.error('설문 등록에 실패했습니다.');
         } finally {
             setLoading(false);

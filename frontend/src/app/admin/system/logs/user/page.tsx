@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { History, Terminal, FileText, Calendar } from 'lucide-react';
 
 const UserLogAdminPage = () => {
     const [params, setParams] = useState<SearchParams>({
-        page踰덊샇: 1,
+        page: 1,
         size: 10,
         searchKeyword: '',
     });
@@ -19,18 +19,18 @@ const UserLogAdminPage = () => {
     const { data, isLoading } = useQuery<PageResponse<UserLog>>({
         queryKey: ['admin-logs-user', params],
         queryFn: () => systemLogAdminService.getUserLogs({
-            page踰덊샇: Number(params.page踰덊샇) || 1,
-            size: params.size,
+            pageNo: Number(params.page) || 1,
+            size: params.size || 10,
             searchKeyword: params.searchKeyword,
         }),
     });
 
-    const logs: UserLog[] = data?.resultList || data?.list || [];
-    const pagination = data?.paginationInfo;
+    const logs = (data?.resultList || data?.list || []) as UserLog[];
+    const totalPageCount = data?.totalPage || data?.paginationInfo?.totalPageCount || 1;
 
     const columns: Column<UserLog>[] = [
         {
-            header: '諛쒖깮?쇱옄',
+            header: '발생일자',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-500 tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
@@ -40,24 +40,26 @@ const UserLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '?쒕퉬설명',
+            header: '서비스설명',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
-                    <span className="font-bold text-slate-700 tracking-tight">{item.svcNm}</span>
+                    <span className="font-bold text-slate-700 tracking-tight text-left">{item.svcNm}</span>
                 </div>
             )
         },
         {
-            header: '硫붿꽌?쒕챸',
+            header: '메소드명',
             accessor: (item: UserLog) => (
-                <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-[10px] text-slate-600">
-                    {item.methodNm}
-                </code>
+                <div className="text-left">
+                    <code className="px-2 py-1 bg-slate-100 rounded border font-mono text-[10px] text-slate-600">
+                        {item.methodNm}
+                    </code>
+                </div>
             )
         },
         {
-            header: '요청?륤D',
+            header: '요청자ID',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-full w-fit shadow-sm">
                     <span className="text-xs font-black text-slate-700">{item.rqesterId}</span>
@@ -66,7 +68,7 @@ const UserLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '등록?쇱떆',
+            header: '등록일시',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/80 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
@@ -79,22 +81,30 @@ const UserLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="사용자로그" breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '로그관리 }, { label: '사용자로그' }]} />
+            <PageHeader 
+                title="사용자 로그" 
+                breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '사용자 로그' }]} 
+            />
 
-            <HubHeader title="?됱젙 ?대젰" highlight="사용자로그" subtitle="시스템ъ슜?먯쓽 ?쒕퉬님紐⑤뱢蹂님곹샇?묒슜 諛님묒뾽 ?섑뻾 ?대젰님紐낇솗?섍쾶 관리ы빀?덈떎." icon={History} />
+            <HubHeader 
+                title="활동 이력" 
+                highlight="사용자 로그" 
+                subtitle="시스템 사용자의 서비스 모듈별 상호작용 및 작업 수행 이력을 명확하게 관리합니다." 
+                icon={History} 
+            />
 
             <StandardDataTable
                 columns={columns}
                 data={logs}
                 loading={isLoading}
                 pagination={{
-                    currentPage: (params.page踰덊샇 || 1) as number,
-                    totalPages: data?.totalPage || pagination?.totalPageCount || 1,
-                    onPageChange: (page: number) => setParams({ ...params, page踰덊샇: page }),
+                    currentPage: (params.page || 1) as number,
+                    totalPages: totalPageCount,
+                    onPageChange: (page: number) => setParams({ ...params, page: page }),
                 }}
                 search={{
-                    placeholder: '?쒕퉬설명, 요청님寃님..',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 }),
+                    placeholder: '서비스설명, 요청자명 검색..',
+                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page: 1 }),
                 }}
             />
         </div>
@@ -102,4 +112,3 @@ const UserLogAdminPage = () => {
 };
 
 export default UserLogAdminPage;
-

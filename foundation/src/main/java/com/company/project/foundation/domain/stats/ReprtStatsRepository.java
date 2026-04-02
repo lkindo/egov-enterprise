@@ -9,13 +9,13 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 癰귣떯???????Repository
+ * 癰귣떯Repository
  */
 @Repository
 public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> {
 
     /**
-     * 癰귣떯???????筌뤴뫖以?鈺곌퀬??(??륁뵠筌?
+     * 癰귣떯筌뤴뫖以鈺곌퀬??(??륁뵠筌
      */
     @Query("""
             SELECT r FROM ReprtStats r
@@ -31,7 +31,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             Pageable pageable);
 
     /**
-     * 癰귣떯????醫륁굨癰?????
+     * 癰귣떯醫륁굨癰
      */
     @Query(value = """
             SELECT r.reprt_ty as reprtTy, COUNT(*) as cnt
@@ -45,7 +45,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             @Param("toDate") String toDate);
 
     /**
-     * 癰귣떯????怨밴묶癰?????
+     * 癰귣떯怨밴묶癰
      */
     @Query(value = """
             SELECT r.reprt_sttus as reprtSttus, COUNT(*) as cnt
@@ -59,7 +59,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             @Param("toDate") String toDate);
 
     /**
-     * ?源낆쨯??고?????
+     * 源낆쨯??고
      */
     @Query(value = """
             SELECT TO_CHAR(r.frst_regist_pnttm, 'YYYY-MM-DD') as statsDate, COUNT(*) as cnt
@@ -73,7 +73,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             @Param("toDate") String toDate);
 
     /**
-     * ?袁⑷퍥 椰꾨똻??
+     * 袁⑷퍥 椰꾨똻??
      */
     @Query("""
             SELECT COUNT(r) FROM ReprtStats r

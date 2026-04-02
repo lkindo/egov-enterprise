@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -48,18 +48,18 @@ export function CommandPalette() {
                 const menus = await menuAdminService.getAllMenus();
 
                 const searchResults: SearchResult[] = menus
-                    .filter(menu => menu.modernRoute && menu.modernRoute !== '#' && menu.id <= 9999999)
+                    .filter(menu => menu.modernRoute && menu.modernRoute !== '#' && menu.menuNo <= 9999999)
                     .map(menu => ({
-                        id: String(menu.id),
+                        id: String(menu.menuNo),
                         category: 'Menu' as const,
                         title: menu.menuNm,
-                        url: menu.modernRoute,
+                        url: menu.modernRoute!,
                         description: menu.menuDc || undefined,
-                        icon: getMenuIcon(menu.modernRoute),
+                        icon: getMenuIcon(menu.modernRoute!),
                     }));
 
                 setResults(searchResults);
-            } catch {
+            } catch (error) {
                 console.error('Failed to load menus:', error);
                 setResults([]);
             } finally {
@@ -128,7 +128,7 @@ export function CommandPalette() {
                         }}
                     />
                     {isLoading && (
-                        <div className="text-xs text-muted-foreground animate-pulse">濡쒕뵫중..</div>
+                        <div className="text-xs text-muted-foreground animate-pulse">로딩 중...</div>
                     )}
                     <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
                         <span className="text-[10px] font-black text-muted-foreground">ESC</span>
@@ -219,15 +219,15 @@ export function CommandPalette() {
                 <div className="p-4 bg-muted/30 border-t flex items-center justify-center gap-6">
                     <div className="flex items-center gap-2">
                         <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">Enter</kbd>
-                        <span className="text-[10px] font-bold text-muted-foreground">?좏깮</span>
+                        <span className="text-[10px] font-bold text-muted-foreground">선택</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">?묅넃</kbd>
-                        <span className="text-[10px] font-bold text-muted-foreground">?대룞</span>
+                        <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">↑↓</kbd>
+                        <span className="text-[10px] font-bold text-muted-foreground">이동</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <Command size={12} className="text-muted-foreground" />
-                        <span className="text-[10px] font-bold text-muted-foreground">EGov ?뷀꽣?꾨씪?댁쫰 인텔리전스/span>
+                        <span className="text-[10px] font-bold text-muted-foreground">EGov Enterprise Intelligence</span>
                     </div>
                 </div>
             </div>

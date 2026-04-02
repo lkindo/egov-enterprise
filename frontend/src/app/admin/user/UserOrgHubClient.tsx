@@ -63,14 +63,14 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
 
   const { data: usersData, isLoading: isUsersLoading, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', searchKeyword, userPage],
-    queryFn: () => userAdminService.getUserList({ page번호: userPage, searchKeyword }),
+    queryFn: () => userAdminService.getUserList({ pageNo: userPage, searchKeyword }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES'
   });
   const users = usersData?.list || [];
 
   const { data: deptsData, isLoading: isDeptsLoading, error: deptsError, refetch: refetchDepts } = useQuery({
     queryKey: ['admin-depts', searchKeyword, deptPage],
-    queryFn: () => deptAdminService.getDeptList({ page번호: deptPage, searchKeyword }),
+    queryFn: () => deptAdminService.getDeptList({ pageNo: deptPage, searchKeyword }),
     enabled: activeTab === 'DEPTS'
   });
   const departments = deptsData?.list || [];

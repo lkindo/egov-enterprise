@@ -10,7 +10,7 @@ import java.util.List;
 public interface SysLogSummaryRepository extends JpaRepository<SysLogSummary, SysLogSummaryId> {
 
     /**
-     * ??뺥돩??삵?????鈺곌퀬??(?袁⑤즲癰?筌욌쵌??
+     * ??뺥돩??삵鈺곌퀬??(袁⑤즲癰筌욌쵌??
      */
     @Query(value = """
             SELECT METHOD_NM AS conectMethod,
@@ -33,7 +33,7 @@ public interface SysLogSummaryRepository extends JpaRepository<SysLogSummary, Sy
             @Param("detailStatsKind") String detailStatsKind);
 
     /**
-     * ??뺥돩??삵?????鈺곌퀬??(?遺얩?筌욌쵌??
+     * ??뺥돩??삵鈺곌퀬??(遺얩筌욌쵌??
      */
     @Query(value = """
             SELECT METHOD_NM AS conectMethod,
@@ -56,7 +56,7 @@ public interface SysLogSummaryRepository extends JpaRepository<SysLogSummary, Sy
             @Param("detailStatsKind") String detailStatsKind);
 
     /**
-     * ??뺥돩??삵?????鈺곌퀬??(??고?筌욌쵌??
+     * ??뺥돩??삵鈺곌퀬??(??고筌욌쵌??
      */
     @Query(value = """
             SELECT METHOD_NM AS conectMethod,

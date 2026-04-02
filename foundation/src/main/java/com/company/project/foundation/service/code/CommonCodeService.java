@@ -83,7 +83,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
 
                 return CommonCodeDto.from(commonCodeRepository.save(required(code, "code 는 null 일 수 없습니다")));
         }
-        // --- ?듯?遺꾨쪟?붾?(CmmnClCode) ---
+        // --- ?듯遺꾨쪟?붾?(CmmnClCode) ---
 
         @Override
         public List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull ComDefaultVO searchVO) {
@@ -165,7 +165,7 @@ public class CommonCodeService extends BaseAbstractService implements EgovCommon
                                 .build();
         }
 
-        // --- ?듯?肄붾뱶(洹몃? (CmmnCode) ---
+        // --- ?듯肄붾뱶(洹몃? (CmmnCode) ---
 
         @Override
         public List<CmmnCodeDto> selectCmmnCodeList(@NonNull ComDefaultVO searchVO) {

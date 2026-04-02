@@ -19,7 +19,7 @@ public class StatsVO {
     private long outptCo;
     private long errorCo;
 
-    // BBS ???
+    // BBS 
     private String mxmmInqireBbsId;
     private String mxmmInqireBbsNm;
     private long maxStatsCo;

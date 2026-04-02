@@ -26,7 +26,7 @@ public class FileGroup extends BaseTimeEntity {
     private Long id;
 
     @Column(unique = true, nullable = false, length = 50)
-    private String atchFileId; // ?袁⑹쁽?類? ??? ??명??(UUID ??
+    private String atchFileId; // 袁⑹쁽類 ??? ??명(UUID ??
 
     @Column(length = 1)
     private String useAt;

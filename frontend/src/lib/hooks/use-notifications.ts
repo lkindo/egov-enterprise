@@ -1,4 +1,5 @@
-﻿
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { IMessage, StompSubscription } from '@stomp/stompjs';
 import client from '@/lib/api/client';
@@ -24,8 +25,8 @@ export function useNotifications() {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      // client.ts ?명꽣?됲꽣媛 ?대? data.data 瑜님댁꽌 二쇰濡諛붾줈 ъ슜합니다
-      const [listResult, countResult]: unknown[] = await Promise.all([
+      // client.ts 인터셉터가 이미 data.data를 떼서 주므로 바로 사용합니다.
+      const [listResult, countResult]: any[] = await Promise.all([
         client.get('/notifications').catch(() => []),
         client.get('/notifications/unread-count').catch(() => 0)
       ]);
@@ -36,11 +37,11 @@ export function useNotifications() {
       const actualList = Array.isArray(list) ? list : (list?.list || []);
       setNotifications(actualList);
       setUnreadCount(typeof countData === 'number' ? countData : (countData?.count || 0));
-    } catch {
-      // ?먮윭 로그 異쒕젰 (?꾨줈?뺤뀡?먯꽌님console.error 님?먮윭 紐⑤땲?곕쭅 ?쒕퉬님ъ슜 沅뚯옣)
+    } catch (error) {
+      // 에러 로그 출력 (프로덕션에서는 console.error 대신 에러 모니터링 서비스 사용 권장)
       console.error('Failed to fetch notifications:', error);
-      // ъ슜?먯뿉寃님좎뒪님硫붿떆吏 ?쒖떆
-      toast('?뚮┝님遺덈윭ㅻ뒗님ㅽ뙣있습니다.', 'error');
+      // 사용자에게 토스트 메시지 표시
+      toast('알림을 불러오는데 실패했습니다.', 'error');
     }
   }, [toast]);
 
@@ -49,21 +50,21 @@ export function useNotifications() {
     setNotifications(prev => [newNotif, ...prev]);
     setUnreadCount(prev => prev + 1);
 
-    // Show Real-time Toast
-    toast(newNotif.ntfcSj || '새로운?뚮┝님?꾩갑있습니다.', 'success');
+    // 실시간 토스트 표시
+    toast(newNotif.ntfcSj || '새로운 알림이 도착했습니다.', 'success');
   }, [toast]);
 
-  // Initial load and WebSocket subscription
+  // 초기 로드 및 WebSocket 구독 설정
   useEffect(() => {
     if (user) {
       fetchNotifications();
     }
 
     if (wsClient && isConnected) {
-      // Subscribe to public notifications
+      // 공용 알림 구독
       const publicSub = wsClient.subscribe('/topic/public', handleNewNotification);
 
-      // Subscribe to user-specific notifications
+      // 사용자별 알림 구독
       let userSub: StompSubscription | null = null;
       if (user?.id) {
         userSub = wsClient.subscribe(`/user/${user.id}/queue/notifications`, handleNewNotification);
@@ -74,7 +75,7 @@ export function useNotifications() {
         if (userSub) userSub.unsubscribe();
       };
     } else {
-      // Fallback: Poll every 60 seconds if WS is not available
+      // 폴백: WebSocket을 사용할 수 없는 경우 60초마다 폴링
       const interval = setInterval(() => {
         if (user) fetchNotifications();
       }, 60000);
@@ -86,9 +87,9 @@ export function useNotifications() {
     try {
       await client.put(`/notifications/${id}/read`);
       fetchNotifications();
-    } catch {
+    } catch (error) {
       console.error('Failed to mark notification as read:', error);
-      toast('?뚮┝ ?쎌쓬 泥섎━님ㅽ뙣있습니다.', 'error');
+      toast('알림 읽음 처리에 실패했습니다.', 'error');
     }
   };
 

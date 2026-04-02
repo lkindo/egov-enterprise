@@ -49,7 +49,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
   const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
 
   const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd || '');
-  const [pageNo, setPageNo] = useState(initialParams.pageNo || 1);
+  const [page, setPage] = useState(initialParams.page || 1);
   const [searchCnd, setSearchCnd] = useState(initialParams.searchCnd || '0');
   const [orderBy, setOrderBy] = useState(initialParams.orderBy || 'date');
   const [startDate, setStartDate] = useState<Date | undefined>(initialParams.startDate ? new Date(initialParams.startDate) : undefined);
@@ -63,7 +63,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
 
   const { data, isLoading: loading } = useBoardList({
     bbsId,
-    pageNo,
+    page,
     pageUnit: 10,
     searchWrd,
     searchCnd,
@@ -78,7 +78,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setPageNo(1);
+    setPage(1);
   };
 
   return (
@@ -265,7 +265,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                          <BookOpen size={100} />
                        </div>
                        <Badge className="absolute top-6 left-6 bg-white/90 text-slate-900 border-none font-black backdrop-blur-md">
-                         번호. {totalCount - ((pageNo - 1) * 10) - idx}
+                         번호. {totalCount - ((page - 1) * 10) - idx}
                        </Badge>
                     </div>
                     <CardContent className="p-8 space-y-4 bg-white relative z-10">
@@ -308,7 +308,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                   {list.map((item: BoardPost, idx: number) => (
                     <TableRow key={item.nttId} className="hover:bg-primary/[0.02] transition-all group border-b last:border-0">
                       <TableCell className="text-center font-bold text-sm text-slate-400 py-8">
-                        {totalCount - ((pageNo - 1) * 10) - idx}
+                        {totalCount - ((page - 1) * 10) - idx}
                       </TableCell>
                       <TableCell className="px-6 py-8">
                         <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`} className="group/link flex flex-col gap-1">
@@ -352,21 +352,21 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
             <div className="flex items-center justify-center gap-8 py-10">
               <Button
                 variant="outline"
-                onClick={() => setPageNo((p: number) => Math.max(1, p - 1))}
-                disabled={pageNo === 1}
+                onClick={() => setPage((p: number) => Math.max(1, p - 1))}
+                disabled={page === 1}
                 className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
               >
                 이전
               </Button>
               <div className="flex items-center gap-4 bg-slate-900 px-8 py-3 rounded-2xl shadow-xl">
-                <span className="text-lg font-black text-white">{pageNo}</span>
+                <span className="text-lg font-black text-white">{page}</span>
                 <div className="h-4 w-px bg-white/20" />
                 <span className="text-sm font-bold text-white/50">{totalPages}</span>
               </div>
               <Button
                 variant="outline"
-                onClick={() => setPageNo((p: number) => Math.min(totalPages, p + 1))}
-                disabled={pageNo === totalPages}
+                onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
                 className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
               >
                 다음

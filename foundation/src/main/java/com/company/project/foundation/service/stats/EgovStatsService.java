@@ -9,18 +9,18 @@ import java.util.List;
 public interface EgovStatsService {
 
     /**
-     * ?묒냽 ????議고??     */
+     * ?묒냽 議고??     */
     List<StatsDto> getConnectionStats(String fromDate, String toDate, String statsKind);
 
     /**
-     * 寃뚯?臾?????議고??     */
+     * 寃뚯臾議고??     */
     List<StatsDto> getBoardStats(String fromDate, String toDate, String statsKind);
 
     /**
-     * ?????????議고??     */
+     * 議고??     */
     List<StatsDto> getUserStats(String fromDate, String toDate, String statsKind);
 
     /**
-     * ?붿껌 ????議고??     */
+     * ?붿껌 議고??     */
     List<StatsDto> getRequestStats(String fromDate, String toDate, String statsKind);
 }

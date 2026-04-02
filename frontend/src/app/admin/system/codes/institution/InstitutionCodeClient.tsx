@@ -51,11 +51,11 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
   const loadListData = async (wrd: string = searchWrd, page: number = pageNo) => {
     try {
       setLoading(true);
-      const res = await codeAdminService.getInstitutionCodeList({ searchWrd: wrd, page번호: page });
+      const res = await codeAdminService.getInstitutionCodeList({ searchWrd: wrd, pageNo: page });
       setData(res.list || []);
       setTotal(res.total || 0);
       setPageNo(page);
-    } catch {
+    } catch (error) {
       toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);
@@ -65,11 +65,11 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
   const loadReceptionData = async (wrd: string = searchWrd, page: number = pageNo) => {
     try {
       setLoading(true);
-      const res = await codeAdminService.getInstitutionCodeRecptnList({ searchWrd: wrd, page번호: page });
+      const res = await codeAdminService.getInstitutionCodeRecptnList({ searchWrd: wrd, pageNo: page });
       setReceptionData(res.list || []);
       setTotal(res.total || 0);
       setPageNo(page);
-    } catch {
+    } catch (error) {
       toast('수신 내역을 불러오는 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);
@@ -87,7 +87,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       });
       toast('성공적으로 반영되었습니다.', 'success');
       loadReceptionData();
-    } catch {
+    } catch (error) {
       toast('반영 처리 중 오류가 발생했습니다.', 'error');
     }
   };

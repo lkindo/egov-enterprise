@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 洹몃??????퉬??
+ * 洹몃퉬??
  */
 @Service("projectGroupManageService")
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class GroupManageService {
     private final GroupManageRepository groupManageRepository;
 
     /**
-     * 洹몃?紐⑸?議고??     */
+     * 洹몃紐⑸議고??     */
     public List<GroupManageDto> selectGroupList(ComDefaultVO searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
@@ -44,7 +44,7 @@ public class GroupManageService {
     }
 
     /**
-     * 洹몃?紐⑸???嫄댁??     */
+     * 洹몃紐⑸嫄댁??     */
     public int selectGroupListTotCnt(ComDefaultVO searchVO) {
         String keyword = searchVO.getSearchKeyword();
         if (keyword != null && !keyword.isEmpty()) {

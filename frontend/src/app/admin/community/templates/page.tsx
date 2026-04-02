@@ -1,20 +1,19 @@
-﻿import { templateAdminService } from '@/services/foundation/system/TemplateAdminService';
+import { templateAdminService } from '@/services/foundation/system/TemplateAdminService';
 import { cookies } from 'next/headers';
 import TemplateAdminClient from './TemplateAdminClient';
 
 export const metadata = {
- title: '?쒗뵆由관리| ?쒖뒪?쒓由,
+  title: '템플릿 관리 | 시스템 관리',
 };
 
 export default async function TemplateAdminPage() {
- const cookieStore = await cookies();
- const accessToken = cookieStore.get('accessToken')?.value;
- const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
+  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- const initialTemplates = await templateAdminService.getTemplateList(axiosConfig).catch(() => []);
+  const initialTemplates = await templateAdminService.getTemplateList(axiosConfig).catch(() => []);
 
- return (
- <TemplateAdminClient initialTemplates={initialTemplates} />
- );
+  return (
+    <TemplateAdminClient initialTemplates={initialTemplates} />
+  );
 }
-

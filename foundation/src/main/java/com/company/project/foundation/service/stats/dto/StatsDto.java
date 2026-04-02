@@ -4,12 +4,12 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * ????寃곌??DTO
+ * 寃곌??DTO
  */
 @Getter
 @Builder
 public class StatsDto {
-    // 寃??議곌?
+    // 寃議곌?
                      String fromDate;
     private String toDate;
     private String statsKind;
