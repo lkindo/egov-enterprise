@@ -1,6 +1,6 @@
 package com.company.project.foundation.service.user;
 
-import com.company.project.foundation.IntegrationTest;
+import com.company.project.foundation.support.IntegrationTest;
 import com.company.project.foundation.domain.auth.UserAuthorityRepository;
 import com.company.project.foundation.domain.user.entity.User;
 import com.company.project.foundation.domain.user.repository.UserRepository;
@@ -56,18 +56,19 @@ class UserServiceIntegrationTest {
         entityManager.clear();
 
         // When
-        List<UserDto> users = userService.getAllUsers();
+        List<UserDto> users = userService.getUserList();
 
         // Then
         assertThat(users).isNotEmpty();
     }
 
-    private void createUser(String loginId, String name, String role) {
+    private void createUser(String userId, String name, String role) {
         User user = User.builder()
-                .loginId(loginId)
-                .name(name)
+                .userId(userId)
+                .userNm(name)
+                .esntlId("ESNTL_" + userId)
                 .password(passwordEncoder.encode("password"))
-                .email(loginId + "@example.com")
+                .emailAdres(userId + "@example.com")
                 .build();
         userRepository.save(user);
     }

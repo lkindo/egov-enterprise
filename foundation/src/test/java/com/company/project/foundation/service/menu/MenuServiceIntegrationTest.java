@@ -1,6 +1,6 @@
 package com.company.project.foundation.service.menu;
 
-import com.company.project.foundation.IntegrationTest;
+import com.company.project.foundation.support.IntegrationTest;
 import com.company.project.foundation.domain.auth.MenuAuthority;
 import com.company.project.foundation.domain.auth.MenuAuthority.MenuAuthorityId;
 import com.company.project.foundation.domain.auth.MenuAuthorityRepository;

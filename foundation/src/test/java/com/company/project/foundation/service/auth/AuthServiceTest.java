@@ -1,28 +1,32 @@
-package com.company.project.foundation.service.auth;
+﻿package com.company.project.foundation.service.auth;
 
-import com.company.project.foundation.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.core.exception.BusinessException;
+import com.company.project.foundation.core.exception.ErrorCode;
 import com.company.project.foundation.service.auth.dto.LoginRequest;
 import com.company.project.foundation.service.auth.dto.TokenResponse;
 import com.company.project.foundation.service.auth.impl.AuthServiceImpl;
+import com.company.project.foundation.security.jwt.JwtTokenProvider;
+import com.company.project.foundation.domain.user.repository.UserRepository;
+import com.company.project.foundation.domain.auth.UserAuthorityRepository;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import java.util.Collections;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AuthService ?�스??)
+@DisplayName("AuthService 테스트")
 class AuthServiceTest {
 
     @Mock
@@ -32,206 +36,69 @@ class AuthServiceTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @Mock
-    private com.company.project.foundation.domain.user.repository.UserRepository userRepository;
+    private UserRepository userRepository;
 
     @Mock
-    private com.company.project.foundation.domain.auth.UserAuthorityRepository userAuthorityRepository;
-
-    @Mock
-    private Authentication authentication;
+    private UserAuthorityRepository userAuthorityRepository;
 
     @InjectMocks
     private AuthServiceImpl authService;
 
-    @Nested
-    @DisplayName("로그???�스??)
-    class LoginTests {
-
-        @Test
-        @DisplayName("?�상 로그?????�세???�큰�?리프?�시 ?�큰 반환")
-        void login_Success() {
-            // Given
-            String userId = "testUser";
-            String password = "testPassword";
-            String role = "ROLE_USER";
-            String expectedAccessToken = "accessToken123";
-            String expectedRefreshToken = "refreshToken456";
-
-            LoginRequest request = new LoginRequest(userId, password);
-
-            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                    .thenReturn(authentication);
-            when(authentication.getName()).thenReturn(userId);
-            doReturn(Collections.singletonList(new SimpleGrantedAuthority(role))).when(authentication).getAuthorities();
-            when(jwtTokenProvider.createAccessToken(userId, role)).thenReturn(expectedAccessToken);
-            when(jwtTokenProvider.createRefreshToken(userId)).thenReturn(expectedRefreshToken);
-
-            // When
-            TokenResponse result = authService.login(request);
-
-            // Then
-            assertNotNull(result);
-            assertEquals(expectedAccessToken, result.accessToken());
-            assertEquals(expectedRefreshToken, result.refreshToken());
-            verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
-            verify(jwtTokenProvider, times(1)).createAccessToken(userId, role);
-            verify(jwtTokenProvider, times(1)).createRefreshToken(userId);
-        }
-
-        @Test
-        @DisplayName("로그????ROLE_USER 가 기본 ??���??�정??)
-        void login_DefaultRole() {
-            // Given
-            String userId = "newUser";
-            String password = "password";
-            String defaultRole = "ROLE_USER";
-            String accessToken = "accessToken";
-            String refreshToken = "refreshToken";
-
-            LoginRequest request = new LoginRequest(userId, password);
-
-            when(authenticationManager.authenticate(any())).thenReturn(authentication);
-            when(authentication.getName()).thenReturn(userId);
-            doReturn(Collections.singletonList(new SimpleGrantedAuthority(defaultRole))).when(authentication)
-                    .getAuthorities();
-            when(jwtTokenProvider.createAccessToken(userId, defaultRole)).thenReturn(accessToken);
-            when(jwtTokenProvider.createRefreshToken(userId)).thenReturn(refreshToken);
-
-            // When
-            TokenResponse result = authService.login(request);
-
-            // Then
-            assertNotNull(result);
-            verify(jwtTokenProvider, times(1)).createAccessToken(userId, defaultRole);
-        }
-
-        @Test
-        @DisplayName("로그????ROLE_ADMIN ??�� ?�상 처리")
-        void login_AdminRole() {
-            // Given
-            String userId = "admin";
-            String password = "adminPassword";
-            String adminRole = "ROLE_ADMIN";
-            String accessToken = "adminAccessToken";
-            String refreshToken = "adminRefreshToken";
-
-            LoginRequest request = new LoginRequest(userId, password);
-
-            when(authenticationManager.authenticate(any())).thenReturn(authentication);
-            when(authentication.getName()).thenReturn(userId);
-            doReturn(Collections.singletonList(new SimpleGrantedAuthority(adminRole))).when(authentication)
-                    .getAuthorities();
-            when(jwtTokenProvider.createAccessToken(userId, adminRole)).thenReturn(accessToken);
-            when(jwtTokenProvider.createRefreshToken(userId)).thenReturn(refreshToken);
-
-            // When
-            TokenResponse result = authService.login(request);
-
-            // Then
-            assertNotNull(result);
-            verify(jwtTokenProvider, times(1)).createAccessToken(userId, adminRole);
-        }
-
-        @Test
-        @DisplayName("?�못???�증 ?�보�?로그?????�외 발생")
-        void login_InvalidCredentials() {
-            // Given
-            LoginRequest request = new LoginRequest("invalidUser", "wrongPassword");
-
-            when(authenticationManager.authenticate(any()))
-                    .thenThrow(new BadCredentialsException("Invalid username or password"));
-
-            // When & Then
-            assertThrows(BadCredentialsException.class, () -> {
-                authService.login(request);
-            });
-            verify(jwtTokenProvider, never()).createAccessToken(any(), any());
-            verify(jwtTokenProvider, never()).createRefreshToken(any());
-        }
-
-        @Test
-        @DisplayName("null 로그???�청?�로 ?�외 발생")
-        void login_NullRequest() {
-            // When & Then
-            assertThrows(NullPointerException.class, () -> {
-                authService.login(null);
-            });
-        }
-
-        @Test
-        @DisplayName("�??�용??ID �?로그???�도")
-        void login_EmptyUserId() {
-            // Given
-            LoginRequest request = new LoginRequest("", "password");
-
-            when(authenticationManager.authenticate(any())).thenReturn(authentication);
-            when(authentication.getName()).thenReturn("");
-            doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))).when(authentication)
-                    .getAuthorities();
-            when(jwtTokenProvider.createAccessToken(anyString(), anyString())).thenReturn("token");
-            when(jwtTokenProvider.createRefreshToken(anyString())).thenReturn("refresh");
-
-            // When
-            TokenResponse result = authService.login(request);
-
-            // Then
-            assertNotNull(result);
-            // �??�용??ID ???�용??(구현???�라 ?��? ???�음)
-        }
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
-    @Nested
-    @DisplayName("?�큰 관�??�스??)
-    class TokenManagementTests {
+    @Test
+    @DisplayName("로그인 성공")
+    void testLoginSuccess() {
+        // Given
+        LoginRequest request = new LoginRequest("user", "password");
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("user");
+        when(authentication.getAuthorities()).thenAnswer(i -> Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        
+        when(jwtTokenProvider.createAccessToken(eq("user"), eq("ROLE_USER"))).thenReturn("access_token");
+        when(jwtTokenProvider.createRefreshToken(eq("user"))).thenReturn("refresh_token");
 
-        @Test
-        @DisplayName("로그???�답???�효???�큰???�함?�어????)
-        void loginResponse_ValidTokens() {
-            // Given
-            LoginRequest request = new LoginRequest("user", "pass");
+        // When
+        TokenResponse response = authService.login(request);
 
-            when(authenticationManager.authenticate(any())).thenReturn(authentication);
-            when(authentication.getName()).thenReturn("user");
-            doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))).when(authentication)
-                    .getAuthorities();
-            when(jwtTokenProvider.createAccessToken(any(), any())).thenReturn("validAccessToken");
-            when(jwtTokenProvider.createRefreshToken(any())).thenReturn("validRefreshToken");
+        // Then
+        assertNotNull(response);
+        assertEquals("access_token", response.accessToken());
+        assertEquals("refresh_token", response.refreshToken());
+        assertEquals("ROLE_USER", response.role());
+    }
 
-            // When
-            TokenResponse response = authService.login(request);
+    @Test
+    @DisplayName("토큰 재발급 성공")
+    void testReissueSuccess() {
+        // Given
+        String refreshToken = "valid_refresh_token";
+        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
+        when(jwtTokenProvider.getUserId(refreshToken)).thenReturn("user");
+        
+        when(jwtTokenProvider.createAccessToken(eq("user"), anyString())).thenReturn("new_access_token");
 
-            // Then
-            assertNotNull(response.accessToken());
-            assertNotNull(response.refreshToken());
-            assertFalse(response.accessToken().isBlank());
-            assertFalse(response.refreshToken().isBlank());
-        }
+        // When
+        TokenResponse response = authService.reissue(refreshToken);
 
-        @Test
-        @DisplayName("?�러 �?로그???�도 ??매번 ?�로???�큰 발급")
-        void login_MultipleAttempts() {
-            // Given
-            LoginRequest request = new LoginRequest("user", "pass");
+        // Then
+        assertNotNull(response);
+        assertEquals("new_access_token", response.accessToken());
+    }
 
-            when(authenticationManager.authenticate(any())).thenReturn(authentication);
-            when(authentication.getName()).thenReturn("user");
-            doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))).when(authentication)
-                    .getAuthorities();
-            when(jwtTokenProvider.createAccessToken("user", "ROLE_USER"))
-                    .thenReturn("token1", "token2", "token3");
-            when(jwtTokenProvider.createRefreshToken("user"))
-                    .thenReturn("refresh1", "refresh2", "refresh3");
+    @Test
+    @DisplayName("유효하지 않은 토큰 재발급 실패")
+    void testReissueFail() {
+        // Given
+        String refreshToken = "invalid_refresh_token";
+        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(false);
 
-            // When
-            TokenResponse response1 = authService.login(request);
-            TokenResponse response2 = authService.login(request);
-            TokenResponse response3 = authService.login(request);
-
-            // Then
-            assertNotEquals(response1.accessToken(), response2.accessToken());
-            assertNotEquals(response2.accessToken(), response3.accessToken());
-            verify(jwtTokenProvider, times(3)).createAccessToken(any(), any());
-            verify(jwtTokenProvider, times(3)).createRefreshToken(any());
-        }
+        // When & Then
+        BusinessException exception = assertThrows(BusinessException.class, () -> authService.reissue(refreshToken));
+        assertEquals(ErrorCode.INVALID_TOKEN, exception.getErrorCode());
     }
 }

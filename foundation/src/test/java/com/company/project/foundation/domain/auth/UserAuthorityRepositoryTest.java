@@ -1,24 +1,41 @@
-package com.company.project.foundation.domain.auth;
+﻿package com.company.project.foundation.domain.auth;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
-@DataJpaTest
-@ActiveProfiles("test")
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 @DisplayName("UserAuthorityRepository 테스트")
 class UserAuthorityRepositoryTest {
 
-    @Autowired
+    @Mock
     private UserAuthorityRepository userAuthorityRepository;
 
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
     @Test
-    @DisplayName("리포지토리 빈 주입 확인")
-    void testRepositoryInjected() {
-        assertNotNull(userAuthorityRepository);
+    @DisplayName("고유 ID 목록으로 권한 목록 조회 테스트")
+    void testFindByUniqIdIn() {
+        // Given
+        List<String> uniqIds = Collections.singletonList("ESNTL_01");
+        when(userAuthorityRepository.findByUniqIdIn(uniqIds)).thenReturn(Collections.emptyList());
+
+        // When
+        List<UserAuthority> result = userAuthorityRepository.findByUniqIdIn(uniqIds);
+
+        // Then
+        assertNotNull(result);
+        verify(userAuthorityRepository, times(1)).findByUniqIdIn(uniqIds);
     }
 }

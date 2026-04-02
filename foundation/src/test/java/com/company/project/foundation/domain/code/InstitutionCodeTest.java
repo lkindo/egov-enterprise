@@ -11,11 +11,11 @@ class InstitutionCodeTest {
     @DisplayName("InstitutionCode 빌더 생성 확인")
     void testInstitutionCodeBuilder() {
         InstitutionCode code = InstitutionCode.builder()
-                .institytCode("I001")
-                .institytNm("기관명")
+                .insttCode("I001")
+                .allInsttNm("기관명")
                 .build();
 
-        assertEquals("I001", code.getInstitytCode());
-        assertEquals("기관명", code.getInstitytNm());
+        assertEquals("I001", code.getInsttCode());
+        assertEquals("기관명", code.getAllInsttNm());
     }
 }

@@ -2,8 +2,8 @@ package com.company.project.foundation.api.auth;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.service.auth.AuthService;
-import com.company.project.foundation.service.auth.dto.LoginRequestDto;
-import com.company.project.foundation.service.auth.dto.LoginResponseDto;
+import com.company.project.foundation.service.auth.dto.LoginRequest;
+import com.company.project.foundation.service.auth.dto.TokenResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,21 +46,16 @@ class AuthApiControllerTest {
     @DisplayName("로그인 성공")
     void testLoginSuccess() throws Exception {
         // Given
-        LoginRequestDto requestDto = new LoginRequestDto();
-        requestDto.setEmplyrId("user01");
-        requestDto.setPassword("password");
+        LoginRequest request = new LoginRequest("user01", "password");
 
-        LoginResponseDto responseDto = LoginResponseDto.builder()
-                .accessToken("access-token")
-                .refreshToken("refresh-token")
-                .build();
+        TokenResponse tokenResponse = new TokenResponse("access-token", "refresh-token", "ROLE_USER");
 
-        when(authService.login(any())).thenReturn(responseDto);
+        when(authService.login(any())).thenReturn(tokenResponse);
 
         // When & Then
         mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestDto)))
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.accessToken").value("access-token"));
@@ -70,16 +65,14 @@ class AuthApiControllerTest {
     @DisplayName("로그인 실패 - 잘못된 비밀번호")
     void testLoginFail() throws Exception {
         // Given
-        LoginRequestDto requestDto = new LoginRequestDto();
-        requestDto.setEmplyrId("user01");
-        requestDto.setPassword("wrong-password");
+        LoginRequest request = new LoginRequest("user01", "wrong-password");
 
         when(authService.login(any())).thenThrow(new RuntimeException("인증 실패"));
 
         // When & Then
         mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestDto)))
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isInternalServerError());
     }
 }

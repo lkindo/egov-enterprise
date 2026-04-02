@@ -1,44 +1,45 @@
-package com.company.project.foundation.core.exception;
+﻿package com.company.project.foundation.core.exception;
 
 import com.company.project.foundation.core.response.ApiResponse;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("GlobalExceptionHandler 테스트")
 class GlobalExceptionHandlerTest {
 
-    private GlobalExceptionHandler handler;
-
-    @BeforeEach
-    void setUp() {
-        handler = new GlobalExceptionHandler();
-    }
+    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     @Test
-    @DisplayName("BusinessException 처리 확인")
-    void handleBusinessException() {
-        BusinessException ex = new BusinessException(ErrorCode.ENTITY_NOT_FOUND);
-        ResponseEntity<ApiResponse<Object>> response = handler.handleBusinessException(ex);
+    @DisplayName("BusinessException 처리 테스트")
+    void testHandleBusinessException() {
+        // Given
+        BusinessException ex = new BusinessException(ErrorCode.USER_NOT_FOUND);
 
+        // When
+        ResponseEntity<ApiResponse<Void>> response = handler.handleBusinessException(ex);
+
+        // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertFalse(response.getBody().isSuccess());
-        assertEquals("C003", response.getBody().getError().getCode());
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().success());
+        assertEquals("USER_001", response.getBody().code());
     }
 
     @Test
-    @DisplayName("지원하지 않는 HTTP 메서드 예외 처리 확인")
-    void handleHttpRequestMethodNotSupportedException() {
-        HttpRequestMethodNotSupportedException ex = new HttpRequestMethodNotSupportedException("POST");
-        ResponseEntity<ApiResponse<Object>> response = handler.handleHttpRequestMethodNotSupportedException(ex);
+    @DisplayName("일반 Exception 처리 테스트")
+    void testHandleException() {
+        // Given
+        Exception ex = new Exception("unexpected error");
 
-        assertEquals(HttpStatus.METHOD_NOT_ALLOWED, response.getStatusCode());
-        assertEquals("C002", response.getBody().getError().getCode());
+        // When
+        ResponseEntity<ApiResponse<Void>> response = handler.handleException(ex);
+
+        // Then
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
     }
 }

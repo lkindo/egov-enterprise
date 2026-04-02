@@ -2,7 +2,7 @@ package com.company.project.foundation.api.controller.code;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.service.code.CommonCodeService;
-import com.company.project.foundation.service.code.dto.CodeDto;
+import com.company.project.foundation.service.code.dto.CmmnCodeDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,8 +47,8 @@ class CommonCodeApiControllerTest {
     @DisplayName("공통코드 목록 조회 성공")
     void testGetCommonCodes() throws Exception {
         // Given
-        when(commonCodeService.selectCommonCodeList(any())).thenReturn(Collections.emptyList());
-        when(commonCodeService.selectCommonCodeListTotCnt(any())).thenReturn(0);
+        when(commonCodeService.selectCmmnCodeList(any())).thenReturn(Collections.emptyList());
+        when(commonCodeService.selectCmmnCodeListTotCnt(any())).thenReturn(0);
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/codes/common-codes")
@@ -61,10 +61,11 @@ class CommonCodeApiControllerTest {
     @DisplayName("공통코드 상세 조회 성공")
     void testGetCommonCode() throws Exception {
         // Given
-        CodeDto dto = new CodeDto();
-        dto.setCodeId("C001");
-        dto.setCodeIdNm("공통코드01");
-        when(commonCodeService.selectCommonCodeDetail("C001")).thenReturn(dto);
+        CmmnCodeDto dto = CmmnCodeDto.builder()
+                .codeId("C001")
+                .codeIdNm("공통코드01")
+                .build();
+        when(commonCodeService.selectCmmnCodeDetail(any(CmmnCodeDto.class))).thenReturn(dto);
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/codes/common-codes/C001"))
@@ -76,9 +77,10 @@ class CommonCodeApiControllerTest {
     @DisplayName("공통코드 등록 성공")
     void testCreateCommonCode() throws Exception {
         // Given
-        CodeDto dto = new CodeDto();
-        dto.setCodeId("C_NEW");
-        dto.setCodeIdNm("신규 공통코드");
+        CmmnCodeDto dto = CmmnCodeDto.builder()
+                .codeId("C_NEW")
+                .codeIdNm("신규 공통코드")
+                .build();
 
         // When & Then
         mockMvc.perform(post("/api/v1/admin/codes/common-codes")
@@ -86,7 +88,7 @@ class CommonCodeApiControllerTest {
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        verify(commonCodeService, times(1)).insertCommonCode(any(CodeDto.class));
+        verify(commonCodeService, times(1)).insertCmmnCode(any(CmmnCodeDto.class));
     }
 
     @Test
@@ -96,6 +98,6 @@ class CommonCodeApiControllerTest {
         mockMvc.perform(delete("/api/v1/admin/codes/common-codes/C001"))
                 .andExpect(status().isOk());
 
-        verify(commonCodeService, times(1)).deleteCommonCode("C001");
+        verify(commonCodeService, times(1)).deleteCmmnCode(any(CmmnCodeDto.class));
     }
 }
