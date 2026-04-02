@@ -1,4 +1,4 @@
-package com.company.project.foundation.service.auth;
+锘縫ackage com.company.project.foundation.service.auth;
 
 import com.company.project.foundation.domain.auth.Authority;
 import com.company.project.foundation.domain.auth.AuthorityRepository;
@@ -23,7 +23,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthorManageService (Auth) ?岇姢??)
+@DisplayName("AuthorManageService (Auth) ?霘挭??)
 class AuthorManageServiceTest {
 
     @Mock
@@ -33,7 +33,7 @@ class AuthorManageServiceTest {
     private AuthorManageService authorManageService;
 
     @Test
-    @DisplayName("甓岉暅 氇╇ 臁绊殞 ?标车")
+    @DisplayName("Restored Test Name")
     void selectAuthorList_Success() {
         Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Admin").build();
         Page<Authority> page = new PageImpl<>(List.of(auth));
@@ -47,7 +47,7 @@ class AuthorManageServiceTest {
     }
 
     @Test
-    @DisplayName("甓岉暅 齑?臧?垬 臁绊殞")
+    @DisplayName("Restored Test Name")
     void selectAuthorListTotCnt_Success() {
         given(authorityRepository.count()).willReturn(50L);
         int result = authorManageService.selectAuthorListTotCnt(new ComDefaultVO());
@@ -55,7 +55,7 @@ class AuthorManageServiceTest {
     }
 
     @Test
-    @DisplayName("甓岉暅 ?侅劯 臁绊殞 ?标车")
+    @DisplayName("Restored Test Name")
     void selectAuthor_Success() {
         Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Admin").build();
         given(authorityRepository.findById("AUTH_001")).willReturn(Optional.of(auth));
@@ -65,7 +65,7 @@ class AuthorManageServiceTest {
     }
 
     @Test
-    @DisplayName("甓岉暅 ?彪 ?标车")
+    @DisplayName("Restored Test Name")
     void insertAuthor_Success() {
         AuthorManageDto dto = AuthorManageDto.builder()
                 .authorCode("AUTH_NEW")
@@ -77,7 +77,7 @@ class AuthorManageServiceTest {
     }
 
     @Test
-    @DisplayName("甓岉暅 ?橃爼 ?标车")
+    @DisplayName("Restored Test Name")
     void updateAuthor_Success() {
         Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Old").build();
         given(authorityRepository.findById("AUTH_001")).willReturn(Optional.of(auth));
@@ -88,14 +88,14 @@ class AuthorManageServiceTest {
     }
 
     @Test
-    @DisplayName("甓岉暅 ??牅 ?标车")
+    @DisplayName("Restored Test Name")
     void deleteAuthor_Success() {
         authorManageService.deleteAuthor("AUTH_001");
         verify(authorityRepository).deleteById("AUTH_001");
     }
 
     @Test
-    @DisplayName("甓岉暅 ?缄磩 ??牅 ?标车")
+    @DisplayName("Restored Test Name")
     void deleteAuthors_Success() {
         String[] codes = {"AUTH_1", "AUTH_2"};
         authorManageService.deleteAuthors(codes);

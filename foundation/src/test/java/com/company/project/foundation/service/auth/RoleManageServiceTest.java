@@ -1,4 +1,4 @@
-package com.company.project.foundation.service.auth;
+﻿package com.company.project.foundation.service.auth;
 
 import com.company.project.foundation.domain.auth.RoleInfo;
 import com.company.project.foundation.domain.auth.RoleInfoRepository;
@@ -32,7 +32,7 @@ class RoleManageServiceTest {
     private RoleManageService roleManageService;
 
     @Test
-    @DisplayName("??�� 목록 조회 ?�스??)
+    @DisplayName("??븷 紐⑸줉 議고쉶 ?뚯뒪??)
     void selectRoleListTest() {
         // Given
         ComDefaultVO searchVO = new ComDefaultVO();
@@ -57,7 +57,7 @@ class RoleManageServiceTest {
     }
 
     @Test
-    @DisplayName("??�� ?�세 조회 ?�스??)
+    @DisplayName("??븷 ?곸꽭 議고쉶 ?뚯뒪??)
     void selectRoleTest() {
         // Given
         String roleCode = "ROLE_ADMIN";
@@ -78,7 +78,7 @@ class RoleManageServiceTest {
     }
 
     @Test
-    @DisplayName("??�� ?�록 ?�스??)
+    @DisplayName("??븷 ?깅줉 ?뚯뒪??)
     void insertRoleTest() {
         // Given
         RoleManageDto dto = RoleManageDto.builder()
@@ -94,7 +94,7 @@ class RoleManageServiceTest {
     }
 
     @Test
-    @DisplayName("??�� ?�정 ?�스??)
+    @DisplayName("??븷 ?섏젙 ?뚯뒪??)
     void updateRoleTest() {
         // Given
         String roleCode = "ROLE_TARGET";
@@ -114,7 +114,7 @@ class RoleManageServiceTest {
     }
 
     @Test
-    @DisplayName("??�� ??�� ?�스??)
+    @DisplayName("??븷 ??젣 ?뚯뒪??)
     void deleteRoleTest() {
         // Given
         String roleCode = "ROLE_DELETE";
