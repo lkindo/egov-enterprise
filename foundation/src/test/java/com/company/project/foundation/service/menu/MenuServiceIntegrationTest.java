@@ -13,7 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+// import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.cache.CacheManager;
 import java.util.List;
 
@@ -38,7 +38,7 @@ class MenuServiceIntegrationTest {
     @Autowired
     private MenuAuthorityRepository menuAuthorityRepository;
     @Autowired
-    private TestEntityManager entityManager;
+    private jakarta.persistence.EntityManager entityManager;
     @Autowired
     private CacheManager cacheManager;
 

@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+// import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.cache.CacheManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -31,7 +31,7 @@ class UserServiceIntegrationTest {
     @Autowired private UserService userService;
     @Autowired private UserRepository userRepository;
     @Autowired private UserAuthorityRepository userAuthorityRepository;
-    @Autowired private TestEntityManager entityManager;
+    @Autowired private jakarta.persistence.EntityManager entityManager;
     @Autowired private CacheManager cacheManager;
     @Autowired private PasswordEncoder passwordEncoder;
 
