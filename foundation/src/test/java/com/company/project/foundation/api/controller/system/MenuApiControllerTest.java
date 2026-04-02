@@ -47,7 +47,8 @@ class MenuApiControllerTest {
     @DisplayName("메뉴 목록 조회 성공")
     void testGetMenus() throws Exception {
         // Given
-        when(menuService.selectMenuList(any())).thenReturn(Collections.emptyList());
+        when(menuService.selectMenuManageList(any())).thenReturn(Collections.emptyList());
+        when(menuService.selectMenuManageListTotCnt(any())).thenReturn(0);
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/menus"))
@@ -62,7 +63,7 @@ class MenuApiControllerTest {
         MenuDto dto = new MenuDto();
         dto.setMenuNo(1001L);
         dto.setMenuNm("시스템 관리");
-        when(menuService.selectMenu(1001L)).thenReturn(dto);
+        when(menuService.selectMenuManage(1001L)).thenReturn(dto);
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/menus/1001"))
@@ -84,7 +85,7 @@ class MenuApiControllerTest {
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        verify(menuService, times(1)).insertMenu(any(MenuDto.class));
+        verify(menuService, times(1)).insertMenuManage(any(MenuDto.class));
     }
 
     @Test
@@ -94,6 +95,6 @@ class MenuApiControllerTest {
         mockMvc.perform(delete("/api/v1/admin/system/menus/1001"))
                 .andExpect(status().isOk());
 
-        verify(menuService, times(1)).deleteMenu(1001L);
+        verify(menuService, times(1)).deleteMenuManage(any(MenuDto.class));
     }
 }

@@ -47,8 +47,8 @@ class GroupApiControllerTest {
     @DisplayName("그룹 목록 조회 성공")
     void testGetGroups() throws Exception {
         // Given
-        when(groupManageService.selectGroupManageList(any())).thenReturn(Collections.emptyList());
-        when(groupManageService.selectGroupManageListTotCnt(any())).thenReturn(0);
+        when(groupManageService.selectGroupList(any())).thenReturn(Collections.emptyList());
+        when(groupManageService.selectGroupListTotCnt(any())).thenReturn(0);
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/groups")
@@ -64,7 +64,7 @@ class GroupApiControllerTest {
         GroupManageDto dto = new GroupManageDto();
         dto.setGroupId("GROUP_001");
         dto.setGroupNm("관리자 그룹");
-        when(groupManageService.selectGroupManage("GROUP_001")).thenReturn(dto);
+        when(groupManageService.selectGroup("GROUP_001")).thenReturn(dto);
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/groups/GROUP_001"))
@@ -86,7 +86,7 @@ class GroupApiControllerTest {
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        verify(groupManageService, times(1)).insertGroupManage(any(GroupManageDto.class));
+        verify(groupManageService, times(1)).insertGroup(any(GroupManageDto.class));
     }
 
     @Test
@@ -96,6 +96,6 @@ class GroupApiControllerTest {
         mockMvc.perform(delete("/api/v1/admin/system/groups/GROUP_001"))
                 .andExpect(status().isOk());
 
-        verify(groupManageService, times(1)).deleteGroupManage("GROUP_001");
+        verify(groupManageService, times(1)).deleteGroup("GROUP_001");
     }
 }

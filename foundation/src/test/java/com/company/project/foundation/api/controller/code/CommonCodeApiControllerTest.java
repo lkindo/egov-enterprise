@@ -1,11 +1,9 @@
-package com.company.project.foundation.api.controller.code;
+﻿package com.company.project.foundation.api.controller.code;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.service.code.CommonCodeService;
-import com.company.project.foundation.service.code.dto.CmmnCodeDto;
-import com.company.project.foundation.service.code.dto.CmmnDetailCodeDto;
+import com.company.project.foundation.service.code.dto.CodeDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,22 +16,19 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("CommonCodeApiController ?�스??)
+@DisplayName("CommonCodeApiController 테스트")
 class CommonCodeApiControllerTest {
 
     private MockMvc mockMvc;
 
     @Mock
     private CommonCodeService commonCodeService;
-
-    @Mock
-    private EgovPropertyService propertiesService;
 
     @InjectMocks
     private CommonCodeApiController commonCodeApiController;
@@ -46,68 +41,61 @@ class CommonCodeApiControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(commonCodeApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
-        
-        when(propertiesService.getInt("pageUnit")).thenReturn(10);
-        when(propertiesService.getInt("pageSize")).thenReturn(10);
     }
 
     @Test
-    @DisplayName("분류코드 목록 조회 ?�공")
-    void testGetClCodeList() throws Exception {
+    @DisplayName("공통코드 목록 조회 성공")
+    void testGetCommonCodes() throws Exception {
         // Given
-        when(commonCodeService.selectCmmnClCodeList(any())).thenReturn(Collections.emptyList());
-        when(commonCodeService.selectCmmnClCodeListTotCnt(any())).thenReturn(0);
+        when(commonCodeService.selectCommonCodeList(any())).thenReturn(Collections.emptyList());
+        when(commonCodeService.selectCommonCodeListTotCnt(any())).thenReturn(0);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/admin/system/codes/cl")
+        mockMvc.perform(get("/api/v1/admin/codes/common-codes")
                 .param("pageIndex", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    @DisplayName("공통코드 ?�록 ?�공")
-    void testCreateCmmnCode() throws Exception {
+    @DisplayName("공통코드 상세 조회 성공")
+    void testGetCommonCode() throws Exception {
         // Given
-        CmmnCodeDto dto = new CmmnCodeDto();
-        dto.setCodeId("GROUP_001");
-        dto.setCodeIdNm("그룹�?);
-        dto.setClCode("CL001");
-        dto.setUseAt("Y");
+        CodeDto dto = new CodeDto();
+        dto.setCodeId("C001");
+        dto.setCodeIdNm("공통코드01");
+        when(commonCodeService.selectCommonCodeDetail("C001")).thenReturn(dto);
 
         // When & Then
-        mockMvc.perform(post("/api/v1/admin/system/codes/cmmn")
+        mockMvc.perform(get("/api/v1/admin/codes/common-codes/C001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.codeId").value("C001"));
+    }
+
+    @Test
+    @DisplayName("공통코드 등록 성공")
+    void testCreateCommonCode() throws Exception {
+        // Given
+        CodeDto dto = new CodeDto();
+        dto.setCodeId("C_NEW");
+        dto.setCodeIdNm("신규 공통코드");
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/admin/codes/common-codes")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        verify(commonCodeService, times(1)).insertCmmnCode(any(CmmnCodeDto.class));
+        verify(commonCodeService, times(1)).insertCommonCode(any(CodeDto.class));
     }
 
     @Test
-    @DisplayName("?�세코드 ?�세 조회 ?�공")
-    void testGetDetailCode() throws Exception {
-        // Given
-        CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
-        dto.setCodeId("GROUP_001");
-        dto.setCode("CODE_001");
-        dto.setCodeNm("?�세코드�?);
-
-        when(commonCodeService.selectCmmnDetailCodeDetail(any())).thenReturn(dto);
-
+    @DisplayName("공통코드 삭제 성공")
+    void testDeleteCommonCode() throws Exception {
         // When & Then
-        mockMvc.perform(get("/api/v1/admin/system/codes/detail/GROUP_001/CODE_001"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.codeNm").value("?�세코드�?));
-    }
-
-    @Test
-    @DisplayName("?�세코드 ??�� ?�공")
-    void testDeleteDetailCode() throws Exception {
-        // When & Then
-        mockMvc.perform(delete("/api/v1/admin/system/codes/detail/GROUP_001/CODE_001"))
+        mockMvc.perform(delete("/api/v1/admin/codes/common-codes/C001"))
                 .andExpect(status().isOk());
 
-        verify(commonCodeService, times(1)).deleteCmmnDetailCode(any(CmmnDetailCodeDto.class));
+        verify(commonCodeService, times(1)).deleteCommonCode("C001");
     }
 }

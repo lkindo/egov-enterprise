@@ -47,10 +47,12 @@ class ProgramApiControllerTest {
     @DisplayName("프로그램 목록 조회 성공")
     void testGetPrograms() throws Exception {
         // Given
-        when(programService.selectProgramList(any())).thenReturn(Collections.emptyList());
+        when(programService.selectProgrmList(any())).thenReturn(Collections.emptyList());
+        when(programService.selectProgrmListTotCnt(any())).thenReturn(0);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/admin/system/programs"))
+        mockMvc.perform(get("/api/v1/admin/system/programs")
+                .param("pageIndex", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -60,14 +62,14 @@ class ProgramApiControllerTest {
     void testGetProgram() throws Exception {
         // Given
         ProgramDto dto = new ProgramDto();
-        dto.setProgrmFileNm("PROG_001");
-        dto.setProgrmKoreanNm("회원 관리");
-        when(programService.selectProgram("PROG_001")).thenReturn(dto);
+        dto.setProgrmFileNm("PROG_01");
+        dto.setProgrmKoreanNm("프로그램01");
+        when(programService.selectProgrmById("PROG_01")).thenReturn(dto);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/admin/system/programs/PROG_001"))
+        mockMvc.perform(get("/api/v1/admin/system/programs/PROG_01"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.progrmFileNm").value("PROG_001"));
+                .andExpect(jsonPath("$.data.progrmFileNm").value("PROG_01"));
     }
 
     @Test
@@ -84,16 +86,16 @@ class ProgramApiControllerTest {
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        verify(programService, times(1)).insertProgram(any(ProgramDto.class));
+        verify(programService, times(1)).insertProgrm(any(ProgramDto.class));
     }
 
     @Test
     @DisplayName("프로그램 삭제 성공")
     void testDeleteProgram() throws Exception {
         // When & Then
-        mockMvc.perform(delete("/api/v1/admin/system/programs/PROG_001"))
+        mockMvc.perform(delete("/api/v1/admin/system/programs/PROG_01"))
                 .andExpect(status().isOk());
 
-        verify(programService, times(1)).deleteProgram("PROG_001");
+        verify(programService, times(1)).deleteProgrm(any(ProgramDto.class));
     }
 }

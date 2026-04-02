@@ -1,8 +1,8 @@
-﻿package com.company.project.foundation.api.controller.system;
+package com.company.project.foundation.api.controller.system;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
-import com.company.project.foundation.service.system.DeptManageService;
-import com.company.project.foundation.service.system.dto.DeptManageDto;
+import com.company.project.foundation.service.usermanagement.EgovDeptManageService;
+import com.company.project.foundation.service.usermanagement.dto.DeptManageDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -17,6 +18,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -28,7 +30,7 @@ class DeptApiControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private DeptManageService deptManageService;
+    private EgovDeptManageService deptManageService;
 
     @InjectMocks
     private DeptApiController deptApiController;
@@ -47,8 +49,8 @@ class DeptApiControllerTest {
     @DisplayName("부서 목록 조회 성공")
     void testGetDepts() throws Exception {
         // Given
-        when(deptManageService.selectDeptManageList(any())).thenReturn(Collections.emptyList());
-        when(deptManageService.selectDeptManageListTotCnt(any())).thenReturn(0);
+        when(deptManageService.getDeptManageList(any(), any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/departments")
@@ -64,7 +66,7 @@ class DeptApiControllerTest {
         DeptManageDto dto = new DeptManageDto();
         dto.setOrgnztId("ORG_001");
         dto.setOrgnztNm("총무부");
-        when(deptManageService.selectDeptManage("ORG_001")).thenReturn(dto);
+        when(deptManageService.getDeptManage("ORG_001")).thenReturn(dto);
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/departments/ORG_001"))

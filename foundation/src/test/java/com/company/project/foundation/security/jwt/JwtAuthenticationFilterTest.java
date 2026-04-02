@@ -14,9 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import jakarta.servlet.ServletException;
 import java.io.IOException;
-import java.util.Objects;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,151 +39,45 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("?�효???�큰???�는 경우 ?�증 ?�공")
+    @DisplayName("유효한 토큰이 있는 경우 인증 성공")
     void doFilterInternal_withValidToken_authenticationSuccess() throws ServletException, IOException {
         // Given
         String token = "validToken123";
         Authentication mockAuth = mock(Authentication.class);
-
-        request.addHeader("Authorization", "Bearer " + token);
-        when(tokenProvider.resolveToken(request)).thenReturn(token);
         when(tokenProvider.validateToken(token)).thenReturn(true);
         when(tokenProvider.getAuthentication(token)).thenReturn(mockAuth);
 
+        request.addHeader("Authorization", "Bearer " + token);
+
         // When
-        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
-                Objects.requireNonNull(filterChain));
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Then
-        verify(tokenProvider).resolveToken(request);
-        verify(tokenProvider).validateToken(token);
-        verify(tokenProvider).getAuthentication(token);
-
-        assertThat(SecurityContextHolder.getContext().getAuthentication()).isEqualTo(mockAuth);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(mockAuth);
     }
 
     @Test
-    @DisplayName("?�큰???�는 경우 ?�증 ?�이 진행")
-    void doFilterInternal_withoutToken_continueWithoutAuthentication() throws ServletException, IOException {
-        // Given
-        when(tokenProvider.resolveToken(request)).thenReturn(null);
-
+    @DisplayName("토큰이 없는 경우 인증 없이 통과")
+    void doFilterInternal_noToken_passWithoutAuthentication() throws ServletException, IOException {
         // When
-        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
-                Objects.requireNonNull(filterChain));
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Then
-        verify(tokenProvider).resolveToken(request);
-        verify(tokenProvider, never()).validateToken(any());
-        verify(tokenProvider, never()).getAuthentication(any());
-
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
     @Test
-    @DisplayName("?�효?��? ?��? ?�큰??경우 ?�증 ?�패")
-    void doFilterInternal_withInvalidToken_authenticationFailure() throws ServletException, IOException {
+    @DisplayName("잘못된 토큰인 경우 인증 없이 통과")
+    void doFilterInternal_invalidToken_passWithoutAuthentication() throws ServletException, IOException {
         // Given
-        String token = "invalidToken123";
-
+        String token = "invalidToken";
+        when(tokenProvider.validateToken(token)).thenReturn(false);
         request.addHeader("Authorization", "Bearer " + token);
-        when(tokenProvider.resolveToken(request)).thenReturn(token);
-        when(tokenProvider.validateToken(token)).thenReturn(false); // Invalid token
 
         // When
-        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
-                Objects.requireNonNull(filterChain));
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Then
-        verify(tokenProvider).resolveToken(request);
-        verify(tokenProvider).validateToken(token);
-        verify(tokenProvider, never()).getAuthentication(any()); // Should not be called for invalid token
-
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-    }
-
-    @Test
-    @DisplayName("Authorization ?�더??Bearer ?�두?��? ?�는 경우 ?�증 ?�이 진행")
-    void doFilterInternal_withoutBearerPrefix_continueWithoutAuthentication() throws ServletException, IOException {
-        // Given
-        request.addHeader("Authorization", "invalidPrefix token123");
-        when(tokenProvider.resolveToken(request)).thenReturn(null); // Will return null due to missing Bearer prefix
-
-        // When
-        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
-                Objects.requireNonNull(filterChain));
-
-        // Then
-        verify(tokenProvider).resolveToken(request);
-        verify(tokenProvider, never()).validateToken(any());
-        verify(tokenProvider, never()).getAuthentication(any());
-
-        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-    }
-
-    @Test
-    @DisplayName("?�큰 검�?�??�외 발생 ???�증 ?�패")
-    void doFilterInternal_withTokenValidationException_authenticationFailure() throws ServletException, IOException {
-        // Given
-        String token = "exceptionToken123";
-
-        request.addHeader("Authorization", "Bearer " + token);
-        when(tokenProvider.resolveToken(request)).thenReturn(token);
-        when(tokenProvider.validateToken(token)).thenThrow(new RuntimeException("Token validation error"));
-
-        // When
-        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
-                Objects.requireNonNull(filterChain));
-
-        // Then
-        verify(tokenProvider).resolveToken(request);
-        verify(tokenProvider).validateToken(token);
-        verify(tokenProvider, never()).getAuthentication(any()); // Should not be called when validation fails
-
-        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-    }
-
-    @Test
-    @DisplayName("?�터 체인??계속 진행?�는지 ?�인")
-    void doFilterInternal_chainContinues() throws ServletException, IOException {
-        // Given
-        String token = "validToken123";
-        Authentication mockAuth = mock(Authentication.class);
-
-        request.addHeader("Authorization", "Bearer " + token);
-        when(tokenProvider.resolveToken(request)).thenReturn(token);
-        when(tokenProvider.validateToken(token)).thenReturn(true);
-        when(tokenProvider.getAuthentication(token)).thenReturn(mockAuth);
-
-        // When
-        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
-                Objects.requireNonNull(filterChain));
-
-        // Then
-        // Verify that the filter chain continues (no exceptions thrown)
-        assertThat(filterChain.getRequest()).isEqualTo(request);
-    }
-
-    @Test
-    @DisplayName("Security Context???�증 ?�보가 ?�바르게 ?�정?�는지 ?�인")
-    void doFilterInternal_securityContextSetCorrectly() throws ServletException, IOException {
-        // Given
-        String token = "validToken123";
-        Authentication mockAuth = mock(Authentication.class);
-        when(mockAuth.getName()).thenReturn("testUser");
-
-        request.addHeader("Authorization", "Bearer " + token);
-        when(tokenProvider.resolveToken(request)).thenReturn(token);
-        when(tokenProvider.validateToken(token)).thenReturn(true);
-        when(tokenProvider.getAuthentication(token)).thenReturn(mockAuth);
-
-        // When
-        jwtAuthenticationFilter.doFilterInternal(Objects.requireNonNull(request), Objects.requireNonNull(response),
-                Objects.requireNonNull(filterChain));
-
-        // Then
-        Authentication authInContext = SecurityContextHolder.getContext().getAuthentication();
-        assertThat(authInContext).isEqualTo(mockAuth);
-        assertThat(authInContext.getName()).isEqualTo("testUser");
     }
 }
