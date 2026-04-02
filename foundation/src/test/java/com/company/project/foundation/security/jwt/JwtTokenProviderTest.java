@@ -1,89 +1,69 @@
 package com.company.project.foundation.security.jwt;
 
+import com.company.project.foundation.domain.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(MockitoExtension.class)
+@DisplayName("JwtTokenProvider 테스트")
 class JwtTokenProviderTest {
 
-    @InjectMocks
     private JwtTokenProvider jwtTokenProvider;
-
-    @Mock
-    private UserDetailsService userDetailsService;
-
-    private final String secretKey = "testSecretKeyWithEnoughLengthForHmacSha256Algorithm!";
+    private final String secretKey = "testSecretKeytestSecretKeytestSecretKeytestSecretKey";
+    private final long tokenValidityInMilliseconds = 3600000; // 1hour
 
     @BeforeEach
     void setUp() {
+        jwtTokenProvider = new JwtTokenProvider();
         ReflectionTestUtils.setField(jwtTokenProvider, "secretKey", secretKey);
-        jwtTokenProvider.init();
+        ReflectionTestUtils.setField(jwtTokenProvider, "tokenValidityInMilliseconds", tokenValidityInMilliseconds);
+        jwtTokenProvider.afterPropertiesSet();
     }
 
     @Test
-    @DisplayName("?�세???�큰 ?�성 �?검�??�공")
-    void createAndValidateAccessToken() {
+    @DisplayName("액세스 토큰 생성 및 검증 성공")
+    void createToken_and_validate_success() {
         // Given
-        String userId = "testuser";
-        String role = "ROLE_USER";
-
+        User user = User.builder()
+                .loginId("testuser")
+                .name("테스트")
+                .build();
+        
         // When
-        String token = jwtTokenProvider.createAccessToken(userId, role);
-        boolean isValid = jwtTokenProvider.validateToken(token);
-        String extractedUserId = jwtTokenProvider.getUserId(token);
-
+        String token = jwtTokenProvider.createAccessToken(user.getLoginId(), Collections.singletonList("ROLE_USER"));
+        
         // Then
-        assertThat(token).isNotEmpty();
-        assertThat(isValid).isTrue();
-        assertThat(extractedUserId).isEqualTo(userId);
+        assertThat(token).isNotNull();
+        assertThat(jwtTokenProvider.validateToken(token)).isTrue();
     }
 
     @Test
-    @DisplayName("리프?�시 ?�큰 ?�성 �?검�??�공")
-    void createAndValidateRefreshToken() {
+    @DisplayName("토큰에서 인증 정보 조회 성공")
+    void getAuthentication_success() {
         // Given
-        String userId = "testuser";
-
+        String token = jwtTokenProvider.createAccessToken("testuser", Collections.singletonList("ROLE_USER"));
+        
         // When
-        String token = jwtTokenProvider.createRefreshToken(userId);
-        boolean isValid = jwtTokenProvider.validateToken(token);
-        String extractedUserId = jwtTokenProvider.getUserId(token);
-
+        Authentication authentication = jwtTokenProvider.getAuthentication(token);
+        
         // Then
-        assertThat(token).isNotEmpty();
-        assertThat(isValid).isTrue();
-        assertThat(extractedUserId).isEqualTo(userId);
+        assertThat(authentication.getName()).isEqualTo("testuser");
+        assertThat(authentication.getAuthorities()).isNotEmpty();
     }
 
     @Test
-    @DisplayName("?�못???�큰 검�??�패")
-    void validateToken_fail_invalid() {
+    @DisplayName("잘못된 토큰 검증 실패")
+    void validateToken_fail() {
         // Given
-        String invalidToken = "invalid.token.here";
-
-        // When
-        boolean isValid = jwtTokenProvider.validateToken(invalidToken);
-
-        // Then
-        assertThat(isValid).isFalse();
-    }
-
-    @Test
-    @DisplayName("만료???�큰 검�??�패")
-    void validateToken_fail_expired() {
-        // Given
-        // We can't easily test expiration without mocking Date or waiting, 
-        // but we can test if it handles it gracefully.
-        // For simplicity, we just test a clearly invalid token structure.
-        assertThat(jwtTokenProvider.validateToken("")).isFalse();
+        String invalidToken = "invalidToken";
+        
+        // When & Then
+        assertThat(jwtTokenProvider.validateToken(invalidToken)).isFalse();
     }
 }
