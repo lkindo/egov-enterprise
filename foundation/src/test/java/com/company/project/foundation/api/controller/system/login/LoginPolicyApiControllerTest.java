@@ -1,4 +1,4 @@
-package com.company.project.foundation.api.controller.system.login;
+﻿package com.company.project.foundation.api.controller.system.login;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.service.login.LoginPolicyManageService;
@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("LoginPolicyApiController ?�스??)
+@DisplayName("LoginPolicyApiController 테스트")
 class LoginPolicyApiControllerTest {
 
     private MockMvc mockMvc;
@@ -50,7 +50,7 @@ class LoginPolicyApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그???�책 목록 조회 ?�공")
+    @DisplayName("로그인 정책 목록 조회 성공")
     void testGetLoginPolicyList() throws Exception {
         // Given
         when(loginPolicyManageService.selectLoginPolicyList(any())).thenReturn(Collections.emptyList());
@@ -64,12 +64,12 @@ class LoginPolicyApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그???�책 ?�세 조회 ?�공")
+    @DisplayName("로그인 정책 상세 조회 성공")
     void testGetLoginPolicy() throws Exception {
         // Given
         LoginPolicyDto dto = LoginPolicyDto.builder()
                 .emplyrId("user01")
-                .emplyrNm("?�용??1")
+                .emplyrNm("사용자1")
                 .regYn("Y")
                 .build();
         when(loginPolicyManageService.selectLoginPolicy("user01")).thenReturn(dto);
@@ -81,7 +81,7 @@ class LoginPolicyApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그???�책 ?�???�공 - ?�규")
+    @DisplayName("로그인 정책 저장 성공 - 신규")
     void testSaveLoginPolicy_New() throws Exception {
         // Given
         LoginPolicyDto dto = LoginPolicyDto.builder().ipInfo("127.0.0.1").build();
@@ -97,7 +97,7 @@ class LoginPolicyApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그???�책 ?�???�공 - 기존 ?�데?�트")
+    @DisplayName("로그인 정책 저장 성공 - 기존 업데이트")
     void testSaveLoginPolicy_Update() throws Exception {
         // Given
         LoginPolicyDto dto = LoginPolicyDto.builder().ipInfo("127.0.0.1").build();
@@ -113,7 +113,7 @@ class LoginPolicyApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그???�책 ??�� ?�공")
+    @DisplayName("로그인 정책 삭제 성공")
     void testDeleteLoginPolicy() throws Exception {
         // When & Then
         mockMvc.perform(delete("/api/v1/admin/system/login-policies/user01"))

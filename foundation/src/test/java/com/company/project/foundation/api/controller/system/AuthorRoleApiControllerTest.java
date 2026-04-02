@@ -1,4 +1,4 @@
-package com.company.project.foundation.api.controller.system;
+﻿package com.company.project.foundation.api.controller.system;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.service.auth.AuthorRoleManageService;
@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("AuthorRoleApiController ?�스??)
+@DisplayName("AuthorRoleApiController 테스트")
 class AuthorRoleApiControllerTest {
 
     private MockMvc mockMvc;
@@ -47,7 +47,7 @@ class AuthorRoleApiControllerTest {
     }
 
     @Test
-    @DisplayName("권한�?�?목록 조회 ?�공")
+    @DisplayName("권한별 롤 목록 조회 성공")
     void testGetAuthorRoles() throws Exception {
         // Given
         when(authorRoleManageService.selectAuthorRoleList(anyString(), any()))
@@ -61,7 +61,7 @@ class AuthorRoleApiControllerTest {
     }
 
     @Test
-    @DisplayName("권한�?�??�당 ?�???�공")
+    @DisplayName("권한별 롤 할당 저장 성공")
     void testSaveAuthorRoles() throws Exception {
         // Given
         List<String> roleCodes = Arrays.asList("ROLE_WEB_001", "ROLE_WEB_002");
