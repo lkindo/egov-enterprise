@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("UserLog 도메인 단위 테스트")
+@DisplayName("UserLog ?�메???�위 ?�스??)
 class UserLogTest {
 
     @Test
-    @DisplayName("UserLog 생성 및 복합키 필드 확인 테스트")
+    @DisplayName("UserLog ?�성 �?복합???�드 ?�인 ?�스??)
     void userLogTest() {
         // given
         UserLog log = UserLog.builder()
@@ -43,7 +43,7 @@ class UserLogTest {
     }
 
     @Test
-    @DisplayName("UserLogId Equals/HashCode 테스트")
+    @DisplayName("UserLogId Equals/HashCode ?�스??)
     void userLogIdTest() {
         // given
         UserLogId id1 = new UserLogId("20241227", "user01", "S", "M");

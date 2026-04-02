@@ -59,7 +59,7 @@ class UserServiceAdditionalTest {
     }
 
     @Test
-    @DisplayName("사용자 정보 수정 성공")
+    @DisplayName("?�용???�보 ?�정 ?�공")
     void updateUser_success() {
         // Given
         String userId = "testUser";
@@ -84,7 +84,7 @@ class UserServiceAdditionalTest {
     }
 
     @Test
-    @DisplayName("사용자 정보 수정 실패 - 존재하지 않는 사용자")
+    @DisplayName("?�용???�보 ?�정 ?�패 - 존재?��? ?�는 ?�용??)
     void updateUser_fail_userNotFound() {
         // Given
         String userId = "nonexistent";
@@ -98,7 +98,7 @@ class UserServiceAdditionalTest {
     }
 
     @Test
-    @DisplayName("비밀번호 변경 성공")
+    @DisplayName("비�?번호 변�??�공")
     void changePassword_success() {
         // Given
         String userId = "testUser";
@@ -124,7 +124,7 @@ class UserServiceAdditionalTest {
     }
 
     @Test
-    @DisplayName("비밀번호 변경 실패 - 기존 비밀번호 불일치")
+    @DisplayName("비�?번호 변�??�패 - 기존 비�?번호 불일�?)
     void changePassword_fail_invalidOldPassword() {
         // Given
         String userId = "testUser";
@@ -146,7 +146,7 @@ class UserServiceAdditionalTest {
     }
 
     @Test
-    @DisplayName("사용자 삭제 성공")
+    @DisplayName("?�용????�� ?�공")
     void deleteUser_success() {
         // Given
         String userId = "testUser";
@@ -160,7 +160,7 @@ class UserServiceAdditionalTest {
     }
 
     @Test
-    @DisplayName("사용자 삭제 실패 - 존재하지 않는 사용자")
+    @DisplayName("?�용????�� ?�패 - 존재?��? ?�는 ?�용??)
     void deleteUser_fail_userNotFound() {
         // Given
         String userId = "nonexistent";

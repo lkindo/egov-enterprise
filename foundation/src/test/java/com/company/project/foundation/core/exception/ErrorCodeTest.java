@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ErrorCodeTest {
 
     @Test
-    @DisplayName("ErrorCode Getter 작동 테스트")
+    @DisplayName("ErrorCode Getter ?�동 ?�스??)
     void testErrorCodeGetters() {
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
 
@@ -19,7 +19,7 @@ class ErrorCodeTest {
     }
 
     @Test
-    @DisplayName("모든 ErrorCode 값이 정상적으로 정의되어 있는지 확인")
+    @DisplayName("모든 ErrorCode 값이 ?�상?�으�??�의?�어 ?�는지 ?�인")
     void testAllErrorCodeValues() {
         for (ErrorCode errorCode : ErrorCode.values()) {
             assertThat(errorCode.getStatus()).isNotNull();

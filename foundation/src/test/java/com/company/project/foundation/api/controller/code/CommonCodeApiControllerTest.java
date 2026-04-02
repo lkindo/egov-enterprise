@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("CommonCodeApiController 테스트")
+@DisplayName("CommonCodeApiController ?�스??)
 class CommonCodeApiControllerTest {
 
     private MockMvc mockMvc;
@@ -52,7 +52,7 @@ class CommonCodeApiControllerTest {
     }
 
     @Test
-    @DisplayName("분류코드 목록 조회 성공")
+    @DisplayName("분류코드 목록 조회 ?�공")
     void testGetClCodeList() throws Exception {
         // Given
         when(commonCodeService.selectCmmnClCodeList(any())).thenReturn(Collections.emptyList());
@@ -66,12 +66,12 @@ class CommonCodeApiControllerTest {
     }
 
     @Test
-    @DisplayName("공통코드 등록 성공")
+    @DisplayName("공통코드 ?�록 ?�공")
     void testCreateCmmnCode() throws Exception {
         // Given
         CmmnCodeDto dto = new CmmnCodeDto();
         dto.setCodeId("GROUP_001");
-        dto.setCodeIdNm("그룹명");
+        dto.setCodeIdNm("그룹�?);
         dto.setClCode("CL001");
         dto.setUseAt("Y");
 
@@ -85,24 +85,24 @@ class CommonCodeApiControllerTest {
     }
 
     @Test
-    @DisplayName("상세코드 상세 조회 성공")
+    @DisplayName("?�세코드 ?�세 조회 ?�공")
     void testGetDetailCode() throws Exception {
         // Given
         CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
         dto.setCodeId("GROUP_001");
         dto.setCode("CODE_001");
-        dto.setCodeNm("상세코드명");
+        dto.setCodeNm("?�세코드�?);
 
         when(commonCodeService.selectCmmnDetailCodeDetail(any())).thenReturn(dto);
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/codes/detail/GROUP_001/CODE_001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.codeNm").value("상세코드명"));
+                .andExpect(jsonPath("$.data.codeNm").value("?�세코드�?));
     }
 
     @Test
-    @DisplayName("상세코드 삭제 성공")
+    @DisplayName("?�세코드 ??�� ?�공")
     void testDeleteDetailCode() throws Exception {
         // When & Then
         mockMvc.perform(delete("/api/v1/admin/system/codes/detail/GROUP_001/CODE_001"))

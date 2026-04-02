@@ -33,7 +33,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * UserService 기능 테스트
+ * UserService 기능 ?�스??
  */
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -60,7 +60,7 @@ class UserServiceTest {
   void setUp() {
     mockUser = User.builder()
         .userId("testUser")
-        .userNm("테스트사용자")
+        .userNm("?�스?�사?�자")
         .esntlId("USR_1234567890123456")
         .role(Role.USER)
         .password("encodedPassword")
@@ -69,14 +69,14 @@ class UserServiceTest {
     signupRequest = new UserSignupRequest(
         "newUser",
         "password123!",
-        "신규사용자",
+        "?�규?�용??,
         Role.USER,
         "hint",
         "answer");
   }
 
   @Test
-  @DisplayName("전체 사용자 목록 조회 테스트")
+  @DisplayName("?�체 ?�용??목록 조회 ?�스??)
   void getUserList_success() {
     // Given
     List<User> userList = Arrays.asList(mockUser);
@@ -84,7 +84,7 @@ class UserServiceTest {
     lenient().when(userAuthorityRepository.findByUniqIdIn(anyList())).thenReturn(List.of());
     lenient().when(userMapper.toDtoWithAuthority(any(User.class), any())).thenReturn(UserDto.builder()
         .userId("testUser")
-        .userNm("테스트사용자")
+        .userNm("?�스?�사?�자")
         .esntlId("USR_1234567890123456")
         .build());
 
@@ -94,11 +94,11 @@ class UserServiceTest {
     // Then
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getUserId()).isEqualTo("testUser");
-    assertThat(result.get(0).getUserNm()).isEqualTo("테스트사용자");
+    assertThat(result.get(0).getUserNm()).isEqualTo("?�스?�사?�자");
   }
 
   @Test
-  @DisplayName("페이징된 사용자 목록 조회 테스트")
+  @DisplayName("?�이징된 ?�용??목록 조회 ?�스??)
   void getPagedUserList_success() {
     // Given
     List<User> userList = Arrays.asList(mockUser);
@@ -108,7 +108,7 @@ class UserServiceTest {
     lenient().when(userAuthorityRepository.findByUniqIdIn(anyList())).thenReturn(List.of());
     lenient().when(userMapper.toDtoWithAuthority(any(User.class), any())).thenReturn(UserDto.builder()
         .userId("testUser")
-        .userNm("테스트사용자")
+        .userNm("?�스?�사?�자")
         .esntlId("USR_1234567890123456")
         .build());
 
@@ -121,14 +121,14 @@ class UserServiceTest {
   }
 
   @Test
-  @DisplayName("사용자 단건 조회 테스트 - userId 기준")
+  @DisplayName("?�용???�건 조회 ?�스??- userId 기�?")
   void getUserById_success_withUserId() {
     // Given
     when(userRepository.findById("testUser")).thenReturn(Optional.of(mockUser));
     lenient().when(userAuthorityRepository.findById(anyString())).thenReturn(Optional.empty());
     lenient().when(userMapper.toDtoWithAuthority(any(User.class), any())).thenReturn(UserDto.builder()
         .userId("testUser")
-        .userNm("테스트사용자")
+        .userNm("?�스?�사?�자")
         .esntlId("USR_1234567890123456")
         .build());
 
@@ -137,11 +137,11 @@ class UserServiceTest {
 
     // Then
     assertThat(result.getUserId()).isEqualTo("testUser");
-    assertThat(result.getUserNm()).isEqualTo("테스트사용자");
+    assertThat(result.getUserNm()).isEqualTo("?�스?�사?�자");
   }
 
   @Test
-  @DisplayName("사용자 단건 조회 테스트 - esntlId 기준")
+  @DisplayName("?�용???�건 조회 ?�스??- esntlId 기�?")
   void getUserById_success_withEsntlId() {
     // Given
     when(userRepository.findById("USR_1234567890123456")).thenReturn(Optional.empty());
@@ -149,7 +149,7 @@ class UserServiceTest {
     lenient().when(userAuthorityRepository.findById(anyString())).thenReturn(Optional.empty());
     lenient().when(userMapper.toDtoWithAuthority(any(User.class), any())).thenReturn(UserDto.builder()
         .userId("testUser")
-        .userNm("테스트사용자")
+        .userNm("?�스?�사?�자")
         .esntlId("USR_1234567890123456")
         .build());
 
@@ -162,7 +162,7 @@ class UserServiceTest {
   }
 
   @Test
-  @DisplayName("사용자 단건 조회 실패 - 존재하지 않는 사용자")
+  @DisplayName("?�용???�건 조회 ?�패 - 존재?��? ?�는 ?�용??)
   void getUserById_fail_userNotFound() {
     // Given
     when(userRepository.findById("nonexistent")).thenReturn(Optional.empty());
@@ -175,12 +175,12 @@ class UserServiceTest {
   }
 
   @Test
-  @DisplayName("신규 사용자 등록 테스트")
+  @DisplayName("?�규 ?�용???�록 ?�스??)
   void registerUser_success() {
     // Given
     String userId = "newUser";
     String password = "password123!";
-    String userNm = "신규등록사용자";
+    String userNm = "?�규?�록?�용??;
     String passwordHint = "hint";
     String passwordCnsr = "answer";
     Role role = Role.ADMIN;
@@ -202,13 +202,13 @@ class UserServiceTest {
     User savedUser = userCaptor.getValue();
     assertThat(savedUser.getUserId()).isEqualTo(userId);
     assertThat(savedUser.getPassword()).isEqualTo(encodedPassword);
-    assertThat(savedUser.getUserNm()).isEqualTo("신규등록사용자");
+    assertThat(savedUser.getUserNm()).isEqualTo("?�규?�록?�용??);
     assertThat(savedUser.getRole()).isEqualTo(role);
     assertThat(savedUser.getEsntlId()).startsWith("USR_");
   }
 
   @Test
-  @DisplayName("회원가입 요청 처리 테스트")
+  @DisplayName("?�원가???�청 처리 ?�스??)
   void signup_success() {
     // Given
     when(userRepository.existsById("newUser")).thenReturn(false);
@@ -216,14 +216,14 @@ class UserServiceTest {
     when(passwordEncoder.encode("password123!")).thenReturn(encodedPassword);
     lenient().when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
     lenient().when(userAuthorityRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-    when(userMapper.toResponse(any())).thenReturn(new UserResponse("newUser", "신규사용자", Role.USER));
+    when(userMapper.toResponse(any())).thenReturn(new UserResponse("newUser", "?�규?�용??, Role.USER));
 
     // When
     UserResponse result = userService.signup(signupRequest);
 
     // Then
     assertThat(result.userId()).isEqualTo("newUser");
-    assertThat(result.userNm()).isEqualTo("신규사용자");
+    assertThat(result.userNm()).isEqualTo("?�규?�용??);
 
     ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
     verify(userRepository).save(userCaptor.capture());
@@ -231,13 +231,13 @@ class UserServiceTest {
     User savedUser = userCaptor.getValue();
     assertThat(savedUser.getUserId()).isEqualTo("newUser");
     assertThat(savedUser.getPassword()).isEqualTo(encodedPassword);
-    assertThat(savedUser.getUserNm()).isEqualTo("신규사용자");
+    assertThat(savedUser.getUserNm()).isEqualTo("?�규?�용??);
     assertThat(savedUser.getRole()).isEqualTo(Role.USER);
     assertThat(savedUser.getEsntlId()).startsWith("USR_");
   }
 
   @Test
-  @DisplayName("회원가입 실패 - 이미 존재하는 아이디")
+  @DisplayName("?�원가???�패 - ?��? 존재?�는 ?�이??)
   void signup_fail_duplicateUserId() {
     // Given
     when(userRepository.existsById("newUser")).thenReturn(true);
@@ -249,7 +249,7 @@ class UserServiceTest {
   }
 
   @Test
-  @DisplayName("비밀번호 일치 여부 검증 테스트 - 성공")
+  @DisplayName("비�?번호 ?�치 ?��? 검�??�스??- ?�공")
   void verifyPassword_success() {
     // Given
     when(passwordEncoder.matches("rawPassword", "encodedPassword")).thenReturn(true);
@@ -262,7 +262,7 @@ class UserServiceTest {
   }
 
   @Test
-  @DisplayName("비밀번호 일치 여부 검증 테스트 - 실패")
+  @DisplayName("비�?번호 ?�치 ?��? 검�??�스??- ?�패")
   void verifyPassword_fail() {
     // Given
     when(passwordEncoder.matches("wrongPassword", "encodedPassword")).thenReturn(false);
@@ -275,13 +275,13 @@ class UserServiceTest {
   }
 
   @Test
-  @DisplayName("사용자 정보 수정 테스트")
+  @DisplayName("?�용???�보 ?�정 ?�스??)
   void updateUser_success() {
     // Given
     String userId = "testUser";
     UserDto userDto = UserDto.builder()
         .userId(userId)
-        .userNm("수정된이름")
+        .userNm("?�정?�이�?)
         .esntlId("USR_12345")
         .emplNo("EMP001")
         .ofcpsNm("과장")
@@ -293,13 +293,13 @@ class UserServiceTest {
     userService.updateUser(userId, userDto);
 
     // Then
-    assertThat(mockUser.getUserNm()).isEqualTo("수정된이름");
+    assertThat(mockUser.getUserNm()).isEqualTo("?�정?�이�?);
     assertThat(mockUser.getEmplNo()).isEqualTo("EMP001");
     assertThat(mockUser.getOfcpsNm()).isEqualTo("과장");
   }
 
   @Test
-  @DisplayName("비밀번호 변경 테스트")
+  @DisplayName("비�?번호 변�??�스??)
   void changePassword_success() {
     // Given
     String userId = "testUser";
@@ -319,7 +319,7 @@ class UserServiceTest {
   }
 
   @Test
-  @DisplayName("비밀번호 변경 실패 - 기존 비밀번호 불일치")
+  @DisplayName("비�?번호 변�??�패 - 기존 비�?번호 불일�?)
   void changePassword_fail_invalidOldPassword() {
     // Given
     String userId = "testUser";
@@ -336,7 +336,7 @@ class UserServiceTest {
   }
 
   @Test
-  @DisplayName("사용자 삭제 테스트")
+  @DisplayName("?�용????�� ?�스??)
   void deleteUser_success() {
     // Given
     String userId = "testUser";
@@ -350,7 +350,7 @@ class UserServiceTest {
   }
 
   @Test
-  @DisplayName("사용자 삭제 실패 - 존재하지 않는 사용자")
+  @DisplayName("?�용????�� ?�패 - 존재?��? ?�는 ?�용??)
   void deleteUser_fail_userNotFound() {
     // Given
     String userId = "nonexistent";

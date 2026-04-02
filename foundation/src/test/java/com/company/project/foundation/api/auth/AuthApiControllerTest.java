@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthApiController 테스트")
+@DisplayName("AuthApiController ?�스??)
 class AuthApiControllerTest {
 
     private MockMvc mockMvc;
@@ -60,7 +60,7 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그인 성공 테스트")
+    @DisplayName("로그???�공 ?�스??)
     void loginSuccessTest() throws Exception {
         TokenResponse tokenResponse = new TokenResponse("accessToken", "refreshToken", "ROLE_USER");
         when(authService.login(any(LoginRequest.class))).thenReturn(tokenResponse);
@@ -77,7 +77,7 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그아웃 테스트")
+    @DisplayName("로그?�웃 ?�스??)
     void logout_Success() throws Exception {
         doNothing().when(jwtTokenProvider).addRefreshTokenCookie(any(), eq(""));
         
@@ -87,7 +87,7 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그인 실패 테스트 - 인증 오류")
+    @DisplayName("로그???�패 ?�스??- ?�증 ?�류")
     void loginFailTest() throws Exception {
         when(authService.login(any(LoginRequest.class))).thenThrow(new org.springframework.security.authentication.BadCredentialsException("Auth failed"));
 
@@ -102,7 +102,7 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("토큰 재발급 성공 테스트")
+    @DisplayName("?�큰 ?�발�??�공 ?�스??)
     void reissue_Success() throws Exception {
         String refreshToken = "validRefreshToken";
         TokenResponse tokenResponse = new TokenResponse("newAccessToken", "validRefreshToken", "ROLE_USER");
@@ -116,7 +116,7 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("토큰 재발급 실패 테스트 - 유효하지 않은 토큰")
+    @DisplayName("?�큰 ?�발�??�패 ?�스??- ?�효?��? ?��? ?�큰")
     void reissue_Fail_InvalidToken() throws Exception {
         String refreshToken = "invalidToken";
         when(authService.reissue(refreshToken)).thenThrow(new BusinessException(ErrorCode.INVALID_TOKEN));
@@ -128,7 +128,7 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("내 정보 조회 - CustomUserDetails 사용")
+    @DisplayName("???�보 조회 - CustomUserDetails ?�용")
     void me_Success_WithCustomUserDetails() throws Exception {
         CustomUserDetails userDetails = mock(CustomUserDetails.class);
         when(userDetails.getUserId()).thenReturn("user01");
@@ -139,7 +139,7 @@ class AuthApiControllerTest {
 
         com.company.project.foundation.service.user.dto.UserDto mockUserDto = com.company.project.foundation.service.user.dto.UserDto.builder()
                 .userId("user01")
-                .userNm("홍길동")
+                .userNm("?�길??)
                 .role("ROLE_ADMIN")
                 .userSe("EMP")
                 .emailAdres("hong@example.com")
@@ -150,7 +150,7 @@ class AuthApiControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value("user01"))
-                .andExpect(jsonPath("$.data.name").value("홍길동"))
+                .andExpect(jsonPath("$.data.name").value("?�길??))
                 .andExpect(jsonPath("$.data.role").value("ROLE_ADMIN"))
                 .andExpect(jsonPath("$.data.userSe").value("EMP"));
         

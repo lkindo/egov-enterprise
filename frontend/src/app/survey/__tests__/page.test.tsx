@@ -29,6 +29,6 @@ describe('SurveyListPage', () => {
     // Note: If SurveyListPage is a Server Component, this would need more setup for real testing, 
     // but here we are testing the basic structure or if it's already a client component or wrapped.
     render(<SurveyListPage />);
-    expect(await screen.findByText(/온라인 설문조사/i)).toBeInTheDocument();
+    expect(await screen.findByText(/온라인 설문 조사/i)).toBeInTheDocument();
   });
 });

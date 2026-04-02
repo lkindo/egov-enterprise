@@ -20,11 +20,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * UserService 통합 테스트
- * - N+1 쿼리 해결 검증
- * - 권한 매핑 검증
- * - 캐싱 동작 검증
- */
+ * UserService ?�합 ?�스?? * - N+1 쿼리 ?�결 검�? * - 권한 매핑 검�? * - 캐싱 ?�작 검�? */
 @IntegrationTest
 class UserServiceIntegrationTest {
 
@@ -37,76 +33,74 @@ class UserServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // 캐시 클리어
-        cacheManager.getCache("users").clear();
+        // 캐시 ?�리??        cacheManager.getCache("users").clear();
     }
 
     @Test
-    @DisplayName("사용자 목록 조회 - N+1 쿼리 해결 검증")
+    @DisplayName("?�용??목록 조회 - N+1 쿼리 ?�결 검�?)
     void getUserList_NPlusOneResolved() {
-        // Given: 5 명의 사용자와 권한 설정
-        createUser("user1", "사용자 1", "ROLE_ADMIN");
-        createUser("user2", "사용자 2", "ROLE_USER");
-        createUser("user3", "사용자 3", "ROLE_ADMIN");
+        // Given: 5 명의 ?�용?��? 권한 ?�정
+        createUser("user1", "?�용??1", "ROLE_ADMIN");
+        createUser("user2", "?�용??2", "ROLE_USER");
+        createUser("user3", "?�용??3", "ROLE_ADMIN");
 
         entityManager.flush();
-        entityManager.clear(); // 영속성 컨텍스트 초기화 (N+1 검증을 위해)
+        entityManager.clear(); // ?�속??컨텍?�트 초기??(N+1 검증을 ?�해)
 
-        // When: 사용자 목록 조회
+        // When: ?�용??목록 조회
         List<UserDto> result = userService.getUserList();
 
-        // Then: 1 개의 쿼리로 모든 사용자와 권한 조회 (N+1 발생 안함)
+        // Then: 1 개의 쿼리�?모든 ?�용?��? 권한 조회 (N+1 발생 ?�함)
         assertThat(result).hasSize(3);
         assertThat(result).extracting("userId", "userNm", "role")
                 .containsExactlyInAnyOrder(
-                        org.assertj.core.api.Assertions.tuple("user1", "사용자 1", "ROLE_ADMIN"),
-                        org.assertj.core.api.Assertions.tuple("user2", "사용자 2", "ROLE_USER"),
-                        org.assertj.core.api.Assertions.tuple("user3", "사용자 3", "ROLE_ADMIN")
+                        org.assertj.core.api.Assertions.tuple("user1", "?�용??1", "ROLE_ADMIN"),
+                        org.assertj.core.api.Assertions.tuple("user2", "?�용??2", "ROLE_USER"),
+                        org.assertj.core.api.Assertions.tuple("user3", "?�용??3", "ROLE_ADMIN")
                 );
     }
 
     @Test
-    @DisplayName("캐싱 동작 검증 - 2 번째 호출은 캐시에서 조회")
+    @DisplayName("캐싱 ?�작 검�?- 2 번째 ?�출?� 캐시?�서 조회")
     void getUserList_Caching() {
-        // Given: 사용자 데이터 설정
-        createUser("cacheUser", "캐시테스트", "ROLE_USER");
+        // Given: ?�용???�이???�정
+        createUser("cacheUser", "캐시?�스??, "ROLE_USER");
         entityManager.flush();
         entityManager.clear();
 
-        // When: 첫 번째 호출 (캐시 미스)
+        // When: �?번째 ?�출 (캐시 미스)
         long startTime1 = System.currentTimeMillis();
         List<UserDto> result1 = userService.getUserList();
         long endTime1 = System.currentTimeMillis();
 
-        // Then: 첫 번째 호출은 DB 조회
+        // Then: �?번째 ?�출?� DB 조회
         assertThat(result1).hasSize(1);
         assertThat(endTime1 - startTime1).isGreaterThan(0);
 
-        // When: 두 번째 호출 (캐시 히트)
+        // When: ??번째 ?�출 (캐시 ?�트)
         long startTime2 = System.currentTimeMillis();
         List<UserDto> result2 = userService.getUserList();
         long endTime2 = System.currentTimeMillis();
 
-        // Then: 두 번째 호출은 캐시에서 조회 (빠름)
+        // Then: ??번째 ?�출?� 캐시?�서 조회 (빠름)
         assertThat(result2).hasSize(1);
         assertThat(endTime2 - startTime2).isLessThanOrEqualTo(endTime1 - startTime1);
     }
 
     @Test
-    @DisplayName("권한 매핑 검증 - 사용자와 권한이 올바르게 매핑됨")
+    @DisplayName("권한 매핑 검�?- ?�용?��? 권한???�바르게 매핑??)
     void getUserList_AuthorityMapping() {
-        // Given: 다양한 권한을 가진 사용자들
+        // Given: ?�양??권한??가�??�용?�들
         createUser("admin", "관리자", "ROLE_ADMIN");
-        createUser("user", "일반사용자", "ROLE_USER");
+        createUser("user", "?�반?�용??, "ROLE_USER");
 
         entityManager.flush();
         entityManager.clear();
 
-        // When: 사용자 목록 조회
+        // When: ?�용??목록 조회
         List<UserDto> result = userService.getUserList();
 
-        // Then: 권한이 올바르게 매핑됨
-        assertThat(result).hasSize(2);
+        // Then: 권한???�바르게 매핑??        assertThat(result).hasSize(2);
         assertThat(result).extracting("userId", "role")
                 .containsExactlyInAnyOrder(
                         org.assertj.core.api.Assertions.tuple("admin", "ROLE_ADMIN"),
@@ -114,8 +108,7 @@ class UserServiceIntegrationTest {
                 );
     }
 
-    // 테스트 헬퍼 메서드
-    private void createUser(String userId, String userNm, String role) {
+    // ?�스???�퍼 메서??    private void createUser(String userId, String userNm, String role) {
         User user = User.builder()
                 .userId(userId)
                 .userNm(userNm)

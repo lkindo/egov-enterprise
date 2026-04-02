@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("RoleApiController 테스트")
+@DisplayName("RoleApiController ?�스??)
 class RoleApiControllerTest {
 
     private MockMvc mockMvc;
@@ -44,7 +44,7 @@ class RoleApiControllerTest {
     }
 
     @Test
-    @DisplayName("롤 목록 조회 성공")
+    @DisplayName("�?목록 조회 ?�공")
     void testGetRoles() throws Exception {
         // Given
         when(roleManageService.selectRoleList(any())).thenReturn(Collections.emptyList());
@@ -58,12 +58,12 @@ class RoleApiControllerTest {
     }
 
     @Test
-    @DisplayName("롤 상세 조회 성공")
+    @DisplayName("�??�세 조회 ?�공")
     void testGetRole() throws Exception {
         // Given
         RoleManageDto dto = new RoleManageDto();
         dto.setRoleCode("ROLE_WEB_001");
-        dto.setRoleNm("웹 접근 권한");
+        dto.setRoleNm("???�근 권한");
         when(roleManageService.selectRole("ROLE_WEB_001")).thenReturn(dto);
 
         // When & Then
@@ -73,12 +73,12 @@ class RoleApiControllerTest {
     }
 
     @Test
-    @DisplayName("롤 등록 성공")
+    @DisplayName("�??�록 ?�공")
     void testCreateRole() throws Exception {
         // Given
         RoleManageDto dto = new RoleManageDto();
         dto.setRoleCode("ROLE_NEW");
-        dto.setRoleNm("신규 롤");
+        dto.setRoleNm("?�규 �?);
 
         // When & Then
         mockMvc.perform(post("/api/v1/admin/system/roles")
@@ -90,7 +90,7 @@ class RoleApiControllerTest {
     }
 
     @Test
-    @DisplayName("롤 삭제 성공")
+    @DisplayName("�???�� ?�공")
     void testDeleteRole() throws Exception {
         // When & Then
         mockMvc.perform(delete("/api/v1/admin/system/roles/ROLE_WEB_001"))

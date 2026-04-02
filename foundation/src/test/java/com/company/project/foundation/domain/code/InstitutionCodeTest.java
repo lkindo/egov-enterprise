@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("InstitutionCode 엔티티 테스트")
+@DisplayName("InstitutionCode ?�티???�스??)
 class InstitutionCodeTest {
 
     @Test
-    @DisplayName("InstitutionCode 엔티티 빌더 및 초기화 테스트")
+    @DisplayName("InstitutionCode ?�티??빌더 �?초기???�스??)
     void builderTest() {
         InstitutionCode code = InstitutionCode.builder()
                 .insttCode("INST01")
@@ -26,7 +26,7 @@ class InstitutionCodeTest {
     }
 
     @Test
-    @DisplayName("InstitutionCode 엔티티 수정 테스트")
+    @DisplayName("InstitutionCode ?�티???�정 ?�스??)
     void updateTest() {
         InstitutionCode code = InstitutionCode.builder()
                 .insttCode("INST01")
@@ -44,7 +44,7 @@ class InstitutionCodeTest {
     }
 
     @Test
-    @DisplayName("InstitutionCode 엔티티 소프트 삭제 테스트")
+    @DisplayName("InstitutionCode ?�티???�프????�� ?�스??)
     void softDeleteTest() {
         InstitutionCode code = InstitutionCode.builder()
                 .insttCode("INST01")

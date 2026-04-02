@@ -1,6 +1,6 @@
 package com.company.project.business.support;
 
-import com.company.project.foundation.TestApplication;
+import com.company.project.TestApplication;
 import com.company.project.foundation.security.config.TestSecurityConfig;
 import com.company.project.foundation.core.config.TestMessagingConfig;
 import org.springframework.boot.test.context.SpringBootTest;

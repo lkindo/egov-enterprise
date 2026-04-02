@@ -1,4 +1,4 @@
-﻿vi.mock('next/config', () => ({
+vi.mock('next/config', () => ({
   default: () => ({
     publicRuntimeConfig: {},
     serverRuntimeConfig: {},
@@ -31,7 +31,7 @@ vi.mock('@/app/components/ui/standard-modal', () => ({
   StandardModal: ({ children, isOpen, title, onClose, footer }: any) => isOpen ? (
     <div data-testid="modal">
       <h2 data-testid="modal-title">{title}</h2>
-      <button onClick={onClose}>リ린</button>
+      <button onClick={onClose}>닫기</button>
       {children}
       <div data-testid="modal-footer">{footer}</div>
     </div>
@@ -119,8 +119,8 @@ describe('ProgramAdminClient Component', () => {
 
   it('renders the program list correctly', () => {
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-    expect(screen.getAllByText('2 개').length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/신규 프로그램 등록/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('2').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/신규 등록/).length).toBeGreaterThan(0);
     // Look for the count in the HubMetricCard
     expect(screen.getByText('2')).toBeInTheDocument();
   });
@@ -128,11 +128,11 @@ describe('ProgramAdminClient Component', () => {
   it('opens the registration modal when "신규 등록" is clicked', async () => {
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
     
-    const deployBtn = screen.getByText(/신규 프로그램 등록/i);
+    const deployBtn = screen.getByText(/신규 등록/i);
     fireEvent.click(deployBtn);
 
     const modal = await screen.findByTestId('modal');
-    expect(within(modal).getByText('신규 ?꾨줈洹몃옩 등록')).toBeDefined();
+    expect(within(modal).getByText('신규 프로그램 등록')).toBeDefined();
   });
 
   it('opens the edit modal with correct data when settings icon is clicked', async () => {
@@ -142,7 +142,7 @@ describe('ProgramAdminClient Component', () => {
     fireEvent.click(settingsBtns[0]);
 
     const modal = await screen.findByTestId('modal');
-    expect(within(modal).getByText('?꾨줈洹몃옩 ?뺣낫 ?섏젙')).toBeDefined();
+    expect(within(modal).getByText('프로그램 정보 수정')).toBeDefined();
     
     const input = within(modal).getByDisplayValue('PROG_1') as HTMLInputElement;
     expect(input).toBeDefined();
@@ -175,7 +175,7 @@ describe('ProgramAdminClient Component', () => {
 
     const modal = await screen.findByTestId('modal');
 
-    const nameInput = within(modal).getByPlaceholderText('?쒓뎅님?먯궛 紐낆묶 ?낅젰');
+    const nameInput = within(modal).getByPlaceholderText('한글 자산 명칭 입력');
     fireEvent.change(nameInput, { target: { value: 'New Program Name' } });
 
     const submitBtn = within(modal).getByText('신규 등록');

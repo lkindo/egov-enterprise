@@ -18,7 +18,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("CryptoUtil 테스트")
+@DisplayName("CryptoUtil ?�스??)
 class CryptoUtilTest {
 
     @Mock
@@ -39,11 +39,11 @@ class CryptoUtilTest {
     }
 
     @Nested
-    @DisplayName("encrypt 메서드 테스트")
+    @DisplayName("encrypt 메서???�스??)
     class EncryptTests {
 
         @Test
-        @DisplayName("정상 데이터 암호화 성공")
+        @DisplayName("?�상 ?�이???�호???�공")
         void testEncrypt_Success() {
             // Given
             String originalData = "testData";
@@ -61,7 +61,7 @@ class CryptoUtilTest {
         }
 
         @Test
-        @DisplayName("null 데이터 암호화 시 null 반환")
+        @DisplayName("null ?�이???�호????null 반환")
         void testEncrypt_NullData() {
             // When
             String result = CryptoUtil.encrypt(null);
@@ -72,7 +72,7 @@ class CryptoUtilTest {
         }
 
         @Test
-        @DisplayName("빈 문자열 암호화 성공")
+        @DisplayName("�?문자???�호???�공")
         void testEncrypt_EmptyString() {
             // Given
             String emptyData = "";
@@ -89,11 +89,11 @@ class CryptoUtilTest {
     }
 
     @Nested
-    @DisplayName("decrypt 메서드 테스트")
+    @DisplayName("decrypt 메서???�스??)
     class DecryptTests {
 
         @Test
-        @DisplayName("정상 데이터 복호화 성공")
+        @DisplayName("?�상 ?�이??복호???�공")
         void testDecrypt_Success() {
             // Given
             String originalData = "testData";
@@ -112,7 +112,7 @@ class CryptoUtilTest {
         }
 
         @Test
-        @DisplayName("null 데이터 복호화 시 null 반환")
+        @DisplayName("null ?�이??복호????null 반환")
         void testDecrypt_NullData() {
             // When
             String result = CryptoUtil.decrypt(null);
@@ -123,7 +123,7 @@ class CryptoUtilTest {
         }
 
         @Test
-        @DisplayName("잘못된 Base64 문자열 복호화 시 예외 발생")
+        @DisplayName("?�못??Base64 문자??복호?????�외 발생")
         void testDecrypt_InvalidBase64() {
             // Given
             String invalidBase64 = "InvalidBase64!@#";
@@ -136,11 +136,11 @@ class CryptoUtilTest {
     }
 
     @Nested
-    @DisplayName("특수 목적 암호화 메서드 테스트")
+    @DisplayName("?�수 목적 ?�호??메서???�스??)
     class SpecialEncryptTests {
 
         @Test
-        @DisplayName("encryptSession - 세션 ID 와 함께 암호화")
+        @DisplayName("encryptSession - ?�션 ID ?� ?�께 ?�호??)
         void testEncryptSession() {
             // Given
             String data = "userData";
@@ -159,7 +159,7 @@ class CryptoUtilTest {
         }
 
         @Test
-        @DisplayName("encryptSession - null 데이터 시 대시 반환")
+        @DisplayName("encryptSession - null ?�이?????�??반환")
         void testEncryptSession_NullData() {
             // When
             String result = CryptoUtil.encryptSession(null, "SESSION123");
@@ -170,7 +170,7 @@ class CryptoUtilTest {
         }
 
         @Test
-        @DisplayName("encryptId - ID 암호화")
+        @DisplayName("encryptId - ID ?�호??)
         void testEncryptId() {
             // Given
             String userId = "user123";
@@ -187,11 +187,11 @@ class CryptoUtilTest {
     }
 
     @Nested
-    @DisplayName("예외 상황 테스트")
+    @DisplayName("?�외 ?�황 ?�스??)
     class ExceptionTests {
 
         @Test
-        @DisplayName("암호화 서비스 오류 시 RuntimeException 발생")
+        @DisplayName("?�호???�비???�류 ??RuntimeException 발생")
         void testEncrypt_ServiceError() {
             // Given
             String data = "testData";
@@ -205,7 +205,7 @@ class CryptoUtilTest {
         }
 
         @Test
-        @DisplayName("복호화 서비스 오류 시 RuntimeException 발생")
+        @DisplayName("복호???�비???�류 ??RuntimeException 발생")
         void testDecrypt_ServiceError() {
             // Given
             String encryptedData = Base64.getEncoder().encodeToString("test".getBytes());

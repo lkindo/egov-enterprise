@@ -54,7 +54,7 @@ class UserServiceCrudTest {
   void setUp() {
     mockUser = User.builder()
         .userId("testUser")
-        .userNm("테스트사용자")
+        .userNm("?�스?�사?�자")
         .esntlId("USR_1234567890123456")
         .role(Role.USER)
         .password("encodedPassword")
@@ -63,14 +63,14 @@ class UserServiceCrudTest {
     signupRequest = new UserSignupRequest(
         "newUser",
         "password123!",
-        "새사용자",
+        "?�사?�자",
         Role.USER,
         "hint",
         "answer");
   }
 
   @Test
-  @DisplayName("사용자 생성 성공")
+  @DisplayName("?�용???�성 ?�공")
   void createUser_success() {
     when(passwordEncoder.encode(any())).thenReturn("encoded");
     when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -81,20 +81,20 @@ class UserServiceCrudTest {
   }
 
   @Test
-  @DisplayName("사용자 생성 실패 - null 값 포함")
+  @DisplayName("?�용???�성 ?�패 - null �??�함")
   void createUser_fail_withNullValues() {
     assertThatThrownBy(() -> userService.registerUser(null, "pw", "name", "h", "c", Role.USER))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
-  @DisplayName("사용자 상세 조회 성공 - 유효한 ID")
+  @DisplayName("?�용???�세 조회 ?�공 - ?�효??ID")
   void getUserById_success_withValidId() {
     when(userRepository.findById("testUser")).thenReturn(Optional.of(mockUser));
     when(userAuthorityRepository.findById(any())).thenReturn(Optional.of(
         UserAuthority.builder().uniqId("USR_1234567890123456").authorCode("ROLE_USER").build()));
     when(userMapper.toDtoWithAuthority(any(), any()))
-        .thenReturn(new UserDto("testUser", "테스트사용자", "USR_1234567890123456", null, null, null, null));
+        .thenReturn(new UserDto("testUser", "?�스?�사?�자", "USR_1234567890123456", null, null, null, null));
 
     UserDto result = userService.getUserById("testUser");
 
@@ -103,7 +103,7 @@ class UserServiceCrudTest {
   }
 
   @Test
-  @DisplayName("사용자 상세 조회 실패 - 존재하지 않는 ID")
+  @DisplayName("?�용???�세 조회 ?�패 - 존재?��? ?�는 ID")
   void getUserById_fail_withNonExistentId() {
     when(userRepository.findById(any())).thenReturn(Optional.empty());
     when(userRepository.findByEsntlId(any())).thenReturn(Optional.empty());
@@ -113,13 +113,13 @@ class UserServiceCrudTest {
   }
 
   @Test
-  @DisplayName("사용자 목록 조회 성공")
+  @DisplayName("?�용??목록 조회 ?�공")
   void getUserList_success() {
     when(userRepository.findAll()).thenReturn(List.of(mockUser));
     when(userAuthorityRepository.findByUniqIdIn(any())).thenReturn(List.of(
         UserAuthority.builder().uniqId("USR_1234567890123456").authorCode("ROLE_USER").build()));
     when(userMapper.toDtoWithAuthority(any(), any()))
-        .thenReturn(new UserDto("testUser", "테스트사용자", "USR_1234567890123456", null, null, null, null));
+        .thenReturn(new UserDto("testUser", "?�스?�사?�자", "USR_1234567890123456", null, null, null, null));
 
     List<UserDto> result = userService.getUserList();
 
@@ -128,14 +128,14 @@ class UserServiceCrudTest {
   }
 
   @Test
-  @DisplayName("페이지별 사용자 목록 조회 성공")
+  @DisplayName("?�이지�??�용??목록 조회 ?�공")
   void getPagedUserList_success() {
     Page<User> page = new PageImpl<>(List.of(mockUser));
     when(userRepository.findAll(any(Pageable.class))).thenReturn(page);
     when(userAuthorityRepository.findByUniqIdIn(any())).thenReturn(List.of(
         UserAuthority.builder().uniqId("USR_1234567890123456").authorCode("ROLE_USER").build()));
     when(userMapper.toDtoWithAuthority(any(), any()))
-        .thenReturn(new UserDto("testUser", "테스트사용자", "USR_1234567890123456", null, null, null, null));
+        .thenReturn(new UserDto("testUser", "?�스?�사?�자", "USR_1234567890123456", null, null, null, null));
 
     Page<UserDto> result = userService.getPagedUserList(PageRequest.of(0, 10));
 
@@ -144,7 +144,7 @@ class UserServiceCrudTest {
   }
 
   @Test
-  @DisplayName("사용자 회원가입 성공")
+  @DisplayName("?�용???�원가???�공")
   void signup_success() {
     when(userRepository.existsById(any())).thenReturn(false);
     when(passwordEncoder.encode(any())).thenReturn("encoded");
@@ -158,7 +158,7 @@ class UserServiceCrudTest {
   }
 
   @Test
-  @DisplayName("사용자 회원가입 실패 - 중복된 ID")
+  @DisplayName("?�용???�원가???�패 - 중복??ID")
   void signup_fail_duplicateId() {
     when(userRepository.existsById(any())).thenReturn(true);
 
@@ -167,7 +167,7 @@ class UserServiceCrudTest {
   }
 
   @Test
-  @DisplayName("사용자 회원가입 실패 - null 값 포함")
+  @DisplayName("?�용???�원가???�패 - null �??�함")
   void signup_fail_withNullValues() {
     UserSignupRequest nullRequest = new UserSignupRequest(null, "pw", "name", Role.USER, "h", "c");
 
@@ -176,14 +176,14 @@ class UserServiceCrudTest {
   }
 
   @Test
-  @DisplayName("비밀번호 검증 성공")
+  @DisplayName("비�?번호 검�??�공")
   void validatePassword_success() {
     when(passwordEncoder.matches(any(), any())).thenReturn(true);
     assertThat(passwordEncoder.matches("pw", "encoded")).isTrue();
   }
 
   @Test
-  @DisplayName("비밀번호 검증 실패")
+  @DisplayName("비�?번호 검�??�패")
   void validatePassword_fail() {
     when(passwordEncoder.matches(any(), any())).thenReturn(false);
     assertThat(passwordEncoder.matches("pw", "encoded")).isFalse();

@@ -1,9 +1,11 @@
 package com.company.project.foundation.support;
 
+import com.company.project.TestApplication;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -31,6 +33,7 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @ActiveProfiles("test")
 @Import(MockMvcTestConfig.class)
+@ContextConfiguration(classes = TestApplication.class)
 public abstract class ControllerTestSupport {
 
     @Autowired

@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("SysLog 도메인 단위 테스트")
+@DisplayName("SysLog ?�메???�위 ?�스??)
 class SysLogTest {
 
     @Test
-    @DisplayName("SysLog 생성 및 필드 확인 테스트")
+    @DisplayName("SysLog ?�성 �??�드 ?�인 ?�스??)
     void sysLogTest() {
         // given
         SysLog log = SysLog.builder()
@@ -35,7 +35,7 @@ class SysLogTest {
     }
 
     @Test
-    @DisplayName("SysLog 생성자 테스트")
+    @DisplayName("SysLog ?�성???�스??)
     void sysLogConstructorTest() {
         // when
         SysLog log = new SysLog("REQ-002", "S", "M", "U", "50", "id", "ip", "20241227", "400", "E", "S");

@@ -5,13 +5,13 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("User 엔티티 테스트")
+@DisplayName("User ?�티???�스??)
 class UserEntityTest {
 
     @Test
-    @DisplayName("사용자 잠금 횟수 증가 및 초기화 테스트")
+    @DisplayName("?�용???�금 ?�수 증�? �?초기???�스??)
     void lockCountTest() {
-        User user = User.builder().userId("user01").userNm("홍길동").esntlId("E1").password("pwd").build();
+        User user = User.builder().userId("user01").userNm("?�길??).esntlId("E1").password("pwd").build();
         
         assertThat(user.getLockCount()).isNull();
         
@@ -28,9 +28,9 @@ class UserEntityTest {
     }
 
     @Test
-    @DisplayName("권한 코드 설정 테스트")
+    @DisplayName("권한 코드 ?�정 ?�스??)
     void setAuthorCodeTest() {
-        User user = User.builder().userId("user01").userNm("홍길동").esntlId("E1").password("pwd").build();
+        User user = User.builder().userId("user01").userNm("?�길??).esntlId("E1").password("pwd").build();
         
         user.setAuthorCode("ROLE_ADMIN");
         assertThat(user.getRole()).isEqualTo(Role.ADMIN);
@@ -44,9 +44,9 @@ class UserEntityTest {
     }
 
     @Test
-    @DisplayName("비밀번호 업데이트 테스트")
+    @DisplayName("비�?번호 ?�데?�트 ?�스??)
     void updatePasswordTest() {
-        User user = User.builder().userId("user01").userNm("홍길동").esntlId("E1").password("old").build();
+        User user = User.builder().userId("user01").userNm("?�길??).esntlId("E1").password("old").build();
         LocalDateTime before = LocalDateTime.now();
         
         user.updatePassword("newPassword");
@@ -56,7 +56,7 @@ class UserEntityTest {
     }
 
     @Test
-    @DisplayName("사용자 정보 업데이트 테스트")
+    @DisplayName("?�용???�보 ?�데?�트 ?�스??)
     void updateInfoTest() {
         User user = User.builder().userId("user01").userNm("Old Name").esntlId("E1").password("pwd").build();
         

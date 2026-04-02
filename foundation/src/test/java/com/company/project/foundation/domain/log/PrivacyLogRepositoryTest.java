@@ -1,6 +1,6 @@
 package com.company.project.foundation.domain.log;
 
-import com.company.project.foundation.TestApplication;
+import com.company.project.TestApplication;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,14 +16,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ContextConfiguration(classes = TestApplication.class)
-@DisplayName("PrivacyLog 리포지토리 테스트")
+@DisplayName("PrivacyLog 리포지?�리 ?�스??)
 class PrivacyLogRepositoryTest {
 
     @Autowired
     private PrivacyLogRepository repository;
 
     @Test
-    @DisplayName("개인정보 로그 검색 테스트 (검색어, 날짜구간-하이픈타입)")
+    @DisplayName("개인?�보 로그 검???�스??(검?�어, ?�짜구간-?�이?��???")
     void searchPrivacyLogsTest() {
         // given
         LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
@@ -45,14 +45,14 @@ class PrivacyLogRepositoryTest {
         String bgnDe = yesterday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String endDe = yesterday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-        // when (검색어 필터)
+        // when (검?�어 ?�터)
         Page<PrivacyLog> searchByInfo = repository.searchPrivacyLogs("PersonalInfo", null, null, PageRequest.of(0, 10));
 
         // then
         assertThat(searchByInfo.getContent()).hasSize(1);
         assertThat(searchByInfo.getContent().get(0).getRequestId()).isEqualTo("REQ-001");
 
-        // when (날짜 필터 - yyyy-MM-dd)
+        // when (?�짜 ?�터 - yyyy-MM-dd)
         Page<PrivacyLog> searchByDate = repository.searchPrivacyLogs(null, bgnDe, endDe, PageRequest.of(0, 10));
 
         // then

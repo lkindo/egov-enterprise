@@ -1,6 +1,6 @@
 package com.company.project.foundation.domain.login;
 
-import com.company.project.foundation.TestApplication;
+import com.company.project.TestApplication;
 import com.company.project.foundation.domain.user.entity.User;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ContextConfiguration(classes = TestApplication.class)
-@DisplayName("LoginPolicyRepository 테스트")
+@DisplayName("LoginPolicyRepository ?�스??)
 class LoginPolicyRepositoryTest {
 
     @Autowired
@@ -30,7 +30,7 @@ class LoginPolicyRepositoryTest {
         // Create User for JOIN test
         User user = User.builder()
                 .userId("TEST_USER")
-                .userNm("테스트 유저")
+                .userNm("?�스???��?")
                 .esntlId("ESNTL_001")
                 .password("test1234")
                 .build();
@@ -50,7 +50,7 @@ class LoginPolicyRepositoryTest {
     }
 
     @Test
-    @DisplayName("로그인 정책 검색 테스트 - 전체 조회")
+    @DisplayName("로그???�책 검???�스??- ?�체 조회")
     void searchAllTest() {
         // Given
         LoginPolicySearchCondition condition = new LoginPolicySearchCondition();
@@ -66,12 +66,12 @@ class LoginPolicyRepositoryTest {
     }
 
     @Test
-    @DisplayName("로그인 정책 검색 테스트 - 이름 조건 (성공)")
+    @DisplayName("로그???�책 검???�스??- ?�름 조건 (?�공)")
     void searchByNameSuccessTest() {
         // Given
         LoginPolicySearchCondition condition = new LoginPolicySearchCondition();
         condition.setSearchCondition("1");
-        condition.setSearchKeyword("테스트");
+        condition.setSearchKeyword("?�스??);
         PageRequest pageable = PageRequest.of(0, 10);
 
         // When
@@ -79,16 +79,16 @@ class LoginPolicyRepositoryTest {
 
         // Then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getUserNm()).isEqualTo("테스트 유저");
+        assertThat(result.getContent().get(0).getUserNm()).isEqualTo("?�스???��?");
     }
 
     @Test
-    @DisplayName("로그인 정책 검색 테스트 - 이름 조건 (결과 없음)")
+    @DisplayName("로그???�책 검???�스??- ?�름 조건 (결과 ?�음)")
     void searchByNameNoResultTest() {
         // Given
         LoginPolicySearchCondition condition = new LoginPolicySearchCondition();
         condition.setSearchCondition("1");
-        condition.setSearchKeyword("존재하지않는이름");
+        condition.setSearchKeyword("존재?��??�는?�름");
         PageRequest pageable = PageRequest.of(0, 10);
 
         // When
@@ -99,7 +99,7 @@ class LoginPolicyRepositoryTest {
     }
 
     @Test
-    @DisplayName("로그인 정책 검색 테스트 - 키워드 없음")
+    @DisplayName("로그???�책 검???�스??- ?�워???�음")
     void searchNoKeywordTest() {
         // Given
         LoginPolicySearchCondition condition = new LoginPolicySearchCondition();

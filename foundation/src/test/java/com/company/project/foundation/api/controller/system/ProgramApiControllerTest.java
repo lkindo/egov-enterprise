@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 
-@DisplayName("ProgramApiController 테스트")
+@DisplayName("ProgramApiController ?�스??)
 class ProgramApiControllerTest {
 
     private MockMvc mockMvc;
@@ -47,7 +47,7 @@ class ProgramApiControllerTest {
     }
 
     @Test
-    @DisplayName("프로그램 목록 조회 성공")
+    @DisplayName("?�로그램 목록 조회 ?�공")
     void testGetProgramList() throws Exception {
         // Given
         when(programService.selectProgrmList(any())).thenReturn(Collections.emptyList());
@@ -62,12 +62,12 @@ class ProgramApiControllerTest {
     }
 
     @Test
-    @DisplayName("프로그램 상세 조회 성공")
+    @DisplayName("?�로그램 ?�세 조회 ?�공")
     void testGetProgram() throws Exception {
         // Given
         ProgramDto dto = ProgramDto.builder()
                 .progrmFileNm("Prog001")
-                .progrmKoreanNm("프로그램 001")
+                .progrmKoreanNm("?�로그램 001")
                 .build();
         when(programService.selectProgrmById("Prog001")).thenReturn(dto);
 
@@ -78,12 +78,12 @@ class ProgramApiControllerTest {
     }
 
     @Test
-    @DisplayName("프로그램 등록 성공")
+    @DisplayName("?�로그램 ?�록 ?�공")
     void testCreateProgram() throws Exception {
         // Given
         ProgramDto dto = ProgramDto.builder()
                 .progrmFileNm("NewProg")
-                .progrmKoreanNm("신규 프로그램")
+                .progrmKoreanNm("?�규 ?�로그램")
                 .build();
 
         // When & Then
@@ -96,11 +96,11 @@ class ProgramApiControllerTest {
     }
 
     @Test
-    @DisplayName("프로그램 수정 성공")
+    @DisplayName("?�로그램 ?�정 ?�공")
     void testUpdateProgram() throws Exception {
         // Given
         ProgramDto dto = ProgramDto.builder()
-                .progrmKoreanNm("수정된 프로그램")
+                .progrmKoreanNm("?�정???�로그램")
                 .build();
 
         // When & Then
@@ -113,7 +113,7 @@ class ProgramApiControllerTest {
     }
 
     @Test
-    @DisplayName("프로그램 삭제 성공")
+    @DisplayName("?�로그램 ??�� ?�공")
     void testDeleteProgram() throws Exception {
         // When & Then
         mockMvc.perform(delete("/api/v1/admin/system/programs/Prog001"))

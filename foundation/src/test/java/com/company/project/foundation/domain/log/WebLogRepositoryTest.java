@@ -1,6 +1,6 @@
 package com.company.project.foundation.domain.log;
 
-import com.company.project.foundation.TestApplication;
+import com.company.project.TestApplication;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,14 +16,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ContextConfiguration(classes = TestApplication.class)
-@DisplayName("WebLog 리포지토리 테스트")
+@DisplayName("WebLog 리포지?�리 ?�스??)
 class WebLogRepositoryTest {
 
     @Autowired
     private WebLogRepository repository;
 
     @Test
-    @DisplayName("웹 로그 검색 테스트 (검색어, 날짜구간-하이픈)")
+    @DisplayName("??로그 검???�스??(검?�어, ?�짜구간-?�이??")
     void searchWebLogsTest() {
         // given
         LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
@@ -46,14 +46,14 @@ class WebLogRepositoryTest {
         String bgnDe = yesterday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String endDe = yesterday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-        // when (URL 필터)
+        // when (URL ?�터)
         Page<WebLog> searchByUrl = repository.searchWebLogs("/user/login", null, null, PageRequest.of(0, 10));
 
         // then
         assertThat(searchByUrl.getContent()).hasSize(1);
         assertThat(searchByUrl.getContent().get(0).getRequstId()).isEqualTo("REQ-001");
 
-        // when (날짜 필터)
+        // when (?�짜 ?�터)
         Page<WebLog> searchByDate = repository.searchWebLogs(null, bgnDe, endDe, PageRequest.of(0, 10));
 
         // then

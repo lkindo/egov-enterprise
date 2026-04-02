@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("DeptApiController 테스트")
+@DisplayName("DeptApiController ?�스??)
 class DeptApiControllerTest {
 
     private MockMvc mockMvc;
@@ -47,7 +47,7 @@ class DeptApiControllerTest {
     }
 
     @Test
-    @DisplayName("부서 목록 조회 성공")
+    @DisplayName("부??목록 조회 ?�공")
     void testGetDepts() throws Exception {
         // Given
         when(deptManageService.getDeptManageList(any(), any()))
@@ -62,7 +62,7 @@ class DeptApiControllerTest {
     }
 
     @Test
-    @DisplayName("부서 상세 조회 성공")
+    @DisplayName("부???�세 조회 ?�공")
     void testGetDept() throws Exception {
         // Given
         DeptManageDto dto = DeptManageDto.builder()
@@ -78,12 +78,12 @@ class DeptApiControllerTest {
     }
 
     @Test
-    @DisplayName("부서 등록 성공")
+    @DisplayName("부???�록 ?�공")
     void testInsertDept() throws Exception {
         // Given
         DeptManageDto dto = DeptManageDto.builder()
                 .orgnztId("ORGNZT_NEW")
-                .orgnztNm("신규부서")
+                .orgnztNm("?�규부??)
                 .build();
 
         // When & Then
@@ -96,7 +96,7 @@ class DeptApiControllerTest {
     }
 
     @Test
-    @DisplayName("부서 삭제 성공")
+    @DisplayName("부????�� ?�공")
     void testDeleteDept() throws Exception {
         // When & Then
         mockMvc.perform(delete("/api/v1/admin/system/depts/ORGNZT_001"))

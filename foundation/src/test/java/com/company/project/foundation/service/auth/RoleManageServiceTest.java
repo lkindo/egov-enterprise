@@ -32,7 +32,7 @@ class RoleManageServiceTest {
     private RoleManageService roleManageService;
 
     @Test
-    @DisplayName("역할 목록 조회 테스트")
+    @DisplayName("??�� 목록 조회 ?�스??)
     void selectRoleListTest() {
         // Given
         ComDefaultVO searchVO = new ComDefaultVO();
@@ -57,7 +57,7 @@ class RoleManageServiceTest {
     }
 
     @Test
-    @DisplayName("역할 상세 조회 테스트")
+    @DisplayName("??�� ?�세 조회 ?�스??)
     void selectRoleTest() {
         // Given
         String roleCode = "ROLE_ADMIN";
@@ -78,7 +78,7 @@ class RoleManageServiceTest {
     }
 
     @Test
-    @DisplayName("역할 등록 테스트")
+    @DisplayName("??�� ?�록 ?�스??)
     void insertRoleTest() {
         // Given
         RoleManageDto dto = RoleManageDto.builder()
@@ -94,7 +94,7 @@ class RoleManageServiceTest {
     }
 
     @Test
-    @DisplayName("역할 수정 테스트")
+    @DisplayName("??�� ?�정 ?�스??)
     void updateRoleTest() {
         // Given
         String roleCode = "ROLE_TARGET";
@@ -114,7 +114,7 @@ class RoleManageServiceTest {
     }
 
     @Test
-    @DisplayName("역할 삭제 테스트")
+    @DisplayName("??�� ??�� ?�스??)
     void deleteRoleTest() {
         // Given
         String roleCode = "ROLE_DELETE";

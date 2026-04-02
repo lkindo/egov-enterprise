@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("MenuApiController 테스트")
+@DisplayName("MenuApiController ?�스??)
 class MenuApiControllerTest {
 
     private MockMvc mockMvc;
@@ -47,7 +47,7 @@ class MenuApiControllerTest {
     }
 
     @Test
-    @DisplayName("메뉴 목록 조회 성공")
+    @DisplayName("메뉴 목록 조회 ?�공")
     void testGetMenuList() throws Exception {
         // Given
         when(menuService.selectMenuManageList(any())).thenReturn(Collections.emptyList());
@@ -62,7 +62,7 @@ class MenuApiControllerTest {
     }
 
     @Test
-    @DisplayName("메뉴 상세 조회 성공")
+    @DisplayName("메뉴 ?�세 조회 ?�공")
     void testGetMenu() throws Exception {
         // Given
         MenuDto dto = MenuDto.builder()
@@ -78,7 +78,7 @@ class MenuApiControllerTest {
     }
 
     @Test
-    @DisplayName("메뉴 등록 성공")
+    @DisplayName("메뉴 ?�록 ?�공")
     void testCreateMenu() throws Exception {
         // Given
         MenuDto dto = MenuDto.builder()
@@ -96,7 +96,7 @@ class MenuApiControllerTest {
     }
 
     @Test
-    @DisplayName("권한별 메뉴 할당 저장 성공")
+    @DisplayName("권한�?메뉴 ?�당 ?�???�공")
     void testCreateMenuCreation() throws Exception {
         // Given
         List<Long> menuNos = Arrays.asList(100L, 200L);

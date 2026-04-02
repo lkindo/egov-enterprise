@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ApiResponseTest {
 
     @Test
-    @DisplayName("성공 응답 생성 테스트")
+    @DisplayName("?�공 ?�답 ?�성 ?�스??)
     void successResponseTest() {
         String data = "test data";
         ApiResponse<String> response = ApiResponse.success(data);
@@ -21,7 +21,7 @@ class ApiResponseTest {
     }
 
     @Test
-    @DisplayName("에러 응답 생성 테스트")
+    @DisplayName("?�러 ?�답 ?�성 ?�스??)
     void errorResponseTest() {
         ApiResponse<Object> response = ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE);
 
@@ -32,7 +32,7 @@ class ApiResponseTest {
     }
 
     @Test
-    @DisplayName("커스텀 메시지 에러 응답 테스트")
+    @DisplayName("커스?� 메시지 ?�러 ?�답 ?�스??)
     void errorWithCustomMessageTest() {
         String customMsg = "Custom error message";
         ApiResponse<Object> response = ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, customMsg);

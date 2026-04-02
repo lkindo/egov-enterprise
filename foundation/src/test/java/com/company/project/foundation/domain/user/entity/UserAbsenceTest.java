@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("UserAbsence 엔티티 단위 테스트")
+@DisplayName("UserAbsence ?�티???�위 ?�스??)
 class UserAbsenceTest {
 
     @Test
-    @DisplayName("UserAbsence 생성 및 수정 테스트")
+    @DisplayName("UserAbsence ?�성 �??�정 ?�스??)
     void createAndUpdateTest() {
         // Given
         String emplyrId = "USR_00001";

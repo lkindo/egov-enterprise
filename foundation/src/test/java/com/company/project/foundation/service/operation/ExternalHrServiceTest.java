@@ -17,7 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("ExternalHrService 테스트")
+@DisplayName("ExternalHrService ?�스??)
 class ExternalHrServiceTest {
 
     @Mock
@@ -27,7 +27,7 @@ class ExternalHrServiceTest {
     private ExternalHrService externalHrService;
 
     @Test
-    @DisplayName("외부 인력 전체 조회")
+    @DisplayName("?��? ?�력 ?�체 조회")
     void getAllExternalHr_Success() {
         // Given
         ExternalHr entity = ExternalHr.builder().extrlHrId("HR1").extrlHrNm("Name").build();
@@ -42,7 +42,7 @@ class ExternalHrServiceTest {
     }
 
     @Test
-    @DisplayName("이름으로 외부 인력 검색")
+    @DisplayName("?�름?�로 ?��? ?�력 검??)
     void searchByName_Success() {
         // Given
         ExternalHr entity = ExternalHr.builder().extrlHrId("HR1").extrlHrNm("Tester").build();
@@ -56,7 +56,7 @@ class ExternalHrServiceTest {
     }
 
     @Test
-    @DisplayName("외부 인력 등록")
+    @DisplayName("?��? ?�력 ?�록")
     void createExternalHr_Success() {
         // Given
         ExternalHrDto dto = ExternalHrDto.builder().extrlHrNm("New").build();

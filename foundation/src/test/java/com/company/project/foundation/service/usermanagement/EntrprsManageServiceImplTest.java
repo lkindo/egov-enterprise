@@ -19,7 +19,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("EntrprsManageService 테스트")
+@DisplayName("EntrprsManageService ?�스??)
 class EntrprsManageServiceImplTest {
 
     @Mock
@@ -32,7 +32,7 @@ class EntrprsManageServiceImplTest {
     private EntrprsManageServiceImpl entrprsManageService;
 
     @Test
-    @DisplayName("기업 사용자 상세 조회 성공")
+    @DisplayName("기업 ?�용???�세 조회 ?�공")
     void getEntrprs_Success() {
         // Given
         EnterpriseUser entity = EnterpriseUser.builder()
@@ -50,7 +50,7 @@ class EntrprsManageServiceImplTest {
     }
 
     @Test
-    @DisplayName("기업 사용자 등록 성공")
+    @DisplayName("기업 ?�용???�록 ?�공")
     void insertEntrprs_Success() {
         // Given
         EnterpriseUserDto dto = EnterpriseUserDto.builder()
@@ -67,7 +67,7 @@ class EntrprsManageServiceImplTest {
     }
 
     @Test
-    @DisplayName("기업 사용자 수정 성공")
+    @DisplayName("기업 ?�용???�정 ?�공")
     void updateEntrprs_Success() {
         // Given
         EnterpriseUser entity = EnterpriseUser.builder().esntlId("E1").build();
@@ -82,7 +82,7 @@ class EntrprsManageServiceImplTest {
     }
 
     @Test
-    @DisplayName("비밀번호 수정 성공")
+    @DisplayName("비�?번호 ?�정 ?�공")
     void updatePassword_Success() {
         // Given
         EnterpriseUser entity = EnterpriseUser.builder().esntlId("E1").build();

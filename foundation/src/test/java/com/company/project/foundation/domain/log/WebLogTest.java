@@ -7,11 +7,11 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("WebLog 도메인 단위 테스트")
+@DisplayName("WebLog ?�메???�위 ?�스??)
 class WebLogTest {
 
     @Test
-    @DisplayName("WebLog 생성 및 필드 확인 테스트")
+    @DisplayName("WebLog ?�성 �??�드 ?�인 ?�스??)
     void webLogTest() {
         // given
         LocalDateTime now = LocalDateTime.now();

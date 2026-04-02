@@ -1,4 +1,4 @@
-﻿vi.mock('next/config', () => ({
+vi.mock('next/config', () => ({
   default: () => ({
     publicRuntimeConfig: {},
     serverRuntimeConfig: {},
@@ -30,6 +30,6 @@ describe('ScheduleListPage', () => {
   <ScheduleListPage />
   </QueryClientProvider>
   );
-  expect(await screen.findByText(/업무 諛님명뀛由ъ쟾님i)).toBeInTheDocument();
+  expect(await screen.findByText(/워크플로우 허브/i)).toBeInTheDocument();
  });
 });

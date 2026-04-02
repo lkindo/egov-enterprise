@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @ActiveProfiles("test")
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-@DisplayName("UserAuthorityRepository 테스트")
+@DisplayName("UserAuthorityRepository ?�스??)
 class UserAuthorityRepositoryTest {
 
     @TestConfiguration
@@ -46,7 +46,7 @@ class UserAuthorityRepositoryTest {
     private EntityManager em;
 
     @Test
-    @DisplayName("사용자별 권한 그룹 조회 테스트 (QueryDSL)")
+    @DisplayName("?�용?�별 권한 그룹 조회 ?�스??(QueryDSL)")
     void searchAuthorGroupsTest() {
         // Given
         User user = User.builder()
@@ -79,7 +79,7 @@ class UserAuthorityRepositoryTest {
     }
 
     @Test
-    @DisplayName("부서별 권한 조회 테스트 (QueryDSL)")
+    @DisplayName("부?�별 권한 조회 ?�스??(QueryDSL)")
     void searchDeptAuthorsTest() {
         // Given
         DeptManage dept = DeptManage.builder()

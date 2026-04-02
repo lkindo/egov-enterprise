@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("LoginPolicy 엔티티 테스트")
+@DisplayName("LoginPolicy ?�티???�스??)
 class LoginPolicyTest {
 
     @Test
-    @DisplayName("로그인 정책 생성 및 수정 테스트")
+    @DisplayName("로그???�책 ?�성 �??�정 ?�스??)
     void loginPolicyUpdateTest() {
         // Given
         LoginPolicy policy = LoginPolicy.builder()
@@ -30,7 +30,7 @@ class LoginPolicyTest {
     }
 
     @Test
-    @DisplayName("기본 생성자 테스트 (NoArgsConstructor)")
+    @DisplayName("기본 ?�성???�스??(NoArgsConstructor)")
     void noArgsConstructorTest() {
         // Given
         LoginPolicy policy = LoginPolicy.builder().build();

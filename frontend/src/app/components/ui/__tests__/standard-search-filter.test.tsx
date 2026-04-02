@@ -11,7 +11,7 @@ import { StandardSearchFilter } from '../standard-search-filter';
 import React from 'react';
 
 describe('StandardSearchFilter', () => {
-  const mockFields = [
+  const mockFields: any[] = [
     { name: 'keyword', label: '검색어', type: 'text', placeholder: '이름 검색' },
     { name: 'status', label: '상태', type: 'select', options: [{ label: '활성', value: 'Y' }] }
   ];
@@ -41,7 +41,7 @@ describe('StandardSearchFilter', () => {
     const input = screen.getByPlaceholderText('이름 검색');
     fireEvent.change(input, { target: { value: '홍길동' } });
 
-    const submitBtn = screen.getByRole('button', { name: /검색 실행/i });
+    const submitBtn = screen.getByRole('button', { name: /조회/i });
     fireEvent.click(submitBtn);
 
     expect(onSearch).toHaveBeenCalledWith({ keyword: '홍길동' });
@@ -57,7 +57,7 @@ describe('StandardSearchFilter', () => {
       />
     );
 
-    const resetBtn = screen.getByRole('button', { name: /필터 초기화/i });
+    const resetBtn = screen.getByRole('button', { name: /초기화/i });
     fireEvent.click(resetBtn);
 
     expect(onReset).toHaveBeenCalled();

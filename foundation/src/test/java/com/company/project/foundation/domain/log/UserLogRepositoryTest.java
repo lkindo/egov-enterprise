@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
-@DisplayName("UserLog 리포지토리 테스트")
+@DisplayName("UserLog 리포지?�리 ?�스??)
 class UserLogRepositoryTest {
 
     @Autowired
@@ -34,12 +34,12 @@ class UserLogRepositoryTest {
                 "PRIMARY KEY (EMPLYR_ID))").executeUpdate();
         
         // Insert mock user
-        entityManager.createNativeQuery("INSERT INTO NEMPLYRINFO (EMPLYR_ID, ESNTL_ID, USER_NM, PASSWORD) VALUES ('MOCK-USER', 'USR-MOCK-001', '홍길동', 'pwd')")
+        entityManager.createNativeQuery("INSERT INTO NEMPLYRINFO (EMPLYR_ID, ESNTL_ID, USER_NM, PASSWORD) VALUES ('MOCK-USER', 'USR-MOCK-001', '?�길??, 'pwd')")
                 .executeUpdate();
     }
 
     @Test
-    @DisplayName("사용자 로그 검색 테스트 (Native SQL Join)")
+    @DisplayName("?�용??로그 검???�스??(Native SQL Join)")
     void searchUserLogsTest() {
         // given
         UserLog log = UserLog.builder()
@@ -51,14 +51,14 @@ class UserLogRepositoryTest {
                 .build();
         repository.save(log);
 
-        // when (사용자명 검색)
+        // when (?�용?�명 검??
         Page<UserLog> searchByName = repository.searchUserLogs("길동", "20241220", "20241230", PageRequest.of(0, 10));
 
         // then
         assertThat(searchByName.getContent()).hasSize(1);
         assertThat(searchByName.getContent().get(0).getRqesterId()).isEqualTo("USR-MOCK-001");
 
-        // when (날짜 검색 - 하이픈 자동 제거 검증)
+        // when (?�짜 검??- ?�이???�동 ?�거 검�?
         Page<UserLog> searchByDate = repository.searchUserLogs(null, "2024-12-27", "2024-12-27", PageRequest.of(0, 10));
         assertThat(searchByDate.getContent()).hasSize(1);
 

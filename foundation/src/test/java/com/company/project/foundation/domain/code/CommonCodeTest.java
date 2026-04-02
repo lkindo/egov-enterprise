@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("CommonCode 엔티티 테스트")
+@DisplayName("CommonCode ?�티???�스??)
 class CommonCodeTest {
 
     @Test
-    @DisplayName("CommonCode 엔티티 빌더 및 초기화 테스트")
+    @DisplayName("CommonCode ?�티??빌더 �?초기???�스??)
     void builderTest() {
         CommonCode commonCode = CommonCode.builder()
                 .codeGroupId("COM001")
@@ -27,7 +27,7 @@ class CommonCodeTest {
     }
 
     @Test
-    @DisplayName("CommonCode 엔티티 수정 테스트")
+    @DisplayName("CommonCode ?�티???�정 ?�스??)
     void updateTest() {
         CommonCode commonCode = CommonCode.builder()
                 .codeGroupId("COM001")
@@ -44,7 +44,7 @@ class CommonCodeTest {
     }
 
     @Test
-    @DisplayName("CommonCode 엔티티 삭제 테스트")
+    @DisplayName("CommonCode ?�티????�� ?�스??)
     void deleteTest() {
         CommonCode commonCode = CommonCode.builder()
                 .codeGroupId("COM001")

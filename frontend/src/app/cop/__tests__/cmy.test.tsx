@@ -1,4 +1,4 @@
-﻿vi.mock('next/config', () => ({
+vi.mock('next/config', () => ({
   default: () => ({
     publicRuntimeConfig: {},
     serverRuntimeConfig: {},
@@ -29,7 +29,7 @@ vi.mock('@/services/business/community/communityService', () => ({
  cmmntyId: 'CMM_0001',
  cmmntyNm: '개발팀 커뮤니티',
  cmmntyIntrcn: '개발 관련 논의',
- frstRegisterNm: '?뚯뒪님,
+ frstRegisterNm: '테스트님',
  frstRegisterPnttm: '2024-05-01'
  }
  ],
@@ -50,7 +50,7 @@ describe('CommunityListPage', () => {
  cmmntyId: 'CMM_0001',
  cmmntyNm: '개발팀 커뮤니티',
  cmmntyIntrcn: '개발 관련 논의',
- frstRegisterNm: '?뚯뒪님,
+ frstRegisterNm: '테스트님',
  frstRegisterPnttm: '2024-05-01'
  }
  ],
@@ -64,5 +64,3 @@ describe('CommunityListPage', () => {
  });
  });
 });
-
-

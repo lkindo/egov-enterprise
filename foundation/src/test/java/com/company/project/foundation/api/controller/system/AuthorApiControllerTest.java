@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("AuthorApiController 테스트")
+@DisplayName("AuthorApiController ?�스??)
 class AuthorApiControllerTest {
 
     private MockMvc mockMvc;
@@ -44,7 +44,7 @@ class AuthorApiControllerTest {
     }
 
     @Test
-    @DisplayName("권한 그룹 목록 조회 성공")
+    @DisplayName("권한 그룹 목록 조회 ?�공")
     void testGetAuthors() throws Exception {
         // Given
         when(authorManageService.selectAuthorList(any())).thenReturn(Collections.emptyList());
@@ -58,7 +58,7 @@ class AuthorApiControllerTest {
     }
 
     @Test
-    @DisplayName("권한 그룹 상세 조회 성공")
+    @DisplayName("권한 그룹 ?�세 조회 ?�공")
     void testGetAuthor() throws Exception {
         // Given
         AuthorManageDto dto = new AuthorManageDto();
@@ -73,12 +73,12 @@ class AuthorApiControllerTest {
     }
 
     @Test
-    @DisplayName("권한 그룹 등록 성공")
+    @DisplayName("권한 그룹 ?�록 ?�공")
     void testCreateAuthor() throws Exception {
         // Given
         AuthorManageDto dto = new AuthorManageDto();
         dto.setAuthorCode("ROLE_NEW");
-        dto.setAuthorNm("신규 권한");
+        dto.setAuthorNm("?�규 권한");
 
         // When & Then
         mockMvc.perform(post("/api/v1/admin/system/authorities")
@@ -90,7 +90,7 @@ class AuthorApiControllerTest {
     }
 
     @Test
-    @DisplayName("권한 그룹 삭제 성공")
+    @DisplayName("권한 그룹 ??�� ?�공")
     void testDeleteAuthor() throws Exception {
         // When & Then
         mockMvc.perform(delete("/api/v1/admin/system/authorities/ROLE_ADMIN"))

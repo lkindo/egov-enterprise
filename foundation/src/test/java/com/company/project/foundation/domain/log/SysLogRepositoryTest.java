@@ -1,6 +1,6 @@
 package com.company.project.foundation.domain.log;
 
-import com.company.project.foundation.TestApplication;
+import com.company.project.TestApplication;
 import com.company.project.foundation.domain.code.CommonCode;
 import com.company.project.foundation.domain.code.CommonCodeRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ContextConfiguration(classes = TestApplication.class)
-@DisplayName("SysLog 리포지토리 테스트")
+@DisplayName("SysLog 리포지?�리 ?�스??)
 class SysLogRepositoryTest {
 
     @Autowired
@@ -25,14 +25,14 @@ class SysLogRepositoryTest {
     private CommonCodeRepository commonCodeRepository;
 
     @Test
-    @DisplayName("시스템 로그 검색 테스트 (공통코드 조인 필터)")
+    @DisplayName("?�스??로그 검???�스??(공통코드 조인 ?�터)")
     void searchSysLogsTest() {
         // given
-        // 공통코드 사전 데이터 (COM033)
+        // 공통코드 ?�전 ?�이??(COM033)
         CommonCode code = CommonCode.builder()
                 .codeGroupId("COM033")
                 .code("C")
-                .codeNm("등록")
+                .codeNm("?�록")
                 .useAt("Y")
                 .build();
         commonCodeRepository.save(code);
@@ -45,14 +45,14 @@ class SysLogRepositoryTest {
                 .build();
         repository.save(log);
 
-        // when (코드명 검색: "등록")
-        Page<SysLog> searchResult = repository.searchSysLogs("등록", "20241201", "20241231", PageRequest.of(0, 10));
+        // when (코드�?검?? "?�록")
+        Page<SysLog> searchResult = repository.searchSysLogs("?�록", "20241201", "20241231", PageRequest.of(0, 10));
 
         // then
         assertThat(searchResult.getContent()).hasSize(1);
         assertThat(searchResult.getContent().get(0).getRequstId()).isEqualTo("REQ-001");
         
-        // when (기간 검색)
+        // when (기간 검??
         Page<SysLog> searchDateResult = repository.searchSysLogs(null, "20241227", "20241227", PageRequest.of(0, 10));
         assertThat(searchDateResult.getContent()).hasSize(1);
 

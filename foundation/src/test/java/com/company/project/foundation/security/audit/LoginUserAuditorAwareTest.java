@@ -31,14 +31,14 @@ class LoginUserAuditorAwareTest {
     }
 
     @Test
-    @DisplayName("인증 정보가 없을 때 SYSTEM 반환")
+    @DisplayName("?�증 ?�보가 ?�을 ??SYSTEM 반환")
     void getCurrentAuditor_NoAuthentication_ReturnsSystem() {
         Optional<String> auditor = auditorAware.getCurrentAuditor();
         assertThat(auditor).isPresent().contains("SYSTEM");
     }
 
     @Test
-    @DisplayName("인증되지 않았을 때 SYSTEM 반환")
+    @DisplayName("?�증?��? ?�았????SYSTEM 반환")
     void getCurrentAuditor_NotAuthenticated_ReturnsSystem() {
         Authentication authentication = mock(Authentication.class);
         when(authentication.isAuthenticated()).thenReturn(false);
@@ -51,7 +51,7 @@ class LoginUserAuditorAwareTest {
     }
 
     @Test
-    @DisplayName("익명 사용자일 때 SYSTEM 반환")
+    @DisplayName("?�명 ?�용?�일 ??SYSTEM 반환")
     void getCurrentAuditor_AnonymousUser_ReturnsSystem() {
         Authentication authentication = new UsernamePasswordAuthenticationToken("anonymousUser", null, Collections.emptyList());
         SecurityContext context = SecurityContextHolder.createEmptyContext();
@@ -63,7 +63,7 @@ class LoginUserAuditorAwareTest {
     }
 
     @Test
-    @DisplayName("CustomUserDetails일 때 사용자 ID 반환")
+    @DisplayName("CustomUserDetails?????�용??ID 반환")
     void getCurrentAuditor_CustomUserDetails_ReturnsUserId() {
         CustomUserDetails userDetails = CustomUserDetails.builder()
                 .userId("testUser")
@@ -78,7 +78,7 @@ class LoginUserAuditorAwareTest {
     }
 
     @Test
-    @DisplayName("그 외의 경우 authentication.getName() 반환")
+    @DisplayName("�??�의 경우 authentication.getName() 반환")
     void getCurrentAuditor_OtherPrincipal_ReturnsName() {
         Authentication authentication = new UsernamePasswordAuthenticationToken("directName", null, Collections.emptyList());
         SecurityContext context = SecurityContextHolder.createEmptyContext();

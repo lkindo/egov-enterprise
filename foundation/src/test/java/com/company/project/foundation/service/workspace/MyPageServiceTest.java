@@ -29,12 +29,12 @@ class MyPageServiceTest {
     private MyPageService myPageService;
 
     @Test
-    @DisplayName("활성 마이페이지 콘텐츠 조회 테스트")
+    @DisplayName("?�성 마이?�이지 콘텐�?조회 ?�스??)
     void getActiveMyPageContents_Success() {
         // given
         MyPageContent entity = MyPageContent.builder()
                 .cntntsId("MYP_001")
-                .cntntsNm("테스트 콘텐츠")
+                .cntntsNm("?�스??콘텐�?)
                 .cntntsUseAt("Y")
                 .build();
         given(myPageContentRepository.findByCntntsUseAt("Y")).willReturn(Collections.singletonList(entity));
@@ -44,20 +44,20 @@ class MyPageServiceTest {
 
         // then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getCntntsNm()).isEqualTo("테스트 콘텐츠");
+        assertThat(result.get(0).getCntntsNm()).isEqualTo("?�스??콘텐�?);
     }
 
     @Test
-    @DisplayName("마이페이지 콘텐츠 등록 테스트")
+    @DisplayName("마이?�이지 콘텐�??�록 ?�스??)
     void createContent_Success() {
         // given
         MyPageContentDto dto = MyPageContentDto.builder()
                 .cntntsId("MYP_001")
-                .cntntsNm("테스트 콘텐츠")
+                .cntntsNm("?�스??콘텐�?)
                 .build();
         MyPageContent entity = MyPageContent.builder()
                 .cntntsId("MYP_001")
-                .cntntsNm("테스트 콘텐츠")
+                .cntntsNm("?�스??콘텐�?)
                 .build();
         given(myPageContentRepository.save(any(MyPageContent.class))).willReturn(entity);
 
@@ -70,15 +70,15 @@ class MyPageServiceTest {
     }
 
     @Test
-    @DisplayName("마이페이지 콘텐츠 수정 테스트")
+    @DisplayName("마이?�이지 콘텐�??�정 ?�스??)
     void updateContent_Success() {
         // given
         MyPageContent entity = MyPageContent.builder()
                 .cntntsId("MYP_001")
-                .cntntsNm("이전 이름")
+                .cntntsNm("?�전 ?�름")
                 .build();
         MyPageContentDto updateDto = MyPageContentDto.builder()
-                .cntntsNm("수정된 이름")
+                .cntntsNm("?�정???�름")
                 .build();
         given(myPageContentRepository.findById("MYP_001")).willReturn(Optional.of(entity));
 
@@ -86,11 +86,11 @@ class MyPageServiceTest {
         myPageService.updateContent("MYP_001", updateDto);
 
         // then
-        assertThat(entity.getCntntsNm()).isEqualTo("수정된 이름");
+        assertThat(entity.getCntntsNm()).isEqualTo("?�정???�름");
     }
 
     @Test
-    @DisplayName("마이페이지 콘텐츠 삭제 테스트")
+    @DisplayName("마이?�이지 콘텐�???�� ?�스??)
     void deleteContent_Success() {
         // when
         myPageService.deleteContent("MYP_001");

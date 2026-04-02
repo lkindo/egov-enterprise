@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthorRoleManageService 테스트")
+@DisplayName("AuthorRoleManageService ?�스??)
 class AuthorRoleManageServiceTest {
 
     @Mock
@@ -34,11 +34,11 @@ class AuthorRoleManageServiceTest {
     private AuthorRoleManageService authorRoleManageService;
 
     @Nested
-    @DisplayName("권한별 롤 목록 조회 테스트")
+    @DisplayName("권한�?�?목록 조회 ?�스??)
     class SelectAuthorRoleListTests {
 
         @Test
-        @DisplayName("권한별 롤 목록 조회 성공")
+        @DisplayName("권한�?�?목록 조회 ?�공")
         void testSelectAuthorRoleList_Success() {
             // Given
             String authorCode = "ROLE_ADMIN";
@@ -67,11 +67,11 @@ class AuthorRoleManageServiceTest {
     }
 
     @Nested
-    @DisplayName("권한에 롤 할당 테스트")
+    @DisplayName("권한??�??�당 ?�스??)
     class InsertAuthorRoleTests {
 
         @Test
-        @DisplayName("권한에 롤 할당 성공")
+        @DisplayName("권한??�??�당 ?�공")
         void testInsertAuthorRole_Success() {
             // Given
             String authorCode = "ROLE_ADMIN";
@@ -86,7 +86,7 @@ class AuthorRoleManageServiceTest {
         }
 
         @Test
-        @DisplayName("빈 롤 목록 전달 시 기존 정보 삭제만 수행")
+        @DisplayName("�?�?목록 ?�달 ??기존 ?�보 ??���??�행")
         void testInsertAuthorRole_EmptyRoles() {
             // Given
             String authorCode = "ROLE_ADMIN";

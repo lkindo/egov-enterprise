@@ -1,4 +1,4 @@
-﻿vi.mock('next/config', () => ({
+vi.mock('next/config', () => ({
   default: () => ({
     publicRuntimeConfig: {},
     serverRuntimeConfig: {},
@@ -98,9 +98,9 @@ describe('MenuAdminClient Component', () => {
 
  it('opens create modal', async () => {
  render(<MenuAdminClient initialMenus={mockInitialMenus} programs={mockPrograms} />);
- const btn = screen.getByText(/상위 메뉴 추가/i);
+ const btn = screen.getByText(/신규 등록/i);
  fireEvent.click(btn);
- expect(await screen.findByText(/신규 ㅻ퉬寃뚯씠님노드 설계/i)).toBeDefined();
+ expect(await screen.findByText(/신규 메뉴 정의/i)).toBeDefined();
  });
 
  it('handles deletion', async () => {

@@ -1,4 +1,4 @@
-﻿vi.mock('next/config', () => ({
+vi.mock('next/config', () => ({
   default: () => ({
     publicRuntimeConfig: {},
     serverRuntimeConfig: {},
@@ -34,7 +34,7 @@ describe('DeptJobListPage', () => {
  deptJobId: 'JOB_0001',
  deptJobNm: '주간 보고 작성',
  priort: '1', // High
- frstRegisterNm: '님,
+ frstRegisterNm: '테스트님',
  frstRegisterPnttm: '2024-06-01'
  }
  ],
@@ -48,9 +48,7 @@ describe('DeptJobListPage', () => {
 
  await waitFor(() => {
  expect(screen.getByText('주간 보고 작성')).toBeDefined();
- expect(screen.getByText('?믪쓬')).toBeDefined();
+ expect(screen.getByText('높음')).toBeDefined();
  });
  });
 });
-
-

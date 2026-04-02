@@ -80,7 +80,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("BusinessException 처리 테스트")
+    @DisplayName("BusinessException 처리 ?�스??)
     void handleBusinessExceptionTest() throws Exception {
         mockMvc.perform(get("/test/business-exception"))
                 .andExpect(status().isBadRequest())
@@ -89,7 +89,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("IllegalArgumentException 처리 테스트")
+    @DisplayName("IllegalArgumentException 처리 ?�스??)
     void handleIllegalArgumentExceptionTest() throws Exception {
         mockMvc.perform(get("/test/illegal-argument"))
                 .andExpect(status().isBadRequest())
@@ -98,7 +98,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("AccessDeniedException 처리 테스트")
+    @DisplayName("AccessDeniedException 처리 ?�스??)
     void handleAccessDeniedExceptionTest() throws Exception {
         mockMvc.perform(get("/test/access-denied"))
                 .andExpect(status().isForbidden())
@@ -106,7 +106,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("AuthenticationException 처리 테스트")
+    @DisplayName("AuthenticationException 처리 ?�스??)
     void handleAuthenticationExceptionTest() throws Exception {
         mockMvc.perform(get("/test/auth-exception"))
                 .andExpect(status().isUnauthorized())
@@ -114,7 +114,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("OptimisticLockingFailureException 처리 테스트")
+    @DisplayName("OptimisticLockingFailureException 처리 ?�스??)
     void handleOptimisticLockingFailureExceptionTest() throws Exception {
         mockMvc.perform(get("/test/optimistic-lock"))
                 .andExpect(status().isConflict())
@@ -122,7 +122,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("MethodArgumentNotValidException 처리 테스트")
+    @DisplayName("MethodArgumentNotValidException 처리 ?�스??)
     void handleMethodArgumentNotValidExceptionTest() throws Exception {
         mockMvc.perform(post("/test/validation"))
                 .andExpect(status().isBadRequest())
@@ -131,7 +131,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("HttpRequestMethodNotSupportedException 처리 테스트")
+    @DisplayName("HttpRequestMethodNotSupportedException 처리 ?�스??)
     void handleMethodNotSupportedExceptionTest() throws Exception {
         mockMvc.perform(post("/test/business-exception")) // GET only endpoint called with POST
                 .andExpect(status().isMethodNotAllowed())
@@ -139,7 +139,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("일반 Exception 처리 테스트")
+    @DisplayName("?�반 Exception 처리 ?�스??)
     void handleExceptionTest() throws Exception {
         mockMvc.perform(get("/test/runtime-exception"))
                 .andExpect(status().isInternalServerError())

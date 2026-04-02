@@ -25,14 +25,14 @@ class ApplicationContextProviderTest {
     }
 
     @Test
-    @DisplayName("ApplicationContext 설정 및 조회 확인")
+    @DisplayName("ApplicationContext ?�정 �?조회 ?�인")
     void setAndGetApplicationContext() {
         provider.setApplicationContext(mockContext);
         assertThat(ApplicationContextProvider.getApplicationContext()).isEqualTo(mockContext);
     }
 
     @Test
-    @DisplayName("Class 타입으로 빈 조회 확인")
+    @DisplayName("Class ?�?�으�?�?조회 ?�인")
     void getBeanByClass_Success() {
         provider.setApplicationContext(mockContext);
         String expectedBean = "testBean";
@@ -43,14 +43,14 @@ class ApplicationContextProviderTest {
     }
 
     @Test
-    @DisplayName("Context가 없을 때 Class 타입으로 빈 조회 시 null 반환")
+    @DisplayName("Context가 ?�을 ??Class ?�?�으�?�?조회 ??null 반환")
     void getBeanByClass_NullContext_ReturnsNull() {
         String actualBean = ApplicationContextProvider.getBean(String.class);
         assertThat(actualBean).isNull();
     }
 
     @Test
-    @DisplayName("조회 중 예외 발생 시 null 반환")
+    @DisplayName("조회 �??�외 발생 ??null 반환")
     void getBeanByClass_Exception_ReturnsNull() {
         provider.setApplicationContext(mockContext);
         when(mockContext.getBean(String.class)).thenThrow(new RuntimeException("Bean not found"));
@@ -60,7 +60,7 @@ class ApplicationContextProviderTest {
     }
 
     @Test
-    @DisplayName("이름으로 빈 조회 확인")
+    @DisplayName("?�름?�로 �?조회 ?�인")
     void getBeanByName_Success() {
         provider.setApplicationContext(mockContext);
         Object expectedBean = new Object();
@@ -71,7 +71,7 @@ class ApplicationContextProviderTest {
     }
 
     @Test
-    @DisplayName("Context가 없을 때 이름으로 빈 조회 시 null 반환")
+    @DisplayName("Context가 ?�을 ???�름?�로 �?조회 ??null 반환")
     void getBeanByName_NullContext_ReturnsNull() {
         Object actualBean = ApplicationContextProvider.getBean("beanName");
         assertThat(actualBean).isNull();

@@ -1,6 +1,6 @@
 package com.company.project.foundation.domain.log;
 
-import com.company.project.foundation.TestApplication;
+import com.company.project.TestApplication;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,14 +16,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ContextConfiguration(classes = TestApplication.class)
-@DisplayName("LoginLog 리포지토리 테스트")
+@DisplayName("LoginLog 리포지?�리 ?�스??)
 class LoginLogRepositoryTest {
 
     @Autowired
     private LoginLogRepository repository;
 
     @Test
-    @DisplayName("로그인 로그 검색 테스트 (검색어, 날짜구간)")
+    @DisplayName("로그??로그 검???�스??(검?�어, ?�짜구간)")
     void searchLoginLogsTest() {
         // given
         LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
@@ -46,14 +46,14 @@ class LoginLogRepositoryTest {
         String bgnDe = yesterday.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String endDe = yesterday.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        // when (검색어 필터)
+        // when (검?�어 ?�터)
         Page<LoginLog> searchByMethod = repository.searchLoginLogs("LOGOUT", null, null, PageRequest.of(0, 10));
         
         // then
         assertThat(searchByMethod.getContent()).hasSize(1);
         assertThat(searchByMethod.getContent().get(0).getLoginId()).isEqualTo("user02");
 
-        // when (날짜 필터)
+        // when (?�짜 ?�터)
         Page<LoginLog> searchByDate = repository.searchLoginLogs(null, bgnDe, endDe, PageRequest.of(0, 10));
 
         // then
@@ -62,12 +62,12 @@ class LoginLogRepositoryTest {
     }
 
     @Test
-    @DisplayName("날짜 파싱 예외 케이스 커버리지 확보 테스트")
+    @DisplayName("?�짜 ?�싱 ?�외 케?�스 커버리�? ?�보 ?�스??)
     void searchLoginLogsDateExceptionTest() {
         // when
         Page<LoginLog> result = repository.searchLoginLogs(null, "INVALID_DATE", "20241231", PageRequest.of(0, 10));
         
-        // then (Exception catch 로직 커치되어 null 리턴 -> creatDtBetween 이 null -> 모든 데이터 조회)
+        // then (Exception catch 로직 커치?�어 null 리턴 -> creatDtBetween ??null -> 모든 ?�이??조회)
         assertThat(result).isNotNull();
 
         // when (Native Query Coverage)

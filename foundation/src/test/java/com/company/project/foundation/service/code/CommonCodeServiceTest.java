@@ -34,7 +34,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("CommonCodeService 테스트")
+@DisplayName("CommonCodeService ?�스??)
 class CommonCodeServiceTest {
 
     @Mock
@@ -50,11 +50,11 @@ class CommonCodeServiceTest {
     private CommonCodeService commonCodeService;
 
     @Nested
-    @DisplayName("공통코드 그룹별 조회 테스트")
+    @DisplayName("공통코드 그룹�?조회 ?�스??)
     class GetCodesByGroupTests {
 
         @Test
-        @DisplayName("그룹 ID 로 사용 가능한 공통코드 조회 성공")
+        @DisplayName("그룹 ID �??�용 가?�한 공통코드 조회 ?�공")
         void testGetCodesByGroup_Success() {
             // Given
             String codeGroupId = "CODE_GROUP_1";
@@ -62,7 +62,7 @@ class CommonCodeServiceTest {
                     .codeGroupId(codeGroupId)
                     .code("CODE_001")
                     .codeNm("코드 001")
-                    .codeDc("설명 001")
+                    .codeDc("?�명 001")
                     .useAt("Y")
                     .build();
 
@@ -88,7 +88,7 @@ class CommonCodeServiceTest {
         }
 
         @Test
-        @DisplayName("null 그룹 ID 전달 시 예외 발생")
+        @DisplayName("null 그룹 ID ?�달 ???�외 발생")
         void testGetCodesByGroup_NullGroupId() {
             // When & Then
             assertThrows(NullPointerException.class, () -> {
@@ -97,7 +97,7 @@ class CommonCodeServiceTest {
         }
 
         @Test
-        @DisplayName("그룹에 코드가 없을 때 빈 리스트 반환")
+        @DisplayName("그룹??코드가 ?�을 ??�?리스??반환")
         void testGetCodesByGroup_EmptyResult() {
             // Given
             String codeGroupId = "EMPTY_GROUP";
@@ -114,18 +114,18 @@ class CommonCodeServiceTest {
     }
 
     @Nested
-    @DisplayName("공통코드 생성 테스트")
+    @DisplayName("공통코드 ?�성 ?�스??)
     class CreateCodeTests {
 
         @Test
-        @DisplayName("새로운 공통코드 생성 성공")
+        @DisplayName("?�로??공통코드 ?�성 ?�공")
         void testCreateCode_Success() {
             // Given
             CommonCodeSaveRequest request = new CommonCodeSaveRequest(
                     "GROUP_001",
                     "CODE_001",
-                    "코드명",
-                    "코드 설명",
+                    "코드�?,
+                    "코드 ?�명",
                     "Y");
 
             CommonCode savedCode = CommonCode.builder()
@@ -154,14 +154,14 @@ class CommonCodeServiceTest {
         }
 
         @Test
-        @DisplayName("중복된 코드 ID 로 생성 시 예외 발생")
+        @DisplayName("중복??코드 ID �??�성 ???�외 발생")
         void testCreateCode_Duplicate() {
             // Given
             CommonCodeSaveRequest request = new CommonCodeSaveRequest(
                     "GROUP_001",
                     "CODE_001",
-                    "코드명",
-                    "설명",
+                    "코드�?,
+                    "?�명",
                     "Y");
 
             CommonCodeId duplicateId = new CommonCodeId("GROUP_001", "CODE_001");
@@ -181,11 +181,11 @@ class CommonCodeServiceTest {
     }
 
     @Nested
-    @DisplayName("공통분류코드 조회 테스트")
+    @DisplayName("공통분류코드 조회 ?�스??)
     class CmmnClCodeTests {
 
         @Test
-        @DisplayName("공통분류코드 리스트 조회 성공")
+        @DisplayName("공통분류코드 리스??조회 ?�공")
         void testSelectCmmnClCodeList() {
             // Given
             ComDefaultVO searchVO = new ComDefaultVO();
@@ -196,7 +196,7 @@ class CommonCodeServiceTest {
             CommonCodeCategory category1 = CommonCodeCategory.builder()
                     .clCode("CL001")
                     .clCodeNm("분류 001")
-                    .clCodeDc("분류 설명")
+                    .clCodeDc("분류 ?�명")
                     .useAt("Y")
                     .build();
 
@@ -215,7 +215,7 @@ class CommonCodeServiceTest {
         }
 
         @Test
-        @DisplayName("공통분류코드 상세 조회 성공")
+        @DisplayName("공통분류코드 ?�세 조회 ?�공")
         void testSelectCmmnClCodeDetail() {
             // Given
             CmmnClCodeDto searchDto = new CmmnClCodeDto();
@@ -223,7 +223,7 @@ class CommonCodeServiceTest {
 
             CommonCodeCategory category = CommonCodeCategory.builder()
                     .clCode("CL001")
-                    .clCodeNm("분류명")
+                    .clCodeNm("분류�?)
                     .build();
 
             when(commonCodeCategoryRepository.findById("CL001")).thenReturn(Optional.of(category));
@@ -234,11 +234,11 @@ class CommonCodeServiceTest {
             // Then
             assertNotNull(result);
             assertEquals("CL001", result.getClCode());
-            assertEquals("분류명", result.getClCodeNm());
+            assertEquals("분류�?, result.getClCodeNm());
         }
 
         @Test
-        @DisplayName("공통분류코드 상세 조회 - 존재하지 않는 경우 null 반환")
+        @DisplayName("공통분류코드 ?�세 조회 - 존재?��? ?�는 경우 null 반환")
         void testSelectCmmnClCodeDetail_NotFound() {
             // Given
             CmmnClCodeDto searchDto = new CmmnClCodeDto();
@@ -254,17 +254,17 @@ class CommonCodeServiceTest {
     }
 
     @Nested
-    @DisplayName("공통분류코드 CRUD 테스트")
+    @DisplayName("공통분류코드 CRUD ?�스??)
     class CmmnClCodeCrudTests {
 
         @Test
-        @DisplayName("공통분류코드 등록 성공")
+        @DisplayName("공통분류코드 ?�록 ?�공")
         void testInsertCmmnClCode() {
             // Given
             CmmnClCodeDto dto = new CmmnClCodeDto();
             dto.setClCode("CL001");
-            dto.setClCodeNm("새 분류");
-            dto.setClCodeDc("설명");
+            dto.setClCodeNm("??분류");
+            dto.setClCodeDc("?�명");
             dto.setUseAt("Y");
             dto.setFrstRegisterId("admin");
 
@@ -283,11 +283,11 @@ class CommonCodeServiceTest {
             verify(commonCodeCategoryRepository, times(1)).save(captor.capture());
             CommonCodeCategory saved = captor.getValue();
             assertEquals("CL001", saved.getClCode());
-            assertEquals("새 분류", saved.getClCodeNm());
+            assertEquals("??분류", saved.getClCodeNm());
         }
 
         @Test
-        @DisplayName("중복된 공통분류코드 등록 시 예외 발생")
+        @DisplayName("중복??공통분류코드 ?�록 ???�외 발생")
         void testInsertCmmnClCode_Duplicate() {
             // Given
             CmmnClCodeDto dto = new CmmnClCodeDto();
@@ -301,17 +301,17 @@ class CommonCodeServiceTest {
         }
 
         @Test
-        @DisplayName("공통분류코드 수정 성공")
+        @DisplayName("공통분류코드 ?�정 ?�공")
         void testUpdateCmmnClCode() {
             // Given
             CmmnClCodeDto dto = new CmmnClCodeDto();
             dto.setClCode("CL001");
-            dto.setClCodeNm("수정된 분류명");
+            dto.setClCodeNm("?�정??분류�?);
             dto.setLastUpdusrId("admin");
 
             CommonCodeCategory existing = CommonCodeCategory.builder()
                     .clCode("CL001")
-                    .clCodeNm("원래 분류명")
+                    .clCodeNm("?�래 분류�?)
                     .build();
 
             when(commonCodeCategoryRepository.findById("CL001")).thenReturn(Optional.of(existing));
@@ -321,11 +321,11 @@ class CommonCodeServiceTest {
 
             // Then
             verify(commonCodeCategoryRepository, times(1)).findById("CL001");
-            assertEquals("수정된 분류명", existing.getClCodeNm());
+            assertEquals("?�정??분류�?, existing.getClCodeNm());
         }
 
         @Test
-        @DisplayName("공통분류코드 삭제 성공")
+        @DisplayName("공통분류코드 ??�� ?�공")
         void testDeleteCmmnClCode() {
             // Given
             CmmnClCodeDto dto = new CmmnClCodeDto();
@@ -342,26 +342,26 @@ class CommonCodeServiceTest {
 
             // Then
             verify(commonCodeCategoryRepository, times(1)).findById("CL001");
-            // delete() 메서드가 호출되었는지 확인 (CommonCodeCategory 내부 로직)
+            // delete() 메서?��? ?�출?�었?��? ?�인 (CommonCodeCategory ?��? 로직)
         }
     }
 
     @Nested
-    @DisplayName("공통코드 그룹 CRUD 테스트")
+    @DisplayName("공통코드 그룹 CRUD ?�스??)
     class CmmnCodeCrudTests {
 
         @Test
-        @DisplayName("공통코드 그룹 등록 성공")
+        @DisplayName("공통코드 그룹 ?�록 ?�공")
         void testInsertCmmnCode() {
             // Given
             CmmnCodeDto dto = new CmmnCodeDto();
             dto.setCodeId("GROUP_001");
-            dto.setCodeIdNm("그룹명");
+            dto.setCodeIdNm("그룹�?);
             dto.setClCode("CL001");
             dto.setUseAt("Y");
 
             doReturn(false).when(commonCodeGroupRepository).existsById("GROUP_001");
-            lenient().doReturn(Optional.of(CommonCodeCategory.builder().clCodeNm("분류명").build()))
+            lenient().doReturn(Optional.of(CommonCodeCategory.builder().clCodeNm("분류�?).build()))
                     .when(commonCodeCategoryRepository).findById("CL001");
             doAnswer(invocation -> {
                 CommonCodeGroup entity = invocation.getArgument(0);
@@ -377,7 +377,7 @@ class CommonCodeServiceTest {
         }
 
         @Test
-        @DisplayName("중복된 공통코드 그룹 등록 시 예외 발생")
+        @DisplayName("중복??공통코드 그룹 ?�록 ???�외 발생")
         void testInsertCmmnCode_Duplicate() {
             // Given
             CmmnCodeDto dto = new CmmnCodeDto();
@@ -391,17 +391,17 @@ class CommonCodeServiceTest {
         }
 
         @Test
-        @DisplayName("공통코드 그룹 수정 성공")
+        @DisplayName("공통코드 그룹 ?�정 ?�공")
         void testUpdateCmmnCode() {
             // Given
             CmmnCodeDto dto = new CmmnCodeDto();
             dto.setCodeId("GROUP_001");
-            dto.setCodeIdNm("수정된 그룹명");
+            dto.setCodeIdNm("?�정??그룹�?);
             dto.setLastUpdusrId("admin");
 
             CommonCodeGroup existing = CommonCodeGroup.builder()
                     .codeId("GROUP_001")
-                    .codeIdNm("원래 그룹명")
+                    .codeIdNm("?�래 그룹�?)
                     .build();
 
             when(commonCodeGroupRepository.findById("GROUP_001")).thenReturn(Optional.of(existing));
@@ -411,11 +411,11 @@ class CommonCodeServiceTest {
 
             // Then
             verify(commonCodeGroupRepository, times(1)).findById("GROUP_001");
-            assertEquals("수정된 그룹명", existing.getCodeIdNm());
+            assertEquals("?�정??그룹�?, existing.getCodeIdNm());
         }
 
         @Test
-        @DisplayName("공통코드 그룹 삭제 성공")
+        @DisplayName("공통코드 그룹 ??�� ?�공")
         void testDeleteCmmnCode() {
             // Given
             CmmnCodeDto dto = new CmmnCodeDto();
@@ -437,17 +437,17 @@ class CommonCodeServiceTest {
     }
 
     @Nested
-    @DisplayName("공통상세코드 CRUD 테스트")
+    @DisplayName("공통?�세코드 CRUD ?�스??)
     class CmmnDetailCodeCrudTests {
 
         @Test
-        @DisplayName("공통상세코드 등록 성공")
+        @DisplayName("공통?�세코드 ?�록 ?�공")
         void testInsertCmmnDetailCode() {
             // Given
             CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
             dto.setCodeId("GROUP_001");
             dto.setCode("CODE_001");
-            dto.setCodeNm("코드명");
+            dto.setCodeNm("코드�?);
             dto.setUseAt("Y");
 
             CommonCodeId codeId = new CommonCodeId("GROUP_001", "CODE_001");
@@ -461,12 +461,12 @@ class CommonCodeServiceTest {
             // When
             commonCodeService.insertCmmnDetailCode(dto);
 
-            // Then - 서비스 호출이 예외 없이 완료되는지 확인
+            // Then - ?�비???�출???�외 ?�이 ?�료?�는지 ?�인
             assertTrue(true);
         }
 
         @Test
-        @DisplayName("중복된 공통상세코드 등록 시 예외 발생")
+        @DisplayName("중복??공통?�세코드 ?�록 ???�외 발생")
         void testInsertCmmnDetailCode_Duplicate() {
             // Given
             CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
@@ -483,14 +483,14 @@ class CommonCodeServiceTest {
         }
 
         @Test
-        @DisplayName("공통상세코드 수정 성공 - 상세 필드 검증")
+        @DisplayName("공통?�세코드 ?�정 ?�공 - ?�세 ?�드 검�?)
         void testUpdateCmmnDetailCode_Detailed() {
             // Given
             CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
             dto.setCodeId("GROUP_001");
             dto.setCode("CODE_001");
-            dto.setCodeNm("수정된 이름");
-            dto.setCodeDc("수정된 설명");
+            dto.setCodeNm("?�정???�름");
+            dto.setCodeDc("?�정???�명");
             dto.setUseAt("N");
             dto.setLastUpdusrId("user01");
 
@@ -498,7 +498,7 @@ class CommonCodeServiceTest {
             CommonCode existing = spy(CommonCode.builder()
                     .codeGroupId("GROUP_001")
                     .code("CODE_001")
-                    .codeNm("기존 이름")
+                    .codeNm("기존 ?�름")
                     .build());
 
             when(commonCodeRepository.findById(codeId)).thenReturn(Optional.of(existing));
@@ -507,12 +507,12 @@ class CommonCodeServiceTest {
             commonCodeService.updateCmmnDetailCode(dto);
 
             // Then
-            verify(existing).update(eq("수정된 이름"), eq("수정된 설명"), eq("N"), eq("user01"));
-            assertEquals("수정된 이름", existing.getCodeNm());
+            verify(existing).update(eq("?�정???�름"), eq("?�정???�명"), eq("N"), eq("user01"));
+            assertEquals("?�정???�름", existing.getCodeNm());
         }
 
         @Test
-        @DisplayName("공통상세코드 삭제 성공 - delete 메서드 호출 확인")
+        @DisplayName("공통?�세코드 ??�� ?�공 - delete 메서???�출 ?�인")
         void testDeleteCmmnDetailCode_Detailed() {
             // Given
             CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
@@ -523,7 +523,7 @@ class CommonCodeServiceTest {
             CommonCode existing = spy(CommonCode.builder()
                     .codeGroupId("GROUP_001")
                     .code("CODE_001")
-                    .codeNm("기존 이름")
+                    .codeNm("기존 ?�름")
                     .build());
 
             when(commonCodeRepository.findById(codeId)).thenReturn(Optional.of(existing));

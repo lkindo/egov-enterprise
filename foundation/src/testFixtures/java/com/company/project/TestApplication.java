@@ -1,4 +1,4 @@
-package com.company.project.foundation;
+package com.company.project;
 
 import com.company.project.foundation.core.config.FullBeanNameGenerator;
 import com.company.project.foundation.core.config.QuerydslConfig;
@@ -13,9 +13,9 @@ import org.springframework.context.annotation.Import;
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test.*Config.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*ConfigTest.*"),
         @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = { org.springframework.boot.test.context.TestConfiguration.class }),
-        @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com\\\\.company\\\\.project\\\\.api\\\\.config\\\\.ApiSecurityConfig"),
-        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = { com.company.project.foundation.domain.config.JpaConfig.class })
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com\\.company\\.project\\.api\\.config\\.ApiSecurityConfig")
 })
-@Import({QuerydslConfig.class, com.company.project.foundation.domain.config.JpaConfig.class})
+@Import({QuerydslConfig.class})
 public class TestApplication {
 }
+

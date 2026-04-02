@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthService 테스트")
+@DisplayName("AuthService ?�스??)
 class AuthServiceTest {
 
     @Mock
@@ -44,11 +44,11 @@ class AuthServiceTest {
     private AuthServiceImpl authService;
 
     @Nested
-    @DisplayName("로그인 테스트")
+    @DisplayName("로그???�스??)
     class LoginTests {
 
         @Test
-        @DisplayName("정상 로그인 시 액세스 토큰과 리프레시 토큰 반환")
+        @DisplayName("?�상 로그?????�세???�큰�?리프?�시 ?�큰 반환")
         void login_Success() {
             // Given
             String userId = "testUser";
@@ -79,7 +79,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("로그인 시 ROLE_USER 가 기본 역할로 설정됨")
+        @DisplayName("로그????ROLE_USER 가 기본 ??���??�정??)
         void login_DefaultRole() {
             // Given
             String userId = "newUser";
@@ -106,7 +106,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("로그인 시 ROLE_ADMIN 역할 정상 처리")
+        @DisplayName("로그????ROLE_ADMIN ??�� ?�상 처리")
         void login_AdminRole() {
             // Given
             String userId = "admin";
@@ -133,7 +133,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("잘못된 인증 정보로 로그인 시 예외 발생")
+        @DisplayName("?�못???�증 ?�보�?로그?????�외 발생")
         void login_InvalidCredentials() {
             // Given
             LoginRequest request = new LoginRequest("invalidUser", "wrongPassword");
@@ -150,7 +150,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("null 로그인 요청으로 예외 발생")
+        @DisplayName("null 로그???�청?�로 ?�외 발생")
         void login_NullRequest() {
             // When & Then
             assertThrows(NullPointerException.class, () -> {
@@ -159,7 +159,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("빈 사용자 ID 로 로그인 시도")
+        @DisplayName("�??�용??ID �?로그???�도")
         void login_EmptyUserId() {
             // Given
             LoginRequest request = new LoginRequest("", "password");
@@ -176,16 +176,16 @@ class AuthServiceTest {
 
             // Then
             assertNotNull(result);
-            // 빈 사용자 ID 도 허용됨 (구현에 따라 다를 수 있음)
+            // �??�용??ID ???�용??(구현???�라 ?��? ???�음)
         }
     }
 
     @Nested
-    @DisplayName("토큰 관리 테스트")
+    @DisplayName("?�큰 관�??�스??)
     class TokenManagementTests {
 
         @Test
-        @DisplayName("로그인 응답에 유효한 토큰이 포함되어야 함")
+        @DisplayName("로그???�답???�효???�큰???�함?�어????)
         void loginResponse_ValidTokens() {
             // Given
             LoginRequest request = new LoginRequest("user", "pass");
@@ -208,7 +208,7 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("여러 번 로그인 시도 시 매번 새로운 토큰 발급")
+        @DisplayName("?�러 �?로그???�도 ??매번 ?�로???�큰 발급")
         void login_MultipleAttempts() {
             // Given
             LoginRequest request = new LoginRequest("user", "pass");

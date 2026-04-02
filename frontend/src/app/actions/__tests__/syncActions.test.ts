@@ -31,9 +31,9 @@ vi.mock('@/services/foundation/system/SyncAdminService', () => ({
 describe('syncActions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (cookies as unknown).mockResolvedValue({
+    (vi.mocked(cookies)).mockReturnValue({
       get: vi.fn().mockReturnValue({ value: 'token' }),
-    });
+    } as any);
   });
 
   describe('saveSyncServerAction', () => {
@@ -71,7 +71,7 @@ describe('syncActions', () => {
 
     it('should handle errors', async () => {
       const formData = new FormData();
-      (syncAdminService.createSyncServer as unknown).mockRejectedValue(new Error('Save Failed'));
+      (vi.mocked(syncAdminService.createSyncServer)).mockRejectedValue(new Error('Save Failed'));
 
       const result = await saveSyncServerAction({}, formData);
 

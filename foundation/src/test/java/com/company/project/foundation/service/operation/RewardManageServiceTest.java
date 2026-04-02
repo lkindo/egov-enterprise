@@ -17,7 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("RewardManageService 테스트")
+@DisplayName("RewardManageService ?�스??)
 class RewardManageServiceTest {
 
     @Mock
@@ -27,7 +27,7 @@ class RewardManageServiceTest {
     private RewardManageService rewardManageService;
 
     @Test
-    @DisplayName("포상 전체 조회")
+    @DisplayName("?�상 ?�체 조회")
     void getAllRewards_Success() {
         // Given
         RewardManage entity = RewardManage.builder().rwardId("R1").rwardNm("Excellence").build();
@@ -42,7 +42,7 @@ class RewardManageServiceTest {
     }
 
     @Test
-    @DisplayName("이름으로 포상 검색")
+    @DisplayName("?�름?�로 ?�상 검??)
     void searchByName_Success() {
         // Given
         RewardManage entity = RewardManage.builder().rwardId("R1").rwardNm("Gold Prize").build();
@@ -56,7 +56,7 @@ class RewardManageServiceTest {
     }
 
     @Test
-    @DisplayName("포상 등록")
+    @DisplayName("?�상 ?�록")
     void createReward_Success() {
         // Given
         RewardManageDto dto = RewardManageDto.builder().rwardNm("New Reward").build();

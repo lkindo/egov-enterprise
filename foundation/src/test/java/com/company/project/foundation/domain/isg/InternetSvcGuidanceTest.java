@@ -5,32 +5,32 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("InternetSvcGuidance 도메인 단위 테스트")
+@DisplayName("InternetSvcGuidance ?�메???�위 ?�스??)
 class InternetSvcGuidanceTest {
 
     @Test
-    @DisplayName("InternetSvcGuidance 생성 및 수정 테스트")
+    @DisplayName("InternetSvcGuidance ?�성 �??�정 ?�스??)
     void internetSvcGuidanceTest() {
         // given
         InternetSvcGuidance guidance = InternetSvcGuidance.builder()
                 .intnetSvcId("ISG-001")
-                .intnetSvcNm("인터넷 서비스 가이드")
-                .intnetSvcDc("설명입니다")
+                .intnetSvcNm("?�터???�비??가?�드")
+                .intnetSvcDc("?�명?�니??)
                 .reflctAt("Y")
                 .build();
 
         // when & then
         assertThat(guidance.getIntnetSvcId()).isEqualTo("ISG-001");
-        assertThat(guidance.getIntnetSvcNm()).isEqualTo("인터넷 서비스 가이드");
-        assertThat(guidance.getIntnetSvcDc()).isEqualTo("설명입니다");
+        assertThat(guidance.getIntnetSvcNm()).isEqualTo("?�터???�비??가?�드");
+        assertThat(guidance.getIntnetSvcDc()).isEqualTo("?�명?�니??);
         assertThat(guidance.getReflctAt()).isEqualTo("Y");
 
         // when
-        guidance.update("인터넷 서비스 가이드 수정", "수정된 설명입니다", "N");
+        guidance.update("?�터???�비??가?�드 ?�정", "?�정???�명?�니??, "N");
 
         // then
-        assertThat(guidance.getIntnetSvcNm()).isEqualTo("인터넷 서비스 가이드 수정");
-        assertThat(guidance.getIntnetSvcDc()).isEqualTo("수정된 설명입니다");
+        assertThat(guidance.getIntnetSvcNm()).isEqualTo("?�터???�비??가?�드 ?�정");
+        assertThat(guidance.getIntnetSvcDc()).isEqualTo("?�정???�명?�니??);
         assertThat(guidance.getReflctAt()).isEqualTo("N");
     }
 }

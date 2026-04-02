@@ -25,7 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("LoginLogManageService 테스트")
+@DisplayName("LoginLogManageService ?�스??)
 class LoginLogManageServiceTest {
 
     @Mock
@@ -35,11 +35,11 @@ class LoginLogManageServiceTest {
     private LoginLogManageService loginLogManageService;
 
     @Nested
-    @DisplayName("로그인 로그 조회 테스트")
+    @DisplayName("로그??로그 조회 ?�스??)
     class SelectLoginLogTests {
 
         @Test
-        @DisplayName("로그인 로그 목록 조회 성공")
+        @DisplayName("로그??로그 목록 조회 ?�공")
         void testSelectLoginLogList_Success() {
             // Given
             ComDefaultVO searchVO = new ComDefaultVO();
@@ -67,7 +67,7 @@ class LoginLogManageServiceTest {
         }
 
         @Test
-        @DisplayName("로그인 로그 총 갯수 조회 성공")
+        @DisplayName("로그??로그 �?�?�� 조회 ?�공")
         void testSelectLoginLogListTotCnt_Success() {
             // Given
             when(loginLogRepository.count()).thenReturn(10L);
@@ -81,7 +81,7 @@ class LoginLogManageServiceTest {
         }
 
         @Test
-        @DisplayName("로그인 로그 상세 조회 성공")
+        @DisplayName("로그??로그 ?�세 조회 ?�공")
         void testSelectLoginLog_Success() {
             // Given
             String logId = "LGN_001";
@@ -103,7 +103,7 @@ class LoginLogManageServiceTest {
         }
 
         @Test
-        @DisplayName("존재하지 않는 로그인 로그 조회 시 null 반환")
+        @DisplayName("존재?��? ?�는 로그??로그 조회 ??null 반환")
         void testSelectLoginLog_NotFound() {
             // Given
             String logId = "NON_EXIST";

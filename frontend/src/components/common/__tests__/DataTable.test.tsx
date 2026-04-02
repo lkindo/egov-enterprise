@@ -18,7 +18,7 @@ interface MockData {
 
 const columns: Column<MockData>[] = [
   { header: '아이디', accessorKey: 'id', sortable: true },
-  { header: '이름', accessorKey: '상태', sortable: true },
+  { header: '이름', accessorKey: 'name', sortable: true },
   { header: '상태', accessorKey: 'status' }
 ];
 
@@ -31,9 +31,9 @@ describe('DataTable', () => {
   it('renders table headers and data correctly', () => {
     render(<DataTable columns={columns} data={data} title="Test Table" />);
 
-    expect(screen.getByText(/데이터가 없습니다/)).toBeInTheDocument();
+    expect(screen.queryByText(/데이터가 없습니다/)).not.toBeInTheDocument();
     expect(screen.getByText('아이디')).toBeInTheDocument();
-    expect(screen.getByText('아이디')).toBeInTheDocument();
+    expect(screen.getByText('이름')).toBeInTheDocument();
     expect(screen.getByText('Bob')).toBeInTheDocument();
   });
 

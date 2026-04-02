@@ -15,7 +15,7 @@ import com.company.project.config.SecurityTestConfig;
  * 시큐리티 테스트를 위한 기본 추상 클래스
  * MockMvc를 이용한 보안 테스트 환경을 제공하며, 필요한 인증 빈을 Mock으로 설정한다.
  */
-@SpringBootTest(properties = {
+@SpringBootTest(classes = com.company.project.ApiServerApplication.class, properties = {
     "spring.main.allow-bean-definition-overriding=true",
     "springdoc.api-docs.enabled=false"
 })

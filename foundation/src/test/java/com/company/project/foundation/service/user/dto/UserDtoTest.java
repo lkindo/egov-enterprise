@@ -7,16 +7,16 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("User DTO 테스트")
+@DisplayName("User DTO ?�스??)
 class UserDtoTest {
 
     @Test
-    @DisplayName("User 엔티티에서 UserDto로 변환 테스트")
+    @DisplayName("User ?�티?�에??UserDto�?변???�스??)
     void userDtoFromEntityTest() {
         // Given
         User user = User.builder()
                 .userId("tester")
-                .userNm("테스터")
+                .userNm("?�스??)
                 .esntlId("USR_0000000000001")
                 .password("password") // Fixed: Add required field
                 .role(Role.ADMIN)
@@ -29,7 +29,7 @@ class UserDtoTest {
 
         // Then
         assertThat(dto.getUserId()).isEqualTo("tester");
-        assertThat(dto.getUserNm()).isEqualTo("테스터");
+        assertThat(dto.getUserNm()).isEqualTo("?�스??);
         assertThat(dto.getEsntlId()).isEqualTo("USR_0000000000001");
         assertThat(dto.getRole()).isEqualTo("ADMIN");
         assertThat(dto.getEmplNo()).isEqualTo("12345");
@@ -37,19 +37,19 @@ class UserDtoTest {
     }
 
     @Test
-    @DisplayName("null User 엔티티 변환 테스트")
+    @DisplayName("null User ?�티??변???�스??)
     void userDtoFromNullEntityTest() {
         assertThat(UserDto.from(null)).isNull();
     }
 
     @Test
-    @DisplayName("UserSignupRequest 생성 테스트")
+    @DisplayName("UserSignupRequest ?�성 ?�스??)
     void userSignupRequestTest() {
         // Given & When
         UserSignupRequest request = new UserSignupRequest(
                 "signupUser",
                 "password123!",
-                "가입자",
+                "가?�자",
                 Role.USER,
                 "Hint",
                 "Answer"
@@ -58,7 +58,7 @@ class UserDtoTest {
         // Then
         assertThat(request.userId()).isEqualTo("signupUser");
         assertThat(request.password()).isEqualTo("password123!");
-        assertThat(request.userNm()).isEqualTo("가입자");
+        assertThat(request.userNm()).isEqualTo("가?�자");
         assertThat(request.role()).isEqualTo(Role.USER);
         assertThat(request.passwordHint()).isEqualTo("Hint");
         assertThat(request.passwordCnsr()).isEqualTo("Answer");

@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BusinessExceptionTest {
 
     @Test
-    @DisplayName("BusinessException 생성 및 ErrorCode 매핑 테스트")
+    @DisplayName("BusinessException ?�성 �?ErrorCode 매핑 ?�스??)
     void businessExceptionTest() {
         ErrorCode errorCode = ErrorCode.ENTITY_NOT_FOUND;
         BusinessException exception = new BusinessException(errorCode);
@@ -17,7 +17,7 @@ class BusinessExceptionTest {
     }
 
     @Test
-    @DisplayName("커스텀 메시지를 가진 BusinessException 테스트")
+    @DisplayName("커스?� 메시지�?가�?BusinessException ?�스??)
     void businessExceptionWithCustomMessageTest() {
         String customMsg = "Specific entity not found";
         BusinessException exception = new BusinessException(customMsg, ErrorCode.ENTITY_NOT_FOUND);

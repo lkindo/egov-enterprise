@@ -30,7 +30,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("액세스 토큰 생성 및 검증 성공")
+    @DisplayName("?�세???�큰 ?�성 �?검�??�공")
     void createAndValidateAccessToken() {
         // Given
         String userId = "testuser";
@@ -48,7 +48,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("리프레시 토큰 생성 및 검증 성공")
+    @DisplayName("리프?�시 ?�큰 ?�성 �?검�??�공")
     void createAndValidateRefreshToken() {
         // Given
         String userId = "testuser";
@@ -65,7 +65,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("잘못된 토큰 검증 실패")
+    @DisplayName("?�못???�큰 검�??�패")
     void validateToken_fail_invalid() {
         // Given
         String invalidToken = "invalid.token.here";
@@ -78,7 +78,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("만료된 토큰 검증 실패")
+    @DisplayName("만료???�큰 검�??�패")
     void validateToken_fail_expired() {
         // Given
         // We can't easily test expiration without mocking Date or waiting, 

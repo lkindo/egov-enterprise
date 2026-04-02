@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PageResponseTest {
 
     @Test
-    @DisplayName("페이지 응답 객체 생성 및 페이징 계산 테스트")
+    @DisplayName("?�이지 ?�답 객체 ?�성 �??�이�?계산 ?�스??)
     void pageResponseCreationTest() {
         List<String> list = List.of("item1", "item2");
         long total = 25;

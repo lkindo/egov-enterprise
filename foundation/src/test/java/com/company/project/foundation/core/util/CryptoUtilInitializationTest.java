@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class CryptoUtilInitializationTest {
 
     @Test
-    @DisplayName("CryptoUtil 초기화되지 않은 경우 예외 발생 테스트")
+    @DisplayName("CryptoUtil 초기?�되지 ?��? 경우 ?�외 발생 ?�스??)
     void encrypt_fail_notInitialized() {
         // Given
         // Clear static fields to simulate uninitialized state
@@ -23,7 +23,7 @@ class CryptoUtilInitializationTest {
     }
 
     @Test
-    @DisplayName("CryptoUtil 복호화 시 초기화되지 않은 경우 예외 발생 테스트")
+    @DisplayName("CryptoUtil 복호????초기?�되지 ?��? 경우 ?�외 발생 ?�스??)
     void decrypt_fail_notInitialized() {
         // Given
         ReflectionTestUtils.setField(CryptoUtil.class, "cryptoService", null);

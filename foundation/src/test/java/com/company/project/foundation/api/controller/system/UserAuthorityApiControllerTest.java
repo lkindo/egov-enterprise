@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("UserAuthorityApiController 테스트")
+@DisplayName("UserAuthorityApiController ?�스??)
 class UserAuthorityApiControllerTest {
 
     private MockMvc mockMvc;
@@ -47,7 +47,7 @@ class UserAuthorityApiControllerTest {
     }
 
     @Test
-    @DisplayName("사용자별 권한 목록 조회 성공")
+    @DisplayName("?�용?�별 권한 목록 조회 ?�공")
     void testGetUserAuthorities() throws Exception {
         // Given
         when(userAuthorityManageService.selectUserAuthorityList(any()))
@@ -61,7 +61,7 @@ class UserAuthorityApiControllerTest {
     }
 
     @Test
-    @DisplayName("사용자 권한 할당 저장 성공")
+    @DisplayName("?�용??권한 ?�당 ?�???�공")
     void testSaveUserAuthorities() throws Exception {
         // Given
         List<UserAuthorityDto> userAuthorities = Arrays.asList(
@@ -78,7 +78,7 @@ class UserAuthorityApiControllerTest {
     }
 
     @Test
-    @DisplayName("사용자 권한 할당 삭제 성공")
+    @DisplayName("?�용??권한 ?�당 ??�� ?�공")
     void testDeleteUserAuthorities() throws Exception {
         // Given
         List<String> uniqIds = Arrays.asList("UNIQ_001", "UNIQ_002");

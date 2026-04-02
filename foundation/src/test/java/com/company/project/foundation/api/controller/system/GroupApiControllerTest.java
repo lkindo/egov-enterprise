@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@DisplayName("GroupApiController 테스트")
+@DisplayName("GroupApiController ?�스??)
 class GroupApiControllerTest {
 
     private MockMvc mockMvc;
@@ -44,7 +44,7 @@ class GroupApiControllerTest {
     }
 
     @Test
-    @DisplayName("그룹 목록 조회 성공")
+    @DisplayName("그룹 목록 조회 ?�공")
     void testGetGroups() throws Exception {
         // Given
         when(groupManageService.selectGroupList(any())).thenReturn(Collections.emptyList());
@@ -58,12 +58,12 @@ class GroupApiControllerTest {
     }
 
     @Test
-    @DisplayName("그룹 상세 조회 성공")
+    @DisplayName("그룹 ?�세 조회 ?�공")
     void testGetGroup() throws Exception {
         // Given
         GroupManageDto dto = GroupManageDto.builder()
                 .groupId("GROUP_001")
-                .groupNm("일반사용자")
+                .groupNm("?�반?�용??)
                 .build();
         when(groupManageService.selectGroup("GROUP_001")).thenReturn(dto);
 
@@ -74,12 +74,12 @@ class GroupApiControllerTest {
     }
 
     @Test
-    @DisplayName("그룹 등록 성공")
+    @DisplayName("그룹 ?�록 ?�공")
     void testCreateGroup() throws Exception {
         // Given
         GroupManageDto dto = GroupManageDto.builder()
                 .groupId("GROUP_NEW")
-                .groupNm("신규그룹")
+                .groupNm("?�규그룹")
                 .build();
 
         // When & Then
@@ -92,7 +92,7 @@ class GroupApiControllerTest {
     }
 
     @Test
-    @DisplayName("그룹 삭제 성공")
+    @DisplayName("그룹 ??�� ?�공")
     void testDeleteGroup() throws Exception {
         // When & Then
         mockMvc.perform(delete("/api/v1/admin/system/groups/GROUP_001"))

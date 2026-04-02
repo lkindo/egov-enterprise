@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("로그 통계 Summary 엔티티 단위 테스트")
+@DisplayName("로그 ?�계 Summary ?�티???�위 ?�스??)
 class LogSummaryTest {
 
     @Test
-    @DisplayName("BbsSummary 생성 및 복합키 확인")
+    @DisplayName("BbsSummary ?�성 �?복합???�인")
     void bbsSummaryTest() {
         BbsSummary summary = BbsSummary.builder()
                 .occrrncDe("20241227")
@@ -30,7 +30,7 @@ class LogSummaryTest {
     }
 
     @Test
-    @DisplayName("SysLogSummary 생성 및 복합키 확인")
+    @DisplayName("SysLogSummary ?�성 �?복합???�인")
     void sysLogSummaryTest() {
         SysLogSummary summary = SysLogSummary.builder()
                 .srvcNm("Srvc")
@@ -47,7 +47,7 @@ class LogSummaryTest {
     }
 
     @Test
-    @DisplayName("UserSummary 생성 및 복합키 확인")
+    @DisplayName("UserSummary ?�성 �?복합???�인")
     void userSummaryTest() {
         UserSummary summary = UserSummary.builder()
                 .occrrncDe("20241227")
@@ -64,7 +64,7 @@ class LogSummaryTest {
     }
 
     @Test
-    @DisplayName("WebLogSummary 생성 및 복합키 확인")
+    @DisplayName("WebLogSummary ?�성 �?복합???�인")
     void webLogSummaryTest() {
         WebLogSummary summary = WebLogSummary.builder()
                 .occrrncDe("20241227")
