@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.core.util;
+package com.company.project.foundation.core.util;
 
 import org.egovframe.rte.fdl.crypto.EgovCryptoService;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.api.auth;
+package com.company.project.foundation.api.auth;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.service.auth.AuthService;

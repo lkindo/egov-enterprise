@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.api.controller.system.login;
+package com.company.project.foundation.api.controller.system.login;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.service.login.LoginPolicyManageService;

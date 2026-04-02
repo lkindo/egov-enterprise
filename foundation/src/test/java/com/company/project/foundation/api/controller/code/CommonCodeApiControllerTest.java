@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.api.controller.code;
+package com.company.project.foundation.api.controller.code;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.service.code.CommonCodeService;

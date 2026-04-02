@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.domain.log;
+package com.company.project.foundation.domain.log;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

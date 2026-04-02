@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.domain.user.entity;
+package com.company.project.foundation.domain.user.entity;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

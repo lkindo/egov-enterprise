@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.core.response;
+package com.company.project.foundation.core.response;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

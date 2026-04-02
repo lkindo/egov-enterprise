@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.domain.isg;
+package com.company.project.foundation.domain.isg;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

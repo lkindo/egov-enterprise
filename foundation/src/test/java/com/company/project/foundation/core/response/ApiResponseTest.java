@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.core.response;
+package com.company.project.foundation.core.response;
 
 import com.company.project.foundation.core.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;

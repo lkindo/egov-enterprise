@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.api.controller.system;
+package com.company.project.foundation.api.controller.system;
 
 import com.company.project.foundation.core.exception.GlobalExceptionHandler;
 import com.company.project.foundation.service.auth.RoleManageService;

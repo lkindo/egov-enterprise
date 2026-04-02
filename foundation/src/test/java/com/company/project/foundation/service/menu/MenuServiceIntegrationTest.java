@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.service.menu;
+package com.company.project.foundation.service.menu;
 
 import com.company.project.foundation.IntegrationTest;
 import com.company.project.foundation.domain.auth.MenuAuthority;
