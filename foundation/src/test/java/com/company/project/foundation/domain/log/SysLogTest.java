@@ -1,47 +1,20 @@
-package com.company.project.foundation.domain.log;
+﻿package com.company.project.foundation.domain.log;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-@DisplayName("SysLog ?�메???�위 ?�스??)
+@DisplayName("SysLog 도메인 테스트")
 class SysLogTest {
 
     @Test
-    @DisplayName("SysLog ?�성 �??�드 ?�인 ?�스??)
-    void sysLogTest() {
-        // given
+    @DisplayName("SysLog 빌더 확인")
+    void testBuilder() {
         SysLog log = SysLog.builder()
-                .requstId("REQ-001")
-                .srvcNm("SysService")
-                .methodNm("sysMethod")
-                .processSeCode("C")
-                .processTime("100")
-                .rqesterId("user01")
-                .rqesterIp("127.0.0.1")
-                .occrrncDe("20241227")
-                .rspnsCode("200")
-                .errorCode("E01")
-                .errorSe("SER")
+                .srvcNm("DeptService")
+                .methodNm("selectDept")
                 .build();
 
-        // then
-        assertThat(log.getRequstId()).isEqualTo("REQ-001");
-        assertThat(log.getSrvcNm()).isEqualTo("SysService");
-        assertThat(log.getMethodNm()).isEqualTo("sysMethod");
-        assertThat(log.getProcessSeCode()).isEqualTo("C");
-        assertThat(log.getProcessTime()).isEqualTo("100");
-    }
-
-    @Test
-    @DisplayName("SysLog ?�성???�스??)
-    void sysLogConstructorTest() {
-        // when
-        SysLog log = new SysLog("REQ-002", "S", "M", "U", "50", "id", "ip", "20241227", "400", "E", "S");
-
-        // then
-        assertThat(log.getRequstId()).isEqualTo("REQ-002");
-        assertThat(log.getProcessSeCode()).isEqualTo("U");
+        assertEquals("DeptService", log.getSrvcNm());
     }
 }

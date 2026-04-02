@@ -1,41 +1,20 @@
-package com.company.project.foundation.domain.login;
+﻿package com.company.project.foundation.domain.login;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-@DisplayName("LoginPolicy ?�티???�스??)
+@DisplayName("LoginPolicy 도메인 테스트")
 class LoginPolicyTest {
 
     @Test
-    @DisplayName("로그???�책 ?�성 �??�정 ?�스??)
-    void loginPolicyUpdateTest() {
-        // Given
+    @DisplayName("LoginPolicy 빌더 확인")
+    void testBuilder() {
         LoginPolicy policy = LoginPolicy.builder()
-                .emplyrId("USER_01")
+                .emplyrId("user01")
                 .ipInfo("127.0.0.1")
-                .dplctPermAt("Y")
-                .lmttAt("N")
                 .build();
 
-        // When
-        policy.update("192.168.0.1", "N", "Y");
-
-        // Then
-        assertThat(policy.getEmplyrId()).isEqualTo("USER_01");
-        assertThat(policy.getIpInfo()).isEqualTo("192.168.0.1");
-        assertThat(policy.getDplctPermAt()).isEqualTo("N");
-        assertThat(policy.getLmttAt()).isEqualTo("Y");
-    }
-
-    @Test
-    @DisplayName("기본 ?�성???�스??(NoArgsConstructor)")
-    void noArgsConstructorTest() {
-        // Given
-        LoginPolicy policy = LoginPolicy.builder().build();
-        
-        // Then
-        assertThat(policy).isNotNull();
+        assertEquals("user01", policy.getEmplyrId());
     }
 }

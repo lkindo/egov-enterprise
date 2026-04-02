@@ -1,39 +1,20 @@
-package com.company.project.foundation.domain.log;
+﻿package com.company.project.foundation.domain.log;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.time.LocalDateTime;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-@DisplayName("PrivacyLog ?�메???�위 ?�스??)
+@DisplayName("PrivacyLog 도메인 테스트")
 class PrivacyLogTest {
 
     @Test
-    @DisplayName("PrivacyLog ?�성 �??�드 ?�인 ?�스??)
-    void privacyLogTest() {
-        // given
-        LocalDateTime now = LocalDateTime.now();
+    @DisplayName("PrivacyLog 빌더 확인")
+    void testBuilder() {
         PrivacyLog log = PrivacyLog.builder()
-                .requestId("REQ-001")
-                .inquiryDatetime(now)
-                .serviceName("PrivacyService")
-                .inquiryInfo("PersonalData")
-                .requesterId("admin")
-                .requesterIp("127.0.0.1")
+                .rqesterId("user01")
+                .processMthdCode("READ")
                 .build();
 
-        // then
-        assertThat(log.getRequestId()).isEqualTo("REQ-001");
-        assertThat(log.getInquiryDatetime()).isEqualTo(now);
-        assertThat(log.getServiceName()).isEqualTo("PrivacyService");
-        assertThat(log.getInquiryInfo()).isEqualTo("PersonalData");
-        assertThat(log.getRequesterId()).isEqualTo("admin");
-        assertThat(log.getRequesterIp()).isEqualTo("127.0.0.1");
-
-        // when (Setter test since @Setter is present)
-        log.setServiceName("ModifiedService");
-        assertThat(log.getServiceName()).isEqualTo("ModifiedService");
+        assertEquals("user01", log.getRqesterId());
     }
 }

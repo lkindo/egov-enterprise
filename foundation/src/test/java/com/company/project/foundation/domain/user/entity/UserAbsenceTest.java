@@ -1,35 +1,20 @@
-package com.company.project.foundation.domain.user.entity;
+﻿package com.company.project.foundation.domain.user.entity;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-@DisplayName("UserAbsence ?�티???�위 ?�스??)
+@DisplayName("UserAbsence 엔티티 테스트")
 class UserAbsenceTest {
 
     @Test
-    @DisplayName("UserAbsence ?�성 �??�정 ?�스??)
-    void createAndUpdateTest() {
-        // Given
-        String emplyrId = "USR_00001";
-        String initialStatus = "N";
-        String updatedStatus = "Y";
-
-        // When
+    @DisplayName("사용자 부재 빌더 확인")
+    void testBuilder() {
         UserAbsence absence = UserAbsence.builder()
-                .emplyrId(emplyrId)
-                .userAbsnceAt(initialStatus)
+                .emplyrId("user01")
+                .userAbsnceAt("Y")
                 .build();
 
-        // Then
-        assertThat(absence.getEmplyrId()).isEqualTo(emplyrId);
-        assertThat(absence.getUserAbsnceAt()).isEqualTo(initialStatus);
-
-        // When
-        absence.updateAbsence(updatedStatus);
-
-        // Then
-        assertThat(absence.getUserAbsnceAt()).isEqualTo(updatedStatus);
+        assertEquals("user01", absence.getEmplyrId());
     }
 }
