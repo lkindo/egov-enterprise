@@ -1,5 +1,4 @@
-﻿'개인정보 처리 방침이 업데이트되었습니다.';
-
+﻿
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -46,10 +45,10 @@ export default function PrivacyPolicyClient({
     setLoading(true);
     try {
       await policyAdminService.updatePolicy('privacy', policy);
-      toast.success('보안 ?뺤콉 ?꾨젅?꾩썙?ш? ?깃났?곸쑝濡?而ㅻ컠?섏뿀?듬땲님');
+      toast.success('보안 ?뺤콉 ?꾨젅?꾩썙ш ?깃났?곸쑝濡而ㅻ컠?섏뿀?듬땲님');
       setIsEditing(false);
     } catch {
-      toast.error('?곗씠님?뺥빀님?ㅻ쪟濡?理쒖쥌 ??μ씠 以묐떒?섏뿀?듬땲님');
+      toast.error('데이터?뺥빀님ㅻ쪟濡理쒖쥌 μ씠 以묐떒?섏뿀?듬땲님');
     } finally {
       setLoading(false);
     }
@@ -59,13 +58,13 @@ export default function PrivacyPolicyClient({
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
         title="보안 정책 거버넌스"
-        breadcrumbs={[{ label: '시스템관리'보안愿由? }, { label: '媛쒖씤?뺣낫蹂댄샇?뺤콉' }]}
+        breadcrumbs={[{ label: '시스템관리'보안관리 }, { label: '媛쒖씤?뺣낫보호?뺤콉' }]}
       />
 
       <HubHeader 
         title="?꾨씪?대쾭님 
         highlight="Compliance" 
-        subtitle="?꾩궗 ?곗씠님蹂댄샇 洹쒖젙 諛?媛쒖씤?뺣낫 泥섎━ 諛⑹묠님실시간嫄곕쾭?뚯뒪 愿由님쒖뒪님 
+        subtitle="?꾩궗 데이터보호 洹쒖젙 및 媛쒖씤?뺣낫 泥섎━ 諛⑹묠님실시간嫄곕쾭?뚯뒪 관리님쒖뒪님 
         icon={ShieldCheck} 
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -127,11 +126,11 @@ export default function PrivacyPolicyClient({
                             <label className="text-[10px] font-black text-white/30 tracking-[0.4em] px-2 uppercase font-mono">Governance_Probing</label>
                             <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">留덉?留?而ㅻ컠</span>
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">留덉留而ㅻ컠</span>
                                     <span className="text-[9px] font-black text-primary font-mono tracking-widest uppercase ">2026-03-18_1433</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">?⑸쾿님寃님/span>
+                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">⑸쾿님寃님/span>
                                     <span className="text-[9px] font-black text-emerald-400 font-mono tracking-widest uppercase ">ISO_27001_OK</span>
                                 </div>
                                 <div className="flex items-center justify-between">
@@ -144,7 +143,7 @@ export default function PrivacyPolicyClient({
 
                     <div className="pt-8 border-t border-white/5 space-y-4">
                         <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60">
-                            * 蹂님뺤콉 紐낆꽭님蹂寃쎌? ?꾩궗 ?쒕퉬님諛?怨꾩빟 ?꾨줈?좎퐳님利됯컖?곸씤 踰뺤쟻 ?⑤젰님諛쒗쐶?⑸땲님
+                            * 蹂님뺤콉 紐낆꽭님蹂寃쎌? ?꾩궗 ?쒕퉬님및 怨꾩빟 ?꾨줈?좎퐳님利됯컖?곸씤 踰뺤쟻 ⑤젰님諛쒗쐶합니다
                         </p>
                         <HubStatusBadge status="활성" className="bg-emerald-500/10 text-emerald-500 border-none px-6 py-2 rounded-xl text-[9px] tracking-widest font-black" />
                     </div>
@@ -155,8 +154,8 @@ export default function PrivacyPolicyClient({
         {/* Policy Content Stream */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
             <HubSectionCard 
-                title="?곗씠님蹂댄샇 ?꾨줈?좎퐳 紐낆꽭" 
-                description="?꾩궗?곸쑝濡님곸슜?섎뒗 媛쒖씤?뺣낫 泥섎━ 諛?보안 洹쒖젙님?님?곸꽭 ?꾪궎?띿쿂 紐낆꽭?낅땲님" 
+                title="데이터보호 ?꾨줈?좎퐳 紐낆꽭" 
+                description="?꾩궗?곸쑝濡님곸슜?섎뒗 媛쒖씤?뺣낫 泥섎━ 및 보안 洹쒖젙님님상세 ?꾪궎?띿쿂 紐낆꽭?낅땲님" 
                 icon={FileCode}
                 className="flex-1"
             >
@@ -188,7 +187,7 @@ export default function PrivacyPolicyClient({
                                 value={policy.content}
                                 onChange={(e) => setPolicy(prev => ({ ...prev, content: e.target.value }))}
                                 className="min-h-[550px] p-12 rounded-[3.5rem] border-2 border-slate-100 bg-slate-50/50 text-base font-bold leading-[2] focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner custom-scrollbar"
-                                placeholder="?곗씠님蹂댄샇 洹쒖젙님?곸꽭 紐낆꽭瑜님낅젰?섏떗?쒖삤..."
+                                placeholder="데이터보호 洹쒖젙님상세 紐낆꽭瑜님낅젰?섏떗?쒖삤..."
                             />
                         ) : (
                             <div className="p-16 rounded-[4rem] bg-white border-2 border-slate-100/50 text-slate-600 leading-[2.2] font-semibold whitespace-pre-wrap shadow-2xl text-lg relative overflow-hidden group">

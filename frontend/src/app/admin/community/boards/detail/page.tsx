@@ -85,7 +85,7 @@ function DetailContent() {
           <form action={async (formData) => {
             const res = await deleteBoardArticle(null, formData);
             if (res.success) {
-              toast('吏님?먯궛님님젣?섏뿀?듬땲님', 'success');
+              toast('吏님?먯궛님삭제섏뿀?듬땲님', 'success');
               router.push('/admin/help');
             }
           }}>
@@ -122,7 +122,7 @@ function DetailContent() {
           <div className="relative z-10 max-w-4xl mx-auto space-y-16">
             <div className="flex items-center gap-4">
               <span className="h-[2px] w-12 bg-primary" />
-              <p className="text-[10px] font-black tracking-[0.6em] text-primary uppercase leading-none italic">寃利앸맂 吏님?곗씠?곗뀑</p>
+              <p className="text-[10px] font-black tracking-[0.6em] text-primary uppercase leading-none italic">寃利앸맂 吏님데이터셋</p>
             </div>
 
             <div
@@ -159,7 +159,7 @@ function DetailContent() {
               <p className="text-[11px] font-black tracking-widest uppercase">Associated Data Assets</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* 님遺遺꾩? ?ㅼ젣 ?뚯씪 由ъ뒪님濡쒖쭅님?덈떎硫님곕룞 */}
+              {/* 님遺遺꾩? ㅼ젣 ?뚯씪 由ъ뒪님濡쒖쭅님?덈떎硫님곕룞 */}
               <div className="flex items-center justify-between p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white hover:text-slate-900 transition-all cursor-pointer group/file">
                 <div className="flex items-center gap-4">
                   <FileText size={20} className="text-primary" />

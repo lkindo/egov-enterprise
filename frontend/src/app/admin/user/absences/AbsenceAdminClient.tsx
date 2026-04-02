@@ -1,5 +1,4 @@
-﻿'부재';
-
+﻿
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -65,9 +64,9 @@ export default function AbsenceAdminClient({
           return [...prev, { emplyrId, userAbsnceAt: newStatus }];
         }
       });
-      toast.success(`${emplyrId} ?ъ슜?먯쓽 ?꾨줈?좎퐳님${newStatus === 'Y' ? '遺님紐⑤뱶' : '활성 紐⑤뱶'}濡님꾪솚?섏뿀?듬땲님`);
+      toast.success(`${emplyrId} ъ슜?먯쓽 ?꾨줈?좎퐳님${newStatus === 'Y' ? '遺님紐⑤뱶' : '활성 紐⑤뱶'}濡님꾪솚?섏뿀?듬땲님`);
     } catch {
-      toast.error('?꾨줈?좎퐳 ?숆린님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
+      toast.error('?꾨줈?좎퐳 동기화以님ㅻ쪟媛 諛쒖깮있습니다.');
     }
   };
 
@@ -97,7 +96,7 @@ export default function AbsenceAdminClient({
       className: 'w-72'
     },
     {
-      header: '而ㅻ님덉님댁뀡 ?붾뱶?ъ씤님,
+      header: '而ㅻ님덉님댁뀡 ?붾뱶ъ씤님,
       accessor: (item: any) => (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
@@ -140,14 +139,14 @@ export default function AbsenceAdminClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="遺님愿由님ㅽ띁?덉씠님
-        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '?ъ슜?먭?由? }, { label: '遺님愿由? }]}
+        title="遺님관리님ㅽ띁?덉씠님
+        breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: 'ъ슜?먭由 }, { label: '遺님관리 }]}
       />
 
       <HubHeader
-        title="媛?⑹꽦"
+        title="媛⑹꽦"
         highlight="Matrix"
-        subtitle="?꾩궗 ?몄쟻 由ъ냼?ㅼ쓽 실시간媛?⑹꽦 諛?遺님?꾨줈?좎퐳 ?듯빀 ?쒖뼱 ?쒖뒪님
+        subtitle="?꾩궗 ?몄쟻 由ъ냼ㅼ쓽 실시간媛⑹꽦 및 遺님?꾨줈?좎퐳 ?듯빀 ?쒖뼱 시스템
         icon={UserX}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -161,7 +160,7 @@ export default function AbsenceAdminClient({
               size="lg"
               className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
-              <Zap size={20} className="group-hover:animate-pulse" /> 媛?⑹꽦 ?꾨줈?좎퐳 ?숆린님              <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Zap size={20} className="group-hover:animate-pulse" /> 媛⑹꽦 ?꾨줈?좎퐳 동기화              <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
           </div>
         }
@@ -186,7 +185,7 @@ export default function AbsenceAdminClient({
                 <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                   <Activity size={32} className="text-primary" />
                 </div>
-                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary">媛?⑹꽦<br />?명뀛由ъ쟾님/h4>
+                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary">媛⑹꽦<br />인텔리전스/h4>
               </div>
 
               <div className="space-y-8">
@@ -198,7 +197,7 @@ export default function AbsenceAdminClient({
                       onChange={(e) => setSearchKeyword(e.target.value)}
                       value={searchKeyword}
                       className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
-                      placeholder="由ъ냼님紐낆묶 ?먮뒗 UID ?꾪꽣留?
+                      placeholder="由ъ냼님紐낆묶 또는 UID ?꾪꽣留
                     />
                   </div>
                 </div>
@@ -206,7 +205,7 @@ export default function AbsenceAdminClient({
 
               <div className="pt-8 border-t border-white/5 flex items-center justify-between">
                 <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 max-w-[200px]">
-                  * 紐⑤뱺 遺님?꾨줈?좎퐳 蹂寃쎌궗님? ?묒뾽 留ㅽ듃由?뒪님利됱떆 ?숆린?붾맗?덈떎.
+                  * 紐⑤뱺 遺님?꾨줈?좎퐳 蹂寃쎌궗님? ?묒뾽 매트릭스님利됱떆 ?숆린?붾맗?덈떎.
                 </p>
                 <Button
                   className="h-12 px-8 rounded-2xl bg-white text-slate-900 border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition-all hover:-translate-y-1"
@@ -221,8 +220,8 @@ export default function AbsenceAdminClient({
         {/* Resources Availability Matrix */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
           <HubSectionCard
-            title="由ъ냼님媛?⑹꽦 ?곹깭 留ㅽ듃由?뒪"
-            description="?몄쟻 由ъ냼?ㅼ쓽 ?ㅼ떆媛님쒖꽦/遺님?곹깭瑜님ㅼ떆媛꾩쑝濡?紐⑤땲?곕쭅?섍퀬 ?쒖뼱?⑸땲님"
+            title="由ъ냼님媛⑹꽦 ?곹깭 매트릭스"
+            description="?몄쟻 由ъ냼ㅼ쓽 실시간쒖꽦/遺님?곹깭瑜님ㅼ떆媛꾩쑝濡紐⑤땲?곕쭅?섍퀬 ?쒖뼱합니다"
             icon={SearchCode}
           >
             <div className="overflow-hidden">

@@ -24,7 +24,7 @@ export interface Reward {
 }
 
 /**
- * ?댁쁺吏님愿由님쒕퉬님(Admin)
+ * ?댁쁺吏님관리님쒕퉬님(Admin)
  */
 class OperationAdminService extends ApiService {
  constructor() {
@@ -46,14 +46,14 @@ class OperationAdminService extends ApiService {
  }
 
  /**
- * ?ъ긽 紐⑸줉 조회
+ * ъ긽 紐⑸줉 조회
  */
  async getRewardList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Reward>> {
  return this.get<PageResponse<Reward>>('/rewards', { ...config, params });
  }
 
  /**
- * ?ъ긽 ?뺣낫 등록
+ * ъ긽 ?뺣낫 등록
  */
  async createReward(data: Partial<Reward>, config?: AxiosRequestConfig): Promise<void> {
  return this.post('/rewards', data, config);

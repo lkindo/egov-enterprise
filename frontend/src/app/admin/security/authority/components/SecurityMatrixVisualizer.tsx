@@ -50,8 +50,8 @@ interface SecurityMatrixVisualizerProps {
 }
 
 /**
- * 보안 沅뚰븳 留ㅽ듃由?뒪 ?쒓컖님(Access Control Grid)
- * 님븷(X異?怨?硫붾돱(Y異님?愿怨꾨? ?덊듃留님ㅽ님쇱쓽 寃⑹옄濡님쒓컖?뷀븯님 * ?쒖뒪님?꾩껜님보안 ?됰㈃님?쒕늿님議곌컧?섍퀬 ?쒖뼱님님?덇쾶 ?⑸땲님
+ * 보안 沅뚰븳 매트릭스 ?쒓컖님(Access Control Grid)
+ * 님븷(X異怨硫붾돱(Y異님愿怨꾨? ?덊듃留님ㅽ님쇱쓽 寃⑹옄濡님쒓컖?뷀븯님 * 시스템?꾩껜보안 ?됰㈃님?쒕늿님議곌컧?섍퀬 ?쒖뼱님님?덇쾶 합니다
  */
 export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> = ({ 
   authors, 
@@ -243,7 +243,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
           <div className="space-y-1">
              <p className="text-sm font-black text-slate-900 tracking-tight leading-none italic uppercase underline decoration-primary/20 decoration-4 underline-offset-4">Governance_Protocol_Guide</p>
              <p className="text-[11px] font-medium text-slate-400">
-                媛?寃⑹옄(Cell)瑜님대┃?섏뿬 ?대떦 님븷님?님硫붾돱 ?묎렐 沅뚰븳님?좉님⑸땲님 蹂寃쎌궗님? ?곗륫 ?곷떒님<span className="text-slate-900 font-black">COMMIT_CHANGES</span> 踰꾪듉님?뚮윭님?ㅼ젣 ?꾪궎?띿쿂님諛섏쁺?⑸땲님
+                媛寃⑹옄(Cell)瑜님대┃섏뿬 ?대떦 님븷님님硫붾돱 ?묎렐 沅뚰븳님?좉님⑸땲님 蹂寃쎌궗님? ?곗륫 ?곷떒님<span className="text-slate-900 font-black">COMMIT_CHANGES</span> 踰꾪듉님?뚮윭님ㅼ젣 ?꾪궎?띿쿂님諛섏쁺합니다
              </p>
           </div>
        </div>

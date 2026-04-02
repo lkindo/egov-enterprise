@@ -1,5 +1,4 @@
-﻿"행 선택";
-
+﻿
 import React, { useState, useMemo, memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -195,7 +194,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
         <form onSubmit={handleSearchSubmit} className="relative group max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
           <Input
-            placeholder={search.placeholder || '寃?됱뼱 ?낅젰...'}
+            placeholder={search.placeholder || '寃됱뼱 ?낅젰...'}
             className="h-12 pl-12 rounded-xl border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
@@ -383,14 +382,14 @@ function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => v
         <AlertCircle size={40} className="text-rose-500" />
       </div>
       <div className="space-y-2">
-        <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">?곗씠님濡쒕뱶 ?ㅽ뙣</p>
+        <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">데이터濡쒕뱶 ㅽ뙣</p>
         <div className="p-4 bg-rose-50/50 rounded-xl border border-rose-100 inline-block">
           <p className="text-[10px] font-black font-mono text-rose-800 tracking-tight opacity-70">
             ERROR_STREAM: {error.message || 'UNKNOWN_EXEPTION'}
           </p>
         </div>
         <p className="text-xs text-muted-foreground font-black tracking-tight max-w-[360px] mx-auto leading-relaxed opacity-60 mt-4">
-          ?곗씠?곕쿋?댁뒪 ?몄뀡?쇰줈遺님媛쒖껜 ?뺣낫瑜님섏떊?섏? 紐삵뻽?듬땲님 <br />?ㅽ듃?뚰겕 ?곌껐 ?곹깭瑜님뺤씤?섍굅님?꾨옒 踰꾪듉님?듯빐 ?ъ떆?꾪븯님떆님
+          ?곗씠?곕쿋?댁뒪 ?몄뀡?쇰줈遺님媛쒖껜 ?뺣낫瑜님섏떊?섏? 紐삵뻽?듬땲님 <br />ㅽ듃?뚰겕 ?곌껐 ?곹깭瑜님뺤씤?섍굅님?꾨옒 踰꾪듉님?듯빐 ъ떆?꾪븯님떆님
         </p>
       </div>
       <div className="flex gap-4 mt-6">
@@ -420,7 +419,7 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
       <div className="space-y-2">
         <p className="text-xl font-black text-foreground tracking-tighter uppercase">{emptyMessage}</p>
         <p className="text-xs text-muted-foreground font-black tracking-tight max-w-[320px] mx-auto leading-relaxed opacity-60">
-          ?쒖뒪?쒖뿉님?곗씠?곕? 조회?섏? 紐삵뻽?듬땲님 <br />寃님議곌굔님議곗젙?섍굅님?ㅼ떆 珥덇린?뷀빐 蹂댁떗?쒖삤.
+          ?쒖뒪?쒖뿉님?곗씠?곕? 조회?섏? 紐삵뻽?듬땲님 <br />寃님議곌굔님議곗젙?섍굅님ㅼ떆 珥덇린?뷀빐 蹂댁떗?쒖삤.
         </p>
       </div>
       <Button

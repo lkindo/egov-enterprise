@@ -5,8 +5,8 @@ import AdminStatsClient from './AdminStatsClient';
 import { SummaryStats, MenuStats } from '@/types/foundation/stats';
 
 export const metadata = {
- title: '?명뀛由ъ쟾님통계 ??쒕낫님| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
- description: '?쒖뒪님?꾨컲님?쒕룞 ?곗씠?곗? ?꾨찓님吏?쒕? ?ㅼ떆媛꾩쑝濡?분석?⑸땲님',
+ title: '인텔리전스통계 쒕낫님| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+ description: '시스템?꾨컲님?쒕룞 ?곗씠?곗? ?꾨찓님吏쒕? 실시간꾩쑝濡분석합니다',
 };
 
 export default async function AdminStatsPage() {
@@ -14,7 +14,7 @@ export default async function AdminStatsPage() {
  const accessToken = cookieStore.get('accessToken')?.value;
  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- // [Eliminating Waterfalls] 蹂묐젹 ?곗씠님?몄텧
+ // [Eliminating Waterfalls] 蹂묐젹 데이터?몄텧
  let initialSummary: SummaryStats | null = null;
  let initialConnectData: any[] = [];
  let initialMenuData: MenuStats[] = [];

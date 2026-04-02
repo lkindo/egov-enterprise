@@ -9,7 +9,7 @@ export interface Department {
 }
 
 /**
- * 遺님愿由님쒕퉬님(Admin)
+ * 遺님관리님쒕퉬님(Admin)
  */
 class DeptAdminService extends AdminService {
   constructor() {
@@ -21,7 +21,7 @@ class DeptAdminService extends AdminService {
     return this.get<PageResponse<Department>>('', { ...config, params });
   }
 
-  /** 遺님?곸꽭 조회 */
+  /** 遺님상세 조회 */
   async getDept(deptId: string, config?: AxiosRequestConfig): Promise<Department> {
     return this.get<Department>(`/${deptId}`, config);
   }

@@ -1,5 +1,4 @@
-﻿"사용자 검색 및 선택";
-
+﻿
 import React, { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('./standard-modal').then(mod => mod.StandardModal), { ssr: false });
@@ -20,7 +19,7 @@ export function UserPicker({
  isOpen,
  onClose,
  onSelect,
- title = "?ъ슜님寃님諛님좏깮"
+ title = "사용자寃님諛님좏깮"
 }: UserPickerProps) {
  const [keyword, setKeyword] = useState('');
  const [results, setResults] = useState<NameCard[]>([]);
@@ -94,13 +93,13 @@ export function UserPicker({
  <div className="bg-card border rounded-2xl overflow-hidden min-h-[350px] flex flex-col">
  {loading ? (
  <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground animate-pulse font-medium">
- 寃님以?..
+ 寃님중..
  </div>
  ) : results.length === 0 ? (
  <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center space-y-2">
  <Search size={32} className="opacity-10" />
  <p className="text-sm font-bold">寃님寃곌낵媛 ?놁뒿?덈떎.</p>
- <p className="text-[10px]">?대쫫?대굹 遺?쒕챸님?낅젰?섍퀬 ?뷀꽣瑜님뚮윭二쇱꽭님</p>
+ <p className="text-[10px]">?대쫫?대굹 遺쒕챸님?낅젰?섍퀬 ?뷀꽣瑜님뚮윭二쇱꽭님</p>
  </div>
  ) : (
  <VirtualScrollList

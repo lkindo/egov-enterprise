@@ -8,7 +8,7 @@ export interface Program {
   progrmDc?: string;
 }
 
-/** 님client님ApiResponse.data瑜?吏곸젒 諛섑솚?섎?濡님섏씠吏?ㅼ씠님援ъ“ */
+/** 님client님ApiResponse.data瑜吏곸젒 諛섑솚?섎濡님섏씠吏ㅼ씠님援ъ“ */
 export interface ProgramResponse {
   content?: Program[];
   totalElements?: number;

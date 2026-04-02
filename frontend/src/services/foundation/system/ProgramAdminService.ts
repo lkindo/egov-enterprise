@@ -5,7 +5,7 @@ import { AxiosRequestConfig } from 'axios';
 import { Program } from '@/types/foundation/program';
 
 /**
- * ?꾨줈洹몃옩 愿由님쒕퉬님(Admin)
+ * ?꾨줈洹몃옩 관리님쒕퉬님(Admin)
  */
 class ProgramAdminService extends AdminService {
  constructor() {
@@ -23,7 +23,7 @@ class ProgramAdminService extends AdminService {
  });
  }
 
- /** ?꾨줈洹몃옩 ?곸꽭 조회 */
+ /** ?꾨줈洹몃옩 상세 조회 */
  async getProgram(progrmFileNm: string, config?: AxiosRequestConfig): Promise<Program> {
  return this.get<Program>(`/${progrmFileNm}`, config);
  }

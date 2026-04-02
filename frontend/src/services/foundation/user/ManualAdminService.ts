@@ -3,7 +3,7 @@ import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * ?⑤씪님留ㅻ돱님DTO
+ * ⑤씪님留ㅻ돱님DTO
  */
 export interface ManualDto {
   onlineMnlId?: string;
@@ -24,7 +24,7 @@ class ManualAdminService extends ApiService {
     return this.get<PageResponse<ManualDto>>('/manuals', { ...config, params });
   }
 
-  /** 留ㅻ돱님?곸꽭 조회 */
+  /** 留ㅻ돱님상세 조회 */
   async getManual(mnlId: string, config?: AxiosRequestConfig) {
     return this.get<ManualDto>(`/manuals/${mnlId}`, config);
   }

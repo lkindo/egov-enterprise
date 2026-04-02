@@ -1,5 +1,4 @@
-﻿"검색...";
-
+﻿
 import React, { useState } from 'react';
 import {
  History as HistoryIcon,
@@ -82,7 +81,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
    <ShieldCheck size={12} /> 遺덈? 嫄곕쾭?뚯뒪 ?먯옣 활성
  </div>
  <div className="h-3 w-px bg-muted" />
-   <span className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight leading-none">?ㅼ떆媛님곗씠님臾닿껐님紐⑤땲?곕쭅</span>
+   <span className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight leading-none">실시간곗씠님무결성紐⑤땲?곕쭅</span>
  </div>
  </div>
  </div>
@@ -163,7 +162,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  {expandedLog === log.id && log.changes && (
  <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-slate-50 dark:bg-slate-900 space-y-6 animate-in slide-in-from-top-4 duration-500">
  <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-4 flex items-center gap-2">
-   <Cpu size={12} /> AI 湲곕컲 蹂寃?媛먯? ?붿쭊
+   <Cpu size={12} /> AI 湲곕컲 蹂寃媛먯? ?붿쭊
  </h4>
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {log.changes.map((change, cIdx) => (
@@ -187,9 +186,9 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  분석 由ы룷님?앹꽦
  </Button>
  <Button variant="outline" size="sm" className="rounded-xl font-black h-10 px-6 gap-2 border-2 hover:bg-primary/5">
- <Monitor size={16} /> ?쒓컖님寃利? </Button>
+ <Monitor size={16} /> ?쒓컖님寃利 </Button>
  <Button size="sm" className="rounded-xl font-black h-10 px-8 gap-2 bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200">
- <RotateCcw size={16} /> ?ㅻ깄님濡ㅻ갚
+ <RotateCcw size={16} /> ㅻ깄님濡ㅻ갚
  </Button>
  </div>
  </div>
@@ -212,7 +211,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  </div>
  </div>
  <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-40 mt-4 md:mt-0">
-   Total Audit Records: {logs.length} 님臾닿껐님寃利님꾨즺
+   Total Audit Records: {logs.length} 님무결성寃利님꾨즺
  </p>
  </div>
  </div>

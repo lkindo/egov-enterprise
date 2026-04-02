@@ -14,7 +14,7 @@ export interface FileDetail {
 }
 
 /**
- * ?뚯씪 愿由님쒕퉬님(Admin)
+ * ?뚯씪 관리님쒕퉬님(Admin)
  */
 class FileAdminService extends AdminService {
  constructor() {

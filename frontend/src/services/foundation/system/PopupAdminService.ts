@@ -4,14 +4,14 @@ import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { Popup } from '@/types/foundation/banner';
 
 /**
- * ?앹뾽李?愿由님쒕퉬님(Admin)
+ * ?앹뾽李관리님쒕퉬님(Admin)
  */
 class PopupAdminService extends AdminService {
   constructor() {
     super('/popups');
   }
 
-  /** ?앹뾽李?紐⑸줉 조회 */
+  /** ?앹뾽李紐⑸줉 조회 */
   async getPopupList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Popup>> {
     return this.get<PageResponse<Popup>>('', { ...config, params });
   }
@@ -21,7 +21,7 @@ class PopupAdminService extends AdminService {
     return this.get<Popup>(`/${popupId}`, config);
   }
 
-  /** ?앹뾽李?등록 */
+  /** ?앹뾽李등록 */
   async createPopup(data: Partial<Popup>, config?: AxiosRequestConfig): Promise<Popup> {
     return this.post<Popup>('', data, config);
   }

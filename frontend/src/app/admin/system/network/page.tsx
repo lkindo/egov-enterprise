@@ -5,8 +5,8 @@ import NetworkAdminClient from './NetworkAdminClient';
 import { Loader2 } from 'lucide-react';
 
 export const metadata = {
- title: '?ㅽ듃?뚰겕 ?명봽님吏?ν삎 愿由?諛?理쒖쟻님| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
- description: '?쒖뒪님?꾨컲님?ㅽ듃?뚰겕 ?좏뤃濡쒖? ?뺣낫瑜?愿由ы븯怨?理쒖쟻님?곌껐?깆쓣 蹂댁옣?⑸땲님',
+ title: 'ㅽ듃?뚰겕 ?명봽님吏ν삎 관리및 理쒖쟻님| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+ description: '시스템?꾨컲님ㅽ듃?뚰겕 ?좏뤃濡쒖? ?뺣낫瑜관리ы븯怨理쒖쟻님?곌껐?깆쓣 蹂댁옣합니다',
 };
 
 export default async function AdminNetworkPage() {
@@ -14,7 +14,7 @@ export default async function AdminNetworkPage() {
  const accessToken = cookieStore.get('accessToken')?.value;
  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- // [Eliminating Waterfalls] ?쒕쾭 ?ъ씠님珥덇린 ?곗씠님?⑥묶
+ // [Eliminating Waterfalls] ?쒕쾭 ъ씠님珥덇린 데이터⑥묶
  let initialNetworks: Network[] = [];
 
  try {

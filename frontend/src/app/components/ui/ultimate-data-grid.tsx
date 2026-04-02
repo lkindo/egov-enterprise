@@ -45,7 +45,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
     keyField,
     className,
     onDataChange,
-    title = "?곗씠님?명뀛由ъ쟾님
+    title = "데이터인텔리전스
 }: UltimateDataGridProps<T>) {
     const [data, setData] = useState<T[]>(initialData);
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }[]>([]);
@@ -142,7 +142,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                     </div>
                     <div>
                         <h3 className="text-lg font-black tracking-tight text-foreground ">{title}</h3>
-                        <p className="text-[10px] font-bold text-muted-foreground tracking-tight leading-none">怨좎꽦님?명뀛由ъ쟾님洹몃━님/p>
+                        <p className="text-[10px] font-bold text-muted-foreground tracking-tight leading-none">怨좎꽦님인텔리전스洹몃━님/p>
                     </div>
                 </div>
 
@@ -283,7 +283,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                     </div>
                     <div className="h-4 w-px bg-muted" />
                     <span className="text-[10px] font-black text-muted-foreground opacity-50 underline decoration-primary/30 underline-offset-4">
-                        {filteredData.length}媛님덉퐫님寃?됰맖
+                        {filteredData.length}媛님덉퐫님寃됰맖
                     </span>
                 </div>
 
@@ -294,7 +294,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                             <Button key={`page-${p}`} variant={p === 1 ? "default" : "ghost"} size="sm" className="w-9 h-9 rounded-xl text-[10px] font-black p-0 shadow-sm">{p}</Button>
                         ))}
                     </div>
-                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight">?ㅼ쓬</Button>
+                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight">ㅼ쓬</Button>
                 </div>
             </div>
         </div>

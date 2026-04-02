@@ -3,8 +3,8 @@ import { operationAdminService } from '@/services/foundation/operation/Operation
 import ExternalHrClient from './ExternalHrClient';
 
 export const metadata = {
-    title: '?몃님몄궗?뺣낫 愿由?| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
-    description: '?됱궗 愿님?몃님몄궗 ?뺣낫瑜?愿由ы빀?덈떎.',
+    title: '?몃님몄궗?뺣낫 관리| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+    description: '?됱궗 愿님?몃님몄궗 ?뺣낫瑜관리ы빀?덈떎.',
 };
 
 export default async function ExternalHrPage() {
@@ -17,7 +17,7 @@ export default async function ExternalHrPage() {
     }
 
     return (
-        <Suspense fallback={<div>濡쒕뵫 以?..</div>}>
+        <Suspense fallback={<div>濡쒕뵫 중..</div>}>
             <ExternalHrClient initialData={initialData} />
         </Suspense>
     );

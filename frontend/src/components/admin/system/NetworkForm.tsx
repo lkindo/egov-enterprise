@@ -1,5 +1,4 @@
-﻿"관리 항목";
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { FormField, StandardForm } from '@/app/components/ui/standard-form';
 import { NetworkInfo } from '@/services/foundation/system/networkService';
@@ -30,12 +29,12 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
  return (
  <StandardForm onSubmit={handleSubmit} className="border-none shadow-none rounded-none p-0">
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
- <FormField label="愿由님?ぉ" required>
+ <FormField label="관리님ぉ" required>
  <input
  type="text"
  value={formData.manageIem || ''}
  onChange={(e) => setFormData({ ...formData, manageIem: e.target.value })}
- placeholder="님 ?대?留님쒕쾭님
+ placeholder="님 ?대留님쒕쾭님
  className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
  required
  />
@@ -96,15 +95,15 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
  onChange={(e) => setFormData({ ...formData, useAt: e.target.value as 'Y' | 'N' })}
  className="w-full h-10 px-3 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary/20"
  >
- <option value="Y">?ъ슜 以?/option>
+ <option value="Y">ъ슜 以</option>
  <option value="N">誘몄궗님以묒?</option>
  </select>
  </FormField>
 
  <div className="flex justify-end gap-2 pt-4">
- <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg font-bold">痍⑥냼</button>
+ <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg font-bold">취소</button>
  <button type="submit" className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all">
- ??ν븯湲? </button>
+ ν븯湲 </button>
  </div>
  </StandardForm>
  );

@@ -68,7 +68,7 @@ describe('boardActions', () => {
       };
       (cookies as unknown).mockResolvedValue(mockCookies);
 
-      // 紐⑥쓽 ?앹꽦 ?묐떟?쇰줈 ?앹꽦님寃뚯떆湲 ID(님 '100')瑜?諛섑솚?쒕떎怨?媛님      (client.post as unknown).mockResolvedValue('100');
+      // 紐⑥쓽 ?앹꽦 ?묐떟?쇰줈 ?앹꽦님게시글 ID(님 '100')瑜諛섑솚?쒕떎怨媛님      (client.post as unknown).mockResolvedValue('100');
 
       const result = await saveBoardArticle({}, formData);
 
@@ -102,7 +102,7 @@ describe('boardActions', () => {
       }));
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards');
       expect(result.success).toBe(true);
-      expect(result.message).toBe('寃뚯떆湲님?깃났?곸쑝濡님섏젙?섏뿀?듬땲님');
+      expect(result.message).toBe('게시글이성공적으로수정되었습니다');
       expect(result.redirect).toBe('/admin/community/boards/detail?bbsId=BBS_001&nttId=100');
     });
 
@@ -118,7 +118,7 @@ describe('boardActions', () => {
       const result = await saveBoardArticle({}, formData);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe('??μ뿉 ?ㅽ뙣?덉뒿?덈떎.');
+      expect(result.message).toBe('μ뿉 ㅽ뙣있습니다.');
     });
 
     it('should handle catch error', async () => {
@@ -165,7 +165,7 @@ describe('boardActions', () => {
       const result = await deleteBoardArticle({}, formData);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe('님젣님?ㅽ뙣?덉뒿?덈떎.');
+      expect(result.message).toBe('삭제ㅽ뙣있습니다.');
     });
   });
 });

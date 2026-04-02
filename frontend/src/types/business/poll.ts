@@ -4,7 +4,7 @@
  pollBeginDe: string; // YYYY-MM-DD
  pollEndDe: string; // YYYY-MM-DD
  pollKindCode: string; // COM039 (001: 李щ컲, 002: ?좏깮)
- pollDsuseYn: string; // N: ?ъ슜, Y: ?먭린 (Backend naming seems to be 'Y' for disuse?) -> Check controller or VO logic. Usually 'Y' means deleted/unused.
+ pollDsuseYn: string; // N: ъ슜, Y: ?먭린 (Backend naming seems to be 'Y' for disuse?) -> Check controller or VO logic. Usually 'Y' means deleted/unused.
  // Controller: pollDsuseYn
  frstRegisterId?: string;
  frstRegisterNm?: string;
@@ -14,7 +14,7 @@
 export interface OnlinePollItemVO {
  pollId: string;
  pollIemId?: string;
- pollIemNm: string; // 님ぉ紐? sortOrdr?: number; // ?뺣젹?쒖꽌
+ pollIemNm: string; // 님ぉ紐 sortOrdr?: number; // ?뺣젹?쒖꽌
  frstRegisterId?: string;
  frstRegistPnttm?: string;
 }
@@ -22,7 +22,7 @@ export interface OnlinePollItemVO {
 export interface OnlinePollPartcptnVO {
  pollId: string;
  pollIemId: string; // ?좏깮님님ぉ ID
- frstRegisterId?: string; // ?ъ슜님ID (濡쒓렇님님?먮룞)
+ frstRegisterId?: string; // 사용자ID (로그인님?먮룞)
 }
 
 export interface PollSearchParams {

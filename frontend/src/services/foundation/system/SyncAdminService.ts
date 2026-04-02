@@ -2,7 +2,7 @@
 import { AxiosRequestConfig } from 'axios';
 
 /**
- * ?꾩넚/?숆린님?쒕쾭 愿由님쒕퉬님(Admin)
+ * ?꾩넚/동기화?쒕쾭 관리님쒕퉬님(Admin)
  */
 export interface SyncServer {
  serverId: string;
@@ -17,27 +17,27 @@ class SyncAdminService extends AdminService {
  super('/sync');
  }
 
- /** ?숆린님?쒕쾭 紐⑸줉 조회 */
+ /** 동기화?쒕쾭 紐⑸줉 조회 */
  async getSyncServers(config?: AxiosRequestConfig): Promise<SyncServer[]> {
  return this.get<SyncServer[]>('', config);
  }
 
- /** ?숆린님?쒕쾭 등록 */
+ /** 동기화?쒕쾭 등록 */
  async createSyncServer(data: SyncServer, config?: AxiosRequestConfig): Promise<void> {
  return this.post('', data, config);
  }
 
- /** ?숆린님?쒕쾭 ?섏젙 */
+ /** 동기화?쒕쾭 ?섏젙 */
  async updateSyncServer(id: string, data: Partial<SyncServer>, config?: AxiosRequestConfig): Promise<void> {
  return this.put(`/${id}`, data, config);
  }
 
- /** ?숆린님?쒕쾭 님젣 */
+ /** 동기화?쒕쾭 님젣 */
  async deleteSyncServer(id: string, config?: AxiosRequestConfig): Promise<void> {
  return this.delete(`/${id}`, config);
  }
 
- /** ?숆린님?ㅽ뻾 */
+ /** 동기화ㅽ뻾 */
  async executeSync(id: string, config?: AxiosRequestConfig): Promise<void> {
  return this.post(`/${id}/execute`, {}, config);
  }

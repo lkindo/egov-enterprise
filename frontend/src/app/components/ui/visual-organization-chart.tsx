@@ -1,5 +1,4 @@
-﻿'김상무';
-
+﻿
 import React, { useState } from 'react';
 import {
  Users,
@@ -33,7 +32,7 @@ export interface OrgNode {
 
 const MOCK_ORG_DATA: OrgNode = {
  id: 'o-1',
- name: '源?곷Т',
+ name: '源곷Т',
  role: 'Chief Executive Officer',
  dept: '경영지원본부',
  email: 'ceo@company.com',
@@ -185,7 +184,7 @@ export function VisualOrganizationChart() {
  <h4 className="relative z-10 text-sm font-black tracking-tight opacity-80 mb-2">湲곗뾽 통계</h4>
  <div className="relative z-10 grid grid-cols-2 gap-4 mt-6">
  <div>
- <p className="text-[10px] font-black opacity-60">珥?吏곸썝</p>
+ <p className="text-[10px] font-black opacity-60">珥吏곸썝</p>
  <p className="text-2xl font-black tracking-tighter">1,204</p>
  </div>
  <div>

@@ -24,9 +24,9 @@ interface PreviewProps {
 }
 
 const MOCK_POSTS = [
-  { id: 1, title: '?꾩옄?뺣? ?쒖님꾨젅?꾩썙님4.x ?낅뜲?댄듃 媛?대뱶?쇱씤', author: '愿由ъ옄', date: '2024-05-20', views: 1240, comments: 45, image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80' },
-  { id: 2, title: '由ъ븸님?쒕쾭 而댄룷?뚰듃(RSC) ?꾩엯 님二쇱쓽?ы빆 諛?紐⑤쾾 ?щ?', author: '湲곗닠?곸떊?', date: '2024-05-19', views: 856, comments: 23, image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80' },
-  { id: 3, title: 'MSA ?섍꼍?먯꽌님遺꾩궛 ?몃옖님뀡 泥섎━ ?꾨왂 (Saga ?⑦꽩)', author: '?뚮옯?쇱떎', date: '2024-05-18', views: 2301, comments: 67, image: 'https://images.unsplash.com/photo-1558494949-ef010958384e?w=800&q=80' },
+  { id: 1, title: '?꾩옄?뺣? ?쒖님꾨젅?꾩썙님4.x ?낅뜲?댄듃 媛대뱶?쇱씤', author: '관리자', date: '2024-05-20', views: 1240, comments: 45, image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80' },
+  { id: 2, title: '由ъ븸님?쒕쾭 而댄룷?뚰듃(RSC) ?꾩엯 님二쇱쓽ы빆 및 紐⑤쾾 여부', author: '湲곗닠?곸떊', date: '2024-05-19', views: 856, comments: 23, image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80' },
+  { id: 3, title: 'MSA ?섍꼍?먯꽌님遺꾩궛 ?몃옖님뀡 泥섎━ ?꾨왂 (Saga ⑦꽩)', author: '?뚮옯?쇱떎', date: '2024-05-18', views: 2301, comments: 67, image: 'https://images.unsplash.com/photo-1558494949-ef010958384e?w=800&q=80' },
 ];
 
 export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {

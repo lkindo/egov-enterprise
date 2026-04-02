@@ -1,5 +1,4 @@
-﻿'목록을 불러오는 중 오류가 발생했습니다.';
-
+﻿
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -11,7 +10,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { useSearchState } from '@/lib/hooks/use-search-state';
 import { Plus, Eye, Megaphone, Loader2 } from 'lucide-react';
 
-const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 공지사항 湲곕낯媛?
+const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 공지사항 湲곕낯媛
 function CommunityDetailContent() {
     const router = useRouter();
     const params = useParams();
@@ -30,8 +29,8 @@ function CommunityDetailContent() {
  async function loadPosts() {
  try {
  setLoading(true);
- // ?ㅼ젣濡쒕뒗 communityId님?곕Ⅸ bbsId瑜?조회?댁빞 님?섎룄 ?덉쑝님 
- // 湲곗〈 濡쒖쭅님?꾨님붾맂 寃쎈줈濡님댁떇?⑸땲님
+ // ㅼ젣濡쒕뒗 communityId님?곕Ⅸ bbsId瑜조회?댁빞 님?섎룄 ?덉쑝님 
+ // 湲곗〈 濡쒖쭅님?꾨님붾맂 경로濡님댁떇합니다
  const res = await boardUserService.getPosts(values.bbsId, {
  page: parseInt(values.page),
  size: 10,
@@ -41,7 +40,7 @@ function CommunityDetailContent() {
  setData(res.list || []);
  setTotal(res.total || 0);
  } catch {
- toast('紐⑸줉님遺덈윭?ㅻ뒗 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+ toast('紐⑸줉님遺덈윭ㅻ뒗 以님ㅻ쪟媛 諛쒖깮있습니다.', 'error');
  } finally {
  setLoading(false);
  }
@@ -58,8 +57,8 @@ function CommunityDetailContent() {
         async function loadPosts() {
             try {
                 setLoading(true);
-                // ?ㅼ젣濡쒕뒗 communityId님?곕Ⅸ bbsId瑜?조회?댁빞 님?섎룄 ?덉쑝님 
-                // 湲곗〈 濡쒖쭅님?꾨님붾맂 寃쎈줈濡님댁떇?⑸땲님
+                // ㅼ젣濡쒕뒗 communityId님?곕Ⅸ bbsId瑜조회?댁빞 님?섎룄 ?덉쑝님 
+                // 湲곗〈 濡쒖쭅님?꾨님붾맂 경로濡님댁떇합니다
                 const res = await boardUserService.getPosts(values.bbsId, {
                     page: parseInt(values.page),
                     size: 10,
@@ -69,7 +68,7 @@ function CommunityDetailContent() {
                 setData(res.list || []);
                 setTotal(res.total || 0);
             } catch {
-                toast('紐⑸줉님遺덈윭?ㅻ뒗 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+                toast('紐⑸줉님遺덈윭ㅻ뒗 以님ㅻ쪟媛 諛쒖깮있습니다.', 'error');
             } finally {
                 setLoading(false);
             }
@@ -113,8 +112,8 @@ function CommunityDetailContent() {
     return (
         <div className="space-y-6">
             <PageHeader
-                title="而ㅻ님덊떚 ?곸꽭 諛?寃뚯떆님
-                breadcrumbs={[{ label: '?묒뾽吏님, href: '/admin/community' }, { label: '而ㅻ님덊떚 ?곸꽭' }]}
+                title="而ㅻ님덊떚 상세 및 寃뚯떆님
+                breadcrumbs={[{ label: '?묒뾽吏님, href: '/admin/community' }, { label: '而ㅻ님덊떚 상세' }]}
                 actions={
                     <button
                         onClick={() => router.push('/admin/community/boards/write')}
@@ -162,7 +161,7 @@ function CommunityDetailContent() {
 
             <div className="flex justify-center pt-4">
                 <p className="text-sm text-muted-foreground font-medium">
-                    珥?<span className="text-foreground font-bold">{total}</span> 媛쒖쓽 寃뚯떆湲님?덉뒿?덈떎.
+                    珥<span className="text-foreground font-bold">{total}</span> 媛쒖쓽 게시글이있습니다.
                 </p>
             </div>
         </div>
@@ -174,7 +173,7 @@ export default function CommunityDetailPage() {
         <Suspense fallback={
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <p className="text-muted-foreground font-medium animate-pulse">而ㅻ님덊떚 ?뺣낫瑜?遺덈윭?ㅺ퀬 ?덉뒿?덈떎...</p>
+                <p className="text-muted-foreground font-medium animate-pulse">而ㅻ님덊떚 ?뺣낫瑜遺덈윭ㅺ퀬 있습니다...</p>
             </div>
         }>
             <CommunityDetailContent />

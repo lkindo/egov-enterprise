@@ -1,5 +1,4 @@
-﻿'성공적으로 승인';
-
+﻿
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -63,11 +62,11 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
     try {
       setLoading(true);
       await ismAdminService.confirmInfrmlSanctn(selectedSanctn.infrmlSanctnId, status, returnResn);
-      toast(`寃곗옱 ?쒗?ㅺ? ${status === 'C' ? '?깃났?곸쑝濡님뱀씤' : '諛섎젮'} 泥섎━?섏뿀?듬땲님`, 'success');
+      toast(`결재 ?쒗ㅺ ${status === 'C' ? '성공적으로뱀씤' : '諛섎젮'} 泥섎━섏뿀?듬땲님`, 'success');
       setIsOpen(false);
       router.refresh();
     } catch {
-      toast('?꾨줈?몄뒪 泥섎━ 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+      toast('?꾨줈?몄뒪 泥섎━ 以님ㅻ쪟媛 諛쒖깮있습니다.', 'error');
     } finally {
       setLoading(false);
     }
@@ -91,7 +90,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
       )
     },
     {
-      header: '寃곗옱 ?꾩씠?댄떚님,
+      header: '결재 ?꾩씠?댄떚님,
       accessor: (item: InfrmlSanctn) => (
         <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shadow-inner group-hover:bg-primary/5 group-hover:text-primary transition-colors">
@@ -106,18 +105,18 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
       className: 'w-56'
     },
     {
-      header: '寃곗옱 ?湲?(PENDING)',
+      header: '결재 湲(PENDING)',
       accessor: (item: InfrmlSanctn) => {
           let status: '활성' | 'DISABLED' | 'INACTIVE' = 'INACTIVE';
           if (item.confmAt === 'Y') status = '활성';
           if (item.confmAt === 'R') status = 'DISABLED';
           
-          return <HubStatusBadge status={status} labels={{ ACTIVE: '?뱀씤님(CONFIRMED)', DISABLED: '諛섎젮님(REJECTED)', INACTIVE: '寃곗옱 ?湲?(PENDING)' }} />;
+          return <HubStatusBadge status={status} labels={{ ACTIVE: '?뱀씤님(CONFIRMED)', DISABLED: '諛섎젮님(REJECTED)', INACTIVE: '결재 湲(PENDING)' }} />;
       },
       className: 'w-48'
     },
     {
-      header: '愿由?,
+      header: '관리,
       className: 'text-right w-48',
       accessor: (item: InfrmlSanctn) => (
         <div className="flex justify-end gap-3 pr-4">
@@ -126,7 +125,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
               onClick={() => handleOpenConfirm(item)}
               className="h-10 px-6 bg-slate-900 text-white rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl shadow-slate-900/10 flex items-center gap-2 group"
             >
-              <ShieldCheck size={16} className="group-hover:rotate-12 transition-transform" /> ?뱀씤 ?ㅽ뻾
+              <ShieldCheck size={16} className="group-hover:rotate-12 transition-transform" /> ?뱀씤 ㅽ뻾
             </Button>
           )}
           <Button
@@ -146,13 +145,13 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
         title="인포멀 생션 아키텍처"
-        breadcrumbs={[{ label: '시스템관리'?쎌떇寃곗옱' }]}
+        breadcrumbs={[{ label: '시스템관리'?쎌떇결재' }]}
       />
 
       <HubHeader 
-        title="寃곗옱" 
-        highlight="?⑤툕由? 
-        subtitle="洹쒓꺽?붾릺吏 ?딆? 鍮꾩젙님결재 요청님?좎뿰님寃利?諛님꾩궗 ?섏궗寃곗젙 ?쒗님?듯빀 愿由? 
+        title="결재" 
+        highlight="⑤툕由 
+        subtitle="洹쒓꺽?붾릺吏 ?딆? 鍮꾩젙님결재 요청님?좎뿰님寃利諛님꾩궗 ?섏궗寃곗젙 ?쒗님?듯빀 관리 
         icon={ShieldCheck} 
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -172,9 +171,9 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="寃곗옱_?湲님쒗님 value={ismList.filter(i => i.confmAt === 'N' || i.confmAt === 'A').length} icon={Clock} color="amber" status="二쇱쓽" />
+        <HubMetricCard title="결재_湲님쒗님 value={ismList.filter(i => i.confmAt === 'N' || i.confmAt === 'A').length} icon={Clock} color="amber" status="二쇱쓽" />
         <HubMetricCard title="?뱀씤님?먯궛_님 value={ismList.filter(i => i.confmAt === 'Y').length} icon={CheckCircle2} color="emerald" status="理쒖쟻" />
-        <HubMetricCard title="諛섎젮_濡쒓렇_님 value={ismList.filter(i => i.confmAt === 'R').length} icon={XCircle} color="rose" />
+        <HubMetricCard title="諛섎젮_로그_님 value={ismList.filter(i => i.confmAt === 'R').length} icon={XCircle} color="rose" />
         <HubMetricCard title="?꾩껜_?섏궗寃곗젙_님 value={ismList.length} icon={FileText} color="primary" />
       </HubMetricGrid>
 
@@ -190,16 +189,16 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
                         <div className="w-20 h-20 rounded-[2rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                             <Cpu size={36} className="text-primary" />
                         </div>
-                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">遺덈?<br />?섍껐 ?먯옣</h4>
+                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">遺덈<br />?섍껐 ?먯옣</h4>
                     </div>
                     
                     <p className="text-sm text-slate-400 font-bold leading-relaxed italic border-l-4 border-primary pl-8">
-                        紐⑤뱺 ?쎌떇 寃곗옱 ?꾪궎?띿쿂님?곗씠님臾닿껐님寃利앹쓣 嫄곗튂硫? 寃곗젙 洹쇨굅님遺꾩궛 ?먯옣님?곴뎄님湲곕줉?섏뼱 媛먯궗媛 媛?ν빀?덈떎.
+                        紐⑤뱺 ?쎌떇 결재 ?꾪궎?띿쿂님데이터무결성寃利앹쓣 嫄곗튂硫 寃곗젙 洹쇨굅님遺꾩궛 ?먯옣님?곴뎄님湲곕줉?섏뼱 媛먯궗媛 媛ν빀?덈떎.
                     </p>
 
                     <div className="space-y-6 pt-12 border-t border-white/5">
                         <div className="flex items-center justify-between group/stat">
-                            <span className="text-[10px] font-black text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">濡쒖쭅_?덈툕_臾닿껐님/span>
+                            <span className="text-[10px] font-black text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">濡쒖쭅_?덈툕_무결성/span>
                             <span className="text-lg font-black font-mono tracking-tighter text-emerald-500">?뺤긽</span>
                         </div>
                         <div className="flex items-center justify-between group/stat">
@@ -213,13 +212,13 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
 
         {/* Approval Inventory */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
-            <HubSectionCard title="?쎌떇 寃곗옱 ?쒗님?곗씠님留ㅽ듃由?뒪" description="?쒖뒪?쒖쓽 ?좎뿰님?섏궗寃곗젙님?꾪빐 罹≪쿂님紐⑤뱺 鍮꾩젙님결재 요청님실시간紐낆꽭?낅땲님" icon={SearchCode}>
+            <HubSectionCard title="?쎌떇 결재 ?쒗님데이터매트릭스" description="?쒖뒪?쒖쓽 ?좎뿰님?섏궗寃곗젙님?꾪빐 罹≪쿂님紐⑤뱺 鍮꾩젙님결재 요청님실시간紐낆꽭?낅땲님" icon={SearchCode}>
                 <div className="overflow-hidden min-h-[500px]">
                     <StandardDataTable
                         columns={columns}
                         data={ismList}
                         loading={loading}
-                        emptyMessage="조회님?쎌떇 寃곗옱 ?꾨줈?좎퐳님현재 ?뱁꽣님議댁옱?섏? ?딆뒿?덈떎."
+                        emptyMessage="조회님?쎌떇 결재 ?꾨줈?좎퐳님현재 ?뱁꽣님議댁옱?섏? ?딆뒿?덈떎."
                         className="border-none bg-transparent"
                     />
                 </div>
@@ -234,7 +233,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">조사_痍⑥냼</Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">조사_취소</Button>
             <Button 
                 onClick={() => handleProcess('R')}
                 className="flex-1 h-16 bg-rose-50 text-rose-500 rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-rose-500 hover:text-white transition-all active:scale-95 border-2 border-rose-100 flex items-center justify-center gap-3"
@@ -276,7 +275,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
           <div className="space-y-4">
             <div className="flex items-center justify-between px-2">
                 <label className="text-[11px] font-black tracking-[0.4em] text-slate-400 uppercase flex items-center gap-3">
-                    <SearchCode size={14} className="text-primary" /> 寃곗옱/諛섎젮 ?섏궗寃곗젙 濡쒓렇 (Decision Opinion) <span className="text-rose-500 animate-pulse">*</span>
+                    <SearchCode size={14} className="text-primary" /> 결재/諛섎젮 ?섏궗寃곗젙 로그 (Decision Opinion) <span className="text-rose-500 animate-pulse">*</span>
                 </label>
             </div>
             <textarea
@@ -288,7 +287,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
             <div className="flex items-center gap-3 px-6 py-4 bg-amber-50 border border-amber-100 rounded-2xl">
                 <AlertCircle size={16} className="text-amber-500" />
                 <p className="text-[10px] font-bold text-amber-700 leading-relaxed uppercase opacity-80">
-                    * ?묒꽦님?섍껄? ?섏젙님遺덇님ν븯硫?紐⑤뱺 愿怨꾩옄?먭쾶 ?ㅼ떆媛꾩쑝濡님듭님⑸땲님
+                    * ?묒꽦님?섍껄 ?섏젙님遺덇님ν븯硫紐⑤뱺 愿怨꾩옄?먭쾶 실시간꾩쑝濡님듭님⑸땲님
                 </p>
             </div>
           </div>

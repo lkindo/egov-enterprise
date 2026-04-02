@@ -30,7 +30,7 @@ const TransferLogAdminPage = () => {
 
     const columns: Column<TransferLog>[] = [
         {
-            header: '濡쒓렇ID',
+            header: '로그ID',
             accessor: (item: TransferLog) => (
                 <div className="font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
                     {item.logId}
@@ -39,7 +39,7 @@ const TransferLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '?쒓났湲곌?肄붾뱶',
+            header: '?쒓났湲곌肄붾뱶',
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2">
                     <Box size={14} className="text-primary/40" />
@@ -49,7 +49,7 @@ const TransferLogAdminPage = () => {
             className: 'w-36'
         },
         {
-            header: '?쒓났?쒖뒪님,
+            header: '?쒓났시스템,
             accessor: (item: TransferLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/30" />
@@ -59,7 +59,7 @@ const TransferLogAdminPage = () => {
             className: 'w-32'
         },
         {
-            header: '요청?쒖뒪님,
+            header: '요청시스템,
             accessor: (item: TransferLog) => (
                 <code className="px-2 py-0.5 bg-sky-50 text-sky-600 text-[10px] font-black rounded border border-sky-100">
                     {item.requstSysCode}
@@ -92,9 +92,9 @@ const TransferLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="?≪닔님濡쒓렇" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }, { label: '?≪닔님濡쒓렇' }]} />
+            <PageHeader title="≪닔님로그" breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '로그관리 }, { label: '≪닔님로그' }]} />
 
-            <HubHeader title="?곌퀎 留덉뒪님 highlight="?≪닔님濡쒓렇" subtitle="?몃? ?쒖뒪님諛님대? 紐⑤뱢 媛꾩쓽 ?곗씠님?≪닔님?대젰님?ㅼ떆媛꾩쑝濡?紐⑤땲?곕쭅?⑸땲님" icon={Share2} />
+            <HubHeader title="?곌퀎 留덉뒪님 highlight="≪닔님로그" subtitle="?몃? 시스템諛님대? 紐⑤뱢 媛꾩쓽 데이터≪닔님?대젰님실시간꾩쑝濡紐⑤땲?곕쭅합니다" icon={Share2} />
 
             <StandardDataTable
                 columns={columns}
@@ -106,7 +106,7 @@ const TransferLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page踰덊샇: page }),
                 }}
                 search={{
-                    placeholder: '湲곌?肄붾뱶, ?쒖뒪님寃님..',
+                    placeholder: '湲곌肄붾뱶, 시스템寃님..',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 }),
                 }}
             />

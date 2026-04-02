@@ -2,8 +2,8 @@
 import RoughMapManagementClient from './RoughMapManagementClient';
 
 export const metadata: Metadata = {
-  title: '?쎈룄 愿由?| eGov Enterprise System',
-  description: '?먭퀬釉님뷀꽣?꾨씪?댁쫰 怨듦컙 ?명뀛由ъ쟾님諛님쎈룄 愿由님쇳꽣',
+  title: '?쎈룄 관리| eGov Enterprise System',
+  description: '?먭퀬釉님뷀꽣?꾨씪?댁쫰 怨듦컙 인텔리전스諛님쎈룄 관리님쇳꽣',
 };
 
 export default function RoughMapPage() {

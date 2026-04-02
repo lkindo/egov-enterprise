@@ -1,7 +1,7 @@
 ﻿import { MESSAGES } from '@/constants/messages';
 
 /**
- * 硫붿떆吏 조회 님 * - 異뷀썑 i18n ?쇱씠釉뚮윭由?next-intl 님 ?꾩엯 님님?낅쭔 ?섏젙?섎㈃ ?꾩뿭 諛섏쁺 媛님 */
+ * 硫붿떆吏 조회 님 * - 異뷀썑 i18n ?쇱씠釉뚮윭由next-intl 님 ?꾩엯 님님?낅쭔 ?섏젙?섎㈃ ?꾩뿭 諛섏쁺 媛님 */
 export function useMessage() {
   const t = (keyPath: string, params?: Record<string, string | number>): string => {
     const keys = keyPath.split('.');

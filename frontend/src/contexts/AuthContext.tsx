@@ -1,5 +1,4 @@
-﻿'인증 정보가 올바르지 않습니다.';
-
+﻿
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 
@@ -20,14 +19,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = useCallback(async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
-    // ?좏겙님?놁쑝硫님몄쬆 ?뺤씤님嫄대꼫?곷땲님
+    // ?좏겙님?놁쑝硫님몄쬆 확인님嫄대꼫?곷땲님
     if (!token) {
       setUser(null);
       setLoading(false);
       return;
     }
 
-    // ?좏겙님留뚮즺?섏뿀?붾씪님interceptor ?먯꽌 reissue 瑜님쒕룄님寃껋씠誘濡?    // /auth/me 瑜님몄텧?섏뿬 理쒖쥌 ?좏슚?깆쓣 寃利앺빀?덈떎.
+    // ?좏겙님留뚮즺?섏뿀?붾씪님interceptor ?먯꽌 reissue 瑜님쒕룄님寃껋씠誘濡    // /auth/me 瑜님몄텧?섏뿬 理쒖쥌 ?좏슚?깆쓣 寃利앺빀?덈떎.
     try {
       const userData = await authService.getCurrentUser();
       if (userData) {
@@ -36,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
     } catch {
-      // 401 ?먮윭님interceptor 媛 ?좏겙 ?щ컻湲님ㅽ뙣 님理쒖쥌?곸쑝濡님섏쭛?덈떎.
+      // 401 ?먮윭님interceptor 媛 ?좏겙 щ컻湲님ㅽ뙣 님理쒖쥌?곸쑝濡님섏쭛?덈떎.
       setUser(null);
       if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');
@@ -49,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (credentials: Record<string, string>) => {
     try {
-      // 諛깆뿏님湲곕? ?꾨뱶紐?蹂님 id 님userId
+      // 諛깆뿏님湲곕? ?꾨뱶紐蹂님 id 님userId
       const loginData = {
         userId: credentials.id,
         password: credentials.password,
@@ -57,10 +56,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await authService.login(loginData);
 
       if (data && data.accessToken) {
-        // 1. localStorage 님?님(?곗꽑)
+        // 1. localStorage 님님(?곗꽑)
         localStorage.setItem('accessToken', data.accessToken);
 
-        // 2. 荑좏궎님?님(middleware 諛?SSR 님
+        // 2. 荑좏궎님님(middleware 및 SSR 님
         document.cookie = `accessToken=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
         if (data.role) {
           document.cookie = `userRole=${data.role}; path=/; max-age=86400; SameSite=Lax`;
@@ -70,17 +69,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = await authService.getCurrentUser();
         setUser(userData);
 
-        // 4. ?붾쾭源? ?님?뺤씤
+        // 4. ?붾쾭源 님확인
         if (process.env.NODE_ENV === 'development') {
           console.log('[AuthContext] Login successful, user set to:', userData);
           console.log('[AuthContext] Cookies set:', document.cookie);
           console.log('[AuthContext] localStorage:', localStorage.getItem('accessToken'));
         }
       } else {
-        throw new Error('?몄쬆 ?뺣낫媛 ?щ컮瑜댁? ?딆뒿?덈떎.');
+        throw new Error('?몄쬆 ?뺣낫媛 щ컮瑜댁? ?딆뒿?덈떎.');
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '濡쒓렇님以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.';
+      const message = error instanceof Error ? error.message : '로그인以님ㅻ쪟媛 諛쒖깮있습니다.';
       console.error('Login process error:', message);
       throw new Error(message);
     }

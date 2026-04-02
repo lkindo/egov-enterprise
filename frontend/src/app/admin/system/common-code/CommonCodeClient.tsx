@@ -1,5 +1,4 @@
-﻿'상세 코드 삭제';
-
+﻿
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -120,7 +119,7 @@ export default function CommonCodeClient({
                 details: fetchedDetails
             });
         } catch {
-            toast('?곸꽭 肄붾뱶瑜?遺덈윭?ㅻ뒗 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+            toast('상세 肄붾뱶瑜遺덈윭ㅻ뒗 以님ㅻ쪟媛 諛쒖깮있습니다.', 'error');
         } finally {
             setDetailsLoading(false);
         }
@@ -168,8 +167,8 @@ export default function CommonCodeClient({
         if (!selectedGroup) return;
 
         const ok = await confirm({
-            title: '?곸꽭 肄붾뱶 紐낆꽭 님젣',
-            message: '님肄붾뱶 ?뺣낫瑜님곗씠?곕쿋?댁뒪?먯꽌 ?곴뎄님님젣?섏떆寃좎뒿?덇퉴?',
+            title: '상세 肄붾뱶 紐낆꽭 님젣',
+            message: '님肄붾뱶 ?뺣낫瑜님곗씠?곕쿋?댁뒪?먯꽌 ?곴뎄님삭제섏떆寃좎뒿?덇퉴?',
             variant: 'destructive',
             confirmText: '님젣'
         });
@@ -183,14 +182,14 @@ export default function CommonCodeClient({
                     toast(res.message, 'error');
                 }
             } catch {
-                toast('?ㅽ듃?뚰겕 ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+                toast('ㅽ듃?뚰겕 ㅻ쪟媛 諛쒖깮있습니다.', 'error');
             }
         }
     };
 
     const handleCreateDetail = () => {
         if (!selectedGroup) {
-            toast('肄붾뱶 紐낆꽭瑜?등록님洹몃９ 肄붾뱶瑜?癒쇱? ?좏깮?섏떗?쒖삤.', 'info');
+            toast('肄붾뱶 紐낆꽭瑜등록님洹몃９ 肄붾뱶瑜癒쇱? ?좏깮?섏떗?쒖삤.', 'info');
             return;
         }
         setEditingDetail(null);
@@ -216,7 +215,7 @@ export default function CommonCodeClient({
                 toast(res.message, 'error');
             }
         } catch {
-            toast('?뺥빀님寃利앹뿉 ?ㅽ뙣?덉뒿?덈떎.', 'error');
+            toast('?뺥빀님寃利앹뿉 ㅽ뙣있습니다.', 'error');
         }
     };
 
@@ -236,12 +235,12 @@ export default function CommonCodeClient({
             )
         },
         {
-            header: '?ъ슜 ?щ?',
-            accessor: (item: CodeDetail) => <HubStatusBadge status={item.useAt === 'Y' ? '?ъ슜以? : '誘몄궗님} />,
+            header: 'ъ슜 여부',
+            accessor: (item: CodeDetail) => <HubStatusBadge status={item.useAt === 'Y' ? 'ъ슜以 : '誘몄궗님} />,
             className: 'w-24'
         },
         {
-            header: '愿由?,
+            header: '관리,
             className: 'text-right w-28',
             accessor: (item: CodeDetail) => (
                 <div className="flex justify-end gap-1">
@@ -403,15 +402,15 @@ export default function CommonCodeClient({
                                             {detailsLoading ? <RefreshCcw size={18} className="animate-spin" /> : <Layers size={18} />}
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase">?쒖뒪님援ъ꽦 紐낆꽭</h3>
+                                            <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase">시스템援ъ꽦 紐낆꽭</h3>
                                             <p className="text-[10px] font-bold text-slate-400">
-                                                {detailsLoading ? '?쒕쾭濡쒕님?紐낆꽭瑜님쎌뼱?ㅻ뒗 以?..' : `珥?${selectedGroup.details?.length || 0}媛쒖쓽 파라미터媛 ?뺤쓽님}
+                                                {detailsLoading ? '?쒕쾭濡쒕님紐낆꽭瑜님쎌뼱ㅻ뒗 중..' : `珥${selectedGroup.details?.length || 0}媛쒖쓽 파라미터媛 ?뺤쓽님}
                                             </p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="flex flex-col items-end pr-4 text-right">
-                                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1.5">臾닿껐님/span>
+                                            <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1.5">무결성/span>
                                             <div className="flex items-center gap-1">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                                 <span className="text-[10px] font-black text-emerald-500 font-mono">99.9%</span>
@@ -423,7 +422,7 @@ export default function CommonCodeClient({
                                     <StandardDataTable<CodeDetail>
                                         columns={columns}
                                         data={selectedGroup.details || []}
-                                        emptyMessage="?좏깮님洹몃９님?곸꽭 肄붾뱶媛 議댁옱?섏? ?딆뒿?덈떎."
+                                        emptyMessage="?좏깮님洹몃９님상세 肄붾뱶媛 議댁옱?섏? ?딆뒿?덈떎."
                                         className="border-none"
                                         isPremium={false}
                                     />
@@ -435,14 +434,14 @@ export default function CommonCodeClient({
                             <div className="w-24 h-24 rounded-[2.5rem] bg-slate-50 flex items-center justify-center text-slate-300 mb-8 border border-slate-100 shadow-inner">
                                 <Database size={40} className="animate-pulse" />
                             </div>
-                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase mb-4">留덉뒪님?곗씠님??μ냼</h3>
+                            <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase mb-4">留덉뒪님데이터μ냼</h3>
                             <p className="text-xs font-bold text-slate-400 text-center max-w-sm leading-relaxed mb-10">
-                                ?쇱そ 肄붾뱶 ?듭뒪?뚮줈?ъ뿉님愿由님?곸쓣 ?좏깮?섏떗?쒖삤.<br />
-                                ?꾨찓님怨꾩링蹂?紐⑤뱺 留덉뒪님?곗씠?곌? ?닿납님?쒖텧?⑸땲님
+                                ?쇱そ 肄붾뱶 ?듭뒪?뚮줈ъ뿉님관리님곸쓣 ?좏깮?섏떗?쒖삤.<br />
+                                ?꾨찓님怨꾩링蹂紐⑤뱺 留덉뒪님?곗씠?곌? ?닿납님?쒖텧합니다
                             </p>
                             <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
                                 <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col gap-2">
-                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">?꾨찓님?대윭?ㅽ꽣</span>
+                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">?꾨찓님?대윭ㅽ꽣</span>
                                     <span className="text-2xl font-black text-slate-900 font-mono italic">{initialClusters.length}</span>
                                 </div>
                                 <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col gap-2">
@@ -463,9 +462,9 @@ export default function CommonCodeClient({
                 maxWidth="3xl"
                 footer={
                     <div className="flex w-full gap-4">
-                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">痍⑥냼</Button>
+                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
                         <Button form="code-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group">
-                            <Plus size={18} className="group-hover:rotate-90 transition-transform" /> ?님                        </Button>
+                            <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 님                        </Button>
                     </div>
                 }
             >
@@ -487,7 +486,7 @@ export default function CommonCodeClient({
                                     placeholder="분류 코드 이름"
                                 />
                             </FormField>
-                            <FormField label="?쇰━ ?덉씠釉?(Label)" required>
+                            <FormField label="?쇰━ ?덉씠釉(Label)" required>
                                 <Input name="codeNm" defaultValue={editingDetail?.codeNm} required className="h-14 rounded-2xl text-sm font-black tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all" placeholder="?쒓?/?곷Ц 肄붾뱶 ?대쫫" />
                             </FormField>
                         </div>
@@ -504,7 +503,7 @@ export default function CommonCodeClient({
                                     </SelectTrigger>
                                     <SelectContent className="rounded-2xl shadow-xl z-[9999]">
                                         <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-emerald-500">
-                                            --- ?ъ슜以?(ACTIVE) ---
+                                            --- ъ슜以(ACTIVE) ---
                                         </SelectItem>
                                         <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">
                                             --- 誘몄궗님(INACTIVE) ---
@@ -512,8 +511,8 @@ export default function CommonCodeClient({
                                     </SelectContent>
                                 </Select>
                             </FormField>
-                            <FormField label="硫뷀님곗씠님而⑦뀓?ㅽ듃 ?ㅻ챸">
-                                <textarea name="codeDc" defaultValue={editingDetail?.codeDc} className="w-full min-h-[160px] p-6 rounded-[2rem] border-none bg-slate-50 text-[11px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner" placeholder="肄붾뱶 ?ъ슜泥?諛님쒖뒪님?쒖빟 議곌굔 ?ㅻ챸..." />
+                            <FormField label="硫뷀님곗씠님而⑦뀓ㅽ듃 설명">
+                                <textarea name="codeDc" defaultValue={editingDetail?.codeDc} className="w-full min-h-[160px] p-6 rounded-[2rem] border-none bg-slate-50 text-[11px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner" placeholder="肄붾뱶 ъ슜泥諛님쒖뒪님?쒖빟 議곌굔 설명..." />
                             </FormField>
                         </div>
                     </div>

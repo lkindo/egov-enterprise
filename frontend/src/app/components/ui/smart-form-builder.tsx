@@ -1,5 +1,4 @@
-﻿"신규 행정 서식";
-
+﻿
 import React, { useState, useMemo } from 'react';
 import {
  Plus,
@@ -44,7 +43,7 @@ export interface FormSchema {
 export function SmartFormBuilder() {
  const [schema, setSchema] = useState<FormSchema>({
  title: "신규 ?됱젙 ?쒖떇",
- description: "업무 吏님諛?蹂닿퀬瑜님꾪븳 ?쒖? ?쒖떇?낅땲님",
+ description: "업무 吏님및 蹂닿퀬瑜님꾪븳 ?쒖? ?쒖떇?낅땲님",
  fields: [
  { id: 'f1', type: 'text', label: '제목', placeholder: '안건 제목을 입력하세요'full' },
  { id: 'f2', type: 'date', label: '기한', required: true, width: 'half' },
@@ -59,8 +58,8 @@ export function SmartFormBuilder() {
  const newField: FormField = {
  id: `f-${Date.now()}`,
  type,
- label: `?덈줈님${type} ?꾨뱶`,
- placeholder: '?댁슜님?낅젰?댁＜?몄슂',
+ label: `새로운${type} ?꾨뱶`,
+ placeholder: '이용님입력해주세요',
  width: 'full'
  };
  setSchema(prev => ({ ...prev, fields: [...prev.fields, newField] }));
@@ -119,9 +118,9 @@ export function SmartFormBuilder() {
  </div>
  <div className="h-6 w-px bg-muted mx-2" />
  <Button variant="outline" className="rounded-xl font-bold h-11 px-6 border-2 hover:bg-primary/5 gap-2">
- <Eye size={18} /> ?꾨━酉? </Button>
+ <Eye size={18} /> ?꾨━뷰? </Button>
  <Button className="rounded-xl font-black h-11 px-8 shadow-xl shadow-primary/20 gap-2">
- <Save size={18} /> ?쒖떇 ?님 </Button>
+ <Save size={18} /> ?쒖떇 님 </Button>
  </div>
  </div>
 
@@ -159,7 +158,7 @@ export function SmartFormBuilder() {
  <span className="text-[10px] font-black ">?꾨줈 님/span>
  </div>
  <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
- ?꾨뱶瑜님대┃?섏뿬 ?띿꽦님?몄쭛?섍퀬, ?쒕옒洹명븯님?쒖꽌瑜?蹂寃쏀븷 님?덉뒿?덈떎.
+ ?꾨뱶瑜님대┃섏뿬 ?띿꽦님?몄쭛?섍퀬, ?쒕옒洹명븯님?쒖꽌瑜蹂寃쏀븷 님있습니다.
  </p>
  </div>
  </div>
@@ -203,7 +202,7 @@ export function SmartFormBuilder() {
  </div>
 
  <div className="h-12 bg-muted/50 rounded-xl border border-primary/5 px-4 flex items-center text-sm text-muted-foreground/40 font-medium">
- {field.placeholder || `${field.label} ?댁슜님?낅젰?섏꽭님}
+ {field.placeholder || `${field.label} 이용님입력하세요}
  </div>
  </div>
  ))}
@@ -229,7 +228,7 @@ export function SmartFormBuilder() {
  />
  </div>
  <div className="space-y-2">
- <label className="text-[10px] font-black text-muted-foreground px-1">?뚮젅?댁뒪?님/label>
+ <label className="text-[10px] font-black text-muted-foreground px-1">?뚮젅?댁뒪님/label>
  <Input
  value={activeField.placeholder || ''}
  onChange={(e) => updateField(activeField.id, { placeholder: e.target.value })}
@@ -302,7 +301,7 @@ export function SmartFormBuilder() {
  </div>
  <h4 className="text-sm font-black tracking-tight text-muted-foreground/60 mb-2">?좏깮님?꾨뱶 ?놁쓬</h4>
  <p className="text-[10px] font-medium text-muted-foreground/40 leading-relaxed">
- 罹붾쾭?ㅼ쓽 ?꾨뱶瑜님좏깮?섏뿬 ?곸꽭 ?띿꽦님?몄쭛?섏꽭님
+ 罹붾쾭ㅼ쓽 ?꾨뱶瑜님좏깮?섏뿬 상세 ?띿꽦님?몄쭛?섏꽭님
  </p>
  </div>
  )}

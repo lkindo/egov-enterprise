@@ -45,17 +45,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 
 const STEPS = [
-  { id: 1, title: '湲곕낯 ?ㅼ젙', description: '寃뚯떆?먯쓽 ?대쫫怨님ㅻ챸님?낅젰?섏꽭님', icon: Settings2 },
-  { id: 2, title: '?쒗뵆由님좏깮', description: '?⑸룄님留욌뒗 UI ?ㅽ님쇱쓣 ?좏깮?섏꽭님', icon: Layout },
-  { id: 3, title: '沅뚰븳 留ㅽ듃由?뒪', description: '?ъ슜님洹몃９蹂?沅뚰븳님?ㅼ젙?섏꽭님', icon: ShieldCheck },
-  { id: 4, title: '硫붾돱 諛고룷', description: '?ъ씠님硫붾돱님寃뚯떆?먯쓣 ?곌껐?섏꽭님', icon: Rocket },
+  { id: 1, title: '湲곕낯 ㅼ젙', description: '寃뚯떆?먯쓽 ?대쫫怨님ㅻ챸님입력하세요', icon: Settings2 },
+  { id: 2, title: '?쒗뵆由님좏깮', description: '⑸룄님留욌뒗 UI ㅽ님쇱쓣 ?좏깮?섏꽭님', icon: Layout },
+  { id: 3, title: '沅뚰븳 매트릭스', description: '사용자洹몃９蹂沅뚰븳님ㅼ젙?섏꽭님', icon: ShieldCheck },
+  { id: 4, title: '硫붾돱 諛고룷', description: 'ъ씠님硫붾돱님寃뚯떆?먯쓣 ?곌껐?섏꽭님', icon: Rocket },
 ];
 
 const TEMPLATES = [
   {
     id: 'TMPLT_HUB',
     name: '吏님?덈툕',
-    description: '吏님怨듭쑀님理쒖쟻?붾맂 怨좊룄님??쒕낫?쒗삎 ?덉씠?꾩썐',
+    description: '吏님怨듭쑀님理쒖쟻?붾맂 怨좊룄님쒕낫?쒗삎 ?덉씠?꾩썐',
     typeCode: 'BBST01',
     icon: BookOpen,
     color: 'bg-indigo-500',
@@ -63,7 +63,7 @@ const TEMPLATES = [
   {
     id: 'TMPLT_LIST',
     name: 'Enterprise List',
-    description: '鍮좊Ⅸ ?먯깋怨?媛?낆꽦님以묒떆?섎뒗 ?쒖? ?곗씠님?뚯씠釉?,
+    description: '鍮좊Ⅸ ?먯깋怨媛낆꽦님以묒떆?섎뒗 ?쒖? 데이터?뚯씠釉,
     typeCode: 'BBST02',
     icon: List,
     color: 'bg-emerald-500',
@@ -71,7 +71,7 @@ const TEMPLATES = [
   {
     id: 'TMPLT_GALLERY',
     name: 'Visual Gallery',
-    description: '?대?吏 諛?移대뱶 以묒떖님?쒓컖님而ㅻ님덊떚 ?덉씠?꾩썐',
+    description: '?대吏 및 移대뱶 以묒떖님?쒓컖님而ㅻ님덊떚 ?덉씠?꾩썐',
     typeCode: 'BBST03',
     icon: ImageIcon,
     color: 'bg-rose-500',
@@ -79,9 +79,9 @@ const TEMPLATES = [
 ];
 
 const ROLES = [
-  { id: 'ROLE_ADMIN', name: '?쒖뒪님愿由ъ옄', icon: Lock, color: 'text-rose-500' },
+  { id: 'ROLE_ADMIN', name: '시스템관리자', icon: Lock, color: 'text-rose-500' },
   { id: 'ROLE_USER', name: '?쇰컲 ?꾩쭅님, icon: UserCircle, color: 'text-blue-500' },
-  { id: 'ROLE_ANONYMOUS', name: '?듬챸 ?ъ슜님, icon: UserMinus, color: 'text-slate-400' },
+  { id: 'ROLE_ANONYMOUS', name: '?듬챸 사용자, icon: UserMinus, color: 'text-slate-400' },
 ];
 
 const PERMISSIONS = [
@@ -92,7 +92,7 @@ const PERMISSIONS = [
 ];
 
 const formSchema = z.object({
-  bbsNm: z.string().min(2, '寃뚯떆님紐낆묶? 理쒖냼 2湲님?댁긽?댁뼱님?⑸땲님'),
+  bbsNm: z.string().min(2, '寃뚯떆님紐낆묶 理쒖냼 2湲님?댁긽?댁뼱님합니다'),
   bbsIntrcn: z.string(),
   replyPosblAt: z.boolean(),
   fileAtchPosblAt: z.boolean(),
@@ -227,7 +227,7 @@ export function BoardMakerWizard() {
           <div className="space-y-4">
             <h2 className="text-5xl font-black tracking-tighter text-slate-900 italic">MISSION COMPLETE!</h2>
             <p className="text-xl text-slate-400 font-bold leading-relaxed max-w-md mx-auto">
-              寃뚯떆?먯씠 ?앹꽦?섏뿀?쇰ŉ <span className="text-primary">'{watch('menuNm')}'</span> 硫붾돱님?깃났?곸쑝濡님곌껐?섏뿀?듬땲님
+              寃뚯떆?먯씠 ?앹꽦?섏뿀?쇰ŉ <span className="text-primary">'{watch('menuNm')}'</span> 硫붾돱님성공적으로곌껐?섏뿀?듬땲님
             </p>
           </div>
           <div className="flex flex-col gap-4 w-full max-w-sm">
@@ -242,7 +242,7 @@ export function BoardMakerWizard() {
               onClick={() => window.location.reload()}
               className="h-14 rounded-2xl text-slate-400 font-bold hover:text-primary transition-colors"
             >
-              ?ㅻⅨ 寃뚯떆님異붽님섍린
+              ㅻⅨ 寃뚯떆님異붽님섍린
             </Button>
           </div>
         </CardContent>
@@ -320,7 +320,7 @@ export function BoardMakerWizard() {
                       </Label>
                       <Input
                         id="bbsNm"
-                        placeholder="님 ?щ궡 ?뚯떇 怨듭쑀 寃뚯떆님
+                        placeholder="님 щ궡 ?뚯떇 怨듭쑀 寃뚯떆님
                         className={cn(
                           "h-16 text-xl rounded-2xl border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm",
                           errors.bbsNm ? "border-red-500 bg-red-50/10" : "border-slate-100 bg-slate-50/50"
@@ -337,7 +337,7 @@ export function BoardMakerWizard() {
                       </Label>
                       <Textarea
                         id="bbsIntrcn"
-                        placeholder="寃뚯떆?먯쓽 紐⑹쟻怨님ъ슜 ??곸쓣 媛꾨떒님?ㅻ챸?댁＜?몄슂."
+                        placeholder="寃뚯떆?먯쓽 紐⑹쟻怨님ъ슜 곸쓣 媛꾨떒님설명?댁＜몄슂."
                         className="min-h-[140px] text-lg rounded-3xl border-2 border-slate-100 bg-slate-50/50 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm"
                         {...register('bbsIntrcn')}
                       />
@@ -347,10 +347,10 @@ export function BoardMakerWizard() {
                       <div className="flex items-center justify-between p-8 rounded-[2rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all">
                         <div className="space-y-1">
                           <Label className="text-lg font-black text-slate-800 flex items-center gap-2">
-                            ?볤? ?ъ슜 ?щ?
+                            ?볤? ъ슜 여부
                             <Info className="w-4 h-4 text-slate-300" />
                           </Label>
-                          <p className="text-sm text-slate-400 font-medium whitespace-nowrap">寃뚯떆湲님?볤님님묒꽦님님?덉뒿?덈떎.</p>
+                          <p className="text-sm text-slate-400 font-medium whitespace-nowrap">게시글이?볤님님묒꽦님님있습니다.</p>
                         </div>
                         <Switch
                           checked={watch('replyPosblAt')}
@@ -362,10 +362,10 @@ export function BoardMakerWizard() {
                       <div className="flex items-center justify-between p-8 rounded-[2rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all">
                         <div className="space-y-1">
                           <Label className="text-lg font-black text-slate-800 flex items-center gap-2">
-                            ?뚯씪 泥⑤? ?щ?
+                            ?뚯씪 泥⑤ 여부
                             <Info className="w-4 h-4 text-slate-300" />
                           </Label>
-                          <p className="text-sm text-slate-400 font-medium whitespace-nowrap">臾몄꽌님?대?吏瑜?泥⑤님님님덉뒿?덈떎.</p>
+                          <p className="text-sm text-slate-400 font-medium whitespace-nowrap">臾몄꽌님?대吏瑜泥⑤님님님덉뒿?덈떎.</p>
                         </div>
                         <Switch
                           checked={watch('fileAtchPosblAt')}
@@ -382,7 +382,7 @@ export function BoardMakerWizard() {
                     <div className="flex-1 space-y-8">
                       <div className="space-y-2">
                         <h4 className="text-xl font-black text-slate-800 tracking-tight italic">LAYOUT_STRATEGY_SELECT</h4>
-                        <p className="text-sm text-slate-400 font-medium">鍮꾩쫰?덉뒪 紐⑹쟻님遺?⑺븯님理쒖쟻님UI ?붿쭊님?좏깮?섏꽭님</p>
+                        <p className="text-sm text-slate-400 font-medium">鍮꾩쫰?덉뒪 紐⑹쟻님遺⑺븯님理쒖쟻님UI ?붿쭊님?좏깮?섏꽭님</p>
                       </div>
                       <div className="grid grid-cols-1 gap-6">
                         {TEMPLATES.map((tpl) => {
@@ -429,8 +429,8 @@ export function BoardMakerWizard() {
                       </div>
                       <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white/40 font-mono text-[10px] tracking-widest leading-relaxed">
                         ?붿쭊 理쒖쟻님 활성 <br />
-                        UI ?뚮뜑留?紐⑤뱶: 怨좎땐?ㅻ룄 <br />
-                        ?쒗뵆由?ID: {selectedTemplate}
+                        UI ?뚮뜑留紐⑤뱶: 怨좎땐ㅻ룄 <br />
+                        ?쒗뵆由ID: {selectedTemplate}
                       </div>
                     </div>
 
@@ -454,7 +454,7 @@ export function BoardMakerWizard() {
                         <table className="w-full min-w-[800px]">
                           <thead>
                             <tr className="bg-slate-900/5 border-b">
-                              <th className="p-8 text-left font-black text-slate-400 text-sm tracking-widest uppercase">?님洹몃９ (Roles)</th>
+                              <th className="p-8 text-left font-black text-slate-400 text-sm tracking-widest uppercase">님洹몃９ (Roles)</th>
                               {PERMISSIONS.map(p => (
                                 <th key={p.id} className="p-8 text-center font-black text-slate-400 text-sm tracking-widest uppercase">{p.name}</th>
                               ))}
@@ -505,7 +505,7 @@ export function BoardMakerWizard() {
                       <Info className="w-8 h-8 text-amber-500 shrink-0" />
                       <div>
                         <p className="font-black text-amber-900 text-lg">보안 ?뺤콉 ?덈궡</p>
-                        <p className="text-slate-600 font-medium">愿由ъ옄 洹몃９? 紐⑤뱺 沅뚰븳님湲곕낯?곸쑝濡?遺?щ맗?덈떎. '?듬챸 ?ъ슜님?먭쾶 ?곌린 沅뚰븳님遺?ы븷 寃쎌슦 ?ㅽ뙵 寃뚯떆臾쇱뿉 二쇱쓽媛 ?꾩슂?⑸땲님</p>
+                        <p className="text-slate-600 font-medium">관리자 洹몃９ 紐⑤뱺 沅뚰븳님湲곕낯?곸쑝濡遺щ맗?덈떎. '?듬챸 사용자?먭쾶 ?곌린 沅뚰븳님遺ы븷 寃쎌슦 ㅽ뙵 寃뚯떆臾쇱뿉 二쇱쓽媛 ?꾩슂합니다</p>
                       </div>
                     </div>
                   </div>
@@ -523,8 +523,8 @@ export function BoardMakerWizard() {
                           <SelectValue placeholder="?곸쐞 硫붾돱瑜님좏깮?섏꽭님" />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-none shadow-2xl">
-                          <SelectItem value="2000000" className="py-4 text-lg font-bold">?묒뾽 而ㅻ님덊떚 諛?肄섑뀗痢?/SelectItem>
-                          <SelectItem value="2030000" className="py-4 text-lg font-bold">?띾낫?뱀뀡 諛님ъ슜?먯님?/SelectItem>
+                          <SelectItem value="2000000" className="py-4 text-lg font-bold">?묒뾽 而ㅻ님덊떚 및 肄섑뀗痢</SelectItem>
+                          <SelectItem value="2030000" className="py-4 text-lg font-bold">?띾낫?뱀뀡 諛님ъ슜?먯님</SelectItem>
                           <SelectItem value="0" className="py-4 text-lg font-bold">ROOT (理쒖긽님硫붾돱)</SelectItem>
                         </SelectContent>
                       </Select>
@@ -536,7 +536,7 @@ export function BoardMakerWizard() {
                           硫붾돱 紐낆묶
                         </Label>
                         <Input
-                          placeholder="硫붾돱님?쒖떆님?대쫫님?낅젰?섏꽭님"
+                          placeholder="硫붾돱님?쒖떆님?대쫫님입력하세요"
                           className="h-16 text-lg rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm"
                           {...register('menuNm')}
                         />
@@ -581,7 +581,7 @@ export function BoardMakerWizard() {
               disabled={currentStep === 1 || isSubmitting}
               className="h-14 px-8 rounded-2xl font-black text-slate-600 hover:bg-white hover:text-primary transition-all disabled:opacity-0"
             >
-              <ChevronLeft className="mr-2 w-5 h-5" /> ?댁쟾 ?④퀎
+              <ChevronLeft className="mr-2 w-5 h-5" /> ?댁쟾 ④퀎
             </Button>
 
             <Button
@@ -596,11 +596,11 @@ export function BoardMakerWizard() {
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  {status || '泥섎━ 以?..'}
+                  {status || '泥섎━ 중..'}
                 </div>
               ) : (
                 <span className="flex items-center gap-2">
-                  {currentStep === STEPS.length ? '寃뚯떆님?앹꽦 諛?硫붾돱 諛고룷' : '?ㅼ쓬 ?④퀎濡?}
+                  {currentStep === STEPS.length ? '寃뚯떆님?앹꽦 및 硫붾돱 諛고룷' : 'ㅼ쓬 ④퀎濡}
                   <ChevronRight className="ml-2 w-5 h-5" />
                 </span>
               )}
@@ -610,7 +610,7 @@ export function BoardMakerWizard() {
       </Card>
 
       <p className="text-center text-slate-400 text-sm font-medium italic">
-        "留덉?留님대┃님?덈줈님?뚰넻님?쒖옉?낅땲님 - Board Master Maker v1.0
+        "留덉留님대┃님새로운?뚰넻님시작?낅땲님 - Board Master Maker v1.0
       </p>
     </div>
   );

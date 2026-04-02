@@ -6,8 +6,8 @@ import { programAdminService } from '@/services/foundation/system/ProgramAdminSe
 import MenuAdminClient from './MenuAdminClient';
 
 export const metadata = {
-    title: '?쒖뒪님硫붾돱 ?꾪궎?띿쿂 | ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
-    description: '?쒖뒪님?몃━ 援ъ“? ?꾨줈洹몃옩 ?곌껐님泥닿퀎?곸쑝濡?愿由ы빀?덈떎.',
+    title: '시스템硫붾돱 ?꾪궎?띿쿂 | ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+    description: '시스템?몃━ 援ъ“ ?꾨줈洹몃옩 ?곌껐님泥닿퀎?곸쑝濡관리ы빀?덈떎.',
 };
 
 export default async function MenuAdminPage() {

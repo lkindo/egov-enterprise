@@ -12,7 +12,7 @@ export interface AuditLog {
 }
 
 /**
- * 媛먯궗 濡쒓렇 愿由님쒕퉬님(Admin)
+ * 媛먯궗 로그 관리님쒕퉬님(Admin)
  */
 class AuditAdminService extends AdminService {
   constructor() {
@@ -20,7 +20,7 @@ class AuditAdminService extends AdminService {
   }
 
  /**
- * 媛먯궗 濡쒓렇 紐⑸줉 조회
+ * 媛먯궗 로그 紐⑸줉 조회
  */
  async getAuditLogs(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<AuditLog>> {
  return this.get<PageResponse<AuditLog>>('', { ...config, params });

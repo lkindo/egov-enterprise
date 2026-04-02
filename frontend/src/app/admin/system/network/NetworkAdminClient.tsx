@@ -1,5 +1,4 @@
-﻿'네트워크 자산 삭제';
-
+﻿
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -65,7 +64,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
     const handleDelete = async (id: string) => {
         const ok = await confirm({
             title: '?명봽님노드 ?곴뎄 님젣',
-            message: '?좏깮님?ㅽ듃?뚰겕 노드瑜님쒖뒪?쒖뿉님제거?섏떆寃좎뒿?덇퉴? 님?묒뾽? ?섎룎由님님놁쑝硫?愿님?곌껐님利됱떆 李⑤떒?⑸땲님',
+            message: '?좏깮님ㅽ듃?뚰겕 노드瑜님쒖뒪?쒖뿉님제거?섏떆寃좎뒿?덇퉴? 님?묒뾽 ?섎룎由님님놁쑝硫愿님?곌껐님利됱떆 李⑤떒합니다',
             variant: 'destructive',
             confirmText: '자산 삭제'
         });
@@ -79,7 +78,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                     toast(res.message, 'error');
                 }
             } catch {
-                toast('님젣 以님쒖뒪님?뺤? ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+                toast('님젣 以님쒖뒪님?뺤? ㅻ쪟媛 諛쒖깮있습니다.', 'error');
             }
         }
     };
@@ -98,7 +97,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                 toast(res.message, 'error');
             }
         } catch {
-            toast('?곗씠님?좏슚님寃님諛님?μ뿉 ?ㅽ뙣?덉뒿?덈떎.', 'error');
+            toast('데이터?좏슚님寃님諛님μ뿉 ㅽ뙣있습니다.', 'error');
         }
     };
 
@@ -118,7 +117,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             )
         },
         {
-            header: '?ㅽ듃?뚰겕 ?먯궛 ?뺣낫',
+            header: 'ㅽ듃?뚰겕 ?먯궛 ?뺣낫',
             accessor: (item: Network) => (
                 <div className="space-y-1">
                     <span className="text-sm font-black text-foreground uppercase tracking-tight">{item.manageIem}</span>
@@ -135,7 +134,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             className: 'w-32'
         },
         {
-            header: '愿由님꾩슜',
+            header: '관리님꾩슜',
             className: 'text-right w-32',
             accessor: (item: Network) => (
                 <div className="flex justify-end gap-2 pr-4">
@@ -152,12 +151,12 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="?ㅽ듃?뚰겕 ?좏뤃濡쒖? 愿由? breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '?ㅽ듃?뚰겕 愿由? }]} />
+            <PageHeader title="ㅽ듃?뚰겕 ?좏뤃濡쒖? 관리 breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: 'ㅽ듃?뚰겕 관리 }]} />
 
             <HubHeader
                 title="?명봽님
-                highlight="?ㅽ듃?뚰겕 노드 愿由?
-                subtitle="?꾩궗 ?쒕퉬님노드님IP ?좊떦 ?뺤콉, 寃뚯씠?몄썾님諛님쒕툕님援ъ꽦님臾쇰━?곸쑝濡?매핑?섏뿬 愿由ы빀?덈떎."
+                highlight="ㅽ듃?뚰겕 노드 관리
+                subtitle="?꾩궗 ?쒕퉬님노드님IP ?좊떦 ?뺤콉, 寃뚯씠?몄썾님諛님쒕툕님援ъ꽦님臾쇰━곸쑝濡매핑?섏뿬 관리ы빀?덈떎."
                 icon={NetworkIcon}
                 actions={
                     <Button onClick={handleCreate} size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2">
@@ -167,19 +166,19 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             />
 
             <HubMetricGrid>
-                <HubMetricCard title="愿由님님노드" value={initialNetworks.length} icon={Server} color="primary" />
+                <HubMetricCard title="관리님님노드" value={initialNetworks.length} icon={Server} color="primary" />
                 <HubMetricCard title="?좊떦 怨좎젙 IP" value={initialNetworks.filter(n => n.ntwrkIp).length} icon={Database} color="emerald" status="?덉쟾" />
-                <HubMetricCard title="?ㅽ듃?뚰겕 媛?⑹꽦" value="99.9%" icon={Activity} color="amber" />
+                <HubMetricCard title="ㅽ듃?뚰겕 媛⑹꽦" value="99.9%" icon={Activity} color="amber" />
                 <HubMetricCard title="?됯퇏 ?묐떟 ?띾룄" value="4ms" icon={Zap} color="indigo" />
             </HubMetricGrid>
 
-            <HubSectionCard title="?명봽님노드 ?먯깋湲? description="?쒖뒪?쒖뿉 등록님紐⑤뱺 媛님諛?臾쇰━ ?ㅽ듃?뚰겕 ?붾뱶?ъ씤?몄쓽 以묒븰 吏묒쨷님愿님紐⑸줉?낅땲님" icon={Database}>
+            <HubSectionCard title="?명봽님노드 ?먯깋湲 description="?쒖뒪?쒖뿉 등록님紐⑤뱺 媛님및 臾쇰━ ㅽ듃?뚰겕 ?붾뱶ъ씤?몄쓽 以묒븰 吏묒쨷님愿님紐⑸줉?낅땲님" icon={Database}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
                     <div className="flex flex-col md:flex-row gap-4 flex-1">
                         <div className="relative group/search flex-1">
                             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                             <Input
-                                placeholder="노드 紐낆묶 ?먮뒗 ID 湲곕컲 吏?ν삎 寃님.."
+                                placeholder="노드 紐낆묶 또는 ID 湲곕컲 吏ν삎 寃님.."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="h-16 pl-16 pr-8 rounded-[2rem] bg-slate-50 border-2 border-slate-100 font-black text-md tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
@@ -188,17 +187,17 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                     </div>
                 </div>
 
-                <StandardDataTable columns={columns} data={filteredNodes} emptyMessage="조회님?ㅽ듃?뚰겕 ?먯궛님?놁뒿?덈떎." className="border-none bg-transparent" />
+                <StandardDataTable columns={columns} data={filteredNodes} emptyMessage="조회님ㅽ듃?뚰겕 ?먯궛님?놁뒿?덈떎." className="border-none bg-transparent" />
             </HubSectionCard>
 
             <StandardModal
                 isOpen={isModalOpen}
                 onClose={() => setIsOpen(false)}
-                title={editingNode ? '?명봽님노드 援ъ꽦 ?몄쭛' : '신규 ?ㅽ듃?뚰겕 노드 ?꾨줈鍮꾩님?}
+                title={editingNode ? '?명봽님노드 援ъ꽦 ?몄쭛' : '신규 ㅽ듃?뚰겕 노드 ?꾨줈鍮꾩님?}
                 maxWidth="3xl"
                 footer={
                     <div className="flex w-full gap-4">
-                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">痍⑥냼</Button>
+                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
                         <Button form="network-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group">
                             <Plus size={18} className="group-hover:rotate-90 transition-transform" /> {editingNode ? '援ъ꽦 蹂寃님ы빆 ?곸슜' : '?명봽님?곌껐 활성님}
                         </Button>
@@ -224,10 +223,10 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                     defaultValue={editingNode?.manageIem}
                                     required
                                     className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner"
-                                    placeholder="?ㅽ듃?뚰겕 노드 ?대쫫 ?낅젰"
+                                    placeholder="ㅽ듃?뚰겕 노드 ?대쫫 ?낅젰"
                                 />
                             </FormField>
-                            <FormField label="IP ?붾뱶?ъ씤님二쇱냼" required>
+                            <FormField label="IP ?붾뱶ъ씤님주소" required>
                                 <div className="relative group/ip">
                                     <Globe size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/ip:opacity-100 transition-opacity" />
                                     <Input

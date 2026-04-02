@@ -51,8 +51,8 @@ export function AuditTimelineClient() {
   const stats = useMemo(() => {
     return {
        total: totalItems,
-       security: logs.filter(l => l.histCn.includes('濡쒓렇님)).length + 125,
-       system: logs.filter(l => l.histCn.includes('?쒖뒪님)).length + 42,
+       security: logs.filter(l => l.histCn.includes('로그인)).length + 125,
+       system: logs.filter(l => l.histCn.includes('시스템)).length + 42,
        recent: 8
     };
   }, [logs, totalItems]);
@@ -60,14 +60,14 @@ export function AuditTimelineClient() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="보안 媛먯궗 ?명뀛由ъ쟾님
-        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '媛먯궗 ??꾨씪님 }]}
+        title="보안 媛먯궗 인텔리전스
+        breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '媛먯궗 꾨씪님 }]}
       />
 
       <HubHeader 
-        title="?듭?踰? 
-        highlight="?명뀛由ъ쟾님 
-        subtitle="?꾩궗 ?명봽님님紐⑤뱺 愿由ъ쟻 ?됱쐞 諛?보안 ?꾨줈?좎퐳 臾닿껐님異붿쟻 ?ㅽ듃由? 
+        title="?듭踰 
+        highlight="인텔리전스 
+        subtitle="?꾩궗 ?명봽님님紐⑤뱺 관리ъ쟻 ?됱쐞 및 보안 ?꾨줈?좎퐳 무결성異붿쟻 ㅽ듃由 
         icon={ShieldCheck} 
         actions={
           <div className="flex gap-4 p-2">
@@ -92,7 +92,7 @@ export function AuditTimelineClient() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
          <HubMetricCard title="?꾩껜_媛먯궗_媛앹껜" value={stats.total.toLocaleString()} icon={Activity} color="primary" status="ACTIVE" />
          <HubMetricCard title="보안_?꾨줈?좎퐳" value={stats.security.toLocaleString()} icon={ShieldCheck} color="emerald" status="SAFE" />
-         <HubMetricCard title="?쒖뒪님援ъ꽦_蹂寃? value={stats.system.toLocaleString()} icon={Terminal} color="amber" />
+         <HubMetricCard title="시스템援ъ꽦_蹂寃 value={stats.system.toLocaleString()} icon={Terminal} color="amber" />
          <HubMetricCard title="湲덉씪_誘명빐寃님대깽님 value={stats.recent.toLocaleString()} icon={ShieldAlert} color="rose" status="WARNING" />
       </div>
 
@@ -103,7 +103,7 @@ export function AuditTimelineClient() {
               <div className="flex items-center justify-between border-b border-slate-50 pb-8 relative z-10">
                  <div className="space-y-1">
                     <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase">?쒕룞 분석</h3>
-                    <p className="text-2xl font-black tracking-tighter text-slate-900 uppercase italic leading-none">媛먯궗 濡쒕뱶留님ㅽ듃由?/p>
+                    <p className="text-2xl font-black tracking-tighter text-slate-900 uppercase italic leading-none">媛먯궗 濡쒕뱶留님ㅽ듃由</p>
                  </div>
                  <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 group cursor-pointer px-4 py-2 rounded-xl hover:bg-slate-50 transition-all">
@@ -119,7 +119,7 @@ export function AuditTimelineClient() {
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-200 group-focus-within:text-primary transition-colors" size={20} />
                 <Input 
                   className="pl-16 h-16 bg-slate-50 border-none rounded-[1.25rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300" 
-                  placeholder="?됱쐞님 ?쒖뒪?쒕챸 ?먮뒗 ?쒕룞 ?곸꽭 ?꾪꽣留?.." 
+                  placeholder="?됱쐞님 ?쒖뒪?쒕챸 또는 ?쒕룞 상세 ?꾪꽣留.." 
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
                 />
@@ -142,7 +142,7 @@ export function AuditTimelineClient() {
                    <div className="h-80 flex flex-col items-center justify-center text-center opacity-30 select-none grayscale">
                       <Search size={100} className="text-slate-300 mb-6" />
                       <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">寃님寃곌낵媛 ?놁뒿?덈떎</h3>
-                      <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase mt-4">?ㅻⅨ ?꾪꽣留?議곌굔님?쒕룄님蹂댁떗?쒖삤</p>
+                      <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase mt-4">ㅻⅨ ?꾪꽣留議곌굔님?쒕룄님蹂댁떗?쒖삤</p>
                    </div>
                 )}
               </div>
@@ -170,7 +170,7 @@ export function AuditTimelineClient() {
                               <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse" />
                               <h3 className="text-[10px] font-black text-white/30 tracking-[0.5em] uppercase italic">?뷀샇님분석 媛앹껜</h3>
                           </div>
-                          <h2 className="text-5xl font-black text-white tracking-tighter leading-none mb-6">?됱쐞 ?곸꽭 <br /> ?몄뒪?숉꽣</h2>
+                          <h2 className="text-5xl font-black text-white tracking-tighter leading-none mb-6">?됱쐞 상세 <br /> ?몄뒪?숉꽣</h2>
                           <p className="text-[10px] font-mono font-black text-primary/80 tracking-widest uppercase">
                              HIST_ID: {selectedLog.histId}
                           </p>
@@ -193,7 +193,7 @@ export function AuditTimelineClient() {
 
                        <div className="pt-12 mt-auto border-t border-white/5 space-y-8 relative z-10">
                           <Button className="w-full h-20 bg-white text-slate-900 rounded-[2.5rem] font-black tracking-[0.4em] text-[11px] shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 uppercase group overflow-hidden">
-                             媛먯궗 蹂닿퀬님利앸챸님諛쒓툒
+                             媛먯궗 보고利앸챸님諛쒓툒
                              <ArrowRight size={20} className="ml-4 group-hover:translate-x-2 transition-transform" />
                           </Button>
                        </div>
@@ -209,9 +209,9 @@ export function AuditTimelineClient() {
                         <Activity size={100} className="text-slate-300 group-hover:text-primary transition-colors" />
                     </div>
                     <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-tight mb-4">
-                       ?寃님몄뒪?댁뒪 <br /> 誘몄꽑님                    </h3>
+                       寃님몄뒪?댁뒪 <br /> 誘몄꽑님                    </h3>
                     <p className="text-[10px] font-black text-slate-400 tracking-[0.6em] uppercase leading-relaxed max-w-[240px]">
-                       遺꾨텇?앺븷 ??꾨씪님님ぉ님罹≪쿂?섏떗?쒖삤
+                       遺꾨텇?앺븷 꾨씪님님ぉ님罹≪쿂?섏떗?쒖삤
                     </p>
                  </div>
               )}

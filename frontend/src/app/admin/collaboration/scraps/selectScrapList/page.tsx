@@ -1,5 +1,4 @@
-﻿'삭제하시겠습니까?';
-
+﻿
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import axios from '@/lib/api/client';
@@ -52,12 +51,12 @@ const ScrapListPage = () => {
     }, [page踰덊샇]);
 
     const handleDelete = async (id: string) => {
-        if (!confirm('님젣?섏떆寃좎뒿?덇퉴?')) return;
+        if (!confirm('삭제섏떆寃좎뒿?덇퉴?')) return;
         try {
             (await axios.delete(`/scrap/${id}`)) as any;
             fetchList();
         } catch {
-            alert('님젣님?ㅽ뙣?덉뒿?덈떎.');
+            alert('삭제ㅽ뙣있습니다.');
         }
     };
 
@@ -69,9 +68,9 @@ const ScrapListPage = () => {
                 <CardHeader className="flex flex-row items-center justify-between pb-6 bg-gradient-to-r from-muted/50 to-transparent border-b">
                     <div className="space-y-1">
                         <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                            <Bookmark className="w-6 h-6 text-primary" /> ?ㅽ겕님紐⑸줉
+                            <Bookmark className="w-6 h-6 text-primary" /> 스크랩紐⑸줉
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">?섏쨷님?ㅼ떆 蹂?以묒슂님님?섏씠吏? ?뺣낫?ㅼ쓣 愿由ы븯?몄슂.</p>
+                        <p className="text-sm text-muted-foreground">나중에ㅼ떆 蹂以묒슂님님?섏씠吏 ?뺣낫ㅼ쓣 관리ы븯?몄슂.</p>
                     </div>
                     <CardAction>
                         <Link href="/admin/collaboration/scraps/insertScrap">
@@ -84,7 +83,7 @@ const ScrapListPage = () => {
                 <CardContent className="pt-8">
                     <div className="mb-6 flex items-center justify-between">
                         <div className="bg-muted px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 border">
-                            ?꾩껜 <span className="text-primary font-black">{totalCount}</span>嫄댁쓽 ?ㅽ겕님                        </div>
+                            ?꾩껜 <span className="text-primary font-black">{totalCount}</span>嫄댁쓽 스크랩                        </div>
                     </div>
 
                     <div className="rounded-xl border shadow-sm overflow-hidden bg-white">
@@ -92,10 +91,10 @@ const ScrapListPage = () => {
                             <TableHeader className="bg-muted/30">
                                 <TableRow>
                                     <TableHead className="w-[80px] text-center font-bold">踰덊샇</TableHead>
-                                    <TableHead className="w-[250px] font-bold">?ㅽ겕?⑸챸</TableHead>
+                                    <TableHead className="w-[250px] font-bold">스크랩명</TableHead>
                                     <TableHead className="font-bold">URL / 설명</TableHead>
                                     <TableHead className="w-[120px] text-center font-bold">등록님/TableHead>
-                                    <TableHead className="w-[100px] text-center font-bold">愿由?/TableHead>
+                                    <TableHead className="w-[100px] text-center font-bold">관리</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -112,7 +111,7 @@ const ScrapListPage = () => {
                                 ) : list.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium">
-                                            ??λ맂 ?ㅽ겕?⑹씠 ?놁뒿?덈떎. ?뱀쓽 ?좎슜님?뺣낫瑜님?ν빐 蹂댁꽭님
+                                            λ맂 ㅽ겕⑹씠 ?놁뒿?덈떎. ?뱀쓽 ?좎슜님?뺣낫瑜님ν빐 蹂댁꽭님
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -179,7 +178,7 @@ const ScrapListPage = () => {
                                 disabled={page踰덊샇 === totalPages}
                                 className="px-6 font-bold shadow-sm"
                             >
-                                ?ㅼ쓬
+                                ㅼ쓬
                             </Button>
                         </div>
                     )}

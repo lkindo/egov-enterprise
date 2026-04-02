@@ -40,7 +40,7 @@ const UserLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '?쒕퉬?ㅻ챸',
+            header: '?쒕퉬설명',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
@@ -79,9 +79,9 @@ const UserLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="?ъ슜님濡쒓렇" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }, { label: '?ъ슜님濡쒓렇' }]} />
+            <PageHeader title="사용자로그" breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '로그관리 }, { label: '사용자로그' }]} />
 
-            <HubHeader title="?됱젙 ?대젰" highlight="?ъ슜님濡쒓렇" subtitle="?쒖뒪님?ъ슜?먯쓽 ?쒕퉬님紐⑤뱢蹂님곹샇?묒슜 諛님묒뾽 ?섑뻾 ?대젰님紐낇솗?섍쾶 愿由ы빀?덈떎." icon={History} />
+            <HubHeader title="?됱젙 ?대젰" highlight="사용자로그" subtitle="시스템ъ슜?먯쓽 ?쒕퉬님紐⑤뱢蹂님곹샇?묒슜 諛님묒뾽 ?섑뻾 ?대젰님紐낇솗?섍쾶 관리ы빀?덈떎." icon={History} />
 
             <StandardDataTable
                 columns={columns}
@@ -93,7 +93,7 @@ const UserLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page踰덊샇: page }),
                 }}
                 search={{
-                    placeholder: '?쒕퉬?ㅻ챸, 요청님寃님..',
+                    placeholder: '?쒕퉬설명, 요청님寃님..',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 }),
                 }}
             />

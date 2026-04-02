@@ -2,7 +2,7 @@
 import { AdminService } from '@/services/core/ApiService';
 
 /**
- * 통계 愿由님쒕퉬님(Admin)
+ * 통계 관리님쒕퉬님(Admin)
  */
 export interface StatsDto {
   statsDate: string;
@@ -35,7 +35,7 @@ class StatsAdminService extends AdminService {
     return this.get<StatsDto[]>('/bbs', { ...config, params });
   }
 
-  /** ?ъ슜님통계 조회 */
+  /** 사용자통계 조회 */
   async getUserStats(params?: { fromDate?: string; toDate?: string; statsKind?: string }, config?: AxiosRequestConfig) {
     return this.get<StatsDto[]>('/user', { ...config, params });
   }
@@ -45,12 +45,12 @@ class StatsAdminService extends AdminService {
     return this.get<StatsDto[]>('/screen', { ...config, params });
   }
 
-  /** 蹂닿퀬님통계 조회 */
+  /** 보고통계 조회 */
   async getReportStats(params?: { fromDate?: string; toDate?: string }, config?: AxiosRequestConfig) {
     return this.get<StatsDto[]>('/report', { ...config, params });
   }
 
-  /** ?먮즺?댁슜현황 통계 조회 */
+  /** ?먮즺이용현황 통계 조회 */
   async getDataUsageStats(params?: { fromDate?: string; toDate?: string }, config?: AxiosRequestConfig) {
     return this.get<StatsDto[]>('/data-usage', { ...config, params });
   }

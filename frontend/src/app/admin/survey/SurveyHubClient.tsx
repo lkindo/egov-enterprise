@@ -1,5 +1,4 @@
-﻿'2024년 상반기 직원 만족도 조사';
-
+﻿
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -62,7 +61,7 @@ export default function SurveyHubClient() {
 
   // --- Mock Data ---
   const surveys: SurveyItem[] = [
-    { id: 1, title: '2024님?곷컲湲?吏곸썝 留뚯”님조사', participants: 450, status: '활성', startDate: '2024-03-01', endDate: '2024-03-31' },
+    { id: 1, title: '2024님?곷컲湲吏곸썝 留뚯”님조사', participants: 450, status: '활성', startDate: '2024-03-01', endDate: '2024-03-31' },
     { id: 2, title: '신규 기업 보안 정책 피드백'활성', startDate: '2024-03-10', endDate: '2024-03-24' },
     { id: 3, title: '복지 포인트 사용처 선호도 조사', participants: 856, status: 'CLOSED', startDate: '2024-02-15', endDate: '2024-03-01' },
     { id: 4, title: '사내 어학 교육 수요 조사', participants: 32, status: 'PENDING', startDate: '2024-04-01', endDate: '2024-04-15' },
@@ -74,13 +73,13 @@ export default function SurveyHubClient() {
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
         title="조사 留덉뒪님?덈툕"
-        breadcrumbs={[{ label: '而ㅻ님덊떚' }, { label: '설문 ?명뀛由ъ쟾님 }]}
+        breadcrumbs={[{ label: '而ㅻ님덊떚' }, { label: '설문 인텔리전스 }]}
       />
 
       <HubHeader
-        title="설문 ?명뀛由ъ쟾님
-        highlight="留ㅽ듃由?뒪"
-        subtitle="?꾩궗 피드諛?諛님ъ슜님분석 ?곗씠님?듯빀 留ㅻ땲吏癒쇳듃 ?덈툕"
+        title="설문 인텔리전스
+        highlight="매트릭스"
+        subtitle="?꾩궗 피드및 諛님ъ슜님분석 데이터?듯빀 留ㅻ땲吏癒쇳듃 ?덈툕"
         icon={ClipboardCheck}
         actions={
           <div className="flex gap-4 p-2">
@@ -116,8 +115,8 @@ export default function SurveyHubClient() {
                 <HubStatusBadge label="?숆린?붾맖" variant="success" className="bg-emerald-500/20 border-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-widest uppercase" />
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-black text-white/30 tracking-[0.4em] uppercase leading-none">珥?李몄뿬</p>
-                <h4 className="text-4xl font-black tracking-tighter text-white leading-none tabular-nums">1,458<span className="text-sm opacity-20 ml-2">?⑥쐞</span></h4>
+                <p className="text-[10px] font-black text-white/30 tracking-[0.4em] uppercase leading-none">珥李몄뿬</p>
+                <h4 className="text-4xl font-black tracking-tighter text-white leading-none tabular-nums">1,458<span className="text-sm opacity-20 ml-2">⑥쐞</span></h4>
                 <div className="flex items-center gap-2 text-[9px] font-black text-emerald-400 mt-4 bg-emerald-400/10 w-fit px-3 py-1 rounded-full border border-emerald-400/20">
                   <Activity size={10} /> +12.4% INCREMENTAL
                 </div>
@@ -130,7 +129,7 @@ export default function SurveyHubClient() {
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-8">
           <HubSectionCard
             title="설문 ?몃깽?좊━"
-            description="현재 ?쒖뒪?쒖뿉님?댁슜 以묒씤 ?곗씠님?섏쭛 ?좊떅?ㅼ엯?덈떎."
+            description="현재 ?쒖뒪?쒖뿉님이용 以묒씤 데이터?섏쭛 ?좊떅ㅼ엯?덈떎."
             icon={Database}
           >
             <div className="relative group mb-8">
@@ -185,7 +184,7 @@ export default function SurveyHubClient() {
                       <span className={cn("text-xl font-black tracking-tighter tabular-nums leading-none", selectedSurveyId === survey.id ? "text-white" : "text-primary")}>
                         {survey.participants.toLocaleString()}
                       </span>
-                      <span className="text-[9px] font-black tracking-[0.2em] opacity-40 uppercase">?⑥쐞</span>
+                      <span className="text-[9px] font-black tracking-[0.2em] opacity-40 uppercase">⑥쐞</span>
                     </div>
 
                     <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.02] grayscale transition-all duration-700">
@@ -211,12 +210,12 @@ export default function SurveyHubClient() {
               >
                 <HubSectionCard
                   title="실시간吏님분석"
-                  description="?좏깮님설문 ?꾨줈?좎퐳님?묐떟 ?곗씠님?쒓컖님諛님몃젋님분석?낅땲님"
+                  description="?좏깮님설문 ?꾨줈?좎퐳님?묐떟 데이터?쒓컖님諛님몃젋님분석?낅땲님"
                   icon={BarChart3}
                   statusBadges={
                     <div className="flex gap-2">
-                      <HubStatusBadge label="?ㅽ듃由щ컢" icon={Activity} variant="default" className="text-[8px] font-black tracking-widest" />
-                      <HubStatusBadge label="?뺤씤님 icon={CheckCircle} variant="success" className="text-[8px] font-black tracking-widest" />
+                      <HubStatusBadge label="ㅽ듃由щ컢" icon={Activity} variant="default" className="text-[8px] font-black tracking-widest" />
+                      <HubStatusBadge label="확인님 icon={CheckCircle} variant="success" className="text-[8px] font-black tracking-widest" />
                     </div>
                   }
                 >
@@ -227,7 +226,7 @@ export default function SurveyHubClient() {
                           <div className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                           Temporal Flow Analysis
                         </h4>
-                        <span className="text-[9px] font-black text-primary tracking-widest uppercase">?쇱씠釉?寃뚯씠吏</span>
+                        <span className="text-[9px] font-black text-primary tracking-widest uppercase">?쇱씠釉寃뚯씠吏</span>
                       </div>
                       <div className="h-56 rounded-[3rem] bg-slate-950 border-8 border-slate-900 flex items-end justify-between p-12 gap-8 relative overflow-hidden shadow-2xl">
                         <div className="absolute inset-x-0 bottom-0 h-1 bg-primary/10 blur-[40px] pointer-events-none" />
@@ -264,7 +263,7 @@ export default function SurveyHubClient() {
                   <PieChart size={48} />
                 </div>
                 <div className="space-y-4">
-                  <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-50">?쒖뒪님?湲?/h3>
+                  <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-50">시스템湲</h3>
                   <p className="text-[11px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.4em] uppercase leading-relaxed">
                     Select Identity to Initiate Analytics
                   </p>

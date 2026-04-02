@@ -2,7 +2,7 @@
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * ?뚯씪 愿由님쒕퉬님 * ?곌껐: com.company.project.api.controller.file.FileController
+ * ?뚯씪 관리님쒕퉬님 * ?곌껐: com.company.project.api.controller.file.FileController
  */
 export interface SharedFileDetail {
  atchFileId: string;
@@ -39,7 +39,7 @@ export const fileMngService = {
  return client.get<SharedFileDetail[]>(`${BASE_URL}/${atchFileId}`);
  },
 
- /** ?뚯씪 ?ㅼ슫濡쒕뱶 URL ?앹꽦 */
+ /** ?뚯씪 ㅼ슫濡쒕뱶 URL ?앹꽦 */
  getDownloadUrl: (atchFileId: string, fileSn: number): string => {
  const baseUrl = typeof window === 'undefined'
  ? process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'

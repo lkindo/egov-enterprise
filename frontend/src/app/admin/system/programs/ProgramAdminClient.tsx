@@ -1,5 +1,4 @@
-﻿'데이터를 불러오는 중 오류가 발생했습니다.';
-
+﻿
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -76,7 +75,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       setData(list);
       setTotal(totalCount);
     } catch (error: unknown) {
-      toast('?곗씠?곕? 遺덈윭?ㅻ뒗 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+      toast('?곗씠?곕? 遺덈윭ㅻ뒗 以님ㅻ쪟媛 諛쒖깮있습니다.', 'error');
     } finally {
       setLoading(false);
     }
@@ -109,7 +108,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
   const handleDelete = async (name: string) => {
     const isConfirmed = await confirm({
       title: '프로그램 삭제',
-      message: `[${name}] ?꾨줈洹몃옩님님젣?섏떆寃좎뒿?덇퉴? ?대떦 ?꾨줈洹몃옩怨님곌껐님紐⑤뱺 硫붾돱 ?곕룞님?댁젣님님?덉뒿?덈떎.`,
+      message: `[${name}] ?꾨줈洹몃옩님삭제섏떆寃좎뒿?덇퉴? ?대떦 ?꾨줈洹몃옩怨님곌껐님紐⑤뱺 硫붾돱 ?곕룞님?댁젣님님있습니다.`,
       variant: 'destructive'
     });
     if (isConfirmed) {
@@ -139,7 +138,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       )
     },
     {
-      header: '?앸퀎 ?뚯씪紐?,
+      header: '?앸퀎 ?뚯씪紐,
       accessor: (item: Program) => (
         <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg w-fit">
           <span className="text-[10px] font-black text-primary tracking-tight font-mono">{item.progrmFileNm}</span>
@@ -148,7 +147,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       className: 'w-48'
     },
     {
-      header: '?붾뱶?ъ씤님(API/URL)',
+      header: '?붾뱶ъ씤님(API/URL)',
       accessor: (item: Program) => (
         <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/70 tracking-tighter italic">
           <LinkIcon size={12} className="text-primary opacity-40" />
@@ -158,7 +157,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       className: 'w-64'
     },
     {
-      header: '愿由?,
+      header: '관리,
       className: 'text-right w-32',
       accessor: (item: Program) => (
         <div className="flex justify-end gap-2 pr-4">
@@ -177,13 +176,13 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
         title="시스템 프로그램 미들웨어"
-        breadcrumbs={[{ label: '시스템관리'?꾨줈洹몃옩 愿由? }]}
+        breadcrumbs={[{ label: '시스템관리'?꾨줈洹몃옩 관리 }]}
       />
 
       <HubHeader
         title="?꾨줈洹몃옩"
-        highlight="?먯궛 愿由?
-        subtitle="?쒖뒪?쒖쓣 援ъ꽦?섎뒗 紐⑤뱺 ?쇰━님?꾨줈洹몃옩 紐⑤뱢 諛?API ?붾뱶?ъ씤?몄쓽 ?앸챸二쇨린 愿由?
+        highlight="?먯궛 관리
+        subtitle="?쒖뒪?쒖쓣 援ъ꽦?섎뒗 紐⑤뱺 ?쇰━님?꾨줈洹몃옩 紐⑤뱢 및 API ?붾뱶ъ씤?몄쓽 ?앸챸二쇨린 관리
         icon={Box}
         actions={
           <Button
@@ -198,12 +197,12 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
       <HubMetricGrid>
         <HubMetricCard title="활성_?꾨줈洹몃옩_님 value={total} icon={Layers} color="primary" />
-        <HubMetricCard title="?쒖뒪님臾닿껐님 value="?뺤긽" icon={ShieldCheck} color="emerald" status="?뺤씤님 />
-        <HubMetricCard title="?쒕퉬님媛?숈떆媛? value="99.9%" icon={Zap} color="amber" />
+        <HubMetricCard title="시스템무결성 value="?뺤긽" icon={ShieldCheck} color="emerald" status="확인님 />
+        <HubMetricCard title="?쒕퉬님媛숈떆媛 value="99.9%" icon={Zap} color="amber" />
         <HubMetricCard title="?덉님ㅽ듃由님숆린님 value="실시간 icon={RefreshCcw} color="indigo" />
       </HubMetricGrid>
 
-      <HubSectionCard title="?뚰봽?몄썾님?덊룷吏?좊━" description="현재 ?쒖뒪?쒖뿉 등록?섏뼱 ?숈옉 以묒씤 紐⑤뱺 ?뚰봽?몄썾님?먯궛님紐낆꽭 諛님명꽣?섏씠님?뺣낫?낅땲님" icon={SearchCode}>
+      <HubSectionCard title="?뚰봽?몄썾님?덊룷吏좊━" description="현재 ?쒖뒪?쒖뿉 등록?섏뼱 ?숈옉 以묒씤 紐⑤뱺 ?뚰봽?몄썾님?먯궛님紐낆꽭 諛님명꽣?섏씠님?뺣낫?낅땲님" icon={SearchCode}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
           <div className="flex-1 max-w-2xl">
             <div className="relative group/search">
@@ -239,16 +238,16 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">痍⑥냼</Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
             <Button onClick={handleSave} className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest shadow-xl">
-              {mode === 'create' ? '신규 등록' : '?님}
+              {mode === 'create' ? '신규 등록' : '님}
             </Button>
           </div>
         }
       >
         <div className="space-y-8 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <FormField label="?쒖뒪님?앸퀎 ?뚯씪紐? required description="님 EgovMain (怨좎쑀 ?ㅺ컪)">
+            <FormField label="시스템?앸퀎 ?뚯씪紐 required description="님 EgovMain (怨좎쑀 ㅺ컪)">
               <Input
                 value={formData.progrmFileNm || ''}
                 onChange={(e) => setFormData({ ...formData, progrmFileNm: e.target.value })}
@@ -267,7 +266,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             </FormField>
           </div>
 
-          <FormField label="?명꽣?섏씠님?붾뱶?ъ씤님(URL)" required description="?ㅼ젣 ?쒕퉬?ㅺ? ?쒓났?섎뒗 님二쇱냼 ?먮뒗 API 寃쎈줈">
+          <FormField label="?명꽣?섏씠님?붾뱶ъ씤님(URL)" required description="ㅼ젣 ?쒕퉬ㅺ ?쒓났?섎뒗 님주소 또는 API 경로">
             <Input
               value={formData.url || ''}
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
@@ -276,7 +275,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             />
           </FormField>
 
-          <FormField label="臾쇰━님?님寃쎈줈" description="?쒕쾭 님?뚯씪 ??μ냼 ?쇰━ 寃쎈줈 (Optional)">
+          <FormField label="臾쇰━님경로" description="?쒕쾭 님?뚯씪 μ냼 ?쇰━ 경로 (Optional)">
             <Input
               value={formData.progrmStrePath || ''}
               onChange={(e) => setFormData({ ...formData, progrmStrePath: e.target.value })}
@@ -285,12 +284,12 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
             />
           </FormField>
 
-          <FormField label="?곸꽭 湲곕뒫 紐낆꽭">
+          <FormField label="상세 湲곕뒫 紐낆꽭">
             <textarea
               value={formData.progrmDc || ''}
               onChange={(e) => setFormData({ ...formData, progrmDc: e.target.value })}
               className="w-full min-h-[140px] p-6 rounded-2xl border-2 border-border bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
-              placeholder="?꾨줈洹몃옩님님븷 諛?愿님紐⑤뱢 ?ㅻ챸"
+              placeholder="?꾨줈洹몃옩님님븷 및 愿님紐⑤뱢 설명"
             />
           </FormField>
         </div>

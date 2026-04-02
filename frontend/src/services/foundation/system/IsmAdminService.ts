@@ -18,7 +18,7 @@ export interface InfrmlSanctn {
 }
 
 /**
- * ?꾩궛 ?좎껌(Informal Sanction) 愿由님쒕퉬님(Admin)
+ * ?꾩궛 ?좎껌(Informal Sanction) 관리님쒕퉬님(Admin)
  */
 class IsmAdminService extends AdminService {
  constructor() {
@@ -30,7 +30,7 @@ class IsmAdminService extends AdminService {
  return this.get<PageResponse<InfrmlSanctn>>('', { ...config, params });
  }
 
- /** ?좎껌 ?곸꽭 조회 */
+ /** ?좎껌 상세 조회 */
  async getInfrmlSanctn(id: string, config?: AxiosRequestConfig): Promise<InfrmlSanctn> {
  return this.get<InfrmlSanctn>(`/${id}`, config);
  }

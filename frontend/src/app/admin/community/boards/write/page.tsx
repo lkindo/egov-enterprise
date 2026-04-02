@@ -1,5 +1,4 @@
-﻿'제목을 입력해 주세요.';
-
+﻿
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -27,12 +26,12 @@ export default function BoardWritePage() {
 
     const [files, setFiles] = useState<File[]>([]);
 
-    // ?먮룞 ?님님?곕룞
+    // ?먮룞 님님?곕룞
     const { clear } = useAutoSave('bbs_write', formData, (data) => setFormData(data));
 
     const handleSave = async () => {
         if (!formData.nttSj.trim()) {
-            toast('?쒕ぉ님?낅젰님二쇱꽭님', 'error');
+            toast('제목님?낅젰님二쇱꽭님', 'error');
             return;
         }
 
@@ -47,11 +46,11 @@ export default function BoardWritePage() {
                 const res = (await boardUserService.createPost(formData)) as any;
                 if (res?.success) {
                     toast('성공적으로 등록되었습니다.', 'success');
-                    clear(); // ?먮룞 ?님?곗씠님님젣
+                    clear(); // ?먮룞 님데이터님젣
                     router.push('/admin/community/boards');
                 }
             } catch {
-                toast('등록 以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+                toast('등록 以님ㅻ쪟媛 諛쒖깮있습니다.', 'error');
             }
         }
     };
@@ -60,11 +59,11 @@ export default function BoardWritePage() {
         <div className="max-w-5xl mx-auto space-y-8 pb-20">
             <PageHeader
                 title="새 게시글 작성"
-                breadcrumbs={[{ label: '게시판'/admin/community/boards' }, { label: '湲?곌린' }]}
+                breadcrumbs={[{ label: '게시판'/admin/community/boards' }, { label: '湲곌린' }]}
                 actions={
                     <div className="flex gap-2">
                         <button onClick={() => router.back()} className="px-4 py-2 border rounded-lg font-bold hover:bg-accent transition-all flex items-center gap-2">
-                            <X size={18} /> 痍⑥냼
+                            <X size={18} /> 취소
                         </button>
                         <button onClick={handleSave} className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all flex items-center gap-2">
                             <Send size={18} /> 등록
@@ -103,7 +102,7 @@ export default function BoardWritePage() {
                             寃뚯떆 ?듭뀡
                         </h3>
 
-                        <FormField label="寃뚯떆님?님>
+                        <FormField label="寃뚯떆님님>
                             <select
                                 value={formData.bbsId}
                                 onChange={(e) => setFormData({ ...formData, bbsId: e.target.value })}
@@ -123,7 +122,7 @@ export default function BoardWritePage() {
                                     onChange={(e) => setFormData({ ...formData, noticeAt: e.target.checked ? 'Y' : 'N' })}
                                     className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                                 />
-                                <span className="text-sm font-medium group-hover:text-primary transition-colors">以묒슂 怨듭?濡?등록</span>
+                                <span className="text-sm font-medium group-hover:text-primary transition-colors">以묒슂 怨듭濡등록</span>
                             </label>
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <input
@@ -132,7 +131,7 @@ export default function BoardWritePage() {
                                     onChange={(e) => setFormData({ ...formData, secretAt: e.target.checked ? 'Y' : 'N' })}
                                     className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                                 />
-                                <span className="text-sm font-medium group-hover:text-primary transition-colors">鍮꾨?湲濡님ㅼ젙</span>
+                                <span className="text-sm font-medium group-hover:text-primary transition-colors">鍮꾨湲濡님ㅼ젙</span>
                             </label>
                         </div>
                     </div>

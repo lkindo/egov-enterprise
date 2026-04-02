@@ -30,7 +30,7 @@ const PrivacyLogAdminPage = () => {
 
     const columns: Column<PrivacyLog>[] = [
         {
-            header: '濡쒓렇ID',
+            header: '로그ID',
             accessor: (item: PrivacyLog) => (
                 <div className="font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
                     {item.logId}
@@ -39,7 +39,7 @@ const PrivacyLogAdminPage = () => {
             className: 'w-40'
         },
         {
-            header: '??곷챸',
+            header: '곷챸',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <User size={14} className="text-primary/40" />
@@ -49,7 +49,7 @@ const PrivacyLogAdminPage = () => {
             )
         },
         {
-            header: '??곸쑀님,
+            header: '곸쑀님,
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/40" />
@@ -92,9 +92,9 @@ const PrivacyLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="媛쒖씤?뺣낫 ?묎렐 濡쒓렇" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }, { label: '媛쒖씤?뺣낫 ?묎렐 濡쒓렇' }]} />
+            <PageHeader title="媛쒖씤?뺣낫 ?묎렐 로그" breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '로그관리 }, { label: '媛쒖씤?뺣낫 ?묎렐 로그' }]} />
 
-            <HubHeader title="?꾨씪?대쾭님媛님 highlight="媛쒖씤?뺣낫 ?묎렐 濡쒓렇" subtitle="媛쒖씤?뺣낫 ?묎렐 諛?泥섎━ ?대젰님異붿쟻?섏뿬 ?곗씠님蹂댄샇 而댄뵆?쇱씠?몄뒪瑜?蹂댁옣?⑸땲님" icon={ShieldAlert} />
+            <HubHeader title="?꾨씪?대쾭님媛님 highlight="媛쒖씤?뺣낫 ?묎렐 로그" subtitle="媛쒖씤?뺣낫 ?묎렐 및 泥섎━ ?대젰님異붿쟻?섏뿬 데이터보호 而댄뵆?쇱씠?몄뒪瑜蹂댁옣합니다" icon={ShieldAlert} />
 
             <StandardDataTable
                 columns={columns}
@@ -106,7 +106,7 @@ const PrivacyLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page踰덊샇: page }),
                 }}
                 search={{
-                    placeholder: '??곷챸, 요청님寃님..',
+                    placeholder: '곷챸, 요청님寃님..',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 }),
                 }}
             />

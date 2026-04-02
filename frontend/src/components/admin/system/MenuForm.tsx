@@ -1,5 +1,4 @@
-﻿"메뉴번호는 필수입니다.";
-
+﻿
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -118,7 +117,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
             {isEdit ? '硫붾돱 ?꾨줈?좎퐳 ?섏젙' : '신규 硫붾돱 ?꾪궎?띿쿂 등록'}
           </DialogTitle>
           <DialogDescription className="text-center font-bold text-slate-400 text-sm">
-            ?쒖뒪님?대퉬寃뚯씠님援ъ“瑜님꾪븳 {isEdit ? '湲곗〈 硫붾돱 ?뺣낫瑜님섏젙' : '?덈줈님硫붾돱 노드瑜님뺤쓽'}?⑸땲님
+            시스템?대퉬寃뚯씠님援ъ“瑜님꾪븳 {isEdit ? '湲곗〈 硫붾돱 ?뺣낫瑜님섏젙' : '새로운硫붾돱 노드瑜님뺤쓽'}합니다
           </DialogDescription>
         </DialogHeader>
 
@@ -239,7 +238,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <Settings2 size={12} className="text-primary" /> ?곸꽭 ?ㅻ챸
+ <Settings2 size={12} className="text-primary" /> 상세 설명
  </FormLabel>
  <FormControl>
  <Input 
@@ -261,14 +260,14 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
  onClick={() => onOpenChange(false)}
  className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all flex-1"
  >
- 痍⑥냼
+ 취소
  </Button>
  <Button 
  type="submit"
  className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
  >
  <Save size={18} />
- ?곗씠님?님 </Button>
+ 데이터님 </Button>
  </div>
  {isEdit && (
  <Button 

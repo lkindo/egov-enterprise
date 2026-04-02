@@ -54,7 +54,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
       CharacterCount,
     ],
     content: value,
-    immediatelyRender: false, // SSR Hydration ?ㅻ쪟 諛⑹?瑜님꾪빐 ?꾩닔 ?ㅼ젙
+    immediatelyRender: false, // SSR Hydration ㅻ쪟 諛⑹瑜님꾪빐 ?꾩닔 ㅼ젙
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -192,10 +192,10 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
       <div className="px-8 py-4 bg-slate-50/50 dark:bg-muted/30 border-t border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase">紐⑤뱶: 由ъ튂 ?띿뒪님?먮뵒님v1.0</span>
-          <span className="text-[10px] font-black tracking-widest text-primary uppercase bg-primary/5 px-2 py-0.5 rounded leading-none">?묒꽦 ?댁슜 ?ㅼ떆媛님숆린님以?..</span>
+          <span className="text-[10px] font-black tracking-widest text-primary uppercase bg-primary/5 px-2 py-0.5 rounded leading-none">?묒꽦 이용 실시간숆린님중..</span>
         </div>
         <div className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest whitespace-nowrap">
-          {editor.storage.characterCount?.words?.() || 0} ?⑥뼱 님怨좏뭹吏님щ㎎님        </div>
+          {editor.storage.characterCount?.words?.() || 0} ⑥뼱 님怨좏뭹吏님щ㎎님        </div>
       </div>
     </div>
   );

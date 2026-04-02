@@ -18,7 +18,7 @@ export interface WorkReport {
 }
 
 /**
- * 蹂닿퀬님愿由님쒕퉬님(User)
+ * 보고관리님쒕퉬님(User)
  */
 class ReportService extends ApiService {
  constructor() {
@@ -26,28 +26,28 @@ class ReportService extends ApiService {
  }
 
  /**
- * 蹂닿퀬님紐⑸줉 조회
+ * 보고紐⑸줉 조회
  */
  async getReports(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<WorkReport>> {
  return this.get<PageResponse<WorkReport>>('', { ...config, params });
  }
 
  /**
- * 蹂닿퀬님?곸꽭 조회
+ * 보고상세 조회
  */
  async getReport(id: string, config?: AxiosRequestConfig): Promise<WorkReport> {
  return this.get<WorkReport>(`/${id}`, config);
  }
 
  /**
- * 蹂닿퀬님등록
+ * 보고등록
  */
  async createReport(data: Partial<WorkReport>, config?: AxiosRequestConfig): Promise<void> {
  return this.post<void>('', data, config);
  }
 
  /**
- * 蹂닿퀬님?뱀씤/諛섎젮
+ * 보고?뱀씤/諛섎젮
  */
  async confirmReport(id: string, confmAt: 'Y' | 'N', config?: AxiosRequestConfig): Promise<void> {
  return this.put<void>(`/${id}/confirm`, { confmAt }, config);

@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * 1. GaugeChart
- * DB 而ㅻ꽖님諛?由ъ냼님?ъ슜瑜좎쓣 怨꾧린님?뺥깭濡님쒓컖님 */
+ * DB 而ㅻ꽖님및 由ъ냼님ъ슜瑜좎쓣 怨꾧린님?뺥깭濡님쒓컖님 */
 interface GaugeChartProps {
  value: number; // 0 to 100
  title: string;
@@ -86,7 +86,7 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
 
 /**
  * 2. RealtimeSparkline
- * CPU/MEM 異붿씠瑜?蹂댁뿬二쇰뒗 珥덉냼님誘몄꽭 異붿꽭님 */
+ * CPU/MEM 추이瑜蹂댁뿬二쇰뒗 珥덉냼님誘몄꽭 異붿꽭님 */
 interface SparklineProps {
  data: { value: number }[];
  color?: string;
@@ -128,7 +128,7 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
 
 /**
  * 3. SystemStatusRadar
- * 媛?⑹꽦, 보안, ?깅뒫, ?덉젙님?깆쓽 ?ㅼ감님분석
+ * 媛⑹꽦, 보안, ?깅뒫, 설정?깆쓽 ㅼ감님분석
  */
 interface RadarProps {
  data: { subject: string; A: number }[];
@@ -169,7 +169,7 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
 
 /**
  * 4. ActivityAreaChart
- * ?쒕룞 ?몃젋님님 최근 7님濡쒓렇님님瑜님붾젮님洹몃씪?곗씠님硫댁쟻 李⑦듃濡님쒓컖님 */
+ * ?쒕룞 ?몃젋님님 최근 7님로그인님瑜님붾젮님洹몃씪데이터硫댁쟻 李⑦듃濡님쒓컖님 */
 interface ActivityData {
   name: string;
   value: number;
@@ -189,7 +189,7 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
         <h4 className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase">{title}</h4>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-[10px] font-bold text-foreground opacity-60">통계 ?꾨줈釉?/span>
+          <span className="text-[10px] font-bold text-foreground opacity-60">통계 ?꾨줈釉</span>
         </div>
       </div>
       <div style={{ width: '100%', height: height }}>
@@ -244,7 +244,7 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
 
 /**
  * 5. DistributionPieChart
- * ?곗씠님분포(님 ?ъ슜님님븷 援ъ꽦)瑜님몃젴님留님뺥깭님?꾨꽋 李⑦듃濡님쒓컖님 */
+ * 데이터분포(님 사용자님븷 援ъ꽦)瑜님몃젴님留님뺥깭님?꾨꽋 李⑦듃濡님쒓컖님 */
 interface DistributionData {
   name: string;
   value: number;

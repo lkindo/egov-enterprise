@@ -58,7 +58,7 @@ const InsertBBSContent = () => {
  <ChevronRight className="w-4 h-4 opacity-30" />
  <Link href={`/admin/community/boards?bbsId=${bbsId}`} className="hover:text-primary transition-colors font-bold">而ㅻ님덊떚</Link>
  <ChevronRight className="w-4 h-4 opacity-30" />
- <span className="text-foreground font-black">湲?곌린</span>
+ <span className="text-foreground font-black">湲곌린</span>
  </div>
 
  <Card className="shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] border-none overflow-hidden rounded-[3.5rem] bg-card ring-1 ring-primary/5">
@@ -78,7 +78,7 @@ const InsertBBSContent = () => {
  <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Insight</span>
  </CardTitle>
  <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed">
- ?덈줈님?꾩씠?붿뼱? ?뚯떇님怨듭쑀?섏뿬 <br className="hidden md:block" />?님?뚰넻님님媛移님덇쾶 留뚮뱶?몄슂.
+ 새로운?꾩씠?붿뼱 ?뚯떇님怨듭쑀?섏뿬 <br className="hidden md:block" />님?뚰넻님님媛移님덇쾶 留뚮뱶?몄슂.
  </p>
  </div>
  <div className="hidden lg:block relative">
@@ -106,7 +106,7 @@ const InsertBBSContent = () => {
  <Input
  id="nttSj"
  name="nttSj"
- placeholder="留ㅻ젰?곸씠怨?紐낇솗님?쒕ぉ님?낅젰?섏꽭님
+ placeholder="留ㅻ젰?곸씠怨紐낇솗님제목님입력하세요
  className={cn(
  "h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[1.75rem] px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
  (state as any)?.field === 'nttSj' && "border-rose-500 bg-rose-50"
@@ -163,8 +163,8 @@ const InsertBBSContent = () => {
  <div className="space-y-3 relative z-10 text-center md:text-left">
  <h4 className="text-2xl font-black text-white tracking-tight ">Final Check</h4>
  <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xl">
- 寃뚯떆湲님등록?섍린 ?꾩뿉 ?ㅽ님?誘쇨컧님?뺣낫媛 ?ы븿?섏뼱 ?덈뒗吏 ?ㅼ떆 ?쒕쾲 ?뺤씤?댁＜?몄슂.
- 등록님湲? 紐⑤뱺 ?ъ썝?ㅼ씠 ?대엺님님?덉뒿?덈떎.
+ 게시글이등록?섍린 ?꾩뿉 ㅽ민감?뺣낫媛 ы븿?섏뼱 ?덈뒗吏 ㅼ떆 ?쒕쾲 확인?댁＜몄슂.
+ 등록님湲 紐⑤뱺 ъ썝ㅼ씠 ?대엺님님있습니다.
  </p>
  </div>
  </div>

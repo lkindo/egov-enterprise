@@ -1,5 +1,4 @@
-"검색어를 입력하세요...";
-
+﻿
 import React, { useState } from 'react';
 import {
   Table,

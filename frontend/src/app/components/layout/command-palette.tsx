@@ -1,5 +1,4 @@
-﻿'통계 대시보드';
-
+﻿
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -24,7 +23,7 @@ interface SearchResult {
     icon: React.ReactNode;
 }
 
-// 移댄뀒怨좊━蹂님꾩씠肄?매핑
+// 移댄뀒怨좊━蹂님꾩씠肄매핑
 const categoryIcons = {
     Menu: <Settings size={14} />,
     Content: <FileText size={14} />,
@@ -39,7 +38,7 @@ export function CommandPalette() {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // 硫붾돱 ?곗씠님濡쒕뱶
+    // 硫붾돱 데이터濡쒕뱶
     useEffect(() => {
         if (!isOpen) return;
 
@@ -129,7 +128,7 @@ export function CommandPalette() {
                         }}
                     />
                     {isLoading && (
-                        <div className="text-xs text-muted-foreground animate-pulse">濡쒕뵫以?..</div>
+                        <div className="text-xs text-muted-foreground animate-pulse">濡쒕뵫중..</div>
                     )}
                     <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
                         <span className="text-[10px] font-black text-muted-foreground">ESC</span>
@@ -147,8 +146,8 @@ export function CommandPalette() {
                                 <Search size={40} className="text-muted-foreground/30" />
                             </div>
                             <div>
-                                <p className="text-lg font-black text-foreground">硫붾돱瑜?遺덈윭?ㅻ뒗 以?..</p>
-                                <p className="text-sm text-muted-foreground font-bold">?좎떆留?湲곕떎?ㅼ＜?몄슂.</p>
+                                <p className="text-lg font-black text-foreground">硫붾돱瑜遺덈윭ㅻ뒗 중..</p>
+                                <p className="text-sm text-muted-foreground font-bold">?좎떆留湲곕떎ㅼ＜몄슂.</p>
                             </div>
                         </div>
                     ) : filteredResults.length > 0 ? (
@@ -210,7 +209,7 @@ export function CommandPalette() {
                             </div>
                             <div>
                                 <p className="text-lg font-black text-foreground">寃곌낵媛 ?놁뒿?덈떎.</p>
-                                <p className="text-sm text-muted-foreground font-bold">?ㅻⅨ ?ㅼ썙?쒕줈 寃?됲빐 蹂댁꽭님</p>
+                                <p className="text-sm text-muted-foreground font-bold">ㅻⅨ ㅼ썙?쒕줈 寃됲빐 蹂댁꽭님</p>
                             </div>
                         </div>
                     )}
@@ -228,7 +227,7 @@ export function CommandPalette() {
                     </div>
                     <div className="flex items-center gap-2">
                         <Command size={12} className="text-muted-foreground" />
-                        <span className="text-[10px] font-bold text-muted-foreground">EGov ?뷀꽣?꾨씪?댁쫰 ?명뀛由ъ쟾님/span>
+                        <span className="text-[10px] font-bold text-muted-foreground">EGov ?뷀꽣?꾨씪?댁쫰 인텔리전스/span>
                     </div>
                 </div>
             </div>
@@ -236,7 +235,7 @@ export function CommandPalette() {
     );
 }
 
-// 硫붾돱 寃쎈줈蹂님꾩씠肄?諛섑솚
+// 硫붾돱 경로蹂님꾩씠肄諛섑솚
 function getMenuIcon(route: string): React.ReactNode {
     if (route.includes('stats') || route.includes('dashboard')) return <LayoutDashboard size={14} />;
     if (route.includes('user')) return <Users size={14} />;

@@ -33,13 +33,13 @@ class NoteService extends ApiService {
  }
 
  /**
- * 履쎌? 蹂대궡湲? */
+ * 履쎌? 蹂대궡湲 */
  async sendNote(data: { rcverId: string; noteSj: string; noteCn: string }): Promise<Note> {
  return this.post<Note>('', data);
  }
 
  /**
- * 履쎌? ?곸꽭 조회 諛님쎌쓬 泥섎━
+ * 履쎌? 상세 조회 諛님쎌쓬 泥섎━
  */
  async getNote(id: string): Promise<Note> {
  return this.get<Note>(`/${id}`);

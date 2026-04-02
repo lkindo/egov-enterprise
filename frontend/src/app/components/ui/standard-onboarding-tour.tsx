@@ -1,5 +1,4 @@
-﻿"eGov 5.0 현대화 플랫폼에 오신 것을 환영합니다!";
-
+﻿
 import React, { useState, useEffect } from 'react';
 import {
  X,
@@ -60,13 +59,13 @@ export function StandardOnboardingTour() {
 
  const steps: TourStep[] = [
  {
- title: "eGov 5.0 ?꾨님님뚮옯?쇱뿉 ?ㅼ떊 寃껋쓣 ?섏쁺?⑸땲님",
- description: "援님 ?뺣낫님?쒖님님좊룄?섎뒗 ?덈줈님愿由님쒖뒪?쒖엯?덈떎. 님鍮좊Ⅴ怨? 님吏곴님곸씤 업무 ?섍꼍님寃쏀뿕?대낫?몄슂.",
+ title: "eGov 5.0 ?꾨님님뚮옯?쇱뿉 ㅼ떊 寃껋쓣 ?섏쁺합니다",
+ description: "援님 ?뺣낫님?쒖님님좊룄?섎뒗 새로운관리님쒖뒪?쒖엯?덈떎. 님鍮좊Ⅴ怨 님吏곴님곸씤 업무 ?섍꼍님寃쏀뿕?대낫?몄슂.",
  icon: <Sparkles className="text-primary" size={32} />
  },
  {
- title: "?ㅻ쭏님?대퉬寃뚯씠님,
- description: "?쇱そ ?ъ씠?쒕컮瑜님듯빐 紐⑤뱺 업무 紐⑤뱢님鍮좊Ⅴ寃님묎렐님님?덉뒿?덈떎. 怨꾩링님硫붾돱? ?꾨님곸씤 ?꾩씠肄섏쑝濡님먰븯님硫붾돱瑜님쎄쾶 李얠븘蹂댁꽭님",
+ title: "ㅻ쭏님?대퉬寃뚯씠님,
+ description: "?쇱そ ъ씠?쒕컮瑜님듯빐 紐⑤뱺 업무 紐⑤뱢님鍮좊Ⅴ寃님묎렐님님있습니다. 怨꾩링님硫붾돱 ?꾨님곸씤 ?꾩씠肄섏쑝濡님먰븯님硫붾돱瑜님쎄쾶 李얠븘蹂댁꽭님",
  icon: <Layout className="text-blue-500" size={32} />
  },
  {
@@ -152,12 +151,12 @@ export function StandardOnboardingTour() {
  嫄대꼫?곌린
  </Button>
  <Button onClick={nextStep} className="rounded-xl font-black h-12 px-8 gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all" aria-label="다음 단계로 이동">
- ?ㅼ쓬 媛?대뱶 <ChevronRight size={18} />
+ ㅼ쓬 媛대뱶 <ChevronRight size={18} />
  </Button>
  </>
  ) : (
  <Button onClick={handleComplete} className="rounded-xl font-black h-12 px-10 gap-2 shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white hover:scale-105 transition-all" aria-label="가이드 완료 및 시작하기">
- ?쒖옉?섍린 <CheckCircle2 size={18} />
+ 시작?섍린 <CheckCircle2 size={18} />
  </Button>
  )}
  </div>

@@ -18,7 +18,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
  const [activeMenuNo, setActiveMenuNo] = useState<number>(0);
  const pathname = usePathname();
 
- // ?섏씠吏 ?대룞 님?ъ씠?쒕컮 ?リ린 (紐⑤컮님
+ // ?섏씠吏 ?대룞 님ъ씠?쒕컮 リ린 (紐⑤컮님
  useEffect(() => {
  setSidebarOpen(false);
  }, [pathname]);

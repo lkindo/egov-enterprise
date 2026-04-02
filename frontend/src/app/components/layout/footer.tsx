@@ -20,7 +20,7 @@ export function Footer({ className }: FooterProps) {
           </p>
         </div>
         <div className="flex items-center gap-8 text-[11px] font-black text-muted-foreground/30 uppercase tracking-widest">
-          <a href="#" className="hover:text-primary hover:opacity-100 transition-all">?댁슜?쎄?</a>
+          <a href="#" className="hover:text-primary hover:opacity-100 transition-all">이용?쎄?</a>
           <a href="#" className="hover:text-primary hover:opacity-100 transition-all">媛쒖씤?뺣낫泥섎━諛⑹묠</a>
           <a href="#" className="hover:text-primary hover:opacity-100 transition-all">怨좉컼吏님/a>
         </div>

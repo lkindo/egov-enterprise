@@ -1,5 +1,4 @@
-﻿'매뉴얼 목록을 불러오지 못했습니다.';
-
+﻿
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
@@ -56,7 +55,7 @@ export default function ManualAdminClient({
  setManuals(res.list);
  setTotalCount(res.total);
  } catch {
- toast.error('留ㅻ돱님紐⑸줉님遺덈윭?ㅼ? 紐삵뻽?듬땲님');
+ toast.error('留ㅻ돱님紐⑸줉님遺덈윭ㅼ 紐삵뻽?듬땲님');
  } finally {
  setLoading(false);
  }
@@ -96,7 +95,7 @@ export default function ManualAdminClient({
  setIsAddOpen(false);
  handleRefresh();
  } catch {
- toast.error('??μ뿉 ?ㅽ뙣?덉뒿?덈떎.');
+ toast.error('μ뿉 ㅽ뙣있습니다.');
  } finally {
  setLoading(false);
  }
@@ -111,7 +110,7 @@ export default function ManualAdminClient({
  toast.success('매뉴얼을 삭제했습니다.');
  handleRefresh();
  } catch {
- toast.error('님젣님?ㅽ뙣?덉뒿?덈떎.');
+ toast.error('삭제ㅽ뙣있습니다.');
  } finally {
  setLoading(false);
  }
@@ -178,7 +177,7 @@ export default function ManualAdminClient({
  <div className="max-w-6xl mx-auto space-y-12 px-4 md:px-0 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
  <PageHeader
  title="온라인 가이드 아키텍처"
- breadcrumbs={[{ label: '부가서비스'?⑤씪?몃ℓ?댁뼹' }]}
+ breadcrumbs={[{ label: '부가서비스'⑤씪?몃ℓ댁뼹' }]}
  actions={
  <div className="flex items-center gap-4">
  <Button
@@ -208,7 +207,7 @@ export default function ManualAdminClient({
  </div>
  <div>
  <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter ">吏님?먯궛</h3>
- <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">온라인留ㅻ돱님愿由?/p>
+ <p className="text-[9px] font-black text-slate-400 tracking-[0.3em]">온라인留ㅻ돱님관리</p>
  </div>
  </div>
  <div className="flex items-center gap-4">
@@ -251,7 +250,7 @@ export default function ManualAdminClient({
  {selectedManual ? '가이드 수정' : '가이드 등록'}
  </DialogTitle>
  <DialogDescription className="text-center font-bold text-slate-400 text-sm">
- ?ъ슜님援먯쑁님?꾪븳 吏님?먯궛님{selectedManual ? '?섏젙' : '?뺤쓽'}?⑸땲님
+ 사용자援먯쑁님?꾪븳 吏님?먯궛님{selectedManual ? '?섏젙' : '?뺤쓽'}합니다
  </DialogDescription>
  </DialogHeader>
  
@@ -267,7 +266,7 @@ export default function ManualAdminClient({
  </div>
 
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">由ъ냼님寃쎈줈</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">由ъ냼경로</label>
  <Input
  placeholder="/src/docs/manuals/..."
  value={form.onlineMnlCours}
@@ -277,7 +276,7 @@ export default function ManualAdminClient({
  </div>
  
  <div className="space-y-3">
- <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">?곸꽭 ?ㅻ챸</label>
+ <label className="text-[10px] font-black text-slate-400 tracking-tight ml-2">상세 설명</label>
  <Textarea
  placeholder="매뉴얼 설명을 입력하세요..."
  value={form.onlineMnlDc}
@@ -293,7 +292,7 @@ export default function ManualAdminClient({
  onClick={() => setIsAddOpen(false)}
  className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all"
  >
- 痍⑥냼
+ 취소
  </Button>
  <Button
  onClick={handleSubmit}
@@ -301,7 +300,7 @@ export default function ManualAdminClient({
  className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
  >
  {loading ? <RefreshCcw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
- ?님 </Button>
+ 님 </Button>
  </DialogFooter>
  </DialogContent>
  </Dialog>

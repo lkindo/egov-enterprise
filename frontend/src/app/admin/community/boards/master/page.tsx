@@ -101,7 +101,7 @@ export default function BoardMasterListPage() {
             "px-4 py-1.5 rounded-full font-black text-[10px] uppercase border-none tracking-widest shadow-sm",
             board.useAt === 'Y' ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
           )}>
-            {board.useAt === 'Y' ? '활성' : '?湲?}
+            {board.useAt === 'Y' ? '활성' : '湲}
           </Badge>
         </div>
       ),
@@ -112,13 +112,13 @@ export default function BoardMasterListPage() {
       accessor: (_board: BoardMaster) => (
         <div className="space-y-1 text-center">
            <p className="text-xl font-black text-slate-800 italic">0</p>
-           <p className="text-[10px] font-black text-slate-300 uppercase leading-none">寃뚯떆湲 님/p>
+           <p className="text-[10px] font-black text-slate-300 uppercase leading-none">게시글 님/p>
         </div>
       ),
       className: 'text-center'
     },
     {
-      header: '?묒뾽 而⑦듃濡?,
+      header: '?묒뾽 而⑦듃濡,
       accessor: (board: BoardMaster) => (
         <div className="flex items-center justify-end gap-3 pr-6">
            <Button size="icon" variant="ghost" className="w-12 h-12 rounded-xl text-slate-400 hover:bg-primary hover:text-white transition-all shadow-hover-sm">
@@ -140,12 +140,12 @@ export default function BoardMasterListPage() {
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000 max-w-[1600px] mx-auto px-4">
-      <PageHeader title="寃뚯떆님留덉뒪님 breadcrumbs={[{ label: '而ㅻ님덊떚' }, { label: '寃뚯떆?먭?由? }, { label: '留덉뒪님肄섏넄' }]} />
+      <PageHeader title="寃뚯떆님留덉뒪님 breadcrumbs={[{ label: '而ㅻ님덊떚' }, { label: '寃뚯떆?먭由 }, { label: '留덉뒪님肄섏넄' }]} />
 
       <HubHeader 
         title="留덉뒪님肄섏넄" 
-        highlight="寃뚯떆님?듯빀 愿由? 
-        subtitle="?앹꽦님紐⑤뱺 寃뚯떆?먯쓽 ?쇱씠?꾩궗?댄겢怨?沅뚰븳 留ㅽ듃由?뒪瑜님ㅼ떆媛꾩쑝濡님쒖뼱?섍퀬 紐⑤땲?곕쭅?⑸땲님" 
+        highlight="寃뚯떆님?듯빀 관리 
+        subtitle="?앹꽦님紐⑤뱺 寃뚯떆?먯쓽 ?쇱씠?꾩궗?댄겢怨沅뚰븳 매트릭스瑜님ㅼ떆媛꾩쑝濡님쒖뼱?섍퀬 紐⑤땲?곕쭅합니다" 
         icon={Settings2} 
         actions={
           <Button 
@@ -166,7 +166,7 @@ export default function BoardMasterListPage() {
       >
         <InsightCard label="珥앷퀎" value="32" desc="Active Board Masters" icon={Layers} color="text-indigo-500" />
         <InsightCard label="援먮쪟" value="1.2k" desc="Engagement Traffic" icon={TrendingUp} color="text-rose-500" />
-        <InsightCard label="?쒖뒪님 value="Optimal" desc="Storage Status" icon={Zap} color="text-emerald-500" />
+        <InsightCard label="시스템 value="Optimal" desc="Storage Status" icon={Zap} color="text-emerald-500" />
         <InsightCard label="보안" value="L4" desc="Encrypted Access" icon={ShieldCheck} color="text-amber-500" />
       </motion.div>
 
@@ -176,7 +176,7 @@ export default function BoardMasterListPage() {
           data={boardList}
           loading={isLoading}
           search={{
-            placeholder: '寃뚯떆님紐낆묶, ?쒖뒪님ID 寃님..',
+            placeholder: '寃뚯떆님紐낆묶, 시스템ID 寃님..',
             onSearch: (keyword) => setSearchWrd(keyword)
           }}
         />
@@ -188,12 +188,12 @@ export default function BoardMasterListPage() {
         </div>
         <div className="max-w-3xl space-y-8 relative z-10">
            <h3 className="text-5xl font-black italic tracking-tighter leading-tight uppercase">Ready to scale your <span className="text-primary underline decoration-primary/30 decoration-8 underline-offset-8">ecosystem?</span></h3>
-           <p className="text-xl text-slate-400 font-bold leading-relaxed tracking-tight">?앺깭怨꾨? ?뺤옣님以鍮꾧? ?섏뀲?듬땲源? 留덈쾿?щ? ?듯빐 蹂듭옟님怨쇱젙 ?놁씠 님4?④퀎留뚯쑝濡님щ궡 吏님?덈툕瑜?援ъ텞?섏떗?쒖삤.</p>
+           <p className="text-xl text-slate-400 font-bold leading-relaxed tracking-tight">?앺깭怨꾨? ?뺤옣님以鍮꾧? ?섏뀲?듬땲源 留덈쾿여부 ?듯빐 蹂듭옟님怨쇱젙 ?놁씠 님4④퀎留뚯쑝濡님щ궡 吏님?덈툕瑜援ъ텞?섏떗?쒖삤.</p>
            <Button 
               onClick={() => router.push('/admin/community/boards/maker')}
               className="h-20 px-12 rounded-[2rem] bg-primary text-white text-2xl font-black tracking-tighter shadow-[0_30px_60px_-15px_rgba(59,130,246,0.4)] hover:scale-110 active:scale-95 transition-all gap-4 ring-8 ring-primary/5 italic"
            >
-              ?쇱씠釉?留덈쾿님?ㅽ뻾 <Rocket className="w-8 h-8" />
+              ?쇱씠釉留덈쾿님ㅽ뻾 <Rocket className="w-8 h-8" />
            </Button>
         </div>
       </div>

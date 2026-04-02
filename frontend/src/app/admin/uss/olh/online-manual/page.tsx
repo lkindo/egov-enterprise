@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import ManualAdminClient from './ManualAdminClient';
 
 export const metadata = {
- title: '온라인留ㅻ돱님愿由?| 遺媛?쒕퉬님,
+ title: '온라인留ㅻ돱님관리| 遺媛쒕퉬님,
 };
 
 export default async function ManualAdminPage({

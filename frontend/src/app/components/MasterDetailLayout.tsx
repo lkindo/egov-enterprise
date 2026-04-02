@@ -56,7 +56,7 @@ export const MasterDetailLayout = ({
  animate={{ opacity: 1 }}
  className="h-full w-full flex items-center justify-center text-muted-foreground p-8"
  >
- <p className="text-sm tracking-tight ">님ぉ님?좏깮?섏뿬 ?곸꽭?뺣낫瑜님뺤씤?섏꽭님/p>
+ <p className="text-sm tracking-tight ">님ぉ님?좏깮?섏뿬 상세?뺣낫瑜님뺤씤?섏꽭님/p>
  </motion.div>
  )}
  </AnimatePresence>

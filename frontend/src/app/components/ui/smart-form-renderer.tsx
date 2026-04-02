@@ -1,5 +1,4 @@
-﻿"필수 동의 항목입니다.";
-
+﻿
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,8 +25,8 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
         let rule: z.ZodTypeAny = z.string();
         if (field.type === 'number') rule = z.number();
         if (field.required) {
-            if (field.type === 'checkbox') rule = z.boolean().refine(v => v === true, { message: "?꾩닔 ?숈쓽 님ぉ?낅땲님" });
-            else rule = (rule as z.ZodString).min(1, { message: `${field.label}?(님 ?꾩닔 ?낅젰 님ぉ?낅땲님` });
+            if (field.type === 'checkbox') rule = z.boolean().refine(v => v === true, { message: "?꾩닔 ?숈쓽 님ぉ낅땲님" });
+            else rule = (rule as z.ZodString).min(1, { message: `${field.label}(님 ?꾩닔 ?낅젰 님ぉ낅땲님` });
         } else {
             rule = rule.optional();
         }
@@ -86,7 +85,7 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
                                                     className="rounded-lg w-5 h-5 border-2 border-primary/20 data-[state=checked]:bg-primary"
                                                 />
                                                 <span className="text-sm font-bold text-foreground/80 group-hover:text-primary transition-colors cursor-pointer" onClick={() => formField.onChange(!formField.value)}>
-                                                    {field.placeholder || '?숈쓽?⑸땲님}
+                                                    {field.placeholder || '?숈쓽합니다}
                                                 </span>
                                             </div>
                                         ) : (

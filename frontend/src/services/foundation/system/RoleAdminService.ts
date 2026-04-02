@@ -6,14 +6,14 @@ import { RoleManage } from '@/types/foundation/security';
 export type RoleInfo = RoleManage;
 
 /**
- * 濡?愿由님쒕퉬님(Admin)
+ * 濡관리님쒕퉬님(Admin)
  */
 class RoleAdminService extends AdminService {
  constructor() {
  super('/roles');
  }
 
- /** 濡?紐⑸줉 조회 */
+ /** 濡紐⑸줉 조회 */
  async getRoleList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<RoleInfo>> {
  return this.get<PageResponse<RoleInfo>>('', { ...config, params });
  }
@@ -23,7 +23,7 @@ class RoleAdminService extends AdminService {
  return this.get<RoleInfo>(`/${roleCode}`, config);
  }
 
- /** 濡?등록 */
+ /** 濡등록 */
  async createRole(data: Partial<RoleInfo>, config?: AxiosRequestConfig): Promise<void> {
  return this.post<void>('', data, config);
  }

@@ -2,7 +2,7 @@
 import { AdminService } from '@/services/core/ApiService';
 
 /**
- * ?ъ슜님遺님?뺣낫 DTO
+ * 사용자遺님?뺣낫 DTO
  */
 export interface UserAbsenceDto {
   emplyrId: string;
@@ -19,7 +19,7 @@ class AbsenceAdminService extends AdminService {
     return this.get<UserAbsenceDto[]>('', config);
   }
 
-  /** 遺님?뺣낫 ?곸꽭 조회 */
+  /** 遺님?뺣낫 상세 조회 */
   async getAbsence(emplyrId: string, config?: AxiosRequestConfig) {
     return this.get<UserAbsenceDto>(`/${emplyrId}`, config);
   }

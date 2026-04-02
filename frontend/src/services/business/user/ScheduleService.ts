@@ -8,7 +8,7 @@ class ScheduleService extends ApiService {
  }
 
  /**
- * ?꾩껜 ?쇱젙 紐⑸줉 조회 (?섏씠吏?
+ * ?꾩껜 ?쇱젙 紐⑸줉 조회 (?섏씠吏
  */
  async getScheduleList(params: { page踰덊샇?: number; pageUnit?: number }): Promise<PageResponse<Schedule>> {
  return this.get<PageResponse<Schedule>>('', { params });
@@ -32,7 +32,7 @@ class ScheduleService extends ApiService {
  }
 
  /**
- * ?쇱젙 ?곸꽭 조회
+ * ?쇱젙 상세 조회
  */
  async getSchedule(id: string): Promise<Schedule> {
  return this.get<Schedule>(`/${id}`);

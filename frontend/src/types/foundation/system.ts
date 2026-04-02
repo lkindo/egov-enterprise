@@ -11,18 +11,18 @@
 }
 
 /**
- * 諛깆뿏님신규 ?섏씠吏님묐떟 ?щ㎎ (PageResponse)
- * - list/content: 현재 ?섏씠吏 ?곗씠님 * - total/totalElements: ?꾩껜 ?덉퐫님님 * - page: 현재 ?섏씠吏 踰덊샇 (1-based)
+ * 諛깆뿏님신규 ?섏씠吏님묐떟 щ㎎ (PageResponse)
+ * - list/content: 현재 ?섏씠吏 데이터 * - total/totalElements: ?꾩껜 ?덉퐫님님 * - page: 현재 ?섏씠吏 踰덊샇 (1-based)
  * - size: ?섏씠吏님님ぉ 님 * - totalPage: ?꾩껜 ?섏씠吏 님 */
 export interface PageResponse<T = unknown> {
  list: T[];
  content?: T[]; // Spring Data JPA
- resultList?: T[]; // eGovFrame Legacy ?님 total: number;
+ resultList?: T[]; // eGovFrame Legacy 님 total: number;
  totalElements?: number; // Spring Data JPA
  page: number;
  size: number;
  totalPage: number;
- paginationInfo?: PaginationInfo; // eGovFrame Legacy ?님 totalCount?: number; // eGovFrame Legacy ?님  [key: string]: unknown; // 紐⑤뱺 異붽? ?꾨뱶 ?덉슜
+ paginationInfo?: PaginationInfo; // eGovFrame Legacy 님 totalCount?: number; // eGovFrame Legacy 님  [key: string]: unknown; // 紐⑤뱺 異붽? ?꾨뱶 ?덉슜
 }
 
 export interface ApiResponse<T = unknown> {
@@ -38,9 +38,9 @@ export interface ApiResponse<T = unknown> {
 export interface PaginationResponse<T> {
  success?: boolean;
  list?: T[];
- content?: T[]; // Spring Data JPA ?님異붽?
+ content?: T[]; // Spring Data JPA 님異붽?
  totalRecordCount?: number;
- totalElements?: number; // Spring Data JPA ?님異붽?
+ totalElements?: number; // Spring Data JPA 님異붽?
  resultList?: T[];
  paginationInfo?: PaginationInfo;
 }
@@ -55,7 +55,7 @@ export interface SearchParams {
  ntwrkId?: string; // 異붽?
  codeId?: string; // 異붽?
  pageUnit?: number; // 異붽?
- sbscrbSttus?: string; // ?ъ슜님媛님?곹깭 ?꾪꽣 異붽?
+ sbscrbSttus?: string; // 사용자媛님?곹깭 ?꾪꽣 異붽?
   [key: string]: unknown; // 紐⑤뱺 異붽? ?꾨뱶 ?덉슜
 }
 

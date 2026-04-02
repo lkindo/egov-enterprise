@@ -27,7 +27,7 @@ export function SurveyHubClient() {
       <div className="bg-slate-50/50 p-2 rounded-[1.5rem] border border-slate-100 shadow-sm inline-flex">
         <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
           <TabsTrigger value="manage" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <LayoutGrid size={16} /> 설문 愿由?          </TabsTrigger>
+            <LayoutGrid size={16} /> 설문 관리          </TabsTrigger>
           <TabsTrigger value="stats" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
             <BarChart3 size={16} /> 寃곌낵 통계
           </TabsTrigger>
@@ -38,9 +38,9 @@ export function SurveyHubClient() {
             <Users size={16} /> ?묐떟님洹몃９
           </TabsTrigger>
           <TabsTrigger value="templates" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <FileStack size={16} /> ?쒗뵆由?愿由?          </TabsTrigger>
+            <FileStack size={16} /> ?쒗뵆由관리          </TabsTrigger>
           <TabsTrigger value="settings" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-xl h-12 px-6 font-bold text-xs gap-2 transition-all">
-            <Settings2 size={16} /> ?곕룞 ?ㅼ젙
+            <Settings2 size={16} /> ?곕룞 ㅼ젙
           </TabsTrigger>
         </TabsList>
       </div>
@@ -54,19 +54,19 @@ export function SurveyHubClient() {
       </TabsContent>
 
       <TabsContent value="questions" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="吏덈Ц 諛?臾명빆 ?쇱씠釉뚮윭由? description="설문님?ы븿님?듭떖 吏덈Ц怨님좏깮 님ぉ님援ъ“?뷀븯님愿由ы빀?덈떎." icon={HelpCircle} />
+        <PlaceholderCard title="吏덈Ц 및 臾명빆 ?쇱씠釉뚮윭由 description="설문님ы븿님?듭떖 吏덈Ц怨님좏깮 님ぉ님援ъ“뷀븯님관리ы빀?덈떎." icon={HelpCircle} />
       </TabsContent>
 
       <TabsContent value="respondents" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="?묐떟님洹몃９ 愿由? description="설문 조사님??곸씠 님?ъ슜님吏묐떒 諛님멸렇癒쇳듃瑜님뺤쓽?⑸땲님" icon={Users} />
+        <PlaceholderCard title="?묐떟님洹몃９ 관리 description="설문 조사님곸씠 님사용자吏묐떒 諛님멸렇癒쇳듃瑜님뺤쓽합니다" icon={Users} />
       </TabsContent>
 
       <TabsContent value="templates" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="설문 ?쒗뵆由님쒖뒪님 description="?쒖님붾맂 설문 ?묒떇님?앹꽦?섍퀬 ?ъ궗님媛?ν븳 紐낆꽭瑜?愿由ы빀?덈떎." icon={FileStack} />
+        <PlaceholderCard title="설문 ?쒗뵆由님쒖뒪님 description="?쒖님붾맂 설문 ?묒떇님?앹꽦?섍퀬 ъ궗님媛ν븳 紐낆꽭瑜관리ы빀?덈떎." icon={FileStack} />
       </TabsContent>
 
        <TabsContent value="settings" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <PlaceholderCard title="??멸린愿 ?곕룞 ?ㅼ젙" description="?몃? ?ы꽭?대굹 ? ?쒖뒪?쒓낵님설문 ?곗씠님?곕룞 ?꾨줈?좎퐳님愿由ы빀?덈떎." icon={Settings2} />
+        <PlaceholderCard title="멸린愿 ?곕룞 ㅼ젙" description="?몃? ы꽭?대굹  ?쒖뒪?쒓낵님설문 데이터?곕룞 ?꾨줈?좎퐳님관리ы빀?덈떎." icon={Settings2} />
       </TabsContent>
     </Tabs>
   );

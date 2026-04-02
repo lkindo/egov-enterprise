@@ -32,11 +32,11 @@ import { PageResponse } from '@/types/foundation/system';
 
 // Log categories configuration
 const logCategories = [
-  { id: 'SYS', label: '?쒖뒪님濡쒓렇', icon: <Terminal size={20} />, description: '?쒕퉬님諛?硫붿냼님?ㅽ뻾 ?대젰', serviceMethod: 'getSystemLogs' },
-  { id: 'LGN', label: '濡쒓렇님濡쒓렇', icon: <Lock size={20} />, description: '?ъ슜님접속 諛님몄쬆 湲곕줉', serviceMethod: 'getLoginLogs' },
-  { id: 'USR', label: '?ъ슜님?쒕룞', icon: <UserCheck size={20} />, description: '?곗씠님蹂寃?諛?沅뚰븳 異붿쟻', serviceMethod: 'getUserLogs' },
-  { id: 'WEB', label: '님濡쒓렇', icon: <Globe size={20} />, description: 'HTTP 요청 諛님곗씠님분석', serviceMethod: 'getWebLogs' },
-  { id: 'TRS', label: '?≪닔님濡쒓렇', icon: <Activity size={20} />, description: '?몃? ?곕룞 諛?諛곗튂 寃곌낵', serviceMethod: 'getTransferLogs' },
+  { id: 'SYS', label: '시스템로그', icon: <Terminal size={20} />, description: '?쒕퉬님및 硫붿냼님ㅽ뻾 ?대젰', serviceMethod: 'getSystemLogs' },
+  { id: 'LGN', label: '로그인로그', icon: <Lock size={20} />, description: '사용자접속 諛님몄쬆 湲곕줉', serviceMethod: 'getLoginLogs' },
+  { id: 'USR', label: '사용자?쒕룞', icon: <UserCheck size={20} />, description: '데이터蹂寃및 沅뚰븳 異붿쟻', serviceMethod: 'getUserLogs' },
+  { id: 'WEB', label: '님로그', icon: <Globe size={20} />, description: 'HTTP 요청 諛님곗씠님분석', serviceMethod: 'getWebLogs' },
+  { id: 'TRS', label: '≪닔님로그', icon: <Activity size={20} />, description: '?몃? ?곕룞 및 諛곗튂 寃곌낵', serviceMethod: 'getTransferLogs' },
 ];
 
 export default function LogDashboardPage() {
@@ -147,26 +147,26 @@ export default function LogDashboardPage() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="濡쒓렇 ?듯빀 ??쒕낫님
-        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }]}
+        title="로그 ?듯빀 쒕낫님
+        breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '로그관리 }]}
       />
 
       <HubHeader
-        title="?쒖뒪님
-        highlight="濡쒓렇 ?듯빀 愿由?
-        subtitle="?쒖뒪님?꾨컲?먯꽌 諛쒖깮?섎뒗 보안, 접속, ?쒕룞, 님요청 濡쒓렇瑜님듯빀?곸쑝濡?紐⑤땲?곕쭅?⑸땲님"
+        title="시스템
+        highlight="로그 ?듯빀 관리
+        subtitle="시스템?꾨컲?먯꽌 諛쒖깮?섎뒗 보안, 접속, ?쒕룞, 님요청 로그瑜님듯빀?곸쑝濡紐⑤땲?곕쭅합니다"
         icon={History}
         actions={
           <div className="flex gap-4">
             <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest gap-3">
-              <SearchCode size={18} /> ?곸꽭 濡쒓렇 寃님            </Button>
+              <SearchCode size={18} /> 상세 로그 寃님            </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="?ㅻ뒛 ?꾩껜 濡쒓렇" value="1,492" icon={Database} color="primary" />
-        <HubMetricCard title="보안 ?꾪삊 濡쒓렇" value="3" icon={Lock} color="rose" status="?댁긽 吏뺥썑" />
+        <HubMetricCard title="ㅻ뒛 ?꾩껜 로그" value="1,492" icon={Database} color="primary" />
+        <HubMetricCard title="보안 ?꾪삊 로그" value="3" icon={Lock} color="rose" status="?댁긽 吏뺥썑" />
         <HubMetricCard title="활성 ?몄뀡" value="84" icon={Activity} color="emerald" status="?덉쟾" />
         <HubMetricCard title="?됯퇏 吏님?띾룄" value="38ms" icon={Zap} color="amber" />
       </HubMetricGrid>
@@ -202,8 +202,8 @@ export default function LogDashboardPage() {
 
         <div className="col-span-12 lg:col-span-9">
           <HubSectionCard
-            title="실시간濡쒓렇 ?ㅽ듃由?
-            description={`${logCategories.find(c => c.id === activeCategory)?.label}?먯꽌 ?ㅼ떆媛꾩쑝濡님좎엯?섎뒗 媛활성 ?ㅽ듃由님곗씠?곗엯?덈떎.`}
+            title="실시간로그 ㅽ듃由
+            description={`${logCategories.find(c => c.id === activeCategory)?.label}?먯꽌 실시간꾩쑝濡님좎엯?섎뒗 媛활성 ㅽ듃由님곗씠?곗엯?덈떎.`}
             icon={Activity}
           >
             <StandardDataTable
@@ -244,11 +244,11 @@ export default function LogDashboardPage() {
                 <Terminal size={22} />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">濡쒓렇 由ъ냼님?앸퀎님/p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">로그 由ъ냼님?앸퀎님/p>
                 <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || '님님?놁쓬'}</p>
               </div>
             </div>
-            <HubStatusBadge label="?뺤씤님 variant="success" />
+            <HubStatusBadge label="확인님 variant="success" />
           </div>
 
           <div className="space-y-4">

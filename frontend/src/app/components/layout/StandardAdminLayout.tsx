@@ -33,8 +33,8 @@ interface StandardAdminLayoutProps<T extends { [key: string]: any }> {
 }
 
 /**
- * ?쒖? 愿由ъ옄 ?섏씠吏 ?덉씠?꾩썐 而댄룷?뚰듃
- * - 寃님?꾪꽣, ?곗씠님洹몃━님 ?섏씠吏 ?ㅻ뜑瑜님듯빀님?쒖? ?⑦꽩
+ * ?쒖? 관리자 ?섏씠吏 ?덉씠?꾩썐 而댄룷?뚰듃
+ * - 寃님?꾪꽣, 데이터洹몃━님 ?섏씠吏 ㅻ뜑瑜님듯빀님?쒖? ⑦꽩
  */
 export function StandardAdminLayout<T extends { [key: string]: any }>({
  title,

@@ -13,7 +13,7 @@ export interface CommentDetail {
 }
 
 /**
- * ?볤? 愿由님쒕퉬님(Admin)
+ * ?볤? 관리님쒕퉬님(Admin)
  */
 class CommentAdminService extends AdminService {
  constructor() {

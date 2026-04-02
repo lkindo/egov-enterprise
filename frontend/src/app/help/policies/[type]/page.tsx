@@ -24,7 +24,7 @@ export default function PolicyViewPage() {
           setPolicy({
             type: type as string,
             title: type === 'privacy' ? '媛쒖씤?뺣낫 泥섎━ 諛⑹묠' : '?쎄? 諛님뺤콉',
-            content: '?댁슜님遺덈윭님님?놁뒿?덈떎. ?좎떆 님?ㅼ떆 ?쒕룄?댁＜?몄슂.'
+            content: '이용님遺덈윭님님?놁뒿?덈떎. ?좎떆 님ㅼ떆 ?쒕룄?댁＜몄슂.'
           });
         })
         .finally(() => setLoading(false));
@@ -43,7 +43,7 @@ export default function PolicyViewPage() {
   return (
     <div className="container mx-auto py-20 px-6 max-w-4xl animate-in slide-in-from-bottom-5 duration-700">
       <HubHeader 
-        title={policy?.title || '?쒖뒪님?뺤콉'} 
+        title={policy?.title || '시스템?뺤콉'} 
         subtitle="POLICY & LEGAL"
         icon={Scale}
         className="mb-12"

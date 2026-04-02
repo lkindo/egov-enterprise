@@ -1,5 +1,4 @@
-﻿'새로운 알림이 도착했습니다.';
-
+﻿
 import { useState, useEffect, useCallback } from 'react';
 import { IMessage, StompSubscription } from '@stomp/stompjs';
 import client from '@/lib/api/client';
@@ -25,7 +24,7 @@ export function useNotifications() {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      // client.ts ?명꽣?됲꽣媛 ?대? data.data 瑜님?댁꽌 二쇰?濡?諛붾줈 ?ъ슜?⑸땲님
+      // client.ts ?명꽣?됲꽣媛 ?대? data.data 瑜님댁꽌 二쇰濡諛붾줈 ъ슜합니다
       const [listResult, countResult]: unknown[] = await Promise.all([
         client.get('/notifications').catch(() => []),
         client.get('/notifications/unread-count').catch(() => 0)
@@ -38,10 +37,10 @@ export function useNotifications() {
       setNotifications(actualList);
       setUnreadCount(typeof countData === 'number' ? countData : (countData?.count || 0));
     } catch {
-      // ?먮윭 濡쒓렇 異쒕젰 (?꾨줈?뺤뀡?먯꽌님console.error ?님?먮윭 紐⑤땲?곕쭅 ?쒕퉬님?ъ슜 沅뚯옣)
+      // ?먮윭 로그 異쒕젰 (?꾨줈?뺤뀡?먯꽌님console.error 님?먮윭 紐⑤땲?곕쭅 ?쒕퉬님ъ슜 沅뚯옣)
       console.error('Failed to fetch notifications:', error);
-      // ?ъ슜?먯뿉寃님좎뒪님硫붿떆吏 ?쒖떆
-      toast('?뚮┝님遺덈윭?ㅻ뒗님?ㅽ뙣?덉뒿?덈떎.', 'error');
+      // ъ슜?먯뿉寃님좎뒪님硫붿떆吏 ?쒖떆
+      toast('?뚮┝님遺덈윭ㅻ뒗님ㅽ뙣있습니다.', 'error');
     }
   }, [toast]);
 
@@ -51,7 +50,7 @@ export function useNotifications() {
     setUnreadCount(prev => prev + 1);
 
     // Show Real-time Toast
-    toast(newNotif.ntfcSj || '?덈줈님?뚮┝님?꾩갑?덉뒿?덈떎.', 'success');
+    toast(newNotif.ntfcSj || '새로운?뚮┝님?꾩갑있습니다.', 'success');
   }, [toast]);
 
   // Initial load and WebSocket subscription
@@ -89,7 +88,7 @@ export function useNotifications() {
       fetchNotifications();
     } catch {
       console.error('Failed to mark notification as read:', error);
-      toast('?뚮┝ ?쎌쓬 泥섎━님?ㅽ뙣?덉뒿?덈떎.', 'error');
+      toast('?뚮┝ ?쎌쓬 泥섎━님ㅽ뙣있습니다.', 'error');
     }
   };
 

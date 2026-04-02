@@ -1,5 +1,4 @@
-﻿"코드ID는 필수입니다.";
-
+﻿
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -95,7 +94,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  <DialogHeader>
  <DialogTitle>{isEdit ? '공통상세코드 수정' : '공통상세코드 등록'}</DialogTitle>
  <DialogDescription>
- 怨듯넻?곸꽭肄붾뱶 ?뺣낫瑜?{isEdit ? '?섏젙' : '?낅젰'}?⑸땲님
+ 怨듯넻상세肄붾뱶 ?뺣낫瑜{isEdit ? '?섏젙' : '?낅젰'}합니다
  </DialogDescription>
  </DialogHeader>
  <Form {...form}>
@@ -142,9 +141,9 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  name="codeNm"
  render={({ field }) => (
  <FormItem>
- <FormLabel>肄붾뱶紐?/FormLabel>
+ <FormLabel>肄붾뱶紐</FormLabel>
  <FormControl>
- <Input placeholder="肄붾뱶紐? {...field} />
+ <Input placeholder="肄붾뱶紐 {...field} />
  </FormControl>
  <FormMessage />
  </FormItem>
@@ -155,7 +154,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  name="codeDc"
  render={({ field }) => (
  <FormItem>
- <FormLabel>?ㅻ챸</FormLabel>
+ <FormLabel>설명</FormLabel>
  <FormControl>
  <Input placeholder="코드명" {...field} />
  </FormControl>
@@ -168,7 +167,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  name="useAt"
  render={({ field }) => (
  <FormItem>
- <FormLabel>?ъ슜?щ?</FormLabel>
+ <FormLabel>ъ슜여부</FormLabel>
  <Select onValueChange={field.onChange} defaultValue={field.value}>
  <FormControl>
  <SelectTrigger>
@@ -176,7 +175,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  </SelectTrigger>
  </FormControl>
  <SelectContent>
- <SelectItem value="Y">?ъ슜 (Y)</SelectItem>
+ <SelectItem value="Y">ъ슜 (Y)</SelectItem>
  <SelectItem value="N">誘몄궗님(N)</SelectItem>
  </SelectContent>
  </Select>
@@ -190,7 +189,7 @@ export function CommonDetailCodeForm({ open, onOpenChange, data, onSuccess, code
  님젣
  </Button>
  )}
- <Button type="submit">?님/Button>
+ <Button type="submit">님/Button>
  </DialogFooter>
  </form>
  </Form>

@@ -1,5 +1,4 @@
-﻿'콘텐츠 정보를 불러오지 못했습니다.';
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { myPageAdminService } from '@/services/foundation/workspace/MyPageAdminService';
@@ -17,7 +16,7 @@ export default function MyPageManagement() {
  const data = await myPageAdminService.getContents({ all: true });
  setContents(data);
  } catch {
- toast('肄섑뀗痢님뺣낫瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲님', 'error');
+ toast('肄섑뀗痢님뺣낫瑜遺덈윭ㅼ 紐삵뻽?듬땲님', 'error');
  } finally {
  setLoading(false);
  }
@@ -30,9 +29,9 @@ export default function MyPageManagement() {
  try {
  await myPageAdminService.updateContent(item.cntntsId, { ...item, cntntsUseAt: newStatus });
  setContents(contents.map(c => c.cntntsId === item.cntntsId ? { ...c, cntntsUseAt: newStatus } : c));
- toast(`${item.cntntsNm} ?곹깭媛 蹂寃쎈릺?덉뒿?덈떎.`);
+ toast(`${item.cntntsNm} ?곹깭媛 蹂寃쎈릺있습니다.`);
  } catch {
- toast('?곹깭 蹂寃?以님ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+ toast('?곹깭 蹂寃以님ㅻ쪟媛 諛쒖깮있습니다.', 'error');
  }
  };
 

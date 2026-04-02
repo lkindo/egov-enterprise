@@ -100,7 +100,7 @@ describe('MenuAdminClient Component', () => {
  render(<MenuAdminClient initialMenus={mockInitialMenus} programs={mockPrograms} />);
  const btn = screen.getByText(/상위 메뉴 추가/i);
  fireEvent.click(btn);
- expect(await screen.findByText(/신규 ?ㅻ퉬寃뚯씠님노드 설계/i)).toBeDefined();
+ expect(await screen.findByText(/신규 ㅻ퉬寃뚯씠님노드 설계/i)).toBeDefined();
  });
 
  it('handles deletion', async () => {

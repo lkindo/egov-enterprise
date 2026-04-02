@@ -1,5 +1,4 @@
-﻿"확대 이미지";
-
+﻿
 import React, { useState } from 'react';
 import { X, ZoomIn, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -29,7 +28,7 @@ export function ImageLightbox({ src, alt, isOpen, onClose }: ImageLightboxProps)
  <div className="relative max-w-[90vw] max-h-[90vh] w-full h-[85vh]">
  <Image
  src={src}
- alt={alt || "?뺣? ?대?吏"}
+ alt={alt || "?뺣? ?대吏"}
  fill
  className="object-contain max-w-full max-h-[85vh] rounded-lg shadow-2xl animate-in zoom-in-95 duration-300"
  />

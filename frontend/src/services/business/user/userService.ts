@@ -21,7 +21,7 @@ class UserService extends ApiService {
  }
 
  /**
- * 鍮꾨?踰덊샇 蹂寃? */
+ * 鍮꾨踰덊샇 蹂寃 */
  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
  return this.put<void>('/password', { oldPassword, newPassword });
  }

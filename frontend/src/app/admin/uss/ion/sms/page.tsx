@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import SmsAdminClient from './SmsAdminClient';
 
 export const metadata = {
-  title: '臾몄옄 硫붿떆吏 愿由?| 遺媛?쒕퉬님,
+  title: '臾몄옄 硫붿떆吏 관리| 遺媛쒕퉬님,
 };
 
 export default async function SmsAdminPage() {

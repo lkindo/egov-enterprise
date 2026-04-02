@@ -154,7 +154,7 @@ export function StandardChartWrapper({
                             </LineChart>
                         ) : (
                             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                                李⑦듃 ?좏삎님吏?먮릺吏 ?딆뒿?덈떎.
+                                李⑦듃 ?좏삎님吏먮릺吏 ?딆뒿?덈떎.
                             </div>
                         )}
                     </ResponsiveContainer>

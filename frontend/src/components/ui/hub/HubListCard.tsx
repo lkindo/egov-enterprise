@@ -78,7 +78,7 @@ export function HubListCard({
           <Link
             href={moreHref}
             className="w-12 h-12 bg-muted/30 rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            aria-label={`${title} ?붾낫湲?}
+            aria-label={`${title} ?붾낫湲}
           >
             <ArrowRight size={20} />
           </Link>

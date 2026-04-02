@@ -33,7 +33,7 @@ const LoginLogAdminPage = () => {
 
     const columns: Column<LoginLog>[] = [
         {
-            header: '濡쒓렇ID',
+            header: '로그ID',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
@@ -89,9 +89,9 @@ const LoginLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="濡쒓렇님濡쒓렇" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }, { label: '濡쒓렇님濡쒓렇' }]} />
+            <PageHeader title="로그인로그" breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '로그관리 }, { label: '로그인로그' }]} />
 
-            <HubHeader title="怨꾩젙 媛?붿뼵" highlight="濡쒓렇님濡쒓렇" subtitle="?쒖뒪님접속 諛?濡쒓렇님濡쒓렇?꾩썐 ?대젰님?щ챸?섍쾶 愿由ы븯님보안 ?ш퀬瑜?誘몄뿰님諛⑹님⑸땲님" icon={KeyRound} />
+            <HubHeader title="怨꾩젙 媛붿뼵" highlight="로그인로그" subtitle="시스템접속 및 로그인로그?꾩썐 ?대젰님щ챸?섍쾶 관리ы븯보안 ш퀬瑜誘몄뿰님諛⑹님⑸땲님" icon={KeyRound} />
 
             <StandardDataTable
                 columns={columns}

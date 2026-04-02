@@ -30,7 +30,7 @@ const WebLogAdminPage = () => {
 
     const columns: Column<WebLog>[] = [
         {
-            header: '濡쒓렇ID',
+            header: '로그ID',
             accessor: (item: WebLog) => (
                 <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-muted-foreground/50 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
@@ -63,7 +63,7 @@ const WebLogAdminPage = () => {
             className: 'w-24'
         },
         {
-            header: '?묐떟?쒓컙',
+            header: '?묐떟시간',
             accessor: (item: WebLog) => (
                 <div className="flex items-center gap-1.5 font-bold text-slate-600">
                     <Clock size={12} className="opacity-30" />
@@ -96,9 +96,9 @@ const WebLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="님濡쒓렇" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }, { label: '님濡쒓렇' }]} />
+            <PageHeader title="님로그" breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '로그관리 }, { label: '님로그' }]} />
 
-            <HubHeader title="?몃옒님?덉씠님 highlight="님濡쒓렇" subtitle="紐⑤뱺 HTTP 요청怨님묐떟 ?대젰님분석?섏뿬 ?쒖뒪님?깅뒫怨?보안 ?댁긽 吏뺥썑瑜님ㅼ떆媛꾩쑝濡?媛먯님⑸땲님" icon={Globe} />
+            <HubHeader title="?몃옒님?덉씠님 highlight="님로그" subtitle="紐⑤뱺 HTTP 요청怨님묐떟 ?대젰님분석?섏뿬 시스템?깅뒫怨보안 ?댁긽 吏뺥썑瑜님ㅼ떆媛꾩쑝濡媛먯님⑸땲님" icon={Globe} />
 
             <StandardDataTable
                 columns={columns}

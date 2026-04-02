@@ -21,7 +21,7 @@ export interface MenuCreate {
 }
 
 /**
- * 硫붾돱 愿由님쒕퉬님(Admin)
+ * 硫붾돱 관리님쒕퉬님(Admin)
  */
 class MenuAdminService extends AdminService {
  constructor() {
@@ -44,7 +44,7 @@ class MenuAdminService extends AdminService {
  return this.get<Menu[]>('/all', config);
  }
 
- /** 硫붾돱 ?곸꽭 조회 */
+ /** 硫붾돱 상세 조회 */
  async getMenu(menuNo: number, config?: AxiosRequestConfig): Promise<Menu> {
  return this.get<Menu>(`/${menuNo}`, config);
  }
@@ -59,9 +59,9 @@ class MenuAdminService extends AdminService {
  return this.put(`/${menuNo}`, data, config);
  }
 
-  /** 硫붾돱 ?쒖꽌 ?쇨큵 ?섏젙 - API 紐낆꽭님?곕Ⅸ 寃쎈줈 ?섏젙 (/batch-order) */
+  /** 硫붾돱 ?쒖꽌 ?쇨큵 ?섏젙 - API 紐낆꽭님?곕Ⅸ 경로 ?섏젙 (/batch-order) */
   async updateMenuOrder(data: Partial<Menu>[], config?: AxiosRequestConfig): Promise<void> {
-    // 80?ш컻님硫붾돱 ?낅뜲?댄듃 遺?섎? 怨좊젮?섏뿬 ??꾩븘님120珥덈줈 ?님?곗옣
+    // 80ш컻님硫붾돱 ?낅뜲?댄듃 遺섎? 怨좊젮?섏뿬 꾩븘님120珥덈줈 님?곗옣
     return this.put('/batch-order', data, { ...config, timeout: 120000 });
   }
 
@@ -70,12 +70,12 @@ class MenuAdminService extends AdminService {
  return this.delete(`/${menuNo}`, config);
  }
 
- /** 沅뚰븳蹂?硫붾돱 ?앹꽦 愿由?紐⑸줉 조회 */
+ /** 沅뚰븳蹂硫붾돱 ?앹꽦 관리紐⑸줉 조회 */
  async getMenuCreationManageList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<MenuCreate>> {
  return this.get<PageResponse<MenuCreate>>('/creation-manage', { ...config, params });
  }
 
- /** 沅뚰븳蹂?硫붾돱 ?좊떦 ?님*/
+ /** 沅뚰븳蹂硫붾돱 ?좊떦 님*/
  async saveMenuCreation(authorCode: string, menuNos: number[], config?: AxiosRequestConfig): Promise<void> {
  return this.post(`/creation/${authorCode}`, menuNos, config);
  }

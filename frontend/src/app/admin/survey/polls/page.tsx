@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import OnlinePollAdminClient from './OnlinePollAdminClient';
 
 export const metadata = {
-  title: '온라인설문 愿由?| 설문愿由?,
+  title: '온라인설문 관리| 설문관리,
 };
 
 export default async function OnlinePollAdminPage({

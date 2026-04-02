@@ -1,5 +1,4 @@
-﻿'부서 목록을 불러오지 못했습니다.';
-
+﻿
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -59,7 +58,7 @@ export default function DeptAdminClient({
       setDepts(res.list);
       setTotalCount(res.total);
     } catch {
-      toast.error('議곗쭅 泥닿퀎 ?ㅽ듃由?濡쒕뱶님?ㅽ뙣?덉뒿?덈떎.');
+      toast.error('議곗쭅 泥닿퀎 ㅽ듃由濡쒕뱶님ㅽ뙣있습니다.');
     } finally {
       setLoading(false);
     }
@@ -95,7 +94,7 @@ export default function DeptAdminClient({
       setIsAddOpen(false);
       handleRefresh();
     } catch {
-      toast.error('?곗씠님?뺥빀님?ㅻ쪟濡님?μ씠 痍⑥냼?섏뿀?듬땲님');
+      toast.error('데이터?뺥빀님ㅻ쪟濡님μ씠 취소?섏뿀?듬땲님');
     } finally {
       setLoading(false);
     }
@@ -110,7 +109,7 @@ export default function DeptAdminClient({
       toast.success('부서를 삭제했습니다.');
       handleRefresh();
     } catch {
-      toast.error('沅뚰븳 遺議님먮뒗 ?쒖뒪님?ㅻ쪟濡님?젣瑜님섑뻾?섏? 紐삵뻽?듬땲님');
+      toast.error('沅뚰븳 遺議님먮뒗 시스템ㅻ쪟濡님?젣瑜님섑뻾?섏? 紐삵뻽?듬땲님');
     } finally {
       setLoading(false);
     }
@@ -167,13 +166,13 @@ export default function DeptAdminClient({
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
         title="조직 체계 매트릭스"
-        breadcrumbs={[{ label: '시스템관리'遺님愿由? }]}
+        breadcrumbs={[{ label: '시스템관리'遺님관리 }]}
       />
 
       <HubHeader
         title="Organization"
         highlight="Topology"
-        subtitle="?꾩궗 鍮꾩쫰?덉뒪 議곗쭅 泥닿퀎 諛?怨꾩링님遺님援ъ“님실시간愿由님쒖뒪님
+        subtitle="?꾩궗 鍮꾩쫰?덉뒪 議곗쭅 泥닿퀎 및 怨꾩링님遺님援ъ“님실시간관리님쒖뒪님
         icon={Network}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -226,7 +225,7 @@ export default function DeptAdminClient({
                       onChange={(e) => setSearchKeyword(e.target.value)}
                       value={searchKeyword}
                       className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
-                      placeholder="議곗쭅 ?먮뒗 遺님?앸퀎님
+                      placeholder="議곗쭅 또는 遺님?앸퀎님
                     />
                   </div>
                 </div>
@@ -234,7 +233,7 @@ export default function DeptAdminClient({
 
               <div className="pt-8 border-t border-white/5 flex items-center justify-between">
                 <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 max-w-[200px]">
-                  * ?꾨줈鍮꾩님앸맂 紐⑤뱺 議곗쭅 ?먯궛? ?ㅼ떆媛꾩쑝濡님ъ슜님留ㅽ듃由?뒪? ?숆린?붾맗?덈떎.
+                  * ?꾨줈鍮꾩님앸맂 紐⑤뱺 議곗쭅 ?먯궛 실시간꾩쑝濡님ъ슜님매트릭스 ?숆린?붾맗?덈떎.
                 </p>
                 <Button
                   onClick={handleRefresh}
@@ -251,7 +250,7 @@ export default function DeptAdminClient({
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
           <HubSectionCard
             title="議곗쭅 ?먯궛 ?붾젆?좊━ ?몃깽?좊━"
-            description="?쒖뒪님?좏뤃濡쒖? ?댁뿉 援ъ꽦님?꾩궗 鍮꾩쫰?덉뒪 議곗쭅 ?⑥쐞님?ㅼ떆媛님곹깭 紐낆꽭?낅땲님"
+            description="시스템?좏뤃濡쒖? ?댁뿉 援ъ꽦님?꾩궗 鍮꾩쫰?덉뒪 議곗쭅 ⑥쐞님실시간곹깭 紐낆꽭?낅땲님"
             icon={SearchCode}
           >
             <div className="overflow-hidden">
@@ -270,11 +269,11 @@ export default function DeptAdminClient({
       <StandardModal
         isOpen={isFormOpen}
         onClose={() => setIsAddOpen(false)}
-        title={selectedDept ? '議곗쭅 노드 ?ㅽ럺 ?섏젙' : '신규 遺님?먯궛 ?꾨줈鍮꾩님?}
+        title={selectedDept ? '議곗쭅 노드 ㅽ럺 ?섏젙' : '신규 遺님?먯궛 ?꾨줈鍮꾩님?}
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">痍⑥냼</Button>
+            <Button variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
             <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group">
               <Zap size={18} className="group-hover:animate-pulse" /> {selectedDept ? '議곗쭅 ?섏젙' : '遺님諛고룷'}
             </Button>
@@ -282,7 +281,7 @@ export default function DeptAdminClient({
         }
       >
         <div className="space-y-10 pt-4">
-          <FormField label="議곗쭅 諛?遺님紐낆묶" required description="?쒖뒪님?꾨컲님?몄텧님議곗쭅님?쒖? 紐낆묶">
+          <FormField label="議곗쭅 및 遺님紐낆묶" required description="시스템?꾨컲님?몄텧님議곗쭅님?쒖? 紐낆묶">
             <div className="relative group/name">
               <Building2 size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/name:opacity-100 transition-opacity" />
               <Input
@@ -294,11 +293,11 @@ export default function DeptAdminClient({
             </div>
           </FormField>
 
-          <FormField label="議곗쭅 ?꾪궎?띿쿂 紐낆꽭" description="?대떦 議곗쭅님二쇱슂 님븷 諛?硫뷀님곗씠님?뺤쓽">
+          <FormField label="議곗쭅 ?꾪궎?띿쿂 紐낆꽭" description="?대떦 議곗쭅님二쇱슂 님븷 및 硫뷀님곗씠님?뺤쓽">
             <div className="relative group/dc">
               <Pencil size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
               <Textarea
-                placeholder="議곗쭅 ?곸꽭 紐낆꽭 ?낅젰"
+                placeholder="議곗쭅 상세 紐낆꽭 ?낅젰"
                 value={form.orgnztDc}
                 onChange={(e) => setForm(prev => ({ ...prev, orgnztDc: e.target.value }))}
                 className="min-h-[160px] pl-16 p-6 rounded-[2rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all resize-none shadow-inner"
@@ -312,7 +311,7 @@ export default function DeptAdminClient({
             </div>
             <div className="space-y-1">
               <h6 className="text-[10px] font-black text-indigo-900 tracking-widest uppercase">Structural_Integrity_Check</h6>
-              <p className="text-[10px] font-bold text-indigo-700/60 leading-relaxed italic uppercase">신규 議곗쭅 노드 ?앹꽦 님怨꾩링 援ъ“ ?먮룞 寃利님꾨줈?좎퐳님?섑뻾?⑸땲님</p>
+              <p className="text-[10px] font-bold text-indigo-700/60 leading-relaxed italic uppercase">신규 議곗쭅 노드 ?앹꽦 님怨꾩링 援ъ“ ?먮룞 寃利님꾨줈?좎퐳님?섑뻾합니다</p>
             </div>
           </div>
         </div>

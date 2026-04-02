@@ -1,14 +1,14 @@
 ﻿/**
  * Generated API Types Utility
  *
- * openapi-typescript濡님앹꽦님types/generated-api.d.ts瑜?湲곕컲?쇰줈
- * API 요청/?묐떟 ??낆쓣 媛꾧껐?섍쾶 異붿텧?섏뿬 ?ъ슜?섎뒗 ?ы띁?낅땲님
+ * openapi-typescript濡님앹꽦님types/generated-api.d.ts瑜湲곕컲?쇰줈
+ * API 요청/?묐떟 낆쓣 媛꾧껐?섍쾶 異붿텧?섏뿬 ъ슜?섎뒗 ы띁?낅땲님
  */
 
 import { paths, components } from '../generated/generated-api';
 
 /**
- * ?뱀젙 ?붾뱶?ъ씤?몄쓽 ?묐떟 ?곗씠님??낆쓣 異붿텧?⑸땲님
+ * ?뱀젙 ?붾뱶ъ씤?몄쓽 ?묐떟 데이터낆쓣 異붿텧합니다
  * @example
  * type UserInfo = ApiResponseData<'/api/v1/users/{id}', 'get'>;
  */
@@ -20,7 +20,7 @@ export type ApiResponseData<
  : never;
 
 /**
- * ?뱀젙 ?붾뱶?ъ씤?몄쓽 요청 ?곗씠님Body) ??낆쓣 異붿텧?⑸땲님
+ * ?뱀젙 ?붾뱶ъ씤?몄쓽 요청 데이터Body) 낆쓣 異붿텧합니다
  */
 export type ApiRequestBody<
  Path extends keyof paths,
@@ -30,6 +30,6 @@ export type ApiRequestBody<
  : never;
 
 /**
- * ?ㅽ궎留?而댄룷?뚰듃(DTO)瑜?吏곸젒 李몄“?⑸땲님
+ * ㅽ궎留而댄룷?뚰듃(DTO)瑜吏곸젒 李몄“합니다
  */
 export type SchemaDTO<Name extends keyof components['schemas']> = components['schemas'][Name];

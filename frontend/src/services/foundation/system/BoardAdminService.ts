@@ -26,7 +26,7 @@ export interface BoardMaster {
 }
 
 /**
- * 寃뚯떆님留덉뒪님愿由님쒕퉬님(Admin)
+ * 寃뚯떆님留덉뒪님관리님쒕퉬님(Admin)
  */
 class BoardAdminService extends AdminService {
     constructor() {
@@ -44,7 +44,7 @@ class BoardAdminService extends AdminService {
         });
     }
 
-    /** 寃뚯떆님?곸꽭 조회 */
+    /** 寃뚯떆님상세 조회 */
     async getBoardMaster(id: string, config?: AxiosRequestConfig): Promise<BoardMaster> {
         return this.get<BoardMaster>(`/${id}`, config);
     }

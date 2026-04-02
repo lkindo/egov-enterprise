@@ -50,7 +50,7 @@ const SystemLogAdminPage = () => {
             className: 'w-52'
         },
         {
-            header: '?쒕퉬?ㅻ챸',
+            header: '?쒕퉬설명',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
@@ -67,7 +67,7 @@ const SystemLogAdminPage = () => {
             )
         },
         {
-            header: '?묐떟?쒓컙',
+            header: '?묐떟시간',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-1.5 font-bold text-slate-600">
                     <Clock size={12} className="opacity-30" />
@@ -90,9 +90,9 @@ const SystemLogAdminPage = () => {
 
     return (
         <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader title="?쒖뒪님濡쒓렇" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }, { label: '?쒖뒪님濡쒓렇' }]} />
+            <PageHeader title="시스템로그" breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '로그관리 }, { label: '시스템로그' }]} />
 
-            <HubHeader title="?쒖뒪님인사이트" highlight="?쒖뒪님濡쒓렇" subtitle="?쒕쾭님?ㅼ떆媛님숈옉 ?곹깭? 紐⑤뱢蹂님ㅽ뻾 ?대젰님紐낇솗?섍쾶 異붿쟻?⑸땲님" icon={Activity} 
+            <HubHeader title="시스템인사이트" highlight="시스템로그" subtitle="?쒕쾭님실시간숈옉 ?곹깭 紐⑤뱢蹂님ㅽ뻾 ?대젰님紐낇솗?섍쾶 異붿쟻합니다" icon={Activity} 
                 actions={
                     <div className="flex gap-4 p-2 items-center">
                         <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">실시간紐⑤땲?곕쭅</Button>
@@ -110,7 +110,7 @@ const SystemLogAdminPage = () => {
                     onPageChange: (page: number) => setParams({ ...params, page踰덊샇: page }),
                 }}
                 search={{
-                    placeholder: '?쒕퉬?ㅻ챸, 요청ID 寃님..',
+                    placeholder: '?쒕퉬설명, 요청ID 寃님..',
                     onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page踰덊샇: 1 }),
                 }}
             />

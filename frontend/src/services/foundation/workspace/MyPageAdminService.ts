@@ -11,19 +11,19 @@ export interface MyPageContent {
 }
 
 /**
- * 留덉씠?섏씠吏 肄섑뀗痢?愿由님쒕퉬님(Admin)
+ * 留덉씠?섏씠吏 肄섑뀗痢관리님쒕퉬님(Admin)
  */
 class MyPageAdminService extends AdminService {
  constructor() {
  super('/workspace/mypage/contents');
  }
 
- /** 留덉씠?섏씠吏 肄섑뀗痢?紐⑸줉 조회 */
+ /** 留덉씠?섏씠吏 肄섑뀗痢紐⑸줉 조회 */
  async getContents(params?: { all?: boolean }, config?: AxiosRequestConfig): Promise<MyPageContent[]> {
  return this.get<MyPageContent[]>('', { ...config, params });
  }
 
- /** 留덉씠?섏씠吏 肄섑뀗痢?등록 */
+ /** 留덉씠?섏씠吏 肄섑뀗痢등록 */
  async createContent(data: Partial<MyPageContent>, config?: AxiosRequestConfig): Promise<string> {
  return this.post<string>('', data, config);
  }

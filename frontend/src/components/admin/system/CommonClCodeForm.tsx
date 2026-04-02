@@ -1,5 +1,4 @@
-﻿"분류코드는 필수입니다.";
-
+﻿
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -93,7 +92,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  <DialogHeader>
  <DialogTitle>{isEdit ? '공통분류코드 수정' : '공통분류코드 등록'}</DialogTitle>
  <DialogDescription>
- 怨듯넻遺꾨쪟肄붾뱶 ?뺣낫瑜?{isEdit ? '?섏젙' : '?낅젰'}?⑸땲님
+ 怨듯넻遺꾨쪟肄붾뱶 ?뺣낫瑜{isEdit ? '?섏젙' : '?낅젰'}합니다
  </DialogDescription>
  </DialogHeader>
  <Form {...form}>
@@ -116,9 +115,9 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  name="clCodeNm"
  render={({ field }) => (
  <FormItem>
- <FormLabel>遺꾨쪟肄붾뱶紐?/FormLabel>
+ <FormLabel>遺꾨쪟肄붾뱶紐</FormLabel>
  <FormControl>
- <Input placeholder="遺꾨쪟肄붾뱶紐? {...field} />
+ <Input placeholder="遺꾨쪟肄붾뱶紐 {...field} />
  </FormControl>
  <FormMessage />
  </FormItem>
@@ -129,7 +128,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  name="clCodeDc"
  render={({ field }) => (
  <FormItem>
- <FormLabel>?ㅻ챸</FormLabel>
+ <FormLabel>설명</FormLabel>
  <FormControl>
  <Input placeholder="분류코드명" {...field} />
  </FormControl>
@@ -142,7 +141,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  name="useAt"
  render={({ field }) => (
  <FormItem>
- <FormLabel>?ъ슜?щ?</FormLabel>
+ <FormLabel>ъ슜여부</FormLabel>
  <Select onValueChange={field.onChange} defaultValue={field.value}>
  <FormControl>
  <SelectTrigger>
@@ -150,7 +149,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  </SelectTrigger>
  </FormControl>
  <SelectContent>
- <SelectItem value="Y">?ъ슜 (Y)</SelectItem>
+ <SelectItem value="Y">ъ슜 (Y)</SelectItem>
  <SelectItem value="N">誘몄궗님(N)</SelectItem>
  </SelectContent>
  </Select>
@@ -164,7 +163,7 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
  님젣
  </Button>
  )}
- <Button type="submit">?님/Button>
+ <Button type="submit">님/Button>
  </DialogFooter>
  </form>
  </Form>

@@ -5,7 +5,7 @@ import { getInitialBoardData } from './BoardListServer';
 import { Skeleton } from "@/components/ui/skeleton";
 import { redirect } from 'next/navigation';
 
-// ?대씪?댁뼵님而댄룷?뚰듃瑜?吏님濡쒕뵫?섏뿬 ?쒕쾭/?대씪?댁뼵님寃쎄퀎瑜?紐낇솗님님const BoardListClient = dynamic(() => import('./BoardListClient').then(mod => mod.BoardListClient), {
+// ?대씪?댁뼵님而댄룷?뚰듃瑜吏님濡쒕뵫?섏뿬 ?쒕쾭/?대씪?댁뼵님寃쎄퀎瑜紐낇솗님님const BoardListClient = dynamic(() => import('./BoardListClient').then(mod => mod.BoardListClient), {
  ssr: true,
  loading: () => (
  <div className="flex flex-col gap-6 p-6">
@@ -20,8 +20,8 @@ import { redirect } from 'next/navigation';
 });
 
 export const metadata: Metadata = {
- title: '?꾩껜 寃뚯떆湲 - ?꾩옄?뺣? ?꾨젅?꾩썙님?꾨님?,
- description: '?꾩옄?뺣? ?뚰봽?몄썾님?꾨젅?꾩썙님?꾨님님꾨줈?앺듃님?꾩껜 寃뚯떆湲 紐⑸줉?낅땲님',
+ title: '?꾩껜 게시글 - ?꾩옄?뺣? ?꾨젅?꾩썙님?꾨님?,
+ description: '?꾩옄?뺣? ?뚰봽?몄썾님?꾨젅?꾩썙님?꾨님님꾨줈?앺듃님?꾩껜 게시글 紐⑸줉?낅땲님',
 };
 
 /**
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 export default async function BoardListPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
  const resolvedSearchParams = await searchParams;
 
- // 파라미터 以鍮? const params = {
+ // 파라미터 以鍮 const params = {
  bbsId: (resolvedSearchParams.bbsId as string) || 'BBSMSTR_AAAAAAAAAAAA',
  page踰덊샇: Number(resolvedSearchParams.page踰덊샇) || 1,
  searchWrd: (resolvedSearchParams.searchWrd as string) || '',
@@ -39,7 +39,7 @@ export default async function BoardListPage({ searchParams }: { searchParams: Pr
  endDate: (resolvedSearchParams.endDate as string) || undefined,
  };
 
- // ?쒕쾭 ?꾩슜 ?⑥닔瑜님듯빐 ?곗씠님?섏묶
+ // ?쒕쾭 ?꾩슜 ⑥닔瑜님듯빐 데이터?섏묶
  let initialData;
  try {
   initialData = await getInitialBoardData(params);

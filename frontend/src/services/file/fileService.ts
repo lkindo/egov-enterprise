@@ -3,7 +3,7 @@ import { PageResponse } from '@/types/foundation/system';
 import { FileVO, FileSearchParams } from '@/types/business/file';
 
 /**
- * ?뚯씪 愿由님쒕퉬님(Admin ?꾩슜)
+ * ?뚯씪 관리님쒕퉬님(Admin ?꾩슜)
  */
 const fileService = {
  /**

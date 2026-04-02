@@ -13,7 +13,7 @@ export interface Event {
  ctgryCode: string; // 1:援먯쑁/?됱궗, 2:罹좏럹님}
 
 /**
- * ?대깽님?됱궗 愿由님쒕퉬님(User)
+ * ?대깽님?됱궗 관리님쒕퉬님(User)
  */
 class EventUserService extends UserService {
  constructor() {
@@ -28,7 +28,7 @@ class EventUserService extends UserService {
  }
 
  /**
- * ?대깽님?곸꽭 조회
+ * ?대깽님상세 조회
  */
  async getEvent(id: string, config?: AxiosRequestConfig): Promise<Event> {
  return this.get<Event>(`/${id}`, config);

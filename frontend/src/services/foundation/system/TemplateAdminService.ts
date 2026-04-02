@@ -18,7 +18,7 @@ class TemplateAdminService extends AdminService {
     super('/templates');
   }
 
-  /** ?쒗뵆由?紐⑸줉 조회 */
+  /** ?쒗뵆由紐⑸줉 조회 */
   async getTemplateList(config?: AxiosRequestConfig) {
     return this.get<TmplatInfo[]>('', config);
   }
@@ -28,7 +28,7 @@ class TemplateAdminService extends AdminService {
     return this.get<TmplatInfo>(`/${tmplatId}`, config);
   }
 
-  /** ?쒗뵆由?등록 */
+  /** ?쒗뵆由등록 */
   async createTemplate(tmplatInfo: TmplatInfo, config?: AxiosRequestConfig) {
     return this.post<void>('', tmplatInfo, config);
   }

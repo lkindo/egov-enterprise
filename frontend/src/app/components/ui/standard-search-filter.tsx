@@ -1,5 +1,4 @@
-﻿'필터 접기';
-
+﻿
 import React, { useState } from 'react';
 import { Search, RotateCcw, Calendar as CalendarIcon, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -58,7 +57,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
               <SlidersHorizontal size={20} />
             </div>
             <div>
-              <h3 className="text-base font-black text-foreground tracking-tighter leading-none uppercase">寃님議곌굔 ?ㅼ젙</h3>
+              <h3 className="text-base font-black text-foreground tracking-tighter leading-none uppercase">寃님議곌굔 ㅼ젙</h3>
               <p className="text-[10px] font-black text-muted-foreground/50 mt-1.5 uppercase tracking-widest">怨좉툒 ?꾪꽣留님쒖뒪님/p>
             </div>
           </div>
@@ -70,7 +69,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
             className="rounded-xl font-black h-10 px-4 gap-2 hover:bg-muted transition-all text-muted-foreground"
           >
             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            <span className="text-[10px] tracking-widest font-black uppercase">?꾪꽣 {isExpanded ? '?묎린' : '?쇱튂湲?}</span>
+            <span className="text-[10px] tracking-widest font-black uppercase">?꾪꽣 {isExpanded ? '?묎린' : '?쇱튂湲}</span>
           </Button>
         </div>
 

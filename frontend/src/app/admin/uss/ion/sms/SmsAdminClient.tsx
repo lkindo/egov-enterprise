@@ -1,5 +1,4 @@
-﻿'발송 내역을 불러오지 못했습니다.';
-
+﻿
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
@@ -54,7 +53,7 @@ export default function SmsAdminClient({
   // Send SMS State
   const [isSendOpen, setIsSendOpen] = useState(false);
   const [sendForm, setSendForm] = useState({
-    trnsmitTelno: '02-1234-5678', // 諛쒖떊踰덊샇 (湲곕낯媛?
+    trnsmitTelno: '02-1234-5678', // 諛쒖떊踰덊샇 (湲곕낯媛
     recptnTelno: '',
     trnsmitCn: ''
   });
@@ -66,7 +65,7 @@ export default function SmsAdminClient({
       setSmsList(res.list);
       setTotalCount(res.total);
     } catch {
-      toast.error('諛쒖넚 ?댁뿭님遺덈윭?ㅼ? 紐삵뻽?듬땲님');
+      toast.error('諛쒖넚 ?댁뿭님遺덈윭ㅼ 紐삵뻽?듬땲님');
     } finally {
       setLoading(false);
     }
@@ -85,7 +84,7 @@ export default function SmsAdminClient({
       setIsSendOpen(false);
       handleSearch(); // 紐⑸줉 媛깆떊
     } catch {
-      toast.error('諛쒖넚님?ㅽ뙣?덉뒿?덈떎.');
+      toast.error('諛쒖넚님ㅽ뙣있습니다.');
     } finally {
       setLoading(false);
     }
@@ -141,14 +140,14 @@ export default function SmsAdminClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="硫붿떆吏 ?ㅼ님ㅽ듃?덉씠님
-        breadcrumbs={[{ label: '遺媛?쒕퉬님 }, { label: '臾몄옄硫붿떆吏 ?붿쭊' }]}
+        title="硫붿떆吏 ㅼ님ㅽ듃?덉씠님
+        breadcrumbs={[{ label: '遺媛쒕퉬님 }, { label: '臾몄옄硫붿떆吏 ?붿쭊' }]}
       />
 
       <HubHeader 
         title="SMS ?몃옖님뀡" 
-        highlight="留ㅽ듃由?뒪" 
-        subtitle="?쒖뒪님?먮룞 ?뚮┝ 諛?보안 ?몄쬆 臾몄옄 硫붿떆吏 ?꾩넚 ?꾩뭅?대툕 愿由? 
+        highlight="매트릭스" 
+        subtitle="시스템?먮룞 ?뚮┝ 및 보안 ?몄쬆 臾몄옄 硫붿떆吏 ?꾩넚 ?꾩뭅?대툕 관리 
         icon={Send} 
         actions={
           <div className="flex gap-4 p-2">
@@ -158,7 +157,7 @@ export default function SmsAdminClient({
               onClick={handleSearch}
               className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2"
             >
-              <RefreshCcw size={16} className={cn(loading && "animate-spin")} /> 濡쒓렇 ?숆린님            </Button>
+              <RefreshCcw size={16} className={cn(loading && "animate-spin")} /> 로그 동기화            </Button>
             <Button
               size="lg"
               onClick={() => setIsSendOpen(true)}
@@ -198,13 +197,13 @@ export default function SmsAdminClient({
 
       {/* Main Stream Area */}
       <HubSectionCard
-        title="硫붿떆吏 ?꾩넚 ?ㅽ듃由?
-        description="?쒖뒪?쒖뿉님泥섎━님紐⑤뱺 ?꾩썐諛붿슫님硫붿떆吏 ?몃옒?쎌쓽 ?ㅼ떆媛님대젰?낅땲님"
+        title="硫붿떆吏 ?꾩넚 ㅽ듃由
+        description="?쒖뒪?쒖뿉님泥섎━님紐⑤뱺 ?꾩썐諛붿슫님硫붿떆吏 ?몃옒?쎌쓽 실시간대젰?낅땲님"
         icon={MessageSquare}
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
           <div>
-            <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">?꾩넚 濡쒓렇</h3>
+            <h3 className="text-2xl font-black tracking-tighter uppercase leading-none">?꾩넚 로그</h3>
             <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2 opacity-50">湲濡쒕쾶 異쒕젰 紐⑤땲?곕쭅</p>
           </div>
           <div className="flex items-center gap-4">
@@ -242,7 +241,7 @@ export default function SmsAdminClient({
               <Send size={32} />
             </div>
             <div className="text-center space-y-2">
-              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">?ㅽ듃由님묒꽦</DialogTitle>
+              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">ㅽ듃由님묒꽦</DialogTitle>
               <DialogDescription className="text-[10px] font-black tracking-[0.4em] uppercase opacity-40">
                 Outbound Message Configuration
               </DialogDescription>

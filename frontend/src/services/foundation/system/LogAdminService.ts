@@ -31,29 +31,29 @@ export interface SystemLog {
 }
 
 /**
- * 濡쒓렇 愿由님쒕퉬님(Admin)
+ * 로그 관리님쒕퉬님(Admin)
  */
 class LogAdminService extends AdminService {
  constructor() {
  super('/logs');
  }
 
- /** 濡쒓렇님濡쒓렇 紐⑸줉 조회 */
+ /** 로그인로그 紐⑸줉 조회 */
  async getLoginLogList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginLog>> {
  return this.get<PageResponse<LoginLog>>('/login', { ...config, params });
  }
 
- /** 濡쒓렇님濡쒓렇 ?곸꽭 조회 */
+ /** 로그인로그 상세 조회 */
  async getLoginLog(id: string, config?: AxiosRequestConfig): Promise<LoginLog> {
  return this.get<LoginLog>(`/login/${id}`, config);
  }
 
- /** ?쒖뒪님濡쒓렇 紐⑸줉 조회 */
+ /** 시스템로그 紐⑸줉 조회 */
  async getSystemLogList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SystemLog>> {
  return this.get<PageResponse<SystemLog>>('/system', { ...config, params });
  }
 
- /** ?쒖뒪님濡쒓렇 ?곸꽭 조회 */
+ /** 시스템로그 상세 조회 */
  async getSystemLog(id: string, config?: AxiosRequestConfig): Promise<SystemLog> {
  return this.get<SystemLog>(`/system/${id}`, config);
  }

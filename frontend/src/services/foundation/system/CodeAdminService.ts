@@ -50,7 +50,7 @@ export interface InstitutionCodeRecptn {
 }
 
 /**
- * 肄붾뱶 愿由님쒕퉬님(Admin)
+ * 肄붾뱶 관리님쒕퉬님(Admin)
  */
 class CodeAdminService extends AdminService {
  constructor() {
@@ -99,7 +99,7 @@ class CodeAdminService extends AdminService {
  return this.delete(`/cmmn/${codeId}`, config);
  }
 
- // --- ?곸꽭肄붾뱶 (Detail Code) ---
+ // --- 상세肄붾뱶 (Detail Code) ---
  async getDetailCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CmmnDetailCode>> {
  return this.get<PageResponse<CmmnDetailCode>>('/detail', { ...config, params });
  }
@@ -141,17 +141,17 @@ class CodeAdminService extends AdminService {
  return this.delete(`/administ/${administZoneCode}`, config);
  }
 
- // --- 湲곌?肄붾뱶 (Institution Code) ---
+ // --- 湲곌肄붾뱶 (Institution Code) ---
  async getInstitutionCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<InstitutionCode>> {
  return this.get<PageResponse<InstitutionCode>>('/institution', { ...config, params });
  }
 
- /** 湲곌?肄붾뱶 ?섏떊 ?댁뿭 조회 */
+ /** 湲곌肄붾뱶 ?섏떊 ?댁뿭 조회 */
  async getInstitutionCodeRecptnList(params?: SearchParams & { processSe?: string }, config?: AxiosRequestConfig): Promise<PageResponse<InstitutionCodeRecptn>> {
  return this.get<PageResponse<InstitutionCodeRecptn>>('/institution/receptions', { ...config, params });
  }
 
- /** 湲곌?肄붾뱶 ?섏떊 泥섎━ */
+ /** 湲곌肄붾뱶 ?섏떊 泥섎━ */
  async processInstitutionCodeRecptn(params: { occrrncDe: string, insttCode: string, opertSn: number }, config?: AxiosRequestConfig): Promise<void> {
  return this.post('/institution/receptions/process', null, { ...config, params });
  }

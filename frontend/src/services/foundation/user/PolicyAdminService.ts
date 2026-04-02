@@ -15,12 +15,12 @@ class PolicyAdminService extends AdminService {
     super('/policies');
   }
 
-  /** ?뺤콉 ?댁슜 조회 */
+  /** ?뺤콉 이용 조회 */
   async getPolicy(type: 'privacy' | 'copyright', config?: AxiosRequestConfig) {
     return this.get<PolicyDto>(`/${type}`, config);
   }
 
-  /** ?뺤콉 ?댁슜 ?섏젙 */
+  /** ?뺤콉 이용 ?섏젙 */
   async updatePolicy(type: 'privacy' | 'copyright', dto: Partial<PolicyDto>, config?: AxiosRequestConfig) {
     return this.put<void>(`/${type}`, dto, config);
   }

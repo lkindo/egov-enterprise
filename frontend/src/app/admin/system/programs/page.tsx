@@ -7,8 +7,8 @@ import { Program } from '@/types/foundation/program';
 import { PageResponse } from '@/types/foundation/system';
 
 export const metadata = {
- title: '?쒖뒪님?꾨줈洹몃옩 誘몃뱾?⑥뼱 | ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
- description: '?쒖뒪님?꾪궎?띿쿂 ?댁쓽 媛님꾨줈洹몃옩怨님붾뱶?ъ씤?몃? ?뺤쓽?섍퀬 愿由ы빀?덈떎.',
+ title: '시스템?꾨줈洹몃옩 誘몃뱾⑥뼱 | ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+ description: '시스템?꾪궎?띿쿂 ?댁쓽 媛님꾨줈洹몃옩怨님붾뱶ъ씤?몃? ?뺤쓽?섍퀬 관리ы빀?덈떎.',
 };
 
 export default async function ProgramAdminPage({

@@ -16,13 +16,13 @@
 
  {/* Loading Text */}
  <div className="mt-8 flex flex-col items-center gap-2">
- <h3 className="text-xl font-black tracking-tighter text-primary">?뷀꽣?꾨씪?댁쫰 ?꾨님?/h3>
+ <h3 className="text-xl font-black tracking-tighter text-primary">?뷀꽣?꾨씪?댁쫰 ?꾨님</h3>
  <div className="flex items-center gap-1.5">
  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[bounce_1s_infinite_0ms]" />
  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[bounce_1s_infinite_200ms]" />
  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[bounce_1s_infinite_400ms]" />
  </div>
- <p className="text-[10px] font-bold text-muted-foreground tracking-[0.3em] mt-2 opacity-50">?좎떆留?湲곕떎?ㅼ＜?몄슂</p>
+ <p className="text-[10px] font-bold text-muted-foreground tracking-[0.3em] mt-2 opacity-50">?좎떆留湲곕떎ㅼ＜몄슂</p>
  </div>
 
  {/* Background Accent */}

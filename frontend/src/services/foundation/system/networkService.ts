@@ -2,7 +2,7 @@
 import { SearchParams, PageResponse } from '@/types/foundation/system';
 
 /**
- * ?ㅽ듃?뚰겕 愿由?諛?紐⑤땲?곕쭅 ?쒕퉬님(Admin)
+ * ㅽ듃?뚰겕 관리및 紐⑤땲?곕쭅 ?쒕퉬님(Admin)
  * ?곌껐: com.company.project.api.controller.system.NtwrkController
  */
 export interface NetworkInfo {
@@ -27,37 +27,37 @@ export interface NetworkStatusDetailed {
 const BASE_URL = '/admin/system/networks';
 
 export const networkService = {
- /** ?ㅽ듃?뚰겕 紐⑸줉 조회 */
+ /** ㅽ듃?뚰겕 紐⑸줉 조회 */
  getNetworks: async (params?: SearchParams): Promise<PageResponse<NetworkInfo>> => {
  return client.get<PageResponse<NetworkInfo>>(BASE_URL, { params });
  },
 
- /** ?ㅽ듃?뚰겕 ?곸꽭 조회 */
+ /** ㅽ듃?뚰겕 상세 조회 */
  getNetwork: async (ntwrkId: string): Promise<NetworkInfo> => {
  return client.get<NetworkInfo>(`${BASE_URL}/${ntwrkId}`);
  },
 
- /** ?ㅽ듃?뚰겕 湲곗큹 ?뺣낫 등록 */
+ /** ㅽ듃?뚰겕 湲곗큹 ?뺣낫 등록 */
  createNetwork: async (data: Partial<NetworkInfo>): Promise<string> => {
  return client.post<string>(BASE_URL, data);
  },
 
- /** ?ㅽ듃?뚰겕 ?뺣낫 ?섏젙 */
+ /** ㅽ듃?뚰겕 ?뺣낫 ?섏젙 */
  updateNetwork: async (ntwrkId: string, data: Partial<NetworkInfo>): Promise<void> => {
  return client.put<void>(`${BASE_URL}/${ntwrkId}`, data);
  },
 
- /** ?ㅽ듃?뚰겕 ?뺣낫 님젣 */
+ /** ㅽ듃?뚰겕 ?뺣낫 님젣 */
  deleteNetwork: async (ntwrkId: string): Promise<void> => {
  return client.delete<void>(`${BASE_URL}/${ntwrkId}`);
  },
 
- /** (紐⑤땲?곕쭅) ?ㅽ듃?뚰겕 ?쒕퉬님?곹깭 紐⑸줉 조회 */
+ /** (紐⑤땲?곕쭅) ㅽ듃?뚰겕 ?쒕퉬님?곹깭 紐⑸줉 조회 */
  getStatus: async (params?: SearchParams): Promise<PageResponse<NetworkStatusDetailed>> => {
  return client.get<PageResponse<NetworkStatusDetailed>>('/admin/system/ntwrksvc-monitoring', { params });
  },
 
- /** ?ㅽ듃?뚰겕 濡쒓렇 조회 (Alias) */
+ /** ㅽ듃?뚰겕 로그 조회 (Alias) */
  getNetworkLogs: async (params?: SearchParams): Promise<PageResponse<NetworkStatusDetailed>> => {
  return client.get<PageResponse<NetworkStatusDetailed>>('/admin/system/ntwrksvc-monitoring', { params });
  },

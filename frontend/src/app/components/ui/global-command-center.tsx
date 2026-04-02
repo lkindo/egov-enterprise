@@ -1,5 +1,4 @@
-﻿'메뉴';
-
+﻿
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -34,7 +33,7 @@ interface CommandItem {
   name: string;
   url?: string;
   action?: () => void;
-  category: '硫붾돱' | '?≪뀡' | '?쒖뒪님 | '寃님;
+  category: '硫붾돱' | '≪뀡' | '시스템 | '寃님;
   icon?: React.ReactNode;
   description?: string;
 }
@@ -50,7 +49,7 @@ export function GlobalCommandCenter() {
   const { logout } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 1. ?⑥텞님등록 (CMD/Ctrl+K)
+  // 1. ⑥텞님등록 (CMD/Ctrl+K)
   useShortcut('k', true, () => {
     setIsOpen(prev => {
       const next = !prev;
@@ -62,7 +61,7 @@ export function GlobalCommandCenter() {
     });
   });
 
-  // 2. 珥덇린 硫붾돱 ?곗씠님濡쒕뱶
+  // 2. 珥덇린 硫붾돱 데이터濡쒕뱶
   useEffect(() => {
     async function fetchAllMenus() {
       if (!isOpen) return;
@@ -81,7 +80,7 @@ export function GlobalCommandCenter() {
 
           setMenus(allHead);
 
-          // ?섏쐞 硫붾돱 濡쒕뱶
+          // 하위 硫붾돱 濡쒕뱶
           for (const m of head) {
             menuService.getLeftMenus(m.menuNo).then(left => {
               if (left && left.length > 0) {
@@ -110,23 +109,23 @@ export function GlobalCommandCenter() {
     if (isOpen && menus.length === 0) fetchAllMenus();
   }, [isOpen, menus.length]);  // menus.length ?섏〈님異붽?
 
-  // 3. 怨좎젙 ?≪뀡 ?뺤쓽
+  // 3. 怨좎젙 ≪뀡 ?뺤쓽
   const quickActions: CommandItem[] = [
     { id: 'act-notif', name: '스마트 메시징 센터', url: '/admin/notifications', icon: <Bell size={16} />, category: '메뉴', description: '전사 알림 통합 모니터링 및 AI 디스패치' },
-    { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '조직도 및 지능형 회의/?먯썝 愿由? },
+    { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '조직도 및 지능형 회의/?먯썝 관리 },
     { id: 'act-audit', name: '보안 감사 타임머신'/admin/system/audit', icon: <HistoryIcon size={16} />, category: '메뉴', description: '데이터 변경 이력 추적 및 시각적 감사 분석' },
-    { id: 'act-workflow', name: '프로세스 캔버스'/admin/workflow', icon: <GitBranch size={16} />, category: '硫붾돱'메뉴'鍮꾩쫰?덉뒪 ?뚰겕?뚮줈님설계 諛?紐⑤땲?곕쭅' },
-    { id: 'act-form', name: '스마트 서식 엔진', url: '/admin/sanctn/forms', icon: <FileText size={16} />, category: '메뉴', description: '?됱젙 ?쒖떇 설계 諛?臾몄꽌 ?먮룞님愿由? },
+    { id: 'act-workflow', name: '프로세스 캔버스'/admin/workflow', icon: <GitBranch size={16} />, category: '硫붾돱'메뉴'鍮꾩쫰?덉뒪 워크플로우설계 및 紐⑤땲?곕쭅' },
+    { id: 'act-form', name: '스마트 서식 엔진', url: '/admin/sanctn/forms', icon: <FileText size={16} />, category: '메뉴', description: '?됱젙 ?쒖떇 설계 및 臾몄꽌 ?먮룞님관리 },
     { id: 'act-create-post', name: '새 게시글 작성', url: '/admin/community/boards/insertBoardArticle', icon: <FileText size={16} />, category: '액션', description: '공지사항 및 갤러리 게시글 신규 등록' },
-    { id: 'sys-1', name: '마이페이지', url: '/mypage', icon: <User size={16} />, category: '?쒖뒪님 },
-    { id: '시스템', name: '?섍꼍?ㅼ젙', url: '/admin/system/settings', icon: <Settings size={16} />, category: '?쒖뒪님 },
-    { id: '시스템', name: '濡쒓렇?꾩썐', action: logout, icon: <LogOut size={16} />, category: '?쒖뒪님 },
+    { id: 'sys-1', name: '마이페이지', url: '/mypage', icon: <User size={16} />, category: '시스템 },
+    { id: '시스템', name: '?섍꼍ㅼ젙', url: '/admin/system/settings', icon: <Settings size={16} />, category: '시스템 },
+    { id: '시스템', name: '로그?꾩썐', action: logout, icon: <LogOut size={16} />, category: '시스템 },
   ];
 
-  '시스템' 4. ?듯빀 寃님?꾪꽣留?  const filteredItems = useMemo(() => {
+  '시스템' 4. ?듯빀 寃님?꾪꽣留  const filteredItems = useMemo(() => {
     const combined = [...quickActions, ...menus];
 
-    // 寃?됱뼱媛 ?덉쓣 寃쎌슦 ?꾪꽣留?    let results = search
+    // 寃됱뼱媛 ?덉쓣 寃쎌슦 ?꾪꽣留    let results = search
       ? combined.filter(item =>
         item.name.toLowerCase().includes(search.toLowerCase()) ||
         item.category.toLowerCase().includes(search.toLowerCase())
@@ -137,7 +136,7 @@ export function GlobalCommandCenter() {
     if (search && results.length === 0) {
       results = [{
         id: 'global-search',
-        name: `"${search}" 寃?됱뼱濡님ъ씠님?꾩껜 寃님,
+        name: `"${search}" 寃됱뼱濡님ъ씠님?꾩껜 寃님,
         url: `/search?q=${encodeURIComponent(search)}`,
         category: '寃님,
         icon: <Search size={16} />
@@ -282,8 +281,8 @@ export function GlobalCommandCenter() {
                 <Zap size={32} className="text-muted-foreground/20" />
               </div>
               <div>
-                <p className="text-xl font-black text-foreground">寃곌낵瑜?李얠쓣 님?놁뒿?덈떎.</p>
-                <p className="text-sm text-muted-foreground font-bold mt-1">?꾩님님꾩슂?섏떆硫님쒖뒪님愿由ъ옄?먭쾶 臾몄쓽?섏꽭님</p>
+                <p className="text-xl font-black text-foreground">寃곌낵瑜李얠쓣 님?놁뒿?덈떎.</p>
+                <p className="text-sm text-muted-foreground font-bold mt-1">?꾩님님꾩슂?섏떆硫님쒖뒪님관리자?먭쾶 臾몄쓽?섏꽭님</p>
               </div>
             </div>
           )}
@@ -307,7 +306,7 @@ export function GlobalCommandCenter() {
             <div className="flex items-center gap-3">
               <Globe size={14} className="text-emerald-500 animate-pulse" />
               <span className="text-[10px] font-black text-muted-foreground tracking-tight tracking-tighter">
-                ?쒖뒪님?곹깭: <span className="text-emerald-500">理쒖쟻?붾맖</span>
+                시스템?곹깭: <span className="text-emerald-500">理쒖쟻?붾맖</span>
               </span>
             </div>
           </div>

@@ -4,7 +4,7 @@ import { PaginationResponse, SearchParams } from '@/types/foundation/system';
 import { CnsltVO as Consult } from '@/types/business/consult';
 
 /**
- * ?곷떞 愿由님쒕퉬님(Admin)
+ * ?곷떞 관리님쒕퉬님(Admin)
  */
 class CnsltAdminService extends AdminService {
   constructor() {
@@ -16,7 +16,7 @@ class CnsltAdminService extends AdminService {
     return this.get<PaginationResponse<Consult>>('', { ...config, params });
   }
 
-  /** ?곷떞 ?곸꽭 조회 */
+  /** ?곷떞 상세 조회 */
   async getConsultation(cnsltId: string, config?: AxiosRequestConfig): Promise<Consult> {
     return this.get<Consult>(`/${cnsltId}`, config);
   }

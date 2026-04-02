@@ -1,5 +1,4 @@
-﻿'서울/강원';
-
+﻿
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { MapPin } from 'lucide-react';

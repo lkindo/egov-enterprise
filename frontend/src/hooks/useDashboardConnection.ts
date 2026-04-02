@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useWebSocket } from '@/contexts/websocket-context';
 
 /**
- * ?ㅼ떆媛님?쒕낫님접속 異붿쟻 님 */
+ * 실시간쒕낫님접속 異붿쟻 님 */
 export function useDashboardConnection() {
  const { client, isConnected } = useWebSocket();
 
@@ -17,7 +17,7 @@ export function useDashboardConnection() {
       body: JSON.stringify({ timestamp: new Date().toISOString() })
     });
 
-    // ?곌껐 醫낅즺 님?뚮┝
+    // ?곌껐 종료 님?뚮┝
     return () => {
       if (client.connected) {
         client.publish({

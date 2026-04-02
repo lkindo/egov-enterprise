@@ -53,9 +53,9 @@ export default function MemoReportManagementClient() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000 font-sans">
       <HubHeader 
-        title="硫붾え 蹂닿퀬 留ㅽ듃由?뒪" 
+        title="硫붾え 蹂닿퀬 매트릭스" 
         highlight="Report Node" 
-        subtitle="?먭퀬釉님뷀꽣?꾨씪?댁쫰님鍮꾩젙님蹂닿퀬 諛?吏?쒖궗님?꾨떖님?꾪븳 ?듯빀 而ㅻ님덉님댁뀡 ?쇳꽣?낅땲님" 
+        subtitle="?먭퀬釉님뷀꽣?꾨씪?댁쫰님鍮꾩젙님蹂닿퀬 및 吏쒖궗님?꾨떖님?꾪븳 ?듯빀 而ㅻ님덉님댁뀡 ?쇳꽣?낅땲님" 
         icon={Mail} 
         actions={
           <div className="flex gap-4">
@@ -84,7 +84,7 @@ export default function MemoReportManagementClient() {
                    value={searchKeyword}
                    onChange={(e) => setSearchKeyword(e.target.value)}
                    className="h-11 bg-white border-2 border-slate-50 rounded-xl pl-11 font-black text-xs focus:border-primary/20 transition-all" 
-                   placeholder="由ы룷님?ㅼ틦님.." 
+                   placeholder="由ы룷님ㅼ틦님.." 
                  />
               </div>
            </div>
@@ -176,7 +176,7 @@ export default function MemoReportManagementClient() {
                        
                        <CardHeader className="p-12 border-b border-white/5 flex flex-row items-center justify-between relative z-10 bg-white/5 backdrop-blur-3xl">
                           <div className="space-y-1">
-                             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] leading-none">由ы룷님분석湲?(Analytical View)</span>
+                             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] leading-none">由ы룷님분석湲(Analytical View)</span>
                              <h3 className="text-2xl font-black tracking-tighter italic">{selectedReport.reprtSj}</h3>
                           </div>
                           <div className="flex items-center gap-3">
@@ -196,7 +196,7 @@ export default function MemoReportManagementClient() {
                                 </div>
                                 <div className="w-[1px] h-10 bg-white/5" />
                                 <div className="space-y-1">
-                                   <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">?섏떊 ?님/p>
+                                   <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">?섏떊 님/p>
                                    <div className="flex items-center gap-3 font-black text-lg italic tracking-tighter">
                                       <User size={20} className="text-primary" /> {selectedReport.recptnNm}
                                    </div>
@@ -210,7 +210,7 @@ export default function MemoReportManagementClient() {
 
                           <div className="space-y-4">
                              <div className="flex items-center gap-3 text-[10px] font-black text-primary tracking-[0.3em] uppercase">
-                                <Layers size={14} /> 蹂닿퀬 ?댁슜 ?곗씠님?좊떅 (Report Core)
+                                <Layers size={14} /> 蹂닿퀬 이용 데이터?좊떅 (Report Core)
                              </div>
                              <div className="p-8 bg-white/5 border border-white/5 rounded-[3rem] text-sm font-bold text-white/70 leading-relaxed tracking-tight italic">
                                 {selectedReport.reprtCn}
@@ -220,7 +220,7 @@ export default function MemoReportManagementClient() {
                           {selectedReport.drctMatter && (
                              <div className="space-y-4 pt-4">
                                 <div className="flex items-center gap-3 text-[10px] font-black text-emerald-400 tracking-[0.3em] uppercase">
-                                   <Zap size={14} /> ?쒖뒪님吏?쒖궗님(Direct Matter)
+                                   <Zap size={14} /> 시스템吏쒖궗님(Direct Matter)
                                 </div>
                                 <div className="p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-[3rem] text-sm font-black text-emerald-400 tracking-tight flex items-start gap-4">
                                    <MessageSquare size={20} className="shrink-0 animate-pulse mt-1" />
@@ -231,8 +231,8 @@ export default function MemoReportManagementClient() {
                        </CardContent>
 
                        <div className="p-12 border-t border-white/5 bg-white/5 backdrop-blur-3xl flex gap-6 relative z-10">
-                          <Button className="h-16 flex-1 rounded-[2rem] bg-white text-slate-900 font-black tracking-[0.2em] text-[10px] hover:scale-105 transition-all shadow-2xl">?곸꽭 ?섏젙</Button>
-                          <Button className="h-16 flex-[2] rounded-[2rem] bg-primary text-white font-black tracking-[0.4em] text-[10px] hover:scale-105 transition-all shadow-2xl shadow-primary/40 uppercase italic">吏?쒖궗님등록</Button>
+                          <Button className="h-16 flex-1 rounded-[2rem] bg-white text-slate-900 font-black tracking-[0.2em] text-[10px] hover:scale-105 transition-all shadow-2xl">상세 ?섏젙</Button>
+                          <Button className="h-16 flex-[2] rounded-[2rem] bg-primary text-white font-black tracking-[0.4em] text-[10px] hover:scale-105 transition-all shadow-2xl shadow-primary/40 uppercase italic">吏쒖궗님등록</Button>
                        </div>
                     </Card>
                  </motion.div>
@@ -240,7 +240,7 @@ export default function MemoReportManagementClient() {
                  <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none bg-white rounded-[4rem] border-2 border-dashed border-slate-200">
                     <History size={64} className="mb-8" />
                     <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">SELECT REPORT NODE</h3>
-                    <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2 leading-relaxed">?곗씠님?먮쫫님?뺤씤?섎젮硫?br />醫뚯륫 ?ㅽ듃由쇱뿉님由ы룷?몃? ?좏깮?섏꽭님/p>
+                    <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2 leading-relaxed">데이터?먮쫫님확인?섎젮硫br />醫뚯륫 ㅽ듃由쇱뿉님由ы룷?몃? ?좏깮?섏꽭님/p>
                  </div>
               )}
            </AnimatePresence>

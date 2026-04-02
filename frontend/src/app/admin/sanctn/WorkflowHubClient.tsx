@@ -1,5 +1,4 @@
-﻿'활성';
-
+﻿
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -61,15 +60,15 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  </div>
  <div>
  <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">
- ?꾩옄寃곗옱 諛님뚰겕?뚮줈님?덈툕
+ ?꾩옄결재 諛님뚰겕?뚮줈님?덈툕
  </h2>
  <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 ">
- ?듯빀 寃곗옱 諛?媛먯궗 愿由님쇳꽣
+ ?듯빀 결재 및 媛먯궗 관리님쇳꽣
  </p>
  </div>
  </div>
  <Button className="h-14 px-8 rounded-2xl bg-primary text-white font-black tracking-tight shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all gap-3">
- <Zap size={20} /> ?뚰겕?뚮줈님諛고룷
+ <Zap size={20} /> 워크플로우諛고룷
  </Button>
  </div>
 
@@ -80,7 +79,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <Card className="rounded-[3rem] border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100">
  <CardHeader className="bg-slate-50/50 p-8 border-b">
  <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-2">
- <Workflow size={14} className="text-primary" /> 肄붿뼱 ?붿쭊 紐⑤뱢 愿由? </CardTitle>
+ <Workflow size={14} className="text-primary" /> 肄붿뼱 ?붿쭊 紐⑤뱢 관리 </CardTitle>
  </CardHeader>
  <CardContent className="p-4 space-y-2">
  <NavButton icon={<FileText size={20} />} label="Sanction Forms" active={activeTab === 'FORMS'} onClick={() => setActiveTab('FORMS')} />
@@ -112,7 +111,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <CardHeader className="bg-slate-50/50 border-b p-8 space-y-6">
  <div className="flex items-center justify-between">
  <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.3em] ">
- 寃곗옱 ?묒떇 ?몃깽?좊━
+ 결재 ?묒떇 ?몃깽?좊━
  </CardTitle>
  <Button size="icon" className="w-10 h-10 bg-slate-900 rounded-xl"><Plus size={20} /></Button>
  </div>
@@ -148,7 +147,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <p className={cn("text-[9px] font-bold opacity-40")}>ID: {form.id} 님{form.version}</p>
  </div>
  <div className="text-right flex flex-col items-end gap-1">
- <span className="text-[10px] font-black opacity-40">?ъ슜님/span>
+ <span className="text-[10px] font-black opacity-40">사용자/span>
  <span className={cn("text-sm font-black", selectedFormId === form.id ? "text-primary" : "text-slate-900")}>
  {form.usage > 1000 ? (form.usage / 1000).toFixed(1) + 'k' : form.usage}
  </span>
@@ -174,7 +173,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <CardHeader className="bg-slate-50/50 p-10 border-b flex flex-row items-center justify-between">
  <div className="space-y-1">
  <h3 className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-2 ">
- <Layers size={14} className="text-primary" /> ?쒓컖님濡쒖쭅 설계湲?
+ <Layers size={14} className="text-primary" /> ?쒓컖님濡쒖쭅 설계湲
  </h3>
  <h2 className="text-2xl font-black text-slate-900 tracking-tighter ">{forms.find(f => f.id === selectedFormId)?.title}</h2>
  </div>
@@ -187,9 +186,9 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
  <WorkflowNode type="APPROVE" label="Dept. 관리자" date="L1 승인" active />
  <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
- <WorkflowNode type="APPROVE" label="재무 담당자"L2 寃利? />
+ <WorkflowNode type="APPROVE" label="재무 담당자"L2 寃利 />
  <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
- <WorkflowNode type="END" label="시스템 " date="?꾨즺님 />
+ <WorkflowNode type="END" label="시스템 " date="완료님 />
  </div>
  {"완료됨"}
  <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
@@ -197,15 +196,15 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
 
  <div className="p-10 border-t bg-white flex gap-4">
  <Button variant="outline" className="h-14 flex-1 rounded-2xl font-black tracking-tight text-[10px] border-2 opacity-50">濡쒖쭅 ?섏젙</Button>
- <Button className="h-14 flex-[2] bg-slate-900 text-white rounded-2xl font-black tracking-[0.3em] text-[10px] shadow-2xl shadow-slate-900/40">?몄뒪?댁뒪 ?ㅽ뻾</Button>
+ <Button className="h-14 flex-[2] bg-slate-900 text-white rounded-2xl font-black tracking-[0.3em] text-[10px] shadow-2xl shadow-slate-900/40">?몄뒪?댁뒪 ㅽ뻾</Button>
  </div>
  </Card>
  </motion.div>
  ) : (
  <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none grayscale bg-white rounded-[3rem] border-2 border-dashed border-slate-200">
  <GitBranch size={64} className="mb-8 rotate-45" />
- <h3 className="text-2xl font-black text-slate-900 tracking-tighter ">활성?붾맂 ?뚰겕?뚮줈님?놁쓬</h3>
- <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2">濡쒖쭅님?뺤씤?섎젮硫님묒떇님?좏깮?섏꽭님/p>
+ <h3 className="text-2xl font-black text-slate-900 tracking-tighter ">활성?붾맂 워크플로우?놁쓬</h3>
+ <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2">濡쒖쭅님확인?섎젮硫님묒떇님?좏깮?섏꽭님/p>
  </div>
  )}
  </AnimatePresence>

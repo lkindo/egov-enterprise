@@ -1,4 +1,3 @@
-'취소';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { AlertCircle } from 'lucide-react';

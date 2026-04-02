@@ -1,5 +1,4 @@
-﻿"표준코드";
-
+﻿
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { 
@@ -46,13 +45,13 @@ export default function CommonCodeHubClient({
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader title="留덉뒪님?곗씠님嫄곕쾭?뚯뒪" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '肄붾뱶愿由? }, { label: '?듯빀 肄붾뱶 ?덈툕' }]} />
+      <PageHeader title="留덉뒪님데이터嫄곕쾭?뚯뒪" breadcrumbs={[{ label: '?쒖뒪?쒓由 }, { label: '肄붾뱶관리 }, { label: '?듯빀 肄붾뱶 ?덈툕' }]} />
 
       <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-10">
         <HubHeader 
           title="肄붾뱶" 
           highlight="?듯빀 ?덈툕" 
-          subtitle="?쒖뒪님?꾨컲님?쒖? 肄붾뱶, ?됱젙 ?쒖? 諛?湲곌? 노드 ?앸퀎 泥닿퀎님?님?듯빀 嫄곕쾭?뚯뒪 愿由? 
+          subtitle="시스템?꾨컲님?쒖? 肄붾뱶, ?됱젙 ?쒖? 및 湲곌? 노드 ?앸퀎 泥닿퀎님님?듯빀 嫄곕쾭?뚯뒪 관리 
           icon={Database} 
         />
 
@@ -82,7 +81,7 @@ export default function CommonCodeHubClient({
       {/* Code Metrics Section */}
       <HubMetricGrid>
         <HubMetricCard title="현재 등록 肄붾뱶" value={groups.length + details.length} icon={Code2} color="primary" />
-        <HubMetricCard title="?쒖? ?곹깭 媛?⑹꽦" value="활성" icon={ShieldCheck} color="emerald" status="?숆린?붾맖" />
+        <HubMetricCard title="?쒖? ?곹깭 媛⑹꽦" value="활성" icon={ShieldCheck} color="emerald" status="?숆린?붾맖" />
         <HubMetricCard title="硫뷀님곗씠님嫄댁쟾님 value="99.8%" icon={Zap} color="amber" />
         <HubMetricCard title="노드 ?곕룞 ?띾룄" value="1.2s" icon={Timer} color="indigo" />
       </HubMetricGrid>

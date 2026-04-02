@@ -13,14 +13,14 @@ export interface LoginPolicy {
 }
 
 /**
- * 濡쒓렇님?뺤콉 愿由님쒕퉬님(Admin)
+ * 로그인?뺤콉 관리님쒕퉬님(Admin)
  */
 class LoginPolicyAdminService extends AdminService {
   constructor() {
     super('/login-policies');
   }
 
-  /** 濡쒓렇님?뺤콉 紐⑸줉 조회 */
+  /** 로그인?뺤콉 紐⑸줉 조회 */
   async getLoginPolicyList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginPolicy>> {
     return this.get<PageResponse<LoginPolicy>>('', {
       ...config,
@@ -32,17 +32,17 @@ class LoginPolicyAdminService extends AdminService {
     });
   }
 
-  /** 濡쒓렇님?뺤콉 ?곸꽭 조회 */
+  /** 로그인?뺤콉 상세 조회 */
   async getLoginPolicy(emplyrId: string, config?: AxiosRequestConfig): Promise<LoginPolicy> {
     return this.get<LoginPolicy>(`/${emplyrId}`, config);
   }
 
-  /** 濡쒓렇님?뺤콉 ?님(등록/?섏젙) */
+  /** 로그인?뺤콉 님(등록/?섏젙) */
   async saveLoginPolicy(emplyrId: string, data: Partial<LoginPolicy>, config?: AxiosRequestConfig): Promise<void> {
     return this.put(`/${emplyrId}`, data, config);
   }
 
-  /** 濡쒓렇님?뺤콉 님젣 */
+  /** 로그인?뺤콉 님젣 */
   async deleteLoginPolicy(emplyrId: string, config?: AxiosRequestConfig): Promise<void> {
     return this.delete(`/${emplyrId}`, config);
   }

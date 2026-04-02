@@ -4,7 +4,7 @@ import { Survey, SurveyQuestion, SurveyResultStats } from '@/types/business/surv
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * 설문 愿由님쒕퉬님(Admin)
+ * 설문 관리님쒕퉬님(Admin)
  */
 class SurveyAdminService extends ApiService {
   constructor() {
@@ -19,7 +19,7 @@ class SurveyAdminService extends ApiService {
   }
 
   /**
-   * 설문 ?곸꽭 ?뺣낫 조회
+   * 설문 상세 ?뺣낫 조회
    */
   async getSurvey(id: string, config?: AxiosRequestConfig): Promise<Survey> {
     return this.get<Survey>(`/${id}`, config);

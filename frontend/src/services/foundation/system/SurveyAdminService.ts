@@ -4,7 +4,7 @@ import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { Survey as SurveyInfo, Survey as SurveyTemplate } from '@/types/business/survey';
 
 /**
- * 설문 愿由님쒕퉬님(Admin)
+ * 설문 관리님쒕퉬님(Admin)
  */
 class SurveyAdminService extends AdminService {
   constructor() {
@@ -16,7 +16,7 @@ class SurveyAdminService extends AdminService {
     return this.get<PageResponse<SurveyInfo>>('', { ...config, params });
   }
 
-  /** 설문 ?곸꽭 조회 */
+  /** 설문 상세 조회 */
   async getSurvey(qestnrId: string, config?: AxiosRequestConfig): Promise<SurveyInfo> {
     return this.get<SurveyInfo>(`/${qestnrId}`, config);
   }
@@ -36,7 +36,7 @@ class SurveyAdminService extends AdminService {
     return this.delete(`/${qestnrId}`, config);
   }
 
-  /** 설문 ?쒗뵆由?紐⑸줉 조회 */
+  /** 설문 ?쒗뵆由紐⑸줉 조회 */
   async getTemplateList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SurveyTemplate>> {
     return this.get<PageResponse<SurveyTemplate>>('/templates', { ...config, params });
   }

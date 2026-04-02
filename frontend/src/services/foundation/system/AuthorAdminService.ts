@@ -11,7 +11,7 @@ export interface AuthorInfo {
 }
 
 /**
- * 沅뚰븳 洹몃９ 愿由님쒕퉬님(Admin)
+ * 沅뚰븳 洹몃９ 관리님쒕퉬님(Admin)
  */
 class AuthorAdminService extends AdminService {
   constructor() {
@@ -27,7 +27,7 @@ class AuthorAdminService extends AdminService {
     return this.get<PageResponse<AuthorInfo>>('', { ...config, params: finalParams });
   }
 
-  /** 沅뚰븳 洹몃９ ?곸꽭 조회 */
+  /** 沅뚰븳 洹몃９ 상세 조회 */
   async getAuthor(authorCode: string, config?: AxiosRequestConfig): Promise<AuthorInfo> {
     return this.get<AuthorInfo>(`/${authorCode}`, config);
   }
@@ -47,12 +47,12 @@ class AuthorAdminService extends AdminService {
     return this.delete<void>(`/${authorCode}`, config);
   }
 
-  /** 沅뚰븳 洹몃９ ?ㅼ쨷 님젣 */
+  /** 沅뚰븳 洹몃９ ㅼ쨷 님젣 */
   async deleteAuthors(authorCodes: string[], config?: AxiosRequestConfig): Promise<void> {
     return this.delete<void>('', { ...config, data: authorCodes });
   }
 
-  /** 沅뚰븳蹂?硫붾돱 紐⑸줉 조회 */
+  /** 沅뚰븳蹂硫붾돱 紐⑸줉 조회 */
   async getAuthorMenus(authorCode: string, config?: AxiosRequestConfig): Promise<MenuByAuthority[]> {
     return this.get<MenuByAuthority[]>(`/${authorCode}/menus`, config);
   }

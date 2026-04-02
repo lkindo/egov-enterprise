@@ -1,5 +1,4 @@
-﻿'공지사항 관리';
-
+﻿
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -55,7 +54,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                     articles: (bbsRes?.data?.resultList || []).slice(0, 10),
                     users: (userRes?.data?.resultList || []).slice(0, 10),
                     menus: [
-                        { name: '공지사항 愿由?, path: '/admin/system/menus', category: '?쒖뒪님 },
+                        { name: '공지사항 관리, path: '/admin/system/menus', category: '시스템 },
                         { name: '?먯쑀 寃뚯떆님, path: '/admin/community/boards', category: '而ㅻ님덊떚' }
                     ].filter(m => m.name.includes(query))
                 });
@@ -73,7 +72,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
         { id: 'all', label: '전체 결과', icon: <Layout size={16} /> },
         { id: 'articles', label: '게시글', count: results.articles.length, icon: <MessageSquare size={16} /> },
         { id: 'users', label: '?꾩쭅님, count: results.users.length, icon: <UserIcon size={16} /> },
-        { id: 'menus', label: '硫붾돱 諛붾줈媛湲?, count: results.menus.length, icon: <FileText size={16} /> }
+        { id: 'menus', label: '硫붾돱 諛붾줈媛湲, count: results.menus.length, icon: <FileText size={16} /> }
     ];
 
     return (
@@ -86,13 +85,13 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="space-y-2">
                             <h1 className="text-3xl md:text-3xl font-black text-white tracking-tighter ">
-                                Global <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">?명뀛由ъ쟾님/span>
+                                Global <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">인텔리전스/span>
                             </h1>
-                            <p className="text-slate-400 font-medium text-lg">?쒖뒪님?꾩껜?먯꽌 ?꾩슂님?뺣낫瑜님뺣님섍쾶 李얠븘?낅땲님</p>
+                            <p className="text-slate-400 font-medium text-lg">시스템?꾩껜?먯꽌 ?꾩슂님?뺣낫瑜님뺣님섍쾶 李얠븘?낅땲님</p>
                         </div>
                         <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-2xl border border-white/10 backdrop-blur-xl">
                             <Clock className="text-primary" size={18} />
-                            <span className="text-sm font-black text-white tracking-tight">?ㅼ떆媛님몃뜳님활성님/span>
+                            <span className="text-sm font-black text-white tracking-tight">실시간몃뜳님활성님/span>
                         </div>
                     </div>
 
@@ -109,7 +108,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                 type="submit"
                                 className="absolute right-3 top-1/2 -translate-y-1/2 h-14 px-8 rounded-2xl font-black text-lg shadow-xl"
                             >
-                                寃님?ㅽ뻾
+                                寃님ㅽ뻾
                             </Button>
                         </div>
                     </form>
@@ -135,7 +134,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                         <div className="relative z-10 space-y-4">
                             <h4 className="text-sm font-black tracking-tight text-primary">?꾨줈 님/h4>
                             <p className="text-sm text-slate-400 font-bold leading-relaxed">
-                                ?⑥텞님<kbd className="px-1.5 py-0.5 bg-white/10 rounded border border-white/10">Ctrl + K</kbd> 瑜님꾨Ⅴ硫님대뵒?쒕뱺 而ㅻ㎤님?쇳꽣瑜님님님덉뒿?덈떎.
+                                ⑥텞님<kbd className="px-1.5 py-0.5 bg-white/10 rounded border border-white/10">Ctrl + K</kbd> 瑜님꾨Ⅴ硫님대뵒?쒕뱺 而ㅻ㎤님?쇳꽣瑜님님님덉뒿?덈떎.
                             </p>
                         </div>
                     </div>
@@ -164,14 +163,14 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                 </div>
                                 <div className="space-y-2">
                                     <h3 className="text-2xl font-black text-foreground/60">?쇱튂?섎뒗 寃곌낵媛 ?놁뒿?덈떎.</h3>
-                                    <p className="text-sm text-muted-foreground font-medium">寃?됱뼱瑜님ㅼ떆 ?뺤씤?섍굅님?ㅻⅨ ?ㅼ썙?쒕줈 ?쒕룄?대낫?몄슂.</p>
+                                    <p className="text-sm text-muted-foreground font-medium">寃됱뼱瑜님ㅼ떆 확인?섍굅님ㅻⅨ ㅼ썙?쒕줈 ?쒕룄?대낫?몄슂.</p>
                                 </div>
                             </div>
                         ) : (
                             <div className="space-y-10">
                                 {/* Articles Section */}
                                 {(activeTab === 'all' || activeTab === 'articles') && results.articles.length > 0 ? (
-                                    <ResultSection title="寃뚯떆湲" count={results.articles.length}>
+                                    <ResultSection title="게시글" count={results.articles.length}>
                                         {results.articles.map((item: any, idx: number) => (
                                             <ArticleResultItem key={`search-article-${idx}`} item={item} query={query} />
                                         ))}
@@ -191,7 +190,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
 
                                 {/* Menus Section */}
                                 {(activeTab === 'all' || activeTab === 'menus') && results.menus.length > 0 ? (
-                                    <ResultSection title="諛붾줈媛湲? count={results.menus.length}>
+                                    <ResultSection title="諛붾줈媛湲 count={results.menus.length}>
                                         {results.menus.map((item: any, idx: number) => (
                                             <MenuResultItem key={`search-menu-${idx}`} item={item} />
                                         ))}

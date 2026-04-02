@@ -4,7 +4,7 @@ import { Banner } from '@/types/foundation/banner';
 import { AxiosRequestConfig } from 'axios';
 
 /**
- * 諛곕꼫 愿由님쒕퉬님(Admin)
+ * 諛곕꼫 관리님쒕퉬님(Admin)
  */
 class BannerAdminService extends AdminService {
  constructor() {
@@ -27,7 +27,7 @@ class BannerAdminService extends AdminService {
  return this.get<Banner[]>('/reflected', config);
  }
 
- /** 諛곕꼫 ?곸꽭 조회 */
+ /** 諛곕꼫 상세 조회 */
  async getBanner(id: string, config?: AxiosRequestConfig): Promise<Banner> {
  return this.get<Banner>(`/${id}`, config);
  }

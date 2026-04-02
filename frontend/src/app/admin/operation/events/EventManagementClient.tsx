@@ -48,13 +48,13 @@ export default function EventManagementClient() {
           </div>
           <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-3">
-              <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] bg-primary/5 px-2 py-0.5 rounded leading-none">?좎껌 吏꾪뻾 以?/span>
+              <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] bg-primary/5 px-2 py-0.5 rounded leading-none">?좎껌 吏꾪뻾 以</span>
               <span className="text-[9px] font-bold text-slate-300 tracking-tighter">{event.rceptBeginDe} 님{event.rceptEndDe}</span>
             </div>
             <h3 className="text-lg font-black text-slate-900 tracking-tighter truncate leading-tight group-hover:text-primary transition-colors">{event.eventNm}</h3>
             <div className="flex items-center gap-4 opacity-40">
-              <div className="flex items-center gap-1.5"><Users size={10} className="text-primary" /><span className="text-[10px] font-bold">李몄뿬?뺤썝: {event.psncpa}紐?/span></div>
-              <div className="flex items-center gap-1.5"><MapPin size={10} /><span className="text-[10px] font-bold">?ㅽ봽?쇱씤 而⑦띁?곗뒪</span></div>
+              <div className="flex items-center gap-1.5"><Users size={10} className="text-primary" /><span className="text-[10px] font-bold">李몄뿬?뺤썝: {event.psncpa}紐</span></div>
+              <div className="flex items-center gap-1.5"><MapPin size={10} /><span className="text-[10px] font-bold">ㅽ봽?쇱씤 而⑦띁?곗뒪</span></div>
             </div>
           </div>
         </div>
@@ -78,7 +78,7 @@ export default function EventManagementClient() {
       <HubHeader 
         title="?됱궗 ?댁쁺 ?쇳꽣" 
         highlight="Event Ops" 
-        subtitle="?먭퀬釉님뷀꽣?꾨씪?댁쫰님?듯빀 ?됱궗 諛?罹좏럹님愿由?留ㅽ듃由?뒪?낅땲님 紐⑤뱺 ?대깽님?쒕룞님紐⑤땲?곕쭅?섍퀬 ?쒖뼱?섏떗?쒖삤." 
+        subtitle="?먭퀬釉님뷀꽣?꾨씪?댁쫰님?듯빀 ?됱궗 및 罹좏럹님관리매트릭스?낅땲님 紐⑤뱺 ?대깽님?쒕룞님紐⑤땲?곕쭅?섍퀬 ?쒖뼱?섏떗?쒖삤." 
         icon={Calendar} 
         actions={
           <div className="flex gap-4">
@@ -98,7 +98,7 @@ export default function EventManagementClient() {
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8 h-full">
             <HubSectionCard 
                 title="Global Event Matrix" 
-                description="?꾩뿭?곸쑝濡님ㅼ옣님?됱궗 ?쒕룞 諛?罹좏럹님?쒓렇님?ㅽ듃由쇱엯?덈떎." 
+                description="?꾩뿭?곸쑝濡님ㅼ옣님?됱궗 ?쒕룞 및 罹좏럹님?쒓렇님ㅽ듃由쇱엯?덈떎." 
                 icon={LayoutGrid}
             >
                 <div className="space-y-8">
@@ -118,7 +118,7 @@ export default function EventManagementClient() {
                         columns={eventColumns as any}
                         data={displayItems as any}
                         loading={isLoading}
-                        emptyMessage="?앸퀎님?곗씠님?좊떅님議댁옱?섏? ?딆뒿?덈떎."
+                        emptyMessage="?앸퀎님데이터?좊떅님議댁옱?섏? ?딆뒿?덈떎."
                         keyField="eventId"
                         isPremium={false}
                         className="bg-transparent border-none shadow-none"
@@ -172,10 +172,10 @@ export default function EventManagementClient() {
 
       {/* 3. Detailed Stats Matrix (Insights) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-10 px-2 lg:mt-10">
-         <InsightCard label="Total Attendance" value="1.2M+" desc="?꾧퀬님?鍮?15% ?곸듅" trend="+4.5%" type="primary" />
+         <InsightCard label="Total Attendance" value="1.2M+" desc="?꾧퀬님鍮15% ?곸듅" trend="+4.5%" type="primary" />
          <InsightCard label="System Heatmap" value="CRITICAL" desc="李몄뿬 諛吏묐룄 ?믪? 援ъ뿭" trend="HIGH" type="rose" />
-         <InsightCard label="Schedule Matrix" value="Q2 STABLE" desc="遺꾧린蹂?怨꾪쉷 ?뺢꺽 ?숈옉" trend="OK" type="emerald" />
-         <InsightCard label="Network Assets" value="2.4k" desc="?곕룞님?님?띾낫 ?좊떅" trend="+20" type="amber" />
+         <InsightCard label="Schedule Matrix" value="Q2 STABLE" desc="遺꾧린蹂怨꾪쉷 ?뺢꺽 ?숈옉" trend="OK" type="emerald" />
+         <InsightCard label="Network Assets" value="2.4k" desc="?곕룞님님?띾낫 ?좊떅" trend="+20" type="amber" />
       </div>
 
     </div>

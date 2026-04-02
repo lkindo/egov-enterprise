@@ -4,9 +4,9 @@ import { OnlinePollManageVO, OnlinePollItemVO, OnlinePollPartcptnVO, PollSearchP
 import { AxiosRequestConfig } from 'axios';
 
 /**
- * ?⑤씪님설문(Poll) ?쒕퉬님 * 
- * NOTE: 님?쒕퉬?ㅻ뒗 ?덇굅님.do ?쒕쾭 ?붾뱶?ъ씤?몃? ?몄텧?섎뒗 怨쇰룄湲곗쟻 ?ㅽ럺님?좎님섍퀬 ?덉뒿?덈떎.
- * ?먯쭊?곸쑝濡?AdminService 湲곕컲님RESTful ?섍꼍?쇰줈 ?댄뻾님?덉젙?낅땲님
+ * ⑤씪님설문(Poll) ?쒕퉬님 * 
+ * NOTE: 님?쒕퉬ㅻ뒗 레거시.do ?쒕쾭 ?붾뱶ъ씤?몃? ?몄텧?섎뒗 怨쇰룄湲곗쟻 ㅽ럺님?좎님섍퀬 있습니다.
+ * ?먯쭊?곸쑝濡AdminService 湲곕컲님RESTful ?섍꼍?쇰줈 ?댄뻾님?덉젙?낅땲님
  */
 class PollService extends ApiService {
  constructor() {

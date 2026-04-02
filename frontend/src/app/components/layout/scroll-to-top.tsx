@@ -8,8 +8,8 @@ export function ScrollToTop() {
  const searchParams = useSearchParams();
 
  useEffect(() => {
- // ?섏씠吏 寃쎈줈媛 諛붾님뚮쭏님?덈룄님?ㅽ겕濡ㅼ쓣 ?곷떒?쇰줈 ?대룞
- // setTimeout님?ъ슜?섏뿬 ?뚮뜑留님님ㅽ겕濡ㅼ씠 ?뺤떎?섍쾶 ?숈옉?섎룄濡님좊룄
+ // ?섏씠吏 경로媛 諛붾님뚮쭏님?덈룄님ㅽ겕濡ㅼ쓣 ?곷떒?쇰줈 ?대룞
+ // setTimeout님ъ슜?섏뿬 ?뚮뜑留님님ㅽ겕濡ㅼ씠 ?뺤떎?섍쾶 ?숈옉?섎룄濡님좊룄
  const timeoutId = setTimeout(() => {
  window.scrollTo(0, 0);
  }, 10);

@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import TemplateAdminClient from './TemplateAdminClient';
 
 export const metadata = {
- title: '?쒗뵆由?愿由?| ?쒖뒪?쒓?由?,
+ title: '?쒗뵆由관리| ?쒖뒪?쒓由,
 };
 
 export default async function TemplateAdminPage() {

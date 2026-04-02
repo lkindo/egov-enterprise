@@ -13,7 +13,7 @@ export interface Community {
 }
 
 /**
- * 而ㅻ님덊떚 愿由님쒕퉬님(Admin)
+ * 而ㅻ님덊떚 관리님쒕퉬님(Admin)
  */
 class CommunityAdminService extends AdminService {
   constructor() {
@@ -25,7 +25,7 @@ class CommunityAdminService extends AdminService {
     return this.get<PageResponse<Community>>('', { ...config, params });
   }
 
-  /** 而ㅻ님덊떚 ?곸꽭 조회 */
+  /** 而ㅻ님덊떚 상세 조회 */
   async getCommunity(cmmntyId: string, config?: AxiosRequestConfig): Promise<Community> {
     return this.get<Community>(`/${cmmntyId}`, config);
   }
@@ -45,7 +45,7 @@ class CommunityAdminService extends AdminService {
     return this.delete(`/${cmmntyId}`, config);
   }
 
-  /** ?ы?由우슜 紐⑸줉 조회 */
+  /** ы由우슜 紐⑸줉 조회 */
   async getCommunityPortlet(config?: AxiosRequestConfig): Promise<Community[]> {
     return this.get<Community[]>('/portlet', config);
   }

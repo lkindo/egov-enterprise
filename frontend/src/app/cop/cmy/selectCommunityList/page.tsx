@@ -63,7 +63,7 @@ const CommunityListPage = () => {
  <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-4">
  <Users className="w-10 h-10 text-blue-200" /> 而ㅻ님덊떚 怨듦컙
  </CardTitle>
-  <p className="text-blue-100/70 font-medium text-lg">?뚰겕?ㅽ럹?댁뒪 ?댁쓽 ?ㅼ뼇님?뚮え?꾧낵 而ㅻ님덊떚 怨듦컙님留뚮굹蹂댁꽭님</p>
+  <p className="text-blue-100/70 font-medium text-lg">?뚰겕ㅽ럹?댁뒪 ?댁쓽 ㅼ뼇님?뚮え꾧낵 而ㅻ님덊떚 怨듦컙님留뚮굹蹂댁꽭님</p>
  </div>
  </CardHeader>
  <CardContent className="pt-12 px-10">
@@ -78,9 +78,9 @@ const CommunityListPage = () => {
  <TableHeader className="bg-slate-50/50">
  <TableRow className="hover:bg-transparent">
  <TableHead className="w-[80px] text-center font-black text-slate-400 text-sm py-6 tracking-tight">踰덊샇</TableHead>
- <TableHead className="w-[300px] font-black text-slate-900 text-sm py-6 tracking-tight">而ㅻ님덊떚紐?/TableHead>
+ <TableHead className="w-[300px] font-black text-slate-900 text-sm py-6 tracking-tight">而ㅻ님덊떚紐</TableHead>
  <TableHead className="font-black text-slate-400 text-sm py-6 tracking-tight">?뚭컻</TableHead>
- <TableHead className="w-[150px] font-black text-slate-400 text-sm py-6 text-center tracking-tight">愿由ъ옄</TableHead>
+ <TableHead className="w-[150px] font-black text-slate-400 text-sm py-6 text-center tracking-tight">관리자</TableHead>
  <TableHead className="w-[150px] font-black text-slate-400 text-sm py-6 text-center tracking-tight">媛쒖꽕님/TableHead>
  </TableRow>
  </TableHeader>
@@ -163,7 +163,7 @@ const CommunityListPage = () => {
  disabled={page踰덊샇 === totalPages}
  className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-blue-600 transition-all tracking-tight text-sm"
  >
- ?ㅼ쓬
+ ㅼ쓬
  </Button>
  </div>
  )}

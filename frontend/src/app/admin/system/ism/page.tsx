@@ -5,8 +5,8 @@ import IsmClient from './IsmClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 
 export const metadata = {
- title: '?쎌떇寃곗옱 諛님뱀씤 愿由?| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
- description: '?쒖뒪님님諛쒖깮?섎뒗 ?쎌떇 결재 요청님?뱀씤 ?먮뒗 諛섎젮 泥섎━?⑸땲님',
+ title: '?쎌떇결재 諛님뱀씤 관리| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+ description: '시스템님諛쒖깮?섎뒗 ?쎌떇 결재 요청님?뱀씤 또는 諛섎젮 泥섎━합니다',
 };
 
 export default async function InformalSanctionPage() {

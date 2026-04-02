@@ -1,5 +1,4 @@
-﻿"프로그램파일명은 필수입니다.";
-
+﻿
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -42,7 +41,7 @@ const formSchema = z.object({
  progrmStrePath: z.string().min(1, { message: "프로그램한글명은 필수입니다." }),
  progrmKoreanNm: z.string().min(1, { message: "URL은 필수입니다." }),
  progrmDc: z.string().optional(),
- url: z.string().min(1, { message: "URL? ?꾩닔?낅땲님" }),
+ url: z.string().min(1, { message: "URL ?꾩닔?낅땲님" }),
 });
 
 interface ProgramFormProps {
@@ -105,7 +104,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  {isEdit ? '?꾨줈洹몃옩 濡쒖쭅 ?섏젙' : '신규 ?꾨줈洹몃옩 ?먯뀑 등록'}
  </DialogTitle>
  <DialogDescription className="text-center font-bold text-slate-400 text-sm">
- ?명봽?쇱뒪?몃윮泥섏쓽 ?듭떖 ?꾨줈洹몃옩님{isEdit ? '?섏젙' : '?뺤쓽'}?⑸땲님
+ ?명봽?쇱뒪?몃윮泥섏쓽 ?듭떖 ?꾨줈洹몃옩님{isEdit ? '?섏젙' : '?뺤쓽'}합니다
  </DialogDescription>
  </DialogHeader>
 
@@ -117,7 +116,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <FileCode size={12} className="text-primary" /> ?꾨줈洹몃옩 ?뚯씪紐? </FormLabel>
+ <FileCode size={12} className="text-primary" /> ?꾨줈洹몃옩 ?뚯씪紐 </FormLabel>
  <FormControl>
  <Input 
  placeholder="프로그램파일명" 
@@ -138,7 +137,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <Type size={12} className="text-primary" /> ?꾨줈洹몃옩 ?ㅻ챸
+ <Type size={12} className="text-primary" /> ?꾨줈洹몃옩 설명
  </FormLabel>
  <FormControl>
  <Input 
@@ -157,7 +156,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <LinkIcon size={12} className="text-primary" /> ?≪꽭님?붾뱶?ъ씤님 </FormLabel>
+ <LinkIcon size={12} className="text-primary" /> ≪꽭님?붾뱶ъ씤님 </FormLabel>
  <FormControl>
  <Input 
  placeholder="저장경로" 
@@ -177,7 +176,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <FolderOpen size={12} className="text-primary" /> 臾쇰━님?님??μ냼
+ <FolderOpen size={12} className="text-primary" /> 臾쇰━님님μ냼
  </FormLabel>
  <FormControl>
  <Input 
@@ -197,11 +196,11 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-[10px] font-black text-slate-400 tracking-tight ml-2 flex items-center gap-2">
- <Settings2 size={12} className="text-primary" /> 鍮꾩쫰?덉뒪 濡쒖쭅 ?ㅻ챸
+ <Settings2 size={12} className="text-primary" /> 鍮꾩쫰?덉뒪 濡쒖쭅 설명
  </FormLabel>
  <FormControl>
  <Input 
- placeholder="?꾨줈洹몃옩님님븷怨?湲곕뒫님湲곗닠?섏꽭님.." 
+ placeholder="?꾨줈洹몃옩님님븷怨湲곕뒫님湲곗닠?섏꽭님.." 
  {...field} 
  className="h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
  />
@@ -219,14 +218,14 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
  onClick={() => onOpenChange(false)}
  className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all flex-1"
  >
- 痍⑥냼
+ 취소
  </Button>
  <Button 
  type="submit"
  className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
  >
  <Save size={18} />
- ?쒖뒪님?숆린님 </Button>
+ 시스템동기화 </Button>
  </div>
  {isEdit && (
  <Button 

@@ -21,7 +21,7 @@ interface ChartProps {
 }
 
 export function DashboardVisitorChart({ data }: ChartProps) {
- // ?곗씠님媛怨? ?좎쭨 ?щ㎎ 理쒖쟻님(님 20260302 -> 03.02)
+ // 데이터媛怨 ?좎쭨 щ㎎ 理쒖쟻님(님 20260302 -> 03.02)
  const chartData = (data || []).map(item => ({
  name: item.statsDate?.length === 8 ? `${item.statsDate.substring(4, 6)}.${item.statsDate.substring(6, 8)}` : item.statsDate,
  visitors: item.statsCo || 0

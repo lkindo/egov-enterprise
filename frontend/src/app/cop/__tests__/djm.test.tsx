@@ -34,7 +34,7 @@ describe('DeptJobListPage', () => {
  deptJobId: 'JOB_0001',
  deptJobNm: '주간 보고 작성',
  priort: '1', // High
- frstRegisterNm: '?님,
+ frstRegisterNm: '님,
  frstRegisterPnttm: '2024-06-01'
  }
  ],

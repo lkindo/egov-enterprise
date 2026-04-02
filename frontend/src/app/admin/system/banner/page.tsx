@@ -6,8 +6,8 @@ import BannerAdminClient from './BannerAdminClient';
 import { Loader2 } from 'lucide-react';
 
 export const metadata = {
- title: '?쒖뒪님?띾낫 ?붿쭊 理쒖쟻님| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
- description: '?쒖뒪님?꾨컲님?몄텧?섎뒗 諛곕꼫? ?앹뾽 ?먯궛님怨좎꽦님?꾪궎?띿쿂濡?愿由ы빀?덈떎.',
+ title: '시스템?띾낫 ?붿쭊 理쒖쟻님| ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
+ description: '시스템?꾨컲님?몄텧?섎뒗 諛곕꼫 ?앹뾽 ?먯궛님怨좎꽦님?꾪궎?띿쿂濡관리ы빀?덈떎.',
 };
 
 export default async function BannerAdminPage() {
@@ -15,7 +15,7 @@ export default async function BannerAdminPage() {
  const accessToken = cookieStore.get('accessToken')?.value;
  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
- // [Eliminating Waterfalls] 蹂묐젹 ?곗씠님?몄텧
+ // [Eliminating Waterfalls] 蹂묐젹 데이터?몄텧
  let initialBanners: any[] = [];
  let initialPopups: any[] = [];
 
@@ -30,7 +30,7 @@ export default async function BannerAdminPage() {
  } catch (error: any) {
  console.error('Server-side fetch banners/popups failed:', error);
     
-    // 留뚯빟 401 ?먮윭(?몄쬆 留뚮즺)?쇰㈃ 濡쒓렇님?섏씠吏濡?由щ떎?대젆님    if (error.response?.status === 401) {
+    // 留뚯빟 401 ?먮윭(?몄쬆 留뚮즺)?쇰㈃ 로그인?섏씠吏濡리다이렉트    if (error.response?.status === 401) {
       const { redirect } = await import('next/navigation');
       redirect('/login?expired=true&redirect=/admin/system/banner');
     }

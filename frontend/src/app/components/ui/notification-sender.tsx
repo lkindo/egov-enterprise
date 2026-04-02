@@ -1,5 +1,4 @@
-﻿"[알림] 시스템 유지보수 안내\n원활한 서비스 제공을 위해 아래와 같이 정기 점검이 진행될 예정입니다.\n\n- 일시: 2026년 2월 28일 01:00 ~ 05:00\n- 영향: 점검 시간 내 모든 서비스 일시 중단\n\n중요한 데이터는 미리 저장해 주시기 바랍니다.";
-
+﻿
 import React, { useState } from 'react';
 import {
  Send,
@@ -28,7 +27,7 @@ export function NotificationSender() {
  const simulateAIGenerate = () => {
  setIsGenerating(true);
  setTimeout(() => {
- setMessage("[?뚮┝] ?쒖뒪님?좎?蹂댁닔 ?덈궡\n?먰솢님?쒕퉬님?쒓났님?꾪빐 ?꾨옒? 媛숈씠 ?뺢린 ?먭님?吏꾪뻾님?덉젙?낅땲님\n\n- ?쇱떆: 2026님2님28님01:00 ~ 05:00\n- ?곹뼢: ?먭? ?쒓컙 님紐⑤뱺 ?쒕퉬님?쇱떆 以묐떒\n\n以묒슂님?곗씠?곕뒗 誘몃━ ??ν빐 二쇱떆湲?諛붾엻?덈떎.");
+ setMessage("[?뚮┝] 시스템?좎蹂댁닔 ?덈궡\n?먰솢님?쒕퉬님?쒓났님?꾪빐 ?꾨옒 媛숈씠 ?뺢린 ?먭님吏꾪뻾님?덉젙?낅땲님\n\n- ?쇱떆: 2026님2님28님01:00 ~ 05:00\n- ?곹뼢: ?먭? 시간 님紐⑤뱺 ?쒕퉬님?쇱떆 以묐떒\n\n以묒슂님?곗씠?곕뒗 誘몃━ ν빐 二쇱떆湲諛붾엻?덈떎.");
  setIsGenerating(false);
  }, 1500);
  };
@@ -49,7 +48,7 @@ export function NotificationSender() {
  <h2 className="text-3xl font-black tracking-tighter ">諛쒖넚 ?쒖뼱 ?쇳꽣</h2>
  </div>
  <p className="text-sm font-bold text-muted-foreground opacity-60 leading-relaxed max-w-sm">
- ??곸옄?먭쾶 理쒖쟻님梨꾨꼸님?듯빐 以묒슂님硫붿떆吏瑜님꾨떖?⑸땲님 AI ?붿쭊님臾몃㎘님留욌뒗 ?ㅼ븻留ㅻ꼫瑜?異붿쿇?⑸땲님
+ 곸옄?먭쾶 理쒖쟻님梨꾨꼸님?듯빐 以묒슂님硫붿떆吏瑜님꾨떖합니다 AI ?붿쭊님臾몃㎘님留욌뒗 ㅼ븻留ㅻ꼫瑜異붿쿇합니다
  </p>
  </div>
 
@@ -57,7 +56,7 @@ export function NotificationSender() {
  <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">諛쒖넚 梨꾨꼸 ?좏깮</label>
  <div className="grid grid-cols-3 gap-4">
  {[
- { id: 'system', icon: <Bell />, label: '?쒖뒪님 },
+ { id: 'system', icon: <Bell />, label: '시스템 },
  { id: '시스템', icon: <Mail />, label: '?대찓님 },
  { id: 'sms', icon: <MessageSquare />, label: 'SMS' },
  ].map(item => (
@@ -82,7 +81,7 @@ export function NotificationSender() {
  </div>
 
  <div className="space-y-4">
- <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">?섏떊 ??곸옄 ?몃텇님/label>
+ <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">?섏떊 곸옄 ?몃텇님/label>
  <div className="p-6 rounded-[2.5rem] bg-muted/40 border-2 border-dashed border-primary/10 flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group/target">
  <div className="flex items-center gap-4">
  <div className="w-12 h-12 rounded-2xl bg-white border flex items-center justify-center shadow-inner group-hover/target:scale-110 transition-transform">
@@ -90,7 +89,7 @@ export function NotificationSender() {
  </div>
  <div>
  <p className="text-sm font-black text-foreground">?꾩껜 ?꾩쭅님(Active)</p>
- <p className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">1,204紐낆쓽 ?섏떊님?뺤씤님/p>
+ <p className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">1,204紐낆쓽 ?섏떊님확인님/p>
  </div>
  </div>
  <UserCheck className="text-primary opacity-0 group-hover/target:opacity-100 transition-opacity" size={24} />
@@ -101,9 +100,9 @@ export function NotificationSender() {
  <div className="flex-1 p-6 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10">
  <div className="flex items-center gap-2 text-indigo-600 mb-2">
  <ShieldCheck size={16} />
- <span className="text-[9px] font-black tracking-tight leading-none">臾닿껐님寃利님듦낵</span>
+ <span className="text-[9px] font-black tracking-tight leading-none">무결성寃利님듦낵</span>
  </div>
- <p className="text-[10px] font-bold text-indigo-900/40">님硫붿떆吏님以묐났 諛쒖넚 諛⑹? ?꾪꽣님?섑빐 ?덉쟾?섍쾶 蹂댄샇?섍퀬 ?덉뒿?덈떎.</p>
+ <p className="text-[10px] font-bold text-indigo-900/40">님硫붿떆吏님以묐났 諛쒖넚 諛⑹ ?꾪꽣님?섑빐 ?덉쟾?섍쾶 보호?섍퀬 있습니다.</p>
  </div>
  </div>
  </div>
@@ -114,7 +113,7 @@ export function NotificationSender() {
  <div className="flex items-center justify-between mb-8">
  <div className="flex items-center gap-4">
  <div className="p-3 bg-primary/10 rounded-xl text-primary"><Layers size={18} /></div>
- <span className="text-sm font-black tracking-tight">肄섑뀗痢님몄쭛湲?/span>
+ <span className="text-sm font-black tracking-tight">肄섑뀗痢님몄쭛湲</span>
  </div>
  <Button
  variant="ghost"
@@ -123,7 +122,7 @@ export function NotificationSender() {
  className="rounded-xl h-10 px-6 gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-black text-[10px] tracking-tight shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all"
  >
  {isGenerating ? <Zap size={14} className="animate-spin" /> : <Sparkles size={14} />}
- AI 肄섑뀗痢?珥덉븞 ?앹꽦
+ AI 肄섑뀗痢珥덉븞 ?앹꽦
 
  </Button>
  </div>

@@ -12,7 +12,7 @@ interface VirtualScrollListProps<T> {
 }
 
 /**
- * ??됱쓽 ?곗씠?곕? ?⑥쑉?곸쑝濡?蹂댁뿬二쇨린 ?꾪븳 媛?곹솕 由ъ뒪님 */
+ * 됱쓽 ?곗씠?곕? ⑥쑉?곸쑝濡蹂댁뿬二쇨린 ?꾪븳 媛곹솕 由ъ뒪님 */
 export function VirtualScrollList<T>({
  items,
  itemHeight,

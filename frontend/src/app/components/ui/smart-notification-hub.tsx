@@ -1,5 +1,4 @@
-﻿'보안 정책 변경 안내';
-
+﻿
 import React, { useState } from 'react';
 import {
  Bell,
@@ -40,8 +39,8 @@ export function SmartNotificationHub() {
  id: 'nt-001',
  type: 'system',
  title: '보안 ?뺤콉 蹂寃님덈궡',
- content: '?⑥뒪?뚮뱶 留뚮즺 二쇨린 ?뺤콉님30?쇰줈 ?⑥텞?섏뿀?듬땲님',
- recipient: '?꾩껜 ?ъ슜님,
+ content: '⑥뒪?뚮뱶 留뚮즺 二쇨린 ?뺤콉님30?쇰줈 ⑥텞?섏뿀?듬땲님',
+ recipient: '?꾩껜 사용자,
  timestamp: '2026-02-23 10:30:15',
  status: 'sent',
  severity: 'high'
@@ -49,7 +48,7 @@ export function SmartNotificationHub() {
  {
  id: 'nt-002',
  type: 'mail',
- title: '?곌컙 ?깃낵 분석 蹂닿퀬님,
+ title: '?곌컙 ?깃낵 분석 보고,
  content: '2025?꾨룄 ?깃낵 분석 寃곌낵 由ы룷?멸? 諛쒖넚?섏뿀?듬땲님',
  recipient: 'executives@company.com',
  timestamp: '2026-02-23 09:15:00',
@@ -139,9 +138,9 @@ export function SmartNotificationHub() {
  <div className="absolute top-0 right-0 w-3 h-3 bg-rose-500 border-2 border-white rounded-full" />
  </div>
  <div>
-   <h2 className="text-xl font-black tracking-tighter ">?ㅼ떆媛님뚮┝ ?ㅽ듃由?/h2>
+   <h2 className="text-xl font-black tracking-tighter ">실시간뚮┝ ㅽ듃由</h2>
  <div className="flex items-center gap-2 mt-0.5 text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">
-   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 梨꾨꼸 臾닿껐님 理쒖쟻?붾맖
+   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 梨꾨꼸 무결성 理쒖쟻?붾맖
  </div>
  </div>
  </div>
@@ -163,7 +162,7 @@ export function SmartNotificationHub() {
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30" size={14} />
  <input
  className="w-full bg-muted/20 border-none rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/10 transition-all"
-   placeholder="寃님諛님꾪꽣留?.."
+   placeholder="寃님諛님꾪꽣留.."
  value={search}
  onChange={(e) => setSearch(e.target.value)}
  />
@@ -203,7 +202,7 @@ export function SmartNotificationHub() {
  <div className="p-2 bg-background rounded-full border shadow-sm group-hover:rotate-12 transition-transform">
  {getStatusIcon(log.status)}
  </div>
-   <span className="text-[9px] font-black text-muted-foreground opacity-40">{log.status === 'sent' ? '諛쒖넚?꾨즺' : log.status === 'pending' ? '?湲곗쨷' : '?ㅽ뙣'}</span>
+   <span className="text-[9px] font-black text-muted-foreground opacity-40">{log.status === 'sent' ? '諛쒖넚완료' : log.status === 'pending' ? '湲곗쨷' : 'ㅽ뙣'}</span>
  </div>
 
  <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical size={16} /></Button>
@@ -222,8 +221,8 @@ export function SmartNotificationHub() {
  <Zap size={40} className="text-white fill-white" />
  </div>
  <div>
-   <h3 className="text-2xl font-black tracking-tighter">AI ?ㅻ쭏님諛곕떖</h3>
- <p className="text-sm font-bold opacity-80 mt-2 leading-relaxed">?섏떊?먯쓽 업무 ?⑦꽩님분석?섏뿬<br />理쒖쟻님?쒓컙님?뚮┝님諛곕떖?⑸땲님</p>
+   <h3 className="text-2xl font-black tracking-tighter">AI ㅻ쭏님諛곕떖</h3>
+ <p className="text-sm font-bold opacity-80 mt-2 leading-relaxed">?섏떊?먯쓽 업무 ⑦꽩님분석?섏뿬<br />理쒖쟻님시간?뚮┝님諛곕떖합니다</p>
  </div>
  <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-2xl h-14 font-black shadow-xl">諛쒖넚 理쒖쟻님?붿쭊 활성</Button>
  </div>
@@ -252,11 +251,11 @@ export function SmartNotificationHub() {
  </div>
 
  <div className="pt-8 border-t border-primary/5 space-y-4">
-   <h4 className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">吏?ν삎 인사이트</h4>
+   <h4 className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">吏ν삎 인사이트</h4>
  <div className="p-5 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-4">
  <Info size={16} className="text-indigo-500 mt-0.5" />
  <p className="text-[10px] font-bold text-indigo-900/60 leading-relaxed">
- ?ㅼ쟾 10?쒖뿉님11님?ъ씠님諛쒖넚님?뚮┝님?뺤씤?⑥씠 媛님?믪뒿?덈떎. 以묒슂님怨듭님님님쒓컙님?쒖슜?섏꽭님
+ ㅼ쟾 10?쒖뿉님11님ъ씠님諛쒖넚님?뚮┝님확인⑥씠 媛님?믪뒿?덈떎. 以묒슂님怨듭님님님쒓컙님?쒖슜?섏꽭님
  </p>
  </div>
  </div>

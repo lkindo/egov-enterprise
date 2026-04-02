@@ -12,7 +12,7 @@ export interface SmsDto {
   trnsmitPnttm?: string;
   frstRegisterId?: string;
   frstRegistPnttm?: string;
-  recptnTelno?: string; // 諛쒖넚 님?ъ슜님님?덉쓬
+  recptnTelno?: string; // 諛쒖넚 님사용자님?덉쓬
   recipients?: SmsRecptnDto[];
 }
 
@@ -36,7 +36,7 @@ class SmsAdminService extends ApiService {
     return this.get<PageResponse<SmsDto>>('', { ...config, params });
   }
 
-  /** SMS ?곸꽭 조회 */
+  /** SMS 상세 조회 */
   async getSms(smsId: string, config?: AxiosRequestConfig) {
     return this.get<SmsDto>(`/${smsId}`, config);
   }

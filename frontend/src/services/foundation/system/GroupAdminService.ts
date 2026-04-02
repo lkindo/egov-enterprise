@@ -6,7 +6,7 @@ import { GroupManage } from '@/types/foundation/security';
 export type GroupInfo = GroupManage;
 
 /**
- * 洹몃９ 愿由님쒕퉬님(Admin)
+ * 洹몃９ 관리님쒕퉬님(Admin)
  */
 class GroupAdminService extends AdminService {
  constructor() {
@@ -18,7 +18,7 @@ class GroupAdminService extends AdminService {
  return this.get<PageResponse<GroupInfo>>('', { ...config, params });
  }
 
- /** 洹몃９ ?곸꽭 조회 */
+ /** 洹몃９ 상세 조회 */
  async getGroup(groupId: string, config?: AxiosRequestConfig): Promise<GroupInfo> {
  return this.get<GroupInfo>(`/${groupId}`, config);
  }
@@ -38,7 +38,7 @@ class GroupAdminService extends AdminService {
  return this.delete<void>(`/${groupId}`, config);
  }
 
- /** 洹몃９ ?ㅼ쨷 님젣 */
+ /** 洹몃９ ㅼ쨷 님젣 */
  async deleteGroups(groupIds: string[], config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>('', { ...config, data: groupIds });
  }

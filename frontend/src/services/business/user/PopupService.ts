@@ -12,14 +12,14 @@ class PopupUserService extends UserService {
 
  /**
  * 현재 활성 ?앹뾽 紐⑸줉 조회
- * 寃뚯떆 湲곌컙님현재 ?ы븿님怨듯넻 ?앹뾽?ㅼ쓣 諛섑솚?⑸땲님
+ * 寃뚯떆 湲곌컙님현재 ы븿님怨듯넻 ?앹뾽ㅼ쓣 諛섑솚합니다
  */
  async getActivePopups(config?: AxiosRequestConfig): Promise<Popup[]> {
  return this.get<Popup[]>('/active', config);
  }
 
  /**
- * ?뱀젙 ?앹뾽 ?곸꽭 조회
+ * ?뱀젙 ?앹뾽 상세 조회
  */
  async getPopup(popupId: string, config?: AxiosRequestConfig): Promise<Popup> {
  return this.get<Popup>(`/${popupId}`, config);

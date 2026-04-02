@@ -7,7 +7,7 @@ import CommonCodeHubClient from './CommonCodeHubClient';
 
 export const metadata = {
   title: '?듯빀 肄붾뱶 ?덈툕 | ?꾩옄?뺣? ?쒖님꾨젅?꾩썙님,
-  description: '怨듯넻肄붾뱶, ?됱젙肄붾뱶, 湲곌?肄붾뱶 님?쒖뒪님?꾨컲님硫뷀님곗씠?곕? ?듯빀 愿由ы빀?덈떎.',
+  description: '怨듯넻肄붾뱶, ?됱젙肄붾뱶, 湲곌肄붾뱶 님시스템?꾨컲님硫뷀님곗씠?곕? ?듯빀 관리ы빀?덈떎.',
 };
 
 export default async function CommonCodePage({

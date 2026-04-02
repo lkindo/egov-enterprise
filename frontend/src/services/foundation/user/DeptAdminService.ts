@@ -16,12 +16,12 @@ class DeptAdminService extends AdminService {
     super('/depts');
   }
 
-  /** 遺님紐⑸줉 ?섏씠吏?조회 */
+  /** 遺님紐⑸줉 ?섏씠吏조회 */
   async getDeptList(params?: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig) {
     return this.get<PageResponse<DeptDto>>('', { ...config, params });
   }
 
-  /** 遺님?곸꽭 조회 */
+  /** 遺님상세 조회 */
   async getDept(deptId: string, config?: AxiosRequestConfig) {
     return this.get<DeptDto>(`/${deptId}`, config);
   }

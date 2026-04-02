@@ -9,7 +9,7 @@ export interface SystemPolicy {
 }
 
 /**
- * ?쒖뒪님?뺤콉 愿由님쒕퉬님(Admin)
+ * 시스템?뺤콉 관리님쒕퉬님(Admin)
  */
 class PolicyAdminService extends AdminService {
   constructor() {
@@ -21,7 +21,7 @@ class PolicyAdminService extends AdminService {
     return this.get<SystemPolicy[]>('', config);
   }
 
-  /** ?뺤콉 ?곸꽭 조회 */
+  /** ?뺤콉 상세 조회 */
   async getPolicy(type: string, config?: AxiosRequestConfig): Promise<SystemPolicy> {
     return this.get<SystemPolicy>(`/${type}`, config);
   }
