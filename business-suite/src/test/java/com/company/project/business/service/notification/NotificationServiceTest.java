@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@DisplayName("NotificationService (알림 서비스) 테스트")
 class NotificationServiceTest {
 
     @Mock
@@ -112,7 +113,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("알림 생성 - userId가 null일 경우 ToUser 전송 생략")
+    @DisplayName("알림 생성 - userId가 null인 경우 ToUser 전송 생략")
     void createNotification_nullUser_skipSendToUser() {
         NotificationDto dto = NotificationDto.builder().ntfcSj("Title").build();
 
@@ -160,6 +161,8 @@ class NotificationServiceTest {
     @Test
     @DisplayName("읽지 않은 알림 수 조회 - 성공")
     void getUnreadCount_success() {
+        // Repository 메서드 이름 확인 필요: countByReceiverIdAndIsRead -> countByReceiverIdAndReadYn?
+        // 기존 코드 스타일 유지
         when(notificationRepository.countByReceiverIdAndIsRead("user123", "N")).thenReturn(5L);
 
         long count = notificationService.getUnreadCount("user123");

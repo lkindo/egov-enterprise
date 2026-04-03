@@ -1,6 +1,6 @@
 package com.company.project.foundation.service.user;
 
-import com.company.project.foundation.domain.user.dto.Role;
+import com.company.project.foundation.domain.user.entity.Role;
 import com.company.project.foundation.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

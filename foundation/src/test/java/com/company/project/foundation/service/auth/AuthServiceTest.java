@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.service.auth;
+package com.company.project.foundation.service.auth;
 
 import com.company.project.foundation.core.exception.BusinessException;
 import com.company.project.foundation.core.exception.ErrorCode;

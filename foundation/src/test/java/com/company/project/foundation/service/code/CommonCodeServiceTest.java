@@ -89,14 +89,14 @@ class CommonCodeServiceTest {
                     .build();
 
             Page<CommonCodeCategory> page = new PageImpl<>(Arrays.asList(cat1));
-            when(commonCodeCategoryRepository.searchByKeyword(eq("Test"), any(Pageable.class))).thenReturn(page);
+            when(commonCodeCategoryRepository.searchCommonCodeCategories(any(), eq("Test"), any(Pageable.class))).thenReturn(page);
 
             // When
             List<CmmnClCodeDto> result = commonCodeService.selectCmmnClCodeList(searchVO);
 
             // Then
             assertNotNull(result);
-            verify(commonCodeCategoryRepository, times(1)).searchByKeyword(eq("Test"), any(Pageable.class));
+            verify(commonCodeCategoryRepository, times(1)).searchCommonCodeCategories(any(), eq("Test"), any(Pageable.class));
         }
 
         @Test

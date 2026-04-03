@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.domain.auth;
+package com.company.project.foundation.domain.auth;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -1,22 +1,23 @@
 package com.company.project.foundation.domain.user.entity;
-
+ 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
-@DisplayName("UserEntity 테스트")
-class UserEntityTest {
-
+ 
+@DisplayName("User (사용자 엔티티) 테스트")
+class UserTest {
+ 
     @Test
     @DisplayName("사용자 엔티티 빌더 확인")
     void testBuilder() {
-        UserEntity user = UserEntity.builder()
-                .emplyrId("user01")
+        User user = User.builder()
+                .userId("user01")
                 .userNm("홍길동")
                 .password("pwd123")
+                .esntlId("ESNTL_01")
                 .build();
-
-        assertEquals("user01", user.getEmplyrId());
+ 
+        assertEquals("user01", user.getUserId());
         assertEquals("홍길동", user.getUserNm());
     }
 }

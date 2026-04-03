@@ -22,10 +22,10 @@ class PageResponseTest {
 
         PageResponse<String> response = PageResponse.of(page);
 
-        assertEquals(content, response.getContent());
-        assertEquals(100, response.getTotalElements());
-        assertEquals(10, response.getTotalPages());
-        assertEquals(1, response.getPageNumber());
-        assertEquals(10, response.getPageSize());
+        assertEquals(content, response.getList());
+        assertEquals(100, response.getTotal());
+        assertEquals(10, response.getTotalPage());
+        assertEquals(2, response.getPage());
+        assertEquals(10, response.getSize());
     }
 }

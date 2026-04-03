@@ -12,7 +12,7 @@ class WebLogTest {
     void testBuilder() {
         WebLog log = WebLog.builder()
                 .url("/api/v1/test")
-                .rqsterId("user01")
+                .rqesterId("user01")
                 .build();
 
         assertEquals("/api/v1/test", log.getUrl());

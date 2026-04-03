@@ -1,6 +1,11 @@
 package com.company.project.business.service.note;
 
-import com.company.project.business.domain.note.*;
+import com.company.project.business.domain.note.Note;
+import com.company.project.business.domain.note.NoteRecptn;
+import com.company.project.business.domain.note.NoteTrnsmit;
+import com.company.project.business.domain.note.NoteDomainRepository;
+import com.company.project.business.domain.note.NoteRecptnDomainRepository;
+import com.company.project.business.domain.note.NoteTrnsmitDomainRepository;
 import com.company.project.business.service.note.dto.NoteDto;
 import com.company.project.business.service.note.dto.NoteRecipientDto;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -19,16 +24,12 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("NoteServiceImpl 테스트")
+@DisplayName("NoteService (쪽지 서비스) 테스트")
 class NoteServiceImplTest {
 
     @Mock
@@ -59,7 +60,7 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("수신 쪽지 목록 조회")
+    @DisplayName("수신 쪽지 목록 조회 성공")
     void getReceivedNotes_Success() {
         Note note = Note.builder().noteId("N1").noteSj("Title").build();
         NoteRecptn recptn = NoteRecptn.builder().noteRecptnId("R1").note(note).rcverId("user1").build();
@@ -73,7 +74,7 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("수신 쪽지 목록 조회 - 검색어 포함")
+    @DisplayName("수신 쪽지 목록 조회 성공 - 검색어 포함")
     void getReceivedNotes_WithSearchWrd_Success() {
         Note note = Note.builder().noteId("N1").noteSj("Search Result").build();
         NoteRecptn recptn = NoteRecptn.builder().noteRecptnId("R1").note(note).rcverId("user1").build();
@@ -87,7 +88,7 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("발신 쪽지 목록 조회")
+    @DisplayName("발신 쪽지 목록 조회 성공")
     void getSentNotes_Success() {
         Note note = Note.builder().noteId("N1").noteSj("Title").build();
         NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteTrnsmitId("T1").note(note).trnsmiterId("user1").build();
@@ -100,7 +101,7 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("발신 쪽지 목록 조회 - 검색어 포함")
+    @DisplayName("발신 쪽지 목록 조회 성공 - 검색어 포함")
     void getSentNotes_WithSearchWrd_Success() {
         Note note = Note.builder().noteId("N1").noteSj("Sent Search").build();
         NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteTrnsmitId("T1").note(note).trnsmiterId("user1").build();
@@ -114,7 +115,7 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("쪽지 상세 조회 - 수신")
+    @DisplayName("쪽지 상세 조회 - 수신 성공")
     void getNoteDetail_Recv_Success() {
         Note note = Note.builder().noteId("N1").noteSj("Sj").noteCn("Cn").build();
         given(noteRepository.findById("N1")).willReturn(Optional.of(note));
@@ -128,7 +129,7 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("쪽지 상세 조회 - 발신")
+    @DisplayName("쪽지 상세 조회 - 발신 성공")
     void getNoteDetail_Sent_Success() {
         Note note = Note.builder().noteId("N1").build();
         given(noteRepository.findById("N1")).willReturn(Optional.of(note));
@@ -141,7 +142,7 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("쪽지 상세 조회 - 연관 정보(Recptn) 없음")
+    @DisplayName("쪽지 상세 조회 - 연관 데이터(Recptn) 부재 시 성공")
     void getNoteDetail_RelationNotFound_Success() {
         Note note = Note.builder().noteId("N1").noteSj("Sj").build();
         given(noteRepository.findById("N1")).willReturn(Optional.of(note));
@@ -173,7 +174,7 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("쪽지 발송 성공 - 다중 수신인")
+    @DisplayName("쪽지 발송 성공 - 다중 수신자")
     void sendNote_MultipleRecipients_Success() throws Exception {
         given(egovNoteManageIdGnrService.getNextStringId()).willReturn("N_NEW");
         given(egovNoteTrnsmitIdGnrService.getNextStringId()).willReturn("T_NEW");
@@ -207,14 +208,14 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("쪽지 삭제 - 수신")
+    @DisplayName("쪽지 삭제 - 수신 성공")
     void deleteNote_Recv_Success() {
         noteService.deleteNote("R1", "recv");
         verify(noteRecptnRepository).deleteById("R1");
     }
 
     @Test
-    @DisplayName("쪽지 삭제 - 발신")
+    @DisplayName("쪽지 삭제 - 발신 성공")
     void deleteNote_Sent_Success() {
         NoteTrnsmit trnsmit = mock(NoteTrnsmit.class);
         given(noteTrnsmitRepository.findById("T1")).willReturn(Optional.of(trnsmit));

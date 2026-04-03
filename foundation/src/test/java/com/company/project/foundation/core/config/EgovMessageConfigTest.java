@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.core.config;
+package com.company.project.foundation.core.config;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +21,6 @@ class EgovMessageConfigTest {
         // Then
         assertNotNull(messageSource);
         assertTrue(messageSource instanceof ReloadableResourceBundleMessageSource);
-        assertEquals("UTF-8", ((ReloadableResourceBundleMessageSource) messageSource).getDefaultEncoding());
+        assertEquals("UTF-8", org.springframework.test.util.ReflectionTestUtils.getField(messageSource, "defaultEncoding"));
     }
 }

@@ -11,9 +11,9 @@ class InternetSvcGuidanceTest {
     @DisplayName("InternetSvcGuidance 빌더 생성 확인")
     void testBuilder() {
         InternetSvcGuidance guidance = InternetSvcGuidance.builder()
-                .internetSvcNm("서비스명")
+                .intnetSvcNm("서비스명")
                 .build();
 
-        assertEquals("서비스명", guidance.getInternetSvcNm());
+        assertEquals("서비스명", guidance.getIntnetSvcNm());
     }
 }
