@@ -26,6 +26,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("InstitutionCodeService (기관코드 관리) 테스트")
 class InstitutionCodeServiceTest {
 
     @Mock
@@ -38,13 +39,13 @@ class InstitutionCodeServiceTest {
     private InstitutionCodeService institutionCodeService;
 
     @Test
-    @DisplayName("기�?코드 목록 조회 ?�스??)
+    @DisplayName("기관코드 목록 조회 테스트")
     void getInstitutionCodeList_Success() {
         // given
         PageRequest pageable = PageRequest.of(0, 10);
         InstitutionCode entity = InstitutionCode.builder()
                 .insttCode("1234567")
-                .allInsttNm("?�스?�기관")
+                .allInsttNm("테스트기관")
                 .build();
         Page<InstitutionCode> page = new PageImpl<>(Collections.singletonList(entity));
         given(institutionCodeRepository.findAll(pageable)).willReturn(page);
@@ -54,37 +55,37 @@ class InstitutionCodeServiceTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getAllInsttNm()).isEqualTo("?�스?�기관");
+        assertThat(result.getContent().get(0).getAllInsttNm()).isEqualTo("테스트기관");
     }
 
     @Test
-    @DisplayName("기�?코드 검??조회 ?�스??)
+    @DisplayName("기관코드 검색 조회 테스트")
     void getInstitutionCodeList_WithSearch_Success() {
         // given
         PageRequest pageable = PageRequest.of(0, 10);
         InstitutionCode entity = InstitutionCode.builder()
                 .insttCode("1234567")
-                .allInsttNm("?�스?�기관")
+                .allInsttNm("테스트기관")
                 .build();
         Page<InstitutionCode> page = new PageImpl<>(Collections.singletonList(entity));
-        given(institutionCodeRepository.findByAllInsttNmContaining(eq("?�스??), any())).willReturn(page);
+        given(institutionCodeRepository.findByAllInsttNmContaining(eq("테스트"), any())).willReturn(page);
 
         // when
-        Page<InstitutionCodeDto> result = institutionCodeService.getInstitutionCodeList("?�스??, pageable);
+        Page<InstitutionCodeDto> result = institutionCodeService.getInstitutionCodeList("테스트", pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
     }
 
     @Test
-    @DisplayName("기�?코드 ?�세 조회 ?�스??- 존재?��? ?�음")
+    @DisplayName("기관코드 상세 조회 테스트 - 존재하지 않는 경우")
     void getInstitutionCodeDetail_NotFound() {
         given(institutionCodeRepository.findById("NOT_EXIST")).willReturn(Optional.empty());
         assertThat(institutionCodeService.getInstitutionCodeDetail("NOT_EXIST")).isNull();
     }
 
     @Test
-    @DisplayName("기�?코드 ?�신 로그 목록 조회 ?�스??- 공정구분 ?�터 ?�함")
+    @DisplayName("기관코드 수신 로그 목록 조회 테스트 - 공정구분 필터 포함")
     void getInstitutionCodeRecptnList_WithProcessSe_Success() {
         // given
         PageRequest pageable = PageRequest.of(0, 10);
@@ -103,7 +104,7 @@ class InstitutionCodeServiceTest {
     }
 
     @Test
-    @DisplayName("기�?코드 ?�신 처리 ?�스??)
+    @DisplayName("기관코드 수신 처리 테스트")
     void processInstitutionCodeRecptn_Success() {
         // given
         String occrrncDe = "20240314";

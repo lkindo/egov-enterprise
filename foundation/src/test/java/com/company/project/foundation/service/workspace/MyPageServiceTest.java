@@ -20,6 +20,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("MyPageService (마이페이지 서비스) 테스트")
 class MyPageServiceTest {
 
     @Mock
@@ -29,12 +30,12 @@ class MyPageServiceTest {
     private MyPageService myPageService;
 
     @Test
-    @DisplayName("?�성 마이?�이지 콘텐�?조회 ?�스??)
+    @DisplayName("활성 마이페이지 콘텐츠 조회 테스트")
     void getActiveMyPageContents_Success() {
         // given
         MyPageContent entity = MyPageContent.builder()
                 .cntntsId("MYP_001")
-                .cntntsNm("?�스??콘텐�?)
+                .cntntsNm("테스트 콘텐츠")
                 .cntntsUseAt("Y")
                 .build();
         given(myPageContentRepository.findByCntntsUseAt("Y")).willReturn(Collections.singletonList(entity));
@@ -44,20 +45,20 @@ class MyPageServiceTest {
 
         // then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getCntntsNm()).isEqualTo("?�스??콘텐�?);
+        assertThat(result.get(0).getCntntsNm()).isEqualTo("테스트 콘텐츠");
     }
 
     @Test
-    @DisplayName("마이?�이지 콘텐�??�록 ?�스??)
+    @DisplayName("마이페이지 콘텐츠 등록 테스트")
     void createContent_Success() {
         // given
         MyPageContentDto dto = MyPageContentDto.builder()
                 .cntntsId("MYP_001")
-                .cntntsNm("?�스??콘텐�?)
+                .cntntsNm("테스트 콘텐츠")
                 .build();
         MyPageContent entity = MyPageContent.builder()
                 .cntntsId("MYP_001")
-                .cntntsNm("?�스??콘텐�?)
+                .cntntsNm("테스트 콘텐츠")
                 .build();
         given(myPageContentRepository.save(any(MyPageContent.class))).willReturn(entity);
 
@@ -70,15 +71,15 @@ class MyPageServiceTest {
     }
 
     @Test
-    @DisplayName("마이?�이지 콘텐�??�정 ?�스??)
+    @DisplayName("마이페이지 콘텐츠 수정 테스트")
     void updateContent_Success() {
         // given
         MyPageContent entity = MyPageContent.builder()
                 .cntntsId("MYP_001")
-                .cntntsNm("?�전 ?�름")
+                .cntntsNm("이전 이름")
                 .build();
         MyPageContentDto updateDto = MyPageContentDto.builder()
-                .cntntsNm("?�정???�름")
+                .cntntsNm("수정된 이름")
                 .build();
         given(myPageContentRepository.findById("MYP_001")).willReturn(Optional.of(entity));
 
@@ -86,11 +87,11 @@ class MyPageServiceTest {
         myPageService.updateContent("MYP_001", updateDto);
 
         // then
-        assertThat(entity.getCntntsNm()).isEqualTo("?�정???�름");
+        assertThat(entity.getCntntsNm()).isEqualTo("수정된 이름");
     }
 
     @Test
-    @DisplayName("마이?�이지 콘텐�???�� ?�스??)
+    @DisplayName("마이페이지 콘텐츠 삭제 테스트")
     void deleteContent_Success() {
         // when
         myPageService.deleteContent("MYP_001");

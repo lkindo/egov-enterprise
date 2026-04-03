@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.service.auth;
+package com.company.project.foundation.service.auth;
 
 import com.company.project.foundation.domain.auth.AuthorGroupProjection;
 import com.company.project.foundation.domain.auth.DeptAuthorProjection;
@@ -27,7 +27,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UserAuthorityManageService ?뚯뒪??)
+@DisplayName("UserAuthorityManageService (사용자 권한 관리) 테스트")
 class UserAuthorityManageServiceTest {
 
     @Mock
@@ -37,11 +37,11 @@ class UserAuthorityManageServiceTest {
     private UserAuthorityManageService userAuthorityManageService;
 
     @Nested
-    @DisplayName("?ъ슜?먮퀎 沅뚰븳 紐⑸줉 議고쉶 ?뚯뒪??)
+    @DisplayName("사용자별 권한 목록 조회 테스트")
     class SelectUserAuthorityListTests {
 
         @Test
-        @DisplayName("Restored Test Name")
+        @DisplayName("사용자별 권한 목록 조회 성공")
         void testSelectUserAuthorityList_Success() {
             // Given
             ComDefaultVO searchVO = new ComDefaultVO();
@@ -51,7 +51,7 @@ class UserAuthorityManageServiceTest {
 
             AuthorGroupProjection projection = AuthorGroupProjection.builder()
                     .userId("user01")
-                    .userNm("?ъ슜??1")
+                    .userNm("사용자1")
                     .authorCode("ROLE_USER")
                     .build();
 
@@ -70,11 +70,11 @@ class UserAuthorityManageServiceTest {
     }
 
     @Nested
-    @DisplayName("遺?쒕퀎 沅뚰븳 紐⑸줉 議고쉶 ?뚯뒪??)
+    @DisplayName("부서별 권한 목록 조회 테스트")
     class SelectDeptAuthorityListTests {
 
         @Test
-        @DisplayName("Restored Test Name")
+        @DisplayName("부서별 권한 목록 조회 성공")
         void testSelectDeptAuthorityList_Success() {
             // Given
             String deptCode = "DEPT001";
@@ -97,11 +97,11 @@ class UserAuthorityManageServiceTest {
     }
 
     @Nested
-    @DisplayName("?ъ슜??沅뚰븳 ?뺣낫 ????뚯뒪??)
+    @DisplayName("사용자 권한 정보 저장 테스트")
     class SaveUserAuthoritiesTests {
 
         @Test
-        @DisplayName("Restored Test Name")
+        @DisplayName("새로운 사용자 권한 저장 성공")
         void testSaveUserAuthorities_New() {
             // Given
             UserAuthorityDto dto = UserAuthorityDto.builder()
@@ -120,7 +120,7 @@ class UserAuthorityManageServiceTest {
         }
 
         @Test
-        @DisplayName("Restored Test Name")
+        @DisplayName("기존 사용자 권한 수정 성공")
         void testSaveUserAuthorities_Update() {
             // Given
             UserAuthorityDto dto = UserAuthorityDto.builder()
@@ -144,7 +144,7 @@ class UserAuthorityManageServiceTest {
         }
 
         @Test
-        @DisplayName("Restored Test Name")
+        @DisplayName("빈 권한 목록 저장 시 동작 안함")
         void testSaveUserAuthorities_Empty() {
             // When
             userAuthorityManageService.saveUserAuthorities(Collections.emptyList());
@@ -155,11 +155,11 @@ class UserAuthorityManageServiceTest {
     }
 
     @Nested
-    @DisplayName("?ъ슜??沅뚰븳 ??젣 ?뚯뒪??)
+    @DisplayName("사용자 권한 삭제 테스트")
     class DeleteUserAuthoritiesTests {
 
         @Test
-        @DisplayName("Restored Test Name")
+        @DisplayName("사용자 권한 목록 삭제 성공")
         void testDeleteUserAuthorities_Success() {
             // Given
             List<String> uniqIds = Arrays.asList("UNIQ_001", "UNIQ_002");
@@ -172,7 +172,7 @@ class UserAuthorityManageServiceTest {
         }
 
         @Test
-        @DisplayName("Restored Test Name")
+        @DisplayName("null 입력 시 삭제 동작 안함")
         void testDeleteUserAuthorities_Empty() {
             // When
             userAuthorityManageService.deleteUserAuthorities(null);

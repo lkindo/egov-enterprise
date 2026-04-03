@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.service.auth;
+package com.company.project.foundation.service.auth;
 
 import com.company.project.foundation.domain.auth.AuthorRoleProjection;
 import com.company.project.foundation.domain.auth.AuthorityRoleRepository;
@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthorRoleManageService ?뚯뒪??)
+@DisplayName("AuthorRoleManageService (권한 롤 관리) 테스트")
 class AuthorRoleManageServiceTest {
 
     @Mock
@@ -34,11 +34,11 @@ class AuthorRoleManageServiceTest {
     private AuthorRoleManageService authorRoleManageService;
 
     @Nested
-    @DisplayName("沅뚰븳蹂?濡?紐⑸줉 議고쉶 ?뚯뒪??)
+    @DisplayName("권한별 롤 목록 조회 테스트")
     class SelectAuthorRoleListTests {
 
         @Test
-        @DisplayName("Restored Test Name")
+        @DisplayName("권한별 롤 목록 조회 성공")
         void testSelectAuthorRoleList_Success() {
             // Given
             String authorCode = "ROLE_ADMIN";
@@ -67,11 +67,11 @@ class AuthorRoleManageServiceTest {
     }
 
     @Nested
-    @DisplayName("沅뚰븳??濡??좊떦 ?뚯뒪??)
+    @DisplayName("권한에 롤 할당 테스트")
     class InsertAuthorRoleTests {
 
         @Test
-        @DisplayName("Restored Test Name")
+        @DisplayName("권한에 롤 할당 성공")
         void testInsertAuthorRole_Success() {
             // Given
             String authorCode = "ROLE_ADMIN";
@@ -86,7 +86,7 @@ class AuthorRoleManageServiceTest {
         }
 
         @Test
-        @DisplayName("Restored Test Name")
+        @DisplayName("빈 롤 목록 할당 시 초기화만 수행")
         void testInsertAuthorRole_EmptyRoles() {
             // Given
             String authorCode = "ROLE_ADMIN";

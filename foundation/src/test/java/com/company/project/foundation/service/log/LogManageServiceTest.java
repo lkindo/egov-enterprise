@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("LogManageService ?�스??)
+@DisplayName("LogManageService (시스템 로그 관리) 테스트")
 class LogManageServiceTest {
 
     @Mock
@@ -34,11 +34,11 @@ class LogManageServiceTest {
     private LogManageService logManageService;
 
     @Nested
-    @DisplayName("?�스??로그 ?�록 ?�스??)
+    @DisplayName("시스템 로그 등록 테스트")
     class InsertSysLogTests {
 
         @Test
-        @DisplayName("?�스??로그 ?�록 ?�공")
+        @DisplayName("시스템 로그 등록 성공")
         void testInsertSysLog_Success() {
             // Given
             SysLogDto dto = SysLogDto.builder()
@@ -60,11 +60,11 @@ class LogManageServiceTest {
     }
 
     @Nested
-    @DisplayName("?�스??로그 조회 ?�스??)
+    @DisplayName("시스템 로그 조회 테스트")
     class SelectSysLogTests {
 
         @Test
-        @DisplayName("?�스??로그 목록 조회 ?�공")
+        @DisplayName("시스템 로그 목록 조회 성공")
         void testSelectSysLogList_Success() {
             // Given
             ComDefaultVO searchVO = new ComDefaultVO();
@@ -93,7 +93,7 @@ class LogManageServiceTest {
         }
 
         @Test
-        @DisplayName("?�스??로그 목록 �?�?�� 조회 ?�공")
+        @DisplayName("시스템 로그 목록 총 갯수 조회 성공")
         void testSelectSysLogListTotCnt_Success() {
             // Given
             ComDefaultVO searchVO = new ComDefaultVO();
@@ -111,7 +111,7 @@ class LogManageServiceTest {
         }
 
         @Test
-        @DisplayName("?�스??로그 ?�세 조회 ?�공")
+        @DisplayName("시스템 로그 상세 조회 성공")
         void testSelectSysLog_Success() {
             // Given
             String requestId = "REQ_001";
@@ -132,7 +132,7 @@ class LogManageServiceTest {
         }
 
         @Test
-        @DisplayName("존재?��? ?�는 ?�스??로그 조회 ??null 반환")
+        @DisplayName("존재하지 않는 시스템 로그 조회 시 null 반환")
         void testSelectSysLog_NotFound() {
             // Given
             String requestId = "NON_EXIST";

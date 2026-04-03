@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - 권한별 메뉴 필터링 검증
  */
 @IntegrationTest
+@DisplayName("MenuService 통합 테스트")
 class MenuServiceIntegrationTest {
 
     @Autowired

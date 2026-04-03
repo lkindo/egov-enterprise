@@ -1,17 +1,19 @@
 package com.company.project.foundation.service.user;
 
+import com.company.project.foundation.domain.user.dto.Role;
 import com.company.project.foundation.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * UserValidator 기능 �??�약 조건 ?�스??
+ * UserValidator 기능 및 제약 조건 테스트
  */
+@DisplayName("UserValidator (사용자 검증기) 테스트")
 class UserValidatorTest {
 
   @Test
-  @DisplayName("?�원가???�청 검�?- null ?�청??경우 ?�외 발생")
+  @DisplayName("회원가입 요청 검증 - null 요청인 경우 예외 발생")
   void validateUserSignupRequest_fail_withNullRequest() {
     assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(null))
         .isInstanceOf(IllegalArgumentException.class)
@@ -19,13 +21,13 @@ class UserValidatorTest {
   }
 
   @Test
-  @DisplayName("?�원가???�청 검�?- ?�용??ID ?�락 ?�는 ?�식 ?�반 ???�외 발생")
+  @DisplayName("회원가입 요청 검증 - 사용자 ID 누락 또는 형식 위반 시 예외 발생")
   void validateUserSignupRequest_fail_withNullUserId() {
     UserSignupRequest request = new UserSignupRequest(
         null,
         "password123!",
-        "?�스?�사?�자",
-        com.company.project.foundation.domain.user.entity.Role.USER,
+        "테스트사용자",
+        Role.USER,
         "hint",
         "answer");
 
@@ -35,13 +37,13 @@ class UserValidatorTest {
   }
 
   @Test
-  @DisplayName("?�원가???�청 검�?- 비�?번호 복잡???�반 ???�외 발생")
+  @DisplayName("회원가입 요청 검증 - 비밀번호 복잡성 위반 시 예외 발생")
   void validateUserSignupRequest_fail_withInvalidPassword() {
     UserSignupRequest request = new UserSignupRequest(
         "validUserId",
         "short",
-        "?�스?�사?�자",
-        com.company.project.foundation.domain.user.entity.Role.USER,
+        "테스트사용자",
+        Role.USER,
         "hint",
         "answer");
 
@@ -51,7 +53,7 @@ class UserValidatorTest {
   }
 
   @Test
-  @DisplayName("?�메???�식 검�?- ?�못???�식???�메?�인 경우 ?�외 발생")
+  @DisplayName("이메일 형식 검증 - 잘못된 형식의 이메일인 경우 예외 발생")
   void validateEmail_fail_withInvalidEmailFormat() {
     assertThatThrownBy(() -> UserValidator.validateEmail("invalid-email"))
         .isInstanceOf(IllegalArgumentException.class)
@@ -59,7 +61,7 @@ class UserValidatorTest {
   }
 
   @Test
-  @DisplayName("?�메???�식 검�?- ?�효???�메???�식??경우 ?�과")
+  @DisplayName("이메일 형식 검증 - 유효한 이메일 형식인 경우 통과")
   void validateEmail_success() {
     UserValidator.validateEmail("test@example.com");
   }

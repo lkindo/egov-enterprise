@@ -28,7 +28,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("FaqService 테스트")
+@DisplayName("FaqService (FAQ 서비스) 테스트")
 class FaqServiceTest {
 
     @Mock

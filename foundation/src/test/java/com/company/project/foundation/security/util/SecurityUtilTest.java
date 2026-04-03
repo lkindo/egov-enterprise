@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DisplayName("SecurityUtil 테스트")
 class SecurityUtilTest {
 
     @BeforeEach
@@ -29,14 +30,14 @@ class SecurityUtilTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�보가 ?�을 ??�?Optional 반환 ?�인")
+    @DisplayName("인증 정보가 없을 때 빈 Optional 반환 확인")
     void getCurrentUserId_NoAuthentication_ReturnsEmpty() {
         Optional<String> userId = SecurityUtil.getCurrentUserId();
         assertThat(userId).isEmpty();
     }
 
     @Test
-    @DisplayName("Principal??UserDetails?????�용??ID 반환 ?�인")
+    @DisplayName("Principal이 UserDetails일 때 사용된 ID 반환 확인")
     void getCurrentUserId_UserDetailsPrincipal_ReturnsUsername() {
         UserDetails userDetails = new User("testUser", "password", Collections.emptyList());
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
@@ -49,7 +50,7 @@ class SecurityUtilTest {
     }
 
     @Test
-    @DisplayName("Principal??String?????�용??ID 반환 ?�인")
+    @DisplayName("Principal이 String일 때 사용된 ID 반환 확인")
     void getCurrentUserId_StringPrincipal_ReturnsString() {
         Authentication authentication = new UsernamePasswordAuthenticationToken("stringUser", null, Collections.emptyList());
         SecurityContext context = SecurityContextHolder.createEmptyContext();
@@ -61,7 +62,7 @@ class SecurityUtilTest {
     }
 
     @Test
-    @DisplayName("?�당 권한???�을 ??true 반환 ?�인")
+    @DisplayName("해당 권한이 있을 때 true 반환 확인")
     void hasRole_UserHasRole_ReturnsTrue() {
         Authentication authentication = new UsernamePasswordAuthenticationToken("user", null,
                 List.of(new SimpleGrantedAuthority("ROLE_USER")));
@@ -73,7 +74,7 @@ class SecurityUtilTest {
     }
 
     @Test
-    @DisplayName("?�당 권한???�을 ??false 반환 ?�인")
+    @DisplayName("해당 권한이 없을 때 false 반환 확인")
     void hasRole_UserDoesNotHaveRole_ReturnsFalse() {
         Authentication authentication = new UsernamePasswordAuthenticationToken("user", null,
                 List.of(new SimpleGrantedAuthority("ROLE_GUEST")));
@@ -85,7 +86,7 @@ class SecurityUtilTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�보가 ?�을 ??hasRole false 반환 ?�인")
+    @DisplayName("인증 정보가 없을 때 hasRole false 반환 확인")
     void hasRole_NoAuthentication_ReturnsFalse() {
         assertThat(SecurityUtil.hasRole("USER")).isFalse();
     }

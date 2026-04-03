@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@DisplayName("LoginUserAuditorAware (감사자 추적) 테스트")
 class LoginUserAuditorAwareTest {
 
     private LoginUserAuditorAware auditorAware;
@@ -31,14 +32,14 @@ class LoginUserAuditorAwareTest {
     }
 
     @Test
-    @DisplayName("?�증 ?�보가 ?�을 ??SYSTEM 반환")
+    @DisplayName("인증 정보가 없을 때 SYSTEM 반환")
     void getCurrentAuditor_NoAuthentication_ReturnsSystem() {
         Optional<String> auditor = auditorAware.getCurrentAuditor();
         assertThat(auditor).isPresent().contains("SYSTEM");
     }
 
     @Test
-    @DisplayName("?�증?��? ?�았????SYSTEM 반환")
+    @DisplayName("인증되지 않았을 때 SYSTEM 반환")
     void getCurrentAuditor_NotAuthenticated_ReturnsSystem() {
         Authentication authentication = mock(Authentication.class);
         when(authentication.isAuthenticated()).thenReturn(false);
@@ -51,7 +52,7 @@ class LoginUserAuditorAwareTest {
     }
 
     @Test
-    @DisplayName("?�명 ?�용?�일 ??SYSTEM 반환")
+    @DisplayName("익명 사용자일 때 SYSTEM 반환")
     void getCurrentAuditor_AnonymousUser_ReturnsSystem() {
         Authentication authentication = new UsernamePasswordAuthenticationToken("anonymousUser", null, Collections.emptyList());
         SecurityContext context = SecurityContextHolder.createEmptyContext();
@@ -63,7 +64,7 @@ class LoginUserAuditorAwareTest {
     }
 
     @Test
-    @DisplayName("CustomUserDetails?????�용??ID 반환")
+    @DisplayName("CustomUserDetails 사용 시 ID 반환")
     void getCurrentAuditor_CustomUserDetails_ReturnsUserId() {
         CustomUserDetails userDetails = CustomUserDetails.builder()
                 .userId("testUser")
@@ -78,7 +79,7 @@ class LoginUserAuditorAwareTest {
     }
 
     @Test
-    @DisplayName("�??�의 경우 authentication.getName() 반환")
+    @DisplayName("그 외의 경우 authentication.getName() 반환")
     void getCurrentAuditor_OtherPrincipal_ReturnsName() {
         Authentication authentication = new UsernamePasswordAuthenticationToken("directName", null, Collections.emptyList());
         SecurityContext context = SecurityContextHolder.createEmptyContext();

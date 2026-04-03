@@ -16,7 +16,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("PolicyService ?�합 �??�위 ?�스??)
+@DisplayName("PolicyService (시스템 정책 서비스) 테스트")
 class PolicyServiceTest {
 
     @Mock
@@ -26,14 +26,14 @@ class PolicyServiceTest {
     private PolicyService service;
 
     @Test
-    @DisplayName("?�책 조회 ?�공 ?�스??)
+    @DisplayName("정책 조회 성공 테스트")
     void getPolicy_success() {
         // Given
         String type = "PRIVACY";
         SystemPolicy entity = SystemPolicy.builder()
                 .policyType(type)
-                .title("개인?�보처리방침")
-                .content("?�용")
+                .title("개인정보처리방침")
+                .content("내용")
                 .build();
         when(repository.findById(type)).thenReturn(Optional.of(entity));
 
@@ -42,16 +42,16 @@ class PolicyServiceTest {
 
         // Then
         assertThat(result).isPresent();
-        assertThat(result.get().getTitle()).isEqualTo("개인?�보처리방침");
+        assertThat(result.get().getTitle()).isEqualTo("개인정보처리방침");
     }
 
     @Test
-    @DisplayName("?�책 ?�데?�트 ?�스??(?�규 �??�정)")
+    @DisplayName("정책 업데이트 테스트 (신규 및 수정)")
     void updatePolicy_test() {
         // Given
         String type = "COPYRIGHT";
-        String title = "?�?�권";
-        String content = "?�로???�용";
+        String title = "저작권";
+        String content = "새로운 내용";
         
         when(repository.findById(type)).thenReturn(Optional.empty());
 

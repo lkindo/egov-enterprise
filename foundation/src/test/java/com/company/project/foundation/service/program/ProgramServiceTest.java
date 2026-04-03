@@ -25,7 +25,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("ProgramService ?�스??)
+@DisplayName("ProgramService (프로그램 관리) 테스트")
 class ProgramServiceTest {
 
     @Mock
@@ -35,11 +35,11 @@ class ProgramServiceTest {
     private ProgramService programService;
 
     @Nested
-    @DisplayName("?�로그램 목록 조회 ?�스??)
+    @DisplayName("프로그램 목록 조회 테스트")
     class SelectProgramListTests {
 
         @Test
-        @DisplayName("?�로그램 목록 조회 ?�공")
+        @DisplayName("프로그램 목록 조회 성공")
         void testSelectProgrmList_Success() {
             // Given
             ComDefaultVO searchVO = new ComDefaultVO();
@@ -48,7 +48,7 @@ class ProgramServiceTest {
 
             Program prog1 = Program.builder()
                     .progrmFileNm("Prog001")
-                    .progrmKoreanNm("?�로그램 001")
+                    .progrmKoreanNm("프로그램 001")
                     .build();
 
             Page<Program> page = new PageImpl<>(Arrays.asList(prog1));
@@ -65,7 +65,7 @@ class ProgramServiceTest {
         }
 
         @Test
-        @DisplayName("?�워?�로 ?�로그램 목록 조회 ?�공")
+        @DisplayName("키워드로 프로그램 목록 조회 성공")
         void testSelectProgrmList_WithKeyword() {
             // Given
             ComDefaultVO searchVO = new ComDefaultVO();
@@ -92,17 +92,17 @@ class ProgramServiceTest {
     }
 
     @Nested
-    @DisplayName("?�로그램 ?�세 조회 ?�스??)
+    @DisplayName("프로그램 상세 조회 테스트")
     class SelectProgramDetailTests {
 
         @Test
-        @DisplayName("?�로그램 ?�세 조회 ?�공")
+        @DisplayName("프로그램 상세 조회 성공")
         void testSelectProgrmById_Success() {
             // Given
             String progName = "Prog001";
             Program prog = Program.builder()
                     .progrmFileNm(progName)
-                    .progrmKoreanNm("?�로그램 001")
+                    .progrmKoreanNm("프로그램 001")
                     .build();
 
             when(programRepository.findById(progName)).thenReturn(Optional.of(prog));
@@ -116,7 +116,7 @@ class ProgramServiceTest {
         }
 
         @Test
-        @DisplayName("존재?��? ?�는 ?�로그램 조회 ???�외 발생")
+        @DisplayName("존재하지 않는 프로그램 조회 시 예외 발생")
         void testSelectProgrmById_NotFound() {
             // Given
             String progName = "NON_EXIST";
@@ -130,16 +130,16 @@ class ProgramServiceTest {
     }
 
     @Nested
-    @DisplayName("?�로그램 CRUD ?�스??)
+    @DisplayName("프로그램 CRUD 테스트")
     class ProgramCrudTests {
 
         @Test
-        @DisplayName("?�로그램 ?�록 ?�공")
+        @DisplayName("프로그램 등록 성공")
         void testInsertProgrm() {
             // Given
             ProgramDto dto = ProgramDto.builder()
                     .progrmFileNm("NewProg")
-                    .progrmKoreanNm("?�규 ?�로그램")
+                    .progrmKoreanNm("신규 프로그램")
                     .build();
 
             // When
@@ -150,17 +150,17 @@ class ProgramServiceTest {
         }
 
         @Test
-        @DisplayName("?�로그램 ?�정 ?�공")
+        @DisplayName("프로그램 수정 성공")
         void testUpdateProgrm() {
             // Given
             ProgramDto dto = ProgramDto.builder()
                     .progrmFileNm("Prog001")
-                    .progrmKoreanNm("?�정???�름")
+                    .progrmKoreanNm("수정된 이름")
                     .build();
 
             Program existing = Program.builder()
                     .progrmFileNm("Prog001")
-                    .progrmKoreanNm("기존 ?�름")
+                    .progrmKoreanNm("기존 이름")
                     .build();
 
             when(programRepository.findById("Prog001")).thenReturn(Optional.of(existing));
@@ -169,11 +169,11 @@ class ProgramServiceTest {
             programService.updateProgrm(dto);
 
             // Then
-            assertEquals("?�정???�름", existing.getProgrmKoreanNm());
+            assertEquals("수정된 이름", existing.getProgrmKoreanNm());
         }
 
         @Test
-        @DisplayName("?�로그램 ??�� ?�공")
+        @DisplayName("프로그램 삭제 성공")
         void testDeleteProgrm() {
             // Given
             ProgramDto dto = ProgramDto.builder()
@@ -188,7 +188,7 @@ class ProgramServiceTest {
         }
 
         @Test
-        @DisplayName("?�로그램 목록 멀????�� ?�공")
+        @DisplayName("프로그램 목록 멀티 삭제 성공")
         void testDeleteProgrmManageList() {
             // Given
             String ids = "Prog001,Prog002";

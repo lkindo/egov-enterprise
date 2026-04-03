@@ -1,4 +1,4 @@
-﻿package com.company.project.foundation.service.auth;
+package com.company.project.foundation.service.auth;
 
 import com.company.project.foundation.domain.auth.Authority;
 import com.company.project.foundation.domain.auth.AuthorityRepository;
@@ -23,7 +23,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthorManageService (Auth) ?뚯뒪??)
+@DisplayName("AuthorManageService (권한 관리) 테스트")
 class AuthorManageServiceTest {
 
     @Mock
@@ -33,7 +33,7 @@ class AuthorManageServiceTest {
     private AuthorManageService authorManageService;
 
     @Test
-    @DisplayName("Restored Test Name")
+    @DisplayName("권한 목록 조회 성공")
     void selectAuthorList_Success() {
         Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Admin").build();
         Page<Authority> page = new PageImpl<>(List.of(auth));
@@ -47,7 +47,7 @@ class AuthorManageServiceTest {
     }
 
     @Test
-    @DisplayName("Restored Test Name")
+    @DisplayName("권한 전체 건수 조회 성공")
     void selectAuthorListTotCnt_Success() {
         given(authorityRepository.count()).willReturn(50L);
         int result = authorManageService.selectAuthorListTotCnt(new ComDefaultVO());
@@ -55,7 +55,7 @@ class AuthorManageServiceTest {
     }
 
     @Test
-    @DisplayName("Restored Test Name")
+    @DisplayName("권한 상세 조회 성공")
     void selectAuthor_Success() {
         Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Admin").build();
         given(authorityRepository.findById("AUTH_001")).willReturn(Optional.of(auth));
@@ -65,7 +65,7 @@ class AuthorManageServiceTest {
     }
 
     @Test
-    @DisplayName("Restored Test Name")
+    @DisplayName("권한 등록 성공")
     void insertAuthor_Success() {
         AuthorManageDto dto = AuthorManageDto.builder()
                 .authorCode("AUTH_NEW")
@@ -77,7 +77,7 @@ class AuthorManageServiceTest {
     }
 
     @Test
-    @DisplayName("Restored Test Name")
+    @DisplayName("권한 수정 성공")
     void updateAuthor_Success() {
         Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Old").build();
         given(authorityRepository.findById("AUTH_001")).willReturn(Optional.of(auth));
@@ -88,14 +88,14 @@ class AuthorManageServiceTest {
     }
 
     @Test
-    @DisplayName("Restored Test Name")
+    @DisplayName("권한 삭제 성공")
     void deleteAuthor_Success() {
         authorManageService.deleteAuthor("AUTH_001");
         verify(authorityRepository).deleteById("AUTH_001");
     }
 
     @Test
-    @DisplayName("Restored Test Name")
+    @DisplayName("여러 권한 삭제 성공")
     void deleteAuthors_Success() {
         String[] codes = {"AUTH_1", "AUTH_2"};
         authorManageService.deleteAuthors(codes);

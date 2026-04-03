@@ -19,7 +19,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("MberManageService ?�스??)
+@DisplayName("MberManageService (일반 회원 관리) 테스트")
 class MberManageServiceImplTest {
 
     @Mock
@@ -32,7 +32,7 @@ class MberManageServiceImplTest {
     private MberManageServiceImpl mberManageService;
 
     @Test
-    @DisplayName("?�원 ?�세 조회 ?�공")
+    @DisplayName("회원 상세 조회 성공")
     void getMber_Success() {
         // Given
         GeneralUser user = GeneralUser.builder().esntlId("ID1").mberNm("Name").build();
@@ -47,7 +47,7 @@ class MberManageServiceImplTest {
     }
 
     @Test
-    @DisplayName("?�원 ?�록 ?�공")
+    @DisplayName("회원 등록 성공")
     void insertMber_Success() {
         // Given
         GeneralUserDto dto = GeneralUserDto.builder().mberId("test").mberNm("Name").password("pass").build();
@@ -61,7 +61,7 @@ class MberManageServiceImplTest {
     }
 
     @Test
-    @DisplayName("?�원 ?�보 ?�정 ?�공")
+    @DisplayName("회원 정보 수정 성공")
     void updateMber_Success() {
         // Given
         GeneralUser user = GeneralUser.builder().esntlId("ID1").mberNm("Old").build();
@@ -77,7 +77,7 @@ class MberManageServiceImplTest {
     }
 
     @Test
-    @DisplayName("비�?번호 변�??�공")
+    @DisplayName("비밀번호 변경 성공")
     void updatePassword_Success() {
         // Given
         GeneralUser user = GeneralUser.builder().esntlId("ID1").build();

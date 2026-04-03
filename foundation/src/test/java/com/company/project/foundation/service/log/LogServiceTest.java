@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("LogService ?�스??)
+@DisplayName("LogService (공통 로그 서비스) 테스트")
 class LogServiceTest {
 
     @Mock
@@ -30,11 +30,11 @@ class LogServiceTest {
     private LogService logService;
 
     @Nested
-    @DisplayName("로그??로그 기록 ?�스??)
+    @DisplayName("로그인 로그 기록 테스트")
     class LogLoginTests {
 
         @Test
-        @DisplayName("로그??로그 기록 ?�공")
+        @DisplayName("로그인 로그 기록 성공")
         void testLogLogin_Success() {
             // Given
             String userId = "user01";
@@ -63,11 +63,11 @@ class LogServiceTest {
     }
 
     @Nested
-    @DisplayName("최근 로그??로그 목록 조회 ?�스??)
+    @DisplayName("최근 로그인 로그 목록 조회 테스트")
     class GetRecentLoginLogsTests {
 
         @Test
-        @DisplayName("최근 로그??로그 목록 조회 ?�공")
+        @DisplayName("최근 로그인 로그 목록 조회 성공")
         void testGetRecentLoginLogs_Success() {
             // Given
             LoginLog log1 = LoginLog.builder()
@@ -102,7 +102,7 @@ class LogServiceTest {
         }
 
         @Test
-        @DisplayName("로그가 ?�을 ??�?목록 반환")
+        @DisplayName("로그가 없을 때 빈 목록 반환")
         void testGetRecentLoginLogs_Empty() {
             // Given
             when(loginLogRepository.findTop100ByOrderByCreatDtDesc()).thenReturn(List.of());

@@ -4,11 +4,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("공통 코드 DTO 커버리�? ?�스??)
+@DisplayName("공통 코드 DTO 커버리지 테스트")
 class CodeDtoCoverageTest {
 
     @Test
-    @DisplayName("CmmnClCodeDto 커버리�?")
+    @DisplayName("CmmnClCodeDto 커버리지")
     void cmmnClCodeDto_Coverage() {
         CmmnClCodeDto dto = new CmmnClCodeDto();
         dto.setClCode("C1");
@@ -27,7 +27,7 @@ class CodeDtoCoverageTest {
     }
 
     @Test
-    @DisplayName("CmmnCodeDto 커버리�?")
+    @DisplayName("CmmnCodeDto 커버리지")
     void cmmnCodeDto_Coverage() {
         CmmnCodeDto dto = new CmmnCodeDto();
         dto.setClCode("C1");
@@ -45,7 +45,7 @@ class CodeDtoCoverageTest {
     }
 
     @Test
-    @DisplayName("CmmnDetailCodeDto 커버리�?")
+    @DisplayName("CmmnDetailCodeDto 커버리지")
     void cmmnDetailCodeDto_Coverage() {
         CmmnDetailCodeDto dto = new CmmnDetailCodeDto();
         dto.setCodeId("G1");
@@ -63,7 +63,7 @@ class CodeDtoCoverageTest {
     }
 
     @Test
-    @DisplayName("AdministCodeDto 커버리�?")
+    @DisplayName("AdministCodeDto 커버리지")
     void administCodeDto_Coverage() {
         AdministCodeDto dto = AdministCodeDto.builder()
                 .administZoneCode("110")

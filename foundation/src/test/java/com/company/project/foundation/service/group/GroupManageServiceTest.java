@@ -22,7 +22,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("GroupManageService ?�스??)
+@DisplayName("GroupManageService (그룹 관리 서비스) 테스트")
 class GroupManageServiceTest {
 
     @Mock
@@ -32,7 +32,7 @@ class GroupManageServiceTest {
     private GroupManageService groupManageService;
 
     @Test
-    @DisplayName("그룹 목록 조회 ?�공")
+    @DisplayName("그룹 목록 조회 성공")
     void selectGroupList_Success() {
         // Given
         ComDefaultVO searchVO = new ComDefaultVO();
@@ -50,7 +50,7 @@ class GroupManageServiceTest {
     }
 
     @Test
-    @DisplayName("그룹 ?�세 조회 ?�공")
+    @DisplayName("그룹 상세 조회 성공")
     void selectGroup_Success() {
         // Given
         GroupManage entity = GroupManage.builder().groupId("G1").groupNm("Group1").build();
@@ -64,7 +64,7 @@ class GroupManageServiceTest {
     }
 
     @Test
-    @DisplayName("그룹 ?�록 ?�공")
+    @DisplayName("그룹 등록 성공")
     void insertGroup_Success() {
         // Given
         GroupManageDto dto = GroupManageDto.builder().groupNm("New Group").build();
@@ -78,7 +78,7 @@ class GroupManageServiceTest {
     }
 
     @Test
-    @DisplayName("그룹 ?�정 ?�공")
+    @DisplayName("그룹 수정 성공")
     void updateGroup_Success() {
         // Given
         GroupManage entity = GroupManage.builder().groupId("G1").build();

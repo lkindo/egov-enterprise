@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.spy;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("AdministCodeService (행정코드 관리) 테스트")
 class AdministCodeServiceTest {
 
     @Mock
@@ -33,13 +34,13 @@ class AdministCodeServiceTest {
     private AdministCodeService administCodeService;
 
     @Test
-    @DisplayName("?�정코드 목록 조회 ?�스??)
+    @DisplayName("행정코드 목록 조회 성공")
     void getAdministCodeList_Success() {
         // given
         PageRequest pageable = PageRequest.of(0, 10);
         AdministCode entity = AdministCode.builder()
                 .administZoneCode("1100000000")
-                .administZoneNm("?�울?�별??)
+                .administZoneNm("서울특별시")
                 .build();
         Page<AdministCode> page = new PageImpl<>(Collections.singletonList(entity));
         given(administCodeRepository.findAll(pageable)).willReturn(page);
@@ -49,31 +50,31 @@ class AdministCodeServiceTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getAdministZoneNm()).isEqualTo("?�울?�별??);
+        assertThat(result.getContent().get(0).getAdministZoneNm()).isEqualTo("서울특별시");
     }
 
     @Test
-    @DisplayName("?�정코드 검??조회 ?�스??)
+    @DisplayName("행정코드 검색 조회 성공")
     void getAdministCodeList_WithSearch_Success() {
         // given
         PageRequest pageable = PageRequest.of(0, 10);
         AdministCode entity = AdministCode.builder()
                 .administZoneCode("1100000000")
-                .administZoneNm("?�울?�별??)
+                .administZoneNm("서울특별시")
                 .build();
         Page<AdministCode> page = new PageImpl<>(Collections.singletonList(entity));
-        given(administCodeRepository.findByAdministZoneNmContaining(eq("?�울"), any())).willReturn(page);
+        given(administCodeRepository.findByAdministZoneNmContaining(eq("서울"), any())).willReturn(page);
 
         // when
-        Page<AdministCodeDto> result = administCodeService.getAdministCodeList("?�울", pageable);
+        Page<AdministCodeDto> result = administCodeService.getAdministCodeList("서울", pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        verify(administCodeRepository).findByAdministZoneNmContaining(eq("?�울"), any());
+        verify(administCodeRepository).findByAdministZoneNmContaining(eq("서울"), any());
     }
 
     @Test
-    @DisplayName("?�정코드 ?�세 조회 ?�스??- 존재?��? ?�는 경우")
+    @DisplayName("행정코드 상세 조회 테스트 - 존재하지 않는 경우")
     void getAdministCodeDetail_NotFound() {
         // given
         given(administCodeRepository.findById("NOT_FOUND")).willReturn(Optional.empty());
@@ -86,16 +87,16 @@ class AdministCodeServiceTest {
     }
 
     @Test
-    @DisplayName("?�정코드 ?�록 ?�스??)
+    @DisplayName("행정코드 등록 성공")
     void createAdministCode_Success() {
         // given
         AdministCodeDto dto = AdministCodeDto.builder()
                 .administZoneCode("1100000000")
-                .administZoneNm("?�울?�별??)
+                .administZoneNm("서울특별시")
                 .build();
         AdministCode entity = AdministCode.builder()
                 .administZoneCode("1100000000")
-                .administZoneNm("?�울?�별??)
+                .administZoneNm("서울특별시")
                 .build();
         given(administCodeRepository.save(any(AdministCode.class))).willReturn(entity);
 
@@ -108,7 +109,7 @@ class AdministCodeServiceTest {
     }
 
     @Test
-    @DisplayName("?�정코드 ?�정 ?�스??- ?�공")
+    @DisplayName("행정코드 수정 성공")
     void updateAdministCode_Success() {
         // given
         AdministCode entity = spy(AdministCode.builder()
@@ -129,7 +130,7 @@ class AdministCodeServiceTest {
     }
 
     @Test
-    @DisplayName("?�정코드 ?�정 ?�스??- 존재?��? ?�는 경우 ?�패")
+    @DisplayName("행정코드 수정 실패 - 존재하지 않는 경우")
     void updateAdministCode_NotFound_ThrowsException() {
         // given
         given(administCodeRepository.findById("NOT_FOUND")).willReturn(Optional.empty());
@@ -142,7 +143,7 @@ class AdministCodeServiceTest {
     }
 
     @Test
-    @DisplayName("?�정코드 ??�� ?�스??)
+    @DisplayName("행정코드 삭제 성공")
     void deleteAdministCode_Success() {
         // when
         administCodeService.deleteAdministCode("1100000000");

@@ -26,7 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@DisplayName("LoginPolicyManageService ?�스??)
+@DisplayName("LoginPolicyManageService (로그인 정책 관리) 테스트")
 public class LoginPolicyManageServiceTest {
 
     @Mock
@@ -44,7 +44,7 @@ public class LoginPolicyManageServiceTest {
     }
 
     @Test
-    @DisplayName("로그???�책 목록 조회 ?�공")
+    @DisplayName("로그인 정책 목록 조회 성공")
     public void testSelectLoginPolicyList_Success() {
         // Given
         ComDefaultVO searchVO = new ComDefaultVO();
@@ -54,7 +54,7 @@ public class LoginPolicyManageServiceTest {
         User user = User.builder()
                 .userId("user01")
                 .esntlId("essntl01")
-                .userNm("?�용??01")
+                .userNm("사용자01")
                 .password("password123")
                 .build();
         Page<User> userPage = new PageImpl<>(Collections.singletonList(user));
@@ -66,7 +66,7 @@ public class LoginPolicyManageServiceTest {
                 .lmttAt("N")
                 .build();
 
-        // PageRequest.of(0, 10) ??명시?�으�?모킹
+        // PageRequest.of(0, 10) 을 명시적으로 모킹
         Pageable pageable = PageRequest.of(0, 10);
         when(userRepository.findAll(eq(pageable))).thenReturn(userPage);
         when(loginPolicyRepository.findById("user01")).thenReturn(Optional.of(policy));
@@ -83,14 +83,14 @@ public class LoginPolicyManageServiceTest {
     }
 
     @Test
-    @DisplayName("로그???�책 ?�세 조회 ?�공")
+    @DisplayName("로그인 정책 상세 조회 성공")
     public void testSelectLoginPolicy_Success() {
         // Given
         String userId = "user01";
         User user = User.builder()
                 .userId(userId)
                 .esntlId("essntl01")
-                .userNm("?�용??01")
+                .userNm("사용자01")
                 .password("password123")
                 .build();
         LoginPolicy policy = LoginPolicy.builder()
@@ -111,7 +111,7 @@ public class LoginPolicyManageServiceTest {
     }
 
     @Test
-    @DisplayName("로그???�책 ?�록 ?�공")
+    @DisplayName("로그인 정책 등록 성공")
     public void testInsertLoginPolicy() {
         // Given
         LoginPolicyDto dto = LoginPolicyDto.builder()
@@ -129,7 +129,7 @@ public class LoginPolicyManageServiceTest {
     }
 
     @Test
-    @DisplayName("로그???�책 ?�정 ?�공")
+    @DisplayName("로그인 정책 수정 성공")
     public void testUpdateLoginPolicy() {
         // Given
         LoginPolicyDto dto = LoginPolicyDto.builder()
@@ -152,7 +152,7 @@ public class LoginPolicyManageServiceTest {
     }
 
     @Test
-    @DisplayName("로그???�책 ??�� ?�공")
+    @DisplayName("로그인 정책 삭제 성공")
     public void testDeleteLoginPolicy() {
         // Given
         String userId = "user01";

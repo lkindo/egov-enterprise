@@ -45,7 +45,7 @@ class InformalSanctionApiControllerTest {
     }
 
     @Test
-    @DisplayName("수신된 비정형 결재 목록 조회 테스트")
+    @DisplayName("수신한 비정형 결재 목록 조회 테스트")
     @WithMockUser(username = "user01")
     void getReceivedInformalSanctionListTest() throws Exception {
         org.mockito.BDDMockito.given(informalSanctionService.getReceivedInformalSanctionList(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).willReturn(new org.springframework.data.domain.PageImpl<>(java.util.Collections.emptyList()));

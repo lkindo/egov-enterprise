@@ -25,7 +25,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("ScheduleService 테스트")
+@DisplayName("ScheduleService (일정 서비스) 테스트")
 class ScheduleServiceTest {
 
     @Mock

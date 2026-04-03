@@ -24,7 +24,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("MailService 테스트")
+@DisplayName("MailService (메일 서비스) 테스트")
 class MailServiceTest {
 
     @Mock
