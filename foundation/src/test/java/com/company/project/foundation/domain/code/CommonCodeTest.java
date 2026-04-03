@@ -11,6 +11,7 @@ class CommonCodeTest {
     @DisplayName("CommonCode 빌더 생성 확인")
     void testCommonCodeBuilder() {
         CommonCode code = CommonCode.builder()
+                .codeGroupId("GROUP01")
                 .code("C001")
                 .codeNm("코드명")
                 .build();

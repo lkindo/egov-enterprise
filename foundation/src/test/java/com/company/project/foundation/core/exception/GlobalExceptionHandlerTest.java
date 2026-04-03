@@ -26,7 +26,7 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
         assertFalse(response.getBody().success());
-        assertEquals("USER_001", response.getBody().code());
+        assertEquals("U001", response.getBody().code());
     }
 
     @Test

@@ -14,6 +14,6 @@ class ErrorCodeTest {
 
         assertEquals(400, errorCode.getStatus());
         assertEquals("C001", errorCode.getCode());
-        assertEquals("올바르지 않은 입력값입니다.", errorCode.getMessage());
+        assertEquals("Invalid Input Value", errorCode.getMessage());
     }
 }

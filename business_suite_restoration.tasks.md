@@ -16,7 +16,8 @@
 - [x] `business-suite` 전체 테스트 컴파일 및 실행 성공 (`BUILD SUCCESSFUL`).
 - [x] `:foundation:test` 실행 중 `error: illegal character: '\ufeff'` (BOM) 에러 확인 및 스크립트로 일괄 제거 완료.
 - [x] `foundation` 내 모델 변경으로 인한 잔여 컴파일 오류 대부분 해결 (`User`, `PageResponse`, `JwtTokenProvider`, `CommonCodeService` 등).
-- [x] `api-server` 모듈 컴파일 테스트 성공.
-- [ ] `:foundation:test` 최종 확인 중.
+- [x] Runtime 오류 해결: `ErrorCode`, `GlobalExceptionHandler`, `CommonCode`, `AuthApiController`, `MenuApiController`, `DeptApiController`, `ProgramApiController` 테스트들의 데이터/URL/Pageable 설정 수정.
+- [x] `api-server` 모듈 테스트 성공 (`Select-String` 결과 실패 없음).
+- [ ] `:foundation:test` 최종 확인 중 (Docker 의존성 테스트 제외 broad pass 기대).
 
 
