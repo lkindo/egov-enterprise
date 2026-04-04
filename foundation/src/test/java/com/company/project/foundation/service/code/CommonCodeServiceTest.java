@@ -62,7 +62,7 @@ class CommonCodeServiceTest {
                     .build();
 
             Page<CommonCodeCategory> page = new PageImpl<>(Arrays.asList(cat1));
-            when(commonCodeCategoryRepository.findAll(any(Pageable.class))).thenReturn(page);
+            when(commonCodeCategoryRepository.searchCommonCodeCategories(any(), any(), any(Pageable.class))).thenReturn(page);
 
             // When
             List<CmmnClCodeDto> result = commonCodeService.selectCmmnClCodeList(searchVO);
@@ -71,7 +71,7 @@ class CommonCodeServiceTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals("CL001", result.get(0).getClCode());
-            verify(commonCodeCategoryRepository, times(1)).findAll(any(Pageable.class));
+            verify(commonCodeCategoryRepository, times(1)).searchCommonCodeCategories(any(), any(), any(Pageable.class));
         }
 
         @Test

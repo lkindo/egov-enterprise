@@ -12,7 +12,7 @@ class ErrorCodeTest {
     void testErrorCodeFields() {
         ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
 
-        assertEquals(400, errorCode.getStatus());
+        assertEquals(400, errorCode.getStatus().value());
         assertEquals("C001", errorCode.getCode());
         assertEquals("Invalid Input Value", errorCode.getMessage());
     }

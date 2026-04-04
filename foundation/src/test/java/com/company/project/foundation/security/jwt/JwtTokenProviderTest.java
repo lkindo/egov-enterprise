@@ -45,6 +45,7 @@ class JwtTokenProviderTest {
                 .userId("testuser")
                 .userNm("테스트")
                 .esntlId("ESNTL_01")
+                .password("password")
                 .build();
         
         // When

@@ -51,7 +51,7 @@ public class MenuService {
     /**
      * 권한별 메뉴 계층 구조 조회 (캐싱 적용)
      */
-    @Cacheable(value = "menuHierarchy", key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getAuthorities()")
+    @Cacheable(value = "menuHierarchy", key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication()?.authorities ?: 'ROLE_ANONYMOUS'")
     public List<MenuDto> getMenuHierarchy() {
         try {
             log.debug("getMenuHierarchy started (Cache Miss)");

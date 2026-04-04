@@ -19,16 +19,20 @@ public class LoginUserAuditorAware implements AuditorAware<String> {
     public Optional<String> getCurrentAuditor() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated()
-                || authentication.getPrincipal().equals("anonymousUser")) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             return Optional.of("SYSTEM");
         }
 
         Object principal = authentication.getPrincipal();
+        if (principal == null || "anonymousUser".equals(principal)) {
+            return Optional.of("SYSTEM");
+        }
+
         if (principal instanceof CustomUserDetails) {
             return Optional.of(((CustomUserDetails) principal).getUserId());
         }
 
-        return Optional.of(authentication.getName());
+        String name = authentication.getName();
+        return Optional.ofNullable(name).or(() -> Optional.of("SYSTEM"));
     }
 }

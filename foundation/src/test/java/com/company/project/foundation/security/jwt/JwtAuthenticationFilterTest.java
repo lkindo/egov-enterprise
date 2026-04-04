@@ -45,6 +45,7 @@ class JwtAuthenticationFilterTest {
         // Given
         String token = "validToken123";
         Authentication mockAuth = mock(Authentication.class);
+        when(tokenProvider.resolveToken(request)).thenReturn(token);
         when(tokenProvider.validateToken(token)).thenReturn(true);
         when(tokenProvider.getAuthentication(token)).thenReturn(mockAuth);
 
@@ -72,6 +73,7 @@ class JwtAuthenticationFilterTest {
     void doFilterInternal_invalidToken_passWithoutAuthentication() throws ServletException, IOException {
         // Given
         String token = "invalidToken";
+        when(tokenProvider.resolveToken(request)).thenReturn(token);
         when(tokenProvider.validateToken(token)).thenReturn(false);
         request.addHeader("Authorization", "Bearer " + token);
 

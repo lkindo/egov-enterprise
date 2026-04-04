@@ -115,9 +115,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 목록 조회 성공")
   void getUserList_success() {
-    when(userRepository.findAll()).thenReturn(List.of(mockUser));
-    when(userAuthorityRepository.findByUniqIdIn(any())).thenReturn(List.of(
-        UserAuthority.builder().uniqId("USR_1234567890123456").authorCode("ROLE_USER").build()));
+    when(userRepository.findAllWithAuthorities()).thenReturn(java.util.Collections.singletonList(new Object[]{mockUser, null}));
     when(userMapper.toDtoWithAuthority(any(), any()))
         .thenReturn(new UserDto("testUser", "테스트사용자", "USR_1234567890123456", null, null, null, null));
 

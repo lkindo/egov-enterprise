@@ -174,7 +174,7 @@ class UserServiceBusinessLogicExceptionTest {
         @DisplayName("사용자 목록 조회 실패 - DB 연동 오류")
         void getUserList_fail_withDatabaseConnectionError() {
                 // Given
-                when(userRepository.findAll()).thenThrow(new RuntimeException("Database connection error"));
+                when(userRepository.findAllWithAuthorities()).thenThrow(new RuntimeException("Database connection error"));
 
                 // When & Then
                 assertThatThrownBy(() -> userService.getUserList())

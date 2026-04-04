@@ -14,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import java.util.List;
 
@@ -63,6 +64,7 @@ class MenuServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("메뉴 계층 구조 조회 및 캐싱 테스트")
     void testGetMenuHierarchyAndCaching() {
         // Given

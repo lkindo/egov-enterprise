@@ -1,17 +1,14 @@
 package com.company.project.foundation.domain.login;
 
+import com.company.project.foundation.support.PersistenceTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@DataJpaTest
-@ActiveProfiles("test")
 @DisplayName("LoginPolicyRepository 테스트")
-class LoginPolicyRepositoryTest {
+class LoginPolicyRepositoryTest extends PersistenceTestSupport {
 
     @Autowired
     private LoginPolicyRepository repository;

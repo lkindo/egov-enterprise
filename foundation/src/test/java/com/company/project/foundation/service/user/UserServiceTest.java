@@ -66,6 +66,7 @@ class UserServiceTest {
                 .userId("user01")
                 .esntlId("ESNTL_01")
                 .userNm("테스트유저")
+                .password("password")
                 .build();
         when(userRepository.findById("user01")).thenReturn(Optional.of(user));
         when(userAuthorityRepository.findById("ESNTL_01")).thenReturn(Optional.empty());
