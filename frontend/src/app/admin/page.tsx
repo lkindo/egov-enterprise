@@ -103,7 +103,7 @@ export default function AdminDashboardPage() {
         icon={LayoutDashboard}
         actions={
           <div className="flex gap-4 p-2 items-center">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 italic font-black text-[9px] tracking-widest shadow-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-950 rounded-xl border border-emerald-200 italic font-black text-[9px] tracking-widest shadow-sm">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               시스템 상태: 정상
             </div>
@@ -164,8 +164,8 @@ export default function AdminDashboardPage() {
                 <TrendingUp size={24} />
               </div>
               <div>
-                <h3 className="text-lg font-black text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">Activity Intelligence</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">시스템 트래픽 및 유저 활동 분석</p>
+                <h2 className="text-lg font-black text-foreground tracking-tight underline decoration-indigo-500/20 decoration-4 underline-offset-4">Activity Intelligence</h2>
+                <p className="text-[10px] font-bold text-slate-700 uppercase tracking-widest mt-1">시스템 트래픽 및 유저 활동 분석</p>
               </div>
             </div>
           </div>
@@ -179,8 +179,8 @@ export default function AdminDashboardPage() {
                 <Users size={24} />
               </div>
               <div>
-                <h3 className="text-lg font-black text-foreground tracking-tight">Identity Cluster</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest mt-1">사용자 권한 그룹 분포</p>
+                <h2 className="text-lg font-black text-foreground tracking-tight">Identity Cluster</h2>
+                <p className="text-[10px] font-bold text-slate-700 uppercase tracking-widest mt-1">사용자 권한 그룹 분포</p>
               </div>
             </div>
           </div>
@@ -199,17 +199,17 @@ export default function AdminDashboardPage() {
                   <Cpu size={20} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">컴퓨팅 노드 헬스체크</h3>
-                  <p className="text-[10px] font-medium text-muted-foreground mt-0.5">실시간 리소스 소비 모니터링</p>
+                  <h2 className="text-sm font-bold text-foreground">컴퓨팅 노드 헬스체크</h2>
+                  <p className="text-[10px] font-medium text-slate-700 mt-0.5">실시간 리소스 소비 모니터링</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">평균 부하</p>
+                  <p className="text-[10px] font-bold text-slate-600 uppercase">평균 부하</p>
                   <p className="text-lg font-bold tabular-nums">18.4%</p>
                 </div>
                 <div className="w-px h-8 bg-border/50" />
-                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="시스템 노드 상세 보기">
                   <ArrowUpRight size={18} />
                 </Button>
               </div>
@@ -229,7 +229,7 @@ export default function AdminDashboardPage() {
                   </div>
                   <span className="text-sm font-bold text-foreground">데이터베이스</span>
                 </div>
-                <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] font-bold px-3 py-1">HEALTHY</Badge>
+                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-black px-3 py-1">HEALTHY</Badge>
               </div>
 
               <div className="flex items-end justify-between">
@@ -251,16 +251,16 @@ export default function AdminDashboardPage() {
                   </div>
                   <span className="text-sm font-bold text-foreground">글로벌 지연시간</span>
                 </div>
-                <div className="flex items-center gap-1 text-emerald-500">
+                <div className="flex items-center gap-1 text-emerald-800">
                   <TrendingUp size={12} />
-                  <span className="text-[10px] font-bold uppercase">-4MS OPTIMIZED</span>
+                  <span className="text-[10px] font-black uppercase">-4MS OPTIMIZED</span>
                 </div>
               </div>
 
               <div className="flex items-end justify-between">
                 <div className="space-y-1">
                   <p className="text-3xl font-black tracking-tighter uppercase">12 ms</p>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase">Response time (Seoul Hub)</p>
+                  <p className="text-[10px] font-black text-slate-600 uppercase">Response time (Seoul Hub)</p>
                 </div>
                 <div className="w-24 h-1 font-black bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
               </div>
@@ -275,7 +275,7 @@ export default function AdminDashboardPage() {
                 <div className="p-2 bg-slate-900 rounded-xl text-white shadow-xl">
                   <Clock size={18} />
                 </div>
-                <h3 className="text-sm font-black text-foreground uppercase tracking-widest leading-none">Audit History</h3>
+                <h2 className="text-sm font-black text-foreground uppercase tracking-widest leading-none">Audit History</h2>
               </div>
               <Link href="/admin/system/audit" className="text-[10px] font-black text-primary hover:underline uppercase tracking-tighter italic underline-offset-4 decoration-primary/30">Explore All</Link>
             </div>
@@ -291,7 +291,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <p className="text-xs font-black text-slate-900 group-hover:text-white uppercase tracking-tight">Integrity Probe</p>
-                  <p className="text-[10px] font-bold text-slate-400">Last check: 2 hours ago</p>
+                  <p className="text-[10px] font-bold text-slate-600">Last check: 2 hours ago</p>
                 </div>
               </div>
             </div>
@@ -318,20 +318,20 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
             {icon}
           </div>
           <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{trend}</span>
-            <ArrowUpRight size={14} className="text-primary opacity-40 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{trend}</span>
+            <ArrowUpRight size={14} className="text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </div>
         </div>
 
         <div className="space-y-4">
-          <p className="text-[10px] font-black text-slate-300 tracking-[0.4em] uppercase font-mono">{title}</p>
-          <h4 className="text-4xl font-black text-slate-900 tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h4>
-          <p className="text-[11px] font-black text-slate-400 leading-tight uppercase opacity-60">
+          <p className="text-[10px] font-black text-slate-700 tracking-[0.4em] uppercase font-mono">{title}</p>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h2>
+          <p className="text-[11px] font-bold text-slate-700 leading-tight uppercase">
             {description}
           </p>
         </div>
 
-        <div className="absolute right-[-20px] bottom-[-20px] opacity-[0.03] rotate-12 group-hover:rotate-6 transition-transform duration-1000 pointer-events-none scale-150">
+        <div className="absolute right-[-20px] bottom-[-20px] opacity-[0.05] rotate-12 group-hover:rotate-6 transition-transform duration-1000 pointer-events-none scale-150">
           {icon}
         </div>
       </div>

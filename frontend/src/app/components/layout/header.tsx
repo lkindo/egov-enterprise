@@ -97,7 +97,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center px-4 md:px-6 gap-4">
         {/* Mobile Sidebar Toggle */}
-        <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground mr-1" onClick={toggleSidebar}>
+        <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground mr-1" onClick={toggleSidebar} aria-label="사이드바 열기/닫기">
           {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </Button>
 
@@ -107,12 +107,12 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
           </div>
           <div className="hidden sm:flex flex-col">
             <span className="text-sm font-bold leading-tight text-foreground">전자정부 5.0</span>
-            <span className="text-[10px] text-muted-foreground font-semibold tracking-tight">전자정부 포털</span>
+            <span className="text-[10px] text-slate-600 font-semibold tracking-tight">전자정부 포털</span>
           </div>
         </Link>
 
         <div className="flex-1 flex justify-center">
-          <nav className="hidden xl:flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border/50">
+          <nav className="hidden xl:flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border/50" aria-label="도메인 네비게이션">
             {menus.map((menu, index) => {
               const Icon = DOMAIN_ICON_MAP[menu.menuNo] || CircleDot;
               const isActive = activeMenuNo === menu.menuNo;
@@ -126,11 +126,11 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
                     "px-4 h-9 font-semibold text-sm transition-all rounded-lg gap-2",
                     isActive
                       ? "bg-background text-primary shadow-sm border border-border/50"
-                      : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                      : "text-slate-600 hover:text-foreground hover:bg-background/50"
                   )}
                   onClick={() => setActiveMenuNo(menu.menuNo)}
                 >
-                  <Icon size={14} className={cn("transition-transform", isActive ? "scale-110" : "opacity-60")} />
+                  <Icon size={14} className={cn("transition-transform", isActive ? "scale-110" : "opacity-100")} />
                   {menu.menuNm}
                 </Button>
               );
@@ -142,6 +142,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
           <Link
             href="/help"
             title="메뉴구성 설명"
+            aria-label="메뉴구성 설명"
             className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "hidden md:flex text-muted-foreground")}
           >
             <Info size={20} />
@@ -153,6 +154,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
             className="text-muted-foreground"
             title="테마 변경"
+            aria-label="테마 변경"
           >
             {mounted ? (resolvedTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />) : <div className="w-5 h-5" />}
           </Button>
@@ -161,6 +163,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
             variant="ghost"
             size="icon"
             onClick={() => setIsNotifOpen(true)}
+            aria-label="알림 관리"
             className={cn(
               "relative text-muted-foreground transition-all group",
               unreadCount > 0 && "text-primary bg-primary/5 ring-4 ring-primary/5"
@@ -178,15 +181,15 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
             {user ? (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-9 hover:bg-accent rounded-full">
+                  <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-9 hover:bg-accent rounded-full" aria-label="사용자 계정 메뉴">
                     <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
                       <User size={16} />
                     </div>
                     <div className="flex flex-col items-start mr-1 hidden sm:flex">
                       <span className="text-sm font-bold leading-none">{user.name}</span>
-                      <span className="text-[10px] text-muted-foreground font-semibold mt-0.5">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
+                      <span className="text-[10px] text-slate-600 font-semibold mt-0.5">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
                     </div>
-                    <ChevronDown size={14} className="text-muted-foreground opacity-50 hidden sm:block" />
+                    <ChevronDown size={14} className="text-slate-600 hidden sm:block" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-56 p-2 mt-1" align="end">

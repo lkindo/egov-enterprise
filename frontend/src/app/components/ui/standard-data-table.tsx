@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -115,11 +114,11 @@ const MobileCard = memo(function MobileCard({
         <div className="flex items-center gap-3 flex-1 overflow-hidden">
           {enableSelection && (
             <div onClick={(e) => e.stopPropagation()} className="relative z-10">
-              <Checkbox checked={isSelected} onCheckedChange={onToggle} className="w-6 h-6 rounded-lg" />
+              <Checkbox checked={isSelected} onCheckedChange={onToggle} className="w-6 h-6 rounded-lg" aria-label="항목 선택" />
             </div>
           )}
           <div className="flex flex-col gap-1 overflow-hidden">
-            <span className="text-[10px] font-black text-primary/60 uppercase tracking-[0.2em]">{columns[0].header}</span>
+            <span className="text-[10px] font-black text-primary/90 uppercase tracking-[0.2em]">{columns[0].header}</span>
             <div className="font-[number:var(--font-weight-hub-title)] text-lg text-foreground truncate tracking-tight">
               {typeof columns[0].accessor === 'function' ? columns[0].accessor(item) : item[columns[0].accessor]}
             </div>
@@ -130,7 +129,7 @@ const MobileCard = memo(function MobileCard({
       <div className="grid grid-cols-2 gap-y-5 gap-x-4 pt-5 border-t border-border/50">
         {columns.slice(1, 5).map((column: any, idx: number) => (
           <div key={`mobile-col-${idx}`} className="space-y-1 overflow-hidden">
-            <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em]">{column.header}</p>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">{column.header}</p>
             <div className="text-sm font-bold text-foreground/80 truncate">
               {typeof column.accessor === 'function' ? column.accessor(item) : item[column.accessor]}
             </div>
@@ -198,6 +197,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             className="h-12 pl-12 rounded-xl border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
+            aria-label="데이터 검색"
           />
         </form>
       )}
@@ -260,7 +260,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 )}
                 {columns.map((column, idx) => (
                   <th key={`header-${idx}`} className={cn(
-                    "px-6 py-5 font-black text-muted-foreground/60 text-[10px] uppercase tracking-[0.2em] whitespace-nowrap",
+                    "px-6 py-5 font-black text-slate-800 text-[10px] uppercase tracking-[0.2em] whitespace-nowrap",
                     column.className
                   )} scope="col">
                     {column.header}
@@ -350,14 +350,15 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             className="w-12 h-12 rounded-xl border-2"
             disabled={pagination.currentPage === 1}
             onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
+            aria-label="이전 페이지"
           >
             <ChevronLeft size={20} />
           </Button>
 
           <div className="flex items-center gap-2 px-6 h-12 bg-white border-2 rounded-xl">
             <span className="text-sm font-black italic">{pagination.currentPage}</span>
-            <span className="text-[10px] font-black text-slate-300 uppercase">of</span>
-            <span className="text-sm font-black italic text-slate-400">{pagination.totalPages}</span>
+            <span className="text-[10px] font-black text-slate-900 uppercase">of</span>
+            <span className="text-sm font-black italic text-slate-900">{pagination.totalPages}</span>
           </div>
 
           <Button
@@ -366,6 +367,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             className="w-12 h-12 rounded-xl border-2"
             disabled={pagination.currentPage === pagination.totalPages}
             onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
+            aria-label="다음 페이지"
           >
             <ChevronRight size={20} />
           </Button>
@@ -388,7 +390,7 @@ function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => v
             ERROR_STREAM: {error.message || 'UNKNOWN_EXCEPTION'}
           </p>
         </div>
-        <p className="text-xs text-muted-foreground font-black tracking-tight max-w-[360px] mx-auto leading-relaxed opacity-60 mt-4">
+        <p className="text-xs text-slate-700 font-bold tracking-tight max-w-[360px] mx-auto leading-relaxed mt-4">
           데이터베이스 세션으로부터 객체 정보를 수신하지 못했습니다. <br />네트워크 연결 상태를 확인하거나 아래 버튼을 통해 다시 시도하십시오.
         </p>
       </div>
@@ -418,7 +420,7 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
       </div>
       <div className="space-y-2">
         <p className="text-xl font-black text-foreground tracking-tighter uppercase">{emptyMessage}</p>
-        <p className="text-xs text-muted-foreground font-black tracking-tight max-w-[320px] mx-auto leading-relaxed opacity-60">
+        <p className="text-xs text-slate-700 font-bold tracking-tight max-w-[320px] mx-auto leading-relaxed">
           시스템에서 데이터를 조회하지 못했습니다. <br />검색 조건을 조정하거나 다시 초기화해 보십시오.
         </p>
       </div>

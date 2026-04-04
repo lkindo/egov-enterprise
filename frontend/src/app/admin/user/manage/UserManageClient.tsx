@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -140,8 +140,8 @@ export default function UserManageClient({ initialData, initialParams }: { initi
     {
       header: '커뮤니케이션 엔드포인트',
       accessor: (item) => (
-        <div className="flex items-center gap-3 text-muted-foreground font-bold tracking-tighter lowercase">
-          <Mail size={14} className="opacity-20" />
+        <div className="flex items-center gap-3 text-slate-700 font-bold tracking-tighter lowercase">
+          <Mail size={14} className="text-slate-400" />
           <span className="text-[13px]">{item.email}</span>
         </div>
       )
@@ -222,22 +222,24 @@ export default function UserManageClient({ initialData, initialParams }: { initi
 
               <div className="space-y-8">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-white/30 tracking-[0.4em] px-2 uppercase font-mono">Input_Identity_Probe</label>
+                  <label htmlFor="user-search-input" className="text-[10px] font-black text-white/70 tracking-[0.4em] px-2 uppercase font-mono">Input_Identity_Probe</label>
                   <div className="relative group/search">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within/search:text-primary transition-colors" size={20} />
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/60 group-focus-within/search:text-primary transition-colors" size={20} aria-hidden="true" />
                     <input
+                      id="user-search-input"
                       onChange={(e) => setParams({ ...params, searchKeyword: e.target.value })}
-                      className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
+                      className="w-full h-16 pl-16 pr-8 bg-white/10 border-2 border-white/20 rounded-2xl focus:border-primary/50 focus:bg-white/20 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/40 uppercase"
                       placeholder="사용자명 또는 고유 ID"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-white/30 tracking-[0.4em] px-2 uppercase font-mono">Status_Filter_Mask</label>
+                  <label htmlFor="user-status-filter" className="text-[10px] font-black text-white/70 tracking-[0.4em] px-2 uppercase font-mono">Status_Filter_Mask</label>
                   <select
+                    id="user-status-filter"
                     onChange={(e) => setParams({ ...params, sbscrbSttus: e.target.value })}
-                    className="w-full h-16 px-8 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-primary/50 focus:bg-white/10 transition-all text-[10px] font-black tracking-widest text-white outline-none appearance-none cursor-pointer uppercase"
+                    className="w-full h-16 px-8 bg-white/10 border-2 border-white/20 rounded-2xl focus:border-primary/50 focus:bg-white/20 transition-all text-[10px] font-black tracking-widest text-white outline-none appearance-none cursor-pointer uppercase"
                   >
                     <option value="" className="bg-slate-900">--- ALL_ENTITIES (전체) ---</option>
                     <option value="P" className="bg-slate-900 text-amber-500">--- PENDING (승인대기) ---</option>
@@ -248,7 +250,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
               </div>
 
               <div className="pt-8 border-t border-white/5 flex items-center justify-between">
-                <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 max-w-[180px]">
+                <p className="text-[10px] font-bold text-slate-400 leading-relaxed italic uppercase max-w-[180px]">
                   * 다요소인증(MFA) 적용 계정입니다.
                 </p>
                 <Button variant="ghost" className="h-10 px-4 rounded-xl bg-white/5 text-primary text-[9px] font-black tracking-widest uppercase hover:bg-primary hover:text-white transition-all">조회</Button>
@@ -292,24 +294,34 @@ export default function UserManageClient({ initialData, initialParams }: { initi
       >
         <div className="space-y-10 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <FormField label="사용자 고유 식별 명칭" required description="시스템 접근을 위한 고유 액세스 토큰">
+            <FormField 
+              label="사용자 고유 식별 명칭" 
+              htmlFor="userId" 
+              required 
+              description="시스템 접근을 위한 고유 액세스 토큰"
+            >
               <div className="relative group/id">
                 <Fingerprint size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                 <Input
+                  id="userId"
                   value={formData.userId || ''}
                   onChange={e => setFormData({ ...formData, userId: e.target.value })}
                   readOnly={!!editingUser}
+                  aria-required="true"
+                  aria-describedby="userId-description"
                   className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tighter shadow-inner bg-slate-50/50"
                   placeholder="사용자 식별자"
                 />
               </div>
             </FormField>
-            <FormField label="사용자 성명 (Canonical Name)" required>
+            <FormField label="사용자 성명 (Canonical Name)" htmlFor="userNm" required>
               <div className="relative group/name">
                 <UserPlus size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/name:opacity-100 transition-opacity" />
                 <Input
+                  id="userNm"
                   value={formData.userNm || ''}
                   onChange={e => setFormData({ ...formData, userNm: e.target.value })}
+                  aria-required="true"
                   className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
                   placeholder="표시 이름"
                 />
@@ -317,13 +329,21 @@ export default function UserManageClient({ initialData, initialParams }: { initi
             </FormField>
           </div>
 
-          <FormField label="인증 크리덴셜 (Credential Phase)" required={!editingUser} description={editingUser ? "보안 강화를 위해 필요시에만 변경하십시오." : "보안 강도가 높은 복합 비밀번호를 권장합니다."}>
+          <FormField 
+            label="인증 크리덴셜 (Credential Phase)" 
+            htmlFor="password" 
+            required={!editingUser} 
+            description={editingUser ? "보안 강화를 위해 필요시에만 변경하십시오." : "보안 강도가 높은 복합 비밀번호를 권장합니다."}
+          >
             <div className="relative group/pw">
               <ShieldCheck size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/pw:opacity-100 transition-opacity" />
               <Input
+                id="password"
                 type="password"
                 value={formData.password || ''}
                 onChange={e => setFormData({ ...formData, password: e.target.value })}
+                aria-required={!editingUser}
+                aria-describedby="password-description"
                 className="h-16 pl-16 rounded-2xl border-2 text-sm font-black tracking-widest shadow-inner py-4"
                 placeholder="••••••••••••••••"
               />

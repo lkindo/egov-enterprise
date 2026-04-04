@@ -49,12 +49,14 @@ export function StandardForm({
  */
 export function FormField({
   label,
+  htmlFor,
   error,
   children,
   required,
   description
 }: {
   label: string;
+  htmlFor?: string;
   error?: string;
   children: React.ReactNode;
   required?: boolean;
@@ -62,15 +64,15 @@ export function FormField({
 }) {
   return (
     <div className="space-y-1.5 p-0.5">
-      <label className="text-[11px] font-bold text-muted-foreground/80 flex items-center gap-1.5 ml-1">
+      <label htmlFor={htmlFor} className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
         {label}
-        {required ? <span className="text-destructive font-black text-[10px]">*</span> : null}
+        {required ? <span className="text-rose-500 font-extrabold text-[10px]" aria-hidden="true">*</span> : null}
       </label>
       <div className="relative">
         {children}
       </div>
-      {error ? <p className="text-[10px] font-bold text-destructive px-1 mt-1">{error}</p> : null}
-      {description ? <p className="text-[10px] font-medium text-muted-foreground/60 px-1 mt-1">{description}</p> : null}
+      {error ? <p id={`${htmlFor}-error`} role="alert" className="text-[10px] font-bold text-rose-600 px-1 mt-1">{error}</p> : null}
+      {description ? <p id={`${htmlFor}-description`} className="text-[10px] font-bold text-slate-500 px-1 mt-1 leading-relaxed">{description}</p> : null}
     </div>
   );
 }

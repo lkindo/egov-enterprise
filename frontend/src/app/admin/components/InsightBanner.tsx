@@ -78,10 +78,10 @@ export const InsightBanner: React.FC = () => {
 
   const getSeverityStyles = (severity: string) => {
     switch (severity) {
-      case 'CRITICAL': return "from-rose-500/10 to-transparent border-rose-200 text-rose-600";
-      case 'WARNING': return "from-amber-500/10 to-transparent border-amber-200 text-amber-600";
+      case 'CRITICAL': return "from-rose-500/10 to-transparent border-rose-200 text-rose-700";
+      case 'WARNING': return "from-amber-500/10 to-transparent border-amber-200 text-amber-800";
       case 'INFO': return "from-primary/10 to-transparent border-primary/20 text-primary";
-      default: return "from-slate-500/10 to-transparent border-slate-200 text-slate-600";
+      default: return "from-slate-500/10 to-transparent border-slate-200 text-slate-700";
     }
   };
 
@@ -102,7 +102,7 @@ export const InsightBanner: React.FC = () => {
        <div className={cn(
           "relative min-h-[140px] rounded-[2.5rem] border-2 bg-white/80 backdrop-blur-3xl p-10 flex flex-col lg:flex-row items-center gap-10 transition-all duration-700 overflow-hidden shadow-2xl shadow-slate-200/50 hover:shadow-primary/5",
           getSeverityStyles(activeInsight.severity)
-       )}>
+       )} role="region" aria-label="시스템 인텔리전스 인사이트">
           {/* Animated Wave Background Area */}
           <div className="absolute inset-0 opacity-5 pointer-events-none overflow-hidden">
              <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml,%3Csvg%20viewBox=%220%200%20200%20200%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter%20id=%22noiseFilter%22%3E%3CfeTurbulence%20type=%22fractalNoise%22%20baseFrequency=%220.65%22%20numOctaves=%223%22%20stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect%20width=%22100%25%22%20height=%22100%25%22%20filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')]" />
@@ -120,12 +120,12 @@ export const InsightBanner: React.FC = () => {
           {/* Message Stream */}
           <div className="flex-1 space-y-4 relative z-10 text-center lg:text-left">
              <div className="flex items-center justify-center lg:justify-start gap-3">
-                <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/5 border border-black/5 text-[10px] font-black tracking-widest uppercase italic">
+                <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/5 border border-black/5 text-[10px] font-black tracking-widest uppercase italic" aria-label="AI 인사이트 엔진">
                    {getIcon(activeInsight.type)}
                    AI_INSIGHT_ENGINE
                 </div>
                 <div className="w-1.5 h-1.5 rounded-full bg-current animate-ping" />
-                <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{activeInsight.timestamp}</span>
+                <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">{activeInsight.timestamp}</span>
              </div>
              
              <AnimatePresence mode="wait">
@@ -169,7 +169,7 @@ export const InsightBanner: React.FC = () => {
                    />
                 ))}
              </div>
-             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-900 hover:text-white transition-all">
+             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
                 <Maximize2 size={16} />
              </Button>
           </div>

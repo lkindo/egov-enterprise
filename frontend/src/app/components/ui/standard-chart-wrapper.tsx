@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import {
@@ -26,7 +26,7 @@ export function StandardChartWrapper({
     return (
         <div className={cn("p-6 border rounded-2xl bg-card shadow-sm transition-all hover:shadow-md", className)}>
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[11px] font-black text-muted-foreground tracking-tight">{title}</h3>
+                <h3 className="text-[11px] font-black text-slate-700 tracking-tight">{title}</h3>
             </div>
 
             <div style={{ width: '100%', height }}>
@@ -51,14 +51,14 @@ export function StandardChartWrapper({
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: '#94a3b8' }}
+                                    tick={{ fill: '#475569' }}
                                 />
                                 <YAxis
                                     fontSize={10}
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: '#94a3b8' }}
+                                    tick={{ fill: '#475569' }}
                                 />
                                 <Tooltip
                                     cursor={{ fill: 'rgba(0, 85, 251, 0.05)' }}
@@ -89,14 +89,14 @@ export function StandardChartWrapper({
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: '#94a3b8' }}
+                                    tick={{ fill: '#475569' }}
                                 />
                                 <YAxis
                                     fontSize={10}
                                     fontWeight={800}
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: '#94a3b8' }}
+                                    tick={{ fill: '#475569' }}
                                 />
                                 <Tooltip content={<CustomTooltip />} />
                                 {dataKeys.map((key, idx) => (
@@ -131,7 +131,7 @@ export function StandardChartWrapper({
                                     verticalAlign="bottom"
                                     align="center"
                                     iconType="circle"
-                                    formatter={(value) => <span className="text-[10px] font-black text-muted-foreground ml-1">{value}</span>}
+                                    formatter={(value) => <span className="text-[10px] font-black text-slate-600 ml-1">{value}</span>}
                                 />
                             </PieChart>
                         ) : type === 'line' ? (

@@ -70,8 +70,8 @@ export function HubMetricCard({
         <h3 className="text-3xl font-black tracking-tighter text-foreground leading-none tabular-nums">
           {typeof value === 'number' ? value.toLocaleString() : value}
         </h3>
-        <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase mt-4 leading-none flex items-center gap-3">
-          <span className="w-6 h-0.5 bg-current opacity-20" />
+        <p className="text-[10px] font-black text-slate-600 tracking-[0.4em] uppercase mt-4 leading-none flex items-center gap-3">
+          <span className="w-6 h-0.5 bg-current opacity-40" />
           {title}
         </p>
       </div>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -25,7 +25,8 @@ import { cn } from '@/lib/utils';
 
 /**
  * 1. GaugeChart
- * DB 而ㅻ꽖님및 由ъ냼님ъ슜瑜좎쓣 怨꾧린님?뺥깭濡님쒓컖님 */
+ * DB 커넥션 및 리소스 사용률을 계기판 형태로 시각화합니다.
+ */
 interface GaugeChartProps {
  value: number; // 0 to 100
  title: string;
@@ -72,7 +73,7 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
         </ResponsiveContainer>
         <div className="absolute inset-x-0 bottom-[20%] flex flex-col items-center justify-center">
           <span className="text-3xl font-black tracking-tighter text-foreground">{Math.round(value)}{unit}</span>
-          <span className="text-[10px] font-bold text-muted-foreground tracking-tight">{title}</span>
+          <span className="text-[10px] font-bold text-slate-600 tracking-tight">{title}</span>
         </div>
       </div>
       {value > 90 && (
@@ -86,7 +87,8 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
 
 /**
  * 2. RealtimeSparkline
- * CPU/MEM 추이瑜蹂댁뿬二쇰뒗 珥덉냼님誘몄꽭 異붿꽭님 */
+ * CPU/MEM 추이를 보여주는 초미세 추세 실시간 차트입니다.
+ */
 interface SparklineProps {
  data: { value: number }[];
  color?: string;
@@ -102,7 +104,7 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
   return (
     <div className="space-y-2 p-4 bg-muted/20 border border-white/5 rounded-2xl">
       <div className="flex justify-between items-center">
-        <span className="text-[10px] font-black text-muted-foreground tracking-tight">{label}</span>
+        <span className="text-[10px] font-black text-slate-600 tracking-tight">{label}</span>
         <span className="text-sm font-black text-foreground">
           {data[data.length - 1]?.value?.toFixed(1) || '0.0'}%
         </span>
@@ -128,7 +130,7 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
 
 /**
  * 3. SystemStatusRadar
- * 媛⑹꽦, 보안, ?깅뒫, 설정?깆쓽 ㅼ감님분석
+ * 가용성, 보안, 성능, 설정 등에 대한 다차원 분석 정밀 분석 레이더 차트입니다.
  */
 interface RadarProps {
  data: { subject: string; A: number }[];
@@ -142,8 +144,8 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
  <div className="w-full h-[300px]">
  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
- <PolarGrid stroke="var(--muted-foreground)" strokeOpacity={0.2} />
- <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--muted-foreground)', fontSize: 10, fontWeight: 700 }} />
+ <PolarGrid stroke="#475569" strokeOpacity={0.2} />
+ <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }} />
  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
  <Radar
  name="System Health"
@@ -158,7 +160,7 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
  <div className="mt-4 grid grid-cols-2 gap-4 w-full">
  {data.map((item, idx) => (
  <div key={`radar-item-${idx}`} className="flex flex-col">
- <span className="text-[9px] font-black text-muted-foreground ">{item.subject}</span>
+ <span className="text-[9px] font-black text-slate-600 ">{item.subject}</span>
  <span className="text-sm font-black">{item.A}%</span>
  </div>
  ))}
@@ -169,7 +171,8 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
 
 /**
  * 4. ActivityAreaChart
- * ?쒕룞 ?몃젋님님 최근 7님로그인님瑜님붾젮님洹몃씪데이터硫댁쟻 李⑦듃濡님쒓컖님 */
+ * 활동 트렌드 및 최근 7일 로그인 빈도 시각화 데이터 면적 차트입니다.
+ */
 interface ActivityData {
   name: string;
   value: number;
@@ -186,10 +189,10 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center justify-between mb-2 px-2">
-        <h4 className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase">{title}</h4>
+        <h3 className="text-[10px] font-black text-slate-600 tracking-[0.3em] uppercase">{title}</h3>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-[10px] font-bold text-foreground opacity-60">통계 ?꾨줈釉</span>
+          <span className="text-[10px] font-bold text-slate-700">통계 프로파일</span>
         </div>
       </div>
       <div style={{ width: '100%', height: height }}>
@@ -206,13 +209,13 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
               dataKey="name" 
               axisLine={false} 
               tickLine={false} 
-              tick={{ fill: 'var(--muted-foreground)', fontSize: 10, fontWeight: 700 }}
+              tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }}
               dy={10}
             />
             <YAxis 
               axisLine={false} 
               tickLine={false} 
-              tick={{ fill: 'var(--muted-foreground)', fontSize: 10, fontWeight: 700 }}
+              tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }}
             />
             <Tooltip 
               contentStyle={{ 
@@ -222,7 +225,8 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
                 boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                 fontSize: '11px',
                 fontWeight: '900',
-                padding: '12px'
+                padding: '12px',
+                color: '#1e293b'
               }}
               cursor={{ stroke: color, strokeWidth: 2, strokeDasharray: '5 5' }}
             />
@@ -244,7 +248,8 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
 
 /**
  * 5. DistributionPieChart
- * 데이터분포(님 사용자님븷 援ъ꽦)瑜님몃젴님留님뺥깭님?꾨꽋 李⑦듃濡님쒓컖님 */
+ * 데이터 분포(사용자 구성 등)를 도넛 차트 형태로 시각화합니다.
+ */
 interface DistributionData {
   name: string;
   value: number;
@@ -261,7 +266,7 @@ const DEFAULT_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: DistributionPieChartProps) {
   return (
     <div className="flex flex-col items-center h-full">
-      <h4 className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase mb-6">{title}</h4>
+      <h3 className="text-[10px] font-black text-slate-600 tracking-[0.3em] uppercase mb-6">{title}</h3>
       <div className="w-full h-full min-h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -287,7 +292,8 @@ export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: D
                 borderRadius: '16px', 
                 border: '2px solid var(--border)',
                 fontSize: '11px',
-                fontWeight: '900'
+                fontWeight: '900',
+                color: '#1e293b'
               }}
             />
           </PieChart>

@@ -75,7 +75,7 @@ export default async function RootLayout({
                   <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-14rem)] animate-in fade-in duration-1000">
                     {children}
                   </div>
-                  <Footer className="border-t border-border/20 py-8 mb-4 px-6 opacity-30 hover:opacity-100 transition-opacity" />
+                  <Footer className="border-t border-border/20 py-8 mb-4 px-6 transition-opacity" />
                 </main>
               </div>
             </div>

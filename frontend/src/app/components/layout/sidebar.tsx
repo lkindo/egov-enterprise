@@ -140,7 +140,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
       "flex items-center justify-between gap-3 px-3 py-2 text-sm font-semibold tracking-tight rounded-lg transition-all duration-200 w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary relative",
       isActive
         ? "bg-primary/5 text-primary"
-        : "text-muted-foreground hover:bg-accent hover:text-foreground",
+        : "text-slate-600 hover:bg-accent hover:text-foreground",
       depth === 1 && "pl-10",
       depth === 2 && "pl-14",
       depth >= 3 && "pl-16",
@@ -152,13 +152,13 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
             size={18}
             className={cn(
               "transition-transform duration-200 group-hover:scale-110",
-              isActive ? "text-primary" : "text-muted-foreground/60"
+              isActive ? "text-primary" : "text-slate-600"
             )}
           />
         )}
         {depth > 0 && (
           <div className={cn(
-            "absolute left-4 w-1.5 h-1.5 rounded-full border border-current opacity-40 transition-transform duration-200",
+            "absolute left-4 w-1.5 h-1.5 rounded-full border border-current opacity-80 transition-transform duration-200",
             isActive ? "bg-primary border-primary scale-110 opacity-100" : "group-hover:scale-110"
           )} 
           style={{ left: `${(depth * 12) + 12}px` }}
@@ -170,7 +170,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
-          className="opacity-50"
+          className="opacity-100"
           onClick={(e) => {
             if (href !== '#') {
               e.preventDefault();
@@ -358,7 +358,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
               </div>
               <div className="flex flex-col">
                 <span className="text-base font-bold tracking-tight leading-none text-foreground">엔터프라이즈</span>
-                <span className="text-[10px] text-muted-foreground/60 font-semibold tracking-wider">포털 5.0</span>
+                <span className="text-[10px] text-slate-600 font-semibold tracking-wider">포털 5.0</span>
               </div>
             </Link>
             <Button
@@ -375,7 +375,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
             {/* Mobile View */}
             <div className="lg:hidden space-y-2">
               <div className="mb-6 px-2">
-                <div className="text-[11px] font-bold text-muted-foreground/40 tracking-wider">
+                <div className="text-[11px] font-black text-slate-600 tracking-wider">
                   서비스 모듈
                 </div>
               </div>
@@ -394,7 +394,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
             {/* Desktop View */}
             <div className="hidden lg:block space-y-1">
               <div className="mb-6 px-2 flex items-center justify-between">
-                <div className="text-[11px] font-bold text-muted-foreground/40 tracking-wider">
+                <div className="text-[11px] font-black text-slate-600 tracking-wider">
                   전체 메뉴
                 </div>
                 {topMenus.find(m => m.menuNo === activeMenuNo) && (
@@ -416,7 +416,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
                   <p className="text-sm font-bold tracking-tight">메뉴를 불러올 수 없습니다.</p>
                 </div>
               ) : (
-                <nav className="space-y-1">
+                <nav className="space-y-1" aria-label="메인 사이드바">
                   {menus.map((item: any, index: number) => (
                     <NavItem key={item.menuNo || `menu-${index}`} item={item} />
                   ))}
@@ -432,7 +432,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
                 <Sparkles size={14} className="text-primary" />
                 <span className="text-[10px] font-bold text-primary tracking-tight">eGovFrame 5.0</span>
               </div>
-              <p className="text-[9px] font-medium text-muted-foreground/50 leading-relaxed">
+              <p className="text-[9px] font-semibold text-slate-600 leading-relaxed">
                 현대화된 엔터프라이즈 UI 키트
                 <br />
                 최종 버전 1.0.2

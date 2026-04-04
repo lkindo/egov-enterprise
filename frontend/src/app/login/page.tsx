@@ -51,8 +51,10 @@ export default function LoginPage() {
 
             <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md">
                 <CardHeader className="space-y-1 text-center">
-                    <CardTitle className="text-2xl font-bold tracking-tight text-primary">전자정부 엔터프라이즈</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-2xl font-bold tracking-tight text-primary">
+                        <h1 className="text-2xl font-bold tracking-tight text-primary">전자정부 엔터프라이즈</h1>
+                    </CardTitle>
+                    <CardDescription className="text-slate-600">
                         {t('login.title')}
                     </CardDescription>
                 </CardHeader>
@@ -61,7 +63,7 @@ export default function LoginPage() {
                         <div className="space-y-2">
                             <Label htmlFor="id">{t('login.idLabel')}</Label>
                             <div className="relative">
-                                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                <User className="absolute left-3 top-3 h-4 w-4 text-slate-600" />
                                 <Input
                                     id="id"
                                     placeholder={t('login.idPlaceholder')}
@@ -75,7 +77,7 @@ export default function LoginPage() {
                         <div className="space-y-2">
                             <Label htmlFor="password">{t('login.pwLabel')}</Label>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-600" />
                                 <Input
                                     id="password"
                                     type={showPassword ? 'text' : 'password'}
@@ -90,7 +92,7 @@ export default function LoginPage() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-0 top-0 h-full w-9 text-muted-foreground hover:text-foreground"
+                                    className="absolute right-0 top-0 h-full w-9 text-slate-600 hover:text-foreground"
                                     aria-label={showPassword ? t('login.hidePassword') : t('login.viewPassword')}
                                 >
                                     {showPassword ? (
@@ -113,6 +115,8 @@ export default function LoginPage() {
                             <div
                                 data-testid="login-error"
                                 className="text-sm text-red-500 font-medium text-center bg-red-50 p-2 rounded"
+                                role="alert"
+                                aria-live="assertive"
                             >
                                 {error}
                             </div>

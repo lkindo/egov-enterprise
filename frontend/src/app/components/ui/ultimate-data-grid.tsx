@@ -142,13 +142,13 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                     </div>
                     <div>
                         <h3 className="text-lg font-black tracking-tight text-foreground ">{title}</h3>
-                        <p className="text-[10px] font-bold text-muted-foreground tracking-tight leading-none">고성능 인텔리전스 그리드</p>
+                        <p className="text-[10px] font-bold text-slate-700 tracking-tight leading-none">고성능 인텔리전스 그리드</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3 w-full md:w-auto">
                     <div className="relative flex-1 md:w-64">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40" size={16} />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input
                             className="w-full bg-muted/30 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all font-sans"
                             placeholder="전역 검색.."
@@ -174,7 +174,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                                         <th
                                             key={col.id}
                                             className={cn(
-                                                "px-6 py-5 border-b border-primary/5 font-black text-[10px] tracking-[0.2em] text-muted-foreground transition-all duration-300",
+                                                "px-6 py-5 border-b border-primary/5 font-black text-[10px] tracking-[0.2em] text-slate-700 transition-all duration-300",
                                                 pinnedCols.has(col.id) ? "sticky z-20 bg-muted/95 backdrop-blur-md" : "relative",
                                                 isLastPinned && "shadow-[10px_0_15px_-10px_rgba(0,0,0,0.15)] border-r border-primary/10"
                                             )}
@@ -279,10 +279,10 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[10px] font-black text-muted-foreground tracking-tight">라이브 엔진 활성</span>
+                        <span className="text-[10px] font-black text-slate-700 tracking-tight">라이브 엔진 활성</span>
                     </div>
                     <div className="h-4 w-px bg-muted" />
-                    <span className="text-[10px] font-black text-muted-foreground opacity-50 underline decoration-primary/30 underline-offset-4">
+                    <span className="text-[10px] font-black text-slate-700 underline decoration-primary/30 underline-offset-4">
                         {filteredData.length}개의 레코드 검색됨
                     </span>
                 </div>

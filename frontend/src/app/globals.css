@@ -55,12 +55,12 @@
     --foreground: 222.2 84% 4.9%;
 
     /* Hub Accent Colors */
-    --hub-blue: 221.2 83.2% 53.3%;
-    --hub-orange: 24.6 95% 53.1%;
-    --hub-purple: 262.1 83.3% 57.8%;
-    --hub-emerald: 142.1 70.6% 45.3%;
-    --hub-rose: 346.8 77.2% 49.8%;
-    --hub-amber: 37.9 94.1% 53.3%;
+    --hub-blue: 221.2 83.2% 45%;
+    --hub-orange: 24.6 95% 45%;
+    --hub-purple: 262.1 83.3% 50%;
+    --hub-emerald: 142.1 70.6% 35%;
+    --hub-rose: 346.8 77.2% 40%;
+    --hub-amber: 37.9 94.1% 40%;
 
     --primary: 221.2 100% 50%;
     --primary-foreground: 210 40% 98%;
@@ -74,7 +74,7 @@
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84.2% 45%;
     --destructive-foreground: 210 40% 98%;
 
     --success: 142.1 76.2% 36.3%;
@@ -189,7 +189,7 @@
   }
   
   .hub-subtitle-label {
-    @apply text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-[0.4em] uppercase opacity-60;
+    @apply text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-[0.4em] uppercase text-slate-700;
   }
 
   .hub-card-section {
@@ -228,6 +228,6 @@
 
   /* --- Hub Semantic Utilities --- */
   .hub-label-accent {
-     @apply text-[length:var(--font-size-hub-subtitle)] font-black tracking-[0.4em] uppercase opacity-30 group-focus-within:opacity-100 transition-opacity;
+     @apply text-[length:var(--font-size-hub-subtitle)] font-black tracking-[0.4em] uppercase opacity-70 group-focus-within:opacity-100 transition-opacity;
   }
 }

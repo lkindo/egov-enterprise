@@ -1,4 +1,4 @@
-package com.company.project.foundation.api.controller.system;
+package com.company.project.api.controller.system;
 
 import com.company.project.foundation.core.response.ApiResponse;
 import com.company.project.foundation.core.response.PageResponse;
@@ -17,11 +17,12 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 부서 관리 API 컨트롤러 (Admin)
+ * /api/v1/admin/system/departments 경로로 매핑하여 프론트엔드와 맞춤
  */
 @Tag(name = "Department Management", description = "시스템 부서 관리 API (Admin)")
 @Slf4j
-@RestController("systemDeptApiController")
-@RequestMapping("/api/v1/admin/system/depts")
+@RestController("apiServerDeptApiController")
+@RequestMapping("/api/v1/admin/system/departments")
 @RequiredArgsConstructor
 public class DeptApiController {
 

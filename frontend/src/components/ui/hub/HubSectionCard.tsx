@@ -37,7 +37,7 @@ export function HubSectionCard({
             </div>
           )}
           {description && (
-            <p className="text-slate-400 font-medium leading-relaxed max-w-xl">
+            <p className="text-slate-600 font-medium leading-relaxed max-w-xl">
               {description}
             </p>
           )}

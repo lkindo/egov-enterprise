@@ -67,7 +67,7 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
   const finalItems = customItems.length > 0 ? customItems : items;
 
   return (
-    <nav className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-3 px-5 rounded-full w-fit mb-4 border border-primary/5 shadow-sm">
+    <nav className="flex items-center gap-2 text-sm text-slate-600 bg-muted/30 p-3 px-5 rounded-full w-fit mb-4 border border-primary/5 shadow-sm">
       <Link href="/" className="hover:text-foreground flex items-center gap-1.5 transition-colors">
         <Home className="w-4 h-4" /> 홈
       </Link>

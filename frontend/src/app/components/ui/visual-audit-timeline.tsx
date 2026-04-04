@@ -51,9 +51,9 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
 
  const getSeverityColor = (severity: string) => {
  switch (severity) {
- case 'high': return 'text-rose-500 bg-rose-500/10 border-rose-500/20';
- case 'medium': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
- default: return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+ case 'high': return 'text-rose-700 bg-rose-50 border-rose-200';
+ case 'medium': return 'text-amber-800 bg-amber-50 border-amber-200';
+ default: return 'text-emerald-700 bg-emerald-50 border-emerald-200';
  }
  };
 
@@ -77,26 +77,27 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div>
  <h2 className="text-2xl font-black tracking-tighter text-foreground ">{title}</h2>
  <div className="flex items-center gap-3 mt-1">
- <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 tracking-tight">
+ <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 tracking-tight">
    <ShieldCheck size={12} /> 보안 거버넌스 엔진 활성
  </div>
  <div className="h-3 w-px bg-muted" />
-   <span className="text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight leading-none">실시간 데이터 무결성 모니터링</span>
+   <span className="text-[10px] font-bold text-slate-600 tracking-tight leading-none opacity-80">실시간 데이터 무결성 모니터링</span>
  </div>
  </div>
  </div>
 
  <div className="flex items-center gap-3 w-full md:w-auto">
  <div className="relative flex-1 md:w-64">
- <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40" size={16} />
+ <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={16} />
  <input
  className="w-full bg-muted/40 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all"
  placeholder="검색.."
+ aria-label="감사 로그 검색"
  value={filter}
  onChange={(e) => setFilter(e.target.value)}
  />
  </div>
- <Button variant="outline" size="icon" className="rounded-2xl border-2 h-11 w-11 hover:bg-primary/5"><Filter size={18} /></Button>
+ <Button variant="outline" size="icon" className="rounded-2xl border-2 h-11 w-11 hover:bg-primary/5" aria-label="필터 설정"><Filter size={18} /></Button>
  </div>
  </div>
 
@@ -122,8 +123,16 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  {/* Log Card */}
  <div
  onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
+ onKeyDown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      setExpandedLog(expandedLog === log.id ? null : log.id);
+    }
+ }}
+ role="button"
+ tabIndex={0}
+ aria-expanded={expandedLog === log.id}
  className={cn(
- "group cursor-pointer rounded-[2rem] border-2 transition-all overflow-hidden",
+ "group cursor-pointer rounded-[2rem] border-2 transition-all overflow-hidden outline-none focus:ring-2 focus:ring-primary",
  expandedLog === log.id
  ? "bg-card border-primary/20 shadow-xl"
  : "bg-white dark:bg-slate-800 border-transparent hover:bg-muted/40"
@@ -141,18 +150,18 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  {log.severity.toUpperCase()}
  </span>
  </div>
- <p className="text-sm font-bold text-muted-foreground/60 tracking-tight">
-   <span className="text-primary">{log.action === 'CREATE' ? '생성' : log.action === 'UPDATE' ? '수정' : log.action === 'DELETE' ? '삭제' : '복구'}</span> {log.entityName}
+ <p className="text-sm font-bold text-slate-600 tracking-tight">
+   <span className="text-primary font-black">{log.action === 'CREATE' ? '생성' : log.action === 'UPDATE' ? '수정' : log.action === 'DELETE' ? '삭제' : '복구'}</span> {log.entityName}
  </p>
  </div>
  </div>
 
  <div className="flex items-center gap-6">
  <div className="text-right hidden md:block">
- <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground opacity-60">
+ <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-700">
  <Clock size={12} /> {log.timestamp}
  </div>
- <p className="text-[10px] font-bold text-muted-foreground/40 font-mono mt-1">{log.ipAddress}</p>
+ <p className="text-[10px] font-bold text-slate-600 font-mono mt-1 opacity-80">{log.ipAddress}</p>
  </div>
  {expandedLog === log.id ? <ChevronUp size={20} className="text-primary" /> : <ChevronDown size={20} className="text-muted-foreground/40" />}
  </div>
@@ -160,20 +169,20 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
 
  {/* Expanded Detail: Side-by-Side Diff */}
  {expandedLog === log.id && log.changes && (
- <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-slate-50 dark:bg-slate-900 space-y-6 animate-in slide-in-from-top-4 duration-500">
+ <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-slate-100 dark:bg-slate-900 space-y-6 animate-in slide-in-from-top-4 duration-500">
  <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-4 flex items-center gap-2">
    <Cpu size={12} /> AI 기반 변경 감지 엔진
  </h4>
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {log.changes.map((change, cIdx) => (
- <div key={cIdx} className="space-y-3 p-5 rounded-2xl bg-background border border-primary/5 shadow-sm group/change">
- <label className="text-[10px] font-black text-muted-foreground tracking-tight">{change.field}</label>
+ <div key={cIdx} className="space-y-3 p-5 rounded-2xl bg-white border border-primary/5 shadow-sm group/change">
+ <label className="text-[10px] font-black text-slate-600 tracking-tight">{change.field}</label>
  <div className="flex items-center gap-4">
- <div className="flex-1 p-3 rounded-xl bg-rose-50/50 border border-rose-100/50 text-sm font-medium text-rose-600 line-through decoration-rose-300 opacity-60">
+ <div className="flex-1 p-3 rounded-xl bg-rose-50/80 border border-rose-100/50 text-sm font-medium text-rose-800 line-through decoration-rose-300 opacity-60">
  {change.before}
  </div>
  <ArrowRight size={14} className="text-muted-foreground/30 animate-pulse" />
- <div className="flex-1 p-3 rounded-xl bg-emerald-50/50 border border-emerald-100/50 text-sm font-bold text-emerald-600 transition-all group-hover/change:bg-emerald-100">
+ <div className="flex-1 p-3 rounded-xl bg-emerald-50 border border-emerald-100/50 text-sm font-bold text-emerald-800 transition-all group-hover/change:bg-emerald-100">
  {change.after}
  </div>
  </div>
@@ -182,7 +191,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  </div>
 
  <div className="flex justify-end gap-3 pt-4 border-t border-primary/5">
- <Button variant="ghost" size="sm" className="rounded-xl font-bold h-10 px-6 gap-2 text-muted-foreground hover:bg-rose-50 hover:text-rose-600">
+ <Button variant="ghost" size="sm" className="rounded-xl font-bold h-10 px-6 gap-2 text-slate-700 hover:bg-rose-50 hover:text-rose-700">
  분석 리포트 생성
  </Button>
  <Button variant="outline" size="sm" className="rounded-xl font-black h-10 px-6 gap-2 border-2 hover:bg-primary/5">
@@ -203,15 +212,15 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div className="flex items-center gap-6">
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-   <span className="text-[10px] font-black text-muted-foreground tracking-tight">마스터 저장소 동기화됨</span>
+   <span className="text-[10px] font-black text-slate-700 tracking-tight">마스터 저장소 동기화됨</span>
  </div>
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-   <span className="text-[10px] font-black text-muted-foreground tracking-tight">암호화 알고리즘 AES-256 (NIST)</span>
+   <span className="text-[10px] font-black text-slate-700 tracking-tight">암호화 알고리즘 AES-256 (NIST)</span>
  </div>
  </div>
- <p className="text-[10px] font-black text-muted-foreground tracking-tight opacity-40 mt-4 md:mt-0">
-   Total Audit Records: {logs.length} 데이터 무결성 검증 완료
+ <p className="text-[10px] font-black text-slate-600 tracking-tight opacity-70 mt-4 md:mt-0">
+ Total Audit Records: {logs.length} 데이터 무결성 검증 완료
  </p>
  </div>
  </div>

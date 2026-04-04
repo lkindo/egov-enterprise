@@ -73,7 +73,7 @@ export default function AdminStatsClient({
           </div>
           <div>
             <span className="font-black tracking-tighter text-foreground block text-lg uppercase leading-none">{item.menuNm}</span>
-            <span className="text-[9px] font-black text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-40">NODE_TYPE: CORE_MODULE</span>
+            <span className="text-[9px] font-black text-slate-600 tracking-[0.3em] mt-2 uppercase">NODE_TYPE: CORE_MODULE</span>
           </div>
         </div>
       )
@@ -97,7 +97,7 @@ export default function AdminStatsClient({
               style={{ width: `${item.percentage}%` }}
             />
           </div>
-          <span className="text-[12px] font-black text-foreground w-12 text-right tracking-tighter tabular-nums opacity-60">{item.percentage}%</span>
+          <span className="text-[12px] font-black text-foreground w-12 text-right tracking-tighter tabular-nums">{item.percentage}%</span>
         </div>
       )
     }
@@ -117,7 +117,10 @@ export default function AdminStatsClient({
         icon={BarChart3}
         actions={
           <div className="flex gap-4 p-2 items-center">
-            <select className="h-12 px-6 rounded-xl border-2 border-border bg-white font-black text-[10px] tracking-widest uppercase outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer shadow-sm">
+            <select 
+              className="h-12 px-6 rounded-xl border-2 border-border bg-white font-black text-[10px] tracking-widest uppercase outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer shadow-sm"
+              aria-label="통계 조회 기간 선택"
+            >
               <option>REALTIME_FLOW (14D)</option>
               <option>MONTHLY_BATCH (30D)</option>
               <option>QUARTERLY_ANALYSIS</option>
@@ -235,7 +238,7 @@ export default function AdminStatsClient({
         description="시스템 전반에 걸친 마이크로 상호작용 노드들의 세부 데이터 보고서입니다."
         icon={Cpu}
         statusBadges={
-          <HubStatusBadge label="고밀도 스트림" variant="success" className="bg-emerald-500/10 text-emerald-500 border-none animate-pulse text-[8px] font-black tracking-widest" />
+          <HubStatusBadge label="고밀도 스트림" variant="success" className="bg-emerald-500/10 text-emerald-700 border-none animate-pulse text-[8px] font-black tracking-widest" />
         }
       >
         <div className="px-2 overflow-x-auto">
@@ -255,13 +258,13 @@ export default function AdminStatsClient({
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
           <div className="space-y-10 flex-1 text-center lg:text-left">
             <div className="space-y-4">
-              <h2 className="text-[11px] font-black tracking-[0.6em] text-white/30 uppercase leading-none">시스템 무결성 요약</h2>
+              <h2 className="text-[11px] font-black tracking-[0.6em] text-white/60 uppercase leading-none">시스템 무결성 요약</h2>
               <h3 className="text-5xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] uppercase tabular-nums">
                 Optimized <br />
                 <span className="text-primary italic">Intelligence</span> Core
               </h3>
             </div>
-            <p className="text-lg lg:text-xl text-white/40 font-bold max-w-3xl leading-relaxed tracking-tight">
+            <p className="text-lg lg:text-xl text-white/70 font-bold max-w-3xl leading-relaxed tracking-tight">
               시스템 자원의 99.9%가 효율적으로 관리되고 있습니다. 인텔리전스 엔진은 실시간 주요 이벤트를 추적하여 최적의 성능 프로파일을 동적으로 생성하고 있습니다.
             </p>
           </div>
@@ -305,7 +308,7 @@ function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
           <div className="flex flex-col items-end">
             <span className={cn(
               "text-[10px] font-black px-3 py-1 rounded-full tracking-widest uppercase",
-              color === 'rose' ? "bg-white text-rose-600 shadow-inner" : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-sm"
+              color === 'rose' ? "bg-white text-rose-600 shadow-inner" : "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 shadow-sm"
             )}>
               {trend}
             </span>
@@ -313,9 +316,9 @@ function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
         )}
       </div>
       <div className="relative z-10">
-        <h4 className="text-4xl font-black tracking-tighter tabular-nums leading-none text-foreground">{value?.toLocaleString() ?? 0}</h4>
-        <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] mt-5 flex items-center gap-3 uppercase leading-none">
-          <span className="w-6 h-0.5 bg-current opacity-20" />
+        <h3 className="text-4xl font-black tracking-tighter tabular-nums leading-none text-foreground">{value?.toLocaleString() ?? 0}</h3>
+        <p className="text-[10px] font-black text-slate-600 tracking-[0.4em] mt-5 flex items-center gap-3 uppercase leading-none">
+          <span className="w-6 h-0.5 bg-current opacity-40" />
           {title}
         </p>
       </div>

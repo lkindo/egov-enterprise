@@ -4,6 +4,9 @@ import com.company.project.foundation.domain.auth.AuthorGroupProjection;
 import com.company.project.foundation.domain.auth.DeptAuthorProjection;
 import com.company.project.foundation.domain.auth.UserAuthority;
 import com.company.project.foundation.domain.auth.UserAuthorityRepository;
+import com.company.project.foundation.domain.user.entity.User;
+import com.company.project.foundation.domain.user.repository.UserRepository;
+import com.company.project.foundation.service.auth.dto.DeptAuthorBatchRequest;
 import com.company.project.foundation.service.auth.dto.UserAuthorityDto;
 import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 public class UserAuthorityManageService {
 
     private final UserAuthorityRepository userAuthorityRepository;
+    private final UserRepository userRepository;
 
     /**
      * 사용자별 권한 목록 조회
@@ -90,4 +94,46 @@ public class UserAuthorityManageService {
         }
         userAuthorityRepository.deleteAllByIdInBatch(uniqIds);
     }
+
+    /**
+     * 부서별 권한 일괄 저장
+     */
+    @Transactional
+    public void saveDeptAuthorities(DeptAuthorBatchRequest request) {
+        if (request == null || request.getDeptId() == null || request.getAuthorCode() == null) {
+            return;
+        }
+
+        List<String> userIds;
+        if (request.isAllMembers()) {
+            // 부서 내 모든 사용자 조회
+            userIds = userRepository.findByOrgnztId(request.getDeptId()).stream()
+                    .map(User::getEsntlId)
+                    .collect(Collectors.toList());
+        } else {
+            userIds = request.getUserIds();
+        }
+
+        if (userIds == null || userIds.isEmpty()) {
+            return;
+        }
+
+        List<UserAuthority> entities = userIds.stream()
+                .map(userId -> {
+                    UserAuthority existing = userAuthorityRepository.findById(userId).orElse(null);
+                    if (existing != null) {
+                        existing.update(request.getAuthorCode(), null); // mberTyCode는 기존 유지 또는 null
+                        return existing;
+                    } else {
+                        return UserAuthority.builder()
+                                .uniqId(userId)
+                                .authorCode(request.getAuthorCode())
+                                .build();
+                    }
+                })
+                .collect(Collectors.toList());
+
+        userAuthorityRepository.saveAll(entities);
+    }
 }
+

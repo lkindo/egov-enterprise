@@ -24,6 +24,9 @@ test.describe('Accessibility - Admin Pages', () => {
         await page.goto('/admin', { waitUntil: 'networkidle' });
 
         const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
+        
+        const fs = require('fs');
+        fs.writeFileSync('a11y_violations.json', JSON.stringify(accessibilityScanResults.violations, null, 2));
 
         expect(accessibilityScanResults.violations).toEqual([]);
     });
@@ -37,7 +40,7 @@ test.describe('Accessibility - Admin Pages', () => {
     });
 
     test('should not have accessibility violations on common codes page', async ({ page }) => {
-        await page.goto('/admin/common-codes', { waitUntil: 'networkidle' });
+        await page.goto('/admin/system/common-code', { waitUntil: 'networkidle' });
 
         const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
 
@@ -45,7 +48,7 @@ test.describe('Accessibility - Admin Pages', () => {
     });
 
     test('should not have accessibility violations on user management page', async ({ page }) => {
-        await page.goto('/admin/users', { waitUntil: 'networkidle' });
+        await page.goto('/admin/user/manage', { waitUntil: 'networkidle' });
 
         const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
 
@@ -53,7 +56,7 @@ test.describe('Accessibility - Admin Pages', () => {
     });
 
     test('should not have accessibility violations on menu management page', async ({ page }) => {
-        await page.goto('/admin/menus', { waitUntil: 'networkidle' });
+        await page.goto('/admin/system/menus', { waitUntil: 'networkidle' });
 
         const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
 
@@ -61,7 +64,7 @@ test.describe('Accessibility - Admin Pages', () => {
     });
 
     test('should not have accessibility violations on board management page', async ({ page }) => {
-        await page.goto('/admin/boards', { waitUntil: 'networkidle' });
+        await page.goto('/admin/community/boards/selectBoardList', { waitUntil: 'networkidle' });
 
         const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
 
@@ -69,7 +72,7 @@ test.describe('Accessibility - Admin Pages', () => {
     });
 
     test('should not have accessibility violations on statistics page', async ({ page }) => {
-        await page.goto('/admin/statistics', { waitUntil: 'networkidle' });
+        await page.goto('/admin/stats', { waitUntil: 'networkidle' });
 
         const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
 
