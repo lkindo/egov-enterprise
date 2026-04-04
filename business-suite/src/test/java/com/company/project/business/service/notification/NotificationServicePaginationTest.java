@@ -3,33 +3,24 @@ package com.company.project.business.service.notification;
 import com.company.project.business.domain.notification.Notification;
 import com.company.project.business.domain.notification.NotificationRepository;
 import com.company.project.business.service.notification.dto.NotificationDto;
-import com.company.project.foundation.support.IntegrationTest;
+import com.company.project.business.support.BusinessIntegrationTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * NotificationService 페이지네이션 테스트
- * - getActiveNotifications(Pageable) 테스트
- * - getActiveNotificationsAll() 테스트
- */
-@IntegrationTest
 @Transactional
-class NotificationServicePaginationTest {
+class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
 
     @Autowired
     private NotificationService notificationService;
@@ -42,7 +33,6 @@ class NotificationServicePaginationTest {
 
     @BeforeEach
     void setUp() {
-        // 테스트 데이터 설정
         for (int i = 1; i <= 25; i++) {
             Notification notification = Notification.builder()
                     .ntfcNo("NTFC_" + i)

@@ -22,6 +22,7 @@ import com.company.project.foundation.core.config.FullBeanNameGenerator;
 
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test$"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*"),
+                                @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = { SpringBootApplication.class }),
 
                                 // 보안 및 권한 관리 (web 패키지 제외)
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "egovframework\\.com\\.sec\\.ram\\.web\\..*"),

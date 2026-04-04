@@ -15,6 +15,7 @@ import org.springframework.context.annotation.FilterType;
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test.*Config.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*ConfigTest.*"),
         @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = { org.springframework.boot.test.context.TestConfiguration.class }),
+        @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = { SpringBootApplication.class }),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com\\.company\\.project\\.api\\.config\\.ApiSecurityConfig")
 })
 public class TestApplication {

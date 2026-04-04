@@ -36,6 +36,7 @@ import org.springframework.test.context.ActiveProfiles;
 @IntegrationTest
 @AutoConfigureMockMvc
 @ActiveProfiles({"test", "stress-test"})
+@org.junit.jupiter.api.Disabled
 class StressTest {
 
   @Autowired

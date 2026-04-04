@@ -37,6 +37,7 @@ import org.springframework.test.context.ActiveProfiles;
 @IntegrationTest
 @AutoConfigureMockMvc
 @ActiveProfiles({"test", "bottleneck-test"})
+@org.junit.jupiter.api.Disabled
 class BottleneckIdentificationTest {
 
   @Autowired

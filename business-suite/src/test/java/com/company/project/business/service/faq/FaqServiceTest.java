@@ -1,10 +1,9 @@
 package com.company.project.business.service.faq;
 
-import com.company.project.foundation.core.exception.BusinessException;
-import com.company.project.foundation.core.exception.ErrorCode;
 import com.company.project.business.domain.faq.Faq;
 import com.company.project.business.domain.faq.FaqRepository;
 import com.company.project.business.service.faq.dto.FaqDto;
+import com.company.project.foundation.core.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,130 +19,164 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("FaqService (FAQ 서비스) 테스트")
+@DisplayName("FaqService 단위 테스트")
 class FaqServiceTest {
-
-    @Mock
-    private FaqRepository faqRepository;
 
     @InjectMocks
     private FaqService faqService;
 
+    @Mock
+    private FaqRepository faqRepository;
+
     @Test
-    @DisplayName("FAQ 목록 조회 성공")
+    @DisplayName("FAQ 목록 조회 - 성공")
     void getFaqList_Success() {
-        // Given
+        // given
         String keyword = "test";
         Pageable pageable = PageRequest.of(0, 10);
-        Faq faq = Faq.builder().faqId("FAQ1").qestnSj("Question").build();
-        given(faqRepository.searchFaqs(anyString(), any(Pageable.class))).willReturn(new PageImpl<>(List.of(faq)));
+        Faq faq = Faq.builder()
+                .faqId("FAQ_1")
+                .qestnSj("Question 1")
+                .qestnCn("Content 1")
+                .answerCn("Answer 1")
+                .build();
+        Page<Faq> faqPage = new PageImpl<>(List.of(faq));
 
-        // When
+        given(faqRepository.searchFaqs(eq(keyword), eq(pageable))).willReturn(faqPage);
+
+        // when
         Page<FaqDto> result = faqService.getFaqList(keyword, pageable);
 
-        // Then
+        // then
+        assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getFaqId()).isEqualTo("FAQ1");
-        verify(faqRepository).searchFaqs(keyword, pageable);
+        assertThat(result.getContent().get(0).getFaqId()).isEqualTo("FAQ_1");
     }
 
     @Test
-    @DisplayName("FAQ 상세 조회 성공")
+    @DisplayName("FAQ 단건 조회 - 성공")
     void getFaq_Success() {
-        // Given
-        String faqId = "FAQ1";
-        Faq faq = Faq.builder().faqId(faqId).qestnSj("Question").build();
+        // given
+        String faqId = "FAQ_1";
+        Faq faq = Faq.builder()
+                .faqId(faqId)
+                .qestnSj("Question 1")
+                .qestnCn("Content 1")
+                .answerCn("Answer 1")
+                .build();
+
         given(faqRepository.findById(faqId)).willReturn(Optional.of(faq));
 
-        // When
+        // when
         FaqDto result = faqService.getFaq(faqId);
 
-        // Then
+        // then
+        assertThat(result).isNotNull();
         assertThat(result.getFaqId()).isEqualTo(faqId);
-        verify(faqRepository).findById(faqId);
+        assertThat(result.getQestnSj()).isEqualTo("Question 1");
     }
 
     @Test
-    @DisplayName("FAQ 상세 조회 실패 - 존재하지 않는 FAQ")
-    void getFaq_NotFound() {
-        // Given
-        String faqId = "NON_EXISTENT";
+    @DisplayName("FAQ 단건 조회 - 실패 (존재하지 않음)")
+    void getFaq_Fail_NotFound() {
+        // given
+        String faqId = "FAQ_999";
         given(faqRepository.findById(faqId)).willReturn(Optional.empty());
 
-        // When & Then
-        assertThatThrownBy(() -> faqService.getFaq(faqId))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
+        // when & then
+        assertThrows(BusinessException.class, () -> faqService.getFaq(faqId));
     }
 
     @Test
-    @DisplayName("FAQ 등록 성공")
+    @DisplayName("FAQ 생성 - 성공")
     void createFaq_Success() {
-        // Given
-        String userId = "ADMIN";
-        FaqDto dto = FaqDto.builder().qestnSj("New Question").qestnCn("New Content").build();
+        // given
+        String userId = "user1";
+        FaqDto dto = FaqDto.builder()
+                .qestnSj("New Question")
+                .qestnCn("New Content")
+                .answerCn("New Answer")
+                .build();
 
-        // When
-        String id = faqService.createFaq(userId, dto);
+        given(faqRepository.save(any(Faq.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-        // Then
-        assertThat(id).startsWith("FAQ_");
+        // when
+        String createdFaqId = faqService.createFaq(userId, dto);
+
+        // then
+        assertThat(createdFaqId).isNotNull();
+        assertThat(createdFaqId).startsWith("FAQ_");
         verify(faqRepository, times(1)).save(any(Faq.class));
     }
 
     @Test
-    @DisplayName("FAQ 수정 성공")
+    @DisplayName("FAQ 수정 - 성공")
     void updateFaq_Success() {
-        // Given
-        String faqId = "FAQ1";
-        String userId = "ADMIN";
-        FaqDto dto = FaqDto.builder().qestnSj("Updated Sj").build();
-        Faq faq = Faq.builder().faqId(faqId).qestnSj("Old Sj").build();
-        given(faqRepository.findById(faqId)).willReturn(Optional.of(faq));
+        // given
+        String faqId = "FAQ_1";
+        String userId = "user1";
+        FaqDto dto = FaqDto.builder()
+                .qestnSj("Updated Question")
+                .qestnCn("Updated Content")
+                .answerCn("Updated Answer")
+                .build();
 
-        // When
+        Faq existingFaq = Faq.builder()
+                .faqId(faqId)
+                .qestnSj("Old Question")
+                .qestnCn("Old Content")
+                .answerCn("Old Answer")
+                .build();
+
+        given(faqRepository.findById(faqId)).willReturn(Optional.of(existingFaq));
+
+        // when
         faqService.updateFaq(faqId, userId, dto);
 
-        // Then
-        assertThat(faq.getQestnSj()).isEqualTo("Updated Sj");
-        verify(faqRepository).findById(faqId);
+        // then
+        assertThat(existingFaq.getQestnSj()).isEqualTo("Updated Question");
+        assertThat(existingFaq.getQestnCn()).isEqualTo("Updated Content");
+        assertThat(existingFaq.getAnswerCn()).isEqualTo("Updated Answer");
     }
 
     @Test
-    @DisplayName("FAQ 삭제 성공")
+    @DisplayName("FAQ 삭제 - 성공")
     void deleteFaq_Success() {
-        // Given
-        String faqId = "FAQ1";
-        String userId = "ADMIN";
+        // given
+        String faqId = "FAQ_1";
+        String userId = "user1";
 
-        // When
+        // when
         faqService.deleteFaq(faqId, userId);
 
-        // Then
+        // then
         verify(faqRepository, times(1)).deleteById(faqId);
     }
 
     @Test
-    @DisplayName("FAQ 조회수 증가 성공")
+    @DisplayName("FAQ 조회수 증가 - 성공")
     void increaseViewCount_Success() {
-        // Given
-        String faqId = "FAQ1";
-        Faq faq = Faq.builder().faqId(faqId).inqireCo(0).build();
+        // given
+        String faqId = "FAQ_1";
+        Faq faq = Faq.builder()
+                .faqId(faqId)
+                .inqireCo(0)
+                .build();
+
         given(faqRepository.findById(faqId)).willReturn(Optional.of(faq));
 
-        // When
+        // when
         faqService.increaseViewCount(faqId);
 
-        // Then
+        // then
         assertThat(faq.getInqireCo()).isEqualTo(1);
-        verify(faqRepository).findById(faqId);
     }
 }

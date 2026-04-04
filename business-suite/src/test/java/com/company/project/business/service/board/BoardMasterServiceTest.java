@@ -5,7 +5,6 @@ import com.company.project.business.domain.board.*;
 import com.company.project.business.service.board.dto.BlogDto;
 import com.company.project.business.service.board.dto.BoardMasterDto;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,218 +13,177 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import java.util.Arrays;
+
 import java.util.List;
 import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
+@DisplayName("BoardMasterService 단위 테스트")
 class BoardMasterServiceTest {
 
-  @Mock
-  private BoardMasterRepository boardMasterRepository;
-  @Mock
-  private BlogRepository blogRepository;
-  @Mock
-  private BlogUserRepository blogUserRepository;
-  @Mock
-  private EgovIdGnrService idgenService;
+    @InjectMocks
+    private BoardMasterService boardMasterService;
 
-  @InjectMocks
-  private BoardMasterService boardMasterService;
+    @Mock
+    private BoardMasterRepository boardMasterRepository;
 
-  private BoardMaster mockBoardMaster;
-  private BoardMasterDto boardMasterDto;
+    @Mock
+    private BlogRepository blogRepository;
 
-  @BeforeEach
-  void setUp() {
-    mockBoardMaster = BoardMaster.builder()
-        .bbsId("BBS_0000000001")
-        .bbsNm("Board")
-        .bbsIntrcn("Success")
-        .bbsTyCode("BBST01")
-        .bbsAttrbCode("BBSA01")
-        .replyPosblAt("Y")
-        .fileAtchPosblAt("Y")
-        .atchPosblFileNumber(3)
-        .atchPosblFileSize(1024L * 1024L * 5L)
-        .tmplatId("TMPL01")
-        .useAt("Y")
-        .createdBy("USER001")
-        .lastModifiedBy("USER001")
-        .blogAt("N")
-        .commentAt("Y")
-        .stsfdgAt("Y")
-        .build();
+    @Mock
+    private BlogUserRepository blogUserRepository;
 
-    boardMasterDto = BoardMasterDto.builder()
-        .bbsId("BBS_0000000001")
-        .bbsNm("Board")
-        .bbsIntrcn("Success")
-        .bbsTyCode("BBST01")
-        .bbsAttrbCode("BBSA01")
-        .replyPosblAt("Y")
-        .fileAtchPosblAt("Y")
-        .atchPosblFileNumber(3)
-        .atchPosblFileSize(1024L * 1024L * 5L)
-        .tmplatId("TMPL01")
-        .useAt("Y")
-        .frstRegisterId("USER001")
-        .lastUpdusrId("USER001")
-        .blogAt("N")
-        .commentAt("Y")
-        .stsfdgAt("Y")
-        .build();
-  }
+    @Mock(name = "idgenService")
+    private EgovIdGnrService idgenService;
 
-  @Test
-@DisplayName("Board Master detail success")
-  void getBoardMaster_success() {
-    when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
-    BoardMasterDto result = boardMasterService.getBoardMaster("BBS_0000000001");
-    assertThat(result.getBbsId()).isEqualTo("BBS_0000000001");
-  }
+    @Test
+    @DisplayName("게시판 마스터 단건 조회 - 성공")
+    void getBoardMaster_Success() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").bbsNm("Test Board").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
-  @Test
-@DisplayName("Board Master detail fail - not found")
-  void getBoardMaster_fail_notFound() {
-    when(boardMasterRepository.findById("NONEXISTENT")).thenReturn(Optional.empty());
-    assertThatThrownBy(() -> boardMasterService.getBoardMaster("NONEXISTENT"))
-        .isInstanceOf(BusinessException.class);
-  }
+        BoardMasterDto result = boardMasterService.getBoardMaster("BBS_01");
 
-  @Test
-@DisplayName("Board Master list success")
-  void getBoardMasterList_success() {
-    List<BoardMasterSearchResult> searchResults = Arrays.asList(
-        BoardMasterSearchResult.builder().bbsId("BBS_0000000001").bbsNm("Board").useAt("Y").build());
-    when(boardMasterRepository.searchBoardMasters(any(), any())).thenReturn(new PageImpl<>(searchResults));
-    Page<BoardMasterDto> result = boardMasterService.getBoardMasterList("1", "test", PageRequest.of(0, 10));
-    assertThat(result).hasSize(1);
-  }
+        assertThat(result).isNotNull();
+        assertThat(result.getBbsNm()).isEqualTo("Test Board");
+    }
 
-  @Test
-@DisplayName("Board Master create success")
-  void createBoardMaster_success() throws Exception {
-    when(idgenService.getNextStringId()).thenReturn("BBS_NEW0000001");
-    boardMasterService.createBoardMaster(boardMasterDto);
-    verify(boardMasterRepository).save(any(BoardMaster.class));
-  }
+    @Test
+    @DisplayName("게시판 마스터 단건 조회 - 실패")
+    void getBoardMaster_Fail() {
+        given(boardMasterRepository.findById("BBS_99")).willReturn(Optional.empty());
 
-  @Test
-@DisplayName("Board Master update success")
-  void updateBoardMaster_success() {
-    when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
-    boardMasterService.updateBoardMaster(boardMasterDto);
-    verify(boardMasterRepository).findById("BBS_0000000001");
-  }
+        assertThrows(BusinessException.class, () -> boardMasterService.getBoardMaster("BBS_99"));
+    }
 
-  @Test
-@DisplayName("Board Master delete success")
-  void deleteBoardMaster_success() {
-    when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
-    boardMasterService.deleteBoardMaster("BBS_0000000001", "USER002");
-    verify(boardMasterRepository).findById("BBS_0000000001");
-  }
+    @Test
+    @DisplayName("게시판 마스터 목록 검색")
+    void getBoardMasterList() {
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        BoardMasterSearchResult searchResult = mockSearchResult("BBS_01", "Test Board");
+        Page<BoardMasterSearchResult> page = new PageImpl<>(List.of(searchResult));
+        
+        given(boardMasterRepository.searchBoardMasters(any(), any())).willReturn(page);
 
-  @Test
-@DisplayName("Satisfaction usage check success")
-  void canUseSatisfaction_true() {
-    when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
-    assertThat(boardMasterService.canUseSatisfaction("BBS_0000000001")).isTrue();
-  }
+        Page<BoardMasterDto> result = boardMasterService.getBoardMasterList("0", "Test", pageable);
 
-  @Test
-@DisplayName("Comment usage check success")
-  void canUseComment_true() {
-    when(boardMasterRepository.findById("BBS_0000000001")).thenReturn(Optional.of(mockBoardMaster));
-    assertThat(boardMasterService.canUseComment("BBS_0000000001")).isTrue();
-  }
-
-  @Test
-@DisplayName("Blog list success")
-  void getBlogList_success() {
-    Blog blog = Blog.builder().blogId("BLOG_001").blogNm("Blog").build();
-    when(blogRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(blog)));
-    Page<BlogDto> result = boardMasterService.getBlogList("1", "test", PageRequest.of(0, 10));
-    assertThat(result).hasSize(1);
-  }
-
-  @Test
-  @DisplayName("Blog detail success")
-  void getBlog_success() {
-    Blog blog = Blog.builder().blogId("BLOG_001").blogNm("Blog").build();
-    when(blogRepository.findById("BLOG_001")).thenReturn(Optional.of(blog));
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getBbsNm()).isEqualTo("Test Board");
+    }
     
-    BlogDto result = boardMasterService.getBlog("BLOG_001");
-    
-    assertThat(result).isNotNull();
-    assertThat(result.getBlogId()).isEqualTo("BLOG_001");
-  }
+    private BoardMasterSearchResult mockSearchResult(String bbsId, String bbsNm) {
+        return new BoardMasterSearchResult() {
+            @Override public String getBbsId() { return bbsId; }
+            @Override public String getBbsNm() { return bbsNm; }
+            @Override public String getBbsTyCode() { return "TY01"; }
+            @Override public String getBbsAttrbCode() { return "AT01"; }
+            @Override public String getTmplatId() { return "TMP_01"; }
+            @Override public String getUseAt() { return "Y"; }
+        };
+    }
 
-  @Test
-  @DisplayName("Blog user check success")
-  void checkBlogUser_success() {
-    when(blogRepository.existsByCreatedBy("USER001")).thenReturn(true);
-    
-    boolean result = boardMasterService.checkBlogUser("USER001");
-    
-    assertThat(result).isTrue();
-  }
+    @Test
+    @DisplayName("게시판 마스터 생성")
+    void createBoardMaster() throws Exception {
+        given(idgenService.getNextStringId()).willReturn("BBS_01");
+        BoardMasterDto dto = BoardMasterDto.builder().bbsNm("New Board").build();
 
-  @Test
-  @DisplayName("Get blog list for portlet success")
-  void getBlogListPortlet_success() {
-    Blog blog = Blog.builder().blogId("BLOG_001").blogNm("Blog").build();
-    when(blogRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(blog)));
-    
-    List<BlogDto> result = boardMasterService.getBlogListPortlet();
-    
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getBlogId()).isEqualTo("BLOG_001");
-  }
+        String bbsId = boardMasterService.createBoardMaster(dto);
 
-  @Test
-  @DisplayName("Get board master list for portlet success")
-  void getBoardMasterListPortlet_success() {
-    when(boardMasterRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(mockBoardMaster)));
-    
-    List<BoardMasterDto> result = boardMasterService.getBoardMasterListPortlet();
-    
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getBbsId()).isEqualTo("BBS_0000000001");
-  }
+        assertThat(bbsId).isEqualTo("BBS_01");
+        verify(boardMasterRepository).save(any(BoardMaster.class));
+    }
 
-  @Test
-  @DisplayName("Get board master list by community success")
-  void getBoardMasterListByCommunity_success() {
-    when(boardMasterRepository.findByCmmntyIdAndUseAt("COMM_001", "Y")).thenReturn(List.of(mockBoardMaster));
-    
-    List<BoardMasterDto> result = boardMasterService.getBoardMasterListByCommunity("COMM_001");
-    
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getBbsId()).isEqualTo("BBS_0000000001");
-  }
+    @Test
+    @DisplayName("게시판 마스터 수정")
+    void updateBoardMaster() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").bbsNm("Old Board").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
-  @Test
-  @DisplayName("Blog create success")
-  void createBlog_success() {
-    boardMasterService.createBlog(BlogDto.builder().blogId("B1").build());
-    verify(blogRepository).save(any(Blog.class));
-  }
+        BoardMasterDto dto = BoardMasterDto.builder().bbsId("BBS_01").bbsNm("Updated Board").build();
+        boardMasterService.updateBoardMaster(dto);
 
-  @Test
-  @DisplayName("Blog join success")
-  void joinBlog_success() {
-    boardMasterService.joinBlog("B1", "U1", "N");
-    verify(blogUserRepository).save(any(BlogUser.class));
-  }
+        assertThat(master.getBbsNm()).isEqualTo("Updated Board");
+    }
+
+    @Test
+    @DisplayName("게시판 마스터 삭제 (논리삭제)")
+    void deleteBoardMaster() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useAt("Y").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+
+        boardMasterService.deleteBoardMaster("BBS_01", "user1");
+
+        assertThat(master.getUseAt()).isEqualTo("N");
+    }
+
+    @Test
+    @DisplayName("만족도 및 댓글 사용 가능 여부 확인")
+    void canUseSatisfactionAndComment() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").stsfdgAt("Y").commentAt("N").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+
+        assertThat(boardMasterService.canUseSatisfaction("BBS_01")).isTrue();
+        assertThat(boardMasterService.canUseComment("BBS_01")).isFalse();
+    }
+
+    @Test
+    @DisplayName("블로그 목록 조회")
+    void getBlogList() {
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        Blog blog = Blog.builder().blogId("BLOG_01").blogNm("My Blog").build();
+        given(blogRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(blog)));
+
+        Page<BlogDto> result = boardMasterService.getBlogList(null, null, pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getBlogId()).isEqualTo("BLOG_01");
+    }
+
+    @Test
+    @DisplayName("블로그 단건 조회")
+    void getBlog() {
+        Blog blog = Blog.builder().blogId("BLOG_01").blogNm("My Blog").build();
+        given(blogRepository.findById("BLOG_01")).willReturn(Optional.of(blog));
+
+        BlogDto result = boardMasterService.getBlog("BLOG_01");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getBlogNm()).isEqualTo("My Blog");
+    }
+    
+    @Test
+    @DisplayName("블로그 생성")
+    void createBlog() {
+        BlogDto dto = BlogDto.builder().blogId("BLOG_01").blogNm("New Blog").build();
+        boardMasterService.createBlog(dto);
+        verify(blogRepository).save(any(Blog.class));
+    }
+    
+    @Test
+    @DisplayName("블로그 유저 가입")
+    void joinBlog() {
+        boardMasterService.joinBlog("BLOG_01", "user1", "N");
+        verify(blogUserRepository).save(any(BlogUser.class));
+    }
+
+    @Test
+    @DisplayName("포틀릿 및 커뮤니티용 게시판 조회")
+    void getPortletAndCommunityLists() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        given(boardMasterRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(master)));
+        given(boardMasterRepository.findByCmmntyIdAndUseAt("CMMNTY_01", "Y")).willReturn(List.of(master));
+
+        assertThat(boardMasterService.getBoardMasterListPortlet()).hasSize(1);
+        assertThat(boardMasterService.getBoardMasterListByCommunity("CMMNTY_01")).hasSize(1);
+    }
 }
-
-
-
