@@ -23,7 +23,7 @@ interface SearchResult {
     icon: React.ReactNode;
 }
 
-// 移댄뀒怨좊━蹂님꾩씠肄매핑
+// 카테고리별 아이콘 매핑
 const categoryIcons = {
     Menu: <Settings size={14} />,
     Content: <FileText size={14} />,
@@ -38,7 +38,7 @@ export function CommandPalette() {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // 硫붾돱 데이터濡쒕뱶
+    // 메뉴 데이터 로드
     useEffect(() => {
         if (!isOpen) return;
 
@@ -70,7 +70,7 @@ export function CommandPalette() {
         loadMenus();
     }, [isOpen]);
 
-    // ?꾪꽣留곷맂 寃곌낵
+    // 필터링된 결과
     const filteredResults = results.filter(item =>
         item.title.toLowerCase().includes(query.toLowerCase()) ||
         item.category.toLowerCase().includes(query.toLowerCase()) ||
@@ -107,7 +107,7 @@ export function CommandPalette() {
     return (
         <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4 md:px-0 bg-black/80 animate-in fade-in duration-300">
             <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border shadow-2xl rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200">
-                {/* Search Input Area */}
+                {/* 검색 입력 영역 */}
                 <div className="flex items-center p-6 border-b gap-4">
                     <Search className="text-muted-foreground" size={20} />
                     <input
@@ -138,7 +138,7 @@ export function CommandPalette() {
                     </button>
                 </div>
 
-                {/* Results Area */}
+                {/* 결과 영역 */}
                 <div className="max-h-[50vh] overflow-y-auto p-4 space-y-4 custom-scrollbar">
                     {isLoading ? (
                         <div className="p-20 flex flex-col items-center justify-center text-center space-y-4">
@@ -146,8 +146,8 @@ export function CommandPalette() {
                                 <Search size={40} className="text-muted-foreground/30" />
                             </div>
                             <div>
-                                <p className="text-lg font-black text-foreground">硫붾돱瑜遺덈윭ㅻ뒗 중..</p>
-                                <p className="text-sm text-muted-foreground font-bold">?좎떆留湲곕떎ㅼ＜몄슂.</p>
+                                <p className="text-lg font-black text-foreground">메뉴를 불러오는 중..</p>
+                                <p className="text-sm text-muted-foreground font-bold">잠시만 기다려 주세요.</p>
                             </div>
                         </div>
                     ) : filteredResults.length > 0 ? (
@@ -165,7 +165,7 @@ export function CommandPalette() {
                                                     <button
                                                         key={result.id}
                                                         className={cn(
-                                                            '시스템 통합 분석 및 현황',
+                                                            "w-full group p-4 rounded-2xl flex items-center justify-between transition-all outline-none border-2 border-transparent",
                                                             globalIdx === selectedIndex ? "bg-primary text-primary-foreground shadow-lg scale-[1.01]" : "hover:bg-muted text-foreground"
                                                         )}
                                                         onClick={() => onSelect(result.url)}
@@ -173,8 +173,8 @@ export function CommandPalette() {
                                                     >
                                                         <div className="flex items-center gap-4 text-left">
                                                             <div className={cn(
-                                                                '사용자 관리',
-                                                                globalIdx === selectedIndex ? "bg-white/20 border-white/10" : '통계 대시보드'
+                                                                "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                                                                globalIdx === selectedIndex ? "bg-white/20 border-white/10 shadow-inner" : "bg-primary/5 text-primary border border-primary/10"
                                                             )}>
                                                                 {result.icon}
                                                             </div>
@@ -182,8 +182,8 @@ export function CommandPalette() {
                                                                 <p className="text-sm font-black tracking-tight">{result.title}</p>
                                                                 {result.description && (
                                                                     <p className={cn(
-                                                                        '권한 설정 및 사용자 목록',
-                                                                        globalIdx === selectedIndex ? "text-primary-foreground/70" : '시스템 통합 분석 및 현황'
+                                                                        "text-[10px] font-bold line-clamp-1",
+                                                                        globalIdx === selectedIndex ? "text-primary-foreground/70" : "text-muted-foreground/60"
                                                                     )}>
                                                                         {result.description}
                                                                     </p>
@@ -191,8 +191,8 @@ export function CommandPalette() {
                                                             </div>
                                                         </div>
                                                         <ArrowRight className={cn(
-                                                            '공지사항 게시판',
-                                                            globalIdx === selectedIndex ? "opacity-100 translate-x-0" : "group-hover:opacity-100 -translate-x-2"
+                                                            "transition-all duration-300",
+                                                            globalIdx === selectedIndex ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
                                                         )} size={16} />
                                                     </button>
                                                 );
@@ -208,14 +208,14 @@ export function CommandPalette() {
                                 <Search size={40} className="text-muted-foreground/30" />
                             </div>
                             <div>
-                                <p className="text-lg font-black text-foreground">寃곌낵媛 ?놁뒿?덈떎.</p>
-                                <p className="text-sm text-muted-foreground font-bold">ㅻⅨ ㅼ썙?쒕줈 寃됲빐 蹂댁꽭님</p>
+                                <p className="text-lg font-black text-foreground">결과가 없습니다.</p>
+                                <p className="text-sm text-muted-foreground font-bold">다른 키워드로 검색해 보세요.</p>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* Footer Hints */}
+                {/* 푸터 힌트 */}
                 <div className="p-4 bg-muted/30 border-t flex items-center justify-center gap-6">
                     <div className="flex items-center gap-2">
                         <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">Enter</kbd>
@@ -235,7 +235,7 @@ export function CommandPalette() {
     );
 }
 
-// 硫붾돱 경로蹂님꾩씠肄諛섑솚
+// 메뉴 아이콘 반환 함수
 function getMenuIcon(route: string): React.ReactNode {
     if (route.includes('stats') || route.includes('dashboard')) return <LayoutDashboard size={14} />;
     if (route.includes('user')) return <Users size={14} />;
@@ -243,4 +243,3 @@ function getMenuIcon(route: string): React.ReactNode {
     if (route.includes('system') || route.includes('admin')) return <Settings size={14} />;
     return <LayoutDashboard size={14} />;
 }
-

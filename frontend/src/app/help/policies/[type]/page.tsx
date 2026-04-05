@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -23,8 +23,8 @@ export default function PolicyViewPage() {
           // Fallback static defaults if API fails
           setPolicy({
             type: type as string,
-            title: type === 'privacy' ? '媛쒖씤?뺣낫 泥섎━ 諛⑹묠' : '?쎄? 諛님뺤콉',
-            content: '이용님遺덈윭님님?놁뒿?덈떎. ?좎떆 님ㅼ떆 ?쒕룄?댁＜몄슂.'
+            title: type === 'privacy' ? '개인정보 처리 방침' : '약관 및 정책',
+            content: '정책 내용을 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'
           });
         })
         .finally(() => setLoading(false));
@@ -43,7 +43,7 @@ export default function PolicyViewPage() {
   return (
     <div className="container mx-auto py-20 px-6 max-w-4xl animate-in slide-in-from-bottom-5 duration-700">
       <HubHeader 
-        title={policy?.title || '시스템?뺤콉'} 
+        title={policy?.title || '시스템 정책'} 
         subtitle="POLICY & LEGAL"
         icon={Scale}
         className="mb-12"
@@ -59,7 +59,7 @@ export default function PolicyViewPage() {
       </Card>
       
       <div className="mt-12 text-center text-muted-foreground text-sm uppercase tracking-widest opacity-50">
-        理쒖쥌 ?섏젙님 {new Date().toLocaleDateString()}
+        최종 수정일: {new Date().toLocaleDateString()}
       </div>
     </div>
   );

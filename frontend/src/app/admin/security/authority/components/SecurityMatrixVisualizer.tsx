@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,24 +10,17 @@ import {
   Database, 
   Zap, 
   ShieldAlert, 
-  Maximize2,
-  Minimize2,
-  Trash2,
-  Save,
-  Search,
-  ChevronRight,
-  Info
+  Maximize2, 
+  Minimize2, 
+  Trash2, 
+  Save, 
+  Search, 
+  ChevronRight, 
+  Info 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-// import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-// Mock Tooltip components for when tooltip.tsx is missing
-const TooltipProvider = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-const Tooltip = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-const TooltipTrigger = ({ children, asChild }: { children: React.ReactNode, asChild?: boolean }) => <>{children}</>;
-const TooltipContent = ({ children }: { children: React.ReactNode }) => null;
 
 interface Author {
   authorCode: string;
@@ -50,15 +43,16 @@ interface SecurityMatrixVisualizerProps {
 }
 
 /**
- * 보안 沅뚰븳 매트릭스 ?쒓컖님(Access Control Grid)
- * 님븷(X異怨硫붾돱(Y異님愿怨꾨? ?덊듃留님ㅽ님쇱쓽 寃⑹옄濡님쒓컖?뷀븯님 * 시스템?꾩껜보안 ?됰㈃님?쒕늿님議곌컧?섍퀬 ?쒖뼱님님?덇쾶 합니다
+ * 보안 권한 매트릭스 시각화(Access Control Grid)
+ * 역할(X축)과 메뉴(Y축)의 관계를 히트맵 형식의 격자로 시각화하여
+ * 시스템 전체 보안 평면을 한눈에 조망하고 제어할 수 있게 합니다.
  */
 export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> = ({ 
   authors, 
   menus, 
   mappings, 
   onToggle, 
-  onSave,
+  onSave, 
   isSaving 
 }) => {
   const [searchMenu, setSearchMenu] = useState('');
@@ -66,7 +60,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
 
   const filteredMenus = menus.filter(m => m.menuNm.toLowerCase().includes(searchMenu.toLowerCase()));
 
-  // 통계 怨꾩궛
+  // 통계 계산
   const totalCells = authors.length * menus.length;
   const activeCells = Array.from(mappings.values()).reduce((acc, set) => acc + set.size, 0);
   const coverage = totalCells > 0 ? (activeCells / totalCells) * 100 : 0;
@@ -132,7 +126,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={20} />
                   <Input 
                       className="h-16 pl-16 rounded-2xl border-none shadow-xl text-md font-black tracking-tight focus:ring-8 focus:ring-primary/5"
-                      placeholder="硫붾돱 노드 寃님(紐낆묶, ID)..."
+                      placeholder="메뉴 노드 검색(명칭, ID)..."
                       value={searchMenu}
                       onChange={(e) => setSearchMenu(e.target.value)}
                   />
@@ -149,7 +143,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                             <span className="text-[10px] font-black text-white/40 tracking-[0.4em] uppercase italic">Entity_Map</span>
                          </div>
                       </th>
-                      {authors.map((auth, idx) => (
+                      {authors.map((auth) => (
                          <th key={auth.authorCode} className="p-8 bg-slate-50/50 min-w-[150px] transition-colors hover:bg-slate-100">
                             <div className="flex flex-col items-center gap-2 group/header cursor-pointer">
                                <div className="w-10 h-10 rounded-xl bg-white border-2 border-slate-200 flex items-center justify-center text-slate-400 transition-all group-hover/header:bg-slate-900 group-hover/header:text-white group-hover/header:scale-110 shadow-sm">
@@ -163,16 +157,16 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                    </tr>
                 </thead>
                 <tbody className="divide-y-2 divide-slate-100">
-                   {filteredMenus.map((menu, mIdx) => (
+                   {filteredMenus.map((menu) => (
                       <tr key={menu.menuNo} className="divide-x-2 divide-slate-50 hover:bg-slate-50/50 transition-colors group/row">
                          <td className="sticky left-0 z-20 bg-white p-6 border-r-4 border-slate-100 group-hover/row:bg-slate-50 transition-colors">
                             <div className="flex items-center gap-4">
                                <div className={cn(
                                   "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
                                   menu.upperMenuNo === 0 ? "bg-amber-50 text-amber-500" : "bg-slate-50 text-slate-400"
-                               )}>
+                                )}>
                                   {menu.upperMenuNo === 0 ? <Database size={14} /> : <ChevronRight size={14} />}
-                               </div>
+                                </div>
                                <div className="flex flex-col min-w-0">
                                   <span className="text-sm font-black text-slate-900 truncate tracking-tight">{menu.menuNm}</span>
                                   <span className="text-[8px] font-black text-slate-300 tracking-widest font-mono uppercase">NODE_{menu.menuNo}</span>
@@ -243,11 +237,10 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
           <div className="space-y-1">
              <p className="text-sm font-black text-slate-900 tracking-tight leading-none italic uppercase underline decoration-primary/20 decoration-4 underline-offset-4">Governance_Protocol_Guide</p>
              <p className="text-[11px] font-medium text-slate-400">
-                媛寃⑹옄(Cell)瑜님대┃섏뿬 ?대떦 님븷님님硫붾돱 ?묎렐 沅뚰븳님?좉님⑸땲님 蹂寃쎌궗님? ?곗륫 ?곷떒님<span className="text-slate-900 font-black">COMMIT_CHANGES</span> 踰꾪듉님?뚮윭님ㅼ젣 ?꾪궎?띿쿂님諛섏쁺합니다
+                각 격자(Cell)를 클릭하여 해당 역할에 대한 메뉴 접근 권한을 토글합니다. 변경 사항은 우측 상단의 <span className="text-slate-900 font-black">COMMIT_CHANGES</span> 버튼을 눌러 실제 아키텍처에 반영해야 합니다.
              </p>
           </div>
        </div>
     </div>
   );
 };
-

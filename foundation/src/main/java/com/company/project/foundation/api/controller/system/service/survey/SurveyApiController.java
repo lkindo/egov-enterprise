@@ -19,7 +19,7 @@ import java.util.List;
 
 @Tag(name = "Survey", description = "설문 관리 API (Admin)")
 @RestController("systemSurveyApiController")
-@RequestMapping("/api/v1/admin/system/surveys")
+@RequestMapping({"/api/v1/admin/system/surveys", "/api/v1/surveys"})
 @RequiredArgsConstructor
 public class SurveyApiController {
 

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -54,7 +54,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
       CharacterCount,
     ],
     content: value,
-    immediatelyRender: false, // SSR Hydration ㅻ쪟 諛⑹瑜님꾪빐 ?꾩닔 ㅼ젙
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -74,35 +74,6 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
   return (
     <div className={cn("relative group border-2 border-border/50 rounded-[2.5rem] bg-white dark:bg-muted/10 overflow-hidden transition-all focus-within:border-primary/20 focus-within:shadow-2xl focus-within:shadow-primary/5", className)}>
       
-      {/* --- Floating Bubble Menu Disabled for Build Stability --- */}
-      {/* 
-      <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
-        <div className="flex items-center gap-1 p-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl">
-          <ToolbarButton 
-            onClick={() => editor.chain().focus().toggleBold().run()} 
-            active={editor.isActive('bold')} 
-            icon={<Bold size={16} />} 
-          />
-          <ToolbarButton 
-            onClick={() => editor.chain().focus().toggleItalic().run()} 
-            active={editor.isActive('italic')} 
-            icon={<Italic size={16} />} 
-          />
-          <div className="w-[1px] h-4 bg-white/10 mx-1" />
-          <ToolbarButton 
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} 
-            active={editor.isActive('heading', { level: 1 })} 
-            icon={<Heading1 size={16} />} 
-          />
-          <ToolbarButton 
-            onClick={() => editor.chain().focus().toggleCode().run()} 
-            active={editor.isActive('code')} 
-            icon={<Code size={16} />} 
-          />
-        </div>
-      </BubbleMenu>
-      */}
-
       {/* --- Top Persistent Toolbar --- */}
       <div className="flex items-center flex-wrap gap-2 p-4 bg-slate-50 dark:bg-muted/20 border-b border-border/50 relative z-20">
         <ToolbarGroup>
@@ -191,11 +162,12 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
       {/* --- Footer Status --- */}
       <div className="px-8 py-4 bg-slate-50/50 dark:bg-muted/30 border-t border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className="text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase">紐⑤뱶: 由ъ튂 ?띿뒪님?먮뵒님v1.0</span>
-          <span className="text-[10px] font-black tracking-widest text-primary uppercase bg-primary/5 px-2 py-0.5 rounded leading-none">?묒꽦 이용 실시간숆린님중..</span>
+          <span className="text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase">모드: 지능형 리치 텍스트 에디터 v1.0</span>
+          <span className="text-[10px] font-black tracking-widest text-primary uppercase bg-primary/5 px-2 py-0.5 rounded leading-none">실시간 문서 동기화 활성화</span>
         </div>
         <div className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest whitespace-nowrap">
-          {editor.storage.characterCount?.words?.() || 0} ⑥뼱 님怨좏뭹吏님щ㎎님        </div>
+          {editor.storage.characterCount?.words?.() || 0} 단어 작성 중
+        </div>
       </div>
     </div>
   );
