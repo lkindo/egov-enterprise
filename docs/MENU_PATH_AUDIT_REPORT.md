@@ -11,7 +11,7 @@
 ## 2. 조사 결과 요약
 - **정상 연결**: 모든 메뉴가 실제 파일 시스템 상의 유효한 경로를 가리키고 있습니다. (Next.js App Router 기준)
 - **파일 누락 (File Missing)**: 없음.
-- **의심 항목 (Suspicious)**: 중복 연결, 테스트용 메뉴, 미사용 표기 메뉴 등 **12건** 확인.
+- **의심 항목 (Suspicious)**: 중복 연결, 테스트용 메뉴, 미사용 표기 메뉴 등 **11건** 확인.
 
 ## 3. 의심스러운 메뉴 상세 (보고 필요)
 
@@ -20,7 +20,6 @@
 | `test` | `/admin/community/boards/selectBoardList?bbsId=BBSMSTR_...120` | 테스트용 데이터로 보임. 실 운영 환경에서 제거 필요. |
 | `[미사용] 서베이기능그룹` | `/admin/survey/hub?tab=manage` | '미사용' 표기가 되어 있으나 메뉴 목록에는 존재함. 중복 가능성. |
 | `[미사용] 통계 폴더` | `/admin/system/monitoring` | '미사용' 표기된 폴더가 루트 직계로 존재. |
-| `부서일정관리` / `일정 관리` | `/admin/work-hub?tab=calendar` | 두 메뉴가 동일한 경로 및 탭을 가리킴. 명칭 조율 또는 통합 필요. |
 | `주소록관리` / `인적 자원 및 주소록 관리` | `/admin/collaboration/address-book` | 상위 폴더와 하위 메뉴가 동일한 경로를 가리켜 중복 이동 발생 가능. |
 | `설문템플릿관리` | `/admin/survey/hub?tab=manage` | `설문 및 여론조사 관리` 메뉴와 동일한 탭(`manage`)을 가리킴. |
 | `게시판사용정보` | `/admin/community/boards` | 상위 메뉴(`게시판 및 커뮤니티 관리`)와 동일한 경로를 가리킴. |
@@ -34,7 +33,6 @@
 | 🏢 워크스페이스 | (Link 없음) | OK (Category) | - |
 | 🔍 통합 검색 | `/search` | OK | |
 | 개인 및 부서 일정 | `/admin/work-hub?tab=job` | OK | |
-| 부서일정관리 | `/admin/work-hub?tab=calendar` | OK | **의심 (중복)** |
 | 일정 관리 | `/admin/work-hub?tab=calendar` | OK | **의심 (중복)** |
 | 문자메시지 | `/admin/uss/ion/sms` | OK | |
 | 메일발송 | `/admin/collaboration/mail-send` | OK | |

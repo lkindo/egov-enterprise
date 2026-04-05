@@ -23,7 +23,6 @@ def audit():
         {"menu_nm":"🏢 워크스페이스","modern_route":"","progrm_file_nm":"dir","menu_no":"1000000","upper_menu_no":None},
         {"menu_nm":"🔍 통합 검색","modern_route":"/search","progrm_file_nm":"dir","menu_no":"1000001","upper_menu_no":"1000000"},
         {"menu_nm":"개인 및 부서 일정","modern_route":"/admin/work-hub?tab=job","progrm_file_nm":"dir","menu_no":"1010000","upper_menu_no":"1000000"},
-        {"menu_nm":"부서일정관리","modern_route":"/admin/work-hub?tab=calendar","progrm_file_nm":"EgovDeptSchdulManageList","menu_no":"1010100","upper_menu_no":"1010000"},
         {"menu_nm":"일정 관리","modern_route":"/admin/work-hub?tab=calendar","progrm_file_nm":"EgovIndvdlSchdulManageList","menu_no":"1010200","upper_menu_no":"1010000"},
         {"menu_nm":"메일 및 통합 메시지 센터","modern_route":"/admin/collaboration/mail-history","progrm_file_nm":"dir","menu_no":"1020000","upper_menu_no":"1000000"},
         {"menu_nm":"문자메시지","modern_route":"/admin/uss/ion/sms","progrm_file_nm":"selectSmsList","menu_no":"1020100","upper_menu_no":"1020000"},
