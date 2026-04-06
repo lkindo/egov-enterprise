@@ -163,9 +163,7 @@ tasks.register('jacocoRootReport', JacocoReport) {
     })
 
     // 실행 데이터(.exec) 통합: 테스트 태스크의 결과물과 직접 연결하여 암시적 의존성 문제 해결
-    executionData.setFrom(subprojects.collect { 
-        it.tasks.withType(Test).findAll { t -> t.jacoco.enabled }.collect { t -> t.jacoco.destinationFile }
-    })
+    executionData.setFrom(files("${rootProject.buildDir}/jacoco/test.exec"))
 
     reports {
         xml.required = true
