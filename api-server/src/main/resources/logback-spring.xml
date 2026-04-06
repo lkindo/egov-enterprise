@@ -17,7 +17,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.company.project" level="DEBUG"/>
+    <logger name="nuri" level="DEBUG"/>
     <logger name="org.hibernate.SQL" level="DEBUG"/>
     <logger name="org.hibernate.orm.jdbc.bind" level="TRACE"/>
     <logger name="org.springframework.web" level="DEBUG"/>

@@ -69,5 +69,5 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.hibernate.orm.model.mapping: DEBUG
-    com.company.project: DEBUG
+    nuri: DEBUG
     org.springframework.boot.autoconfigure: DEBUG

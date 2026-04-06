@@ -1,0 +1,18 @@
+package nuri.foundation.service.code;
+
+import nuri.foundation.service.code.dto.CodeDto;
+import java.util.List;
+
+/**
+ * ?듯???붾퉬???명꽣??씠??
+ * - ?꾩옄???꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ⑹꾪븳 ?명꽣??씠???꾨?? */
+public interface EgovCodeService {
+
+    /**
+     * ?뱀洹몃??붾????븳 ?곸꽭 ?붾紐⑸議고??     */
+    List<CodeDto> getDetailCodeList(@org.springframework.lang.NonNull String codeGroupId);
+
+    /**
+     * ?꾩껜 ??꽦 ?붾紐⑸議고??     */
+    List<CodeDto> getAllActiveCodes();
+}

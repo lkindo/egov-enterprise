@@ -1,0 +1,78 @@
+package nuri.foundation.service.system.content.banner;
+
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.ErrorCode;
+import nuri.foundation.domain.system.content.banner.Banner;
+import nuri.foundation.domain.system.content.banner.BannerRepository;
+import nuri.foundation.service.system.content.banner.dto.BannerDto;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class BannerService implements EgovBannerService {
+
+    private final BannerRepository bannerRepository;
+
+    @Override
+    public Page<BannerDto> getBannerList(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.isEmpty()) {
+            return bannerRepository.findAll(Objects.requireNonNull(pageable)).map(BannerDto::from);
+        }
+        return bannerRepository.findByBannerNmContaining(keyword, Objects.requireNonNull(pageable))
+                .map(BannerDto::from);
+    }
+
+    @Override
+    public BannerDto getBanner(String bannerId) {
+        return bannerRepository.findById(Objects.requireNonNull(bannerId))
+                .map(BannerDto::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional
+    public void insertBanner(BannerDto dto) {
+        String id = "BANNER_" + System.currentTimeMillis();
+        Banner entity = Banner.builder()
+                .bannerId(id)
+                .bannerNm(dto.getBannerNm())
+                .linkUrl(dto.getLinkUrl())
+                .bannerImage(dto.getBannerImage())
+                .bannerDc(dto.getBannerDc())
+                .sortOrdr(dto.getSortOrdr())
+                .reflctAt(dto.getReflctAt())
+                .bannerImageFile(dto.getBannerImageFile())
+                .build();
+        bannerRepository.save(Objects.requireNonNull(entity));
+    }
+
+    @Override
+    @Transactional
+    public void updateBanner(BannerDto dto) {
+        Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBannerId()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        entity.update(dto.getBannerNm(), dto.getLinkUrl(), dto.getBannerImage(),
+                dto.getBannerDc(), dto.getSortOrdr(), dto.getReflctAt(), dto.getBannerImageFile());
+    }
+
+    @Override
+    @Transactional
+    public void deleteBanner(String bannerId) {
+        bannerRepository.deleteById(Objects.requireNonNull(bannerId));
+    }
+
+    @Override
+    public List<BannerDto> getReflectedBanners() {
+        return bannerRepository.findByReflctAtOrderBySortOrdrAsc("Y").stream()
+                .map(BannerDto::from)
+                .collect(Collectors.toList());
+    }
+}

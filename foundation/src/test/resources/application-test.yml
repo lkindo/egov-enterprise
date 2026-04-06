@@ -46,7 +46,7 @@ spring:
 logging:
   level:
     root: INFO
-    com.company: DEBUG
+    nuri: DEBUG
     org.hibernate.SQL: DEBUG
 
 # Actuator (disable in tests)

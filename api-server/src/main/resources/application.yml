@@ -63,7 +63,7 @@ jwt:
 logging:
   level:
     root: warn
-    com.company.project: debug
+    nuri: debug
     egovframework: info
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace

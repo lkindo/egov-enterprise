@@ -1,0 +1,21 @@
+package nuri.foundation.domain.log;
+
+import nuri.foundation.support.PersistenceTestSupport;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+@DisplayName("PrivacyLogRepository 테스트")
+class PrivacyLogRepositoryTest extends PersistenceTestSupport {
+
+    @Autowired
+    private PrivacyLogRepository repository;
+
+    @Test
+    @DisplayName("리포지토리 주입 확인")
+    void testInjected() {
+        assertNotNull(repository);
+    }
+}

@@ -8,7 +8,7 @@ plugins {
 }
 
 allprojects {
-    group = 'com.company'
+    group = 'nuri'
     version = '0.0.1-SNAPSHOT'
 
     repositories {

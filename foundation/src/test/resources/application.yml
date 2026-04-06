@@ -24,6 +24,6 @@ spring:
 logging:
   level:
     root: WARN
-    com.company.project: DEBUG
+    nuri: DEBUG
     org.springframework: WARN
     org.hibernate: WARN

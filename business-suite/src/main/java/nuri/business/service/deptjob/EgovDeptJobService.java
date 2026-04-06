@@ -1,0 +1,22 @@
+package nuri.business.service.deptjob;
+
+import nuri.business.service.deptjob.dto.DeptJobDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+/**
+ * 뾽????퉬???명꽣??씠??
+ */
+public interface EgovDeptJobService {
+
+    Page<DeptJobDto> getDeptJobList(String deptId, String deptJobbxId, String searchCondition, String keyword,
+            Pageable pageable);
+
+    DeptJobDto getDeptJob(String deptJobId);
+
+    String createDeptJob(DeptJobDto dto);
+
+    void updateDeptJob(String deptJobId, DeptJobDto dto);
+
+    void deleteDeptJob(String deptJobId);
+}

@@ -41,7 +41,7 @@ management:
 logging:
   level:
     root: WARN
-    com.company.project: INFO
+    nuri: INFO
     org.springframework: WARN
     org.hibernate: WARN
   file:
