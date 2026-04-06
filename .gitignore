@@ -132,6 +132,12 @@
 **/.server/
 **/.prisma/
 
+# -- Custom Tools & Binaries --
+**/tools/k6/
+**/*.exe
+**/*.zip
+**/*.msi
+
 # ----- Java Tools (JRebel, etc.) -----
 **/rebel.xml
 **/*.rebel.xml.bak
@@ -188,7 +194,4 @@ module-knowledge/
 # ----- Security -----
 **/.snyk
 
-tools/k6/k6-v1.7.1-windows-amd64/k6.exe
-/tools/k6/k6-v1.7.1-windows-amd64
-*.exe
-/tools/k6
+
