@@ -126,4 +126,46 @@ class RoleManageServiceTest {
         // Then
         verify(roleInfoRepository).deleteById(roleCode);
     }
+    @Test
+    @DisplayName("롤 상세 조회 실패 테스트")
+    void selectRole_NotFoundTest() {
+        // Given
+        String roleCode = "NOT_FOUND";
+        when(roleInfoRepository.findById(roleCode)).thenReturn(Optional.empty());
+
+        // When
+        RoleManageDto result = roleManageService.selectRole(roleCode);
+
+        // Then
+        assertThat(result).isNull();
+    }
+
+    @Test
+    @DisplayName("롤 등록 테스트 - 코드 포함")
+    void insertRole_WithCodeTest() {
+        // Given
+        RoleManageDto dto = RoleManageDto.builder()
+                .roleCode("ROLE_SPECIFIC")
+                .roleNm("New Role")
+                .build();
+
+        // When
+        roleManageService.insertRole(dto);
+
+        // Then
+        verify(roleInfoRepository).save(argThat(entity -> entity.getRoleCode().equals("ROLE_SPECIFIC")));
+    }
+
+    @Test
+    @DisplayName("여러 롤 삭제 테스트")
+    void deleteRolesTest() {
+        // Given
+        String[] roleCodes = {"ROLE_1", "ROLE_2"};
+
+        // When
+        roleManageService.deleteRoles(roleCodes);
+
+        // Then
+        verify(roleInfoRepository).deleteAllByIdInBatch(anyList());
+    }
 }

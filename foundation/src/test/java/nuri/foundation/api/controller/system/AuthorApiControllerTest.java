@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -29,6 +30,9 @@ class AuthorApiControllerTest {
 
     @Mock
     private AuthorManageService authorManageService;
+
+    @Mock
+    private nuri.foundation.service.menu.MenuService menuService;
 
     @InjectMocks
     private AuthorApiController authorApiController;
@@ -97,5 +101,36 @@ class AuthorApiControllerTest {
                 .andExpect(status().isOk());
 
         verify(authorManageService, times(1)).deleteAuthor("ROLE_ADMIN");
+    }
+
+    @Test
+    @DisplayName("권한 그룹 수정 성공")
+    void testUpdateAuthor() throws Exception {
+        AuthorManageDto dto = AuthorManageDto.builder()
+                .authorCode("ROLE_USER")
+                .authorNm("Modified Name")
+                .build();
+        mockMvc.perform(put("/api/v1/admin/system/authorities/ROLE_USER")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+        verify(authorManageService).updateAuthor(any());
+    }
+
+    @Test
+    @DisplayName("권한별 메뉴 목록 조회")
+    void testGetAuthorMenus() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/system/authorities/ROLE_USER/menus"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("권한 그룹 다중 삭제")
+    void testDeleteAuthors() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/system/authorities")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(List.of("ROLE_1", "ROLE_2"))))
+                .andExpect(status().isOk());
+        verify(authorManageService).deleteAuthors(any());
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -97,5 +98,59 @@ class MenuApiControllerTest {
                 .andExpect(status().isOk());
 
         verify(menuService, times(1)).deleteMenuManage(any(MenuDto.class));
+    }
+
+    @Test
+    @DisplayName("전체 메뉴 트리 조회")
+    void testGetAllMenus() throws Exception {
+        when(menuService.getAllMenus()).thenReturn(Collections.emptyList());
+        mockMvc.perform(get("/api/v1/admin/system/menus/all"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("메뉴 수정")
+    void testUpdateMenu() throws Exception {
+        MenuDto dto = new MenuDto();
+        dto.setMenuNm("Updated");
+        mockMvc.perform(put("/api/v1/admin/system/menus/1001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("메뉴 순서 일괄 변경")
+    void testUpdateMenuOrder() throws Exception {
+        mockMvc.perform(put("/api/v1/admin/system/menus/batch-order")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Collections.emptyList())))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("메뉴 생성 관리 목록 조회")
+    void testGetMenuCreationManageList() throws Exception {
+        when(menuService.selectMenuCreatManagList(any())).thenReturn(Collections.emptyList());
+        mockMvc.perform(get("/api/v1/admin/system/menus/creation-manage"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("권한별 메뉴 목록 조회")
+    void testGetMenuCreationList() throws Exception {
+        when(menuService.selectMenuCreatList(any())).thenReturn(Collections.emptyList());
+        mockMvc.perform(get("/api/v1/admin/system/menus/creation/ROLE_ADMIN"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("권한별 메뉴 할당 저장")
+    void testCreateMenuCreation() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/menus/creation/ROLE_ADMIN")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(List.of(1001L, 1002L))))
+                .andExpect(status().isOk());
+        verify(menuService).insertMenuCreatList(eq("ROLE_ADMIN"), anyString());
     }
 }

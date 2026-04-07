@@ -4,6 +4,9 @@ import nuri.foundation.domain.auth.AuthorGroupProjection;
 import nuri.foundation.domain.auth.DeptAuthorProjection;
 import nuri.foundation.domain.auth.UserAuthority;
 import nuri.foundation.domain.auth.UserAuthorityRepository;
+import nuri.foundation.domain.user.entity.User;
+import nuri.foundation.domain.user.repository.UserRepository;
+import nuri.foundation.service.auth.dto.DeptAuthorBatchRequest;
 import nuri.foundation.service.auth.dto.UserAuthorityDto;
 import egovframework.com.cmm.ComDefaultVO;
 import org.junit.jupiter.api.DisplayName;
@@ -32,6 +35,9 @@ class UserAuthorityManageServiceTest {
 
     @Mock
     private UserAuthorityRepository userAuthorityRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private UserAuthorityManageService userAuthorityManageService;
@@ -81,9 +87,6 @@ class UserAuthorityManageServiceTest {
             ComDefaultVO searchVO = new ComDefaultVO();
             searchVO.setPageIndex(1);
 
-            new DeptAuthorProjection(); // Assuming it has a default constructor or builder
-            // Note: If DeptAuthorProjection is also a class like AuthorGroupProjection, it should work.
-            
             Page<DeptAuthorProjection> page = new PageImpl<>(Collections.emptyList());
             when(userAuthorityRepository.searchDeptAuthors(eq(deptCode), any(Pageable.class))).thenReturn(page);
 
@@ -179,6 +182,64 @@ class UserAuthorityManageServiceTest {
 
             // Then
             verify(userAuthorityRepository, never()).deleteAllByIdInBatch(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("부서별 권한 일괄 저장 테스트")
+    class SaveDeptAuthoritiesTests {
+
+        @Test
+        @DisplayName("부서별 모든 회원 권한 일괄 저장 성공")
+        void testSaveDeptAuthorities_AllMembers() {
+            // Given
+            DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
+            request.setDeptId("DEPT001");
+            request.setAuthorCode("ROLE_USER");
+            request.setAllMembers(true);
+
+            User user = mock(User.class);
+            when(user.getEsntlId()).thenReturn("UNIQ_001");
+            when(userRepository.findByOrgnztId("DEPT001")).thenReturn(Collections.singletonList(user));
+            when(userAuthorityRepository.findById("UNIQ_001")).thenReturn(Optional.empty());
+
+            // When
+            userAuthorityManageService.saveDeptAuthorities(request);
+
+            // Then
+            verify(userRepository, times(1)).findByOrgnztId("DEPT001");
+            verify(userAuthorityRepository, times(1)).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("부서별 선택 회원 권한 일괄 저장 성공")
+        void testSaveDeptAuthorities_SelectedMembers() {
+            // Given
+            DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
+            request.setDeptId("DEPT001");
+            request.setAuthorCode("ROLE_USER");
+            request.setAllMembers(false);
+            request.setUserIds(Collections.singletonList("UNIQ_001"));
+
+            when(userAuthorityRepository.findById("UNIQ_001")).thenReturn(Optional.empty());
+
+            // When
+            userAuthorityManageService.saveDeptAuthorities(request);
+
+            // Then
+            verify(userRepository, never()).findByOrgnztId(any());
+            verify(userAuthorityRepository, times(1)).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("필수 파라미터 누락 시 동작 안함")
+        void testSaveDeptAuthorities_InvalidRequest() {
+            // When
+            userAuthorityManageService.saveDeptAuthorities(null);
+            userAuthorityManageService.saveDeptAuthorities(new DeptAuthorBatchRequest());
+
+            // Then
+            verify(userAuthorityRepository, never()).saveAll(any());
         }
     }
 }

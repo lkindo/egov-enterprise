@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -97,5 +98,26 @@ class GroupApiControllerTest {
                 .andExpect(status().isOk());
 
         verify(groupManageService, times(1)).deleteGroup("GROUP_001");
+    }
+
+    @Test
+    @DisplayName("그룹 수정 성공")
+    void testUpdateGroup() throws Exception {
+        GroupManageDto dto = new GroupManageDto();
+        dto.setGroupNm("Updated");
+        mockMvc.perform(put("/api/v1/admin/system/groups/GROUP_001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("그룹 다중 삭제")
+    void testDeleteGroups() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/system/groups")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(List.of("G1", "G2"))))
+                .andExpect(status().isOk());
+        verify(groupManageService).deleteGroups(any());
     }
 }

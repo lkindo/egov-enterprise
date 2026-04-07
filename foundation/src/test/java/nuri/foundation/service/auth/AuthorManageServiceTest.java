@@ -101,4 +101,13 @@ class AuthorManageServiceTest {
         authorManageService.deleteAuthors(codes);
         verify(authorityRepository).deleteAllById(any());
     }
+
+    @Test
+    @DisplayName("권한 수정 실패 - 존재하지 않는 권한")
+    void updateAuthor_Fail_NotFound() {
+        given(authorityRepository.findById("NOT_FOUND")).willReturn(Optional.empty());
+        AuthorManageDto dto = AuthorManageDto.builder().authorCode("NOT_FOUND").authorNm("New").build();
+        
+        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () -> authorManageService.updateAuthor(dto));
+    }
 }

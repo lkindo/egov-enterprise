@@ -1,0 +1,7 @@
+"name","MissedLines","CoveredLines"
+"nuri/foundation/service/code/CodeService","15","3"
+"nuri/foundation/service/code/EgovCommonCodeService",,
+"nuri/foundation/service/code/AdministCodeService","0","36"
+"nuri/foundation/service/code/InstitutionCodeService","1","81"
+"nuri/foundation/service/code/CommonCodeService","107","90"
+"nuri/foundation/service/code/EgovCodeService",,

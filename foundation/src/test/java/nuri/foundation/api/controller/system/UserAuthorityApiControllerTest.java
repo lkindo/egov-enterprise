@@ -91,4 +91,32 @@ class UserAuthorityApiControllerTest {
 
         verify(userAuthorityManageService, times(1)).deleteUserAuthorities(anyList());
     }
+
+    @Test
+    @DisplayName("사용자별 권한 목록 조회 성공 - pageUnit 명시")
+    void testGetUserAuthorities_WithPageUnit() throws Exception {
+        // Given
+        when(userAuthorityManageService.selectUserAuthorityList(any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/admin/system/user-authorities")
+                .param("pageIndex", "1")
+                .param("pageUnit", "20"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("사용자별 권한 목록 조회 성공 - pageUnit=0 (기본값 설정 로직)")
+    void testGetUserAuthorities_WithPageUnitZero() throws Exception {
+        // Given
+        when(userAuthorityManageService.selectUserAuthorityList(any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/admin/system/user-authorities")
+                .param("pageIndex", "1")
+                .param("pageUnit", "0"))
+                .andExpect(status().isOk());
+    }
 }

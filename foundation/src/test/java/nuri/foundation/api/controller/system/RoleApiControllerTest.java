@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -88,6 +89,18 @@ class RoleApiControllerTest {
     }
 
     @Test
+    @DisplayName("롤 수정 성공")
+    void testUpdateRole() throws Exception {
+        RoleManageDto dto = new RoleManageDto();
+        dto.setRoleNm("Modified");
+        mockMvc.perform(put("/api/v1/admin/system/roles/ROLE_WEB_001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+        verify(roleManageService).updateRole(any());
+    }
+
+    @Test
     @DisplayName("롤 삭제 성공")
     void testDeleteRole() throws Exception {
         // When & Then
@@ -95,5 +108,15 @@ class RoleApiControllerTest {
                 .andExpect(status().isOk());
 
         verify(roleManageService, times(1)).deleteRole("ROLE_WEB_001");
+    }
+
+    @Test
+    @DisplayName("롤 다중 삭제")
+    void testDeleteRoles() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/system/roles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(List.of("R1", "R2"))))
+                .andExpect(status().isOk());
+        verify(roleManageService).deleteRoles(any());
     }
 }
