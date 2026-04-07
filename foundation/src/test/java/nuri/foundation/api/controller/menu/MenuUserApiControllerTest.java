@@ -2,7 +2,6 @@ package nuri.foundation.api.controller.menu;
 
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.service.menu.MenuService;
-import nuri.foundation.service.menu.dto.MenuDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +12,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
