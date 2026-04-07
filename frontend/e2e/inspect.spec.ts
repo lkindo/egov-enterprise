@@ -3,7 +3,7 @@ import fs from 'fs';
 
 test('inspect-dashboard', async ({ page }) => {
     // Navigate to dashboard
-    await page.goto('http://localhost:3001/admin/dashboard', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3001/admin', { waitUntil: 'networkidle' });
     
     // Capture inner HTML of body or main content
     const html = await page.content();

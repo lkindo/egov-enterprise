@@ -301,7 +301,7 @@ test.describe('Hierarchical Menu Management', () => {
 
         // Auth Mocks Removed - Using real session from admin.json
 
-        await page.goto('/admin/dashboard', { waitUntil: 'domcontentloaded' });
+        await page.goto('/admin/system/menus', { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(3000);
 
         const mainVisible = await page.locator('main, [role="main"], .main-content').isVisible({ timeout: 10000 }).catch(() => false);
