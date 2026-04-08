@@ -1,4 +1,4 @@
-﻿from html.parser import HTMLParser
+from html.parser import HTMLParser
 
 class JacocoParser(HTMLParser):
     def __init__(self):

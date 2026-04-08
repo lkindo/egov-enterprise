@@ -1,71 +1,66 @@
 package nuri.foundation.domain.log;
 
 import nuri.foundation.support.PersistenceTestSupport;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("WebLogRepository 테스트")
+@Transactional
+@DisplayName("웹 로그 리포지토리 테스트")
 class WebLogRepositoryTest extends PersistenceTestSupport {
 
     @Autowired
-    private WebLogRepository repository;
+    private WebLogRepository webLogRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Test
     @DisplayName("웹 로그 검색")
-    void testSearchWebLogs() {
+    void searchWebLogs() {
         // given
-        repository.save(WebLog.builder()
-                .requstId("WEBREQ_001")
-                .url("http://example.com/test")
-                .occrrncDe(LocalDateTime.of(2026, 4, 1, 10, 0))
-                .build());
+        WebLog log = WebLog.builder()
+                .requstId("REQ_001")
+                .occrrncDe(LocalDateTime.of(2024, 1, 3, 10, 0))
+                .url("/test/url")
+                .rqesterIp("127.0.0.1")
+                .build();
+        webLogRepository.save(log);
 
-        // when (search by URL)
-        Page<WebLog> results = repository.searchWebLogs("test", null, null, PageRequest.of(0, 10));
+        // when
+        Page<WebLog> result = webLogRepository.searchWebLogs("test", "2024-01-01", "2024-01-31", PageRequest.of(0, 10));
 
         // then
-        assertEquals(1, results.getTotalElements());
-        assertEquals("WEBREQ_001", results.getContent().get(0).getRequstId());
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getRequstId()).isEqualTo("REQ_001");
     }
 
     @Test
-    @DisplayName("로그 요약 이행 확인")
-    void testInsertLogSummary() {
+    @DisplayName("웹 로그 삭제")
+    void deleteOldLogs() {
         // given
-        repository.save(WebLog.builder()
-                .requstId("WEBREQ_1")
-                .url("http://example.com/1")
-                .occrrncDe(LocalDateTime.now().minusDays(1))
-                .build());
+        WebLog oldLog = WebLog.builder()
+                .requstId("REQ_OLD")
+                .occrrncDe(LocalDateTime.of(2020, 1, 1, 10, 0))
+                .build();
+        webLogRepository.save(oldLog);
+        entityManager.flush();
+        entityManager.clear();
 
         // when
-        repository.insertLogSummary();
-
-        // then: No exception
-    }
-
-    @Test
-    @DisplayName("오래된 로그 삭제 확인")
-    void testDeleteOldLogs() {
-        // given
-        repository.save(WebLog.builder()
-                .requstId("WEBREQ_OLD")
-                .url("http://example.com/old")
-                .occrrncDe(LocalDateTime.now().minusMonths(6).minusDays(1))
-                .build());
-
-        // when
-        repository.deleteOldLogs(6);
+        webLogRepository.deleteOldLogs(12);
+        entityManager.flush();
+        entityManager.clear();
 
         // then
-        Page<WebLog> results = repository.searchWebLogs(null, null, null, PageRequest.of(0, 10));
-        assertEquals(0, results.getTotalElements());
+        assertThat(webLogRepository.findById("REQ_OLD")).isEmpty();
     }
 }

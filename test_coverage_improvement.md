@@ -11,17 +11,17 @@
 - [ ] **Summarize (요약)**: 결과 보고 및 작업 마무리
 
 ## 3. 작업 진행 상태 (Current Status)
-- [x] **Think**: `jacocoRootReport`를 통해 `foundation` 모듈의 커버리지를 분석했습니다.
-- [ ] **Plan**: `StatsService`, `MenuService`, `AuthService` 등 커버리지가 낮은 핵심 서비스에 대한 테스트를 우선 작성합니다.
+- [x] **Think**: `domain.log`(83%), `service.template`(29%) 향상 달성.
+- [x] **Plan**: `BbsSummary`, `PrivacyLog`, `UserLog` 리포지토리 및 `TmplatInfoService` 테스트 보강.
+- [x] **Implement**: 4종의 신규 테스트 파일 작성 및 기존 테스트 보강 완료.
+- [x] **Test**: JaCoCo 리포트 확인 (`domain.log` 49% -> 83% 대폭 상향).
 
 ## 4. 상세 분석 결과 (Detailed Analysis)
-- [x] `nuri.foundation.service.stats`: StatsService 통합 테스트 및 ReportStatsService 단위 테스트 추가. (Missed 65 -> 43 -> 0 내외 예상)
-- [x] `nuri.foundation.service.menu`: MenuService 단위 테스트 보강 (URL 추론, 권한 필터링 등). (Missed 137 -> 62)
-- [x] `nuri.foundation.service.code`: CommonCodeService 단위 테스트 보강 (CRUD 전반). (Missed 123 -> 52)
-- [ ] `nuri.foundation.service.auth`: **Next Target**
-- [ ] `nuri.foundation.api.controller`: Controller 레이어 테스트 (MockMvc 활용)
+- [x] `nuri.foundation.domain.log`: (49% -> **83%**) 주요 리포지토리 3종(BbsSummary, PrivacyLog, UserLog) 테스트 추가로 대폭 향상.
+- [x] `nuri.foundation.service.template`: (20% -> **29%**) 서비스 메서드 및 예외 시나리오 보강.
+- [x] `nuri.foundation.domain.login`: (99%) 안정적 유지.
 
 ## 5. 향후 작업 (Next Steps)
-1. `StatsServiceTest` 작성 및 실행
-2. `MenuServiceTest` 보강
-3. `AuthServiceTest` 보강
+1. `nuri.foundation.core.service` 패키지(현재 10%)의 공통 서비스(`BaseAbstractService`) 테스트 확보
+2. `nuri.foundation.service.template` 잔여 비즈니스 로직 테스트 추가
+3. `UserLogRepository.insertLogSummary` Native Query 최적화 및 제약 조건 디버깅

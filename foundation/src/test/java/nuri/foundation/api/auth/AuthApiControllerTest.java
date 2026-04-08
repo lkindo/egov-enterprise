@@ -6,6 +6,9 @@ import nuri.foundation.service.auth.AuthService;
 import nuri.foundation.service.auth.dto.LoginRequest;
 import nuri.foundation.service.auth.dto.TokenResponse;
 import nuri.foundation.service.user.UserService;
+import nuri.foundation.security.service.CustomUserDetails;
+import nuri.foundation.service.user.dto.UserDto;
+import nuri.foundation.domain.user.entity.Role;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,8 +20,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
  
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import java.util.Collections;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -80,5 +89,95 @@ class AuthApiControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    @DisplayName("토큰 재발급")
+    void testReissue() throws Exception {
+        TokenResponse tokenResponse = new TokenResponse("new-access", "new-refresh", "ROLE_USER");
+        when(authService.reissue(any())).thenReturn(tokenResponse);
+
+        mockMvc.perform(post("/api/v1/auth/reissue")
+                .cookie(new jakarta.servlet.http.Cookie("refreshToken", "old-refresh")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").value("new-access"));
+    }
+
+    @Test
+    @DisplayName("로그아웃")
+    void testLogout() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/logout"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("Logged out successfully"));
+    }
+
+    @Test
+    @DisplayName("내 정보 조회")
+    void testMe() throws Exception {
+        // Given
+        CustomUserDetails userDetails = mock(CustomUserDetails.class);
+        when(userDetails.getUserId()).thenReturn("user01");
+        
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                userDetails, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        UserDto userDto = UserDto.builder()
+                .userId("user01")
+                .userNm("Test User")
+                .role(Role.USER.name())
+                .build();
+        when(userService.getUserById("user01")).thenReturn(userDto);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/auth/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value("user01"))
+                .andExpect(jsonPath("$.data.name").value("Test User"));
+        
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("내 정보 조회 - 인증 정보 없음")
+    void testMeUnauthorized() throws Exception {
+        SecurityContextHolder.clearContext();
+
+        mockMvc.perform(get("/api/v1/auth/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("내 정보 조회 - 익명 사용자")
+    void testMeAnonymous() throws Exception {
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                "anonymousUser", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        mockMvc.perform(get("/api/v1/auth/me"))
+                .andExpect(status().isUnauthorized());
+        
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("내 정보 조회 - UserDetails가 아닌 Principal")
+    void testMeSimplePrincipal() throws Exception {
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                "user01", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        UserDto userDto = UserDto.builder()
+                .userId("user01")
+                .userNm("Test User")
+                .role(Role.USER.name())
+                .build();
+        when(userService.getUserById("user01")).thenReturn(userDto);
+
+        mockMvc.perform(get("/api/v1/auth/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value("user01"));
+        
+        SecurityContextHolder.clearContext();
     }
 }
