@@ -47,6 +47,42 @@ import {
   deletePopupAction
 } from '@/app/actions/promotionActions';
 import { motion, AnimatePresence } from 'framer-motion';
+import { z } from 'zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import {
+  Form,
+  FormControl,
+  FormField as ShadcnFormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+
+const bannerSchema = z.object({
+  bannerNm: z.string().min(1, '배너 명칭은 필수 입력 사항입니다.'),
+  linkUrl: z.string().optional(),
+  sortOrdr: z.coerce.number().min(0, '정렬 순서는 0 이상의 숫자여야 합니다.'),
+  reflctAt: z.enum(['Y', 'N']),
+  bannerDc: z.string().optional(),
+});
+
+const popupSchema = z.object({
+  popupTitleNm: z.string().min(1, '팝업 제목은 필수 입력 사항입니다.'),
+  ntceBgnde: z.string().min(1, '게시 시작일은 필수입니다.'),
+  ntceEndde: z.string().min(1, '게시 종료일은 필수입니다.'),
+  popupWlc: z.coerce.number().min(0),
+  popupHlc: z.coerce.number().min(0),
+  popupWSize: z.coerce.number().min(100),
+  popupHSize: z.coerce.number().min(100),
+  ntceAt: z.enum(['Y', 'N']),
+  stopVewAt: z.enum(['Y', 'N']),
+}).refine(data => new Date(data.ntceEndde) >= new Date(data.ntceBgnde), {
+  message: '종료일은 시작일보다 빠를 수 없습니다.',
+  path: ['ntceEndde']
+});
+
+type BannerFormValues = z.infer<typeof bannerSchema>;
+type PopupFormValues = z.infer<typeof popupSchema>;
 
 interface BannerAdminClientProps {
   initialBanners: Banner[];
@@ -61,6 +97,58 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
   const [isModalOpen, setIsOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Banner | Popup | null>(null);
   const [formFiles, setFormFiles] = useState<File[]>([]);
+
+  const bannerForm = useAppForm(bannerSchema, {
+    defaultValues: {
+      bannerNm: '',
+      linkUrl: '',
+      sortOrdr: 0,
+      reflctAt: 'Y',
+      bannerDc: ''
+    }
+  });
+
+  const popupForm = useAppForm(popupSchema, {
+    defaultValues: {
+      popupTitleNm: '',
+      ntceBgnde: '',
+      ntceEndde: '',
+      popupWlc: 0 as any,
+      popupHlc: 0 as any,
+      popupWSize: 400 as any,
+      popupHSize: 400 as any,
+      ntceAt: 'Y' as any,
+      stopVewAt: 'Y' as any
+    }
+  });
+
+  React.useEffect(() => {
+    if (isModalOpen) {
+      if (activeTab === 'banner') {
+        const item = editingItem as Banner;
+        bannerForm.reset({
+          bannerNm: item?.bannerNm || '',
+          linkUrl: item?.linkUrl || '',
+          sortOrdr: item?.sortOrdr || 0,
+          reflctAt: (item?.reflctAt as 'Y' | 'N') || 'Y',
+          bannerDc: item?.bannerDc || ''
+        });
+      } else {
+        const item = editingItem as Popup;
+        popupForm.reset({
+          popupTitleNm: item?.popupTitleNm || '',
+          ntceBgnde: item?.ntceBgnde || '',
+          ntceEndde: item?.ntceEndde || '',
+          popupWlc: item?.popupWlc || 0,
+          popupHlc: item?.popupHlc || 0,
+          popupWSize: item?.popupWSize || 400,
+          popupHSize: item?.popupHSize || 300,
+          ntceAt: (item?.ntceAt as 'Y' | 'N') || 'Y',
+          stopVewAt: (item?.stopVewAt as 'Y' | 'N') || 'Y'
+        });
+      }
+    }
+  }, [isModalOpen, activeTab, editingItem, bannerForm, popupForm]);
 
   const { data: banners = initialBanners, isLoading: isBannersLoading, refetch: refetchBanners } = useQuery({
     queryKey: ['admin-banners'],
@@ -112,53 +200,74 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formDataObj = new FormData(e.currentTarget);
-    const data: Partial<Banner & Popup> = Object.fromEntries(formDataObj.entries());
-
+  const onBannerSubmit = async (values: any) => {
     try {
+      const data = { 
+        ...values,
+        reflctAt: values.reflctAt as "Y" | "N"
+      } as any;
       if (formFiles.length > 0) {
         const uploadRes = await fileAdminService.uploadFiles(formFiles);
         const uploadedFileId = (uploadRes as any)?.data?.data || (uploadRes as any)?.data || uploadRes;
         if (uploadedFileId) {
-          if (activeTab === 'banner') {
-            data.bannerImageFile = uploadedFileId;
-            data.bannerImage = formFiles[0].name;
-          } else {
-            data.fileUrl = `/api/v1/files/download?fileId=${uploadedFileId}`;
-          }
+          data.bannerImageFile = uploadedFileId;
+          data.bannerImage = formFiles[0].name;
         }
       } else if (editingItem) {
-        if (activeTab === 'banner') {
-          data.bannerImageFile = (editingItem as Banner).bannerImageFile;
-          data.bannerImage = (editingItem as Banner).bannerImage;
-        } else {
-          data.fileUrl = (editingItem as Popup).fileUrl;
-        }
+        data.bannerImageFile = (editingItem as Banner).bannerImageFile;
+        data.bannerImage = (editingItem as Banner).bannerImage;
       }
 
-      const res = activeTab === 'banner'
-        ? await saveBannerAction(null, {
-          mode: editingItem ? 'edit' : 'create',
-          data: data as Banner,
-          id: (editingItem as Banner)?.bannerId
-        })
-        : await savePopupAction(null, {
-          mode: editingItem ? 'edit' : 'create',
-          data: data as Popup,
-          id: (editingItem as Popup)?.popupId
-        });
+      const res = await saveBannerAction(null, {
+        mode: editingItem ? 'edit' : 'create',
+        data: data as Banner,
+        id: (editingItem as Banner)?.bannerId
+      });
 
       if (res.success) {
         toast(res.message, 'success');
         setIsOpen(false);
-        activeTab === 'banner' ? refetchBanners() : refetchPopups();
+        refetchBanners();
       } else {
         toast(res.message, 'error');
       }
     } catch (error) {
-      toast('데이터 처리 중 데이터 무결성 오류가 발생했습니다.', 'error');
+      toast('데이터 처리 중 오류가 발생했습니다.', 'error');
+    }
+  };
+
+  const onPopupSubmit = async (values: any) => {
+    try {
+      const data = { 
+        ...values,
+        ntceAt: values.ntceAt as "Y" | "N",
+        stopVewAt: values.stopVewAt as "Y" | "N"
+      } as any;
+      if (formFiles.length > 0) {
+        const uploadRes = await fileAdminService.uploadFiles(formFiles);
+        const uploadedFileId = (uploadRes as any)?.data?.data || (uploadRes as any)?.data || uploadRes;
+        if (uploadedFileId) {
+          data.fileUrl = `/api/v1/files/download?fileId=${uploadedFileId}`;
+        }
+      } else if (editingItem) {
+        data.fileUrl = (editingItem as Popup).fileUrl;
+      }
+
+      const res = await savePopupAction(null, {
+        mode: editingItem ? 'edit' : 'create',
+        data: data as Popup,
+        id: (editingItem as Popup)?.popupId
+      });
+
+      if (res.success) {
+        toast(res.message, 'success');
+        setIsOpen(false);
+        refetchPopups();
+      } else {
+        toast(res.message, 'error');
+      }
+    } catch (error) {
+      toast('데이터 처리 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -406,131 +515,309 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
         footer={
           <div className="flex w-full gap-4">
             <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
-            <Button form="promotion-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
+            <Button
+              onClick={activeTab === 'banner' ? (bannerForm.handleSubmit(onBannerSubmit) as any) : (popupForm.handleSubmit(onPopupSubmit) as any)}
+              disabled={activeTab === 'banner' ? bannerForm.formState.isSubmitting : popupForm.formState.isSubmitting}
+              className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group"
+            >
               <Zap size={18} className="group-hover:animate-pulse mr-2" /> {editingItem ? '자산 수정' : '운영 배포'}
             </Button>
           </div>
         }
       >
-        <form id="promotion-form" onSubmit={handleSubmit} className="space-y-12 pt-4 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div className="space-y-8">
-              {activeTab === 'banner' ? (
-                <>
-                  <FormField label="배너 명칭 (Internal Label)" required description="관리용 명칭입니다">
-                    <Input name="bannerNm" type="text" defaultValue={(editingItem as Banner)?.bannerNm} className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner" required placeholder="배너 이름 입력" />
-                  </FormField>
-                  <FormField label="랜딩 페이지 (Target URL)" description="클릭 시 이동할 프론트엔드 라우트 또는 외부 경로">
-                    <div className="relative group/link">
-                      <LinkIcon size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/link:opacity-100 transition-opacity" />
-                      <Input name="linkUrl" type="text" defaultValue={(editingItem as Banner)?.linkUrl} className="h-14 pl-16 rounded-2xl font-mono text-xs font-black shadow-inner" placeholder="/pages/..." />
+        <div className="pt-4 p-4">
+          {activeTab === 'banner' ? (
+            <Form {...bannerForm}>
+              <form onSubmit={bannerForm.handleSubmit(onBannerSubmit) as any} className="space-y-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                  <div className="space-y-8">
+                    <ShadcnFormField
+                      control={bannerForm.control}
+                      name="bannerNm"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1.5 p-0.5">
+                          <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">배너 명칭 (Internal Label) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
+                          <FormControl>
+                            <Input {...field} className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner" placeholder="배너 이름 입력" />
+                          </FormControl>
+                          <p className="text-[10px] font-bold text-slate-400 px-1 mt-1 leading-relaxed">관리용 명칭입니다</p>
+                          <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                        </FormItem>
+                      )}
+                    />
+                    <ShadcnFormField
+                      control={bannerForm.control}
+                      name="linkUrl"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1.5 p-0.5">
+                          <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">랜딩 페이지 (Target URL)</FormLabel>
+                          <div className="relative group/link">
+                            <LinkIcon size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/link:opacity-100 transition-opacity" />
+                            <FormControl>
+                              <Input {...field} className="h-14 pl-16 rounded-2xl font-mono text-xs font-black shadow-inner" placeholder="/pages/..." />
+                            </FormControl>
+                          </div>
+                          <p className="text-[10px] font-bold text-slate-400 px-1 mt-1 leading-relaxed">클릭 시 이동할 프론트엔드 라우트 또는 외부 경로</p>
+                          <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-8">
+                      <ShadcnFormField
+                        control={bannerForm.control}
+                        name="sortOrdr"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5 p-0.5">
+                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">노출 순서 Priority <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-14 rounded-2xl font-black shadow-inner" />
+                            </FormControl>
+                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                          </FormItem>
+                        )}
+                      />
+                      <ShadcnFormField
+                        control={bannerForm.control}
+                        name="reflctAt"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5 p-0.5">
+                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 로드 상태</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase shadow-inner">
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="rounded-2xl shadow-2xl">
+                                <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase">--- 활성 (Live) ---</SelectItem>
+                                <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">--- 대기 (Staging) ---</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                  </FormField>
-                  <div className="grid grid-cols-2 gap-8">
-                    <FormField label="노출 순서 Priority" required>
-                      <Input name="sortOrdr" type="number" defaultValue={(editingItem as Banner)?.sortOrdr || 0} className="h-14 rounded-2xl font-black shadow-inner" required />
-                    </FormField>
-                    <FormField label="자산 로드 상태">
-                      <Select name="reflctAt" defaultValue={(editingItem as Banner)?.reflctAt || 'Y'}>
-                        <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase shadow-inner">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl shadow-2xl">
-                          <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase">--- 활성 (Live) ---</SelectItem>
-                          <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">--- 대기 (Staging) ---</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormField>
+                    <ShadcnFormField
+                      control={bannerForm.control}
+                      name="bannerDc"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1.5 p-0.5">
+                          <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 명세 및 설명 (Metadata)</FormLabel>
+                          <FormControl>
+                            <textarea {...field} className="w-full min-h-[120px] p-6 rounded-2xl border-2 border-slate-100 bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
+                          </FormControl>
+                          <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <FormField label="자산 명세 및 설명 (Metadata)">
-                    <textarea name="bannerDc" defaultValue={(editingItem as Banner)?.bannerDc} className="w-full min-h-[120px] p-6 rounded-2xl border-2 border-slate-100 bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
-                  </FormField>
-                </>
-              ) : (
-                <>
-                  <FormField label="팝업 타이틀 (Header)" required>
-                    <Input name="popupTitleNm" type="text" defaultValue={(editingItem as Popup)?.popupTitleNm} className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner" required placeholder="팝업 제목 입력" />
-                  </FormField>
-                  <div className="grid grid-cols-2 gap-8 p-10 bg-slate-50 border-2 border-dashed border-slate-100 rounded-[2.5rem] shadow-inner">
-                    <FormField label="게시 시작 시점 (T-0)" required>
-                      <Input name="ntceBgnde" type="date" defaultValue={(editingItem as Popup)?.ntceBgnde} className="h-14 rounded-xl text-xs font-black shadow-sm" required />
-                    </FormField>
-                    <FormField label="게시 종료 시점 (T-End)" required>
-                      <Input name="ntceEndde" type="date" defaultValue={(editingItem as Popup)?.ntceEndde} className="h-14 rounded-xl text-xs font-black shadow-sm" required />
-                    </FormField>
-                  </div>
-                  <div className="grid grid-cols-2 gap-8">
-                    <FormField label="가로 좌표 (X_Pivot)">
-                      <Input name="popupWlc" type="number" defaultValue={(editingItem as Popup)?.popupWlc || 0} className="h-14 rounded-2xl font-black shadow-inner" required />
-                    </FormField>
-                    <FormField label="세로 좌표 (Y_Pivot)">
-                      <Input name="popupHlc" type="number" defaultValue={(editingItem as Popup)?.popupHlc || 0} className="h-14 rounded-2xl font-black shadow-inner" required />
-                    </FormField>
-                  </div>
-                  <div className="grid grid-cols-2 gap-8">
-                    <FormField label="가로 폭 (W_Res)">
-                      <Input name="popupWSize" type="number" defaultValue={(editingItem as Popup)?.popupWSize || 400} className="h-14 rounded-2xl font-black shadow-inner" required />
-                    </FormField>
-                    <FormField label="세로 높이 (H_Res)">
-                      <Input name="popupHSize" type="number" defaultValue={(editingItem as Popup)?.popupHSize || 300} className="h-14 rounded-2xl font-black shadow-inner" required />
-                    </FormField>
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="space-y-12">
-              <FormField label="미디어 자산 업로드 (Visual Payload)" required description="시스템 표준 규격 이미지를 준수하십시오">
-                <div className="p-4 border-4 border-dashed border-slate-100 rounded-[3rem] bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-inner relative group/upload">
-                  <StandardFileUploader onFilesChange={(f) => setFormFiles(f)} maxFiles={1} />
-                  <div className="mt-4 flex items-center justify-center gap-4 text-muted-foreground/30">
-                    <UploadCloud size={24} />
-                    <span className="text-[10px] font-black tracking-widest text-center">여기로 파일을 드래그하여 업로드</span>
+                  <div className="space-y-12">
+                    <FormItem className="space-y-1.5 p-0.5">
+                      <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
+                      <div className="p-4 border-4 border-dashed border-slate-100 rounded-[3rem] bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-inner relative group/upload">
+                        <StandardFileUploader onFilesChange={(f) => setFormFiles(f)} maxFiles={1} />
+                        <div className="mt-4 flex items-center justify-center gap-4 text-muted-foreground/30">
+                          <UploadCloud size={24} />
+                          <span className="text-[10px] font-black tracking-widest text-center">여기로 파일을 드래그하여 업로드</span>
+                        </div>
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
+                    </FormItem>
+                    {(editingItem as Banner)?.bannerImageFile && (
+                      <div className="p-8 rounded-[2rem] bg-slate-900 text-white space-y-3 shadow-2xl relative overflow-hidden group">
+                        <span className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform">
+                            <SearchCode size={20} className="text-primary" />
+                          </div>
+                          <span className="font-mono text-[10px] font-black tracking-tighter text-white/80 truncate">{(editingItem as Banner).bannerImage}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </FormField>
-              {(editingItem as any)?.bannerImageFile && (
-                <div className="p-8 rounded-[2rem] bg-slate-900 text-white space-y-3 shadow-2xl relative overflow-hidden group">
-                  <span className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform">
-                      <SearchCode size={20} className="text-primary" />
+              </form>
+            </Form>
+          ) : (
+            <Form {...popupForm}>
+              <form onSubmit={popupForm.handleSubmit(onPopupSubmit) as any} className="space-y-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                  <div className="space-y-8">
+                    <ShadcnFormField
+                      control={popupForm.control}
+                      name="popupTitleNm"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1.5 p-0.5">
+                          <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">팝업 타이틀 (Header) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
+                          <FormControl>
+                            <Input {...field} className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner" placeholder="팝업 제목 입력" />
+                          </FormControl>
+                          <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-8 p-10 bg-slate-50 border-2 border-dashed border-slate-100 rounded-[2.5rem] shadow-inner">
+                      <ShadcnFormField
+                        control={popupForm.control}
+                        name="ntceBgnde"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5 p-0.5">
+                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 시작 시점 (T-0) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
+                            <FormControl>
+                              <Input {...field} type="date" className="h-14 rounded-xl text-xs font-black shadow-sm" />
+                            </FormControl>
+                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                          </FormItem>
+                        )}
+                      />
+                      <ShadcnFormField
+                        control={popupForm.control}
+                        name="ntceEndde"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5 p-0.5">
+                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 종료 시점 (T-End) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
+                            <FormControl>
+                              <Input {...field} type="date" className="h-14 rounded-xl text-xs font-black shadow-sm" />
+                            </FormControl>
+                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                    <span className="font-mono text-[10px] font-black tracking-tighter text-white/80 truncate">{(editingItem as any).bannerImage || (editingItem as any).fileUrl}</span>
+                    <div className="grid grid-cols-2 gap-8">
+                      <ShadcnFormField
+                        control={popupForm.control}
+                        name="popupWlc"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5 p-0.5">
+                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 좌표 (X_Pivot) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-14 rounded-2xl font-black shadow-inner" />
+                            </FormControl>
+                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                          </FormItem>
+                        )}
+                      />
+                      <ShadcnFormField
+                        control={popupForm.control}
+                        name="popupHlc"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5 p-0.5">
+                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 좌표 (Y_Pivot) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-14 rounded-2xl font-black shadow-inner" />
+                            </FormControl>
+                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-8">
+                      <ShadcnFormField
+                        control={popupForm.control}
+                        name="popupWSize"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5 p-0.5">
+                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 폭 (W_Res) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-14 rounded-2xl font-black shadow-inner" />
+                            </FormControl>
+                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                          </FormItem>
+                        )}
+                      />
+                      <ShadcnFormField
+                        control={popupForm.control}
+                        name="popupHSize"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5 p-0.5">
+                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 높이 (H_Res) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-14 rounded-2xl font-black shadow-inner" />
+                            </FormControl>
+                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-12">
+                    <FormItem className="space-y-1.5 p-0.5">
+                      <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
+                      <div className="p-4 border-4 border-dashed border-slate-100 rounded-[3rem] bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-inner relative group/upload">
+                        <StandardFileUploader onFilesChange={(f) => setFormFiles(f)} maxFiles={1} />
+                        <div className="mt-4 flex items-center justify-center gap-4 text-muted-foreground/30">
+                          <UploadCloud size={24} />
+                          <span className="text-[10px] font-black tracking-widest text-center">여기로 파일을 드래그하여 업로드</span>
+                        </div>
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
+                    </FormItem>
+                    {(editingItem as Popup)?.fileUrl && (
+                      <div className="p-8 rounded-[2rem] bg-slate-900 text-white space-y-3 shadow-2xl relative overflow-hidden group">
+                        <span className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform">
+                            <SearchCode size={20} className="text-primary" />
+                          </div>
+                          <span className="font-mono text-[10px] font-black tracking-tighter text-white/80 truncate">{(editingItem as Popup).fileUrl}</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 gap-8 p-10 bg-indigo-50/30 border-2 border-indigo-100/50 rounded-[2.5rem] shadow-sm">
+                      <p className="text-[9px] font-black text-indigo-500/50 tracking-[0.4em] uppercase mb-1">상태 프로토콜</p>
+                      <div className="grid grid-cols-2 gap-6">
+                        <ShadcnFormField
+                          control={popupForm.control}
+                          name="ntceAt"
+                          render={({ field }) => (
+                            <FormItem className="space-y-1.5 p-0.5">
+                              <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">게시 설정</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-14 rounded-2xl border-2 border-indigo-100 bg-white font-black text-[10px] tracking-widest uppercase shadow-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="rounded-2xl">
+                                  <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">게시 (LIVE)</SelectItem>
+                                  <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase text-rose-500">대기 (STAGING)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                            </FormItem>
+                          )}
+                        />
+                        <ShadcnFormField
+                          control={popupForm.control}
+                          name="stopVewAt"
+                          render={({ field }) => (
+                            <FormItem className="space-y-1.5 p-0.5">
+                              <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">다시보지않기 처리</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-14 rounded-2xl border-2 border-indigo-100 bg-white font-black text-[10px] tracking-widest uppercase shadow-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="rounded-2xl">
+                                  <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">활성 (ENABLE)</SelectItem>
+                                  <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase">비활성 (DISABLE)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              )}
-              {activeTab === 'popup' && (
-                <div className="grid grid-cols-1 gap-8 p-10 bg-indigo-50/30 border-2 border-indigo-100/50 rounded-[2.5rem] shadow-sm">
-                  <p className="text-[9px] font-black text-indigo-500/50 tracking-[0.4em] uppercase mb-1">상태 프로토콜</p>
-                  <div className="grid grid-cols-2 gap-6">
-                    <FormField label="게시 설정">
-                      <Select name="ntceAt" defaultValue={(editingItem as Popup)?.ntceAt || 'Y'}>
-                        <SelectTrigger className="h-14 rounded-2xl border-2 border-indigo-100 bg-white font-black text-[10px] tracking-widest uppercase shadow-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl">
-                          <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">게시 (LIVE)</SelectItem>
-                          <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase text-rose-500">대기 (STAGING)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormField>
-                    <FormField label="다시보지않기 처리">
-                      <Select name="stopVewAt" defaultValue={(editingItem as Popup)?.stopVewAt || 'Y'}>
-                        <SelectTrigger className="h-14 rounded-2xl border-2 border-indigo-100 bg-white font-black text-[10px] tracking-widest uppercase shadow-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl">
-                          <SelectItem value="Y" className="font-black text-[10px] tracking-widest uppercase">활성 (ENABLE)</SelectItem>
-                          <SelectItem value="N" className="font-black text-[10px] tracking-widest uppercase">비활성 (DISABLE)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormField>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </form>
+              </form>
+            </Form>
+          )}
+        </div>
       </StandardModal>
     </div>
   );

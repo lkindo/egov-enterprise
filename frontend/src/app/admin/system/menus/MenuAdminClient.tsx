@@ -35,6 +35,28 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { saveMenuAction, updateMenuOrdersAction, deleteMenuAction } from '@/app/actions/menuActions';
 import { motion, AnimatePresence } from 'framer-motion';
+import { z } from 'zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import {
+  Form,
+  FormControl,
+  FormField as ShadcnFormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+
+const menuSchema = z.object({
+  menuNo: z.number(),
+  menuNm: z.string().min(1, '메뉴 명칭은 필수 입력 사항입니다.'),
+  menuOrdr: z.number().min(0, '순서는 0 이상의 숫자여야 합니다.'),
+  upperMenuId: z.number(),
+  progrmFileNm: z.string().optional(),
+  modernRoute: z.string().optional(),
+  menuDc: z.string().optional()
+});
+
+type MenuFormValues = z.infer<typeof menuSchema>;
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
@@ -105,47 +127,51 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
 
   const [isModalOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
-  const [formData, setFormData] = useState<Partial<MenuInfo>>({
-    menuNo: 0,
-    menuNm: '',
-    menuOrdr: 0,
-    upperMenuId: 0,
-    upperMenuNo: 0,
-    progrmFileNm: '',
-    menuDc: '',
-    modernRoute: ''
+
+  const form = useAppForm(menuSchema, {
+    defaultValues: {
+      menuNo: 0,
+      menuNm: '',
+      menuOrdr: 0,
+      upperMenuId: 0,
+      progrmFileNm: '',
+      modernRoute: '',
+      menuDc: ''
+    }
   });
 
   const handleOpenCreate = (parentId: number = 0) => {
     setMode('create');
-    setFormData({
+    form.reset({
       menuNo: Date.now(),
       menuNm: '',
       menuOrdr: 999,
       upperMenuId: parentId,
-      upperMenuNo: parentId,
       progrmFileNm: '',
-      modernRoute: ''
+      modernRoute: '',
+      menuDc: ''
     });
     setIsOpen(true);
   };
 
   const handleOpenEdit = (menu: MenuInfo) => {
     setMode('edit');
-    setFormData({
-      ...menu,
+    form.reset({
+      menuNo: menu.menuNo,
+      menuNm: menu.menuNm,
+      menuOrdr: menu.menuOrdr || 0,
       upperMenuId: menu.upperMenuNo ?? menu.upperMenuId ?? 0,
-      upperMenuNo: menu.upperMenuNo ?? menu.upperMenuId ?? 0,
-      modernRoute: menu.modernRoute || ''
+      progrmFileNm: menu.progrmFileNm || '',
+      modernRoute: menu.modernRoute || '',
+      menuDc: menu.menuDc || ''
     });
     setIsOpen(true);
   };
 
-  const handleSave = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const onFormSubmit = async (values: MenuFormValues) => {
     const submitData = {
-      ...formData,
-      upperMenuNo: formData.upperMenuId,
+      ...values,
+      upperMenuNo: values.upperMenuId,
     };
     const res = await saveMenuAction(null, { mode, data: submitData as any });
     if (res.success) {
@@ -583,77 +609,148 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
             <Button
-              onClick={() => handleSave()}
-              className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest shadow-xl"
+              onClick={form.handleSubmit(onFormSubmit)}
+              disabled={form.formState.isSubmitting}
+              className="flex-[2] h-14 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group"
             >
-              {mode === 'create' ? '등록 완료' : '수정 완료'}
+              <Save size={18} className="group-hover:scale-110 transition-transform" /> {mode === 'create' ? '등록 완료' : '수정 완료'}
             </Button>
           </div>
         }
       >
-        <div className="space-y-8 pt-4">
-          <FormField label="메뉴 명칭" required description="사용자 인터페이스에 노출될 레이블입니다.">
-            <Input
-              value={formData.menuNm || ''}
-              onChange={(e) => setFormData({ ...formData, menuNm: e.target.value })}
-              className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner"
-              placeholder="메뉴 이름 입력 (팀 / 서비스 관리)"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-8 pt-4">
+            <ShadcnFormField
+              control={form.control}
+              name="menuNm"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5 p-0.5">
+                  <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                    메뉴 명칭 <span className="text-rose-500 font-extrabold text-[10px]">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner"
+                      placeholder="메뉴 이름 입력 (팀 / 서비스 관리)"
+                    />
+                  </FormControl>
+                  <p className="text-[10px] font-bold text-slate-400 px-1 mt-1 leading-relaxed">사용자 인터페이스에 노출될 레이블입니다.</p>
+                  <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                </FormItem>
+              )}
             />
-          </FormField>
-          <div className="grid grid-cols-2 gap-8">
-            <FormField label="상위 노드 식별자">
-              <div className="h-14 rounded-2xl border-2 border-slate-100 flex items-center px-6 text-[10px] font-black tracking-widest uppercase bg-slate-50/50 text-muted-foreground/60 italic overflow-hidden shadow-inner">
-                {formData.upperMenuId === 0 ? 'SYSTEM_ROOT (최상위)' : `PARENT_NODE_${formData.upperMenuId}`}
+
+            <div className="grid grid-cols-2 gap-8">
+              <div className="space-y-1.5 p-0.5">
+                <label className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  상위 노드 식별자
+                </label>
+                <div className="h-14 rounded-2xl border-2 border-slate-100 flex items-center px-6 text-[10px] font-black tracking-widest uppercase bg-slate-50/50 text-muted-foreground/60 italic overflow-hidden shadow-inner">
+                  {form.getValues('upperMenuId') === 0 ? 'SYSTEM_ROOT (최상위)' : `PARENT_NODE_${form.getValues('upperMenuId')}`}
+                </div>
               </div>
-            </FormField>
-            <FormField label="표출 순서 (우선순위)" required>
-              <Input
-                type="number"
-                value={formData.menuOrdr}
-                onChange={(e) => setFormData({ ...formData, menuOrdr: Number(e.target.value) })}
-                className="h-14 rounded-2xl text-xs font-black shadow-inner"
-              />
-            </FormField>
-          </div>
-          <FormField label="연동 소프트웨어 자산 (실행 모듈)">
-            <Select
-              value={formData.progrmFileNm || ''}
-              onValueChange={(v) => setFormData({ ...formData, progrmFileNm: v })}
-            >
-              <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase focus:ring-4 focus:ring-primary/10 transition-all shadow-inner">
-                <SelectValue placeholder="--- UNLINKED (연동되지 않음) ---" />
-              </SelectTrigger>
-              <SelectContent className="rounded-2xl shadow-2xl p-2">
-                {programs.map((p) => (
-                  <SelectItem key={p.progrmFileNm} value={p.progrmFileNm} className="text-xs font-bold">
-                    {p.progrmKoreanNm} ({p.progrmFileNm})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-          <FormField label="모던 라우트 (연결 URL)" description="전자정부 표준 프레임워크 기반 프론트엔드 라우팅 경로">
-            <div className="relative group/route">
-              <Network size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/route:opacity-100 transition-opacity" />
-              <Input
-                value={formData.modernRoute || ''}
-                onChange={(e) => setFormData({ ...formData, modernRoute: e.target.value })}
-                className="h-14 pl-16 rounded-2xl text-xs font-mono font-black italic shadow-inner border-2 border-slate-100"
-                placeholder="예: /admin/system/codes"
+
+              <ShadcnFormField
+                control={form.control}
+                name="menuOrdr"
+                render={({ field }) => (
+                  <FormItem className="space-y-1.5 p-0.5">
+                    <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                      표출 순서 (우선순위) <span className="text-rose-500 font-extrabold text-[10px]">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        className="h-14 rounded-2xl text-xs font-black shadow-inner"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                  </FormItem>
+                )}
               />
             </div>
-          </FormField>
-          <FormField label="노드 상세 메타데이터">
-            <textarea
-              value={formData.menuDc || ''}
-              onChange={(e) => setFormData({ ...formData, menuDc: e.target.value })}
-              className="w-full min-h-[140px] p-6 rounded-2xl border-2 border-border bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
-              placeholder="메뉴에 대한 상세 설명 및 주석"
+
+            <ShadcnFormField
+              control={form.control}
+              name="progrmFileNm"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5 p-0.5">
+                  <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                    연동 소프트웨어 자산 (실행 모듈)
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase focus:ring-4 focus:ring-primary/10 transition-all shadow-inner">
+                        <SelectValue placeholder="--- UNLINKED (연동되지 않음) ---" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="rounded-2xl shadow-2xl p-2 z-[9999]">
+                      {programs.map((p) => (
+                        <SelectItem key={p.progrmFileNm} value={p.progrmFileNm} className="text-xs font-bold">
+                          {p.progrmKoreanNm} ({p.progrmFileNm})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                </FormItem>
+              )}
             />
-          </FormField>
-        </div>
+
+            <ShadcnFormField
+              control={form.control}
+              name="modernRoute"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5 p-0.5">
+                  <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                    모던 라우트 (연결 URL)
+                  </FormLabel>
+                  <div className="relative group/route">
+                    <Network size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/route:opacity-100 transition-opacity" />
+                    <FormControl>
+                      <Input
+                        {...field}
+                        className="h-14 pl-16 rounded-2xl text-xs font-mono font-black italic shadow-inner border-2 border-slate-100"
+                        placeholder="예: /admin/system/codes"
+                      />
+                    </FormControl>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 px-1 mt-1 leading-relaxed">전자정부 표준 프레임워크 기반 프론트엔드 라우팅 경로</p>
+                  <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                </FormItem>
+              )}
+            />
+
+            <ShadcnFormField
+              control={form.control}
+              name="menuDc"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5 p-0.5">
+                  <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                    노드 상세 메타데이터
+                  </FormLabel>
+                  <FormControl>
+                    <textarea
+                      {...field}
+                      className="w-full min-h-[140px] p-6 rounded-2xl border-2 border-slate-100 bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
+                      placeholder="메뉴에 대한 상세 설명 및 주석"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
       </StandardModal>
     </div>
   );

@@ -37,10 +37,12 @@ function PaginationItem({ ...props }: React.ComponentProps<"li">) {
   return <li data-slot="pagination-item" {...props} />
 }
 
+import { type VariantProps } from "class-variance-authority"
+
 type PaginationLinkProps = {
   isActive?: boolean
-  size?: React.ComponentProps<typeof buttonVariants>["size"]
-} & React.ComponentProps<"a">
+} & Pick<VariantProps<typeof buttonVariants>, "size"> &
+  React.ComponentProps<"a">
 
 function PaginationLink({
   className,

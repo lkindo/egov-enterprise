@@ -54,7 +54,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { PagePagination } from '@/components/common/PagePagination';
 
+import { z } from 'zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import { StandardModal } from '@/app/components/ui/standard-modal';
+import { FormField } from '@/app/components/ui/standard-form';
+
 type UserOrgTab = 'USERS' | 'DEPTS' | 'ABSENCES' | 'POLICIES';
+
+const userSchema = z.object({
+  userId: z.string().min(1, '아이디는 필수입니다.').max(20, '아이디는 20자 이내여야 합니다.'),
+  userNm: z.string().min(1, '이름은 필수입니다.').max(30, '이름은 30자 이내여야 합니다.'),
+  email: z.string().email('유효한 이메일 형식이 아닙니다.').optional().or(z.literal('')),
+  moblphonNo: z.string().optional().or(z.literal('')),
+  orgnztId: z.string().optional().or(z.literal('')),
+  password: z.string().min(8, '비밀번호는 8자 이상이어야 합니다.').optional().or(z.literal('')),
+});
+
+const deptSchema = z.object({
+  orgnztNm: z.string().min(1, '부서명은 필수입니다.').max(20, '부서명은 20자 이내여야 합니다.'),
+  orgnztDc: z.string().max(100, '설명은 100자 이내여야 합니다.').optional().or(z.literal('')),
+});
+
+type UserFormValues = z.infer<typeof userSchema>;
+type DeptFormValues = z.infer<typeof deptSchema>;
 
 export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?: UserOrgTab }) {
   const queryClient = useQueryClient();
@@ -65,6 +87,18 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
 
   const [userPage, setUserPage] = useState(1);
   const [deptPage, setDeptPage] = useState(1);
+
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+
+  const userForm = useAppForm(userSchema, {
+    defaultValues: { userId: '', userNm: '', email: '', moblphonNo: '', orgnztId: '', password: '' }
+  });
+
+  const deptForm = useAppForm(deptSchema, {
+    defaultValues: { orgnztNm: '', orgnztDc: '' }
+  });
 
   const { data: usersData, isLoading: isUsersLoading, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', searchKeyword, userPage],
@@ -79,6 +113,38 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
     enabled: activeTab === 'DEPTS'
   });
   const departments = deptsData?.list || [];
+
+  const handleUserSubmit = userForm.handleSubmit(async (values: UserFormValues) => {
+    try {
+      if (formMode === 'create') {
+        await userAdminService.createUser(values as UserManage);
+        toast('사용자가 성공적으로 등록되었습니다.', 'success');
+      } else {
+        await userAdminService.updateUser(selectedItemId as string, values as UserManage);
+        toast('사용자 정보가 수정되었습니다.', 'success');
+      }
+      refetchUsers();
+      setIsUserModalOpen(false);
+    } catch (error) {
+      toast('사용자 저장 중 오류가 발생했습니다.', 'error');
+    }
+  });
+
+  const handleDeptSubmit = deptForm.handleSubmit(async (values: DeptFormValues) => {
+    try {
+      if (formMode === 'create') {
+        await deptAdminService.createDept(values as Department);
+        toast('부서가 성공적으로 등록되었습니다.', 'success');
+      } else {
+        await deptAdminService.updateDept(selectedItemId as string, values as Department);
+        toast('부서 정보가 수정되었습니다.', 'success');
+      }
+      refetchDepts();
+      setIsDeptModalOpen(false);
+    } catch (error) {
+      toast('부서 저장 중 오류가 발생했습니다.', 'error');
+    }
+  });
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
@@ -158,7 +224,20 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
+                <Button 
+                  size="lg" 
+                  className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                  onClick={() => {
+                    setFormMode('create');
+                    if (activeTab === 'DEPTS') {
+                      deptForm.reset({ orgnztNm: '', orgnztDc: '' });
+                      setIsDeptModalOpen(true);
+                    } else {
+                      userForm.reset({ userId: '', userNm: '', email: '', moblphonNo: '', orgnztId: '', password: '' });
+                      setIsUserModalOpen(true);
+                    }
+                  }}
+                >
                   {activeTab === 'DEPTS' ? <LayoutGrid size={20} /> : <UserPlus size={20} />}
                   {activeTab === 'DEPTS' ? '신규 부서 등록' : activeTab === 'ABSENCES' ? '부재 등록' : '사용자 등록'}
                   <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -306,7 +385,32 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                         </div>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-16 w-16 rounded-[1.5rem] bg-slate-50 hover:bg-slate-900 hover:text-white shadow-sm border border-slate-100 transition-all group">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-16 w-16 rounded-[1.5rem] bg-slate-50 hover:bg-slate-900 hover:text-white shadow-sm border border-slate-100 transition-all group"
+                      onClick={() => {
+                        setFormMode('edit');
+                        if (activeTab === 'DEPTS') {
+                          deptForm.reset({
+                            orgnztNm: (selectedItem as Department).orgnztNm || '',
+                            orgnztDc: (selectedItem as Department).orgnztDc || ''
+                          });
+                          setIsDeptModalOpen(true);
+                        } else {
+                          const user = selectedItem as UserManage;
+                          userForm.reset({
+                            userId: user.userId || '',
+                            userNm: user.userNm || '',
+                            email: user.email || '',
+                            moblphonNo: user.moblphonNo || '',
+                            orgnztId: user.orgnztId || '',
+                            password: ''
+                          });
+                          setIsUserModalOpen(true);
+                        }
+                      }}
+                    >
                       <Pencil size={24} className="group-hover:scale-110 transition-transform" />
                     </Button>
                   </div>
@@ -368,6 +472,141 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
           </AnimatePresence>
         </div>
       </div>
+
+      <StandardModal
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserModalOpen(false)}
+        title={formMode === 'create' ? '신규 사용자 등록' : '사용자 정보 수정'}
+        maxWidth="2xl"
+        footer={
+          <div className="flex w-full gap-4">
+            <Button variant="outline" onClick={() => setIsUserModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
+            <Button 
+                onClick={handleUserSubmit} 
+                className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest shadow-xl bg-slate-900 text-white hover:bg-primary transition-all"
+            >
+              {formMode === 'create' ? '신규 등록' : '정보 수정'}
+            </Button>
+          </div>
+        }
+      >
+        <form onSubmit={handleUserSubmit} className="space-y-8 pt-4 text-left">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField label="사용자 아이디 (Identity_ID)" required>
+              <Input
+                {...userForm.register('userId')}
+                readOnly={formMode === 'edit'}
+                className={cn(
+                    "h-14 rounded-2xl text-xs font-mono font-black tracking-widest uppercase shadow-inner", 
+                    formMode === 'edit' && "bg-muted/50 border-none",
+                    userForm.formState.errors.userId ? "border-rose-500 bg-rose-50" : "border-slate-100"
+                )}
+                placeholder="ID (MIN_1)"
+              />
+              {userForm.formState.errors.userId && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{userForm.formState.errors.userId.message}</p>}
+            </FormField>
+            <FormField label="사용자 성함" required>
+              <Input
+                {...userForm.register('userNm')}
+                className={cn(
+                    "h-14 rounded-2xl text-sm font-black tracking-tight",
+                    userForm.formState.errors.userNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
+                )}
+                placeholder="NAME"
+              />
+              {userForm.formState.errors.userNm && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{userForm.formState.errors.userNm.message}</p>}
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField label="이메일 주소">
+              <Input
+                {...userForm.register('email')}
+                className={cn(
+                    "h-14 rounded-2xl text-xs font-medium border-slate-100 shadow-sm",
+                    userForm.formState.errors.email ? "border-rose-500 bg-rose-50" : ""
+                )}
+                placeholder="example@nuri.com"
+              />
+              {userForm.formState.errors.email && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{userForm.formState.errors.email.message}</p>}
+            </FormField>
+            <FormField label="연락처">
+              <Input
+                {...userForm.register('moblphonNo')}
+                className="h-14 rounded-2xl text-xs font-medium border-slate-100 shadow-sm"
+                placeholder="010-0000-0000"
+              />
+            </FormField>
+          </div>
+
+          {formMode === 'create' && (
+            <FormField label="초기 비밀번호" required>
+              <Input
+                {...userForm.register('password')}
+                type="password"
+                className={cn(
+                    "h-14 rounded-2xl text-xs border-slate-100 shadow-sm",
+                    userForm.formState.errors.password ? "border-rose-500 bg-rose-50" : ""
+                )}
+                placeholder="PASSWORD (MIN_8)"
+              />
+              {userForm.formState.errors.password && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{userForm.formState.errors.password.message}</p>}
+            </FormField>
+          )}
+
+          <FormField label="소속 부서">
+            <select
+              {...userForm.register('orgnztId')}
+              className="w-full h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none shadow-inner"
+            >
+              <option value="">소속 없음 / GLOBAL</option>
+              {departments.map((d: any) => (
+                <option key={d.orgnztId} value={d.orgnztId}>{d.orgnztNm}</option>
+              ))}
+            </select>
+          </FormField>
+        </form>
+      </StandardModal>
+
+      <StandardModal
+        isOpen={isDeptModalOpen}
+        onClose={() => setIsDeptModalOpen(false)}
+        title={formMode === 'create' ? '신규 부서 등록' : '부서 정보 수정'}
+        maxWidth="lg"
+        footer={
+          <div className="flex w-full gap-4">
+            <Button variant="outline" onClick={() => setIsDeptModalOpen(false)} className="flex-1 h-12 rounded-xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
+            <Button 
+                onClick={handleDeptSubmit} 
+                className="flex-[2] h-12 rounded-xl font-black text-[10px] tracking-widest shadow-xl bg-slate-900 text-white hover:bg-primary transition-all"
+            >
+              {formMode === 'create' ? '부서 등록' : '정보 수정'}
+            </Button>
+          </div>
+        }
+      >
+        <form onSubmit={handleDeptSubmit} className="space-y-8 pt-4 text-left">
+          <FormField label="부서 명칭" required>
+            <Input
+              {...deptForm.register('orgnztNm')}
+              className={cn(
+                  "h-14 rounded-2xl text-sm font-black tracking-tight",
+                  deptForm.formState.errors.orgnztNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
+              )}
+              placeholder="DEPT_NAME"
+            />
+            {deptForm.formState.errors.orgnztNm && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{deptForm.formState.errors.orgnztNm.message}</p>}
+          </FormField>
+
+          <FormField label="부서 설명명세">
+            <textarea
+              {...deptForm.register('orgnztDc')}
+              className="w-full min-h-[120px] p-6 rounded-2xl border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none resize-none shadow-inner"
+              placeholder="부서의 역할 및 책임 정의..."
+            />
+          </FormField>
+        </form>
+      </StandardModal>
     </div>
   );
 }

@@ -36,6 +36,22 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import { z } from 'zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import {
+  Form,
+  FormControl,
+  FormField as ShadcnFormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+
+const ismSchema = z.object({
+  returnResn: z.string().min(1, '의결 의견은 필수 입력 사항입니다.'),
+});
+
+type IsmFormValues = z.infer<typeof ismSchema>;
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
@@ -46,22 +62,29 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
 
   const [isModalOpen, setIsOpen] = useState(false);
   const [selectedSanctn, setSelectedSanctn] = useState<InfrmlSanctn | null>(null);
-  const [returnResn, setReturnResn] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const form = useAppForm(ismSchema, {
+    defaultValues: {
+      returnResn: ''
+    }
+  });
 
   const ismList = initialData.content || [];
 
   const handleOpenConfirm = (sanctn: InfrmlSanctn) => {
     setSelectedSanctn(sanctn);
-    setReturnResn('');
+    form.reset({
+      returnResn: ''
+    });
     setIsOpen(true);
   };
 
-  const handleProcess = async (status: 'C' | 'R') => {
+  const onFormSubmit = async (values: IsmFormValues, status: 'C' | 'R') => {
     if (!selectedSanctn) return;
     try {
       setLoading(true);
-      await ismAdminService.confirmInfrmlSanctn(selectedSanctn.infrmlSanctnId, status, returnResn);
+      await ismAdminService.confirmInfrmlSanctn(selectedSanctn.infrmlSanctnId, status, values.returnResn);
       toast(`결재 시퀀스가 ${status === 'C' ? '성공적으로 승인' : '반려'} 처리되었습니다.`, 'success');
       setIsOpen(false);
       router.refresh();
@@ -240,13 +263,15 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
           <div className="flex w-full gap-4">
             <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-16 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">조사_취소</Button>
             <Button 
-                onClick={() => handleProcess('R')}
+                onClick={form.handleSubmit((v) => onFormSubmit(v, 'R'))}
+                disabled={loading}
                 className="flex-1 h-16 bg-rose-50 text-rose-500 rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-rose-500 hover:text-white transition-all active:scale-95 border-2 border-rose-100 flex items-center justify-center gap-3"
             >
               <XCircle size={18} strokeWidth={3} /> 시퀀스 반려
             </Button>
             <Button
-                onClick={() => handleProcess('C')}
+                onClick={form.handleSubmit((v) => onFormSubmit(v, 'C'))}
+                disabled={loading}
                 className="flex-[2] h-16 bg-slate-900 border-none text-white rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-2 hover:bg-primary transition-all active:scale-95 group"
             >
               <CheckCircle2 size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 승인
@@ -254,49 +279,58 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
           </div>
         }
       >
-        <div className="space-y-12 pt-4 text-left">
-          <div className="p-10 bg-slate-900 rounded-[3rem] shadow-2xl relative overflow-hidden group/modal-target">
-            <div className="relative z-10 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/20">
-                  <Activity size={16} className="text-primary animate-pulse" />
-                </div>
-                <span className="text-[10px] text-primary/60 font-black tracking-[0.4em] uppercase">Target_Sequence_Probe</span>
-              </div>
-              <h4 className="text-3xl font-black text-white tracking-tighter uppercase leading-tight">{selectedSanctn?.sancltNm}</h4>
-              <div className="flex items-center gap-6 pt-4 border-t border-white/5">
-                <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
-                  <User size={14} className="text-slate-400" />
-                  <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">{selectedSanctn?.applcntId}</span>
-                </div>
+        <Form {...form}>
+          <form className="space-y-12 pt-4 text-left">
+            <div className="p-10 bg-slate-900 rounded-[3rem] shadow-2xl relative overflow-hidden group/modal-target">
+              <div className="relative z-10 space-y-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-black text-white/20 tracking-[0.3em] font-mono uppercase italic">UUID: {selectedSanctn?.infrmlSanctnId}</span>
+                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/20">
+                    <Activity size={16} className="text-primary animate-pulse" />
+                  </div>
+                  <span className="text-[10px] text-primary/60 font-black tracking-[0.4em] uppercase">Target_Sequence_Probe</span>
+                </div>
+                <h4 className="text-3xl font-black text-white tracking-tighter uppercase leading-tight">{selectedSanctn?.sancltNm}</h4>
+                <div className="flex items-center gap-6 pt-4 border-t border-white/5">
+                  <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+                    <User size={14} className="text-slate-400" />
+                    <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">{selectedSanctn?.applcntId}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black text-white/20 tracking-[0.3em] font-mono uppercase italic">UUID: {selectedSanctn?.infrmlSanctnId}</span>
+                  </div>
                 </div>
               </div>
+              <Zap size={240} className="absolute right-[-40px] bottom-[-40px] opacity-[0.03] -rotate-12 group-hover/modal-target:rotate-0 transition-transform duration-1000" />
             </div>
-            <Zap size={240} className="absolute right-[-40px] bottom-[-40px] opacity-[0.03] -rotate-12 group-hover/modal-target:rotate-0 transition-transform duration-1000" />
-          </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between px-2">
-                <label className="text-[11px] font-black tracking-[0.4em] text-slate-400 uppercase flex items-center gap-3">
+            <ShadcnFormField
+              control={form.control}
+              name="returnResn"
+              render={({ field }) => (
+                <FormItem className="space-y-4">
+                  <FormLabel className="text-[11px] font-black tracking-[0.4em] text-slate-400 uppercase flex items-center gap-3">
                     <SearchCode size={14} className="text-primary" /> 결재/반려 의사결정 로그 (Decision Opinion) <span className="text-rose-500 animate-pulse">*</span>
-                </label>
-            </div>
-            <textarea
-              value={returnResn}
-              onChange={(e) => setReturnResn(e.target.value)}
-              placeholder="결재 또는 반려 사유를 입력하세요..."
-              className="w-full min-h-[200px] p-10 rounded-[3rem] border-2 bg-slate-50 font-bold text-lg outline-none focus:bg-white focus:ring-[12px] focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner leading-relaxed resize-none placeholder:text-slate-300"
+                  </FormLabel>
+                  <FormControl>
+                    <textarea
+                      {...field}
+                      placeholder="결재 또는 반려 사유를 입력하세요..."
+                      className="w-full min-h-[200px] p-10 rounded-[3rem] border-2 bg-slate-50 font-bold text-lg outline-none focus:bg-white focus:ring-[12px] focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner leading-relaxed resize-none placeholder:text-slate-300"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                </FormItem>
+              )}
             />
+
             <div className="flex items-center gap-3 px-6 py-4 bg-amber-50 border border-amber-100 rounded-2xl">
-                <AlertCircle size={16} className="text-amber-500" />
-                <p className="text-[10px] font-bold text-amber-700 leading-relaxed uppercase opacity-80">
-                    * 작성된 의견은 수정이 불가능하며 모든 관계자에게 실시간으로 공유됩니다.
-                </p>
+              <AlertCircle size={16} className="text-amber-500" />
+              <p className="text-[10px] font-bold text-amber-700 leading-relaxed uppercase opacity-80">
+                * 작성된 의견은 수정이 불가능하며 모든 관계자에게 실시간으로 공유됩니다.
+              </p>
             </div>
-          </div>
-        </div>
+          </form>
+        </Form>
       </StandardModal>
     </div>
   );

@@ -1,7 +1,10 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import { commonSchemas } from '@/lib/validations/common';
+import { toast } from 'sonner';
+import { Pencil, Plus, Save, Hash, Type, Code2, CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import * as z from 'zod';
 import { Button } from "@/components/ui/button";
 import {
@@ -32,10 +35,10 @@ import { CmmnCode } from '@/types/foundation/system';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 
 const formSchema = z.object({
-  codeId: z.string().min(1, { message: "코드ID는 필수입니다." }),
-  codeIdNm: z.string().min(1, { message: "코드ID명은 필수입니다." }),
+  codeId: commonSchemas.code,
+  codeIdNm: commonSchemas.requiredString("코드ID명"),
   codeIdDc: z.string().optional(),
-  useAt: z.enum(['Y', 'N']),
+  useAt: commonSchemas.useAt,
   clCode: z.string().min(1, { message: "분류코드는 필수입니다." }),
 });
 
@@ -49,13 +52,12 @@ interface CommonCodeFormProps {
 
 export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }: CommonCodeFormProps) {
   const isEdit = !!data;
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useAppForm(formSchema, {
     defaultValues: {
       codeId: data?.codeId || '',
       codeIdNm: data?.codeIdNm || '',
       codeIdDc: data?.codeIdDc || '',
-      useAt: data?.useAt || 'Y',
+      useAt: (data?.useAt as 'Y' | 'N') || 'Y',
       clCode: data?.clCode || '',
     },
   });
@@ -64,14 +66,16 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
     try {
       if (isEdit && data?.codeId) {
         await codeAdminService.updateCmmnCode(data.codeId, values as CmmnCode);
+        toast.success('공통코드 정보가 수정되었습니다.');
       } else {
         await codeAdminService.createCmmnCode(values as CmmnCode);
+        toast.success('신규 공통코드가 등록되었습니다.');
       }
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error(error);
-      alert('저장 중 오류가 발생했습니다.');
+      toast.error('저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -80,11 +84,12 @@ export function CommonCodeForm({ open, onOpenChange, data, onSuccess, clCodes }:
     if (confirm('정말로 삭제하시겠습니까?')) {
       try {
         await codeAdminService.deleteCmmnCode(data.codeId);
+        toast.success('공통코드가 삭제되었습니다.');
         onSuccess();
         onOpenChange(false);
       } catch (error) {
         console.error(error);
-        alert('삭제 중 오류가 발생했습니다.');
+        toast.error('삭제 중 오류가 발생했습니다.');
       }
     }
   };

@@ -10,16 +10,37 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import { Settings, Edit2, FileText, CheckCircle2 } from 'lucide-react';
+import { z } from 'zod';
+import { useAppForm } from '@/hooks/useAppForm';
 import { toast } from 'sonner';
+import {
+  Form,
+  FormControl,
+  FormField as ShadcnFormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+
+const policySchema = z.object({
+  title: z.string().min(1, '정책 제목은 필수입니다.'),
+  content: z.string().min(1, '정책 내용은 필수입니다.')
+});
+
+type PolicyFormValues = z.infer<typeof policySchema>;
 
 export default function PolicyAdminClient() {
   const [policies, setPolicies] = useState<SystemPolicy[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPolicy, setSelectedPolicy] = useState<SystemPolicy | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+
+  const form = useAppForm(policySchema, {
+    defaultValues: {
+      title: '',
+      content: ''
+    }
+  });
 
   const fetchPolicies = async () => {
     setLoading(true);
@@ -40,18 +61,19 @@ export default function PolicyAdminClient() {
 
   const handleEdit = (policy: SystemPolicy) => {
     setSelectedPolicy(policy);
-    setEditTitle(policy.title);
-    setEditContent(policy.content);
+    form.reset({
+      title: policy.title,
+      content: policy.content
+    });
     setIsEditModalOpen(true);
   };
 
-  const handleSave = async () => {
+  const onFormSubmit = async (values: PolicyFormValues) => {
     if (!selectedPolicy) return;
-    setIsSaving(true);
     try {
       await policyAdminService.updatePolicy(selectedPolicy.type || selectedPolicy.id || '', {
-        title: editTitle,
-        content: editContent
+        title: values.title,
+        content: values.content
       });
       toast.success('정책이 성공적으로 수정되었습니다');
       setIsEditModalOpen(false);
@@ -59,8 +81,6 @@ export default function PolicyAdminClient() {
     } catch (error) {
       console.error('Failed to update policy:', error);
       toast.error('정책 수정에 실패했습니다.');
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -149,42 +169,63 @@ export default function PolicyAdminClient() {
             </div>
           </div>
 
-          <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar text-left">
-            <div className="space-y-3">
-              <Label className="text-sm font-black tracking-widest uppercase opacity-40 ml-2">정책 제목</Label>
-              <Input 
-                value={editTitle} 
-                onChange={(e) => setEditTitle(e.target.value)} 
-                placeholder="정책 제목을 입력하세요"
-                className="h-14 rounded-2xl border-2 border-border/50 focus:border-primary/50 bg-slate-50/50 font-black text-lg"
-              />
-            </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onFormSubmit)}>
+              <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar text-left">
+                <ShadcnFormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className="text-sm font-black tracking-widest uppercase opacity-40 ml-2">정책 제목</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          placeholder="정책 제목을 입력하세요"
+                          className="h-14 rounded-2xl border-2 border-border/50 focus:border-primary/50 bg-slate-50/50 font-black text-lg"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="space-y-3">
-              <Label className="text-sm font-black tracking-widest uppercase opacity-40 ml-2">정책 내용</Label>
-              <RichTextEditor 
-                value={editContent} 
-                onChange={setEditContent} 
-                className="min-h-[400px]"
-              />
-            </div>
-          </div>
+                <ShadcnFormField
+                  control={form.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className="text-sm font-black tracking-widest uppercase opacity-40 ml-2">정책 내용</FormLabel>
+                      <FormControl>
+                        <RichTextEditor 
+                          value={field.value} 
+                          onChange={field.onChange} 
+                          className="min-h-[400px]"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-          <DialogFooter className="p-8 bg-slate-50 border-t border-border/50 flex items-center justify-between">
-             <div className="text-[10px] text-muted-foreground font-bold italic uppercase tracking-wider">
-                * 수정 즉시 프론트엔드 인터페이스 및 정책 페이지에 반영됩니다.
-             </div>
-             <div className="flex gap-3">
-                <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} className="rounded-xl h-12 px-8 font-black text-[10px] tracking-widest uppercase">취소</Button>
-                <Button 
-                  onClick={handleSave} 
-                  disabled={isSaving}
-                  className="rounded-xl h-12 px-8 bg-slate-900 hover:bg-primary text-white transition-all shadow-lg font-black text-[10px] tracking-widest uppercase"
-                >
-                  {isSaving ? '저장 중...' : '변경 사항 반영하기'}
-                </Button>
-             </div>
-          </DialogFooter>
+              <DialogFooter className="p-8 bg-slate-50 border-t border-border/50 flex items-center justify-between">
+                <div className="text-[10px] text-muted-foreground font-bold italic uppercase tracking-wider">
+                  * 수정 즉시 프론트엔드 인터페이스 및 정책 페이지에 반영됩니다.
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="ghost" type="button" onClick={() => setIsEditModalOpen(false)} className="rounded-xl h-12 px-8 font-black text-[10px] tracking-widest uppercase">취소</Button>
+                  <Button 
+                    type="submit"
+                    disabled={form.formState.isSubmitting}
+                    className="rounded-xl h-12 px-8 bg-slate-900 hover:bg-primary text-white transition-all shadow-lg font-black text-[10px] tracking-widest uppercase"
+                  >
+                    {form.formState.isSubmitting ? '저장 중...' : '변경 사항 반영하기'}
+                  </Button>
+                </div>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

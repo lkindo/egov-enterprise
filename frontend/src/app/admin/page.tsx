@@ -337,7 +337,7 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
       <TooltipTrigger asChild>
         <Link href={link}>
           <motion.div 
-            whileHover={{ y: -4, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
+            whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
             className="p-8 h-full rounded-[2.5rem] bg-white border-2 border-slate-50 shadow-xl hover:border-primary/30 transition-colors cursor-pointer group relative overflow-hidden"

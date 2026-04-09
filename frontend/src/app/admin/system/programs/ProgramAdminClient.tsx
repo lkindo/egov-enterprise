@@ -35,6 +35,7 @@ import {
 import dynamic from 'next/dynamic';
 import { FormField } from '@/app/components/ui/standard-form';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { saveProgramAction, deleteProgramAction } from '@/app/actions/programActions';
 import {
   Tooltip,
@@ -42,6 +43,31 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
+import { z } from 'zod';
+import { useAppForm } from '@/hooks/useAppForm';
+
+const programSchema = z.object({
+  progrmFileNm: z.string()
+    .min(1, '파일명은 필수입니다.')
+    .max(60, '파일명은 60자 이내여야 합니다.'),
+  progrmStrePath: z.string()
+    .max(100, '경로가 너무 깁니다. (최대 100자)')
+    .optional()
+    .or(z.literal('')),
+  progrmKoreanNm: z.string()
+    .min(1, '프로그램 명칭은 필수입니다.')
+    .max(60, '명칭은 60자 이내여야 합니다.'),
+  url: z.string()
+    .min(1, '엔드포인트 URL은 필수입니다.')
+    .startsWith('/', 'URL은 /로 시작해야 합니다.')
+    .max(100, 'URL은 100자 이내여야 합니다.'),
+  progrmDc: z.string()
+    .max(200, '설명이 너무 깁니다. (최대 200자)')
+    .optional()
+    .or(z.literal('')),
+});
+
+type ProgramFormValues = z.infer<typeof programSchema>;
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
@@ -51,12 +77,15 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
   const [isModalOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
-  const [formData, setFormData] = useState<Program>({
-    progrmFileNm: '',
-    progrmStrePath: '',
-    progrmKoreanNm: '',
-    url: '',
-    progrmDc: ''
+  
+  const form = useAppForm(programSchema, {
+    defaultValues: {
+      progrmFileNm: '',
+      progrmStrePath: '',
+      progrmKoreanNm: '',
+      url: '',
+      progrmDc: ''
+    }
   });
 
   const [data, setData] = useState<Program[]>(() => {
@@ -68,7 +97,6 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
   });
   const [loading, setLoading] = useState(false);
   const [currentSearchWrd, setCurrentSearchWrd] = useState(searchWrd);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const loadData = async (wrd: string = currentSearchWrd, page: number = 1) => {
     try {
@@ -89,53 +117,28 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
   const handleOpenCreate = () => {
     setMode('create');
-    setFormData({ progrmFileNm: '', progrmStrePath: '', progrmKoreanNm: '', url: '', progrmDc: '' });
+    form.reset({ progrmFileNm: '', progrmStrePath: '', progrmKoreanNm: '', url: '', progrmDc: '' });
     setIsOpen(true);
   };
 
   const handleOpenEdit = (program: Program) => {
     setMode('edit');
-    setFormData(program);
+    form.reset(program);
     setIsOpen(true);
   };
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.progrmFileNm?.trim()) newErrors.progrmFileNm = '파일명은 필수입니다.';
-    else if (formData.progrmFileNm.length > 60) newErrors.progrmFileNm = '파일명은 60자 이내여야 합니다.';
-
-    if (!formData.progrmKoreanNm?.trim()) newErrors.progrmKoreanNm = '프로그램 명칭은 필수입니다.';
-    else if (formData.progrmKoreanNm.length > 60) newErrors.progrmKoreanNm = '명칭은 60자 이내여야 합니다.';
-
-    if (!formData.url?.trim()) newErrors.url = '엔드포인트 URL은 필수입니다.';
-    else if (!formData.url.startsWith('/')) newErrors.url = 'URL은 /로 시작해야 합니다.';
-    else if (formData.url.length > 100) newErrors.url = 'URL은 100자 이내여야 합니다.';
-    
-    if (formData.progrmStrePath && formData.progrmStrePath.length > 100) newErrors.progrmStrePath = '경로가 너무 깁니다. (최대 100자)';
-    if (formData.progrmDc && formData.progrmDc.length > 200) newErrors.progrmDc = '설명이 너무 깁니다. (최대 200자)';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      toast('필수 입력 항목을 확인해주세요.', 'error');
-      return;
-    }
-
-    const res = await saveProgramAction(null, { mode, data: formData });
+  const onSave = async (values: ProgramFormValues) => {
+    const res = await saveProgramAction(null, { mode, data: values as Program });
     if (res.success) {
       toast(res.message, 'success');
       loadData();
       setIsOpen(false);
-      setErrors({});
     } else {
       toast(res.message, 'error');
     }
   };
+
+  const handleSave = form.handleSubmit(onSave);
 
   const handleDelete = async (name: string) => {
     const isConfirmed = await confirm({
@@ -310,95 +313,75 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
           </div>
         }
       >
-        <div className="space-y-8 pt-4 text-left">
+        <form onSubmit={handleSave} className="space-y-8 pt-4 text-left">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <FormField label="시스템 식별 파일명" required description="예: EgovMain (고유 식별값)">
               <Input
-                value={formData.progrmFileNm || ''}
-                onChange={(e) => {
-                  setFormData({ ...formData, progrmFileNm: e.target.value });
-                  if (errors.progrmFileNm) setErrors({ ...errors, progrmFileNm: '' });
-                }}
+                {...form.register('progrmFileNm')}
                 readOnly={mode === 'edit'}
                 maxLength={60}
                 className={cn(
                     "h-14 rounded-2xl text-xs font-mono font-black tracking-widest uppercase shadow-inner", 
                     mode === 'edit' && "bg-muted/50 border-none",
-                    errors.progrmFileNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
+                    form.formState.errors.progrmFileNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
                 )}
                 placeholder="고유 자산 ID (MAX_60)"
               />
-              {errors.progrmFileNm && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{errors.progrmFileNm}</p>}
+              {form.formState.errors.progrmFileNm && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{form.formState.errors.progrmFileNm.message}</p>}
             </FormField>
             <FormField label="프로그램 한글 명칭" required>
               <Input
-                value={formData.progrmKoreanNm || ''}
-                onChange={(e) => {
-                    setFormData({ ...formData, progrmKoreanNm: e.target.value });
-                    if (errors.progrmKoreanNm) setErrors({ ...errors, progrmKoreanNm: '' });
-                }}
+                {...form.register('progrmKoreanNm')}
                 maxLength={60}
                 className={cn(
                     "h-14 rounded-2xl text-sm font-black tracking-tight",
-                    errors.progrmKoreanNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
+                    form.formState.errors.progrmKoreanNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
                 )}
                 placeholder="한글 자산 명칭 입력 (MAX_60)"
               />
-              {errors.progrmKoreanNm && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{errors.progrmKoreanNm}</p>}
+              {form.formState.errors.progrmKoreanNm && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{form.formState.errors.progrmKoreanNm.message}</p>}
             </FormField>
           </div>
 
           <FormField label="인터페이스 엔드포인트(URL)" required description="실제 서비스가 제공되는 접속 주소 또는 API 경로">
             <Input
-              value={formData.url || ''}
-              onChange={(e) => {
-                setFormData({ ...formData, url: e.target.value });
-                if (errors.url) setErrors({ ...errors, url: '' });
-              }}
+              {...form.register('url')}
               maxLength={100}
               className={cn(
                   "h-14 rounded-2xl text-xs font-mono font-black",
-                  errors.url ? "border-rose-500 bg-rose-50" : "border-slate-100"
+                  form.formState.errors.url ? "border-rose-500 bg-rose-50" : "border-slate-100"
               )}
               placeholder="/api/v1/... (MAX_100)"
             />
-            {errors.url && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{errors.url}</p>}
+            {form.formState.errors.url && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{form.formState.errors.url.message}</p>}
           </FormField>
 
           <FormField label="물리적 저장 경로" description="서버 내 파일 저장소 물리 경로 (Optional)">
             <Input
-              value={formData.progrmStrePath || ''}
-              onChange={(e) => {
-                  setFormData({ ...formData, progrmStrePath: e.target.value });
-                  if (errors.progrmStrePath) setErrors({ ...errors, progrmStrePath: '' });
-              }}
+              {...form.register('progrmStrePath')}
               maxLength={100}
               className={cn(
                   "h-14 rounded-2xl text-xs font-medium bg-slate-50 border-none shadow-inner",
-                  errors.progrmStrePath ? "border-rose-500 bg-rose-50" : ""
+                  form.formState.errors.progrmStrePath ? "border-rose-500 bg-rose-50" : ""
               )}
               placeholder="파일 저장 물리 경로... (최대 100자)"
             />
-            {errors.progrmStrePath && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{errors.progrmStrePath}</p>}
+            {form.formState.errors.progrmStrePath && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{form.formState.errors.progrmStrePath.message}</p>}
           </FormField>
 
           <FormField label="상세 기능 명세">
             <textarea
-              value={formData.progrmDc || ''}
-              onChange={(e) => {
-                  setFormData({ ...formData, progrmDc: e.target.value });
-                  if (errors.progrmDc) setErrors({ ...errors, progrmDc: '' });
-              }}
+              {...form.register('progrmDc')}
               maxLength={200}
               className={cn(
                   "w-full min-h-[140px] p-6 rounded-2xl border-2 border-border bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner",
-                  errors.progrmDc ? "border-rose-500 bg-rose-50" : ""
+                  form.formState.errors.progrmDc ? "border-rose-500 bg-rose-50" : ""
               )}
               placeholder="프로그램의 역할 및 관련 모듈 설명 (최대 200자)"
             />
-            {errors.progrmDc && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{errors.progrmDc}</p>}
+            {form.formState.errors.progrmDc && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{form.formState.errors.progrmDc.message}</p>}
           </FormField>
-        </div>
+        </form>
       </StandardModal>
     </div>
   );

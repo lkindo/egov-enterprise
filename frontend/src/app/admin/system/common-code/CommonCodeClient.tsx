@@ -43,6 +43,25 @@ import {
     deleteCodeDetail as deleteCodeDetailAction
 } from '@/app/actions/codeActions';
 import { CmmnClCode, CmmnCode } from '@/types/foundation/system';
+import { z } from 'zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import {
+    Form,
+    FormControl,
+    FormField as ShadcnFormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
+
+const codeDetailSchema = z.object({
+    code: z.string().min(1, '코드는 필수 입력 사항입니다.'),
+    codeNm: z.string().min(1, '코드 명칭은 필수 입력 사항입니다.'),
+    useAt: z.enum(['Y', 'N']),
+    codeDc: z.string().optional()
+});
+
+type CodeDetailFormValues = z.infer<typeof codeDetailSchema>;
 
 interface CommonCodeClientProps {
     clCodes: CmmnClCode[];
@@ -65,6 +84,35 @@ export default function CommonCodeClient({
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsOpen] = useState(false);
     const [editingDetail, setEditingDetail] = useState<CodeDetail | null>(null);
+
+    const form = useAppForm(codeDetailSchema, {
+        defaultValues: {
+            code: '',
+            codeNm: '',
+            useAt: 'Y',
+            codeDc: ''
+        }
+    });
+
+    useEffect(() => {
+        if (isModalOpen) {
+            if (editingDetail) {
+                form.reset({
+                    code: editingDetail.code,
+                    codeNm: editingDetail.codeNm,
+                    useAt: (editingDetail.useAt as 'Y' | 'N') || 'Y',
+                    codeDc: editingDetail.codeDc || ''
+                });
+            } else {
+                form.reset({
+                    code: '',
+                    codeNm: '',
+                    useAt: 'Y',
+                    codeDc: ''
+                });
+            }
+        }
+    }, [isModalOpen, editingDetail, form]);
 
     const initialClusters: DomainCluster[] = React.useMemo(() => {
         return clCodes.map(cl => ({
@@ -195,14 +243,11 @@ export default function CommonCodeClient({
         setIsOpen(true);
     };
 
-    const handleSubmitDetail = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const data = Object.fromEntries(formData.entries());
-
+    const onSubmit = async (values: any) => {
         try {
             const res = await saveCodeDetailAction(null, {
-                ...(data as any),
+                ...values,
+                useAt: values.useAt as 'Y' | 'N',
                 codeId: selectedGroup?.codeId || '',
                 isNew: !editingDetail
             });
@@ -214,7 +259,7 @@ export default function CommonCodeClient({
                 toast(res.message, 'error');
             }
         } catch (error) {
-            toast('적합성 검증에 실패했습니다.', 'error');
+            toast('서버 통신 중 오류가 발생했습니다.', 'error');
         }
     };
 
@@ -452,61 +497,127 @@ export default function CommonCodeClient({
                 footer={
                     <div className="flex w-full gap-4">
                         <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
-                        <Button form="code-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group">
+                        <Button
+                            onClick={form.handleSubmit(onSubmit)}
+                            disabled={form.formState.isSubmitting}
+                            className="flex-[2] h-14 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group"
+                        >
                             <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 저장
                         </Button>
                     </div>
                 }
             >
-                <form id="code-form" onSubmit={handleSubmitDetail} className="space-y-10 pt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <div className="space-y-8">
-                            <FormField label="상위 그룹 식별자">
-                                <div className="h-14 flex items-center px-6 rounded-2xl bg-slate-100 border-none font-mono text-xs font-black shadow-inner text-slate-500">
-                                    {selectedGroup?.codeId}
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10 pt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            <div className="space-y-8">
+                                <div className="space-y-1.5 p-0.5">
+                                    <label className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                                        상위 그룹 식별자
+                                    </label>
+                                    <div className="h-14 flex items-center px-6 rounded-2xl bg-slate-100 border-none font-mono text-xs font-black shadow-inner text-slate-500">
+                                        {selectedGroup?.codeId}
+                                    </div>
                                 </div>
-                            </FormField>
-                            <FormField label="코드 식별자 (Unique ID)" required>
-                                <Input
-                                    name="code"
-                                    defaultValue={editingDetail?.code}
-                                    required
-                                    readOnly={!!editingDetail}
-                                    className="h-14 rounded-2xl font-mono text-xs font-black shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
-                                    placeholder="Unique code indicator"
-                                />
-                            </FormField>
-                            <FormField label="표기 레이블 (Label)" required>
-                                <Input name="codeNm" defaultValue={editingDetail?.codeNm} required className="h-14 rounded-2xl text-sm font-black tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left" placeholder="레이블 명칭 입력" />
-                            </FormField>
-                        </div>
 
-                        <div className="space-y-8">
-                            <FormField label="활성 상태 프로토콜">
-                                <Select
-                                    key={editingDetail ? `edit-${editingDetail.code}` : 'new'}
+                                <ShadcnFormField
+                                    control={form.control}
+                                    name="code"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1.5 p-0.5">
+                                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                                                코드 식별자 (Unique ID) <span className="text-rose-500 font-extrabold text-[10px]">*</span>
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    readOnly={!!editingDetail}
+                                                    className="h-14 rounded-2xl font-mono text-xs font-black shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
+                                                    placeholder="Unique code indicator"
+                                                />
+                                            </FormControl>
+                                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <ShadcnFormField
+                                    control={form.control}
+                                    name="codeNm"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1.5 p-0.5">
+                                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                                                표기 레이블 (Label) <span className="text-rose-500 font-extrabold text-[10px]">*</span>
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    className="h-14 rounded-2xl text-sm font-black tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
+                                                    placeholder="레이블 명칭 입력"
+                                                />
+                                            </FormControl>
+                                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="space-y-8">
+                                <ShadcnFormField
+                                    control={form.control}
                                     name="useAt"
-                                    defaultValue={editingDetail?.useAt || 'Y'}
-                                >
-                                    <SelectTrigger className="h-14 rounded-2xl border-none bg-slate-50 font-black text-[10px] tracking-widest uppercase shadow-inner">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-2xl shadow-xl z-[9999]">
-                                        <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-emerald-500">
-                                            --- 사용 중 (ACTIVE) ---
-                                        </SelectItem>
-                                        <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">
-                                            --- 미사용 (INACTIVE) ---
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </FormField>
-                            <FormField label="메타데이터 컨텍스트 설명">
-                                <textarea name="codeDc" defaultValue={editingDetail?.codeDc} className="w-full min-h-[160px] p-6 rounded-[2rem] border-none bg-slate-50 text-[11px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner text-left" placeholder="코드 사용처 및 시스템 제약 조건 설명..." />
-                            </FormField>
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1.5 p-0.5">
+                                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                                                활성 상태 프로토콜
+                                            </FormLabel>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                value={field.value}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger className="h-14 rounded-2xl border-none bg-slate-50 font-black text-[10px] tracking-widest uppercase shadow-inner">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-2xl shadow-xl z-[9999]">
+                                                    <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-emerald-500">
+                                                        --- 사용 중 (ACTIVE) ---
+                                                    </SelectItem>
+                                                    <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">
+                                                        --- 미사용 (INACTIVE) ---
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <ShadcnFormField
+                                    control={form.control}
+                                    name="codeDc"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1.5 p-0.5">
+                                            <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                                                메타데이터 컨텍스트 설명
+                                            </FormLabel>
+                                            <FormControl>
+                                                <textarea
+                                                    {...field}
+                                                    className="w-full min-h-[160px] p-6 rounded-[2rem] border-none bg-slate-50 text-[11px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner text-left"
+                                                    placeholder="코드 사용처 및 시스템 제약 조건 설명..."
+                                                />
+                                            </FormControl>
+                                            <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </Form>
             </StandardModal>
         </div>
     );

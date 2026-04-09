@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import { commonSchemas } from '@/lib/validations/common';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import * as z from 'zod';
 import { Button } from "@/components/ui/button";
 import {
@@ -33,10 +34,10 @@ import { CmmnClCode } from '@/types/foundation/system';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 
 const formSchema = z.object({
-  clCode: z.string().min(1, { message: "분류코드는 필수입니다." }),
-  clCodeNm: z.string().min(1, { message: "분류코드명은 필수입니다." }),
+  clCode: commonSchemas.code,
+  clCodeNm: commonSchemas.requiredString("분류코드명"),
   clCodeDc: z.string().optional(),
-  useAt: z.enum(['Y', 'N']),
+  useAt: commonSchemas.useAt,
 });
 
 interface CommonClCodeFormProps {
@@ -48,13 +49,12 @@ interface CommonClCodeFormProps {
 
 export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: CommonClCodeFormProps) {
   const isEdit = !!data;
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useAppForm(formSchema, {
     defaultValues: {
       clCode: data?.clCode || '',
       clCodeNm: data?.clCodeNm || '',
       clCodeDc: data?.clCodeDc || '',
-      useAt: data?.useAt || 'Y',
+      useAt: (data?.useAt as 'Y' | 'N') || 'Y',
     },
   });
 
@@ -62,14 +62,16 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
     try {
       if (isEdit && data?.clCode) {
         await codeAdminService.updateClCode(data.clCode, { ...values, clCode: data.clCode } as CmmnClCode);
+        toast.success('공통분류코드 정보가 수정되었습니다.');
       } else {
         await codeAdminService.createClCode(values as CmmnClCode);
+        toast.success('신규 공통분류코드가 등록되었습니다.');
       }
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error(error);
-      alert('저장 중 오류가 발생했습니다.');
+      toast.error('저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -78,11 +80,12 @@ export function CommonClCodeForm({ open, onOpenChange, data, onSuccess }: Common
     if (confirm('정말로 삭제하시겠습니까?')) {
       try {
         await codeAdminService.deleteClCode(data.clCode);
+        toast.success('공통분류코드가 삭제되었습니다.');
         onSuccess();
         onOpenChange(false);
       } catch (error) {
         console.error(error);
-        alert('삭제 중 오류가 발생했습니다.');
+        toast.error('삭제 중 오류가 발생했습니다.');
       }
     }
   };

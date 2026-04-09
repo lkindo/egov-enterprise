@@ -38,6 +38,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
+import { SecurityMatrixVisualizer } from './components/SecurityMatrixVisualizer';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/foundation/system/UserAuthorityAdminService';
 import { menuAdminService, Menu } from '@/services/foundation/system/MenuAdminService';
@@ -56,7 +57,25 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { SecurityMatrixVisualizer } from './components/SecurityMatrixVisualizer';
+import { z } from 'zod';
+import { useAppForm } from '@/hooks/useAppForm';
+
+// --- Validation Schemas ---
+const authorSchema = z.object({
+  authorCode: z.string()
+    .min(1, '권한 코드는 필수입니다.')
+    .max(30, '권한 코드는 30자 이내여야 합니다.')
+    .regex(/^[A-Z0-9_]+$/, '영문 대문자, 숫자, 언더바(_)만 가능합니다.'),
+  authorNm: z.string()
+    .min(1, '권한 명칭은 필수입니다.')
+    .max(60, '권한 명칭은 60자 이내여야 합니다.'),
+  authorDc: z.string()
+    .max(200, '내용이 너무 깁니다. (최대 200자)')
+    .optional()
+    .or(z.literal('')),
+});
+
+type AuthorFormValues = z.infer<typeof authorSchema>;
 
 // --- Types ---
 interface MenuNode extends Menu {
@@ -73,15 +92,13 @@ export default function SecurityHubClient() {
 
   const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
   const [authorMode, setAuthorMode] = useState<'create' | 'edit'>('create');
-  const [authorFormData, setAuthorFormData] = useState<Partial<AuthorInfo>>({
-    authorCode: '',
-    authorNm: '',
-    authorDc: ''
+  
+  const authorForm = useAppForm(authorSchema, {
+    defaultValues: { authorCode: '', authorNm: '', authorDc: '' }
   });
 
   const [tempUserMappings, setTempUserMappings] = useState<Set<string>>(new Set());
   const [tempMenuMappings, setTempMenuMappings] = useState<Set<number>>(new Set());
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // --- Matrix Mode States ---
   const [viewMode, setViewMode] = useState<'TOPOLOGY' | 'MATRIX'>('TOPOLOGY');
@@ -160,37 +177,19 @@ export default function SecurityHubClient() {
     return roots;
   }, [menusData, tempMenuMappings]);
 
-  const validateAuthorForm = () => {
-    const errors: Record<string, string> = {};
-    if (!authorFormData.authorCode?.trim()) errors.authorCode = '권한 코드는 필수입니다.';
-    else if (!/^[A-Z0-9_]+$/.test(authorFormData.authorCode)) errors.authorCode = '영문 대문자, 숫자, 언더바(_)만 가능합니다.';
-    else if (authorFormData.authorCode.length > 30) errors.authorCode = '권한 코드는 30자 이내여야 합니다.';
-    
-    if (!authorFormData.authorNm?.trim()) errors.authorNm = '권한 명칭은 필수입니다.';
-    else if (authorFormData.authorNm.length > 60) errors.authorNm = '권한 명칭은 60자 이내여야 합니다.';
-    
-    if (authorFormData.authorDc && authorFormData.authorDc.length > 200) errors.authorDc = '내용이 너무 깁니다. (최대 200자)';
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const saveAuthorMutation = useMutation({
-    mutationFn: (data: Partial<AuthorInfo>) =>
-      authorMode === 'create' ? authorAdminService.createAuthor(data) : authorAdminService.updateAuthor(data.authorCode!, data),
-    onMutate: () => {
-      if (!validateAuthorForm()) throw new Error('VALIDATION_FAILED');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
-      toast('보안 권한 아키텍처가 성공적으로 반영되었습니다.', 'success');
-      setIsAuthorModalOpen(false);
-      setFormErrors({});
-    },
-    onError: (error: any) => {
-      if (error.message !== 'VALIDATION_FAILED') {
-        toast('저장 중 오류가 발생했습니다. 입력을 확인해주세요.', 'error');
+  const handleAuthorSubmit = authorForm.handleSubmit(async (values: AuthorFormValues) => {
+    try {
+      if (authorMode === 'create') {
+        await authorAdminService.createAuthor(values as AuthorInfo);
+        toast('보안 권한 아키텍처가 성공적으로 반영되었습니다.', 'success');
+      } else {
+        await authorAdminService.updateAuthor(values.authorCode, values as AuthorInfo);
+        toast('보안 권한 아키텍처가 성공적으로 수정되었습니다.', 'success');
       }
+      queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
+      setIsAuthorModalOpen(false);
+    } catch (error) {
+      toast('저장 중 오류가 발생했습니다. 입력을 확인해주세요.', 'error');
     }
   });
 
@@ -292,14 +291,17 @@ export default function SecurityHubClient() {
 
   const handleOpenAuthorCreate = () => {
     setAuthorMode('create');
-    setAuthorFormData({ authorCode: '', authorNm: '', authorDc: '' });
-    setFormErrors({});
+    authorForm.reset({ authorCode: '', authorNm: '', authorDc: '' });
     setIsAuthorModalOpen(true);
   };
 
   const handleOpenAuthorEdit = (auth: AuthorInfo) => {
     setAuthorMode('edit');
-    setAuthorFormData(auth);
+    authorForm.reset({
+      authorCode: auth.authorCode || '',
+      authorNm: auth.authorNm || '',
+      authorDc: auth.authorDc || ''
+    });
     setIsAuthorModalOpen(true);
   };
 
@@ -724,80 +726,71 @@ export default function SecurityHubClient() {
       </AnimatePresence>
 
 
-      {/* Authority Profile Modal */}
       <StandardModal
         isOpen={isAuthorModalOpen}
         onClose={() => setIsAuthorModalOpen(false)}
         title={authorMode === 'create' ? '신규 권한 등록' : '보안 역할 아키텍처 상세 수정'}
         maxWidth="xl"
+        footer={
+          <div className="flex w-full gap-6 pt-4">
+            <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button 
+                onClick={handleAuthorSubmit} 
+                className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group px-6"
+            >
+              <Zap size={18} className="group-hover:animate-pulse mr-2" /> {authorMode === 'create' ? '권한 배포' : '권한 수정'}
+            </Button>
+          </div>
+        }
       >
-        <div className="p-4 space-y-12">
-          <div className="grid grid-cols-2 gap-10">
+        <form onSubmit={handleAuthorSubmit} className="p-4 space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <FormField label="보안 역할 식별자(Role Code)" required description="시스템 전반에 적용되는 유일한 역할 고유 코드">
               <div className="relative group/id">
                 <Key size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                 <Input
-                  value={authorFormData.authorCode}
-                  onChange={(e) => {
-                    setAuthorFormData({ ...authorFormData, authorCode: e.target.value.toUpperCase() });
-                    if (formErrors.authorCode) setFormErrors({ ...formErrors, authorCode: '' });
-                  }}
+                  {...authorForm.register('authorCode')}
                   disabled={authorMode === 'edit'}
-                  maxLength={30}
                   className={cn(
                     "h-16 rounded-2xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner pl-16 pt-0",
-                    formErrors.authorCode ? "border-rose-500 bg-rose-50" : "border-slate-100"
+                    authorForm.formState.errors.authorCode ? "border-rose-500 bg-rose-50" : "border-slate-100"
                   )}
                   placeholder="ROLE_IDENTIFIER (MAX_30)"
                 />
               </div>
-              {formErrors.authorCode && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{formErrors.authorCode}</p>}
+              {authorForm.formState.errors.authorCode && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{authorForm.formState.errors.authorCode.message}</p>}
             </FormField>
             <FormField label="역할 레이블 명칭" required description="UI 및 비즈니스 레이어에서 식별 명문화된 이름">
               <div className="relative group/nm">
                 <ShieldCheck size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
                 <Input
-                  value={authorFormData.authorNm}
-                  onChange={(e) => {
-                    setAuthorFormData({ ...authorFormData, authorNm: e.target.value });
-                    if (formErrors.authorNm) setFormErrors({ ...formErrors, authorNm: '' });
-                  }}
-                  maxLength={60}
+                  {...authorForm.register('authorNm')}
                   className={cn(
                     "h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner",
-                    formErrors.authorNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
+                    authorForm.formState.errors.authorNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
                   )}
                   placeholder="역할 명칭 입력 (MAX_60)"
                 />
               </div>
-              {formErrors.authorNm && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{formErrors.authorNm}</p>}
+              {authorForm.formState.errors.authorNm && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{authorForm.formState.errors.authorNm.message}</p>}
             </FormField>
           </div>
 
           <FormField label="보안 정책 정보 명세" description="해당 역할의 상세 목적 및 데이터 접근 범위에 대한 정보 명세">
             <div className="relative group/dc">
               <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
-              <Textarea
-                value={authorFormData.authorDc}
-                onChange={(e) => setAuthorFormData({ ...authorFormData, authorDc: e.target.value })}
-                maxLength={200}
+              <textarea
+                {...authorForm.register('authorDc')}
                 className={cn(
-                  "min-h-[160px] pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner",
-                  formErrors.authorDc ? "border-rose-500 bg-rose-50" : "border-slate-100"
+                  "min-h-[160px] w-full pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner",
+                  authorForm.formState.errors.authorDc ? "border-rose-500 bg-rose-50" : "border-slate-100"
                 )}
                 placeholder="상세 명세 입력... (최대 200자)"
               />
-              {formErrors.authorDc && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{formErrors.authorDc}</p>}
+              {authorForm.formState.errors.authorDc && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{authorForm.formState.errors.authorDc.message}</p>}
             </div>
           </FormField>
-
-          <div className="flex gap-6 pt-4">
-            <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
-            <Button onClick={() => saveAuthorMutation.mutate(authorFormData)} disabled={saveAuthorMutation.isPending} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group px-6">
-              <Zap size={18} className="group-hover:animate-pulse mr-2" /> {authorMode === 'create' ? '권한 배포' : '권한 수정'}
-            </Button>
-          </div>
-        </div>
+        </form>
       </StandardModal>
     </div>
   );

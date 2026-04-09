@@ -1,7 +1,8 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import { commonSchemas } from '@/lib/validations/common';
+import { toast } from 'sonner';
 import * as z from 'zod';
 import { Button } from "@/components/ui/button";
 import {
@@ -39,8 +40,8 @@ import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   menuNo: z.coerce.number().min(1, { message: "메뉴번호는 필수입니다." }),
-  menuNm: z.string().min(1, { message: "메뉴명은 필수입니다." }),
-  progrmFileNm: z.string().min(1, { message: "프로그램파일명은 필수입니다." }),
+  menuNm: commonSchemas.requiredString("메뉴명"),
+  progrmFileNm: commonSchemas.requiredString("프로그램파일명"),
   menuOrdr: z.coerce.number().min(1, { message: "메뉴순서는 필수입니다." }),
   menuDc: z.string().optional(),
   upperMenuId: z.coerce.number().optional(),
@@ -57,15 +58,14 @@ interface MenuFormProps {
 
 export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps) {
   const isEdit = !!data;
-  const form = useForm({
-    resolver: zodResolver(formSchema),
+  const form = useAppForm(formSchema, {
     defaultValues: {
-      menuNo: data?.menuNo ? String(data.menuNo) : '0',
+      menuNo: data?.menuNo || 0,
       menuNm: data?.menuNm || '',
       progrmFileNm: data?.progrmFileNm || '',
-      menuOrdr: data?.menuOrdr ? String(data.menuOrdr) : '1',
+      menuOrdr: data?.menuOrdr || 1,
       menuDc: data?.menuDc || '',
-      upperMenuId: data?.upperMenuId ? String(data.upperMenuId) : '0',
+      upperMenuId: data?.upperMenuId || 0,
       relateImageNm: data?.relateImageNm || '/',
       relateImagePath: data?.relateImagePath || '/',
     },
@@ -81,14 +81,17 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
       };
       if (isEdit) {
         await menuAdminService.updateMenu(data.menuNo!, { ...payload, menuNo: data.menuNo } as MenuManage);
+        toast.success('메뉴 정보가 수정되었습니다.');
       } else {
         await menuAdminService.createMenu(payload as MenuManage);
+        toast.success('신규 메뉴가 등록되었습니다.');
       }
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error(error);
-      alert('저장 중 오류가 발생했습니다.');
+      // useAppForm handles validation errors; here we handle submission (server) errors
+      toast.error('저장 중 오류가 발생했습니다.');
     }
   };
 
