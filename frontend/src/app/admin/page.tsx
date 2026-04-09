@@ -35,6 +35,12 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const MOCK_METRICS = {
   cpu: Array.from({ length: 20 }, (_, i) => ({ time: i, value: 10 + Math.random() * 20 })),
@@ -103,11 +109,25 @@ export default function AdminDashboardPage() {
         icon={LayoutDashboard}
         actions={
           <div className="flex gap-4 p-2 items-center">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-950 rounded-xl border border-emerald-200 italic font-black text-[9px] tracking-widest shadow-sm">
+            <motion.div 
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-950 rounded-xl border border-emerald-200 italic font-black text-[9px] tracking-widest shadow-sm cursor-default"
+            >
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               시스템 상태: 정상
-            </div>
-            <Button size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
+            </motion.div>
+            <Button 
+              size="lg" 
+              onClick={() => toast.success("시스템 동기화가 성공적으로 시작되었습니다.", {
+                description: "백그라운드에서 지능형 엔진이 최적화를 진행 중입니다."
+              })}
+              className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group relative overflow-hidden active:scale-95"
+            >
+              <motion.div
+                className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity"
+                initial={false}
+              />
               <Sparkles size={20} className="text-primary group-hover:rotate-12 transition-transform" />
               동기화 조정
             </Button>
@@ -302,6 +322,8 @@ export default function AdminDashboardPage() {
   );
 }
 
+import { motion } from 'framer-motion';
+
 function DashboardStatCard({ title, value, icon, trend, color, link, description }: any) {
   const colorMap: any = {
     blue: "text-blue-500 bg-blue-500/10 border-blue-500/20",
@@ -311,30 +333,42 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
   };
 
   return (
-    <Link href={link}>
-      <div className="p-8 rounded-[2.5rem] bg-white border-2 border-slate-100 shadow-xl hover:border-primary/50 transition-all cursor-pointer group relative overflow-hidden active:scale-95 duration-500">
-        <div className="flex items-center justify-between mb-8">
-          <div className={cn("p-3.5 rounded-2xl border-2 transition-transform group-hover:rotate-6 shadow-inner", colorMap[color])}>
-            {icon}
-          </div>
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-            <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{trend}</span>
-            <ArrowUpRight size={14} className="text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-          </div>
-        </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Link href={link}>
+          <motion.div 
+            whileHover={{ y: -4, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            className="p-8 h-full rounded-[2.5rem] bg-white border-2 border-slate-50 shadow-xl hover:border-primary/30 transition-colors cursor-pointer group relative overflow-hidden"
+          >
+            <div className="flex items-center justify-between mb-8">
+              <div className={cn("p-3.5 rounded-2xl border-2 transition-transform group-hover:rotate-6 shadow-inner", colorMap[color])}>
+                {icon}
+              </div>
+              <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{trend}</span>
+                <ArrowUpRight size={14} className="text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </div>
+            </div>
 
-        <div className="space-y-4">
-          <p className="text-[10px] font-black text-slate-700 tracking-[0.4em] uppercase font-mono">{title}</p>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h2>
-          <p className="text-[11px] font-bold text-slate-700 leading-tight uppercase">
-            {description}
-          </p>
-        </div>
+            <div className="space-y-4">
+              <p className="text-[10px] font-black text-slate-700 tracking-[0.4em] uppercase font-mono">{title}</p>
+              <h2 className="text-4xl font-black text-slate-900 tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h2>
+              <p className="text-[11px] font-bold text-slate-700 leading-tight uppercase">
+                {description}
+              </p>
+            </div>
 
-        <div className="absolute right-[-20px] bottom-[-20px] opacity-[0.05] rotate-12 group-hover:rotate-6 transition-transform duration-1000 pointer-events-none scale-150">
-          {icon}
-        </div>
-      </div>
-    </Link>
+            <div className="absolute right-[-20px] bottom-[-20px] opacity-[0.05] rotate-12 group-hover:rotate-6 transition-transform duration-1000 pointer-events-none scale-150">
+              {icon}
+            </div>
+          </motion.div>
+        </Link>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+        {title} 상세 페이지로 이동
+      </TooltipContent>
+    </Tooltip>
   );
 }

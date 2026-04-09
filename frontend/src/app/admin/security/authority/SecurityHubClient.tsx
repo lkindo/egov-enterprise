@@ -29,13 +29,14 @@ import {
   Database,
   Binary,
   Workflow,
-  Network,
-  SearchCode,
-  Milestone,
-  Building2,
   Contact2,
   Settings
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/foundation/system/UserAuthorityAdminService';
@@ -80,6 +81,7 @@ export default function SecurityHubClient() {
 
   const [tempUserMappings, setTempUserMappings] = useState<Set<string>>(new Set());
   const [tempMenuMappings, setTempMenuMappings] = useState<Set<number>>(new Set());
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // --- Matrix Mode States ---
   const [viewMode, setViewMode] = useState<'TOPOLOGY' | 'MATRIX'>('TOPOLOGY');
@@ -158,13 +160,37 @@ export default function SecurityHubClient() {
     return roots;
   }, [menusData, tempMenuMappings]);
 
+  const validateAuthorForm = () => {
+    const errors: Record<string, string> = {};
+    if (!authorFormData.authorCode?.trim()) errors.authorCode = '권한 코드는 필수입니다.';
+    else if (!/^[A-Z0-9_]+$/.test(authorFormData.authorCode)) errors.authorCode = '영문 대문자, 숫자, 언더바(_)만 가능합니다.';
+    else if (authorFormData.authorCode.length > 30) errors.authorCode = '권한 코드는 30자 이내여야 합니다.';
+    
+    if (!authorFormData.authorNm?.trim()) errors.authorNm = '권한 명칭은 필수입니다.';
+    else if (authorFormData.authorNm.length > 60) errors.authorNm = '권한 명칭은 60자 이내여야 합니다.';
+    
+    if (authorFormData.authorDc && authorFormData.authorDc.length > 200) errors.authorDc = '내용이 너무 깁니다. (최대 200자)';
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const saveAuthorMutation = useMutation({
     mutationFn: (data: Partial<AuthorInfo>) =>
       authorMode === 'create' ? authorAdminService.createAuthor(data) : authorAdminService.updateAuthor(data.authorCode!, data),
+    onMutate: () => {
+      if (!validateAuthorForm()) throw new Error('VALIDATION_FAILED');
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
       toast('보안 권한 아키텍처가 성공적으로 반영되었습니다.', 'success');
       setIsAuthorModalOpen(false);
+      setFormErrors({});
+    },
+    onError: (error: any) => {
+      if (error.message !== 'VALIDATION_FAILED') {
+        toast('저장 중 오류가 발생했습니다. 입력을 확인해주세요.', 'error');
+      }
     }
   });
 
@@ -267,6 +293,7 @@ export default function SecurityHubClient() {
   const handleOpenAuthorCreate = () => {
     setAuthorMode('create');
     setAuthorFormData({ authorCode: '', authorNm: '', authorDc: '' });
+    setFormErrors({});
     setIsAuthorModalOpen(true);
   };
 
@@ -413,41 +440,71 @@ export default function SecurityHubClient() {
         actions={
           <div className="flex gap-4 p-2 items-center">
             <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-2xl mr-4 border-2 border-slate-100">
-              <Button
-                variant="ghost"
-                onClick={() => setViewMode('TOPOLOGY')}
-                className={cn(
-                  "h-10 px-6 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all",
-                  viewMode === 'TOPOLOGY' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
-                )}
-              >
-                TOPOLOGY_VIEW
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => { setViewMode('MATRIX'); loadGlobalMappings(); }}
-                className={cn(
-                  "h-10 px-6 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all",
-                  viewMode === 'MATRIX' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
-                )}
-              >
-                MATRIX_PLANE
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setViewMode('TOPOLOGY')}
+                    className={cn(
+                      "h-10 px-6 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all",
+                      viewMode === 'TOPOLOGY' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
+                    )}
+                  >
+                    TOPOLOGY_VIEW
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                  보안 객체 간의 계층적 관계 시각화
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    onClick={() => { setViewMode('MATRIX'); loadGlobalMappings(); }}
+                    className={cn(
+                      "h-10 px-6 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all",
+                      viewMode === 'MATRIX' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
+                    )}
+                  >
+                    MATRIX_PLANE
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                  전사적 권한 할당 현황 일괄 검토 및 수정
+                </TooltipContent>
+              </Tooltip>
             </div>
 
-            <Button
-              variant="ghost"
-              onClick={() => queryClient.invalidateQueries()}
-              className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
-            >
-              <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
-            </Button>
-            <Button
-              onClick={handleOpenAuthorCreate}
-              className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
-            >
-              <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 아키텍처 설정
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  onClick={() => queryClient.invalidateQueries()}
+                  className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+                >
+                  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                서버로부터 최신 정책 정보 로드
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleOpenAuthorCreate}
+                  className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                >
+                  <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 아키텍처 설정
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                새로운 역할 또는 보안 그룹 정의
+              </TooltipContent>
+            </Tooltip>
           </div>
         }
       />
@@ -531,14 +588,21 @@ export default function SecurityHubClient() {
                 description="선택한 역할에 할당된 개별 식별자들의 실시간 할당 상태입니다."
                 icon={Users}
                 action={
-                  <Button
-                    size="sm"
-                    onClick={() => saveUserMappingMutation.mutate()}
-                    disabled={!selectedAuthorCode}
-                    className="h-10 px-6 rounded-xl bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
-                  >
-                    <Save size={14} /> COMMIT_ENTITY
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        onClick={() => saveUserMappingMutation.mutate()}
+                        disabled={!selectedAuthorCode}
+                        className="h-10 px-6 rounded-xl bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
+                      >
+                        <Save size={14} /> COMMIT_ENTITY
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                      수정된 사용자 매핑 정보를 DB에 최종 반영
+                    </TooltipContent>
+                  </Tooltip>
                 }
               >
                 <div className="relative h-full flex flex-col pt-4">
@@ -595,14 +659,21 @@ export default function SecurityHubClient() {
                 description="역할별 동적 메뉴 노드 계층 및 아키텍처 접근 수준 설정입니다."
                 icon={Layers}
                 action={
-                  <Button
-                    size="sm"
-                    onClick={() => saveMenuMappingMutation.mutate()}
-                    disabled={!selectedAuthorCode}
-                    className="h-10 px-6 rounded-xl bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
-                  >
-                    <RefreshCcw size={14} /> SYNC_POLICY
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        onClick={() => saveMenuMappingMutation.mutate()}
+                        disabled={!selectedAuthorCode}
+                        className="h-10 px-6 rounded-xl bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
+                      >
+                        <RefreshCcw size={14} /> SYNC_POLICY
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                      현재 노드 구조를 보안 정책에 동기화
+                    </TooltipContent>
+                  </Tooltip>
                 }
               >
                 <div className="relative h-full flex flex-col pt-4">
@@ -667,23 +738,39 @@ export default function SecurityHubClient() {
                 <Key size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                 <Input
                   value={authorFormData.authorCode}
-                  onChange={(e) => setAuthorFormData({ ...authorFormData, authorCode: e.target.value })}
+                  onChange={(e) => {
+                    setAuthorFormData({ ...authorFormData, authorCode: e.target.value.toUpperCase() });
+                    if (formErrors.authorCode) setFormErrors({ ...formErrors, authorCode: '' });
+                  }}
                   disabled={authorMode === 'edit'}
-                  className="h-16 rounded-2xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner pl-16 pt-0"
-                  placeholder="ROLE_IDENTIFIER"
+                  maxLength={30}
+                  className={cn(
+                    "h-16 rounded-2xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner pl-16 pt-0",
+                    formErrors.authorCode ? "border-rose-500 bg-rose-50" : "border-slate-100"
+                  )}
+                  placeholder="ROLE_IDENTIFIER (MAX_30)"
                 />
               </div>
+              {formErrors.authorCode && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{formErrors.authorCode}</p>}
             </FormField>
             <FormField label="역할 레이블 명칭" required description="UI 및 비즈니스 레이어에서 식별 명문화된 이름">
               <div className="relative group/nm">
                 <ShieldCheck size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
                 <Input
                   value={authorFormData.authorNm}
-                  onChange={(e) => setAuthorFormData({ ...authorFormData, authorNm: e.target.value })}
-                  className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
-                  placeholder="역할 명칭 입력"
+                  onChange={(e) => {
+                    setAuthorFormData({ ...authorFormData, authorNm: e.target.value });
+                    if (formErrors.authorNm) setFormErrors({ ...formErrors, authorNm: '' });
+                  }}
+                  maxLength={60}
+                  className={cn(
+                    "h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner",
+                    formErrors.authorNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
+                  )}
+                  placeholder="역할 명칭 입력 (MAX_60)"
                 />
               </div>
+              {formErrors.authorNm && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{formErrors.authorNm}</p>}
             </FormField>
           </div>
 
@@ -693,9 +780,14 @@ export default function SecurityHubClient() {
               <Textarea
                 value={authorFormData.authorDc}
                 onChange={(e) => setAuthorFormData({ ...authorFormData, authorDc: e.target.value })}
-                className="min-h-[160px] pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
-                placeholder="상세 명세 입력..."
+                maxLength={200}
+                className={cn(
+                  "min-h-[160px] pl-16 p-8 rounded-[2.5rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner",
+                  formErrors.authorDc ? "border-rose-500 bg-rose-50" : "border-slate-100"
+                )}
+                placeholder="상세 명세 입력... (최대 200자)"
               />
+              {formErrors.authorDc && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{formErrors.authorDc}</p>}
             </div>
           </FormField>
 

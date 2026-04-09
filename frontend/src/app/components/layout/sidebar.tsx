@@ -327,8 +327,9 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
       
       return await menuService.getLeftMenus(activeMenuNo);
     },
-    enabled: !!activeMenuNo, // Only run if activeMenuNo exists
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    enabled: !!activeMenuNo, 
+    placeholderData: (prev) => prev,
+    staleTime: 5 * 60 * 1000, 
   });
 
   return (

@@ -7,6 +7,10 @@ import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
 import { ScrollToTop } from './components/layout/scroll-to-top';
+import { RouteProgress } from './components/layout/route-progress';
+import { CommandMenu } from './components/layout/command-menu';
+import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { cookies } from 'next/headers';
 import { menuService } from '@/services/business/user/MenuService';
 import { MenuInfo } from '@/types/foundation/menu';
@@ -66,19 +70,24 @@ export default async function RootLayout({
           enableColorScheme
         >
           <Providers>
-            <ScrollToTop />
-            <div className="relative flex min-h-screen flex-col bg-background/50 selection:bg-primary/20 selection:text-primary transition-all duration-700">
+            <TooltipProvider>
+              <RouteProgress />
+              <CommandMenu />
+              <Toaster position="top-center" richColors />
+              <ScrollToTop />
+            <div className="relative flex min-h-screen flex-col bg-background/50 selection:bg-primary/20 selection:text-primary">
               <Header initialMenus={initialMenus} />
               <div className="flex flex-1">
                 <Sidebar initialMenus={initialMenus} />
-                <main className="flex-1 lg:pl-72 pt-1 transition-all duration-500 min-w-0">
-                  <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-14rem)] animate-in fade-in duration-1000">
+                <main className="flex-1 lg:pl-72 pt-1 min-w-0 transition-opacity duration-300">
+                  <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-14rem)] animate-in fade-in slide-in-from-bottom-2 duration-500">
                     {children}
                   </div>
-                  <Footer className="border-t border-border/20 py-8 mb-4 px-6 transition-opacity" />
+                  <Footer className="border-t border-border/20 py-8 mb-4 px-6" />
                 </main>
               </div>
             </div>
+            </TooltipProvider>
           </Providers>
         </ThemeProvider>
       </body>

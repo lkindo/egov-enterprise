@@ -40,6 +40,11 @@ import {
   CloudLightning,
   Contact2
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { UserManage } from '@/types/foundation/user';
@@ -140,14 +145,29 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
         icon={UserCog}
         actions={
           <div className="flex gap-4 p-2 items-center">
-            <Button variant="ghost" size="lg" className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
-              <Settings size={22} className="group-hover:rotate-90 transition-transform duration-500" />
-            </Button>
-            <Button size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
-              {activeTab === 'DEPTS' ? <LayoutGrid size={20} /> : <UserPlus size={20} />}
-              {activeTab === 'DEPTS' ? '신규 부서 등록' : activeTab === 'ABSENCES' ? '부재 등록' : '사용자 등록'}
-              <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="lg" className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
+                  <Settings size={22} className="group-hover:rotate-90 transition-transform duration-500" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                개인화 UI 및 필터 환경 설정
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
+                  {activeTab === 'DEPTS' ? <LayoutGrid size={20} /> : <UserPlus size={20} />}
+                  {activeTab === 'DEPTS' ? '신규 부서 등록' : activeTab === 'ABSENCES' ? '부재 등록' : '사용자 등록'}
+                  <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                {activeTab === 'DEPTS' ? '디렉토리에 새로운 조직 노드 추가' : '새로운 아이덴티티 프로필 생성'}
+              </TooltipContent>
+            </Tooltip>
           </div>
         }
       />
@@ -188,9 +208,16 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                 <div>
                   <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">실시간 디렉토리 동기화</span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-12 rounded-2xl px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
-                  <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> SYNCHRONIZE
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-12 rounded-2xl px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
+                      <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> SYNCHRONIZE
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                    서버 지능형 엔진과 데이터 정합성 맞추기
+                  </TooltipContent>
+                </Tooltip>
               </div>
 
               <div className="relative group/search">
@@ -347,29 +374,36 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
 
 function NavButton({ icon, subLabel, label, active, onClick }: { icon: React.ReactNode, subLabel: string, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "w-full group p-8 rounded-[2.5rem] border-2 transition-all flex items-center gap-6 relative overflow-hidden",
-        active
-          ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.03] z-10"
-          : "bg-transparent border-transparent hover:bg-slate-50 text-slate-400 hover:text-slate-900"
-      )}
-    >
-      <div className={cn(
-        "w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-lg relative z-10",
-        active ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-primary/10 group-hover:text-primary"
-      )}>
-        {icon}
-      </div>
-      <div className="flex flex-col text-left relative z-10">
-        <span className={cn("text-[10px] font-black tracking-widest uppercase mb-1 opacity-30", active && "opacity-40 font-mono italic")}>{subLabel}</span>
-        <span className="text-md font-black tracking-tighter uppercase leading-tight font-mono italic">{label}</span>
-      </div>
-      {active && (
-        <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl opacity-50 -mr-16 -mt-16 pointer-events-none" />
-      )}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          className={cn(
+            "w-full group p-8 rounded-[2.5rem] border-2 transition-all flex items-center gap-6 relative overflow-hidden",
+            active
+              ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.03] z-10"
+              : "bg-transparent border-transparent hover:bg-slate-50 text-slate-400 hover:text-slate-900"
+          )}
+        >
+          <div className={cn(
+            "w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-lg relative z-10",
+            active ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-primary/10 group-hover:text-primary"
+          )}>
+            {icon}
+          </div>
+          <div className="flex flex-col text-left relative z-10">
+            <span className={cn("text-[10px] font-black tracking-widest uppercase mb-1 opacity-30", active && "opacity-40 font-mono italic")}>{subLabel}</span>
+            <span className="text-md font-black tracking-tighter uppercase leading-tight font-mono italic">{label}</span>
+          </div>
+          {active && (
+            <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl opacity-50 -mr-16 -mt-16 pointer-events-none" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+        {label} 섹션으로 이동
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
