@@ -24,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
@@ -106,6 +107,15 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         }
 
                         Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
+                        
+                        java.time.LocalDateTime eventDate = null;
+                        if (StringUtils.hasText(request.eventDate())) {
+                            try {
+                                eventDate = java.time.LocalDateTime.parse(request.eventDate());
+                            } catch (Exception e) {
+                                log.warn("Failed to parse eventDate: {}", request.eventDate());
+                            }
+                        }
 
                         Board board = Board.builder()
                                         .bbsId(required(master.getBbsId(), "master.getBbsId() 는 null 일 수 없습니다"))
@@ -121,6 +131,9 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                         .parnts(0L)
                                         .replyAt("N")
                                         .replyLc(0)
+                                        .eventDate(eventDate)
+                                        .qnaStatus(request.qnaStatus() != null ? request.qnaStatus() : "OPEN")
+                                        .qnaCategory(request.qnaCategory())
                                         .build();
 
                         Long nttId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
@@ -148,7 +161,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.nttSj(), request.nttCn(),
-                                request.ntceBgnde(), request.ntceEndde(), atchFileId);
+                                request.ntceBgnde(), request.ntceEndde(), atchFileId,
+                                request.eventDate(), request.qnaStatus(), request.qnaCategory());
 
                 return createPost(userId, newRequest);
         }
@@ -217,7 +231,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.nttSj(), request.nttCn(),
-                                request.ntceBgnde(), request.ntceEndde(), atchFileId);
+                                request.ntceBgnde(), request.ntceEndde(), atchFileId,
+                                request.eventDate(), request.qnaStatus(), request.qnaCategory());
 
                 return replyPost(userId, parentId, newRequest);
         }
@@ -240,9 +255,20 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 .findById(required(nttId, "nttId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
+                java.time.LocalDateTime eventDate = null;
+                if (StringUtils.hasText(request.eventDate())) {
+                    try {
+                        eventDate = java.time.LocalDateTime.parse(request.eventDate());
+                    } catch (Exception e) {
+                        log.warn("Failed to parse eventDate for update: {}", request.eventDate());
+                    }
+                }
+
                 board.update(request.nttSj(), request.nttCn(), board.getNtcrId(), board.getNtcrNm(),
                                 board.getPassword(), request.ntceBgnde(), request.ntceEndde(),
-                                request.atchFileId());
+                                request.atchFileId(), eventDate, 
+                                request.qnaStatus() != null ? request.qnaStatus() : board.getQnaStatus(), 
+                                request.qnaCategory());
         }
 
         @Override
@@ -262,7 +288,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.nttSj(), request.nttCn(),
-                                request.ntceBgnde(), request.ntceEndde(), atchFileId);
+                                request.ntceBgnde(), request.ntceEndde(), atchFileId,
+                                request.eventDate(), request.qnaStatus(), request.qnaCategory());
 
                 updatePost(required(bbsId, "bbsId 는 null 일 수 없습니다"), required(nttId, "nttId 는 null 일 수 없습니다"),
                                 newRequest);

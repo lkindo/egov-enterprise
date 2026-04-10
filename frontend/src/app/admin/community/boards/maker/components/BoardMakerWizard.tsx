@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -29,16 +29,12 @@ import {
   Layout,
   ShieldCheck,
   Rocket,
-  Settings2,
-  Info,
-  List,
-  ImageIcon,
-  BookOpen,
-  UserCircle,
-  UserMinus,
-  Lock,
   ExternalLink,
-  Loader2
+  Loader2,
+  HelpCircle,
+  CalendarDays,
+  Book,
+  MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -75,6 +71,38 @@ const TEMPLATES = [
     typeCode: 'BBST03',
     icon: ImageIcon,
     color: 'bg-rose-500',
+  },
+  {
+    id: 'TMPLT_QNA',
+    name: 'Professional Q&A',
+    description: '질문과 해결 중심의 사내 기술 지원 및 상담 레이아웃',
+    typeCode: 'BBST04',
+    icon: HelpCircle,
+    color: 'bg-amber-500',
+  },
+  {
+    id: 'TMPLT_CALENDAR',
+    name: 'Event Calendar',
+    description: '날짜 기반의 전사 일정 및 교육 현황 관리 레이아웃',
+    typeCode: 'BBST05',
+    icon: CalendarDays,
+    color: 'bg-cyan-500',
+  },
+  {
+    id: 'TMPLT_FAQ',
+    name: 'Accordion FAQ',
+    description: '질문과 답변을 한눈에 펼쳐보는 아코디언 스타일의 FAQ 레이아웃',
+    typeCode: 'BBST06',
+    icon: MessageSquare,
+    color: 'bg-purple-500',
+  },
+  {
+    id: 'TMPLT_WIKI',
+    name: 'Knowledge Wiki',
+    description: '방대한 정보를 체계적으로 정리하는 도큐먼트형 위키 레이아웃',
+    typeCode: 'BBST07',
+    icon: Book,
+    color: 'bg-slate-700',
   },
 ];
 

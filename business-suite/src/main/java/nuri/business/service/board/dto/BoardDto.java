@@ -92,6 +92,18 @@ public class BoardDto {
     @Schema(description = "Description")
     private final String bbsNm;
 
+    @Schema(description = "Description")
+    private final LocalDateTime eventDate;
+
+    @Schema(description = "Description")
+    private final String qnaStatus;
+
+    @Schema(description = "Description")
+    private final String qnaCategory;
+
+    @Schema(description = "Description")
+    private final String eventDateStr;
+
     public static BoardDto from(Board entity) {
         // ... (existing from method)
         return BoardDto.builder()
@@ -122,6 +134,10 @@ public class BoardDto {
                 .secretAt(entity.getSecretAt())
                 .blogAt(entity.getBlogId() != null ? "Y" : "N")
                 .commentCo(0)
+                .eventDate(entity.getEventDate())
+                .qnaStatus(entity.getQnaStatus())
+                .qnaCategory(entity.getQnaCategory())
+                .eventDateStr(entity.getEventDate() != null ? entity.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "")
                 .build();
     }
 
@@ -147,6 +163,10 @@ public class BoardDto {
                 .frstRegisterId(result.getFrstRegisterId())
                 .secretAt(result.getSecretAt())
                 .commentCo(result.getCommentCo())
+                .eventDate(result.getEventDate())
+                .qnaStatus(result.getQnaStatus())
+                .qnaCategory(result.getQnaCategory())
+                .eventDateStr(result.getEventDate() != null ? result.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "")
                 .build();
     }
 
@@ -177,6 +197,10 @@ public class BoardDto {
                 .password(detail.getPassword())
                 .secretAt(detail.getSecretAt())
                 .bbsNm(detail.getBbsNm())
+                .eventDate(detail.getEventDate())
+                .qnaStatus(detail.getQnaStatus())
+                .qnaCategory(detail.getQnaCategory())
+                .eventDateStr(detail.getEventDate() != null ? detail.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "")
                 .build();
     }
 

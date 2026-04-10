@@ -32,6 +32,14 @@ public class BoardPredicate {
             builder.and(QBoard.board.createdDate.loe(condition.getEndDate()));
         }
 
+        if (StringUtils.hasText(condition.getQnaStatus())) {
+            builder.and(QBoard.board.qnaStatus.eq(condition.getQnaStatus()));
+        }
+
+        if (StringUtils.hasText(condition.getQnaCategory())) {
+            builder.and(QBoard.board.qnaCategory.eq(condition.getQnaCategory()));
+        }
+
         return builder;
     }
 

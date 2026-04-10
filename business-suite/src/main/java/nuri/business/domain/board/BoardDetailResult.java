@@ -38,6 +38,9 @@ public class BoardDetailResult {
     private String noticeAt;
     private String secretAt;
     private Integer commentCo;
+    private LocalDateTime eventDate;
+    private String qnaStatus;
+    private String qnaCategory;
 
     // BoardMaster fields
     private String bbsTyCode;

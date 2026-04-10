@@ -14,6 +14,8 @@ public class BoardSearchCondition {
     private java.time.LocalDateTime startDate;
     private java.time.LocalDateTime endDate;
     private String orderBy; // "date", "views", "comments"
+    private String qnaStatus;
+    private String qnaCategory;
 
     // Default constructor for cases where full initialization isn't needed
     // immediately

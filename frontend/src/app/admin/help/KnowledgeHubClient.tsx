@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -51,6 +51,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
     queryKey: ['knowledge-articles', activeCategory, searchQuery, sortBy],
     queryFn: () => knowledgeService.getArticles({ 
       bbsId: currentBbsId,
+      category: activeCategory !== 'ALL' ? activeCategory : undefined,
       page: 0,
       size: 20,
       searchCnd: searchQuery ? '0' : undefined,
@@ -266,8 +267,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                       >
                         <div className="flex gap-4 md:gap-6 items-start">
                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-[0.1rem] md:rounded-[0.1rem] bg-slate-50 flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors shrink-0">
-                              <span className="text-[8px] md:text-[10px] font-black text-muted-foreground/40 leading-none">점수</span>
-                              <span className="text-sm md:text-xl font-black text-slate-800 leading-none mt-1">{Math.floor(Math.random() * 20) + 80}</span>
+                              <span className="text-[8px] md:text-[10px] font-black text-muted-foreground/40 leading-none">영향력</span>
+                              <span className="text-sm md:text-xl font-black text-slate-800 leading-none mt-1">{Math.min(99, Math.floor((item.inqireCo || 0) / 10) + 85)}</span>
                            </div>
                            <div className="space-y-1 md:space-y-2 min-w-0">
                               <div className="flex items-center gap-2 md:gap-3">
@@ -283,8 +284,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                         </div>
                         <div className="mt-4 sm:mt-0 flex items-center justify-between sm:justify-end gap-4">
                            <div className="hidden sm:flex flex-col items-end">
-                              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">설정 상태</span>
-                              <span className="text-xs font-black text-emerald-500 mt-1 uppercase">동기화 완료</span>
+                              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">상태</span>
+                              <StatusBadge status={item.statusCd} type={activeCategory as KnowledgeCategory} />
                            </div>
                            <ArrowRight className="text-muted-foreground/20 group-hover:text-primary group-hover:translate-x-2 transition-all w-5 h-5 md:w-6 md:h-6" />
                         </div>
@@ -400,6 +401,38 @@ function StatsCard({ label, value, desc, trend }: { label: string, value: string
          </div>
       </div>
     </div>
+  );
+}
+
+function StatusBadge({ status, type }: { status?: string, type: KnowledgeCategory }) {
+  if (type === 'QNA') {
+    const isSolved = status === 'SOLVED';
+    return (
+      <span className={cn(
+        "text-xs font-black mt-1 uppercase",
+        isSolved ? "text-emerald-500" : "text-rose-500 animate-pulse"
+      )}>
+        {isSolved ? 'Solved' : 'Open'}
+      </span>
+    );
+  }
+  
+  if (type === 'WIKI') {
+    const isPublished = status === 'PUBLISHED';
+    return (
+      <span className={cn(
+        "text-xs font-black mt-1 uppercase",
+        isPublished ? "text-primary" : "text-slate-400"
+      )}>
+        {isPublished ? 'Published' : 'Draft'}
+      </span>
+    );
+  }
+
+  return (
+    <span className="text-xs font-black text-emerald-500 mt-1 uppercase">
+      Active
+    </span>
   );
 }
 

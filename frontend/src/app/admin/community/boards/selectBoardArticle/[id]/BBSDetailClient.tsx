@@ -1,9 +1,11 @@
-﻿'use client';
+'use client';
 
 import React, { useState, Suspense, useActionState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import client from '@/lib/api/client';
 import { saveBoardArticle } from '@/app/actions/boardActions';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +40,18 @@ const InsertBBSContent = () => {
 
   const [state, formAction, isPending] = useActionState(saveBoardArticle, null);
 
+  // 마스터 정보 조회 (템플릿 확인용)
+  const { data: masterInfo } = useQuery({
+    queryKey: ['board-master', bbsId],
+    queryFn: () => client.get<any>(`/admin/system/board-masters/${bbsId}`),
+    enabled: !!bbsId,
+  });
+
+  const tmplatId = masterInfo?.tmplatId || 'TMPLT_LIST';
+
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedEventDate, setSelectedEventDate] = useState<string>(new Date().toISOString());
+
   useEffect(() => {
     if (state?.success) {
       toast(state.message, 'success');
@@ -70,10 +84,17 @@ const InsertBBSContent = () => {
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-10 relative z-10">
             <div className="space-y-6 text-center md:text-left">
-              <div className="flex items-center gap-3 px-5 py-2 bg-white/10 w-fit rounded-full border border-white/10 backdrop-blur-xl mx-auto md:mx-0">
-                <Edit3 className="w-4 h-4 text-primary animate-bounce" />
+              <div className={cn(
+                "flex items-center gap-3 px-5 py-2 w-fit rounded-full border backdrop-blur-xl mx-auto md:mx-0",
+                tmplatId === 'TMPLT_QNA' ? "bg-amber-500/20 border-amber-500/30" : "bg-white/10 border-white/10"
+              )}>
+                <Edit3 className={cn("w-4 h-4 animate-bounce", tmplatId === 'TMPLT_QNA' ? "text-amber-400" : "text-primary")} />
                 <span className="text-[10px] font-black tracking-[0.3em] text-white">
-                  {pathname.includes('insertBoardArticle') ? 'NEW POST : ' : 'EDIT : '} {bbsId.includes('NOTICE') ? 'NOTICE' : 'BOARD'}
+                  {pathname.includes('insertBoardArticle') ? 'NEW POST : ' : 'EDIT : '} 
+                  {tmplatId === 'TMPLT_HUB' ? 'KNOWLEDGE_BASE' : 
+                   tmplatId === 'TMPLT_GALLERY' ? 'MEDIA_ASSET' : 
+                   tmplatId === 'TMPLT_QNA' ? 'CONSULT_SESSION' : 
+                   tmplatId === 'TMPLT_CALENDAR' ? 'EVENT_LOG' : 'BOARD'}
                 </span>
               </div>
               <CardTitle className="text-3xl md:text-3xl font-black tracking-tighter leading-tight ">
@@ -121,11 +142,64 @@ const InsertBBSContent = () => {
               />
             </div>
 
+            {/* Hidden Inputs for Action Data */}
+            <input type="hidden" name="qnaCategory" value={selectedCategory} />
+            <input type="hidden" name="eventDate" value={selectedEventDate} />
+            <input type="hidden" name="qnaStatus" value="OPEN" />
+
+            {/* Template Specific Fields */}
+            {tmplatId === 'TMPLT_QNA' && (
+              <div className="space-y-6 animate-in slide-in-from-left-4 duration-500">
+                <Label className="text-[11px] font-black tracking-[0.3em] text-amber-500 flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4" /> 00. CONSULTATION CATEGORY
+                </Label>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {['TECHNICAL', 'HR_POLICY', 'PROJECT_MGMT', 'GENERAL'].map(cat => (
+                    <Button 
+                      key={cat} 
+                      variant={selectedCategory === cat ? 'default' : 'outline'}
+                      type="button" 
+                      onClick={() => setSelectedCategory(cat)}
+                      className={cn(
+                        "h-14 font-black text-[10px] tracking-widest border-2 transition-all rounded-[0.1rem]",
+                        selectedCategory === cat ? "bg-amber-500 border-amber-500 text-white" : "border-amber-100 hover:border-amber-500 hover:bg-amber-50 text-amber-500"
+                      )}
+                    >
+                      {cat}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {tmplatId === 'TMPLT_CALENDAR' && (
+              <div className="p-10 bg-cyan-900/10 border-2 border-cyan-500/20 rounded-[0.1rem] flex flex-col md:flex-row items-center gap-8 animate-in slide-in-from-right-4 duration-500">
+                 <div className="w-16 h-16 bg-cyan-500 rounded-lg flex items-center justify-center text-white shadow-xl shadow-cyan-500/20 shrink-0">
+                    <Calendar size={32} />
+                 </div>
+                 <div className="flex-1 space-y-4">
+                    <div className="space-y-1">
+                        <p className="text-sm font-black text-cyan-700 uppercase tracking-tighter">Event Schedule</p>
+                        <p className="text-xs text-cyan-600/70 font-medium">행사가 진행될 정확한 일시를 지정해 주세요.</p>
+                    </div>
+                    <Input 
+                        type="datetime-local" 
+                        value={selectedEventDate.slice(0, 16)} 
+                        onChange={(e) => setSelectedEventDate(new Date(e.target.value).toISOString())}
+                        className="max-w-xs border-cyan-200 focus:border-cyan-500 focus:ring-cyan-500/20"
+                    />
+                 </div>
+              </div>
+            )}
+
             {/* Content Area */}
             <div className="space-y-6 group">
               <div className="flex items-center justify-between">
-                <Label htmlFor="nttCn" className="text-[11px] font-black tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3">
-                  <FileText className="w-4 h-4" /> 02. 본문 내용
+                <Label htmlFor="nttCn" className={cn(
+                  "text-[11px] font-black tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3",
+                  tmplatId === 'TMPLT_QNA' && "group-focus-within:text-amber-500"
+                )}>
+                  <FileText className="w-4 h-4" /> 02. {tmplatId === 'TMPLT_QNA' ? 'DETAIL QUESTION' : 'CONTENT BODY'}
                 </Label>
                 <span className="text-[10px] font-bold text-primary/40 tracking-tight">필수</span>
               </div>
@@ -133,15 +207,20 @@ const InsertBBSContent = () => {
                 <Textarea
                   id="nttCn"
                   name="nttCn"
-                  placeholder="전달하고자 하는 내용을 상세히 작성하세요..."
+                  placeholder={
+                    tmplatId === 'TMPLT_QNA' 
+                      ? "질문 내용을 자세히 기재해 주시면 더 정확한 답변을 받으실 수 있습니다..."
+                      : "전달하고자 하는 내용을 상세히 작성하세요..."
+                  }
                   className={cn(
                     "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[0.1rem] bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
+                    tmplatId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
                     state?.field === 'nttCn' && "border-rose-500 bg-rose-50"
                   )}
                   required
                 />
                 <div className="absolute bottom-8 right-10 flex items-center gap-2.5 text-[10px] font-black text-muted-foreground/40 tracking-[0.2em] pointer-events-none bg-muted/50 px-4 py-2 rounded-full border border-primary/5 backdrop-blur-sm">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 임시 저장 중
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {tmplatId === 'TMPLT_QNA' ? 'DRAFTING_QNA' : '임시 저장 중'}
                 </div>
               </div>
             </div>

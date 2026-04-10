@@ -27,5 +27,14 @@ public record BoardSaveRequest(
         String ntceEndde,
 
         @Schema(description = "Attached File ID")
-        String atchFileId) {
+        String atchFileId,
+
+        @Schema(description = "Event Date (ISO-8601)")
+        String eventDate,
+
+        @Schema(description = "Q&A Status (OPEN/SOLVED)")
+        String qnaStatus,
+
+        @Schema(description = "Q&A Category")
+        String qnaCategory) {
 }

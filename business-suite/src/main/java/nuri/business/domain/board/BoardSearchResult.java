@@ -29,4 +29,7 @@ public class BoardSearchResult {
     private String noticeAt;
     private String secretAt;
     private Integer commentCo; // Integer로 변경
+    private LocalDateTime eventDate;
+    private String qnaStatus;
+    private String qnaCategory;
 }

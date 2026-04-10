@@ -17,6 +17,9 @@ interface BoardArticle {
   bbsId: string;
   replyAt?: string;
   parntsId?: string;
+  eventDate?: string;
+  qnaStatus?: string;
+  qnaCategory?: string;
 }
 
 export async function saveBoardArticle(prevState: unknown, formData: FormData): Promise<ActionResponse> {
@@ -31,12 +34,16 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
   if (!nttSj || nttSj.trim() === '') return { success: false, message: '제목을 입력해주세요.', field: 'nttSj' };
   if (!nttCn || nttCn.trim() === '') return { success: false, message: '내용을 입력해주세요.', field: 'nttCn' };
 
+  const eventDate = formData.get('eventDate') as string;
+  const qnaStatus = formData.get('qnaStatus') as string;
+  const qnaCategory = formData.get('qnaCategory') as string;
+
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const articleData: BoardArticle = { nttSj, nttCn, bbsId };
+    const articleData: BoardArticle = { nttSj, nttCn, bbsId, eventDate, qnaStatus, qnaCategory };
     if (isReply) {
       articleData.replyAt = 'Y';
       articleData.parntsId = parntsId;

@@ -13,7 +13,10 @@ export interface KnowledgeDto {
   nttCn?: string;
   ntcrNm?: string;
   frstRegisterPnttmStr?: string;
-  bbsId?: string; // Add these for compatibility
+  bbsId?: string;
+  statusCd?: string;
+  categoryCd?: string;
+  inqireCo?: number;
 }
 
 export type BoardArticle = KnowledgeDto;
@@ -48,34 +51,75 @@ export interface FileDto {
 }
 
 export const knowledgeService = {
-  getArticles: async (params: { bbsId?: string; searchWrd?: string; searchCnd?: string; page?: number; size?: number } = {}) => {
-    return client.get<PageResponse<KnowledgeDto>>('admin/digital-assets', { params });
+  getArticles: async (params: { bbsId?: string; category?: string; searchWrd?: string; searchCnd?: string; page?: number; size?: number } = {}) => {
+    // Redirect to Board API
+    const boardParams = {
+      bbsId: params.bbsId || 'BBSMSTR_AAAAAAAAAAAA',
+      qnaCategory: params.category, // Map Hub category to BBS qnaCategory
+      searchWrd: params.searchWrd,
+      searchCnd: params.searchCnd || '0',
+      page: params.page || 0,
+      size: params.size || 20
+    };
+    const res = await client.get<any>('admin/board/articles', { params: boardParams });
+    
+    // Map Board fields to Knowledge fields for UI compatibility
+    return {
+      ...res,
+      list: (res.list || []).map((item: any) => ({
+        ...item,
+        id: item.nttId,
+        knoId: item.nttId,
+        knoNm: item.nttSj,
+        knoCn: item.nttCn,
+        statusCd: item.qnaStatus, // Use the new qnaStatus field!
+        categoryCd: item.qnaCategory,
+        frstRegisterPnttmStr: item.frstRegistPnttm?.split('T')[0] || item.frstRegistPnttm
+      }))
+    };
   },
+
   getHotArticles: async (bbsId?: string) => {
-    // Note: DAM API might not have a specific 'hot' endpoint yet, so we use list with sorting or fallback
-    return client.get<PageResponse<KnowledgeDto>>('admin/digital-assets', { params: { bbsId, size: 5, sort: 'inqireCo,desc' } });
+    const res = await client.get<any>('admin/board/articles', { 
+      params: { bbsId: bbsId || 'BBSMSTR_AAAAAAAAAAAA', size: 5, sort: 'inqireCo,desc' } 
+    });
+    return {
+      list: (res.list || []).map((item: any) => ({
+        ...item,
+        id: item.nttId,
+        nttSj: item.nttSj
+      }))
+    };
   },
+
   getArticle: async (knoId: string) => {
-    return client.get<KnowledgeDto>(`admin/digital-assets/${knoId}`);
+    // Note: Detail view should also ideally come from board detail API
+    return client.get<KnowledgeDto>(`admin/board/articles/${knoId}`);
   },
+
   getStats: async (bbsId?: string) => {
-    const res = await client.get<PageResponse<KnowledgeDto>>('admin/digital-assets', { params: { bbsId, size: 100 } });
+    const res = await client.get<any>('admin/board/articles', { 
+      params: { bbsId: bbsId || 'BBSMSTR_AAAAAAAAAAAA', size: 100 } 
+    });
     const articles = res.list || [];
     return {
       totalCount: res.total || articles.length,
-      totalViews: articles.reduce((acc, cur) => acc + (cur.inqireCo || 0), 0),
+      totalViews: articles.reduce((acc: number, cur: any) => acc + (cur.inqireCo || 0), 0),
       topContributor: articles.length > 0 ? articles[0]?.ntcrNm : 'N/A',
-      intelligenceScore: Math.min(100, (articles.length * 1.5) + (articles.reduce((acc, cur) => acc + (cur.inqireCo || 0), 0) / 10))
+      intelligenceScore: Math.min(100, (articles.length * 2) + 70) 
     };
   },
+
   getActivities: async (bbsId?: string) => {
-    const res = await client.get<PageResponse<KnowledgeDto>>('admin/digital-assets', { params: { bbsId, size: 10 } });
-    return (res.list || []).map(item => ({
-      id: item.knoId,
+    const res = await client.get<any>('admin/board/articles', { 
+      params: { bbsId: bbsId || 'BBSMSTR_AAAAAAAAAAAA', size: 10 } 
+    });
+    return (res.list || []).map((item: any) => ({
+      id: item.nttId,
       type: 'SHARE',
-      title: item.knoNm,
-      user: item.frstRegisterId, // Using frstRegisterId for user
-      time: item.frstRegisterPnttm,
+      title: item.nttSj,
+      user: item.ntcrNm || item.frstRegisterId,
+      time: item.frstRegistPnttm?.split('T')[0] || 'Just now',
       impact: `+${(item.inqireCo || 0) % 100} Reach`
     }));
   }

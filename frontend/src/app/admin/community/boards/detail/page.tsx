@@ -1,8 +1,9 @@
-﻿'use client';
+'use client';
 
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import client from '@/lib/api/client';
 import {
   ArrowLeft, Edit3, Trash2,
   Download, MessageSquare,
@@ -23,6 +24,15 @@ function DetailContent() {
   const searchParams = useSearchParams();
   const bbsId = searchParams.get('bbsId');
   const nttId = searchParams.get('nttId');
+
+  // 마스터 정보 조회 (템플릿 확인용)
+  const { data: masterInfo } = useQuery({
+    queryKey: ['board-master', bbsId],
+    queryFn: () => client.get<any>(`/admin/system/board-masters/${bbsId}`),
+    enabled: !!bbsId,
+  });
+
+  const tmplatId = masterInfo?.tmplatId || 'TMPLT_LIST';
 
   const { data: article, isLoading, refetch } = useQuery({
     queryKey: ['article-detail', bbsId, nttId],
@@ -120,21 +130,66 @@ function DetailContent() {
           </div>
 
           <div className="relative z-10 max-w-4xl mx-auto space-y-16">
-            <div className="flex items-center gap-4">
-              <span className="h-[2px] w-12 bg-primary" />
-              <p className="text-[10px] font-black tracking-[0.6em] text-primary uppercase leading-none italic">검증된 지식 데이터셋</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="h-[2px] w-12 bg-primary" />
+                <p className="text-[10px] font-black tracking-[0.6em] text-primary uppercase leading-none italic">
+                  {tmplatId === 'TMPLT_QNA' ? (article.qnaCategory || 'Q&A_TECHNICAL_CONSULT') : 'VERIFIED_KNOWLEDGE_UNIT'}
+                </p>
+              </div>
+              {tmplatId === 'TMPLT_QNA' && article.qnaStatus !== 'SOLVED' && (
+                <Button className="bg-amber-100 text-amber-600 hover:bg-amber-200 border-2 border-amber-200 rounded-full font-black text-xs px-6">
+                  <CheckCircle2 size={16} className="mr-2" /> Mark as Solved
+                </Button>
+              )}
+              {tmplatId === 'TMPLT_QNA' && article.qnaStatus === 'SOLVED' && (
+                <Badge className="bg-emerald-100 text-emerald-600 border-2 border-emerald-200 rounded-full font-black text-xs px-6 py-2">
+                  <CheckCircle2 size={16} className="mr-2" /> Solved
+                </Badge>
+              )}
             </div>
 
+            {tmplatId === 'TMPLT_CALENDAR' && (
+               <div className="p-8 bg-slate-900 rounded-[0.1rem] border-l-8 border-primary flex items-center gap-8 text-white">
+                  <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/20">
+                    <Calendar size={32} />
+                  </div>
+                  <div>
+                     <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Event Date</p>
+                     <p className="text-2xl font-black italic uppercase tracking-tighter">
+                       {article.eventDate ? format(new Date(article.eventDate), "EEEE, MMMM do, yyyy") : article.frstRegisterPnttm ? format(new Date(article.frstRegisterPnttm), "EEEE, MMMM do, yyyy") : 'TBD'}
+                     </p>
+                  </div>
+               </div>
+            )}
+
             <div
-              className="prose prose-2xl dark:prose-invert prose-slate max-w-none 
-                text-slate-800 dark:text-slate-200 
-                font-medium leading-[1.6] tracking-tight 
-                prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase prose-headings:italic
-                prose-p:my-10
-                prose-blockquote:border-l-[6px] prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-12 prose-blockquote:py-10 prose-blockquote:rounded-r-[2rem] prose-blockquote:italic
-                prose-code:bg-slate-100 prose-code:p-1 prose-code:rounded prose-pre:bg-slate-900 prose-pre:p-8 prose-pre:rounded-[0.1rem]"
+              className={cn(
+                "prose prose-2xl dark:prose-invert prose-slate max-w-none transition-all duration-700",
+                tmplatId === 'TMPLT_HUB' ? "prose-p:text-slate-900 font-bold" : "text-slate-800",
+                "font-medium leading-[1.6] tracking-tight",
+                "prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase prose-headings:italic",
+                "prose-p:my-10",
+                "prose-blockquote:border-l-[6px] prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-12 prose-blockquote:py-10 prose-blockquote:rounded-r-[2rem] prose-blockquote:italic",
+                "prose-code:bg-slate-100 prose-code:p-1 prose-code:rounded prose-pre:bg-slate-900 prose-pre:p-8 prose-pre:rounded-[0.1rem]"
+              )}
               dangerouslySetInnerHTML={{ __html: article.knoCn || (article as any).nttCn || '' }}
             />
+
+            {tmplatId === 'TMPLT_HUB' && (
+              <div className="p-10 bg-slate-50 border-2 border-slate-100 rounded-[0.1rem] flex items-start gap-8">
+                 <div className="w-20 h-20 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center text-slate-200 grow-0 shrink-0">
+                    <User size={40} />
+                 </div>
+                 <div className="space-y-2">
+                    <p className="text-xl font-black uppercase italic tracking-tighter">Contributor Insight</p>
+                    <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                      이 게시물은 사원 {article.frstRegisterId}님에 의해 검증된 지식 자산입니다. 
+                      프로젝트 {bbsId}의 핵심 참조 문서로 분류되어 있으며, 추가 정보가 필요한 경우 작성자에게 직접 문의하실 수 있습니다.
+                    </p>
+                 </div>
+              </div>
+            )}
 
             <div className="pt-24 flex items-center justify-center opacity-10">
               <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-border" />

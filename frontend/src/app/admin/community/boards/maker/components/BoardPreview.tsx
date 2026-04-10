@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,10 @@ import {
   Calendar,
   Grid,
   List as ListIcon,
-  ImageIcon
+  ImageIcon,
+  HelpCircle,
+  CheckCircle2,
+  CalendarDays
 } from 'lucide-react';
 
 interface PreviewProps {
@@ -61,6 +64,8 @@ export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {
         {tmplatId === 'TMPLT_HUB' && <HubLayout posts={MOCK_POSTS} />}
         {tmplatId === 'TMPLT_LIST' && <ListLayout posts={MOCK_POSTS} />}
         {tmplatId === 'TMPLT_GALLERY' && <GalleryLayout posts={MOCK_POSTS} />}
+        {tmplatId === 'TMPLT_QNA' && <QnaLayout posts={MOCK_POSTS} />}
+        {tmplatId === 'TMPLT_CALENDAR' && <CalendarLayout posts={MOCK_POSTS} />}
       </div>
 
       <div className="h-10 bg-slate-100 flex items-center justify-center border-t border-slate-200">
@@ -168,3 +173,74 @@ function GalleryLayout({ posts }: { posts: any[] }) {
   );
 }
 
+function QnaLayout({ posts }: { posts: any[] }) {
+  return (
+    <div className="space-y-4">
+       {posts.map((post, idx) => (
+          <div key={post.id} className="p-6 bg-white border-2 border-slate-100 rounded-[0.1rem] flex gap-6 hover:border-amber-500 transition-all group">
+             <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                <div className={cn(
+                  "w-12 h-12 rounded-lg flex items-center justify-center font-black text-xl shadow-inner",
+                  idx === 0 ? "bg-amber-100 text-amber-600 border-2 border-amber-200" : "bg-slate-50 text-slate-300 border border-slate-100"
+                )}>
+                  {idx === 0 ? <CheckCircle2 size={24} /> : '?' }
+                </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{idx === 0 ? 'Solved' : 'Open'}</span>
+             </div>
+             <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-3">
+                   <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100 border-none text-[9px] font-black">TECH_SUPPORT</Badge>
+                   <span className="text-[10px] font-bold text-slate-300 italic">{post.date}</span>
+                </div>
+                <h4 className="text-lg font-black text-slate-800 leading-tight group-hover:text-amber-600 transition-colors uppercase italic tracking-tighter">{post.title}</h4>
+                <div className="flex items-center gap-4 text-slate-400 font-bold text-[10px]">
+                   <span className="flex items-center gap-1"><User size={12} /> {post.author}</span>
+                   <span className="flex items-center gap-1"><MessageSquare size={12} /> {post.comments} Answers</span>
+                </div>
+             </div>
+          </div>
+       ))}
+    </div>
+  );
+}
+
+function CalendarLayout({ posts }: { posts: any[] }) {
+  const days = Array.from({ length: 35 }, (_, i) => i + 1 - 3); // Simple offset for preview
+  return (
+    <div className="space-y-6">
+       <div className="flex justify-between items-center bg-slate-50 p-6 rounded-[0.1rem] border-2 border-slate-100">
+          <h4 className="text-xl font-black italic tracking-tighter text-slate-900 uppercase">May 2024</h4>
+          <div className="flex gap-2">
+             <div className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400"><ChevronRight className="rotate-180" size={16} /></div>
+             <div className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400"><ChevronRight size={16} /></div>
+          </div>
+       </div>
+       <div className="grid grid-cols-7 gap-2">
+          {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
+             <div key={d} className="text-[10px] font-black text-slate-300 text-center pb-2 tracking-widest">{d}</div>
+          ))}
+          {days.map((day, i) => (
+             <div key={i} className={cn(
+               "h-24 p-2 border-2 border-slate-50 rounded-[0.1rem] transition-all relative group overflow-hidden",
+               day === 20 ? "bg-primary/5 border-primary/20" : "bg-white",
+               day <= 0 || day > 31 ? "opacity-10" : "hover:border-slate-900"
+             )}>
+                <span className={cn("text-xs font-black", day === 20 ? "text-primary" : "text-slate-300")}>
+                  {day > 0 && day <= 31 ? day : ''}
+                </span>
+                {day === 20 && (
+                  <div className="mt-2 p-1.5 bg-primary text-white text-[8px] font-black leading-tight rounded-sm shadow-lg shadow-primary/20 animate-in fade-in slide-in-from-bottom-2">
+                    EGOV_TECH_SEMINAR_4.0
+                  </div>
+                )}
+                {day === 21 && (
+                  <div className="mt-1 p-1.5 bg-slate-900 text-white text-[8px] font-black leading-tight rounded-sm opacity-40">
+                    MAINTENANCE_LOG
+                  </div>
+                )}
+             </div>
+          ))}
+       </div>
+    </div>
+  );
+}

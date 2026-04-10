@@ -49,6 +49,9 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.sjBoldAt,
                                                 QBoard.board.noticeAt,
                                                 QBoard.board.secretAt,
+                                                QBoard.board.eventDate,
+                                                QBoard.board.qnaStatus,
+                                                QBoard.board.qnaCategory,
                                                 QBoardMaster.boardMaster.bbsTyCode,
                                                 QBoardMaster.boardMaster.replyPosblAt,
                                                 QBoardMaster.boardMaster.fileAtchPosblAt,
@@ -99,7 +102,10 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.nttNo,
                                                 QBoard.board.noticeAt,
                                                 QBoard.board.secretAt,
-                                                QBoard.board.commentCo))
+                                                QBoard.board.commentCo,
+                                                QBoard.board.eventDate,
+                                                QBoard.board.qnaStatus,
+                                                QBoard.board.qnaCategory))
                                 .from(QBoard.board)
                                 .leftJoin(QUser.user).on(QBoard.board.createdBy.eq(QUser.user.esntlId))
                                 .where(builder)

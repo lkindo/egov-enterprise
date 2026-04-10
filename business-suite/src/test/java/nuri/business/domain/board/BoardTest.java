@@ -33,7 +33,7 @@ class BoardTest {
                 .nttCn("Old Content")
                 .build();
 
-        board.update("New Title", "New Content", "user01", "User 01", "pass", "20240101", "20241231", "FILE_001");
+        board.update("New Title", "New Content", "user01", "User 01", "pass", "20240101", "20241231", "FILE_001", null, null, null);
 
         assertThat(board.getNttSj()).isEqualTo("New Title");
         assertThat(board.getNttCn()).isEqualTo("New Content");

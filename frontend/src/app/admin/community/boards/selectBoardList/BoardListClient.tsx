@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -28,11 +28,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Home, ChevronRight, MessageSquare, User, Calendar as CalendarIcon, Eye, Plus, Search, ArrowUpDown, X, Settings2, BookOpen } from "lucide-react";
+import { Home, ChevronRight, MessageSquare, User, Calendar as CalendarIcon, Eye, Plus, Search, ArrowUpDown, X, Settings2, BookOpen, Clock, Share2, ThumbsUp, HelpCircle, CheckCircle2, CalendarDays, Book, ChevronDown } from "lucide-react";
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from "@/lib/utils";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardStats), {
   ssr: false,
@@ -40,6 +41,72 @@ const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardSta
 });
 
 import { BoardPost } from '@/types/business/board';
+
+function FAQItem({ item }: { item: BoardPost }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Card 
+      className={cn(
+        "overflow-hidden transition-all duration-300 rounded-[0.1rem] border-2",
+        isOpen ? "border-purple-500 bg-purple-50/10 shadow-xl" : "border-slate-100 hover:border-purple-200"
+      )}
+    >
+      <div 
+        className="p-6 cursor-pointer flex items-center justify-between group"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="flex items-center gap-6">
+          <div className={cn(
+            "w-12 h-12 rounded-lg flex items-center justify-center font-black text-xl transition-all",
+            isOpen ? "bg-purple-500 text-white shadow-lg" : "bg-slate-100 text-slate-400 group-hover:bg-purple-100 group-hover:text-purple-500"
+          )}>
+            Q
+          </div>
+          <h4 className={cn(
+            "text-xl font-black tracking-tighter transition-colors",
+            isOpen ? "text-purple-600" : "text-slate-800"
+          )}>
+            {item.nttSj}
+          </h4>
+        </div>
+        <div className={cn(
+          "transition-transform duration-300",
+          isOpen ? "rotate-180 text-purple-500" : "text-slate-300"
+        )}>
+          <ChevronDown size={24} />
+        </div>
+      </div>
+      
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="px-6 pb-8 ml-[72px] border-t border-purple-100/50 pt-6">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-lg shadow-emerald-500/20">A</div>
+                <div className="space-y-4">
+                  <p className="text-slate-600 font-medium leading-relaxed text-lg whitespace-pre-wrap">
+                    {item.nttCn}
+                  </p>
+                  <div className="flex items-center gap-4 text-[10px] font-black text-slate-300 uppercase tracking-widest pt-4">
+                    <span>Last Updated: {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                    <span className="w-1 h-1 bg-slate-200 rounded-full" />
+                    <span>Views: {item.inqireCo}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Card>
+  );
+}
 
 export const BoardListClient = ({ initialData, params: initialParams }: { initialData: any; params: any }) => {
   const searchParams = useSearchParams();
@@ -75,6 +142,28 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
   const list: BoardPost[] = data?.resultList || [];
   const totalCount = data?.totalCount || 0;
   const totalPages = data?.totalPages || 0;
+
+  // 캘린더 데이터 가공 로직
+  const currentViewDate = startDate || new Date();
+  const year = currentViewDate.getFullYear();
+  const month = currentViewDate.getMonth();
+  
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0: Sun, 6: Sat
+  
+  // 게시글을 날짜별로 그룹화
+  const postsByDay = list.reduce((acc: { [key: number]: BoardPost[] }, post) => {
+    const targetDate = post.eventDate || post.createdDate;
+    if (targetDate) {
+      const d = new Date(targetDate);
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        const day = d.getDate();
+        if (!acc[day]) acc[day] = [];
+        acc[day].push(post);
+      }
+    }
+    return acc;
+  }, {});
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,35 +345,272 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                   ))}
                 </TableBody>
               </Table>
-            ) : (tmplatId === 'TMPLT_GALLERY' || tmplatId === 'TMPLT_HUB') && list.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-10">
-                {list.map((item: BoardPost, idx: number) => (
-                  <Card key={item.nttId} className="group overflow-hidden rounded-[0.1rem] border-2 border-slate-50 hover:border-primary/20 hover:shadow-2xl transition-all cursor-pointer">
-                    <div className="h-56 bg-slate-100 relative overflow-hidden">
-                       <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:scale-125 transition-transform duration-700">
-                         <BookOpen size={100} />
-                       </div>
-                       <Badge className="absolute top-6 left-6 bg-white/90 text-slate-900 border-none font-black backdrop-blur-md">
-                         번호. {totalCount - ((page - 1) * 10) - idx}
-                       </Badge>
-                    </div>
-                    <CardContent className="p-8 space-y-4 bg-white relative z-10">
-                      <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`}>
-                        <h3 className="text-2xl font-black text-slate-800 line-clamp-2 group-hover:text-primary transition-colors">{item.nttSj}</h3>
-                      </Link>
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-50 mt-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                            <User size={14} />
+            ) : tmplatId === 'TMPLT_HUB' && list.length > 0 ? (
+              <div className="space-y-10 p-10">
+                {/* Hub Featured Section */}
+                {page === 1 && (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <Card className="lg:col-span-12 p-10 bg-slate-900 rounded-[0.1rem] text-white relative overflow-hidden group border-none">
+                      <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-primary/20 blur-[100px] rounded-full" />
+                      <div className="relative z-10 space-y-6">
+                        <Badge className="bg-primary hover:bg-primary text-white border-none font-black tracking-[0.4em] uppercase py-1 px-4">FEATURED_KNOWLEDGE</Badge>
+                        <Link href={`/admin/community/boards/selectBoardArticle/${list[0].nttId}?bbsId=${bbsId}`}>
+                          <h3 className="text-4xl font-black tracking-tight leading-tight group-hover:text-primary transition-colors cursor-pointer">{list[0].nttSj}</h3>
+                        </Link>
+                        <div className="flex items-center gap-8 mt-8">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-primary italic font-black text-xs border border-white/10">OP</div>
+                            <div className="flex flex-col">
+                              <span className="text-[11px] font-black text-white/40 italic uppercase tracking-widest leading-none mb-1">Author</span>
+                              <span className="text-sm font-black">{list[0].frstRegisterNm}</span>
+                            </div>
                           </div>
-                          <span className="text-sm font-bold text-slate-600">{item.frstRegisterNm}</span>
+                          <div className="h-8 w-px bg-white/10" />
+                          <div className="flex items-center gap-3 text-white/40">
+                             <Clock size={16} />
+                             <span className="text-xs font-bold">{list[0].createdDate ? String(list[0].createdDate).substring(0, 10) : 'Just now'}</span>
+                          </div>
+                          <div className="h-8 w-px bg-white/10" />
+                          <div className="flex items-center gap-3 text-white/40">
+                             <Eye size={16} />
+                             <span className="text-xs font-bold">{list[0].inqireCo} views</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><Eye size={12} /> {item.inqireCo}회</span>
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><MessageSquare size={12} /> {0}개</span>
+                      </div>
+                    </Card>
+                  </div>
+                )}
+                
+                {/* Grid for minor posts */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {(page === 1 ? list.slice(1) : list).map((item: BoardPost) => (
+                    <Card key={item.nttId} className="group p-8 bg-slate-50/50 rounded-[0.1rem] border-2 border-slate-100 space-y-6 hover:border-primary transition-all cursor-pointer relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 group-hover:scale-125 transition-all text-primary">
+                        <BookOpen size={60} />
+                      </div>
+                      <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`}>
+                        <h4 className="font-black text-slate-800 text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors">{item.nttSj}</h4>
+                      </Link>
+                      <div className="flex justify-between items-center pt-4 border-t border-slate-200/50">
+                        <div className="flex gap-4">
+                          <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs"><Eye size={14} /> {item.inqireCo}</div>
+                          <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs"><MessageSquare size={14} /> 0</div>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
+                          <ChevronRight size={18} />
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : tmplatId === 'TMPLT_GALLERY' && list.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-10 p-10">
+                {list.map((item: BoardPost) => (
+                  <Card key={item.nttId} className="group overflow-hidden rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
+                    <div className="h-64 overflow-hidden relative bg-slate-100">
+                      {/* Using a consistent visual pattern for empty images, could be replaced with real images from storage */}
+                      <div className="w-full h-full flex items-center justify-center bg-slate-200 overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-200 to-slate-300 group-hover:scale-105 transition-transform duration-700" />
+                        <BookOpen size={120} className="text-slate-400 opacity-20 relative z-10" />
+                        <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-500" />
+                      </div>
+                      <div className="absolute top-6 right-6 px-4 py-1.5 bg-slate-900/60 backdrop-blur-md rounded-full text-white text-[10px] font-black tracking-widest uppercase">INSIGHT</div>
+                    </div>
+                    <CardContent className="p-8 space-y-6">
+                      <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`}>
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors cursor-pointer line-clamp-2">{item.nttSj}</h3>
+                      </Link>
+                      <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-black text-[10px] italic">OP</div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-black text-slate-700 leading-none mb-1">{item.frstRegisterNm}</span>
+                            <span className="text-[10px] font-bold text-slate-400">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-6">
+                          <div className="flex items-center gap-1.5 text-slate-300 group-hover:text-primary transition-colors"><ThumbsUp size={16} /><span className="text-xs font-bold text-slate-400">0</span></div>
+                          <div className="flex items-center gap-1.5 text-slate-300"><Share2 size={16} /></div>
                         </div>
                       </div>
                     </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : tmplatId === 'TMPLT_QNA' && list.length > 0 ? (
+              <div className="space-y-6 p-10">
+                {list.map((item: BoardPost, idx: number) => (
+                  <Card key={item.nttId} className="group p-8 bg-white border-2 border-slate-100 rounded-[0.1rem] flex gap-8 hover:border-amber-500 transition-all cursor-pointer relative overflow-hidden">
+                      <div className="flex flex-col items-center gap-2 min-w-[80px]">
+                        <div className={cn(
+                          "w-16 h-16 rounded-xl flex items-center justify-center font-black text-2xl shadow-inner transition-all group-hover:scale-110",
+                          item.qnaStatus === 'SOLVED' ? "bg-emerald-100 text-emerald-600 border-2 border-emerald-200" : "bg-amber-100 text-amber-600 border-2 border-amber-200"
+                        )}>
+                          {item.qnaStatus === 'SOLVED' ? <CheckCircle2 size={32} /> : <HelpCircle size={32} /> }
+                        </div>
+                        <span className={cn(
+                          "text-[10px] font-black uppercase tracking-widest",
+                          item.qnaStatus === 'SOLVED' ? "text-emerald-500" : "text-amber-500"
+                        )}>{item.qnaStatus === 'SOLVED' ? 'Solved' : 'Open'}</span>
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center gap-4">
+                          <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none text-[10px] font-black px-3 py-1">
+                            {item.qnaCategory || 'GENERAL_QNA'}
+                          </Badge>
+                        <span className="text-[11px] font-bold text-slate-300 italic flex items-center gap-1.5"><Clock size={12} /> {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                      </div>
+                      <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`}>
+                        <h4 className="text-2xl font-black text-slate-800 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase italic">{item.nttSj}</h4>
+                      </Link>
+                      <div className="flex flex-wrap items-center gap-6 pt-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-black">AD</div>
+                          <span className="text-xs font-bold text-slate-500">{item.frstRegisterNm}</span>
+                        </div>
+                        <div className="h-4 w-px bg-slate-200" />
+                        <div className="flex items-center gap-2 text-slate-400 font-black text-xs">
+                          <MessageSquare size={14} className="text-amber-400" />
+                          <span>{Math.floor(Math.random() * 5)} Answers</span>
+                        </div>
+                        <div className="h-4 w-px bg-slate-200" />
+                        <div className="flex items-center gap-2 text-slate-400 font-black text-xs">
+                          <Eye size={14} />
+                          <span>{item.inqireCo} views</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute right-[-20px] top-[-20px] opacity-[0.03] group-hover:opacity-[0.08] transition-all">
+                      <HelpCircle size={150} />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : tmplatId === 'TMPLT_CALENDAR' ? (
+              <div className="p-10 space-y-8">
+                <div className="flex justify-between items-center bg-slate-900 p-8 rounded-[0.1rem] text-white">
+                  <div className="space-y-1">
+                    <p className="text-primary font-black tracking-[0.2em] text-[10px] uppercase">Event schedule</p>
+                    <h3 className="text-3xl font-black italic tracking-tighter uppercase">
+                      {format(currentViewDate, "MMMM yyyy", { locale: ko })}
+                    </h3>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        const prev = new Date(year, month - 1, 1);
+                        setStartDate(prev);
+                      }}
+                      className="h-12 w-12 border-white/20 bg-white/10 hover:bg-white hover:text-slate-900 rounded-[0.1rem] transition-all text-white"
+                    >
+                      <ChevronRight className="rotate-180" size={20} />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        const next = new Date(year, month + 1, 1);
+                        setStartDate(next);
+                      }}
+                      className="h-12 w-12 border-white/20 bg-white/10 hover:bg-white hover:text-slate-900 rounded-[0.1rem] transition-all text-white"
+                    >
+                      <ChevronRight size={20} />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-7 gap-4">
+                  {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
+                    <div key={d} className="text-center font-black text-slate-400 text-xs tracking-widest pb-4 border-b-2 border-slate-50">{d}</div>
+                  ))}
+                  {Array.from({ length: 42 }, (_, i) => i - firstDayOfMonth + 1).map((day, i) => {
+                    const isCurrentMonth = day > 0 && day <= daysInMonth;
+                    const dayPosts = isCurrentMonth ? postsByDay[day] || [] : [];
+                    const isToday = day === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
+
+                    return (
+                      <div key={i} className={cn(
+                        "min-h-[160px] p-4 border-2 transition-all relative group rounded-[0.1rem]",
+                        isToday ? "bg-primary/5 border-primary/20 shadow-inner" : "bg-white border-slate-50 hover:border-slate-300",
+                        !isCurrentMonth ? "opacity-10 pointer-events-none bg-slate-50/50" : ""
+                      )}>
+                        <div className="flex justify-between items-start mb-4">
+                          <span className={cn(
+                            "text-xl font-black", 
+                            isToday ? "text-primary" : "text-slate-300 group-hover:text-slate-900",
+                            (i % 7 === 0) && isCurrentMonth ? "text-red-400" : "", // Sunday
+                            (i % 7 === 6) && isCurrentMonth ? "text-blue-400" : "" // Saturday
+                          )}>
+                            {isCurrentMonth ? day : ''}
+                          </span>
+                          {dayPosts.length > 0 && (
+                            <Badge className="bg-primary hover:bg-primary text-[9px] font-black h-5 w-5 rounded-full p-0 flex items-center justify-center border-none">
+                              {dayPosts.length}
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2 max-h-[100px] overflow-y-auto custom-scrollbar">
+                          {dayPosts.map((post) => (
+                            <Link 
+                              key={post.nttId}
+                              href={`/admin/community/boards/selectBoardArticle/${post.nttId}?bbsId=${bbsId}`}
+                              className={cn(
+                                "block p-2 text-[10px] font-black leading-tight rounded-sm shadow-sm transition-all hover:scale-105 cursor-pointer truncate",
+                                post.noticeAt === 'Y' ? "bg-rose-500 text-white" : "bg-slate-900 text-white"
+                              )}
+                              title={post.nttSj}
+                            >
+                              {post.nttSj}
+                            </Link>
+                          ))}
+                        </div>
+
+                        {isCurrentMonth && (
+                          <div className="absolute bottom-4 right-4 text-[8px] font-black text-slate-100 group-hover:text-slate-200 transition-all uppercase">
+                            {`${year}_${month + 1}_${day}`}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : tmplatId === 'TMPLT_FAQ' && list.length > 0 ? (
+              <div className="p-10 space-y-4">
+                {list.map((item: BoardPost) => (
+                  <FAQItem key={item.nttId} item={item} />
+                ))}
+              </div>
+            ) : tmplatId === 'TMPLT_WIKI' && list.length > 0 ? (
+              <div className="p-10 space-y-8">
+                {list.map((item: BoardPost) => (
+                  <Card key={item.nttId} className="group overflow-hidden border-2 border-slate-50 hover:border-slate-900 transition-all rounded-[0.1rem]">
+                    <div className="flex flex-col md:flex-row">
+                      <div className="w-full md:w-16 bg-slate-100 flex md:flex-col items-center justify-center p-4 gap-2 shrink-0">
+                        <Book className="text-slate-400 group-hover:text-slate-900 transition-colors" size={24} />
+                      </div>
+                      <div className="flex-1 p-8 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest text-slate-400 rounded-none border-slate-200">Doc v1.0</Badge>
+                          <span className="text-[11px] font-bold text-slate-300 italic">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                        </div>
+                        <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`}>
+                          <h4 className="text-2xl font-black text-slate-900 leading-tight group-hover:underline decoration-slate-900 decoration-4 underline-offset-8 transition-all">{item.nttSj}</h4>
+                        </Link>
+                        <p className="text-slate-500 font-medium line-clamp-2 leading-relaxed">{item.nttCn}</p>
+                        <div className="flex items-center gap-6 pt-4 border-t border-slate-50">
+                          <div className="flex items-center gap-2">
+                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</span>
+                             <span className="text-xs font-black text-slate-600">{item.frstRegisterNm}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Views</span>
+                             <span className="text-xs font-black text-slate-600">{item.inqireCo}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </Card>
                 ))}
               </div>

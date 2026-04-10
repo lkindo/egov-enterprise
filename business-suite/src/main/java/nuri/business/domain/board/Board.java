@@ -91,6 +91,16 @@ public class Board extends BaseEntity implements Serializable {
     @Column(name = "BLOG_ID", length = 20)
     private String blogId;
 
+    @Column(name = "EVENT_DATE")
+    private java.time.LocalDateTime eventDate;
+
+    @Column(name = "QNA_STATUS", length = 10)
+    @Builder.Default
+    private String qnaStatus = "OPEN";
+
+    @Column(name = "QNA_CATEGORY", length = 50)
+    private String qnaCategory;
+
     // 반정규화 필드 (성능 최적화용)
     @Column(name = "COMMENT_CO")
     @Builder.Default
@@ -101,7 +111,7 @@ public class Board extends BaseEntity implements Serializable {
     private Integer fileCo = 0;
 
     public void update(String nttSj, String nttCn, String ntcrId, String ntcrNm, String password, String ntceBgnde,
-            String ntceEndde, String atchFileId) {
+            String ntceEndde, String atchFileId, java.time.LocalDateTime eventDate, String qnaStatus, String qnaCategory) {
         this.nttSj = nttSj;
         this.nttCn = nttCn;
         this.ntcrId = ntcrId;
@@ -110,6 +120,9 @@ public class Board extends BaseEntity implements Serializable {
         this.ntceBgnde = ntceBgnde;
         this.ntceEndde = ntceEndde;
         this.atchFileId = atchFileId;
+        this.eventDate = eventDate;
+        this.qnaStatus = qnaStatus;
+        this.qnaCategory = qnaCategory;
     }
 
     public void delete() {

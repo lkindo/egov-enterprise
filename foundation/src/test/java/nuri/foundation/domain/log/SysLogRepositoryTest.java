@@ -1,7 +1,6 @@
 package nuri.foundation.domain.log;
 
 import nuri.foundation.domain.code.CommonCode;
-import nuri.foundation.domain.code.CommonCodeId;
 import nuri.foundation.domain.code.CommonCodeRepository;
 import nuri.foundation.support.PersistenceTestSupport;
 import jakarta.persistence.EntityManager;
