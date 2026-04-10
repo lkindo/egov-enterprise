@@ -59,114 +59,91 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-repeat">
-            {/* Dynamic Background Effects */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full animate-pulse" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
-            </div>
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-repeat">
+            {/* Background Overlay from previous design style */}
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" />
 
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
+                transition={{ duration: 0.6 }}
                 className="w-full max-w-md relative z-10 px-4"
             >
-                <Card className="relative overflow-hidden border-none shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] bg-white/90 dark:bg-slate-900/90 backdrop-blur-3xl rounded-[2.5rem] ring-1 ring-white/20">
+                <Card className="relative overflow-hidden border-0 shadow-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl">
                     
-                    {/* Advanced Loading Overlay */}
+                    {/* Advanced Loading Overlay (Functionality Ported) */}
                     <AnimatePresence>
                         {isSubmitting && (
                             <motion.div 
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center"
+                                className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center"
                             >
                                 <motion.div
-                                    initial={{ scale: 0.8, rotate: -10 }}
-                                    animate={{ scale: 1, rotate: 0 }}
-                                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                                    className="w-24 h-24 bg-white rounded-[2rem] shadow-2xl flex items-center justify-center mb-8"
+                                    initial={{ scale: 0.8 }}
+                                    animate={{ scale: 1 }}
+                                    className="w-20 h-20 bg-white rounded-2xl shadow-2xl flex items-center justify-center mb-6"
                                 >
                                     {authStep === 1 ? (
-                                        <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                                        <Loader2 className="w-10 h-10 text-primary animate-spin" />
                                     ) : (
-                                        <ShieldCheck className="w-12 h-12 text-emerald-500" />
+                                        <ShieldCheck className="w-10 h-10 text-emerald-500" />
                                     )}
                                 </motion.div>
                                 
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="space-y-3"
-                                >
-                                    <h3 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">
-                                        {authStep === 1 ? "Authentication" : "Authorized"}
+                                <div className="space-y-2">
+                                    <h3 className="text-xl font-bold text-white">
+                                        {authStep === 1 ? "로그인 인증 중" : "인증 완료"}
                                     </h3>
-                                    <p className="text-slate-300 font-bold text-xs tracking-widest uppercase opacity-70">
-                                        {authStep === 1 ? "Connecting to Security Node..." : "Syncing User Environment..."}
+                                    <p className="text-slate-400 text-sm">
+                                        {authStep === 1 ? "보안 노드에 접속 시도 중..." : "사용자 업무 환경 동기화 중..."}
                                     </p>
-                                </motion.div>
-
-                                <div className="absolute bottom-12 w-full px-12">
-                                     <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                                         <motion.div 
-                                            initial={{ width: "0%" }}
-                                            animate={{ width: authStep === 1 ? "60%" : "100%" }}
-                                            className="h-full bg-primary shadow-[0_0_20px_rgba(var(--primary),0.5)]"
-                                         />
-                                     </div>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    <CardHeader className="space-y-4 text-center p-12 pb-6">
-                        <motion.div 
-                            whileHover={{ scale: 1.05 }}
-                            className="w-16 h-16 bg-slate-950 rounded-2xl mx-auto flex items-center justify-center shadow-xl mb-4"
-                        >
-                            <Zap className="text-primary w-8 h-8 fill-primary" />
-                        </motion.div>
-                        <div className="space-y-1">
-                            <CardTitle className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase leading-none">
-                                Enterprise
-                            </CardTitle>
-                            <CardDescription className="text-slate-500 font-bold text-[10px] tracking-[0.3em] uppercase opacity-60">
-                                Global Management Console
-                            </CardDescription>
+                    <CardHeader className="space-y-2 text-center pt-10">
+                        <div className="w-12 h-12 bg-primary/10 rounded-xl mx-auto flex items-center justify-center mb-2">
+                            <Zap className="text-primary w-6 h-6 fill-primary" />
                         </div>
+                        <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                            엔터프라이즈
+                        </CardTitle>
+                        <CardDescription className="text-slate-500 font-medium text-xs uppercase tracking-wider">
+                            글로벌 통합 관리 콘솔
+                        </CardDescription>
                     </CardHeader>
 
                     <form onSubmit={handleSubmit}>
-                        <CardContent className="space-y-6 px-12">
-                            <div className="space-y-3">
-                                <Label htmlFor="id" className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Terminal ID</Label>
+                        <CardContent className="space-y-5 px-8">
+                            <div className="space-y-2">
+                                <Label htmlFor="id" className="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">사용자 아이디</Label>
                                 <div className="relative group">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="id"
-                                        placeholder="Enter your identification"
+                                        placeholder="시스템 아이디를 입력하세요"
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
-                                        className="h-14 pl-12 rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm"
+                                        className="h-12 pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all shadow-sm"
                                         autoComplete="username"
                                     />
                                 </div>
                             </div>
 
-                            <div className="space-y-3">
-                                <Label htmlFor="password border-none" className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Access Key</Label>
+                            <div className="space-y-2">
+                                <Label htmlFor="password" className="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">액세스 키</Label>
                                 <div className="relative group">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="password"
                                         type={showPassword ? 'text' : 'password'}
                                         placeholder="············"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="h-14 pl-12 pr-12 rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm"
+                                        className="h-12 pl-10 pr-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all shadow-sm"
                                         autoComplete="current-password"
                                     />
                                     <Button
@@ -174,7 +151,7 @@ export default function LoginPage() {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-slate-400 hover:text-slate-900 rounded-xl"
+                                        className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 text-slate-400 hover:text-slate-900 rounded-lg"
                                     >
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </Button>
@@ -182,40 +159,40 @@ export default function LoginPage() {
                             </div>
 
                             <div className="flex items-center justify-between px-1">
-                                <div className="flex items-center space-x-3">
-                                    <Checkbox id="remember" className="rounded-lg border-slate-300" />
-                                    <Label htmlFor="remember" className="text-[11px] font-bold text-slate-500 cursor-pointer select-none">
-                                        Persistent Connection
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="remember" className="rounded-md border-slate-300" />
+                                    <Label htmlFor="remember" className="text-xs font-medium text-slate-500 cursor-pointer select-none">
+                                        로그인 상태 유지
                                     </Label>
                                 </div>
-                                <Button variant="link" className="text-[11px] font-bold text-primary p-0 h-auto">Forgot Key?</Button>
+                                <Button variant="link" className="text-xs font-semibold text-primary p-0 h-auto">비밀번호 찾기</Button>
                             </div>
 
                             {error && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="text-[11px] font-black text-rose-500 text-center bg-rose-50 p-4 rounded-2xl border border-rose-100 uppercase tracking-tight"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="text-xs font-bold text-rose-500 text-center bg-rose-50 p-3 rounded-xl border border-rose-100"
                                 >
                                     {error}
                                 </motion.div>
                             )}
                         </CardContent>
 
-                        <CardFooter className="p-12 pt-6">
+                        <CardFooter className="px-8 pb-10 pt-2">
                             <Button 
-                                className="w-full h-16 rounded-2.5xl bg-slate-900 hover:bg-black text-white font-black text-xs tracking-[0.3em] uppercase shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3" 
+                                className="w-full h-12 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-sm shadow-lg transition-all active:scale-[0.98] flex items-center gap-2" 
                                 type="submit" 
                                 disabled={isSubmitting}
                             >
-                                <LogIn className="h-5 w-5" /> 
-                                Establish Connection
+                                <LogIn className="h-4 w-4" /> 
+                                시스템 접속하기
                             </Button>
                         </CardFooter>
                     </form>
                 </Card>
-                <p className="mt-8 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest opacity-40">
-                    &copy; 2026 Admin Orchestration System. Secure Node 01.
+                <p className="mt-8 text-center text-[11px] font-medium text-slate-500 tracking-tight opacity-60">
+                    &copy; 2026 관리 통합 시스템. 보안 노드 01.
                 </p>
             </motion.div>
         </div>
