@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -91,7 +91,7 @@ export function StandardOnboardingTour() {
  aria-labelledby="tour-title"
  aria-describedby="tour-description"
  >
- <div className="relative max-w-lg w-full bg-background/80 backdrop-blur-2xl border-2 border-primary/10 rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500 ring-1 ring-white/20">
+ <div className="relative max-w-lg w-full bg-background/80 backdrop-blur-2xl border-2 border-primary/10 rounded-[0.1rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500 ring-1 ring-white/20">
  {/* Progress Bar */}
  <div className="absolute top-0 left-0 w-full h-1.5 flex gap-1 px-1 pt-1" aria-hidden="true">
  {steps.map((_, idx) => (
@@ -114,7 +114,7 @@ export function StandardOnboardingTour() {
  </button>
 
  <div className="p-10 pt-16 text-center space-y-8 relative z-10" aria-live="polite">
- <div className="w-20 h-20 bg-muted/50 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner animate-in slide-in-from-bottom-2 duration-700" aria-hidden="true">
+ <div className="w-20 h-20 bg-muted/50 rounded-[0.1rem] flex items-center justify-center mx-auto shadow-inner animate-in slide-in-from-bottom-2 duration-700" aria-hidden="true">
  {steps[currentStep].icon}
  </div>
 
@@ -132,7 +132,7 @@ export function StandardOnboardingTour() {
  variant="ghost"
  onClick={prevStep}
  className={cn(
- "rounded-xl font-bold h-12 px-6 gap-2",
+ "rounded-[0.1rem] font-bold h-12 px-6 gap-2",
  currentStep === 0 && "invisible"
  )}
  aria-label="이전 단계로 이동"
@@ -143,15 +143,15 @@ export function StandardOnboardingTour() {
  <div className="flex gap-2">
  {currentStep < steps.length - 1 ? (
  <>
- <Button variant="ghost" onClick={handleComplete} className="rounded-xl font-bold h-12 px-6 text-muted-foreground" aria-label="가이드 건너뛰기">
+ <Button variant="ghost" onClick={handleComplete} className="rounded-[0.1rem] font-bold h-12 px-6 text-muted-foreground" aria-label="가이드 건너뛰기">
  건너뛰기
  </Button>
- <Button onClick={nextStep} className="rounded-xl font-black h-12 px-8 gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all" aria-label="다음 단계로 이동">
+ <Button onClick={nextStep} className="rounded-[0.1rem] font-black h-12 px-8 gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all" aria-label="다음 단계로 이동">
  다음 가이드 <ChevronRight size={18} />
  </Button>
  </>
  ) : (
- <Button onClick={handleComplete} className="rounded-xl font-black h-12 px-10 gap-2 shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white hover:scale-105 transition-all" aria-label="가이드 완료 및 시작하기">
+ <Button onClick={handleComplete} className="rounded-[0.1rem] font-black h-12 px-10 gap-2 shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white hover:scale-105 transition-all" aria-label="가이드 완료 및 시작하기">
  시작하기 <CheckCircle2 size={18} />
  </Button>
  )}

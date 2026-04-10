@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -90,7 +90,7 @@ export default function SmsListPage() {
                             <Send className="w-4 h-4 mr-2" /> 신규 문자 발송
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md bg-white border-none shadow-2xl p-0 overflow-hidden rounded-3xl">
+                    <DialogContent className="sm:max-w-md bg-white border-none shadow-2xl p-0 overflow-hidden rounded-[0.1rem]">
                         <DialogHeader className="bg-emerald-600 p-6 text-white">
                             <DialogTitle className="text-xl flex items-center">
                                 <MessageSquare className="w-5 h-5 mr-2" /> 문자 발송하기
@@ -105,7 +105,7 @@ export default function SmsListPage() {
                                         <Input
                                             id="recptnTelno"
                                             placeholder="010-0000-0000"
-                                            className="pl-10 h-11 border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition-all rounded-xl"
+                                            className="pl-10 h-11 border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition-all rounded-[0.1rem]"
                                             value={newSms.recptnTelno}
                                             onChange={(e) => setNewSms({ ...newSms, recptnTelno: e.target.value })}
                                         />
@@ -117,7 +117,7 @@ export default function SmsListPage() {
                                         <Textarea
                                             id="trnsmitCn"
                                             placeholder="전달할 내용을 입력하세요..."
-                                            className="min-h-[150px] border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition-all p-4 pt-10 rounded-xl"
+                                            className="min-h-[150px] border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition-all p-4 pt-10 rounded-[0.1rem]"
                                             value={newSms.trnsmitCn}
                                             onChange={(e) => setNewSms({ ...newSms, trnsmitCn: e.target.value })}
                                         />
@@ -131,8 +131,8 @@ export default function SmsListPage() {
                             <DialogFooter className="flex md:justify-between items-center sm:justify-end border-t border-slate-100 pt-6">
                                 <p className="text-[10px] text-slate-400 flex-1 hidden md:block">정보통신망법 준수를 권장합니다.</p>
                                 <div className="flex space-x-2">
-                                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="h-10 px-4 rounded-xl">취소</Button>
-                                    <Button type="submit" disabled={isSending} className="bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-6 font-medium rounded-xl">
+                                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="h-10 px-4 rounded-[0.1rem]">취소</Button>
+                                    <Button type="submit" disabled={isSending} className="bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-6 font-medium rounded-[0.1rem]">
                                         {isSending ? '전송 중...' : '전송하기'}
                                     </Button>
                                 </div>
@@ -142,13 +142,13 @@ export default function SmsListPage() {
                 </Dialog>
             </div>
 
-            <Card className="border-none shadow-xl bg-white overflow-hidden rounded-3xl">
+            <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[0.1rem]">
                 <CardHeader className="bg-slate-50 border-b border-slate-100 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
                     <form onSubmit={(e) => { e.preventDefault(); fetchSmsList(); }} className="relative flex-1 w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input
                             placeholder="전송 내용이나 번호로 검색..."
-                            className="pl-10 h-11 border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition-all w-full md:max-w-md rounded-xl"
+                            className="pl-10 h-11 border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition-all w-full md:max-w-md rounded-[0.1rem]"
                             value={searchKeyword}
                             onChange={(e) => setSearchKeyword(e.target.value)}
                         />

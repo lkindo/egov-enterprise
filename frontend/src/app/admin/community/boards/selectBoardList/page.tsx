@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { getInitialBoardData } from './BoardListServer';
@@ -14,10 +14,10 @@ const BoardListClient = dynamic(() => import('./BoardListClient').then(mod => mo
     <div className="flex flex-col gap-6 p-6">
       <Skeleton className="h-10 w-48 rounded-full" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <Skeleton className="lg:col-span-2 h-64 rounded-[2rem]" />
-        <Skeleton className="h-64 rounded-[2rem]" />
+        <Skeleton className="lg:col-span-2 h-64 rounded-[0.1rem]" />
+        <Skeleton className="h-64 rounded-[0.1rem]" />
       </div>
-      <Skeleton className="h-[600px] w-full rounded-[2.5rem]" />
+      <Skeleton className="h-[600px] w-full rounded-[0.1rem]" />
     </div>
   )
 });

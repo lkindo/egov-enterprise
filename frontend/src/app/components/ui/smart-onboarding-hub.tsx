@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -94,7 +94,7 @@ export function SmartOnboardingHub() {
       className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-[#020617] animate-in fade-in duration-1000"
       role="alertdialog"
     >
-      <div className="relative max-w-4xl w-full bg-[#0f172a] border border-white/10 rounded-[4rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden animate-in zoom-in-95 duration-700 flex flex-col md:flex-row min-h-[500px]">
+      <div className="relative max-w-4xl w-full bg-[#0f172a] border border-white/10 rounded-[0.1rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden animate-in zoom-in-95 duration-700 flex flex-col md:flex-row min-h-[500px]">
         {/* Progress Strip */}
         <div className="absolute top-0 left-0 w-full h-1 flex px-10 pt-4 gap-2 z-20">
           {steps.map((_, idx) => (
@@ -105,10 +105,10 @@ export function SmartOnboardingHub() {
         {/* Left Side: Visual Preview */}
         <div className="flex-1 bg-slate-900 p-12 flex items-center justify-center relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10 opacity-30" />
-          <div className="relative z-10 w-full aspect-video rounded-3xl border border-white/10 bg-black shadow-2xl flex items-center justify-center overflow-hidden">
+          <div className="relative z-10 w-full aspect-video rounded-[0.1rem] border border-white/10 bg-black shadow-2xl flex items-center justify-center overflow-hidden">
             <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundImage: 'radial-gradient(circle, #3b82f6 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             <div className="flex flex-col items-center gap-6 animate-in slide-in-from-bottom-4 duration-1000">
-              <div className="p-6 bg-white/5 rounded-[2.5rem] border border-white/10 shadow-inner">
+              <div className="p-6 bg-white/5 rounded-[0.1rem] border border-white/10 shadow-inner">
                 {steps[currentStep].icon}
               </div>
             </div>
@@ -156,17 +156,17 @@ export function SmartOnboardingHub() {
           </div>
 
           <div className="flex items-center justify-between gap-4 pt-10 border-t border-white/5">
-            <Button variant="ghost" onClick={prevStep} className={cn("rounded-2xl font-black h-12 px-6 text-white/40 hover:text-white transition-all", currentStep === 0 && "invisible")}>
+            <Button variant="ghost" onClick={prevStep} className={cn("rounded-[0.1rem] font-black h-12 px-6 text-white/40 hover:text-white transition-all", currentStep === 0 && "invisible")}>
               <ChevronLeft size={20} /> 이전
             </Button>
 
             <div className="flex gap-3">
               {currentStep < steps.length - 1 ? (
-                <Button onClick={nextStep} className="rounded-2xl font-black h-14 px-10 bg-primary text-white shadow-[0_15px_30px_-5px_rgba(59,130,246,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
+                <Button onClick={nextStep} className="rounded-[0.1rem] font-black h-14 px-10 bg-primary text-white shadow-[0_15px_30px_-5px_rgba(59,130,246,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
                   {currentStep === 0 ? "플랫폼 둘러보기" : "다음 기능"} <ArrowRight size={18} />
                 </Button>
               ) : (
-                <Button onClick={handleComplete} className="rounded-2xl font-black h-14 px-12 bg-emerald-500 text-white shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
+                <Button onClick={handleComplete} className="rounded-[0.1rem] font-black h-14 px-12 bg-emerald-500 text-white shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
                   시작하기 <CheckCircle2 size={18} />
                 </Button>
               )}

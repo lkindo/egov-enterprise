@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect } from 'react';
 import { AlertCircle, RotateCcw, Home, MessageSquare } from 'lucide-react';
@@ -23,8 +23,8 @@ export default function Error({
             {/* Background Decor */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-destructive/5 rounded-full blur-[120px] -z-10" />
 
-            <div className="max-w-lg w-full bg-background/60 backdrop-blur-2xl border-2 border-destructive/10 rounded-[3.5rem] p-12 shadow-2xl shadow-destructive/5 text-center space-y-8 animate-in slide-in-from-bottom-8 duration-700">
-                <div className="w-24 h-24 bg-destructive/10 rounded-[2.5rem] flex items-center justify-center mx-auto animate-bounce duration-[3000ms]">
+            <div className="max-w-lg w-full bg-background/60 backdrop-blur-2xl border-2 border-destructive/10 rounded-[0.1rem] p-12 shadow-2xl shadow-destructive/5 text-center space-y-8 animate-in slide-in-from-bottom-8 duration-700">
+                <div className="w-24 h-24 bg-destructive/10 rounded-[0.1rem] flex items-center justify-center mx-auto animate-bounce duration-[3000ms]">
                     <AlertCircle className="text-destructive" size={44} />
                 </div>
 
@@ -45,13 +45,13 @@ export default function Error({
                     <Button
                         onClick={() => reset()}
                         size="lg"
-                        className="rounded-2xl h-16 font-black bg-destructive hover:bg-destructive/90 text-white shadow-xl shadow-destructive/20 gap-2"
+                        className="rounded-[0.1rem] h-16 font-black bg-destructive hover:bg-destructive/90 text-white shadow-xl shadow-destructive/20 gap-2"
                     >
                         <RotateCcw size={20} /> 다시 시도하기
                     </Button>
                     <Link
                         href="/"
-                        className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-2xl h-16 font-bold border-2 border-primary/10 gap-2")}
+                        className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-[0.1rem] h-16 font-bold border-2 border-primary/10 gap-2")}
                     >
                         <Home size={20} /> 홈으로 돌아가기
                     </Link>

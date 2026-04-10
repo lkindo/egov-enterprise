@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -68,7 +68,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
       {/* Time & Icon Capsule */}
       <div className="relative flex-shrink-0">
         <div className={cn(
-          "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-xl z-10 relative",
+          "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all duration-500 shadow-xl z-10 relative",
           getColor(),
           isSelected ? "scale-110 rotate-12" : "group-hover:rotate-6"
         )}>
@@ -81,7 +81,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
 
       {/* Content Fabric */}
       <div className={cn(
-        "flex-1 p-8 rounded-[2rem] border-2 bg-white transition-all duration-500 shadow-sm overflow-hidden relative",
+        "flex-1 p-8 rounded-[0.1rem] border-2 bg-white transition-all duration-500 shadow-sm overflow-hidden relative",
         getBorderColor(),
         isSelected ? "shadow-2xl translate-x-3 bg-slate-50/50" : "hover:shadow-lg"
       )}>

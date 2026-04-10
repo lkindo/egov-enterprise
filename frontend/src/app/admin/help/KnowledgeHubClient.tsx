@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -112,14 +112,14 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
              <Button 
                onClick={() => router.push('/admin/community/boards/master')}
                variant="outline"
-               className="h-12 md:h-16 px-4 md:px-8 rounded-xl md:rounded-2xl border-2 border-slate-200 bg-white text-slate-900 font-black tracking-widest text-[9px] md:text-[11px] uppercase hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
+               className="h-12 md:h-16 px-4 md:px-8 rounded-[0.1rem] md:rounded-[0.1rem] border-2 border-slate-200 bg-white text-slate-900 font-black tracking-widest text-[9px] md:text-[11px] uppercase hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
              >
                <Settings2 className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-180 transition-transform text-primary" /> Master Console
              </Button>
            )}
            <Button 
              onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${currentBbsId}`)}
-             className="h-12 md:h-16 px-4 md:px-8 rounded-xl md:rounded-2xl bg-slate-900 text-white font-black tracking-widest text-[9px] md:text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
+             className="h-12 md:h-16 px-4 md:px-8 rounded-[0.1rem] md:rounded-[0.1rem] bg-slate-900 text-white font-black tracking-widest text-[9px] md:text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
            >
              <Plus className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-90 transition-transform" /> 신규 등록
            </Button>
@@ -132,7 +132,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
       </motion.div>
 
       {/* 2. Intelligent Search Matrix */}
-      <motion.div variants={hubItemVariants} className="relative h-[320px] md:h-[420px] rounded-[2.5rem] md:rounded-[4rem] bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-6 md:p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border-none mx-2">
+      <motion.div variants={hubItemVariants} className="relative h-[320px] md:h-[420px] rounded-[0.1rem] md:rounded-[0.1rem] bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-6 md:p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border-none mx-2">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-rose-500/10 opacity-60 animate-pulse duration-[10s]" />
         
         {isScanning && (
@@ -164,13 +164,13 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
               <Input 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-16 md:h-24 bg-white/5 border-2 border-white/5 rounded-[2rem] md:rounded-[3rem] px-16 md:px-24 text-white text-lg md:text-3xl font-black placeholder:text-white/10 focus:bg-white focus:text-slate-900 transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] focus:ring-[16px] md:focus:ring-[24px] focus:ring-primary/10 tracking-tight"
+                className="h-16 md:h-24 bg-white/5 border-2 border-white/5 rounded-[0.1rem] md:rounded-[0.1rem] px-16 md:px-24 text-white text-lg md:text-3xl font-black placeholder:text-white/10 focus:bg-white focus:text-slate-900 transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] focus:ring-[16px] md:focus:ring-[24px] focus:ring-primary/10 tracking-tight"
                 placeholder="지식 인텔리전스 검색..."
               />
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
-              <div className="flex items-center gap-1.5 p-1 bg-white/5 border border-white/10 rounded-xl backdrop-blur-xl">
+              <div className="flex items-center gap-1.5 p-1 bg-white/5 border border-white/10 rounded-[0.1rem] backdrop-blur-xl">
                  <FilterButton active={sortBy === 'latest'} onClick={() => setSortBy('latest')} label="RECENT" />
                  <FilterButton active={sortBy === 'views'} onClick={() => setSortBy('views')} label="IMPACT" />
               </div>
@@ -229,9 +229,9 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center justify-center p-24 space-y-8 bg-slate-50 border-2 border-dashed rounded-[3rem] border-primary/20"
+                    className="flex flex-col items-center justify-center p-24 space-y-8 bg-slate-50 border-2 border-dashed rounded-[0.1rem] border-primary/20"
                   >
-                    <div className="w-24 h-24 rounded-[2.5rem] bg-white shadow-2xl flex items-center justify-center text-primary border-2 border-primary/10 animate-bounce">
+                    <div className="w-24 h-24 rounded-[0.1rem] bg-white shadow-2xl flex items-center justify-center text-primary border-2 border-primary/10 animate-bounce">
                       <ShieldAlert size={48} />
                     </div>
                     <div className="text-center space-y-4 max-w-sm">
@@ -241,7 +241,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                     <Button 
                        onClick={() => setActiveCategory('COMMUNITY')}
                        variant="outline"
-                       className="h-14 px-8 rounded-2xl border-2 font-black tracking-widest text-[10px] uppercase gap-3 shadow-xl hover:bg-slate-900 hover:text-white transition-all"
+                       className="h-14 px-8 rounded-[0.1rem] border-2 font-black tracking-widest text-[10px] uppercase gap-3 shadow-xl hover:bg-slate-900 hover:text-white transition-all"
                     >
                       <ArrowRight size={16} /> Open Public Community
                     </Button>
@@ -251,7 +251,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                     {isLoading ? (
                       <div className="p-12 text-center text-muted-foreground animate-pulse">지식 스트림을 동기화 중입니다...</div>
                     ) : displayItems.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center p-20 space-y-4 border-2 border-dashed rounded-[3rem] border-border/50">
+                      <div className="flex flex-col items-center justify-center p-20 space-y-4 border-2 border-dashed rounded-[0.1rem] border-border/50">
                         <Hash size={40} className="text-muted-foreground/20" />
                         <p className="text-muted-foreground font-black text-sm uppercase tracking-widest text-center">지식 기록을 찾을 수 없음</p>
                       </div>
@@ -262,10 +262,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.id}`)}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-8 bg-white border border-border/40 rounded-[2rem] md:rounded-[2.5rem] hover:ring-[15px] md:hover:ring-[20px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group shadow-sm hover:shadow-2xl"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-8 bg-white border border-border/40 rounded-[0.1rem] md:rounded-[0.1rem] hover:ring-[15px] md:hover:ring-[20px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group shadow-sm hover:shadow-2xl"
                       >
                         <div className="flex gap-4 md:gap-6 items-start">
-                           <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1.2rem] md:rounded-[1.5rem] bg-slate-50 flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors shrink-0">
+                           <div className="w-12 h-12 md:w-16 md:h-16 rounded-[0.1rem] md:rounded-[0.1rem] bg-slate-50 flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors shrink-0">
                               <span className="text-[8px] md:text-[10px] font-black text-muted-foreground/40 leading-none">점수</span>
                               <span className="text-sm md:text-xl font-black text-slate-800 leading-none mt-1">{Math.floor(Math.random() * 20) + 80}</span>
                            </div>
@@ -301,7 +301,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
           <HubSectionCard title="Trending Radar" description="인게이지먼트가 높은 데이터 지식" icon={TrendingUp}>
             <div className="space-y-4">
               {hotItems.map((item: any, idx: number) => (
-                <div key={item.id} onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.id}`)} className="flex items-center gap-5 p-4 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group">
+                <div key={item.id} onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.id}`)} className="flex items-center gap-5 p-4 rounded-[0.1rem] hover:bg-slate-50 transition-all cursor-pointer group">
                   <span className="text-3xl font-black text-muted-foreground/20 group-hover:text-primary/20 transition-colors w-8 italic">{idx + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-slate-800 tracking-tight truncate leading-none uppercase">{item.nttSj}</p>
@@ -322,8 +322,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
             </div>
             <div className="space-y-6 relative z-10 font-sans">
               {(activityData || []).slice(0, 5).map((activity: any) => (
-                <div key={activity.id} className="flex items-center gap-5 p-5 bg-white/5 border border-white/5 rounded-[2rem] hover:bg-white/10 transition-all group/activity shadow-lg backdrop-blur-3xl">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/activity:rotate-12 transition-all">
+                <div key={activity.id} className="flex items-center gap-5 p-5 bg-white/5 border border-white/5 rounded-[0.1rem] hover:bg-white/10 transition-all group/activity shadow-lg backdrop-blur-3xl">
+                  <div className="w-10 h-10 rounded-[0.1rem] bg-primary/10 flex items-center justify-center text-primary group-hover/activity:rotate-12 transition-all">
                     <Zap size={18} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -340,7 +340,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
           </HubSectionCard>
 
           <div className="hub-card-premium p-10 bg-gradient-to-br from-primary/10 to-transparent border-primary/20 flex flex-col items-center justify-center text-center space-y-6">
-             <div className="w-20 h-20 rounded-[2rem] bg-white flex items-center justify-center text-primary shadow-2xl border-2 border-primary/10 animate-spin-slow">
+             <div className="w-20 h-20 rounded-[0.1rem] bg-white flex items-center justify-center text-primary shadow-2xl border-2 border-primary/10 animate-spin-slow">
                 <Sparkles size={32} />
              </div>
              <div>
@@ -371,7 +371,7 @@ function FilterButton({ active, onClick, label }: any) {
     <button
       onClick={onClick}
       className={cn(
-        "px-6 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all",
+        "px-6 py-2 rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase transition-all",
         active 
           ? "bg-primary text-white shadow-lg shadow-primary/20" 
           : "text-white/40 hover:text-white hover:bg-white/5"
@@ -415,13 +415,13 @@ function CategoryCard({ title, desc, icon, count, color, active, onClick }: any)
     <div 
       onClick={onClick}
       className={cn(
-        "relative p-8 rounded-[3rem] border-2 transition-all duration-500 cursor-pointer group flex flex-col gap-6",
+        "relative p-8 rounded-[0.1rem] border-2 transition-all duration-500 cursor-pointer group flex flex-col gap-6",
         active 
           ? "border-primary bg-primary/5 shadow-2xl scale-105" 
           : "border-border/40 bg-white hover:border-primary/20 hover:ring-[20px] hover:ring-primary/5"
       )}
     >
-      <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner", colorMap[color])}>
+      <div className={cn("w-16 h-16 rounded-[0.1rem] flex items-center justify-center shadow-inner", colorMap[color])}>
         {icon}
       </div>
       <div className="space-y-1">
@@ -441,7 +441,7 @@ function HubSectionCard({ title, description, icon: Icon, children, className }:
     <div className={cn("hub-card-premium p-10 space-y-8", className)}>
       <div className="flex items-center justify-between border-b border-border/40 pb-6 uppercase">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-primary shadow-inner border border-border/50">
+          <div className="w-10 h-10 rounded-[0.1rem] bg-slate-50 flex items-center justify-center text-primary shadow-inner border border-border/50">
             <Icon size={20} />
           </div>
           <div className="space-y-0.5">

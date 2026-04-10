@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -42,7 +42,7 @@ export default function EventManagementClient() {
       header: 'EVENT_UNIT',
       accessor: (event) => (
         <div className="flex items-center gap-8 py-2">
-          <div className="w-14 h-14 rounded-2xl bg-slate-50 flex flex-col items-center justify-center border border-slate-100 group-hover:bg-primary/5 transition-colors shadow-inner">
+          <div className="w-14 h-14 rounded-[0.1rem] bg-slate-50 flex flex-col items-center justify-center border border-slate-100 group-hover:bg-primary/5 transition-colors shadow-inner">
             <span className="text-[10px] font-black text-slate-400 leading-none">행사</span>
             <span className="text-xl font-black text-slate-800 leading-none mt-1 group-hover:text-primary tracking-tighter transition-colors tabular-nums">{event.psncpa}</span>
           </div>
@@ -65,7 +65,7 @@ export default function EventManagementClient() {
         className: 'text-right w-24',
         accessor: (event) => (
             <div className="flex items-center justify-end pr-4">
-                <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl group-hover:bg-rose-50 group-hover:text-rose-500 transition-colors">
+                <Button variant="ghost" size="icon" className="w-10 h-10 rounded-[0.1rem] group-hover:bg-rose-50 group-hover:text-rose-500 transition-colors">
                     <Trash2 size={16} />
                 </Button>
             </div>
@@ -82,10 +82,10 @@ export default function EventManagementClient() {
         icon={Calendar} 
         actions={
           <div className="flex gap-4">
-             <Button className="h-14 px-8 rounded-2xl bg-slate-100 text-slate-400 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
+             <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-100 text-slate-400 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
                <History size={18} /> 아카이브 보기
              </Button>
-             <Button className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
+             <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
                <Plus size={18} /> 행사 신규 생성
              </Button>
           </div>
@@ -108,7 +108,7 @@ export default function EventManagementClient() {
                             <Input 
                                 value={searchWrd}
                                 onChange={(e) => setSearchWrd(e.target.value)}
-                                className="h-14 bg-slate-50 border-none rounded-2xl pl-14 font-black tracking-tight text-sm shadow-inner" 
+                                className="h-14 bg-slate-50 border-none rounded-[0.1rem] pl-14 font-black tracking-tight text-sm shadow-inner" 
                                 placeholder="행사 태그 검색.." 
                             />
                         </div>
@@ -134,7 +134,7 @@ export default function EventManagementClient() {
 
         {/* Radar Map (Visual Stats) */}
         <div className="col-span-12 lg:col-span-4 relative group lg:sticky lg:top-8 h-fit">
-          <Card className="rounded-[4rem] border-0 bg-slate-900 text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-12 flex flex-col justify-between min-h-[480px]">
+          <Card className="rounded-[0.1rem] border-0 bg-slate-900 text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-12 flex flex-col justify-between min-h-[480px]">
              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-rose-500/5 pointer-events-none opacity-40 animate-pulse" />
              <div className="relative z-10 space-y-8">
                 <div className="flex items-center justify-between">
@@ -159,7 +159,7 @@ export default function EventManagementClient() {
                 <Calendar size={48} className="text-white group-hover:rotate-12 transition-transform" />
              </div>
 
-             <div className="relative z-10 p-6 bg-white/5 rounded-3xl backdrop-blur-3xl border border-white/5 flex items-center justify-between mt-auto">
+             <div className="relative z-10 p-6 bg-white/5 rounded-[0.1rem] backdrop-blur-3xl border border-white/5 flex items-center justify-between mt-auto">
                 <div className="text-left space-y-1">
                    <span className="text-[10px] font-black opacity-40">참여 지수</span>
                    <p className="text-xl font-black italic tracking-tighter">ELITE GRADE</p>
@@ -194,7 +194,7 @@ function InsightCard({ label, value, desc, trend, type }: any) {
 
   return (
     <Card className={cn(
-      "rounded-[3rem] border-2 bg-white p-10 space-y-6 transition-all hover:ring-[25px] flex flex-col justify-between shadow-xl", 
+      "rounded-[0.1rem] border-2 bg-white p-10 space-y-6 transition-all hover:ring-[25px] flex flex-col justify-between shadow-xl", 
       colorMap[type]
     )}>
        <div className="space-y-1">

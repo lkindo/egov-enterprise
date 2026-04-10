@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -71,7 +71,7 @@ export default function InsertBoardArticlePage() {
         <Button
           variant="outline"
           onClick={() => router.back()}
-          className="w-16 h-16 rounded-[2rem] border-2 group hover:bg-slate-900 transition-all duration-500 shadow-xl active:scale-95"
+          className="w-16 h-16 rounded-[0.1rem] border-2 group hover:bg-slate-900 transition-all duration-500 shadow-xl active:scale-95"
         >
           <ArrowLeft className="group-hover:text-white group-hover:-translate-x-1 transition-all" />
         </Button>
@@ -85,13 +85,13 @@ export default function InsertBoardArticlePage() {
 
       <form onSubmit={handleSubmit} className="space-y-10 px-2">
         {/* Title Input Area */}
-        <div className="hub-card-premium p-10 bg-slate-900 border-none shadow-2xl relative overflow-hidden group rounded-[2.5rem]">
+        <div className="hub-card-premium p-10 bg-slate-900 border-none shadow-2xl relative overflow-hidden group rounded-[0.1rem]">
           <div className="absolute top-0 right-0 p-12 opacity-[0.05] pointer-events-none group-focus-within:opacity-10 transition-opacity">
             <Layers size={140} className="rotate-12" />
           </div>
           <div className="relative z-10 space-y-6">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-primary border border-white/10">
+              <div className="w-10 h-10 rounded-[0.1rem] bg-white/10 flex items-center justify-center text-primary border border-white/10">
                 <Zap size={20} />
               </div>
               <span className="text-[10px] font-black tracking-widest text-white/40 uppercase">Dataset Core Subject</span>
@@ -146,14 +146,14 @@ export default function InsertBoardArticlePage() {
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              className="h-16 flex-1 sm:flex-none px-10 rounded-2xl border-2 font-black tracking-widest text-[11px] uppercase hover:bg-slate-50 transition-all"
+              className="h-16 flex-1 sm:flex-none px-10 rounded-[0.1rem] border-2 font-black tracking-widest text-[11px] uppercase hover:bg-slate-50 transition-all"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="h-16 flex-1 sm:flex-none px-12 rounded-2xl bg-primary text-white font-black tracking-widest text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 gap-3 group"
+              className="h-16 flex-1 sm:flex-none px-12 rounded-[0.1rem] bg-primary text-white font-black tracking-widest text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 gap-3 group"
             >
               {isSubmitting ? (
                 <span className="animate-pulse">Saving Node...</span>

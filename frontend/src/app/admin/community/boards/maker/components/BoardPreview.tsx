@@ -31,7 +31,7 @@ const MOCK_POSTS = [
 
 export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {
   return (
-    <div className="w-full h-full bg-slate-50 border-4 border-slate-900 rounded-[3.5rem] overflow-hidden shadow-2xl relative flex flex-col scale-[0.95] origin-top italic">
+    <div className="w-full h-full bg-slate-50 border-4 border-slate-900 rounded-[0.1rem] overflow-hidden shadow-2xl relative flex flex-col scale-[0.95] origin-top italic">
       {/* Browser Bar */}
       <div className="h-12 bg-slate-900 flex items-center px-6 gap-2">
          <div className="w-3 h-3 rounded-full bg-rose-500" />
@@ -51,8 +51,8 @@ export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {
                  <p className="text-sm font-bold text-slate-400 tracking-tight">{bbsIntrcn || 'Board description placeholder...'}</p>
               </div>
               <div className="flex gap-2">
-                 <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white"><Search size={18} strokeWidth={3} /></div>
-                 <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-black text-[10px] tracking-tighter">WRITE</div>
+                 <div className="w-10 h-10 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white"><Search size={18} strokeWidth={3} /></div>
+                 <div className="w-10 h-10 rounded-[0.1rem] bg-primary flex items-center justify-center text-white font-black text-[10px] tracking-tighter">WRITE</div>
               </div>
            </div>
         </div>
@@ -74,7 +74,7 @@ function HubLayout({ posts }: { posts: any[] }) {
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-2 gap-6">
-         <div className="col-span-2 p-8 bg-slate-900 rounded-[2.5rem] text-white relative overflow-hidden group">
+         <div className="col-span-2 p-8 bg-slate-900 rounded-[0.1rem] text-white relative overflow-hidden group">
             <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-primary/20 blur-3xl rounded-full" />
             <div className="relative z-10 space-y-4">
                <span className="text-[10px] font-black tracking-[0.4em] text-primary uppercase">FEATURED_KNOWLEDGE</span>
@@ -94,7 +94,7 @@ function HubLayout({ posts }: { posts: any[] }) {
       </div>
       <div className="grid grid-cols-2 gap-6">
          {posts.slice(1).map(post => (
-            <div key={post.id} className="p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 space-y-4 hover:border-slate-900 transition-all">
+            <div key={post.id} className="p-6 bg-slate-50 rounded-[0.1rem] border-2 border-slate-100 space-y-4 hover:border-slate-900 transition-all">
                 <h4 className="font-black text-slate-800 text-sm leading-snug truncate-2">{post.title}</h4>
                 <div className="flex justify-between items-center pt-2">
                    <div className="flex gap-4">
@@ -144,7 +144,7 @@ function GalleryLayout({ posts }: { posts: any[] }) {
   return (
     <div className="grid grid-cols-1 gap-8">
        {posts.map(post => (
-          <div key={post.id} className="group overflow-hidden rounded-[2.5rem] bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
+          <div key={post.id} className="group overflow-hidden rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
              <div className="h-48 overflow-hidden relative">
                 <img src={post.image} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 scale-110 group-hover:scale-100" />
                 <div className="absolute top-4 right-4 px-4 py-1.5 bg-slate-900/40 backdrop-blur-md rounded-full text-white text-[8px] font-black tracking-widest uppercase">INSIGHT</div>

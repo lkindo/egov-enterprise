@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -40,6 +40,16 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { smsSchema } from '@/lib/validation/schemas';
+import { useAppForm } from '@/hooks/useAppForm';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 
 export default function SmsAdminClient({ 
   initialSmsList 
@@ -50,13 +60,15 @@ export default function SmsAdminClient({
   const [smsList, setSmsList] = useState(initialSmsList.list || []);
   const [totalCount, setTotalCount] = useState(initialSmsList.total || 0);
   const [searchKeyword, setSearchKeyword] = useState('');
-  
-  // Send SMS State
   const [isSendOpen, setIsSendOpen] = useState(false);
-  const [sendForm, setSendForm] = useState({
-    trnsmitTelno: '02-1234-5678', // 발신번호 (기본값)
-    recptnTelno: '',
-    trnsmitCn: ''
+  
+  // Send SMS Form
+  const form = useAppForm(smsSchema, {
+    defaultValues: {
+      trnsmitTelno: '02-1234-5678', // 발신번호 (기본값)
+      recptnTelno: '',
+      trnsmitCn: ''
+    }
   });
 
   const handleSearch = async () => {
@@ -72,17 +84,13 @@ export default function SmsAdminClient({
     }
   };
 
-  const handleSend = async () => {
-    if (!sendForm.recptnTelno || !sendForm.trnsmitCn) {
-      toast.error('수신번호와 내용을 입력해주세요.');
-      return;
-    }
-
+  const handleSend = async (data: z.infer<typeof smsSchema>) => {
     setLoading(true);
     try {
-      await smsAdminService.sendSms(sendForm);
+      await smsAdminService.sendSms(data as any);
       toast.success('문자 메시지를 발송했습니다.');
       setIsSendOpen(false);
+      form.reset();
       handleSearch(); // 목록 갱신
     } catch (error) {
       toast.error('발송에 실패했습니다.');
@@ -96,7 +104,7 @@ export default function SmsAdminClient({
       header: '발송 일시',
       accessor: (item: SmsDto) => (
         <div className="flex items-center gap-4 py-2">
-          <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-inner">
+          <div className="w-10 h-10 rounded-[0.1rem] bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-inner">
             <Calendar size={16} />
           </div>
           <div className="flex flex-col text-left">
@@ -156,14 +164,14 @@ export default function SmsAdminClient({
               variant="outline"
               size="lg"
               onClick={handleSearch}
-              className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2"
+              className="h-12 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2"
             >
               <RefreshCcw size={16} className={cn(loading && "animate-spin")} /> 로그 동기화
             </Button>
             <Button
               size="lg"
               onClick={() => setIsSendOpen(true)}
-              className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2"
+              className="h-12 px-8 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2"
             >
               <Plus size={18} /> 새 메시지 구성
             </Button>
@@ -215,7 +223,7 @@ export default function SmsAdminClient({
                 placeholder="검색..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="h-14 pl-12 pr-6 w-full md:w-[320px] bg-slate-50 border-none rounded-2xl text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all font-mono"
+                className="h-14 pl-12 pr-6 w-full md:w-[320px] bg-slate-50 border-none rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all font-mono"
               />
             </div>
           </div>
@@ -234,77 +242,92 @@ export default function SmsAdminClient({
 
       {/* Send Message Composition Dialog */}
       <Dialog open={isSendOpen} onOpenChange={setIsSendOpen}>
-        <DialogContent className="sm:max-w-[550px] rounded-[3.5rem] p-12 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-white/95 backdrop-blur-3xl overflow-hidden relative">
-          <div className="absolute top-[-20%] right-[-20%] w-64 h-64 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
-          
-          <DialogHeader className="space-y-6 relative z-10">
-            <div className="w-20 h-20 bg-slate-900 text-white rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-primary/30 mx-auto transition-transform hover:rotate-12 duration-500 border-4 border-white/20">
-              <Send size={32} />
-            </div>
-            <div className="text-center space-y-2">
-              <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">메시지 작성</DialogTitle>
-              <DialogDescription className="text-[10px] font-black tracking-[0.4em] uppercase opacity-40">
-                Outbound Message Configuration
-              </DialogDescription>
-            </div>
-          </DialogHeader>
-          
-          <div className="space-y-10 py-10 relative z-10 text-left">
-            <div className="space-y-4">
-              <label className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                Target Terminal Number
-              </label>
-              <div className="relative group">
-                <Smartphone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={20} />
-                <Input
-                  placeholder="010-0000-0000"
-                  value={sendForm.recptnTelno}
-                  onChange={(e) => setSendForm(prev => ({ ...prev, recptnTelno: e.target.value }))}
-                  className="h-18 pl-16 pr-8 rounded-3xl border-none bg-slate-50 text-xl font-black tabular-nums focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-wider"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <label className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                Payload Content
-              </label>
-              <div className="relative">
-                <Textarea
-                  placeholder="메시지 내용을 입력하세요..."
-                  value={sendForm.trnsmitCn}
-                  onChange={(e) => setSendForm(prev => ({ ...prev, trnsmitCn: e.target.value }))}
-                  className="min-h-[180px] p-8 rounded-[2.5rem] border-none bg-slate-50 text-base font-bold outline-none focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"
-                />
-                <div className="absolute bottom-6 right-8 flex items-center gap-2">
-                   <div className="w-32 h-1 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary" style={{ width: `${Math.min(100, (sendForm.trnsmitCn.length / 80) * 100)}%` }} />
-                   </div>
-                   <span className="text-[9px] font-black text-slate-300 tracking-widest">{sendForm.trnsmitCn.length} / 80B</span>
+        <DialogContent className="sm:max-w-[550px] rounded-[0.1rem] p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-white/95 backdrop-blur-3xl overflow-hidden relative">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSend)}>
+              <div className="absolute top-[-20%] right-[-20%] w-64 h-64 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
+              
+              <DialogHeader className="p-12 pb-0 space-y-6 relative z-10">
+                <div className="w-20 h-20 bg-slate-900 text-white rounded-[0.1rem] flex items-center justify-center shadow-2xl shadow-primary/30 mx-auto transition-transform hover:rotate-12 duration-500 border-4 border-white/20">
+                  <Send size={32} />
                 </div>
+                <div className="text-center space-y-2">
+                  <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">메시지 작성</DialogTitle>
+                  <DialogDescription className="text-[10px] font-black tracking-[0.4em] uppercase opacity-40">
+                    Outbound Message Configuration
+                  </DialogDescription>
+                </div>
+              </DialogHeader>
+              
+              <div className="p-12 space-y-10 relative z-10 text-left">
+                <FormField
+                  control={form.control}
+                  name="recptnTelno"
+                  render={({ field }) => (
+                    <FormItem className="space-y-4">
+                      <FormLabel className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                        Target Terminal Number
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative group">
+                          <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={20} />
+                          <Input
+                            {...field}
+                            placeholder="010-0000-0000"
+                            className="h-18 pl-16 pr-8 rounded-[0.1rem] border-none bg-slate-50 text-xl font-black tabular-nums focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-wider"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage className="text-[10px] font-bold" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="trnsmitCn"
+                  render={({ field }) => (
+                    <FormItem className="space-y-4">
+                      <FormLabel className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                        Payload Content
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Textarea
+                            {...field}
+                            placeholder="메시지 내용을 입력하세요..."
+                            className="min-h-[180px] p-8 rounded-[0.1rem] border-none bg-slate-50 text-base font-bold outline-none focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage className="text-[10px] font-bold" />
+                    </FormItem>
+                  )}
+                />
               </div>
-            </div>
-          </div>
-          
-          <DialogFooter className="relative z-10 gap-4 mt-4 flex !justify-center">
-            <Button
-              variant="outline"
-              onClick={() => setIsSendOpen(false)}
-              className="h-18 px-10 rounded-2xl border-2 border-slate-100 font-black text-[11px] tracking-widest uppercase hover:bg-slate-50 transition-all hover:border-slate-200"
-            >
-              Terminate
-            </Button>
-            <Button
-              onClick={handleSend}
-              disabled={loading}
-              className="h-18 px-16 bg-slate-900 border-none text-white rounded-2xl font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
-            >
-              {loading ? <RefreshCcw size={18} className="animate-spin" /> : <Zap size={18} />}
-              Execute Send
-            </Button>
-          </DialogFooter>
+              
+              <DialogFooter className="p-12 pt-0 relative z-10 gap-4 flex !justify-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsSendOpen(false)}
+                  className="h-18 px-10 rounded-[0.1rem] border-2 border-slate-100 font-black text-[11px] tracking-widest uppercase hover:bg-slate-50 transition-all hover:border-slate-200"
+                >
+                  Terminate
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="h-18 px-16 bg-slate-900 border-none text-white rounded-[0.1rem] font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
+                >
+                  {loading ? <RefreshCcw size={18} className="animate-spin" /> : <Zap size={18} />}
+                  Execute Send
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
@@ -315,7 +338,7 @@ function SummaryBlock({ title, value, icon, status, color, bg }: any) {
   return (
     <div className={cn("hub-table-container p-12 group hover:scale-[1.02] transition-all relative overflow-hidden bg-white text-left", bg)}>
       <div className="flex justify-between items-start mb-10">
-        <div className={cn("w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
+        <div className={cn("w-14 h-14 rounded-[0.1rem] bg-slate-50 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
           {icon}
         </div>
         <HubStatusBadge label={`SYSTEM STATUS: ${status}`} variant="default" className="text-[8px] font-black tracking-widest shadow-sm" />

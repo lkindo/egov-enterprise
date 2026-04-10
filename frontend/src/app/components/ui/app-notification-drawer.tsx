@@ -83,7 +83,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
               <div className="flex h-24 items-center justify-between border-b px-8 bg-white dark:bg-slate-950 sticky top-0 z-20">
                 <div className="space-y-1">
                   <h2 className="text-xl font-black flex items-center gap-3 tracking-tighter uppercase italic">
-                    <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-lg">
+                    <div className="w-10 h-10 rounded-[0.1rem] bg-slate-900 text-white flex items-center justify-center shadow-lg">
                        <Bell size={20} className="animate-pulse" />
                     </div>
                     Alert Sentinel
@@ -92,7 +92,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                 </div>
                 <button 
                    onClick={onClose} 
-                   className="p-3 hover:bg-slate-100 dark:hover:bg-white/5 rounded-2xl transition-all hover:rotate-90 group"
+                   className="p-3 hover:bg-slate-100 dark:hover:bg-white/5 rounded-[0.1rem] transition-all hover:rotate-90 group"
                 >
                   <X size={24} className="group-hover:text-primary transition-colors" />
                 </button>
@@ -105,7 +105,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                        key={f}
                        onClick={() => setActiveFilter(f)}
                        className={cn(
-                          "px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all",
+                          "px-4 py-2 rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase transition-all",
                           activeFilter === f 
                              ? "bg-slate-900 text-white shadow-lg scale-105" 
                              : "bg-white text-slate-400 hover:bg-slate-100 border-2 border-slate-100"
@@ -114,7 +114,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                        {f}
                     </button>
                  ))}
-                 <button className="ml-auto w-10 h-10 rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:border-rose-100 transition-all">
+                 <button className="ml-auto w-10 h-10 rounded-[0.1rem] bg-white border-2 border-slate-100 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:border-rose-100 transition-all">
                     <Trash2 size={16} />
                  </button>
               </div>
@@ -141,7 +141,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ delay: idx * 0.05 }}
                         className={cn(
-                          "group relative p-6 rounded-[2rem] border-2 transition-all duration-500 cursor-pointer overflow-hidden backdrop-blur-sm",
+                          "group relative p-6 rounded-[0.1rem] border-2 transition-all duration-500 cursor-pointer overflow-hidden backdrop-blur-sm",
                           notif.isRead
                             ? "bg-slate-50/30 border-slate-50 opacity-60"
                             : "bg-white border-slate-100 shadow-xl hover:shadow-primary/5 hover:border-primary/20",
@@ -150,7 +150,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                       >
                         <div className="flex justify-between items-start gap-4 relative z-10">
                           <div className={cn(
-                             "w-10 h-10 rounded-xl flex items-center justify-center shadow-md shrink-0",
+                             "w-10 h-10 rounded-[0.1rem] flex items-center justify-center shadow-md shrink-0",
                              notif.isRead ? "bg-slate-100 text-slate-400" : "bg-white"
                           )}>
                              {getIcon(notif.type)}
@@ -189,7 +189,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
 
               {/* Bottom Sticky Control */}
               <div className="p-8 border-t bg-white dark:bg-slate-950">
-                 <Button className="w-full h-14 rounded-2xl bg-slate-900 text-white font-black tracking-[0.3em] uppercase text-[10px] shadow-2xl hover:bg-primary transition-all">
+                 <Button className="w-full h-14 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-[0.3em] uppercase text-[10px] shadow-2xl hover:bg-primary transition-all">
                     READ_ALL_BROADCASTS
                  </Button>
               </div>

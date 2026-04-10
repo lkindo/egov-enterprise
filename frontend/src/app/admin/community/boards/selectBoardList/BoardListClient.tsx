@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -36,7 +36,7 @@ import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardStats), {
   ssr: false,
-  loading: () => <Skeleton className="h-[280px] w-full rounded-[2rem]" />
+  loading: () => <Skeleton className="h-[280px] w-full rounded-[0.1rem]" />
 });
 
 import { BoardPost } from '@/types/business/board';
@@ -108,7 +108,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
       {/* 관리자 뷰에서만 통계 리포트 호출 */}
       {isAdmin && isManagementView && <BoardStats />}
 
-      <Card className="border-none shadow-2xl overflow-hidden rounded-[2.5rem] ring-1 ring-slate-200 bg-white">
+      <Card className="border-none shadow-2xl overflow-hidden rounded-[0.1rem] ring-1 ring-slate-200 bg-white">
         <CardHeader className="flex flex-row items-center justify-between bg-slate-900 pb-12 pt-12 px-10 text-white relative overflow-hidden">
           <div className="space-y-2 relative z-10">
             <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
@@ -120,13 +120,13 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
           <CardAction className="relative z-10 flex items-center gap-3">
             {isAdmin && (
               <Link href="/admin/community/boards/master">
-                <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-white/20 bg-white/10 text-white hover:bg-white hover:text-slate-900 font-black shadow-xl transition-all rounded-2xl backdrop-blur-md">
+                <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-white/20 bg-white/10 text-white hover:bg-white hover:text-slate-900 font-black shadow-xl transition-all rounded-[0.1rem] backdrop-blur-md">
                   <Settings2 className="w-6 h-6" /> 마스터 콘솔
                 </Button>
               </Link>
             )}
             <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
-              <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-2xl">
+              <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-[0.1rem]">
                 <div className="flex items-center gap-2">
                   <Plus className="w-6 h-6" /> 신규 등록
                 </div>
@@ -138,11 +138,11 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
           </div>
         </CardHeader>
         <CardContent className="pt-10 px-10">
-          <div className="flex flex-col gap-6 mb-12 bg-slate-50/50 p-8 rounded-[3rem] border-2 border-slate-50 shadow-inner">
+          <div className="flex flex-col gap-6 mb-12 bg-slate-50/50 p-8 rounded-[0.1rem] border-2 border-slate-50 shadow-inner">
             <form onSubmit={handleSearch} className="flex flex-col gap-6">
               <div className="flex flex-col md:flex-row gap-4">
                 <Select value={searchCnd} onValueChange={setSearchCnd}>
-                  <SelectTrigger className="w-full md:w-[150px] h-16 rounded-2xl border-2 border-white bg-white font-bold shadow-sm">
+                  <SelectTrigger className="w-full md:w-[150px] h-16 rounded-[0.1rem] border-2 border-white bg-white font-bold shadow-sm">
                     <SelectValue placeholder="검색 조건" />
                   </SelectTrigger>
                   <SelectContent>
@@ -155,7 +155,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10 group-focus-within:text-primary transition-colors" />
                   <Input
                     type="text"
-                    className="pl-14 h-16 text-lg border-2 border-white bg-white shadow-sm rounded-2xl focus-visible:ring-primary/20 transition-all font-bold"
+                    className="pl-14 h-16 text-lg border-2 border-white bg-white shadow-sm rounded-[0.1rem] focus-visible:ring-primary/20 transition-all font-bold"
                     placeholder="어떤 정보를 찾으시나요?"
                     value={searchWrd}
                     onChange={(e) => setSearchWrd(e.target.value)}
@@ -170,7 +170,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                       <Button
                         variant="outline"
                         className={cn(
-                          "h-14 px-6 justify-start text-left font-bold rounded-2xl border-2 border-white bg-white shadow-sm w-full md:w-[280px]",
+                          "h-14 px-6 justify-start text-left font-bold rounded-[0.1rem] border-2 border-white bg-white shadow-sm w-full md:w-[280px]",
                           !startDate && "text-muted-foreground"
                         )}
                       >
@@ -188,7 +188,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 rounded-3xl overflow-hidden border-none shadow-2xl" align="start">
+                    <PopoverContent className="w-auto p-0 rounded-[0.1rem] overflow-hidden border-none shadow-2xl" align="start">
                       <div className="p-4 bg-white border-b flex items-center justify-between">
                         <span className="font-black text-slate-800">기간 설정</span>
                         <Button
@@ -222,7 +222,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                   </Popover>
 
                   <Select value={orderBy} onValueChange={setOrderBy}>
-                    <SelectTrigger className="w-full md:w-[150px] h-14 rounded-2xl border-2 border-white bg-white font-bold shadow-sm">
+                    <SelectTrigger className="w-full md:w-[150px] h-14 rounded-[0.1rem] border-2 border-white bg-white font-bold shadow-sm">
                       <ArrowUpDown className="mr-2 h-4 w-4 text-primary opacity-50" />
                       <SelectValue placeholder="정렬 방식" />
                     </SelectTrigger>
@@ -234,24 +234,24 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                   </Select>
                 </div>
 
-                <Button type="submit" size="lg" className="h-16 px-12 gap-3 bg-slate-900 border-4 border-white shadow-2xl hover:scale-105 transition-all active:scale-95 font-black rounded-3xl">
+                <Button type="submit" size="lg" className="h-16 px-12 gap-3 bg-slate-900 border-4 border-white shadow-2xl hover:scale-105 transition-all active:scale-95 font-black rounded-[0.1rem]">
                   <Search className="w-6 h-6" /> 조회
                 </Button>
               </div>
             </form>
           </div>
 
-          <div className="rounded-[2.5rem] border-2 border-slate-50 overflow-hidden shadow-2xl bg-white mb-10">
+          <div className="rounded-[0.1rem] border-2 border-slate-50 overflow-hidden shadow-2xl bg-white mb-10">
             {loading ? (
               <Table>
                 <TableBody>
                   {Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={`board-loading-${i}`} className="border-b last:border-0">
-                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
-                      <TableCell className="py-8 px-6"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
-                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
-                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
-                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-[0.1rem]" /></TableCell>
+                      <TableCell className="py-8 px-6"><Skeleton className="h-8 w-full rounded-[0.1rem]" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-[0.1rem]" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-[0.1rem]" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-[0.1rem]" /></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -259,7 +259,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
             ) : (tmplatId === 'TMPLT_GALLERY' || tmplatId === 'TMPLT_HUB') && list.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-10">
                 {list.map((item: BoardPost, idx: number) => (
-                  <Card key={item.nttId} className="group overflow-hidden rounded-[2.5rem] border-2 border-slate-50 hover:border-primary/20 hover:shadow-2xl transition-all cursor-pointer">
+                  <Card key={item.nttId} className="group overflow-hidden rounded-[0.1rem] border-2 border-slate-50 hover:border-primary/20 hover:shadow-2xl transition-all cursor-pointer">
                     <div className="h-56 bg-slate-100 relative overflow-hidden">
                        <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:scale-125 transition-transform duration-700">
                          <BookOpen size={100} />
@@ -318,7 +318,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                         </Link>
                       </TableCell>
                       <TableCell className="text-center py-8">
-                        <div className="font-bold text-slate-600 bg-slate-100/50 mx-auto w-fit px-5 py-2 rounded-xl border border-slate-100 flex items-center gap-2">
+                        <div className="font-bold text-slate-600 bg-slate-100/50 mx-auto w-fit px-5 py-2 rounded-[0.1rem] border border-slate-100 flex items-center gap-2">
                           <User size={14} className="opacity-30" />
                           {item.frstRegisterNm}
                         </div>
@@ -354,11 +354,11 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                 variant="outline"
                 onClick={() => setPage((p: number) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
+                className="h-12 px-8 font-black rounded-[0.1rem] border-2 hover:bg-slate-50"
               >
                 이전
               </Button>
-              <div className="flex items-center gap-4 bg-slate-900 px-8 py-3 rounded-2xl shadow-xl">
+              <div className="flex items-center gap-4 bg-slate-900 px-8 py-3 rounded-[0.1rem] shadow-xl">
                 <span className="text-lg font-black text-white">{page}</span>
                 <div className="h-4 w-px bg-white/20" />
                 <span className="text-sm font-bold text-white/50">{totalPages}</span>
@@ -367,7 +367,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                 variant="outline"
                 onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
+                className="h-12 px-8 font-black rounded-[0.1rem] border-2 hover:bg-slate-50"
               >
                 다음
               </Button>

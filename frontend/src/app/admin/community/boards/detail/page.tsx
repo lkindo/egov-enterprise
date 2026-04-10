@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -71,14 +71,14 @@ function DetailContent() {
           <Button
             variant="outline"
             onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&nttId=${nttId}`)}
-            className="h-16 px-8 rounded-2xl border-2 font-black text-[11px] tracking-widest uppercase gap-3 shadow-xl hover:-translate-y-1 transition-all"
+            className="h-16 px-8 rounded-[0.1rem] border-2 font-black text-[11px] tracking-widest uppercase gap-3 shadow-xl hover:-translate-y-1 transition-all"
           >
             <Edit3 size={18} /> Edit Entry
           </Button>
           <Button
             variant="outline"
             onClick={() => router.push(`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}&parntsId=${nttId}&replyAt=Y`)}
-            className="h-16 px-8 rounded-2xl border-2 font-black text-[11px] tracking-widest uppercase gap-3 shadow-xl hover:-translate-y-1 transition-all"
+            className="h-16 px-8 rounded-[0.1rem] border-2 font-black text-[11px] tracking-widest uppercase gap-3 shadow-xl hover:-translate-y-1 transition-all"
           >
             <Plus size={18} /> Reply
           </Button>
@@ -94,7 +94,7 @@ function DetailContent() {
             <Button
               type="submit"
               variant="outline"
-              className="h-16 w-16 rounded-2xl border-2 text-rose-500 border-rose-100 hover:bg-rose-500 hover:text-white shadow-xl hover:-translate-y-1 transition-all"
+              className="h-16 w-16 rounded-[0.1rem] border-2 text-rose-500 border-rose-100 hover:bg-rose-500 hover:text-white shadow-xl hover:-translate-y-1 transition-all"
             >
               <Trash2 size={24} />
             </Button>
@@ -103,7 +103,7 @@ function DetailContent() {
       </div>
 
       {/* --- Meta Info Bar --- */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 p-10 bg-slate-50 dark:bg-muted/10 rounded-[2.5rem] border-border/40 border">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 p-10 bg-slate-50 dark:bg-muted/10 rounded-[0.1rem] border-border/40 border">
         <MetaItem icon={<User size={18} />} label="Contributor" value={article.frstRegisterId || 'System'} />
         <MetaItem icon={<Calendar size={18} />} label="Published" value={article.frstRegisterPnttm || 'Today'} />
         <MetaItem icon={<Eye size={18} />} label="Global Reach" value={`${(article.inqireCo || 0).toLocaleString()} Views`} />
@@ -114,7 +114,7 @@ function DetailContent() {
       <div className="relative group">
         <div className="absolute -inset-4 bg-gradient-to-br from-primary/5 via-transparent to-rose-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
 
-        <div className="relative bg-white dark:bg-muted/10 rounded-[4rem] p-16 md:p-24 border-2 border-border/40 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.05)] overflow-hidden">
+        <div className="relative bg-white dark:bg-muted/10 rounded-[0.1rem] p-16 md:p-24 border-2 border-border/40 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.05)] overflow-hidden">
           <div className="absolute top-0 right-0 p-12 opacity-[0.03] grayscale pointer-events-none group-hover:rotate-12 transition-transform duration-1000">
             <Quote size={200} className="text-primary" />
           </div>
@@ -132,7 +132,7 @@ function DetailContent() {
                 prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase prose-headings:italic
                 prose-p:my-10
                 prose-blockquote:border-l-[6px] prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-12 prose-blockquote:py-10 prose-blockquote:rounded-r-[2rem] prose-blockquote:italic
-                prose-code:bg-slate-100 prose-code:p-1 prose-code:rounded prose-pre:bg-slate-900 prose-pre:p-8 prose-pre:rounded-3xl"
+                prose-code:bg-slate-100 prose-code:p-1 prose-code:rounded prose-pre:bg-slate-900 prose-pre:p-8 prose-pre:rounded-[0.1rem]"
               dangerouslySetInnerHTML={{ __html: article.knoCn || (article as any).nttCn || '' }}
             />
 
@@ -153,13 +153,13 @@ function DetailContent() {
           </div>
           <div className="relative z-10 space-y-8">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-primary border border-white/5">
+              <div className="w-12 h-12 rounded-[0.1rem] bg-white/10 flex items-center justify-center text-primary border border-white/5">
                 <Download size={24} />
               </div>
               <p className="text-[11px] font-black tracking-widest uppercase">Associated Data Assets</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center justify-between p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white hover:text-slate-900 transition-all cursor-pointer group/file">
+              <div className="flex items-center justify-between p-6 bg-white/5 rounded-[0.1rem] border border-white/10 hover:bg-white hover:text-slate-900 transition-all cursor-pointer group/file">
                 <div className="flex items-center gap-4">
                   <FileText size={20} className="text-primary" />
                   <span className="text-sm font-bold tracking-tight">Technical_Specification_Unit_{nttId?.slice(-4)}.pdf</span>
@@ -178,7 +178,7 @@ function DetailContent() {
 function MetaItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
   return (
     <div className="flex items-center gap-5 p-2 group hover:translate-x-1 transition-transform cursor-default">
-      <div className="w-12 h-12 rounded-2xl bg-white dark:bg-muted flex items-center justify-center text-primary shadow-lg border border-border/50 transition-all group-hover:rotate-12">
+      <div className="w-12 h-12 rounded-[0.1rem] bg-white dark:bg-muted flex items-center justify-center text-primary shadow-lg border border-border/50 transition-all group-hover:rotate-12">
         {icon}
       </div>
       <div className="space-y-1">

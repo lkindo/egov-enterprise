@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -45,12 +45,12 @@ export default function CreateDeptJobPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => router.back()} className="rounded-xl font-bold gap-2">
+        <Button variant="ghost" onClick={() => router.back()} className="rounded-[0.1rem] font-bold gap-2">
             <ArrowLeft className="w-4 h-4" /> 뒤로가기
         </Button>
       </div>
 
-      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-[2.5rem] bg-white">
+      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-[0.1rem] bg-white">
         <CardHeader className="bg-slate-900 pb-12 pt-12 px-10 text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
                 <Briefcase size={120} />
@@ -73,7 +73,7 @@ export default function CreateDeptJobPage() {
                 value={formData.deptJobNm}
                 onChange={(e) => setFormData(prev => ({ ...prev, deptJobNm: e.target.value }))}
                 placeholder="과업의 핵심 명칭을 입력하세요"
-                className="h-14 rounded-2xl border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
+                className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
               />
             </div>
 
@@ -83,10 +83,10 @@ export default function CreateDeptJobPage() {
                 value={formData.priort}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, priort: value }))}
               >
-                <SelectTrigger className="h-14 rounded-2xl border-2 bg-slate-50/50 font-bold px-6">
+                <SelectTrigger className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 font-bold px-6">
                   <SelectValue placeholder="순위 선택" />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl border-none shadow-2xl">
+                <SelectContent className="rounded-[0.1rem] border-none shadow-2xl">
                   <SelectItem value="1" className="font-bold py-3">🔴 높음 (High)</SelectItem>
                   <SelectItem value="2" className="font-bold py-3">🟡 보통 (Medium)</SelectItem>
                   <SelectItem value="3" className="font-bold py-3">🟢 낮음 (Low)</SelectItem>
@@ -102,7 +102,7 @@ export default function CreateDeptJobPage() {
               value={formData.chargerNm}
               onChange={(e) => setFormData(prev => ({ ...prev, chargerNm: e.target.value }))}
               placeholder="담당자 성함을 입력하세요"
-              className="h-14 rounded-2xl border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
+              className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
             />
           </div>
 
@@ -112,13 +112,13 @@ export default function CreateDeptJobPage() {
               id="deptJobCn"
               value={formData.deptJobCn}
               onChange={(e) => setFormData(prev => ({ ...prev, deptJobCn: e.target.value }))}
-              className="min-h-[250px] p-8 rounded-[2rem] border-2 bg-slate-50/50 focus:bg-white text-lg font-medium leading-relaxed transition-all resize-none"
+              className="min-h-[250px] p-8 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white text-lg font-medium leading-relaxed transition-all resize-none"
               placeholder="업무의 구체적인 수행 방법과 목표를 서술하세요..."
             />
           </div>
 
           <div className="flex pt-6">
-            <Button onClick={handleSave} className="w-full h-16 rounded-2xl bg-slate-900 border-none text-white font-black text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
+            <Button onClick={handleSave} className="w-full h-16 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
               <Send className="w-5 h-5" /> 업무 등록 완료
             </Button>
           </div>

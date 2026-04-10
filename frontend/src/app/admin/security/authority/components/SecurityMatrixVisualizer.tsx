@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -71,11 +71,11 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
         isFullscreen ? "fixed inset-0 z-[100] bg-white p-12 overflow-y-auto" : ""
     )}>
        {/* UI Header / Stats */}
-       <div className="flex flex-col lg:flex-row items-center justify-between gap-8 bg-slate-900 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
+       <div className="flex flex-col lg:flex-row items-center justify-between gap-8 bg-slate-900 rounded-[0.1rem] p-10 shadow-2xl relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none" />
           
           <div className="flex items-center gap-6 relative z-10 text-center lg:text-left">
-             <div className="w-16 h-16 rounded-[2rem] bg-white/10 flex items-center justify-center text-primary shadow-xl border border-white/5 relative">
+             <div className="w-16 h-16 rounded-[0.1rem] bg-white/10 flex items-center justify-center text-primary shadow-xl border border-white/5 relative">
                 <ShieldCheck size={32} className="animate-pulse" />
                 <div className="absolute -inset-2 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
              </div>
@@ -85,7 +85,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
              </div>
           </div>
 
-          <div className="flex items-center gap-10 relative z-10 bg-white/5 p-6 rounded-[2rem] border border-white/5 backdrop-blur-md">
+          <div className="flex items-center gap-10 relative z-10 bg-white/5 p-6 rounded-[0.1rem] border border-white/5 backdrop-blur-md">
              <div className="space-y-1">
                 <p className="text-[9px] font-black text-white/30 tracking-widest uppercase">Coverage_Index</p>
                 <p className="text-2xl font-black text-white tabular-nums">{coverage.toFixed(1)}%</p>
@@ -105,14 +105,14 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setIsFullscreen(!isFullscreen)}
-                className="h-14 w-14 rounded-2xl bg-white/10 text-white border border-white/10 hover:bg-white hover:text-slate-900 transition-all shadow-xl"
+                className="h-14 w-14 rounded-[0.1rem] bg-white/10 text-white border border-white/10 hover:bg-white hover:text-slate-900 transition-all shadow-xl"
              >
                 {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
              </Button>
              <Button 
                 onClick={onSave}
                 disabled={isSaving}
-                className="h-14 px-10 rounded-2xl bg-primary text-white font-black text-[11px] tracking-widest uppercase shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-1 gap-3 group"
+                className="h-14 px-10 rounded-[0.1rem] bg-primary text-white font-black text-[11px] tracking-widest uppercase shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-1 gap-3 group"
              >
                 <Save size={18} className={cn(isSaving && "animate-spin")} /> {isSaving ? 'SYNCING...' : 'COMMIT_CHANGES'}
              </Button>
@@ -120,12 +120,12 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
        </div>
 
        {/* Matrix Surface */}
-       <div className="bg-slate-50 border-4 border-slate-100 rounded-[3rem] p-10 flex flex-col gap-8 shadow-inner overflow-hidden">
+       <div className="bg-slate-50 border-4 border-slate-100 rounded-[0.1rem] p-10 flex flex-col gap-8 shadow-inner overflow-hidden">
           <div className="flex items-center gap-6">
               <div className="relative flex-1 group/search">
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={20} />
                   <Input 
-                      className="h-16 pl-16 rounded-2xl border-none shadow-xl text-md font-black tracking-tight focus:ring-8 focus:ring-primary/5"
+                      className="h-16 pl-16 rounded-[0.1rem] border-none shadow-xl text-md font-black tracking-tight focus:ring-8 focus:ring-primary/5"
                       placeholder="메뉴 노드 검색(명칭, ID)..."
                       value={searchMenu}
                       onChange={(e) => setSearchMenu(e.target.value)}
@@ -133,7 +133,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
               </div>
           </div>
 
-          <div className="overflow-x-auto rounded-[2.5rem] border-2 border-slate-100 bg-white shadow-2xl custom-scrollbar relative">
+          <div className="overflow-x-auto rounded-[0.1rem] border-2 border-slate-100 bg-white shadow-2xl custom-scrollbar relative">
              <table className="w-full border-collapse table-fixed min-w-[1000px]">
                 <thead>
                    <tr className="border-b-2 border-slate-100 divide-x-2 divide-slate-50">
@@ -146,7 +146,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                       {authors.map((auth) => (
                          <th key={auth.authorCode} className="p-8 bg-slate-50/50 min-w-[150px] transition-colors hover:bg-slate-100">
                             <div className="flex flex-col items-center gap-2 group/header cursor-pointer">
-                               <div className="w-10 h-10 rounded-xl bg-white border-2 border-slate-200 flex items-center justify-center text-slate-400 transition-all group-hover/header:bg-slate-900 group-hover/header:text-white group-hover/header:scale-110 shadow-sm">
+                               <div className="w-10 h-10 rounded-[0.1rem] bg-white border-2 border-slate-200 flex items-center justify-center text-slate-400 transition-all group-hover/header:bg-slate-900 group-hover/header:text-white group-hover/header:scale-110 shadow-sm">
                                   <Lock size={14} />
                                </div>
                                <span className="text-[11px] font-black text-slate-900 tracking-tighter truncate w-full text-center">{auth.authorNm}</span>
@@ -185,7 +185,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                                      whileTap={{ scale: 0.95 }}
                                      onClick={() => onToggle(auth.authorCode, menu.menuNo)}
                                      className={cn(
-                                        "w-full h-16 rounded-2xl flex items-center justify-center transition-all duration-500 relative overflow-hidden group/cell",
+                                        "w-full h-16 rounded-[0.1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden group/cell",
                                         isSelected 
                                            ? "bg-slate-900 shadow-xl border-none" 
                                            : "bg-white hover:bg-slate-100 border-2 border-dashed border-slate-100 hover:border-slate-200"
@@ -230,8 +230,8 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
        </div>
 
        {/* Footer / Guide */}
-       <div className="flex items-center gap-6 p-8 bg-slate-50 border-2 border-slate-100 border-dashed rounded-[2.5rem]">
-          <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-primary shadow-sm border border-slate-100 shrink-0">
+       <div className="flex items-center gap-6 p-8 bg-slate-50 border-2 border-slate-100 border-dashed rounded-[0.1rem]">
+          <div className="w-12 h-12 rounded-[0.1rem] bg-white flex items-center justify-center text-primary shadow-sm border border-slate-100 shrink-0">
              <Info size={24} />
           </div>
           <div className="space-y-1">

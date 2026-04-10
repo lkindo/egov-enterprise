@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { MessageSquare, User, Clock, Trash2, Edit2, Send, X, Check } from 'lucide-react';
@@ -92,10 +92,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
     return (
       <div className="space-y-4 pt-10">
         <Skeleton className="h-8 w-32 rounded-full" />
-        <Skeleton className="h-32 w-full rounded-3xl" />
+        <Skeleton className="h-32 w-full rounded-[0.1rem]" />
         <div className="space-y-3">
-          <Skeleton className="h-24 w-full rounded-3xl" />
-          <Skeleton className="h-24 w-full rounded-3xl" />
+          <Skeleton className="h-24 w-full rounded-[0.1rem]" />
+          <Skeleton className="h-24 w-full rounded-[0.1rem]" />
         </div>
       </div>
     );
@@ -105,7 +105,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
     <div className="space-y-10 pt-16 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       <div className="flex items-center justify-between border-b pb-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center shadow-xl shadow-slate-200">
+          <div className="w-12 h-12 rounded-[0.1rem] bg-slate-900 flex items-center justify-center shadow-xl shadow-slate-200">
             <MessageSquare className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -118,12 +118,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
       {/* Comment List */}
       <div className="space-y-6">
         {comments.length === 0 ? (
-          <div className="py-20 text-center border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
+          <div className="py-20 text-center border-2 border-dashed border-slate-100 rounded-[0.1rem] bg-slate-50/50">
             <p className="text-slate-400 font-bold tracking-tight">아직 등록된 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!</p>
           </div>
         ) : (
           comments.map((comment) => (
-            <Card key={comment.id} className="border-none shadow-xl shadow-slate-100/50 rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-50 hover:ring-slate-100 transition-all group">
+            <Card key={comment.id} className="border-none shadow-xl shadow-slate-100/50 rounded-[0.1rem] overflow-hidden bg-white ring-1 ring-slate-50 hover:ring-slate-100 transition-all group">
               <CardContent className="p-8">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start justify-between">
@@ -158,7 +158,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
                     <Textarea
                       value={editCn}
                       onChange={(e) => setEditCn(e.target.value)}
-                      className="min-h-[100px] rounded-2xl border-slate-200 focus:ring-slate-900 border-2 text-slate-700 font-medium"
+                      className="min-h-[100px] rounded-[0.1rem] border-slate-200 focus:ring-slate-900 border-2 text-slate-700 font-medium"
                     />
                   ) : (
                     <p className="text-slate-700 font-medium leading-relaxed whitespace-pre-wrap">
@@ -174,8 +174,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
 
       {/* Comment Form */}
       <form onSubmit={handleSubmit} className="relative group pt-10">
-        <div className="absolute -inset-1 bg-gradient-to-r from-slate-200 to-slate-100 rounded-[3rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-        <Card className="relative border-none shadow-2xl rounded-[2.5rem] bg-white ring-1 ring-slate-100 overflow-hidden">
+        <div className="absolute -inset-1 bg-gradient-to-r from-slate-200 to-slate-100 rounded-[0.1rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+        <Card className="relative border-none shadow-2xl rounded-[0.1rem] bg-white ring-1 ring-slate-100 overflow-hidden">
           <CardContent className="p-8 space-y-4">
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="secondary" className="px-3 py-1 rounded-lg bg-slate-900 text-white font-black hover:bg-slate-900">댓글</Badge>
@@ -190,7 +190,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
               <Button
                 type="submit"
                 disabled={submitting || !commentCn.trim()}
-                className="h-14 px-8 rounded-2xl bg-slate-900 hover:bg-black text-white font-black shadow-xl shadow-slate-200 flex gap-2 active:scale-95 transition-all"
+                className="h-14 px-8 rounded-[0.1rem] bg-slate-900 hover:bg-black text-white font-black shadow-xl shadow-slate-200 flex gap-2 active:scale-95 transition-all"
               >
                 <Send className="w-4 h-4" /> 게시하기
               </Button>

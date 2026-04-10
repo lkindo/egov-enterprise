@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -158,7 +158,7 @@ export default function LogDashboardPage() {
         icon={History}
         actions={
           <div className="flex gap-4">
-            <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest gap-3">
+            <Button variant="outline" size="lg" className="h-14 px-8 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest gap-3">
               <SearchCode size={18} /> 상세 로그 검색
             </Button>
           </div>
@@ -174,20 +174,20 @@ export default function LogDashboardPage() {
 
       <div className="grid grid-cols-12 gap-12">
         <div className="col-span-12 lg:col-span-3">
-          <div className="rounded-[3.5rem] bg-white border-2 border-slate-100 shadow-xl p-4 flex flex-col gap-3" id="log-categories">
+          <div className="rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-xl p-4 flex flex-col gap-3" id="log-categories">
             {logCategories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setCategory(cat.id)}
                 className={cn(
-                  "w-full group p-6 rounded-[2.5rem] border-2 transition-all flex items-center gap-5 relative overflow-hidden",
+                  "w-full group p-6 rounded-[0.1rem] border-2 transition-all flex items-center gap-5 relative overflow-hidden",
                   activeCategory === cat.id
                     ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
                     : "bg-transparent border-transparent hover:bg-slate-100 text-slate-400 hover:text-slate-900"
                 )}
               >
                 <div className={cn(
-                  "w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-lg",
+                  "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition-all shadow-lg",
                   activeCategory === cat.id ? "bg-white/10 text-white" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white"
                 )}>
                   {cat.icon}
@@ -239,9 +239,9 @@ export default function LogDashboardPage() {
         maxWidth="2xl"
       >
         <div className="p-8 space-y-8 font-sans text-left">
-          <div className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border-2 border-slate-100">
+          <div className="flex items-center justify-between p-6 bg-slate-50 rounded-[0.1rem] border-2 border-slate-100">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl">
+              <div className="w-12 h-12 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white shadow-xl">
                 <Terminal size={22} />
               </div>
               <div className="text-left">
@@ -254,7 +254,7 @@ export default function LogDashboardPage() {
 
           <div className="space-y-4">
             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2 italic">Raw Architecture Payload</h4>
-            <div className="p-10 rounded-[2.5rem] bg-slate-900 text-emerald-400 font-mono text-[11px] overflow-auto shadow-2xl relative group max-h-[400px]">
+            <div className="p-10 rounded-[0.1rem] bg-slate-900 text-emerald-400 font-mono text-[11px] overflow-auto shadow-2xl relative group max-h-[400px]">
               <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-100 transition-opacity">
                 <Zap size={20} className="animate-pulse" />
               </div>
@@ -266,7 +266,7 @@ export default function LogDashboardPage() {
             <button 
                 type="button"
                 onClick={() => setSelectedLog(null)} 
-                className="flex-1 h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl"
+                className="flex-1 h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl"
             >
               CLOSE_INSPECTOR
             </button>

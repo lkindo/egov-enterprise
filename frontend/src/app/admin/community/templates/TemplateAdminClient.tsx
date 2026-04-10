@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -140,13 +140,13 @@ export default function TemplateAdminClient({
                         <Button
                             onClick={handleRefresh}
                             variant="outline"
-                            className="h-14 w-14 rounded-2xl border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95"
+                            className="h-14 w-14 rounded-[0.1rem] border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95"
                         >
                             <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
                         </Button>
                         <Button
                             onClick={() => setIsAddOpen(true)}
-                            className="h-14 px-8 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic"
+                            className="h-14 px-8 bg-slate-900 text-white rounded-[0.1rem] font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic"
                         >
                             <Plus size={18} />
                             신규 블루프린트
@@ -157,7 +157,7 @@ export default function TemplateAdminClient({
 
             <div className="responsive-card p-6 md:p-12 border-2 border-slate-100 bg-white/50 backdrop-blur-xl relative overflow-hidden group">
                 <div className="flex items-center gap-4 mb-12">
-                    <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg">
+                    <div className="w-12 h-12 bg-slate-900 text-white rounded-[0.1rem] flex items-center justify-center shadow-lg">
                         <FileCode size={24} />
                     </div>
                     <div>
@@ -172,15 +172,15 @@ export default function TemplateAdminClient({
                         data={templates}
                         loading={loading}
                         emptyMessage="시스템에 등록된 템플릿이 없습니다."
-                        className="border-none bg-slate-50/50 rounded-[3rem] p-8"
+                        className="border-none bg-slate-50/50 rounded-[0.1rem] p-8"
                     />
                 </div>
             </div>
 
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                <DialogContent className="sm:max-w-[500px] rounded-[3rem] p-10 border-none shadow-2xl bg-white">
+                <DialogContent className="sm:max-w-[500px] rounded-[0.1rem] p-10 border-none shadow-2xl bg-white">
                     <DialogHeader className="space-y-4">
-                        <div className="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
+                        <div className="w-16 h-16 bg-primary text-white rounded-[0.1rem] flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
                             <Plus size={28} />
                         </div>
                         <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter italic text-center">신규 블루프린트 등록</DialogTitle>
@@ -196,7 +196,7 @@ export default function TemplateAdminClient({
                                 placeholder="템플릿 명..."
                                 value={newTemplate.tmplatNm}
                                 onChange={(e) => setNewTemplate(prev => ({ ...prev, tmplatNm: e.target.value }))}
-                                className="h-16 px-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black italic focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                                className="h-16 px-8 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-lg font-black italic focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                             />
                         </div>
 
@@ -207,10 +207,10 @@ export default function TemplateAdminClient({
                                     value={newTemplate.tmplatSeCode}
                                     onValueChange={(v) => setNewTemplate(prev => ({ ...prev, tmplatSeCode: v }))}
                                 >
-                                    <SelectTrigger className="h-16 rounded-3xl border-2 border-slate-100 bg-slate-50/50 font-black text-[10px] tracking-tight italic focus:bg-white">
+                                    <SelectTrigger className="h-16 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-black text-[10px] tracking-tight italic focus:bg-white">
                                         <SelectValue placeholder="카테고리 선택" />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-none shadow-2xl">
+                                    <SelectContent className="rounded-[0.1rem] border-none shadow-2xl">
                                         <SelectItem value="TMPT01" className="font-black text-[10px] tracking-tight italic">게시판</SelectItem>
                                         <SelectItem value="TMPT02" className="font-black text-[10px] tracking-tight italic">커뮤니티</SelectItem>
                                         <SelectItem value="TMPT03" className="font-black text-[10px] tracking-tight italic">일반</SelectItem>
@@ -223,10 +223,10 @@ export default function TemplateAdminClient({
                                     value={newTemplate.useAt}
                                     onValueChange={(v) => setNewTemplate(prev => ({ ...prev, useAt: v }))}
                                 >
-                                    <SelectTrigger className="h-16 rounded-3xl border-2 border-slate-100 bg-slate-50/50 font-black text-[10px] tracking-tight italic focus:bg-white">
+                                    <SelectTrigger className="h-16 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-black text-[10px] tracking-tight italic focus:bg-white">
                                         <SelectValue placeholder="상태 선택" />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-none shadow-2xl">
+                                    <SelectContent className="rounded-[0.1rem] border-none shadow-2xl">
                                         <SelectItem value="Y" className="font-black text-[10px] tracking-tight italic">활성</SelectItem>
                                         <SelectItem value="N" className="font-black text-[10px] tracking-tight italic">비활성</SelectItem>
                                     </SelectContent>
@@ -242,7 +242,7 @@ export default function TemplateAdminClient({
                                     placeholder="/src/templates/..."
                                     value={newTemplate.tmplatCours}
                                     onChange={(e) => setNewTemplate(prev => ({ ...prev, tmplatCours: e.target.value }))}
-                                    className="h-16 pl-16 pr-8 rounded-3xl border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                                    className="h-16 pl-16 pr-8 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                                 />
                             </div>
                         </div>
@@ -252,14 +252,14 @@ export default function TemplateAdminClient({
                         <Button
                             variant="outline"
                             onClick={() => setIsAddOpen(false)}
-                            className="h-16 px-10 rounded-2xl border-2 border-slate-100 font-black text-sm tracking-tight italic hover:bg-slate-50 transition-all"
+                            className="h-16 px-10 rounded-[0.1rem] border-2 border-slate-100 font-black text-sm tracking-tight italic hover:bg-slate-50 transition-all"
                         >
                             취소
                         </Button>
                         <Button
                             onClick={handleAdd}
                             disabled={loading}
-                            className="h-16 px-14 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic flex-1"
+                            className="h-16 px-14 bg-slate-900 text-white rounded-[0.1rem] font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 italic flex-1"
                         >
                             {loading ? <RefreshCcw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
                             등록 승인

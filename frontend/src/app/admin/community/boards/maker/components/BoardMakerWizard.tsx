@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -219,7 +219,7 @@ export function BoardMakerWizard() {
 
   if (isSuccess) {
     return (
-      <Card className="max-w-3xl mx-auto border-none shadow-2xl rounded-[3.5rem] overflow-hidden bg-white mt-10">
+      <Card className="max-w-3xl mx-auto border-none shadow-2xl rounded-[0.1rem] overflow-hidden bg-white mt-10">
         <CardContent className="p-20 flex flex-col items-center text-center gap-10">
           <div className="w-32 h-32 rounded-full bg-green-500 flex items-center justify-center text-white animate-bounce-short">
             <Check size={64} strokeWidth={4} />
@@ -233,14 +233,14 @@ export function BoardMakerWizard() {
           <div className="flex flex-col gap-4 w-full max-w-sm">
             <Button
               onClick={() => router.push('/admin/community/boards/master')}
-              className="h-16 rounded-2xl bg-primary text-xl font-black hover:scale-105 transition-all shadow-xl shadow-primary/20 italic tracking-tighter"
+              className="h-16 rounded-[0.1rem] bg-primary text-xl font-black hover:scale-105 transition-all shadow-xl shadow-primary/20 italic tracking-tighter"
             >
               게시판 목록 보기
             </Button>
             <Button
               variant="ghost"
               onClick={() => window.location.reload()}
-              className="h-14 rounded-2xl text-slate-400 font-bold hover:text-primary transition-colors"
+              className="h-14 rounded-[0.1rem] text-slate-400 font-bold hover:text-primary transition-colors"
             >
               다른 게시판 추가하기
             </Button>
@@ -264,7 +264,7 @@ export function BoardMakerWizard() {
             <div key={step.id} className="relative z-10 flex flex-col items-center gap-3">
               <div
                 className={cn(
-                  "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 border-4",
+                  "w-14 h-14 rounded-[0.1rem] flex items-center justify-center transition-all duration-500 border-4",
                   isActive ? "bg-primary border-primary text-white shadow-xl shadow-primary/30 scale-110" :
                     isCompleted ? "bg-green-500 border-green-500 text-white" :
                       "bg-white border-slate-200 text-slate-400"
@@ -286,7 +286,7 @@ export function BoardMakerWizard() {
       </div>
 
       {/* Main Content Card */}
-      <Card className="border-none shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-[3rem] overflow-hidden bg-white/80 backdrop-blur-xl ring-1 ring-slate-200/50">
+      <Card className="border-none shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-[0.1rem] overflow-hidden bg-white/80 backdrop-blur-xl ring-1 ring-slate-200/50">
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardHeader className="bg-slate-900 p-12 text-white relative">
             <div className="space-y-2 relative z-10 text-left">
@@ -322,7 +322,7 @@ export function BoardMakerWizard() {
                         id="bbsNm"
                         placeholder="예) 사내 소식 공유 게시판"
                         className={cn(
-                          "h-16 text-xl rounded-2xl border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm",
+                          "h-16 text-xl rounded-[0.1rem] border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm",
                           errors.bbsNm ? "border-red-500 bg-red-50/10" : "border-slate-100 bg-slate-50/50"
                         )}
                         {...register('bbsNm')}
@@ -338,13 +338,13 @@ export function BoardMakerWizard() {
                       <Textarea
                         id="bbsIntrcn"
                         placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요."
-                        className="min-h-[140px] text-lg rounded-3xl border-2 border-slate-100 bg-slate-50/50 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm text-left"
+                        className="min-h-[140px] text-lg rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm text-left"
                         {...register('bbsIntrcn')}
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-                      <div className="flex items-center justify-between p-8 rounded-[2rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all text-left">
+                      <div className="flex items-center justify-between p-8 rounded-[0.1rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all text-left">
                         <div className="space-y-1 text-left">
                           <Label className="text-lg font-black text-slate-800 flex items-center gap-2">
                             댓글 사용 여부
@@ -359,7 +359,7 @@ export function BoardMakerWizard() {
                         />
                       </div>
 
-                      <div className="flex items-center justify-between p-8 rounded-[2rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all text-left">
+                      <div className="flex items-center justify-between p-8 rounded-[0.1rem] border-2 border-slate-50 bg-slate-50/30 group hover:border-primary/20 transition-all text-left">
                         <div className="space-y-1 text-left">
                           <Label className="text-lg font-black text-slate-800 flex items-center gap-2">
                             파일 첨부 여부
@@ -397,12 +397,12 @@ export function BoardMakerWizard() {
                                 setValue('bbsTyCode', tpl.typeCode);
                               }}
                               className={cn(
-                                "group relative p-8 rounded-[2.5rem] border-2 transition-all duration-500 cursor-pointer flex items-center gap-6",
+                                "group relative p-8 rounded-[0.1rem] border-2 transition-all duration-500 cursor-pointer flex items-center gap-6",
                                 isSelected ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-xl" : "border-slate-50 bg-slate-50/30 hover:border-slate-200"
                               )}
                             >
                               <div className={cn(
-                                "w-16 h-16 rounded-2xl flex items-center justify-center text-white transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg",
+                                "w-16 h-16 rounded-[0.1rem] flex items-center justify-center text-white transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg",
                                 tpl.color
                               )}>
                                 <Icon size={32} />
@@ -427,7 +427,7 @@ export function BoardMakerWizard() {
                           );
                         })}
                       </div>
-                      <div className="p-8 bg-slate-900 rounded-[2.5rem] text-white/40 font-mono text-[10px] tracking-widest leading-relaxed text-left">
+                      <div className="p-8 bg-slate-900 rounded-[0.1rem] text-white/40 font-mono text-[10px] tracking-widest leading-relaxed text-left">
                         디자인 최적화 활성 <br />
                         UI 렌더링 모드: 고해상도 <br />
                         템플릿 ID: {selectedTemplate}
@@ -449,7 +449,7 @@ export function BoardMakerWizard() {
 
                 {currentStep === 3 && (
                   <div className="space-y-8 text-left">
-                    <div className="rounded-[2.5rem] border-2 border-slate-50 overflow-hidden shadow-inner bg-slate-50/30">
+                    <div className="rounded-[0.1rem] border-2 border-slate-50 overflow-hidden shadow-inner bg-slate-50/30">
                       <div className="overflow-x-auto">
                         <table className="w-full min-w-[800px]">
                           <thead>
@@ -469,7 +469,7 @@ export function BoardMakerWizard() {
                                 <tr key={role.id} className="group hover:bg-white transition-colors">
                                   <td className="p-8">
                                     <div className="flex items-center gap-4 text-left">
-                                      <div className={cn("p-3 rounded-2xl bg-white shadow-sm border border-slate-100 shadow-inner-sm", role.color)}>
+                                      <div className={cn("p-3 rounded-[0.1rem] bg-white shadow-sm border border-slate-100 shadow-inner-sm", role.color)}>
                                         <RoleIcon size={24} />
                                       </div>
                                       <div className="text-left">
@@ -503,7 +503,7 @@ export function BoardMakerWizard() {
                       </div>
                     </div>
 
-                    <div className="p-8 bg-amber-50 rounded-[2rem] border-2 border-amber-100 flex items-start gap-4 shadow-sm text-left">
+                    <div className="p-8 bg-amber-50 rounded-[0.1rem] border-2 border-amber-100 flex items-start gap-4 shadow-sm text-left">
                       <Info className="w-8 h-8 text-amber-500 shrink-0" />
                       <div className="text-left">
                         <p className="font-black text-amber-900 text-lg text-left">보안 정책 안내</p>
@@ -521,10 +521,10 @@ export function BoardMakerWizard() {
                         상위 메뉴 선택
                       </Label>
                       <Select value={watch('upperMenuNo')} onValueChange={(val) => setValue('upperMenuNo', val)}>
-                        <SelectTrigger className="h-20 rounded-3xl border-2 border-slate-100 bg-slate-50/50 px-8 text-xl font-black shadow-inner-sm text-left">
+                        <SelectTrigger className="h-20 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 px-8 text-xl font-black shadow-inner-sm text-left">
                           <SelectValue placeholder="상위 메뉴를 선택하세요" className="text-left" />
                         </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-none shadow-2xl">
+                        <SelectContent className="rounded-[0.1rem] border-none shadow-2xl">
                           <SelectItem value="2000000" className="py-4 text-lg font-bold">작업 커뮤니티 및 콘텐츠</SelectItem>
                           <SelectItem value="2030000" className="py-4 text-lg font-bold">정보섹션 및 사용자지원</SelectItem>
                           <SelectItem value="0" className="py-4 text-lg font-bold">ROOT (최상위 메뉴)</SelectItem>
@@ -539,7 +539,7 @@ export function BoardMakerWizard() {
                         </Label>
                         <Input
                           placeholder="메뉴에 표시될 이름을 입력하세요"
-                          className="h-16 text-lg rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm text-left"
+                          className="h-16 text-lg rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm text-left"
                           {...register('menuNm')}
                         />
                       </div>
@@ -549,13 +549,13 @@ export function BoardMakerWizard() {
                         </Label>
                         <Input
                           type="number"
-                          className="h-16 text-lg rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm text-left"
+                          className="h-16 text-lg rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 px-6 font-bold shadow-inner-sm text-left"
                           {...register('menuOrdr', { valueAsNumber: true })}
                         />
                       </div>
                     </div>
 
-                    <div className="p-10 rounded-[3rem] bg-slate-900 text-white flex items-center justify-between group overflow-hidden relative text-left">
+                    <div className="p-10 rounded-[0.1rem] bg-slate-900 text-white flex items-center justify-between group overflow-hidden relative text-left">
                       <div className="space-y-2 relative z-10 text-left">
                         <p className="text-primary font-black tracking-widest text-[10px] uppercase text-left">Generated Path</p>
                         <h5 className="text-2xl font-black tracking-tight flex items-center gap-3 text-left">
@@ -581,7 +581,7 @@ export function BoardMakerWizard() {
               size="lg"
               onClick={prevStep}
               disabled={currentStep === 1 || isSubmitting}
-              className="h-16 px-10 rounded-2xl font-black text-slate-600 hover:bg-white hover:text-slate-950 transition-all disabled:opacity-0 flex items-center gap-3 tracking-tighter"
+              className="h-16 px-10 rounded-[0.1rem] font-black text-slate-600 hover:bg-white hover:text-slate-950 transition-all disabled:opacity-0 flex items-center gap-3 tracking-tighter"
             >
               <ChevronLeft className="w-6 h-6" /> 이전 단계
             </Button>
@@ -591,7 +591,7 @@ export function BoardMakerWizard() {
               size="lg"
               disabled={isSubmitting}
               className={cn(
-                "h-16 px-12 rounded-2xl font-black text-xl shadow-xl transition-all text-white min-w-[220px] tracking-tighter",
+                "h-16 px-12 rounded-[0.1rem] font-black text-xl shadow-xl transition-all text-white min-w-[220px] tracking-tighter",
                 currentStep === STEPS.length ? "bg-primary shadow-primary/30 hover:scale-105" : "bg-slate-900 hover:bg-slate-800"
               )}
             >

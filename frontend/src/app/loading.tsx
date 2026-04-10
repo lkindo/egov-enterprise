@@ -1,4 +1,4 @@
-export default function GlobalLoading() {
+﻿export default function GlobalLoading() {
  return (
  <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-md transition-all duration-500">
  <div className="relative">
@@ -8,7 +8,7 @@ export default function GlobalLoading() {
 
  {/* Center Logo/Icon */}
  <div className="absolute inset-0 flex items-center justify-center">
- <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/40 rotate-12 animate-bounce">
+ <div className="w-10 h-10 bg-primary rounded-[0.1rem] flex items-center justify-center shadow-lg shadow-primary/40 rotate-12 animate-bounce">
  <span className="text-primary-foreground font-black text-sm">eG</span>
  </div>
  </div>

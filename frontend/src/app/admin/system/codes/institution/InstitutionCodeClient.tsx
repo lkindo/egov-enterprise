@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -105,7 +105,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
       header: '기관 식별자', 
       accessor: (item: InstitutionCode) => (
         <div className="flex items-center gap-4 py-3">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-[0.1rem] bg-primary flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
             <Building2 size={20} />
           </div>
           <div>
@@ -220,7 +220,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
         item.processSe !== '1' && (
           <Button 
             onClick={() => handleProcess(item)}
-            className="h-10 px-6 rounded-xl bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition-all gap-2"
+            className="h-10 px-6 rounded-[0.1rem] bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition-all gap-2"
           >
             <MonitorCheck size={14} /> 반영 적용
           </Button>
@@ -238,11 +238,11 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             <h4 className="text-3xl font-black tracking-tighter text-foreground uppercase">{activeTab === 'list' ? '기관 마스터 리스트' : '동기화 파이프라인'}</h4>
             <p className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">{activeTab === 'list' ? '활성 노드 인벤토리 및 식별 체계 관리' : '실시간 데이터 수집 및 충돌 해결'}</p>
         </div>
-        <div className="flex bg-slate-100/80 backdrop-blur-md p-2 rounded-2xl border border-slate-200/50 shadow-inner">
+        <div className="flex bg-slate-100/80 backdrop-blur-md p-2 rounded-[0.1rem] border border-slate-200/50 shadow-inner">
             <button 
                 onClick={() => setActiveTab('list')}
                 className={cn(
-                    "px-8 h-12 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
+                    "px-8 h-12 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
                     activeTab === 'list' ? "bg-white text-slate-900 shadow-xl ring-1 ring-slate-100" : "text-muted-foreground hover:bg-white/50"
                 )}>
                 <Server size={14} /> 노드 인벤토리
@@ -250,7 +250,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             <button 
                 onClick={() => setActiveTab('reception')}
                 className={cn(
-                    "px-8 h-12 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
+                    "px-8 h-12 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
                     activeTab === 'reception' ? "bg-white text-slate-900 shadow-xl ring-1 ring-slate-100" : "text-muted-foreground hover:bg-white/50"
                 )}>
                 <History size={14} /> 수신 파이프라인
@@ -283,11 +283,11 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
                         activeTab === 'list' ? loadListData(searchWrd, 1) : loadReceptionData(searchWrd, 1);
                     }
                   }}
-                  className="h-16 pl-16 pr-8 w-full bg-slate-50/50 border-none rounded-[1.25rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                  className="h-16 pl-16 pr-8 w-full bg-slate-50/50 border-none rounded-[0.1rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                 />
             </div>
           </div>
-          <Button variant="outline" size="lg" className="h-16 px-10 rounded-[1.25rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2 hover:bg-slate-50 transition-all group">
+          <Button variant="outline" size="lg" className="h-16 px-10 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2 hover:bg-slate-50 transition-all group">
             <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 데이터 내보내기
           </Button>
         </div>

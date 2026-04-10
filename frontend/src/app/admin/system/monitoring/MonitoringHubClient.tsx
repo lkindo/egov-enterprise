@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -136,7 +136,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       accessor: (log) => (
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
-            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
+            "w-12 h-12 rounded-[0.1rem] flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
             selectedItemId === log.histId ? "bg-white/10 text-white" : "bg-primary/5 text-primary"
           )}>
             <ShieldAlert size={20} />
@@ -159,7 +159,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       accessor: (log) => (
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
-            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
+            "w-12 h-12 rounded-[0.1rem] flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
             selectedItemId === log.requstId ? "bg-white/10 text-white" : "bg-emerald-50 text-emerald-600"
           )}>
             <Terminal size={20} />
@@ -182,7 +182,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       accessor: (log) => (
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
-            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
+            "w-12 h-12 rounded-[0.1rem] flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
             selectedItemId === log.logId ? "bg-white/10 text-white" : "bg-amber-50 text-amber-600"
           )}>
             <LogIn size={20} />
@@ -205,7 +205,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       accessor: (c) => (
         <div className="flex items-center gap-5 py-2 w-full pr-4">
           <div className={cn(
-            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
+            "w-12 h-12 rounded-[0.1rem] flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
             selectedItemId === c.commentNo ? "bg-white/10 text-white" : "bg-indigo-50 text-indigo-600"
           )}>
             <MessageSquare size={20} />
@@ -219,7 +219,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 variant="ghost" 
                 size="icon" 
                 onClick={(e) => { e.stopPropagation(); deleteCommentMutation.mutate(c.commentNo); }} 
-                className="text-white bg-rose-500/20 hover:bg-rose-500/40 rounded-xl transition-all relative z-10 shrink-0 h-10 w-10"
+                className="text-white bg-rose-500/20 hover:bg-rose-500/40 rounded-[0.1rem] transition-all relative z-10 shrink-0 h-10 w-10"
             >
               <Trash2 size={16} />
             </Button>
@@ -261,7 +261,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
          ]}
       />
 
-      <div className="rounded-[3rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group border-none">
+      <div className="rounded-[0.1rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group border-none">
         <div className="absolute top-0 right-0 p-16 opacity-10 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
           <Zap size={200} className="text-primary" />
         </div>
@@ -298,11 +298,11 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 variant="outline" 
                 size="lg" 
                 onClick={() => setIsReportModalOpen(true)}
-                className="h-14 px-8 rounded-2xl border-2 font-black text-[10px] tracking-widest uppercase gap-3 hover:bg-slate-50 transition-all shadow-sm group"
+                className="h-14 px-8 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-3 hover:bg-slate-50 transition-all shadow-sm group"
             >
               <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 리포트 스냅샷
             </Button>
-            <Button size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
+            <Button size="lg" className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
               <Bell size={20} /> 알림 정책
             </Button>
           </div>
@@ -312,7 +312,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       <div className="grid grid-cols-12 gap-12 px-2 min-h-[900px]">
         {/* --- Navigation Side Panel --- */}
         <div className="col-span-12 lg:col-span-3 space-y-8 h-fit lg:sticky lg:top-8">
-          <div className="rounded-[3rem] p-4 bg-white/40 backdrop-blur-xl border-2 border-slate-100 shadow-xl space-y-3">
+          <div className="rounded-[0.1rem] p-4 bg-white/40 backdrop-blur-xl border-2 border-slate-100 shadow-xl space-y-3">
             <NavButton icon={<ShieldAlert size={22} />} label="보안 감사 매트릭스" active={activeTab === 'SECURITY'} onClick={() => { setActiveTab('SECURITY'); setSelectedItemId(null); }} />
             <NavButton icon={<Terminal size={22} />} label="시스템 로그 엔진" active={activeTab === 'SYSTEM'} onClick={() => { setActiveTab('SYSTEM'); setSelectedItemId(null); }} />
             <NavButton icon={<LogIn size={22} />} label="인증 접속 히스토리" active={activeTab === 'LOGIN'} onClick={() => { setActiveTab('LOGIN'); setSelectedItemId(null); }} />
@@ -321,8 +321,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             <NavButton icon={<MessageSquare size={22} />} label="서비스 피드백 관리" active={activeTab === 'COMMENTS'} onClick={() => { setActiveTab('COMMENTS'); setSelectedItemId(null); }} />
           </div>
 
-          <div className="bg-slate-900 text-white rounded-[3rem] p-10 space-y-6 text-center shadow-2xl relative overflow-hidden flex flex-col items-center">
-            <div className="w-20 h-20 bg-white/10 rounded-[2rem] flex items-center justify-center border border-white/5 shadow-inner transition-transform hover:rotate-12 duration-500">
+          <div className="bg-slate-900 text-white rounded-[0.1rem] p-10 space-y-6 text-center shadow-2xl relative overflow-hidden flex flex-col items-center">
+            <div className="w-20 h-20 bg-white/10 rounded-[0.1rem] flex items-center justify-center border border-white/5 shadow-inner transition-transform hover:rotate-12 duration-500">
               <ShieldCheck size={40} className="text-primary" />
             </div>
             <div className="space-y-2">
@@ -337,7 +337,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
         {/* --- Central Intelligence Stream --- */}
         <div className="col-span-12 lg:col-span-5 flex flex-col gap-8 h-full">
-          <div className="rounded-[3.5rem] bg-white border-2 border-slate-100 shadow-2xl flex-1 flex flex-col p-12 space-y-10 relative overflow-hidden">
+          <div className="rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-2xl flex-1 flex flex-col p-12 space-y-10 relative overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-100 pb-8 relative z-10">
               <div className="space-y-1">
                 <h3 className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">데이터 스트림</h3>
@@ -347,7 +347,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 variant="ghost" 
                 size="icon" 
                 onClick={() => queryClient.invalidateQueries()} 
-                className="h-14 w-14 rounded-2xl bg-slate-50 hover:bg-primary hover:text-white transition-all shadow-inner group"
+                className="h-14 w-14 rounded-[0.1rem] bg-slate-50 hover:bg-primary hover:text-white transition-all shadow-inner group"
               >
                 <RefreshCcw size={20} className="group-active:rotate-180 transition-transform duration-500" />
               </Button>
@@ -357,7 +357,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               <div className="relative group/search relative z-10">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                 <Input 
-                  className="pl-16 h-16 bg-slate-50 border-none rounded-[1.25rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/30" 
+                  className="pl-16 h-16 bg-slate-50 border-none rounded-[0.1rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/30" 
                   placeholder="로그 객체 필터링.." 
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -410,7 +410,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 transition={{ duration: 0.6, ease: "backOut" }}
                 className="h-full"
               >
-                <div className="rounded-[3.5rem] bg-white border-2 border-slate-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] h-full p-14 space-y-12 flex flex-col relative overflow-hidden">
+                <div className="rounded-[0.1rem] bg-white border-2 border-slate-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] h-full p-14 space-y-12 flex flex-col relative overflow-hidden">
                   <div className="border-b border-slate-100 pb-12 relative z-10">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/40" />
@@ -421,7 +421,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   </div>
                   
                   <div className="flex-1 space-y-8 overflow-y-auto pr-4 custom-scrollbar relative z-10">
-                    <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] shadow-inner relative overflow-hidden group">
+                    <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-[0.1rem] shadow-inner relative overflow-hidden group">
                       <pre className="text-[11px] font-mono whitespace-pre-wrap break-all text-slate-700 leading-relaxed font-black relative z-10 italic">
                         {JSON.stringify(selectedItem, null, 2)}
                       </pre>
@@ -433,7 +433,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                        <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase">결정 매트릭스</span>
                        <Activity size={20} className="text-primary animate-pulse" />
                     </div>
-                    <Button className="w-full h-18 bg-slate-900 text-white rounded-[1.5rem] font-black tracking-[0.4em] text-[11px] shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 uppercase group overflow-hidden">
+                    <Button className="w-full h-18 bg-slate-900 text-white rounded-[0.1rem] font-black tracking-[0.4em] text-[11px] shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 uppercase group overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                       유지보수 파이프라인 실행
                     </Button>
@@ -443,8 +443,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 </div>
               </motion.div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-40 select-none grayscale rounded-[3.5rem] border-4 border-dashed border-slate-100 bg-slate-50/50 group transition-all hover:bg-white hover:border-primary/20 duration-1000">
-                <div className="w-24 h-24 rounded-3xl bg-white border-2 border-slate-100 flex items-center justify-center mb-10 shadow-xl group-hover:rotate-12 transition-transform duration-700">
+              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-40 select-none grayscale rounded-[0.1rem] border-4 border-dashed border-slate-100 bg-slate-50/50 group transition-all hover:bg-white hover:border-primary/20 duration-1000">
+                <div className="w-24 h-24 rounded-[0.1rem] bg-white border-2 border-slate-100 flex items-center justify-center mb-10 shadow-xl group-hover:rotate-12 transition-transform duration-700">
                     <Activity size={100} className="text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all" />
                 </div>
                 <h3 className="text-4xl font-black text-foreground tracking-tighter uppercase mb-4">인텔리전스 대기 중</h3>
@@ -470,7 +470,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                </div>
             </div>
 
-            <div className="p-8 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100 space-y-4">
+            <div className="p-8 bg-slate-50 rounded-[0.1rem] border-2 border-slate-100 space-y-4">
                <div className="flex items-center justify-between">
                   <span className="text-[11px] font-black text-slate-800 uppercase italic">Reconciliation Range</span>
                   <span className="text-[10px] font-bold text-primary px-3 py-1 bg-primary/10 rounded-full">LAST_24_HOURS</span>
@@ -482,7 +482,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             </div>
 
             <div className="flex gap-4">
-               <Button onClick={() => setIsReportModalOpen(false)} className="flex-1 h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all">
+               <Button onClick={() => setIsReportModalOpen(false)} className="flex-1 h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all">
                   INITIALIZE_GENERATION
                </Button>
             </div>
@@ -494,8 +494,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
 function ReportOption({ icon, title, description }: any) {
   return (
-    <div className="flex items-center gap-5 p-6 rounded-3xl border-2 border-slate-100 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer group">
-       <div className="w-12 h-12 rounded-2xl bg-white shadow-md flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
+    <div className="flex items-center gap-5 p-6 rounded-[0.1rem] border-2 border-slate-100 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer group">
+       <div className="w-12 h-12 rounded-[0.1rem] bg-white shadow-md flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
           {icon}
        </div>
        <div>
@@ -512,14 +512,14 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
     <button 
       onClick={onClick}
       className={cn(
-        "w-full group p-5 rounded-[1.5rem] border-2 transition-all flex items-center gap-6",
+        "w-full group p-5 rounded-[0.1rem] border-2 transition-all flex items-center gap-6",
         active 
           ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10 shadow-slate-200" 
           : "bg-transparent border-transparent hover:bg-white hover:border-slate-100 text-slate-400 hover:text-slate-900"
       )}
     >
       <div className={cn(
-        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg",
+        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all shadow-lg",
         active ? "bg-white/10 text-white" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white"
       )}>
         {icon}
@@ -531,7 +531,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
 
 function StatusIndicator({ label, status, icon: Icon }: { label: string, status: string, icon: any }) {
   return (
-    <div className="p-8 rounded-3xl bg-white/5 border border-white/5 space-y-6 group hover:bg-white/10 transition-colors">
+    <div className="p-8 rounded-[0.1rem] bg-white/5 border border-white/5 space-y-6 group hover:bg-white/10 transition-colors">
       <div className="flex items-center justify-between">
           <p className="text-[10px] font-black text-white/20 tracking-[0.3em] uppercase">{label}</p>
           <Icon size={16} className="text-white/20 group-hover:text-primary transition-colors" />

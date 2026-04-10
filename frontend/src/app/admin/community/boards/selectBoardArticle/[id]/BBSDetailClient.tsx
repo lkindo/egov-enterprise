@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, Suspense, useActionState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -62,7 +62,7 @@ const InsertBBSContent = () => {
         ]}
       />
 
-      <Card className="shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] border-none overflow-hidden rounded-[3.5rem] bg-card ring-1 ring-primary/5">
+      <Card className="shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] border-none overflow-hidden rounded-[0.1rem] bg-card ring-1 ring-primary/5">
         <CardHeader className="border-b bg-slate-950 pb-20 pt-20 px-12 md:px-20 text-white relative overflow-hidden">
           {/* Background Accents */}
           <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
@@ -88,10 +88,10 @@ const InsertBBSContent = () => {
               </p>
             </div>
             <div className="hidden lg:block relative">
-              <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-primary/20 to-transparent border-2 border-white/10 flex items-center justify-center rotate-12 hover:rotate-0 transition-all duration-700 shadow-2xl">
+              <div className="w-32 h-32 rounded-[0.1rem] bg-gradient-to-br from-primary/20 to-transparent border-2 border-white/10 flex items-center justify-center rotate-12 hover:rotate-0 transition-all duration-700 shadow-2xl">
                 <MessageSquare className="w-12 h-12 text-white/40" />
               </div>
-              <div className="absolute -top-4 -right-4 w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-xl animate-bounce duration-[2000ms]">
+              <div className="absolute -top-4 -right-4 w-12 h-12 rounded-[0.1rem] bg-primary flex items-center justify-center shadow-xl animate-bounce duration-[2000ms]">
                 <Send size={20} className="text-white ml-1" />
               </div>
             </div>
@@ -114,7 +114,7 @@ const InsertBBSContent = () => {
                 name="nttSj"
                 placeholder="매력적이고 명확한 제목을 입력하세요"
                 className={cn(
-                  "h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[1.75rem] px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
+                  "h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[0.1rem] px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
                   state?.field === 'nttSj' && "border-rose-500 bg-rose-50"
                 )}
                 required
@@ -135,7 +135,7 @@ const InsertBBSContent = () => {
                   name="nttCn"
                   placeholder="전달하고자 하는 내용을 상세히 작성하세요..."
                   className={cn(
-                    "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[2.5rem] bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
+                    "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[0.1rem] bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
                     state?.field === 'nttCn' && "border-rose-500 bg-rose-50"
                   )}
                   required
@@ -151,7 +151,7 @@ const InsertBBSContent = () => {
               <Label className="text-[11px] font-black tracking-[0.3em] text-muted-foreground flex items-center gap-3">
                 <Paperclip className="w-4 h-4" /> 03. 첨부 파일
               </Label>
-              <div className="p-8 rounded-[2.5rem] border-2 border-dashed border-primary/10 bg-muted/20 hover:border-primary/30 transition-all">
+              <div className="p-8 rounded-[0.1rem] border-2 border-dashed border-primary/10 bg-muted/20 hover:border-primary/30 transition-all">
                 <StandardFileUploader
                   onFilesChange={setFiles}
                   maxFiles={5}
@@ -161,9 +161,9 @@ const InsertBBSContent = () => {
             </div>
 
             {/* Visual Guide / Notice */}
-            <div className="p-10 bg-slate-900 rounded-[3rem] flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group/notice">
+            <div className="p-10 bg-slate-900 rounded-[0.1rem] flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group/notice">
               <div className="absolute right-[-20%] top-[-50%] bg-primary/20 w-[400px] h-[400px] rounded-full blur-[100px] group-hover/notice:bg-primary/30 transition-all duration-1000" />
-              <div className="w-20 h-20 bg-slate-800 rounded-[2.25rem] border border-slate-700 shadow-2xl flex items-center justify-center shrink-0 group-hover/notice:rotate-12 transition-transform">
+              <div className="w-20 h-20 bg-slate-800 rounded-[0.1rem] border border-slate-700 shadow-2xl flex items-center justify-center shrink-0 group-hover/notice:rotate-12 transition-transform">
                 <CheckCircle2 className="w-8 h-8 text-primary" />
               </div>
               <div className="space-y-3 relative z-10 text-center md:text-left">
@@ -180,13 +180,13 @@ const InsertBBSContent = () => {
               type="button"
               variant="ghost"
               onClick={() => router.back()}
-              className="h-20 px-16 font-black tracking-[0.3em] text-sm text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition-all rounded-2xl active:scale-95 border-2 border-transparent"
+              className="h-20 px-16 font-black tracking-[0.3em] text-sm text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition-all rounded-[0.1rem] active:scale-95 border-2 border-transparent"
             >
               <ArrowLeft className="w-5 h-5 mr-4" /> 이전으로
             </Button>
             <Button
               type="submit"
-              className="h-20 px-24 gap-4 font-black tracking-[0.3em] text-sm shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95 ring-[12px] ring-primary/5 rounded-2xl"
+              className="h-20 px-24 gap-4 font-black tracking-[0.3em] text-sm shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95 ring-[12px] ring-primary/5 rounded-[0.1rem]"
               disabled={isPending}
             >
               {isPending ? (

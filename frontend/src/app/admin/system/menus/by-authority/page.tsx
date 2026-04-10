@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -113,7 +113,7 @@ export default function MenuByAuthorityPage() {
         >
           <div
             className={cn(
-                "flex items-center gap-4 py-4 px-6 hover:bg-slate-100 cursor-pointer rounded-2xl transition-all group relative overflow-hidden active:scale-[0.99]",
+                "flex items-center gap-4 py-4 px-6 hover:bg-slate-100 cursor-pointer rounded-[0.1rem] transition-all group relative overflow-hidden active:scale-[0.99]",
                 isExpanded && hasChildren ? "bg-slate-100/50" : ""
             )}
             style={{ paddingLeft: `${depth * 32 + 24}px` }}
@@ -128,7 +128,7 @@ export default function MenuByAuthorityPage() {
             </div>
 
             <div className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 transition-all",
+                "w-10 h-10 rounded-[0.1rem] flex items-center justify-center shadow-sm border border-slate-100 transition-all",
                 hasChildren ? "bg-amber-50 text-amber-500 group-hover:bg-amber-500 group-hover:text-white" : "bg-slate-50 text-slate-400 group-hover:bg-slate-900 group-hover:text-white"
             )}>
                 {hasChildren ? <Folder size={18} /> : <File size={16} />}
@@ -174,11 +174,11 @@ export default function MenuByAuthorityPage() {
             <Button
                 variant="ghost"
                 onClick={() => {}}
-                className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+                className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
             >
                 <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
-            <Button className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
+            <Button className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
                 <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> 권한 인벤토리
             </Button>
           </div>
@@ -199,18 +199,18 @@ export default function MenuByAuthorityPage() {
                     <div className="space-y-4 pt-4">
                         <label className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase ml-2">보안 역할 (Access Role)</label>
                         <Select value={selectedAuthority} onValueChange={setSelectedAuthority}>
-                            <SelectTrigger className="h-16 px-8 rounded-2xl bg-slate-50/50 border-none shadow-inner text-sm font-black tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
+                            <SelectTrigger className="h-16 px-8 rounded-[0.1rem] bg-slate-50/50 border-none shadow-inner text-sm font-black tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
                                 <div className="flex items-center gap-4">
                                      <Fingerprint size={20} className="text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
                                      <SelectValue placeholder="역할을 선택하십시오..." />
                                 </div>
                             </SelectTrigger>
-                            <SelectContent className="rounded-2xl border-none shadow-2xl p-2 bg-slate-900 text-white">
+                            <SelectContent className="rounded-[0.1rem] border-none shadow-2xl p-2 bg-slate-900 text-white">
                                 {authorities.map((auth: AuthorInfo) => (
                                     <SelectItem 
                                         key={auth.authorCode} 
                                         value={auth.authorCode}
-                                        className="rounded-xl h-12 font-black text-[10px] tracking-widest uppercase focus:bg-primary focus:text-white mb-1"
+                                        className="rounded-[0.1rem] h-12 font-black text-[10px] tracking-widest uppercase focus:bg-primary focus:text-white mb-1"
                                     >
                                         {auth.authorNm} ({auth.authorCode})
                                     </SelectItem>
@@ -219,12 +219,12 @@ export default function MenuByAuthorityPage() {
                         </Select>
                     </div>
 
-                    <div className="p-8 rounded-[2.5rem] bg-slate-950 text-white relative overflow-hidden group border-none shadow-2xl min-h-[300px] flex flex-col justify-end">
+                    <div className="p-8 rounded-[0.1rem] bg-slate-950 text-white relative overflow-hidden group border-none shadow-2xl min-h-[300px] flex flex-col justify-end">
                         <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                             <ShieldAlert size={180} className="text-primary" />
                         </div>
                         <div className="relative z-10 space-y-6">
-                            <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 shadow-inner">
+                            <div className="w-14 h-14 bg-white/10 rounded-[0.1rem] flex items-center justify-center border border-white/5 shadow-inner">
                                 <Activity size={28} className="text-primary" />
                             </div>
                             <div className="space-y-3">
@@ -248,7 +248,7 @@ export default function MenuByAuthorityPage() {
                         <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">기능 노드 트리 (Functional Node Tree)</span>
                         <div className="flex items-center gap-4">
                              {isMenuLoading && <Loader2 className="h-6 w-6 animate-spin text-primary opacity-40" />}
-                             <Button variant="ghost" size="sm" className="h-12 rounded-2xl px-6 text-[10px] font-black tracking-widest gap-2 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
+                             <Button variant="ghost" size="sm" className="h-12 rounded-[0.1rem] px-6 text-[10px] font-black tracking-widest gap-2 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
                                   <SearchCode size={16} className="group-hover:rotate-12 transition-transform" /> 노드 검색
                             </Button>
                         </div>
@@ -262,7 +262,7 @@ export default function MenuByAuthorityPage() {
                                     animate={{ opacity: 1 }} 
                                     className="absolute inset-0 flex flex-col items-center justify-center p-24 text-center select-none group"
                                 >
-                                    <div className="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200 shadow-inner mb-8 group-hover:scale-110 transition-transform duration-1000">
+                                    <div className="w-24 h-24 rounded-[0.1rem] bg-slate-50 flex items-center justify-center text-slate-200 shadow-inner mb-8 group-hover:scale-110 transition-transform duration-1000">
                                         <Milestone size={48} className="opacity-20" />
                                     </div>
                                     <h3 className="text-2xl font-black text-slate-300 tracking-tighter uppercase mb-2">권한 미선택</h3>
@@ -292,7 +292,7 @@ export default function MenuByAuthorityPage() {
                                     animate={{ opacity: 1, y: 0 }}
                                     className="space-y-4"
                                 >
-                                    <div className="p-4 rounded-[2.5rem] bg-slate-50/30 border-2 border-slate-100">
+                                    <div className="p-4 rounded-[0.1rem] bg-slate-50/30 border-2 border-slate-100">
                                         {renderMenuTree(menuTree)}
                                     </div>
                                 </motion.div>

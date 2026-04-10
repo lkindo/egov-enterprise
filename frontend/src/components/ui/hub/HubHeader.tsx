@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +49,7 @@ export function HubHeader({
         </div>
       </div>
       {actions && (
-        <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-2xl border border-border/50 shadow-inner">
+        <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-[0.1rem] border border-border/50 shadow-inner">
           {actions}
         </div>
       )}

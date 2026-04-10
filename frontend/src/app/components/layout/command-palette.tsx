@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -106,7 +106,7 @@ export function CommandPalette() {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4 md:px-0 bg-black/80 animate-in fade-in duration-300">
-            <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border shadow-2xl rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border shadow-2xl rounded-[0.1rem] overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* 검색 입력 영역 */}
                 <div className="flex items-center p-6 border-b gap-4">
                     <Search className="text-muted-foreground" size={20} />
@@ -165,7 +165,7 @@ export function CommandPalette() {
                                                     <button
                                                         key={result.id}
                                                         className={cn(
-                                                            "w-full group p-4 rounded-2xl flex items-center justify-between transition-all outline-none border-2 border-transparent",
+                                                            "w-full group p-4 rounded-[0.1rem] flex items-center justify-between transition-all outline-none border-2 border-transparent",
                                                             globalIdx === selectedIndex ? "bg-primary text-primary-foreground shadow-lg scale-[1.01]" : "hover:bg-muted text-foreground"
                                                         )}
                                                         onClick={() => onSelect(result.url)}
@@ -173,7 +173,7 @@ export function CommandPalette() {
                                                     >
                                                         <div className="flex items-center gap-4 text-left">
                                                             <div className={cn(
-                                                                "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                                                                "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition-all",
                                                                 globalIdx === selectedIndex ? "bg-white/20 border-white/10 shadow-inner" : "bg-primary/5 text-primary border border-primary/10"
                                                             )}>
                                                                 {result.icon}

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import {
@@ -112,7 +112,7 @@ export default function AdminDashboardPage() {
             <motion.div 
               whileHover={{ scale: 1.05 }} 
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-950 rounded-xl border border-emerald-200 italic font-black text-[9px] tracking-widest shadow-sm cursor-default"
+              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-950 rounded-[0.1rem] border border-emerald-200 italic font-black text-[9px] tracking-widest shadow-sm cursor-default"
             >
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               시스템 상태: 정상
@@ -122,7 +122,7 @@ export default function AdminDashboardPage() {
               onClick={() => toast.success("시스템 동기화가 성공적으로 시작되었습니다.", {
                 description: "백그라운드에서 지능형 엔진이 최적화를 진행 중입니다."
               })}
-              className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group relative overflow-hidden active:scale-95"
+              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group relative overflow-hidden active:scale-95"
             >
               <motion.div
                 className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity"
@@ -177,10 +177,10 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-8">
+        <div className="lg:col-span-2 p-8 rounded-[0.1rem] bg-card border border-border shadow-sm flex flex-col gap-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-[0.1rem] bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
                 <TrendingUp size={24} />
               </div>
               <div>
@@ -192,10 +192,10 @@ export default function AdminDashboardPage() {
           <ActivityAreaChart data={MOCK_ACTIVITY_DATA} title="최근 7일간 시스템 접속 프로필" color="#6366F1" />
         </div>
 
-        <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-8">
+        <div className="p-8 rounded-[0.1rem] bg-card border border-border shadow-sm flex flex-col gap-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-[0.1rem] bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
                 <Users size={24} />
               </div>
               <div>
@@ -212,10 +212,10 @@ export default function AdminDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm overflow-hidden relative group">
+          <div className="p-8 rounded-[0.1rem] bg-card border border-border shadow-sm overflow-hidden relative group">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                <div className="p-2 bg-primary/10 rounded-[0.1rem] text-primary">
                   <Cpu size={20} />
                 </div>
                 <div>
@@ -241,10 +241,10 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-6">
+            <div className="p-8 rounded-[0.1rem] bg-card border border-border shadow-sm flex flex-col gap-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-muted rounded-xl text-muted-foreground">
+                  <div className="p-2 bg-muted rounded-[0.1rem] text-muted-foreground">
                     <Database size={18} />
                   </div>
                   <span className="text-sm font-bold text-foreground">데이터베이스</span>
@@ -263,10 +263,10 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col gap-6">
+            <div className="p-8 rounded-[0.1rem] bg-card border border-border shadow-sm flex flex-col gap-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-muted rounded-xl text-muted-foreground">
+                  <div className="p-2 bg-muted rounded-[0.1rem] text-muted-foreground">
                     <Globe size={18} />
                   </div>
                   <span className="text-sm font-bold text-foreground">글로벌 지연시간</span>
@@ -289,10 +289,10 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="space-y-8">
-          <div className="p-8 rounded-[3rem] bg-card border border-border shadow-sm flex flex-col h-[600px]">
+          <div className="p-8 rounded-[0.1rem] bg-card border border-border shadow-sm flex flex-col h-[600px]">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-900 rounded-xl text-white shadow-xl">
+                <div className="p-2 bg-slate-900 rounded-[0.1rem] text-white shadow-xl">
                   <Clock size={18} />
                 </div>
                 <h2 className="text-sm font-black text-foreground uppercase tracking-widest leading-none">Audit History</h2>
@@ -305,7 +305,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="mt-8 pt-8 border-t border-border/50">
-              <div className="flex items-center gap-4 p-5 rounded-2xl bg-slate-50 border border-dashed border-slate-200 group hover:bg-slate-900 group-hover:border-slate-800 transition-all cursor-pointer">
+              <div className="flex items-center gap-4 p-5 rounded-[0.1rem] bg-slate-50 border border-dashed border-slate-200 group hover:bg-slate-900 group-hover:border-slate-800 transition-all cursor-pointer">
                 <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors shadow-sm">
                   <AlertCircle size={20} />
                 </div>
@@ -340,13 +340,13 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
             whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            className="p-8 h-full rounded-[2.5rem] bg-white border-2 border-slate-50 shadow-xl hover:border-primary/30 transition-colors cursor-pointer group relative overflow-hidden"
+            className="p-8 h-full rounded-[0.1rem] bg-white border-2 border-slate-50 shadow-xl hover:border-primary/30 transition-colors cursor-pointer group relative overflow-hidden"
           >
             <div className="flex items-center justify-between mb-8">
-              <div className={cn("p-3.5 rounded-2xl border-2 transition-transform group-hover:rotate-6 shadow-inner", colorMap[color])}>
+              <div className={cn("p-3.5 rounded-[0.1rem] border-2 transition-transform group-hover:rotate-6 shadow-inner", colorMap[color])}>
                 {icon}
               </div>
-              <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+              <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-[0.1rem] border border-slate-100">
                 <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{trend}</span>
                 <ArrowUpRight size={14} className="text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </div>
@@ -366,7 +366,7 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
           </motion.div>
         </Link>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+      <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[0.1rem] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
         {title} 상세 페이지로 이동
       </TooltipContent>
     </Tooltip>

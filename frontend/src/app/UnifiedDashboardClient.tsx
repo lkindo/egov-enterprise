@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
@@ -29,7 +29,7 @@ import { DashboardTask } from '@/types/foundation/dashboard';
 
 // Optimization: Priority 2 - Dynamic Imports for heavy components
 const BannerSlider = dynamic(() => import('@/app/components/dashboard/BannerSlider').then(mod => mod.BannerSlider), { 
-  loading: () => <Skeleton className="h-[400px] w-full rounded-[3.5rem]" />,
+  loading: () => <Skeleton className="h-[400px] w-full rounded-[0.1rem]" />,
   ssr: false 
 });
 const PopupManager = dynamic(() => import('@/app/components/dashboard/PopupManager').then(mod => mod.PopupManager), { ssr: false });
@@ -38,13 +38,13 @@ const ActivityFeed = dynamic(() => import('@/app/components/dashboard/ActivityFe
   ssr: false 
 });
 const RealTimeDashboard = dynamic(() => import('@/components/features/dashboard/RealTimeDashboard').then(mod => mod.RealTimeDashboard), {
-  loading: () => <Skeleton className="h-[150px] w-full rounded-[4rem]" />,
+  loading: () => <Skeleton className="h-[150px] w-full rounded-[0.1rem]" />,
   ssr: false
 });
 const DashboardVisitorChart = dynamic(
   () => import('@/app/components/dashboard/DashboardCharts').then((mod) => mod.DashboardVisitorChart),
   {
-    loading: () => <Skeleton className="h-[300px] w-full rounded-xl" />,
+    loading: () => <Skeleton className="h-[300px] w-full rounded-[0.1rem]" />,
     ssr: false,
   }
 );
@@ -112,7 +112,7 @@ export default function UnifiedDashboardClient({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => router.push('/admin/community/boards')}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-slate-900 dark:text-white dark:border-white/10 rounded-[2rem] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-slate-900 dark:text-white dark:border-white/10 rounded-[0.1rem] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
           >
             <Plus size={20} /> 새 포스팅
           </motion.button>
@@ -120,12 +120,12 @@ export default function UnifiedDashboardClient({
       </motion.div>
 
       {/* Banner */}
-      <motion.div variants={hubItemVariants} className="relative rounded-[3.5rem] overflow-hidden shadow-2xl">
+      <motion.div variants={hubItemVariants} className="relative rounded-[0.1rem] overflow-hidden shadow-2xl">
         <BannerSlider />
       </motion.div>
 
       {/* Real-time Insights */}
-      <motion.div variants={hubItemVariants} className="p-4 md:p-8 border-2 border-primary/5 rounded-[4rem] bg-slate-50 dark:bg-slate-900/50 shadow-inner">
+      <motion.div variants={hubItemVariants} className="p-4 md:p-8 border-2 border-primary/5 rounded-[0.1rem] bg-slate-50 dark:bg-slate-900/50 shadow-inner">
         <RealTimeDashboard />
       </motion.div>
 
@@ -210,7 +210,7 @@ export default function UnifiedDashboardClient({
           >
             <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-[100px]" />
             <h3 className="text-2xl font-black mb-12 flex items-center gap-4 relative z-10 tracking-tight">
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-[0.1rem] bg-white/10 flex items-center justify-center">
                 <Clock size={22} className="text-primary" />
               </div>
               실시간 피드
@@ -271,18 +271,18 @@ function DashboardSkeleton() {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
         <div className="space-y-6">
           <Skeleton className="h-8 w-48 rounded-full opacity-40" />
-          <Skeleton className="h-20 w-96 rounded-2xl opacity-50" />
+          <Skeleton className="h-20 w-96 rounded-[0.1rem] opacity-50" />
           <Skeleton className="h-6 w-[500px] rounded-lg opacity-30" />
         </div>
         <div className="flex gap-4">
-          <Skeleton className="h-16 w-48 rounded-[2rem] opacity-30" />
-          <Skeleton className="h-16 w-48 rounded-[2rem] opacity-40" />
+          <Skeleton className="h-16 w-48 rounded-[0.1rem] opacity-30" />
+          <Skeleton className="h-16 w-48 rounded-[0.1rem] opacity-40" />
         </div>
       </div>
-      <Skeleton className="h-[250px] w-full rounded-[4rem] opacity-20" />
+      <Skeleton className="h-[250px] w-full rounded-[0.1rem] opacity-20" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={`dash-skeleton-item-${i}`} className="h-[320px] rounded-[3.5rem] opacity-20" />
+          <Skeleton key={`dash-skeleton-item-${i}`} className="h-[320px] rounded-[0.1rem] opacity-20" />
         ))}
       </div>
     </div>

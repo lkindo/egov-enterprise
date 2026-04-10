@@ -1,4 +1,4 @@
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css');
+﻿@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css');
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
@@ -93,7 +93,7 @@
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.1rem;
     --surface-sunken: 210 40% 98%;
     --surface-raised: 0 0% 100%;
 
@@ -193,11 +193,11 @@
   }
 
   .hub-card-section {
-    @apply bg-white/40 text-slate-900 border border-slate-200/50 backdrop-blur-xl dark:bg-card dark:text-foreground p-12 rounded-[var(--radius-hub-section)] shadow-[var(--shadow-hub-premium)] relative overflow-hidden;
+    @apply bg-white/40 text-slate-900 border border-slate-200/50 backdrop-blur-xl dark:bg-card dark:text-foreground p-12 rounded-[0.1rem] shadow-[var(--shadow-hub-premium)] relative overflow-hidden;
   }
 
   .hub-icon-box {
-    @apply w-16 h-16 bg-primary rounded-[var(--radius-hub-widget)] flex items-center justify-center shadow-2xl skew-y-1 hover:rotate-6 transition-transform duration-500 dark:bg-primary/20 dark:text-primary;
+    @apply w-16 h-16 bg-primary rounded-[0.1rem] flex items-center justify-center shadow-2xl skew-y-1 hover:rotate-6 transition-transform duration-500 dark:bg-primary/20 dark:text-primary;
   }
   
   .hub-badge-status {
@@ -205,11 +205,11 @@
   }
 
   .hub-table-container {
-    @apply bg-card border-2 border-border p-4 lg:p-12 rounded-[var(--radius-hub-section)] shadow-sm relative overflow-hidden;
+    @apply bg-card border-2 border-border p-4 lg:p-12 rounded-[0.1rem] shadow-sm relative overflow-hidden;
   }
 
   .hub-card-premium {
-    @apply border-2 border-primary/5 rounded-[4rem] bg-card shadow-2xl shadow-primary/5 relative overflow-hidden transition-all duration-500 hover:shadow-primary/10;
+    @apply border-2 border-primary/5 rounded-[0.1rem] bg-card shadow-2xl shadow-primary/5 relative overflow-hidden transition-all duration-500 hover:shadow-primary/10;
   }
 
   .hub-badge-insight {

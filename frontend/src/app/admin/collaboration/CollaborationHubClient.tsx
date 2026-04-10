@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -73,7 +73,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           key={note.noteId}
           onClick={() => setSelectedItemId(note.noteId)}
           className={cn(
-            "group p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer flex items-center justify-between",
+            "group p-6 rounded-[0.1rem] border-2 transition-all cursor-pointer flex items-center justify-between",
             selectedItemId === note.noteId
               ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]"
               : "bg-white border-transparent hover:border-slate-50 text-slate-600 shadow-sm"
@@ -81,7 +81,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
         >
           <div className="flex items-start gap-6">
             <div className={cn(
-              "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg",
+              "w-12 h-12 rounded-[0.1rem] flex items-center justify-center shrink-0 shadow-lg",
               selectedItemId === note.noteId ? "bg-primary text-white" : "bg-slate-50 text-slate-400"
             )}>
               <Inbox size={20} />
@@ -104,7 +104,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           key={address.adbkId}
           onClick={() => setSelectedItemId(address.adbkId)}
           className={cn(
-            "rounded-[2.5rem] border-2 transition-all cursor-pointer p-6 flex items-center gap-6",
+            "rounded-[0.1rem] border-2 transition-all cursor-pointer p-6 flex items-center gap-6",
             selectedItemId === address.adbkId
               ? "bg-slate-900 border-slate-900 text-white shadow-xl"
               : "bg-white border-transparent hover:border-slate-50"
@@ -134,7 +134,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
             key={scrap.scrapId}
             onClick={() => setSelectedItemId(scrap.scrapId)}
             className={cn(
-              "group p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer flex items-center justify-between",
+              "group p-6 rounded-[0.1rem] border-2 transition-all cursor-pointer flex items-center justify-between",
               selectedItemId === scrap.scrapId
                 ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]"
                 : "bg-white border-transparent hover:border-slate-50 text-slate-600 shadow-sm"
@@ -142,7 +142,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           >
             <div className="flex items-start gap-6">
               <div className={cn(
-                "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg",
+                "w-12 h-12 rounded-[0.1rem] flex items-center justify-center shrink-0 shadow-lg",
                 selectedItemId === scrap.scrapId ? "bg-primary text-white" : "bg-slate-50 text-slate-400"
               )}>
                 <Bookmark size={20} />
@@ -162,7 +162,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
     <div className="space-y-10 pb-20 animate-in fade-in duration-1000">
       <div className="flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-slate-900 rounded-3xl flex items-center justify-center shadow-2xl skew-x-2">
+          <div className="w-14 h-14 bg-slate-900 rounded-[0.1rem] flex items-center justify-center shadow-2xl skew-x-2">
             <Share2 size={28} className="text-white" />
           </div>
           <div>
@@ -175,10 +175,10 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           </div>
         </div>
         <div className="flex gap-4">
-          <Button variant="outline" className="h-14 px-6 rounded-2xl border-2 font-black tracking-tight gap-2">
+          <Button variant="outline" className="h-14 px-6 rounded-[0.1rem] border-2 font-black tracking-tight gap-2">
             <Mail size={18} /> 쪽지 쓰기
           </Button>
-          <Button className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition-all gap-2">
+          <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition-all gap-2">
             <Plus size={20} /> 연락처 추가
           </Button>
         </div>
@@ -186,13 +186,13 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
 
       <div className="grid grid-cols-12 gap-8 px-2 min-h-[700px]">
         <div className="col-span-12 lg:col-span-3 space-y-6">
-          <Card className="rounded-[3rem] border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100 overflow-hidden">
+          <Card className="rounded-[0.1rem] border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100 overflow-hidden">
             <NavButton icon={<Inbox size={20} />} label="메신저" active={activeTab === 'MESSAGES'} onClick={() => { setActiveTab('MESSAGES'); setSelectedItemId(null); }} />
             <NavButton icon={<Users size={20} />} label="전체 연락처" active={activeTab === 'ADDRESS_BOOK'} onClick={() => { setActiveTab('ADDRESS_BOOK'); setSelectedItemId(null); }} />
             <NavButton icon={<Bookmark size={20} />} label="스크랩 관리" active={activeTab === 'SCRAPS'} onClick={() => { setActiveTab('SCRAPS'); setSelectedItemId(null); }} />
           </Card>
 
-          <Card className="rounded-[3rem] border-0 bg-primary text-white p-10 space-y-6 shadow-2xl relative overflow-hidden group">
+          <Card className="rounded-[0.1rem] border-0 bg-primary text-white p-10 space-y-6 shadow-2xl relative overflow-hidden group">
             <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
             <Zap size={48} className="text-white/20 absolute -right-4 -top-4 rotate-12" />
             <div className="space-y-2 relative z-10">
@@ -203,7 +203,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
         </div>
 
         <div className="col-span-12 lg:col-span-5 h-full flex flex-col gap-6">
-          <Card className="flex-1 rounded-[3.5rem] border-0 bg-white shadow-2xl overflow-hidden flex flex-col ring-1 ring-slate-100">
+          <Card className="flex-1 rounded-[0.1rem] border-0 bg-white shadow-2xl overflow-hidden flex flex-col ring-1 ring-slate-100">
             <CardHeader className="bg-slate-50/50 border-b p-10 space-y-8">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.4em] italic leading-tight">
@@ -217,7 +217,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                 <div className="relative flex-1 group">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                   <Input
-                    className="pl-12 h-14 bg-white border-slate-100 rounded-2xl text-sm font-bold shadow-sm"
+                    className="pl-12 h-14 bg-white border-slate-100 rounded-[0.1rem] text-sm font-bold shadow-sm"
                     placeholder="목록 검색..."
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
@@ -225,7 +225,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                 </div>
                 <Button
                   onClick={() => queryClient.invalidateQueries()}
-                  className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-black tracking-tighter shadow-xl hover:-translate-y-1 transition-all"
+                  className="h-14 px-10 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tighter shadow-xl hover:-translate-y-1 transition-all"
                 >
                   검색 실행
                 </Button>
@@ -258,7 +258,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                 exit={{ opacity: 0, x: -20 }}
                 className="h-full flex flex-col gap-8"
               >
-                <Card className="flex-1 rounded-[3.5rem] border-0 bg-white shadow-2xl flex flex-col ring-1 ring-slate-100 overflow-hidden">
+                <Card className="flex-1 rounded-[0.1rem] border-0 bg-white shadow-2xl flex flex-col ring-1 ring-slate-100 overflow-hidden">
                   <CardHeader className="bg-slate-50/50 p-10 border-b">
                     <h2 className="text-2xl font-black text-slate-900 tracking-tighter italic leading-tight">
                       상세 정보
@@ -266,21 +266,21 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                   </CardHeader>
                   <CardContent className="flex-1 p-10 space-y-12">
                     <div className="space-y-6">
-                      <div className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100">
+                      <div className="p-8 rounded-[0.1rem] bg-slate-50 border border-slate-100">
                         <pre className="text-[10px] font-mono whitespace-pre-wrap">
                           {JSON.stringify(selectedItem, null, 2)}
                         </pre>
                       </div>
                     </div>
                     <div className="flex gap-4">
-                      <Button className="flex-1 h-14 rounded-2xl bg-slate-900 text-white font-black tracking-tight text-[9px]">답장 / 열기</Button>
-                      <Button variant="outline" className="h-14 w-14 rounded-2xl border-2"><Trash2 size={20} /></Button>
+                      <Button className="flex-1 h-14 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tight text-[9px]">답장 / 열기</Button>
+                      <Button variant="outline" className="h-14 w-14 rounded-[0.1rem] border-2"><Trash2 size={20} /></Button>
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
             ) : (
-              <Card className="h-full rounded-[3.5rem] border-2 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center p-20 text-center grayscale opacity-30">
+              <Card className="h-full rounded-[0.1rem] border-2 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center p-20 text-center grayscale opacity-30">
                 <Share2 size={64} className="mb-8" />
                 <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic leading-tight">
                   항목을 선택하세요
@@ -300,14 +300,14 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
     <button
       onClick={onClick}
       className={cn(
-        "w-full group p-6 rounded-[2rem] border-2 transition-all flex items-center gap-5",
+        "w-full group p-6 rounded-[0.1rem] border-2 transition-all flex items-center gap-5",
         active
           ? "bg-slate-900 border-slate-900 text-white shadow-xl"
           : "bg-white border-transparent hover:border-slate-50 text-slate-500 hover:text-slate-900"
       )}
     >
       <div className={cn(
-        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all",
+        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all",
         active ? "bg-white/10 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"
       )}>
         {icon}

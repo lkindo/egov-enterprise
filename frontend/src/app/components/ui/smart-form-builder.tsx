@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -87,9 +87,9 @@ export function SmartFormBuilder() {
  return (
  <div className="flex flex-col gap-8 h-[calc(100vh-12rem)] animate-in fade-in duration-700">
  {/* Top Controller */}
- <div className="flex items-center justify-between bg-white dark:bg-slate-900 border-2 border-primary/5 p-6 rounded-[2.5rem] shadow-xl">
+ <div className="flex items-center justify-between bg-white dark:bg-slate-900 border-2 border-primary/5 p-6 rounded-[0.1rem] shadow-xl">
  <div className="flex items-center gap-5">
- <div className="p-3 bg-primary/10 rounded-2xl text-primary animate-pulse">
+ <div className="p-3 bg-primary/10 rounded-[0.1rem] text-primary animate-pulse">
  <Sparkles size={24} />
  </div>
  <div>
@@ -99,7 +99,7 @@ export function SmartFormBuilder() {
  </div>
 
  <div className="flex items-center gap-3">
- <div className="bg-muted/50 p-1 rounded-xl flex gap-1 border border-primary/5">
+ <div className="bg-muted/50 p-1 rounded-[0.1rem] flex gap-1 border border-primary/5">
  <Button
  variant={previewMode === 'desktop' ? "secondary" : "ghost"}
  size="sm"
@@ -118,16 +118,16 @@ export function SmartFormBuilder() {
  </Button>
  </div>
  <div className="h-6 w-px bg-muted mx-2" />
- <Button variant="outline" className="rounded-xl font-bold h-11 px-6 border-2 hover:bg-primary/5 gap-2">
+ <Button variant="outline" className="rounded-[0.1rem] font-bold h-11 px-6 border-2 hover:bg-primary/5 gap-2">
  <Eye size={18} /> 프리뷰 </Button>
- <Button className="rounded-xl font-black h-11 px-8 shadow-xl shadow-primary/20 gap-2">
+ <Button className="rounded-[0.1rem] font-black h-11 px-8 shadow-xl shadow-primary/20 gap-2">
  <Save size={18} /> 서식 저장 </Button>
  </div>
  </div>
 
  <div className="flex gap-8 flex-1 min-h-0">
  {/* Left Toolbar: Elements */}
- <div className="w-72 bg-white dark:bg-slate-900 border border-primary/5 rounded-[3rem] p-8 flex flex-col gap-8">
+ <div className="w-72 bg-white dark:bg-slate-900 border border-primary/5 rounded-[0.1rem] p-8 flex flex-col gap-8">
  <div className="space-y-4">
  <h3 className="text-[10px] font-black text-muted-foreground tracking-[0.2em] px-2 flex items-center gap-2">
  <Plus size={12} /> UI Components
@@ -144,16 +144,16 @@ export function SmartFormBuilder() {
  <button
  key={tool.type}
  onClick={() => addField(tool.type as FieldType)}
- className="flex items-center gap-3 p-4 bg-muted/30 hover:bg-primary/10 hover:text-primary rounded-2xl transition-all font-bold text-sm border border-transparent hover:border-primary/20 group"
+ className="flex items-center gap-3 p-4 bg-muted/30 hover:bg-primary/10 hover:text-primary rounded-[0.1rem] transition-all font-bold text-sm border border-transparent hover:border-primary/20 group"
  >
- <div className="p-2 bg-background rounded-xl shadow-sm group-hover:scale-110 transition-transform">{tool.icon}</div>
+ <div className="p-2 bg-background rounded-[0.1rem] shadow-sm group-hover:scale-110 transition-transform">{tool.icon}</div>
  {tool.label}
  </button>
  ))}
  </div>
  </div>
 
- <div className="mt-auto p-5 bg-primary/5 rounded-[2rem] border border-primary/10">
+ <div className="mt-auto p-5 bg-primary/5 rounded-[0.1rem] border border-primary/10">
  <div className="flex items-center gap-2 mb-2 text-primary">
  <Info size={14} />
  <span className="text-[10px] font-black ">프로 팁</span>
@@ -165,10 +165,10 @@ export function SmartFormBuilder() {
  </div>
 
  {/* Center: Canvas */}
- <div className="flex-1 flex flex-col items-center overflow-y-auto custom-scrollbar bg-slate-100 dark:bg-slate-800 rounded-[3rem] border-2 border-dashed border-primary/10 p-10">
+ <div className="flex-1 flex flex-col items-center overflow-y-auto custom-scrollbar bg-slate-100 dark:bg-slate-800 rounded-[0.1rem] border-2 border-dashed border-primary/10 p-10">
  <div className={cn(
  "bg-background shadow-2xl transition-all duration-700 overflow-hidden relative",
- previewMode === 'desktop' ? "w-full max-w-3xl rounded-[3rem] p-12" : "w-[375px] rounded-[3.5rem] border-[8px] border-slate-900 p-8 pt-16 min-h-[667px]"
+ previewMode === 'desktop' ? "w-full max-w-3xl rounded-[0.1rem] p-12" : "w-[375px] rounded-[0.1rem] border-[8px] border-slate-900 p-8 pt-16 min-h-[667px]"
  )}>
  {previewMode === 'mobile' ? <div className="absolute top-6 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-900 rounded-full" /> : null}
 
@@ -184,7 +184,7 @@ export function SmartFormBuilder() {
  key={field.id}
  onClick={() => setSelectedField(field.id)}
  className={cn(
- "group relative p-6 rounded-3xl border-2 transition-all cursor-pointer",
+ "group relative p-6 rounded-[0.1rem] border-2 transition-all cursor-pointer",
  field.width === 'full' ? "col-span-2" : "col-span-1",
  selectedField === field.id ? "border-primary bg-primary/[0.02] shadow-lg shadow-primary/5" : "border-transparent hover:border-primary/20 hover:bg-muted/30"
  )}
@@ -202,7 +202,7 @@ export function SmartFormBuilder() {
  </div>
  </div>
 
- <div className="h-12 bg-muted/50 rounded-xl border border-primary/5 px-4 flex items-center text-sm text-muted-foreground/40 font-medium">
+ <div className="h-12 bg-muted/50 rounded-[0.1rem] border border-primary/5 px-4 flex items-center text-sm text-muted-foreground/40 font-medium">
  {field.placeholder || `${field.label} 내용을 입력하세요`}
  </div>
  </div>
@@ -212,9 +212,9 @@ export function SmartFormBuilder() {
  </div>
 
  {/* Right Panel: Properties */}
- <div className="w-80 bg-white dark:bg-slate-900 border border-primary/5 rounded-[3.5rem] p-8 flex flex-col gap-6 shadow-2xl">
+ <div className="w-80 bg-white dark:bg-slate-900 border border-primary/5 rounded-[0.1rem] p-8 flex flex-col gap-6 shadow-2xl">
  <div className="flex items-center gap-3 mb-4">
- <div className="p-2.5 bg-primary/10 rounded-xl text-primary"><Settings size={18} /></div>
+ <div className="p-2.5 bg-primary/10 rounded-[0.1rem] text-primary"><Settings size={18} /></div>
  <h3 className="text-sm font-black tracking-tight">속성</h3>
  </div>
 
@@ -225,7 +225,7 @@ export function SmartFormBuilder() {
  <Input
  value={activeField.label}
  onChange={(e) => updateField(activeField.id, { label: e.target.value })}
- className="rounded-2xl h-12 font-bold border-2 border-primary/5"
+ className="rounded-[0.1rem] h-12 font-bold border-2 border-primary/5"
  />
  </div>
  <div className="space-y-2">
@@ -233,14 +233,14 @@ export function SmartFormBuilder() {
  <Input
  value={activeField.placeholder || ''}
  onChange={(e) => updateField(activeField.id, { placeholder: e.target.value })}
- className="rounded-2xl h-11 text-sm border-2 border-primary/5"
+ className="rounded-[0.1rem] h-11 text-sm border-2 border-primary/5"
  />
  </div>
 
  <div className="grid grid-cols-2 gap-4">
  <div className="space-y-2">
  <label className="text-[10px] font-black text-muted-foreground px-1">너비</label>
- <div className="bg-muted/50 p-1 rounded-xl flex gap-1 border border-primary/5">
+ <div className="bg-muted/50 p-1 rounded-[0.1rem] flex gap-1 border border-primary/5">
  <button
  onClick={() => updateField(activeField.id, { width: 'half' })}
  className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all", activeField.width === 'half' ? "bg-background shadow-sm text-primary" : "text-muted-foreground")}
@@ -256,7 +256,7 @@ export function SmartFormBuilder() {
  <div
  onClick={() => updateField(activeField.id, { required: !activeField.required })}
  className={cn(
- "h-9 rounded-xl flex items-center justify-center cursor-pointer transition-all border-2",
+ "h-9 rounded-[0.1rem] flex items-center justify-center cursor-pointer transition-all border-2",
  activeField.required ? "bg-primary border-primary text-white" : "bg-muted/30 border-transparent text-muted-foreground font-black text-[10px]"
  )}
  >
@@ -277,7 +277,7 @@ export function SmartFormBuilder() {
  newOpts[idx] = e.target.value;
  updateField(activeField.id, { options: newOpts });
  }}
- className="rounded-xl h-10 text-sm font-bold"
+ className="rounded-[0.1rem] h-10 text-sm font-bold"
  />
  <Button
  variant="ghost" size="icon" className="h-10 w-10 text-destructive"
@@ -289,7 +289,7 @@ export function SmartFormBuilder() {
  </div>
  ))}
  <Button
- variant="outline" size="sm" className="w-full rounded-xl border-dashed py-5 border-2"
+ variant="outline" size="sm" className="w-full rounded-[0.1rem] border-dashed py-5 border-2"
  onClick={() => updateField(activeField.id, { options: [...(activeField.options || []), 'New Option'] })}
  >+ 속성 추가</Button>
  </div>
@@ -297,7 +297,7 @@ export function SmartFormBuilder() {
  </div>
  ) : (
  <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
- <div className="w-16 h-16 bg-muted rounded-3xl flex items-center justify-center text-muted-foreground mb-4">
+ <div className="w-16 h-16 bg-muted rounded-[0.1rem] flex items-center justify-center text-muted-foreground mb-4">
  <Info size={24} />
  </div>
  <h4 className="text-sm font-black tracking-tight text-muted-foreground/60 mb-2">선택된 필드 없음</h4>

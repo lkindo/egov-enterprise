@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import {
@@ -134,10 +134,10 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
     };
 
     return (
-        <div className={cn("flex flex-col gap-6 bg-card border-2 border-primary/5 rounded-[3rem] p-8 shadow-2xl", className)}>
+        <div className={cn("flex flex-col gap-6 bg-card border-2 border-primary/5 rounded-[0.1rem] p-8 shadow-2xl", className)}>
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                    <div className="p-3 bg-primary/10 rounded-2xl text-primary">
+                    <div className="p-3 bg-primary/10 rounded-[0.1rem] text-primary">
                         <Settings2 size={24} />
                     </div>
                     <div>
@@ -150,18 +150,18 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                     <div className="relative flex-1 md:w-64">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input
-                            className="w-full bg-muted/30 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all font-sans"
+                            className="w-full bg-muted/30 border-none rounded-[0.1rem] py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all font-sans"
                             placeholder="전역 검색.."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <Button variant="outline" size="icon" className="rounded-2xl border-2 hover:bg-primary/5"><Download size={18} /></Button>
-                    <Button variant="outline" size="icon" className="rounded-2xl border-2 hover:bg-primary/5"><ColumnsIcon size={18} /></Button>
+                    <Button variant="outline" size="icon" className="rounded-[0.1rem] border-2 hover:bg-primary/5"><Download size={18} /></Button>
+                    <Button variant="outline" size="icon" className="rounded-[0.1rem] border-2 hover:bg-primary/5"><ColumnsIcon size={18} /></Button>
                 </div>
             </div>
 
-            <div className="relative overflow-hidden border rounded-[2rem] bg-background/50 backdrop-blur-sm shadow-inner">
+            <div className="relative overflow-hidden border rounded-[0.1rem] bg-background/50 backdrop-blur-sm shadow-inner">
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-sm text-left border-separate border-spacing-0">
                         <thead>
@@ -238,7 +238,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                                                     <div className="flex items-center gap-2 animate-in fade-in zoom-in-95">
                                                         <input
                                                             autoFocus
-                                                            className="bg-card border-2 border-primary rounded-xl px-3 py-1.5 text-sm font-bold w-full outline-none shadow-lg shadow-primary/10 ring-4 ring-primary/5"
+                                                            className="bg-card border-2 border-primary rounded-[0.1rem] px-3 py-1.5 text-sm font-bold w-full outline-none shadow-lg shadow-primary/10 ring-4 ring-primary/5"
                                                             value={editValue}
                                                             onChange={(e) => setEditValue(e.target.value)}
                                                             onKeyDown={(e) => {
@@ -288,13 +288,13 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight disabled:opacity-30">이전</Button>
+                    <Button variant="ghost" size="sm" className="rounded-[0.1rem] text-[10px] font-black tracking-tight disabled:opacity-30">이전</Button>
                     <div className="flex items-center gap-1">
                         {[1, 2, 3].map(p => (
-                            <Button key={`page-${p}`} variant={p === 1 ? "default" : "ghost"} size="sm" className="w-9 h-9 rounded-xl text-[10px] font-black p-0 shadow-sm">{p}</Button>
+                            <Button key={`page-${p}`} variant={p === 1 ? "default" : "ghost"} size="sm" className="w-9 h-9 rounded-[0.1rem] text-[10px] font-black p-0 shadow-sm">{p}</Button>
                         ))}
                     </div>
-                    <Button variant="ghost" size="sm" className="rounded-xl text-[10px] font-black tracking-tight">다음</Button>
+                    <Button variant="ghost" size="sm" className="rounded-[0.1rem] text-[10px] font-black tracking-tight">다음</Button>
                 </div>
             </div>
         </div>

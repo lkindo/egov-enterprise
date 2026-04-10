@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import {
   Bell,
@@ -109,9 +109,9 @@ export function SmartNotificationHub() {
           { label: '메일 발송', count: 856, delta: '+45', icon: <Mail />, color: 'blue' },
           { label: 'SMS 전송', count: 386, delta: '-5%', icon: <MessageSquare />, color: 'emerald' },
         ].map((stat, i) => (
-          <div key={`hub-stat-${i}`} className="p-8 pb-6 bg-card border-2 border-primary/5 rounded-[2.5rem] shadow-xl relative overflow-hidden group">
+          <div key={`hub-stat-${i}`} className="p-8 pb-6 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-xl relative overflow-hidden group">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-muted rounded-2xl text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500">
+              <div className="p-3 bg-muted rounded-[0.1rem] text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500">
                 {React.cloneElement(stat.icon as React.ReactElement<any>, { size: 20 })}
               </div>
               <span className={cn(
@@ -128,10 +128,10 @@ export function SmartNotificationHub() {
 
       <div className="flex flex-col xl:flex-row gap-8">
         <div className="flex-1 flex flex-col gap-8">
-          <div className="p-10 bg-card border-2 border-primary/5 rounded-[3.5rem] shadow-2xl space-y-8">
+          <div className="p-10 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-2xl space-y-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-primary/5">
               <div className="flex items-center gap-4">
-                <div className="p-4 bg-primary/10 rounded-2xl text-primary relative">
+                <div className="p-4 bg-primary/10 rounded-[0.1rem] text-primary relative">
                   <Zap size={24} className="animate-pulse" />
                   <div className="absolute top-0 right-0 w-3 h-3 bg-rose-500 border-2 border-white rounded-full" />
                 </div>
@@ -144,13 +144,13 @@ export function SmartNotificationHub() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="flex bg-muted/40 p-1.5 rounded-2xl border-2 border-primary/5">
+                <div className="flex bg-muted/40 p-1.5 rounded-[0.1rem] border-2 border-primary/5">
                   {['all', 'system', 'mail', 'sms'].map(tab => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab as any)}
                       className={cn(
-                        "px-4 py-2 rounded-xl text-[10px] font-black tracking-tight transition-all",
+                        "px-4 py-2 rounded-[0.1rem] text-[10px] font-black tracking-tight transition-all",
                         activeTab === tab ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-primary/5"
                       )}
                     >{tab}</button>
@@ -159,7 +159,7 @@ export function SmartNotificationHub() {
                 <div className="relative w-48 hidden md:block">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30" size={14} />
                   <input
-                    className="w-full bg-muted/20 border-none rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/10 transition-all"
+                    className="w-full bg-muted/20 border-none rounded-[0.1rem] py-2.5 pl-10 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/10 transition-all"
                     placeholder="검색 및 필터링..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -170,9 +170,9 @@ export function SmartNotificationHub() {
 
             <div className="space-y-4 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
               {filteredLogs.map((log, i) => (
-                <div key={log.id || `hub-log-${i}`} className="group flex items-center gap-6 p-6 rounded-[2.5rem] bg-muted/10 border-2 border-transparent hover:bg-card hover:border-primary/10 hover:shadow-xl transition-all duration-500 animate-in fade-in slide-in-from-right-4" style={{ animationDelay: `${i * 100}ms` }}>
+                <div key={log.id || `hub-log-${i}`} className="group flex items-center gap-6 p-6 rounded-[0.1rem] bg-muted/10 border-2 border-transparent hover:bg-card hover:border-primary/10 hover:shadow-xl transition-all duration-500 animate-in fade-in slide-in-from-right-4" style={{ animationDelay: `${i * 100}ms` }}>
                   <div className={cn(
-                    "w-14 h-14 rounded-2xl flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform duration-500",
+                    "w-14 h-14 rounded-[0.1rem] flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform duration-500",
                     log.type === 'system' ? "bg-indigo-500/10 text-indigo-500" : log.type === 'mail' ? "bg-blue-500/10 text-blue-500" : "bg-emerald-500/10 text-emerald-500"
                   )}>
                     {log.type === 'system' ? <Bot size={24} /> : log.type === 'mail' ? <Mail size={24} /> : <MessageSquare size={24} />}
@@ -203,7 +203,7 @@ export function SmartNotificationHub() {
                     <span className="text-[9px] font-black text-muted-foreground opacity-40">{log.status === 'sent' ? '발송 완료' : log.status === 'pending' ? '대기 중' : '실패'}</span>
                   </div>
 
-                  <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical size={16} /></Button>
+                  <Button variant="ghost" size="icon" className="rounded-[0.1rem] h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical size={16} /></Button>
                 </div>
               ))}
             </div>
@@ -211,21 +211,21 @@ export function SmartNotificationHub() {
         </div>
 
         <div className="w-full xl:w-96 flex flex-col gap-8">
-          <div className="p-8 bg-gradient-to-br from-primary to-blue-600 border-none rounded-[3.5rem] text-white shadow-2xl shadow-primary/30 relative overflow-hidden group flex flex-col justify-center h-80">
+          <div className="p-8 bg-gradient-to-br from-primary to-blue-600 border-none rounded-[0.1rem] text-white shadow-2xl shadow-primary/30 relative overflow-hidden group flex flex-col justify-center h-80">
             <div className="absolute inset-0 bg-white/5 opacity-50 backdrop-blur-3xl animate-pulse" />
             <div className="relative z-10 flex flex-col items-center text-center space-y-4">
-              <div className="w-20 h-20 bg-white/20 rounded-[2rem] flex items-center justify-center backdrop-blur-md group-hover:scale-110 transition-transform duration-700">
+              <div className="w-20 h-20 bg-white/20 rounded-[0.1rem] flex items-center justify-center backdrop-blur-md group-hover:scale-110 transition-transform duration-700">
                 <Zap size={40} className="text-white fill-white" />
               </div>
               <div>
                 <h3 className="text-2xl font-black tracking-tighter">AI 스마트 배달</h3>
                 <p className="text-sm font-bold opacity-80 mt-2 leading-relaxed">수신자의 업무 패턴을 분석하여<br />최고의 시간에 알림을 배달합니다</p>
               </div>
-              <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-2xl h-14 font-black shadow-xl">발송 최적화 엔진 활성</Button>
+              <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-[0.1rem] h-14 font-black shadow-xl">발송 최적화 엔진 활성</Button>
             </div>
           </div>
 
-          <div className="p-10 bg-card border-2 border-primary/5 rounded-[3.5rem] shadow-xl space-y-8 flex-1">
+          <div className="p-10 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-xl space-y-8 flex-1">
             <div>
               <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-6">채널 상태 지수</h4>
               <div className="space-y-6">
@@ -249,7 +249,7 @@ export function SmartNotificationHub() {
 
             <div className="pt-8 border-t border-primary/5 space-y-4">
               <h4 className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">지능형 인사이트</h4>
-              <div className="p-5 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-4">
+              <div className="p-5 rounded-[0.1rem] bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-4">
                 <Info size={16} className="text-indigo-500 mt-0.5" />
                 <p className="text-[10px] font-bold text-indigo-900/60 leading-relaxed">
                   오전 10시에서 11시 사이에 발송된 알림의 확인율이 가장 높습니다. 중요한 공지는 이 시간을 활용하세요.

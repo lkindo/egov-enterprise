@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { popupService } from '@/services/business/user/PopupService';
@@ -55,7 +55,7 @@ export function PopupManager() {
  return (
  <div
  key={`popup-${popup.popupId}-${idx}`}
- className="fixed z-50 bg-white shadow-2xl rounded-xl overflow-hidden border animate-in zoom-in duration-300"
+ className="fixed z-50 bg-white shadow-2xl rounded-[0.1rem] overflow-hidden border animate-in zoom-in duration-300"
  style={{
  top: `${popup.popupHlc}px`,
  left: `${popup.popupWlc}px`,

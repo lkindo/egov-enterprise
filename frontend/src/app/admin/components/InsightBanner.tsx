@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -97,10 +97,10 @@ export const InsightBanner: React.FC = () => {
 
   return (
     <div className="relative group text-left">
-       <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-indigo-500/10 to-primary/20 rounded-[2.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+       <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-indigo-500/10 to-primary/20 rounded-[0.1rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
        
        <div className={cn(
-          "relative min-h-[140px] rounded-[2.5rem] border-2 bg-white/80 backdrop-blur-3xl p-10 flex flex-col lg:flex-row items-center gap-10 transition-all duration-700 overflow-hidden shadow-2xl shadow-slate-200/50 hover:shadow-primary/5",
+          "relative min-h-[140px] rounded-[0.1rem] border-2 bg-white/80 backdrop-blur-3xl p-10 flex flex-col lg:flex-row items-center gap-10 transition-all duration-700 overflow-hidden shadow-2xl shadow-slate-200/50 hover:shadow-primary/5",
           getSeverityStyles(activeInsight.severity)
        )} role="region" aria-label="시스템 인텔리전스 인사이트">
           {/* Animated Wave Background Area */}
@@ -111,7 +111,7 @@ export const InsightBanner: React.FC = () => {
 
           {/* AI Logo Area */}
           <div className="flex-shrink-0 relative">
-             <div className="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl relative z-10 transition-transform group-hover:scale-110 duration-500">
+             <div className="w-16 h-16 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white shadow-xl relative z-10 transition-transform group-hover:scale-110 duration-500">
                 <Sparkles size={32} className="animate-pulse" />
              </div>
              <div className="absolute -inset-4 bg-primary/20 rounded-full blur-2xl animate-spin-slow opacity-40" />
@@ -169,7 +169,7 @@ export const InsightBanner: React.FC = () => {
                    />
                 ))}
              </div>
-             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
+             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-[0.1rem] hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
                 <Maximize2 size={16} />
              </Button>
           </div>

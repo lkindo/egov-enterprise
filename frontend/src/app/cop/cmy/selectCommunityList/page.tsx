@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -58,11 +58,11 @@ const CommunityListPage = () => {
         <DynamicBreadcrumb />
       </div>
 
-      <Card className="border-none shadow-2xl overflow-hidden rounded-[3rem] ring-1 ring-slate-100">
+      <Card className="border-none shadow-2xl overflow-hidden rounded-[0.1rem] ring-1 ring-slate-100">
         <CardHeader className="flex flex-row items-center justify-between bg-slate-900 pb-16 pt-16 px-12 text-white relative overflow-hidden">
           <div className="space-y-4 relative z-10 text-left">
             <CardTitle className="text-4xl font-black tracking-tighter flex items-center gap-5">
-              <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/10 shadow-inner">
+              <div className="w-16 h-16 rounded-[0.1rem] bg-white/10 flex items-center justify-center border border-white/10 shadow-inner">
                 <Users className="w-10 h-10 text-primary" />
               </div>
               <span className="text-left font-black tracking-tighter">커뮤니티 공간</span>
@@ -75,7 +75,7 @@ const CommunityListPage = () => {
         </CardHeader>
         
         <CardContent className="pt-16 px-12 text-left">
-          <div className="mb-10 flex items-center bg-slate-50 p-6 rounded-[2rem] border border-slate-100 w-fit text-left">
+          <div className="mb-10 flex items-center bg-slate-50 p-6 rounded-[0.1rem] border border-slate-100 w-fit text-left">
             <div className="text-sm font-black text-slate-600 flex items-center gap-4 text-left">
               <ShieldCheck className="w-6 h-6 text-primary" /> 
               <span className="text-left">활성화된 전체 커뮤니티</span>
@@ -83,7 +83,7 @@ const CommunityListPage = () => {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border-2 border-slate-50 overflow-hidden shadow-sm bg-white ring-1 ring-slate-200/50">
+          <div className="rounded-[0.1rem] border-2 border-slate-50 overflow-hidden shadow-sm bg-white ring-1 ring-slate-200/50">
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow className="hover:bg-transparent border-b-2">
@@ -99,10 +99,10 @@ const CommunityListPage = () => {
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell className="py-8"><Skeleton className="h-6 w-12 mx-auto rounded-lg" /></TableCell>
-                      <TableCell className="py-8"><Skeleton className="h-8 w-48 rounded-xl" /></TableCell>
-                      <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-xl" /></TableCell>
-                      <TableCell className="py-8"><Skeleton className="h-6 w-24 mx-auto rounded-xl" /></TableCell>
-                      <TableCell className="py-8"><Skeleton className="h-6 w-24 mx-auto rounded-xl" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-8 w-48 rounded-[0.1rem]" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-6 w-full rounded-[0.1rem]" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-6 w-24 mx-auto rounded-[0.1rem]" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-6 w-24 mx-auto rounded-[0.1rem]" /></TableCell>
                     </TableRow>
                   ))
                 ) : list.length === 0 ? (
@@ -119,7 +119,7 @@ const CommunityListPage = () => {
                       </TableCell>
                       <TableCell className="py-8">
                         <Link href={`/admin/community/${item.cmmntyId}`} className="flex items-center gap-5 group/item">
-                          <div className="w-12 h-12 rounded-[1rem] bg-slate-900 flex items-center justify-center text-white font-black text-xs shadow-lg group-hover/item:scale-110 transition-all duration-500">
+                          <div className="w-12 h-12 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white font-black text-xs shadow-lg group-hover/item:scale-110 transition-all duration-500">
                             CM
                           </div>
                           <span className="text-xl font-black text-slate-800 group-hover/item:text-primary transition-colors tracking-tighter">
@@ -133,7 +133,7 @@ const CommunityListPage = () => {
                         </p>
                       </TableCell>
                       <TableCell className="text-center py-8">
-                        <div className="inline-flex items-center gap-3 px-5 py-2 bg-slate-100 rounded-2xl text-slate-700 font-black text-xs border border-slate-200">
+                        <div className="inline-flex items-center gap-3 px-5 py-2 bg-slate-100 rounded-[0.1rem] text-slate-700 font-black text-xs border border-slate-200">
                           <ShieldCheck className="w-4 h-4 text-primary" /> {item.frstRegisterNm}
                         </div>
                       </TableCell>
@@ -157,11 +157,11 @@ const CommunityListPage = () => {
                 size="lg"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-10 h-16 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-slate-900 transition-all text-xs tracking-[0.2em] uppercase flex items-center gap-3"
+                className="px-10 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-slate-900 transition-all text-xs tracking-[0.2em] uppercase flex items-center gap-3"
               >
                 <ArrowLeft size={16} /> 이전
               </Button>
-              <div className="bg-slate-900 text-white h-16 px-12 rounded-[2rem] shadow-2xl flex items-center gap-5 border-4 border-white ring-8 ring-slate-50">
+              <div className="bg-slate-900 text-white h-16 px-12 rounded-[0.1rem] shadow-2xl flex items-center gap-5 border-4 border-white ring-8 ring-slate-50">
                 <span className="text-3xl font-black tabular-nums">{page}</span>
                 <div className="h-8 w-px bg-white/20" />
                 <span className="text-sm font-black text-white/40 tabular-nums">{totalPages}</span>
@@ -171,7 +171,7 @@ const CommunityListPage = () => {
                 size="lg"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-10 h-16 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-slate-900 transition-all text-xs tracking-[0.2em] uppercase flex items-center gap-3"
+                className="px-10 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-slate-900 transition-all text-xs tracking-[0.2em] uppercase flex items-center gap-3"
               >
                 다음 <ArrowRight size={16} />
               </Button>

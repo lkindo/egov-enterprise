@@ -104,7 +104,7 @@ export default function GenericStatsClient({
  <Button
  onClick={handleRefresh}
  variant="outline"
- className="h-10 md:h-14 w-10 md:w-14 rounded-xl md:rounded-2xl border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95"
+ className="h-10 md:h-14 w-10 md:w-14 rounded-[0.1rem] md:rounded-[0.1rem] border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95"
  >
  <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
  </Button>
@@ -129,7 +129,7 @@ export default function GenericStatsClient({
  type="date"
  value={fromDate}
  onChange={(e) => setFromDate(e.target.value)}
- className="h-14 pl-12 rounded-2xl border-2 border-slate-100 font-black text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
+ className="h-14 pl-12 rounded-[0.1rem] border-2 border-slate-100 font-black text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
  />
  </div>
  </div>
@@ -141,7 +141,7 @@ export default function GenericStatsClient({
  type="date"
  value={toDate}
  onChange={(e) => setToDate(e.target.value)}
- className="h-14 pl-12 rounded-2xl border-2 border-slate-100 font-black text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
+ className="h-14 pl-12 rounded-[0.1rem] border-2 border-slate-100 font-black text-sm focus:ring-4 focus:ring-primary/10 transition-all bg-white"
  />
  </div>
  </div>
@@ -149,7 +149,7 @@ export default function GenericStatsClient({
  <Button
  onClick={handleSearch}
  disabled={loading}
- className="h-14 px-10 bg-slate-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 min-w-[160px]"
+ className="h-14 px-10 bg-slate-900 text-white rounded-[0.1rem] font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 min-w-[160px]"
  >
  {loading ? <RefreshCcw size={16} className="animate-spin" /> : <Search size={16} />}
  동기화 </Button>
@@ -162,7 +162,7 @@ export default function GenericStatsClient({
  <div className="grid grid-cols-1 gap-10">
  <div className="responsive-card p-6 md:p-12 relative overflow-hidden group">
  <div className="flex items-center gap-4 mb-10">
- <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+ <div className="w-12 h-12 bg-primary text-white rounded-[0.1rem] flex items-center justify-center shadow-lg shadow-primary/20">
  <BarChart3 size={24} />
  </div>
  <div>
@@ -183,7 +183,7 @@ export default function GenericStatsClient({
 
  <div className="responsive-card p-6 md:p-12">
  <div className="flex items-center gap-4 mb-10 px-2">
- <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg">
+ <div className="w-12 h-12 bg-slate-900 text-white rounded-[0.1rem] flex items-center justify-center shadow-lg">
  <Database size={24} />
  </div>
  <div>
@@ -197,7 +197,7 @@ export default function GenericStatsClient({
  data={initialData}
  loading={loading}
  emptyMessage="통계 데이터를 분석 중입니다..."
- className="border-none bg-slate-50/50 rounded-[2rem] md:rounded-[3rem] p-4 md:p-8"
+ className="border-none bg-slate-50/50 rounded-[0.1rem] md:rounded-[0.1rem] p-4 md:p-8"
  />
  </div>
  </div>

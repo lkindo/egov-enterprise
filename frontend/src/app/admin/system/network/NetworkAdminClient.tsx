@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -106,7 +106,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             header: '인프라 노드 ID',
             accessor: (item: Network) => (
                 <div className="flex items-center gap-4 py-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                    <div className="w-10 h-10 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                         <Cpu size={18} />
                     </div>
                     <div className="text-left">
@@ -143,10 +143,10 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             className: 'text-right w-32',
             accessor: (item: Network) => (
                 <div className="flex justify-end gap-2 pr-4">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-200 transition-all font-black" onClick={() => handleEdit(item)}>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-[0.1rem] border border-slate-200 transition-all font-black" onClick={() => handleEdit(item)}>
                         <Settings size={16} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all" onClick={() => handleDelete(item.ntwrkId)}>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-[0.1rem] transition-all" onClick={() => handleDelete(item.ntwrkId)}>
                         <Trash2 size={16} />
                     </Button>
                 </div>
@@ -167,7 +167,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                 subtitle="전사 서비스 노드의 IP 할당 정책, 게이트웨이 및 서브넷 구성을 물리적으로 매핑하여 관리합니다."
                 icon={NetworkIcon}
                 actions={
-                    <Button onClick={handleCreate} size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2">
+                    <Button onClick={handleCreate} size="lg" className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2">
                         <Plus size={18} /> 신규 노드 등록
                     </Button>
                 }
@@ -193,7 +193,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                 placeholder="노드 명칭 또는 ID 기반 지형 검색.."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="h-16 pl-16 pr-8 rounded-[2rem] bg-slate-50 border-2 border-slate-100 font-black text-md tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                                className="h-16 pl-16 pr-8 rounded-[0.1rem] bg-slate-50 border-2 border-slate-100 font-black text-md tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                             />
                         </div>
                     </div>
@@ -214,8 +214,8 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                 maxWidth="3xl"
                 footer={
                     <div className="flex w-full gap-4">
-                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
-                        <Button form="network-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group">
+                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-[0.1rem] font-black text-[10px] tracking-widest border-2">취소</Button>
+                        <Button form="network-form" type="submit" className="flex-[2] h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group">
                             <Plus size={18} className="group-hover:rotate-90 transition-transform" /> {editingNode ? '구성 변경 사항 적용' : '인프라 연결 활성화'}
                         </Button>
                     </div>
@@ -230,7 +230,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                     defaultValue={editingNode?.ntwrkId}
                                     required
                                     readOnly={!!editingNode}
-                                    className="h-14 rounded-2xl bg-slate-50 border-2 border-slate-100 font-mono text-sm font-black shadow-inner"
+                                    className="h-14 rounded-[0.1rem] bg-slate-50 border-2 border-slate-100 font-mono text-sm font-black shadow-inner"
                                     placeholder="EX: NODE-SVR-01"
                                 />
                             </FormField>
@@ -239,7 +239,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                     name="manageIem"
                                     defaultValue={editingNode?.manageIem}
                                     required
-                                    className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner"
+                                    className="h-14 rounded-[0.1rem] text-md font-black tracking-tight shadow-inner"
                                     placeholder="네트워크 노드 이름 입력"
                                 />
                             </FormField>
@@ -250,7 +250,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                         name="ntwrkIp"
                                         defaultValue={editingNode?.ntwrkIp}
                                         required
-                                        className="h-14 pl-16 rounded-2xl font-mono text-xs font-black shadow-inner"
+                                        className="h-14 pl-16 rounded-[0.1rem] font-mono text-xs font-black shadow-inner"
                                         placeholder="0.0.0.0"
                                     />
                                 </div>
@@ -258,7 +258,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                         </div>
 
                         <div className="space-y-8">
-                            <div className="p-10 rounded-[2.5rem] bg-slate-900 text-white space-y-6 shadow-2xl relative overflow-hidden group">
+                            <div className="p-10 rounded-[0.1rem] bg-slate-900 text-white space-y-6 shadow-2xl relative overflow-hidden group">
                                 <div className="relative z-10">
                                     <div className="flex items-center gap-3 mb-6">
                                         <Radio size={18} className="text-primary animate-pulse" />
@@ -266,7 +266,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                     </div>
                                     <FormField label="노드 운영 상태 활성화">
                                         <div className="grid grid-cols-1 gap-4 mt-4 text-left">
-                                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/choice">
+                                            <div className="flex items-center gap-4 p-4 rounded-[0.1rem] bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/choice">
                                                 <input
                                                     type="radio"
                                                     name="useAt"
@@ -280,7 +280,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                                     <span className="text-[9px] font-bold text-white/30 lowercase mt-1">라이브 인프라 구축</span>
                                                 </label>
                                             </div>
-                                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/choice">
+                                            <div className="flex items-center gap-4 p-4 rounded-[0.1rem] bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/choice">
                                                 <input
                                                     type="radio"
                                                     name="useAt"

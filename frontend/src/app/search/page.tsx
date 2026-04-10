@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { Suspense } from 'react';
 import { SearchResultsContent } from './SearchClient';
@@ -11,7 +11,7 @@ const IntegratedSearchPage = () => {
             <div className="min-h-[80vh] flex flex-col items-center justify-center gap-10 p-20 text-center animate-in fade-in duration-1000">
                 <div className="relative group">
                     <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000 animate-pulse" />
-                    <div className="relative w-32 h-32 bg-white rounded-[3rem] border-2 border-slate-100 flex items-center justify-center shadow-2xl transition-all group-hover:rotate-12 group-hover:scale-110">
+                    <div className="relative w-32 h-32 bg-white rounded-[0.1rem] border-2 border-slate-100 flex items-center justify-center shadow-2xl transition-all group-hover:rotate-12 group-hover:scale-110">
                         <Loader2 className="w-16 h-16 text-primary animate-spin" strokeWidth={3} />
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -104,7 +104,7 @@ const SystemLogAdminPage = () => {
                 icon={Activity} 
                 actions={
                     <div className="flex gap-4 p-2 items-center">
-                        <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">
+                        <Button variant="outline" size="lg" className="h-12 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2">
                             실시간 모니터링
                         </Button>
                     </div>

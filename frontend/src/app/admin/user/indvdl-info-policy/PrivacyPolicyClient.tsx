@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -66,14 +66,14 @@ export default function PrivacyPolicyClient({
                 <Button
                   variant="ghost"
                   onClick={() => setIsEditing(false)}
-                  className="h-14 px-8 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 font-black text-[10px] tracking-widest uppercase hover:text-rose-500 hover:bg-rose-50 transition-all shadow-xl active:scale-95 px-6"
+                  className="h-14 px-8 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 font-black text-[10px] tracking-widest uppercase hover:text-rose-500 hover:bg-rose-50 transition-all shadow-xl active:scale-95 px-6"
                 >
                   CANCEL_CHANGES
                 </Button>
                 <Button
                   onClick={handleSave}
                   disabled={loading}
-                  className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                  className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
                 >
                   {loading ? <RefreshCcw size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />} 
                   COMMIT_SPECIFICATION
@@ -83,7 +83,7 @@ export default function PrivacyPolicyClient({
             ) : (
               <Button
                 onClick={() => setIsEditing(true)}
-                className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
               >
                 <FileCode size={20} /> POLICY_SPEC_OVERRIDE
               </Button>
@@ -102,13 +102,13 @@ export default function PrivacyPolicyClient({
       <div className="grid grid-cols-12 gap-12">
         {/* Statistics & Search Panel */}
         <div className="col-span-12 lg:col-span-4 h-full text-left">
-            <div className="rounded-[3.5rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
+            <div className="rounded-[0.1rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
                 <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                     <Shield size={240} className="text-primary" />
                 </div>
                 <div className="relative z-10 space-y-12">
                     <div className="space-y-3">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
+                        <div className="w-16 h-16 rounded-[0.1rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                             <Fingerprint size={32} className="text-primary" />
                         </div>
                         <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-left">프라이버시<br />보호 코어</h4>
@@ -117,7 +117,7 @@ export default function PrivacyPolicyClient({
                     <div className="space-y-8">
                          <div className="space-y-3">
                             <label className="text-[10px] font-black text-white/30 tracking-[0.4em] px-2 uppercase font-mono text-left block text-left">Governance_Probing</label>
-                            <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 space-y-4">
+                            <div className="p-8 rounded-[0.1rem] bg-white/5 border border-white/5 space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest ">마지막 커밋</span>
                                     <span className="text-[9px] font-black text-primary font-mono tracking-widest uppercase ">2026-03-18_1433</span>
@@ -138,7 +138,7 @@ export default function PrivacyPolicyClient({
                         <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic uppercase opacity-60 text-left">
                           * 본 정책 명세 변경 시 전사 서비스 및 계약 프로토콜에 즉각적인 법적 효력을 발생시킵니다.
                         </p>
-                        <HubStatusBadge status="활성" className="bg-emerald-500/10 text-emerald-500 border-none px-6 py-2 rounded-xl text-[9px] tracking-widest font-black" />
+                        <HubStatusBadge status="활성" className="bg-emerald-500/10 text-emerald-500 border-none px-6 py-2 rounded-[0.1rem] text-[9px] tracking-widest font-black" />
                     </div>
                 </div>
             </div>
@@ -162,7 +162,7 @@ export default function PrivacyPolicyClient({
                             <Input
                                 value={policy.title}
                                 onChange={(e) => setPolicy(prev => ({ ...prev, title: e.target.value }))}
-                                className="h-16 px-10 rounded-2xl border-2 border-slate-100 bg-slate-50/50 text-xl font-black tracking-tight focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase"
+                                className="h-16 px-10 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-xl font-black tracking-tight focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase"
                                 placeholder="프로토콜 명칭 정의"
                             />
                         ) : (
@@ -179,11 +179,11 @@ export default function PrivacyPolicyClient({
                             <Textarea
                                 value={policy.content}
                                 onChange={(e) => setPolicy(prev => ({ ...prev, content: e.target.value }))}
-                                className="min-h-[550px] p-12 rounded-[3.5rem] border-2 border-slate-100 bg-slate-50/50 text-base font-bold leading-[2] focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner custom-scrollbar text-left font-sans"
+                                className="min-h-[550px] p-12 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-base font-bold leading-[2] focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner custom-scrollbar text-left font-sans"
                                 placeholder="데이터 보호 규정 상세 명세를 입력하십시오..."
                             />
                         ) : (
-                            <div className="p-16 rounded-[4rem] bg-white border-2 border-slate-100/50 text-slate-600 leading-[2.2] font-semibold whitespace-pre-wrap shadow-2xl text-lg relative overflow-hidden group text-left">
+                            <div className="p-16 rounded-[0.1rem] bg-white border-2 border-slate-100/50 text-slate-600 leading-[2.2] font-semibold whitespace-pre-wrap shadow-2xl text-lg relative overflow-hidden group text-left">
                                 <div className="absolute top-0 right-0 p-12 opacity-[0.01] scale-[2] pointer-events-none group-hover:rotate-12 transition-transform duration-1000">
                                     <Shield size={240} className="text-primary" />
                                 </div>

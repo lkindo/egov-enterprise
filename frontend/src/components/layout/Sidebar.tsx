@@ -1,4 +1,4 @@
-'use server';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
@@ -6,12 +6,14 @@ import { usePathname } from 'next/navigation';
 import axios from '@/lib/api/client';
 
 import { useLayout } from '@/contexts/LayoutContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 import { MenuInfo } from '@/types/foundation/menu';
 
 const Sidebar = () => {
   const pathname = usePathname();
   const { activeMenuNo } = useLayout();
+  const { user } = useAuth();
   const [leftMenus, setLeftMenus] = useState<MenuInfo[]>([]);
   const [parentMenu, setParentMenu] = useState<MenuInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +40,7 @@ const Sidebar = () => {
       const message = err instanceof Error ? err.message : 'Failed to fetch menus';
       setError(message);
     }
-  }, [activeMenuNo]);
+  }, [activeMenuNo, user]);
 
   useEffect(() => {
     fetchLeftMenus();

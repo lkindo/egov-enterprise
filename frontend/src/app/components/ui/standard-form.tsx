@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { cn } from "@/lib/utils";
 
 interface StandardFormProps {
@@ -21,7 +21,7 @@ export function StandardForm({
   footer
 }: StandardFormProps) {
   return (
-    <div className={cn("bg-card border border-border rounded-xl shadow-sm overflow-hidden", className)}>
+    <div className={cn("bg-card border border-border rounded-[0.1rem] shadow-sm overflow-hidden", className)}>
       {(title || description) && (
         <div className="px-6 py-4 border-b border-border/50 bg-muted/20">
           {title ? <h3 className="text-base font-bold text-foreground tracking-tight">{title}</h3> : null}

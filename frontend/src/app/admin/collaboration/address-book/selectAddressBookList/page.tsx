@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,40 +82,40 @@ const AddressBookListPage = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="bg-slate-900 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-3 ring-8 ring-slate-50 border border-white/10 shrink-0">
+                    <div className="bg-slate-900 text-white px-6 py-4 rounded-[0.1rem] shadow-2xl flex items-center gap-3 ring-8 ring-slate-50 border border-white/10 shrink-0">
                         <UserCircle className="w-5 h-5 text-primary" />
                         <span className="text-sm font-bold opacity-60 tracking-tight">전체 등록 연락처</span>
                         <div className="h-4 w-px bg-white/20 mx-1" />
                         <span className="text-2xl font-black">{totalCount}건</span>
                     </div>
                     <Link href="/admin/collaboration/address-book/insertAddressBook">
-                        <Button size="lg" className="h-16 px-8 gap-3 bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/20 rounded-3xl font-black transition-all active:scale-95 shrink-0">
+                        <Button size="lg" className="h-16 px-8 gap-3 bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/20 rounded-[0.1rem] font-black transition-all active:scale-95 shrink-0">
                             <Plus className="w-5 h-5" /> 신규 연락처
                         </Button>
                     </Link>
                 </div>
             </div>
 
-            <Card className="border-none shadow-2xl overflow-hidden rounded-[3rem] bg-white ring-1 ring-slate-100">
+            <Card className="border-none shadow-2xl overflow-hidden rounded-[0.1rem] bg-white ring-1 ring-slate-100">
                 <CardHeader className="bg-slate-50/50 pb-8 pt-10 px-10 border-b">
                     <form onSubmit={handleSearch} className="flex-1 flex gap-3 max-w-2xl">
                         <div className="relative flex-1 group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
                             <Input
                                 type="text"
-                                className="pl-12 h-14 text-base font-bold bg-white border-2 border-slate-100 focus:border-slate-900 focus-visible:ring-slate-100/5 transition-all shadow-inner rounded-2xl"
+                                className="pl-12 h-14 text-base font-bold bg-white border-2 border-slate-100 focus:border-slate-900 focus-visible:ring-slate-100/5 transition-all shadow-inner rounded-[0.1rem]"
                                 placeholder="성명, 전화번호, 소속 등으로 정밀 검색..."
                                 value={searchWrd}
                                 onChange={(e) => setSearchWrd(e.target.value)}
                             />
                         </div>
-                        <Button type="submit" className="h-14 px-10 font-black bg-slate-900 hover:bg-black text-white rounded-2xl shadow-xl transition-all active:scale-95">
+                        <Button type="submit" className="h-14 px-10 font-black bg-slate-900 hover:bg-black text-white rounded-[0.1rem] shadow-xl transition-all active:scale-95">
                             검색하기
                         </Button>
                     </form>
                 </CardHeader>
                 <CardContent className="pt-8 px-10">
-                    <div className="rounded-[2rem] border-2 border-slate-50 overflow-hidden shadow-sm bg-white ring-1 ring-slate-100/50">
+                    <div className="rounded-[0.1rem] border-2 border-slate-50 overflow-hidden shadow-sm bg-white ring-1 ring-slate-100/50">
                         <Table>
                             <TableHeader className="bg-slate-50/80">
                                 <TableRow className="hover:bg-transparent">
@@ -153,7 +153,7 @@ const AddressBookListPage = () => {
                                             </TableCell>
                                             <TableCell className="px-8 py-8">
                                                 <Link href={`/admin/collaboration/address-book/selectAddressBookDetail/${item.adbkId}`} className="flex items-center gap-5 group/item">
-                                                    <div className="w-14 h-14 bg-slate-900 rounded-[1.25rem] flex items-center justify-center text-primary font-black text-xl shadow-xl ring-4 ring-slate-50 transition-all group-hover/item:scale-110">
+                                                    <div className="w-14 h-14 bg-slate-900 rounded-[0.1rem] flex items-center justify-center text-primary font-black text-xl shadow-xl ring-4 ring-slate-50 transition-all group-hover/item:scale-110">
                                                         {item.adbkNm?.charAt(0)}
                                                     </div>
                                                     <div className="space-y-1">
@@ -198,7 +198,7 @@ const AddressBookListPage = () => {
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => handleDelete(item.adbkId)}
-                                                    className="h-12 w-12 text-slate-300 hover:text-rose-500 hover:bg-rose-50/50 transition-all opacity-0 group-hover:opacity-100 rounded-[1.25rem] border border-transparent hover:border-rose-100 shadow-sm"
+                                                    className="h-12 w-12 text-slate-300 hover:text-rose-500 hover:bg-rose-50/50 transition-all opacity-0 group-hover:opacity-100 rounded-[0.1rem] border border-transparent hover:border-rose-100 shadow-sm"
                                                 >
                                                     <Trash2 className="w-5 h-5" />
                                                 </Button>
@@ -217,11 +217,11 @@ const AddressBookListPage = () => {
                                 size="lg"
                                 onClick={() => setPageNo(p => Math.max(1, p - 1))}
                                 disabled={pageNo === 1}
-                                className="px-14 h-16 rounded-[1.5rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-[0.2em] text-[10px]"
+                                className="px-14 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-[0.2em] text-[10px]"
                             >
                                 PREV
                             </Button>
-                            <div className="bg-slate-50 text-slate-900 border-2 border-white px-10 py-4 rounded-[1.5rem] shadow-xl flex items-center gap-5 ring-8 ring-slate-100/50">
+                            <div className="bg-slate-50 text-slate-900 border-2 border-white px-10 py-4 rounded-[0.1rem] shadow-xl flex items-center gap-5 ring-8 ring-slate-100/50">
                                 <span className="text-2xl font-black">{pageNo}</span>
                                 <div className="h-6 w-px bg-slate-200" />
                                 <span className="text-sm font-bold text-slate-400 opacity-60">{totalPages}</span>
@@ -231,7 +231,7 @@ const AddressBookListPage = () => {
                                 size="lg"
                                 onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
                                 disabled={pageNo === totalPages}
-                                className="px-14 h-16 rounded-[1.5rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-[0.2em] text-[10px]"
+                                className="px-14 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-[0.2em] text-[10px]"
                             >
                                 NEXT
                             </Button>

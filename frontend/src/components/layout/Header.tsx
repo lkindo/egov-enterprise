@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
@@ -25,7 +25,7 @@ const Header = () => {
       console.error('Failed to fetch menus:', err);
       setMenus([]);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchMenus();

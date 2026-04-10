@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -122,7 +122,7 @@ export default function DeptAdminClient({
         <div className="flex flex-col gap-1 py-4">
           <span className="font-black font-mono text-muted-foreground/40 text-[9px] tracking-[0.4em] uppercase italic leading-none mb-1">NODE_UID: {item.orgnztId}</span>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+            <div className="w-12 h-12 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
               <Building2 size={20} className="text-primary" />
             </div>
             <span className="font-black tracking-tighter text-foreground text-md uppercase leading-none">{item.orgnztNm}</span>
@@ -151,10 +151,10 @@ export default function DeptAdminClient({
       className: 'text-right w-40',
       accessor: (item: DeptDto) => (
         <div className="flex justify-end gap-2 pr-4">
-          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)} className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-200 transition-all font-black shadow-sm group">
+          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)} className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-[0.1rem] border border-slate-200 transition-all font-black shadow-sm group">
             <Settings size={16} className="group-hover:rotate-45 transition-transform" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => item.orgnztId && handleDelete(item.orgnztId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all shadow-sm">
+          <Button variant="ghost" size="icon" onClick={() => item.orgnztId && handleDelete(item.orgnztId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-[0.1rem] transition-all shadow-sm">
             <Trash2 size={16} />
           </Button>
         </div>
@@ -179,14 +179,14 @@ export default function DeptAdminClient({
             <Button
               variant="ghost"
               onClick={handleRefresh}
-              className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95"
+              className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95"
             >
               <RefreshCcw size={22} className={cn("group-hover:rotate-180 transition-transform duration-700", loading && "animate-spin")} />
             </Button>
             <Button
               onClick={handleOpenAdd}
               size="lg"
-              className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
+              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
             >
               <Plus size={20} /> 신규 조직 노드 구성
             </Button>
@@ -204,13 +204,13 @@ export default function DeptAdminClient({
       <div className="grid grid-cols-12 gap-12">
         {/* Statistics & Search Panel */}
         <div className="col-span-12 lg:col-span-4 h-full text-left">
-          <div className="rounded-[3.5rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
+          <div className="rounded-[0.1rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
             <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
               <Database size={240} className="text-primary" />
             </div>
             <div className="relative z-10 space-y-12">
               <div className="space-y-3">
-                <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
+                <div className="w-16 h-16 rounded-[0.1rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                   <Building2 size={32} className="text-primary" />
                 </div>
                 <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-left">조직 체계<br />인프라</h4>
@@ -224,7 +224,7 @@ export default function DeptAdminClient({
                     <input
                       onChange={(e) => setSearchKeyword(e.target.value)}
                       value={searchKeyword}
-                      className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
+                      className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-[0.1rem] focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
                       placeholder="조직 또는 부서 식별값"
                     />
                   </div>
@@ -237,7 +237,7 @@ export default function DeptAdminClient({
                 </p>
                 <Button
                   onClick={handleRefresh}
-                  className="h-12 px-8 rounded-2xl bg-white text-slate-900 border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition-all hover:-translate-y-1"
+                  className="h-12 px-8 rounded-[0.1rem] bg-white text-slate-900 border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition-all hover:-translate-y-1"
                 >
                   SEARCH
                 </Button>
@@ -273,8 +273,8 @@ export default function DeptAdminClient({
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
-            <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group">
+            <Button variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 h-14 rounded-[0.1rem] font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group">
               <Zap size={18} className="group-hover:animate-pulse" /> {selectedDept ? '조직 수정' : '부서 배포'}
             </Button>
           </div>
@@ -288,7 +288,7 @@ export default function DeptAdminClient({
                 placeholder="조직 아이덴티티 입력"
                 value={form.orgnztNm}
                 onChange={(e) => setForm(prev => ({ ...prev, orgnztNm: e.target.value }))}
-                className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
+                className="h-16 pl-16 rounded-[0.1rem] border-2 text-md font-black tracking-tight shadow-inner"
               />
             </div>
           </FormField>
@@ -300,13 +300,13 @@ export default function DeptAdminClient({
                 placeholder="조직 상세 명세 입력"
                 value={form.orgnztDc}
                 onChange={(e) => setForm(prev => ({ ...prev, orgnztDc: e.target.value }))}
-                className="min-h-[160px] pl-16 p-6 rounded-[2rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all resize-none shadow-inner"
+                className="min-h-[160px] pl-16 p-6 rounded-[0.1rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none transition-all resize-none shadow-inner"
               />
             </div>
           </FormField>
 
-          <div className="p-8 rounded-[2.5rem] bg-indigo-50/30 border-2 border-indigo-100/50 flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-white border border-indigo-100 flex items-center justify-center shadow-sm">
+          <div className="p-8 rounded-[0.1rem] bg-indigo-50/30 border-2 border-indigo-100/50 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-[0.1rem] bg-white border border-indigo-100 flex items-center justify-center shadow-sm">
               <MapPin className="text-indigo-500" size={18} />
             </div>
             <div className="space-y-1">

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -11,8 +11,8 @@ export default function SurveyRespondentsPage() {
         title="설문 응답자 관리"
         breadcrumbs={[{ label: '설문조사' }, { label: '응답자 관리' }]}
       />
-      <div className="p-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
-        <div className="w-20 h-20 bg-rose-50 rounded-[2rem] flex items-center justify-center text-rose-300">
+      <div className="p-20 text-center bg-white rounded-[0.1rem] border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
+        <div className="w-20 h-20 bg-rose-50 rounded-[0.1rem] flex items-center justify-center text-rose-300">
             <Users2 size={40} />
         </div>
         <div className="space-y-2">

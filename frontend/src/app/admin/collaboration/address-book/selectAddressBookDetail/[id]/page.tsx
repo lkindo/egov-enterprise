@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -42,7 +42,7 @@ const InsertAddressBookPage = () => {
     return (
         <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-xl w-fit border border-slate-100">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-[0.1rem] w-fit border border-slate-100">
                 <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
                     <Home className="w-4 h-4" /> 홈
                 </Link>
@@ -52,10 +52,10 @@ const InsertAddressBookPage = () => {
                 <span className="text-foreground font-black">신규 등록</span>
             </div>
 
-            <Card className="shadow-2xl border-none overflow-hidden rounded-[2.5rem] bg-white ring-1 ring-slate-100">
+            <Card className="shadow-2xl border-none overflow-hidden rounded-[0.1rem] bg-white ring-1 ring-slate-100">
                 <CardHeader className="border-b bg-slate-50/50 pb-10 pt-10 px-12">
                     <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-4">
-                        <div className="p-3 bg-primary/10 rounded-2xl text-primary">
+                        <div className="p-3 bg-primary/10 rounded-[0.1rem] text-primary">
                             <User className="w-8 h-8" />
                         </div>
                         주소록 신규 등록
@@ -73,7 +73,7 @@ const InsertAddressBookPage = () => {
                                     <Input
                                         id="adbkNm"
                                         placeholder="성명을 입력하세요"
-                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-2xl transition-all"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition-all"
                                         value={formData.adbkNm}
                                         onChange={(e) => setFormData({ ...formData, adbkNm: e.target.value })}
                                         required
@@ -86,7 +86,7 @@ const InsertAddressBookPage = () => {
                                     <Input
                                         id="telNo"
                                         placeholder="010-0000-0000"
-                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-2xl transition-all font-mono tracking-tight"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition-all font-mono tracking-tight"
                                         value={formData.telNo}
                                         onChange={(e) => setFormData({ ...formData, telNo: e.target.value })}
                                     />
@@ -102,7 +102,7 @@ const InsertAddressBookPage = () => {
                                         id="email"
                                         type="email"
                                         placeholder="example@egov.go.kr"
-                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-2xl transition-all"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition-all"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     />
@@ -114,7 +114,7 @@ const InsertAddressBookPage = () => {
                                     <Input
                                         id="adres"
                                         placeholder="상세 주소를 입력하세요"
-                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-2xl transition-all"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition-all"
                                         value={formData.adres}
                                         onChange={(e) => setFormData({ ...formData, adres: e.target.value })}
                                     />
@@ -122,8 +122,8 @@ const InsertAddressBookPage = () => {
                             </div>
                         </div>
 
-                        <div className="p-6 bg-slate-900 rounded-3xl flex items-start gap-4 shadow-xl ring-8 ring-slate-50">
-                            <div className="p-2 bg-primary/20 rounded-xl text-primary mt-1">
+                        <div className="p-6 bg-slate-900 rounded-[0.1rem] flex items-start gap-4 shadow-xl ring-8 ring-slate-50">
+                            <div className="p-2 bg-primary/20 rounded-[0.1rem] text-primary mt-1">
                                 <Info className="w-5 h-5" />
                             </div>
                             <div className="space-y-1">
@@ -136,11 +136,11 @@ const InsertAddressBookPage = () => {
                     </CardContent>
                     <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-12 border-t bg-slate-50/30 rounded-b-[2.5rem] mt-10">
                         <Link href="/admin/collaboration/address-book/selectAddressBookList">
-                            <Button type="button" variant="ghost" className="h-16 px-10 gap-2 font-black text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-xl transition-all rounded-2xl border border-transparent hover:border-rose-50">
+                            <Button type="button" variant="ghost" className="h-16 px-10 gap-2 font-black text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-xl transition-all rounded-[0.1rem] border border-transparent hover:border-rose-50">
                                 <ArrowLeft className="w-5 h-5" /> 등록 취소
                             </Button>
                         </Link>
-                        <Button type="submit" className="h-16 px-16 gap-3 font-black bg-slate-900 text-white shadow-2xl shadow-slate-900/20 hover:bg-black transition-all active:scale-95 rounded-2xl" disabled={loading}>
+                        <Button type="submit" className="h-16 px-16 gap-3 font-black bg-slate-900 text-white shadow-2xl shadow-slate-900/20 hover:bg-black transition-all active:scale-95 rounded-[0.1rem]" disabled={loading}>
                             {loading ? (
                                 <span className="flex items-center gap-2 animate-pulse">처리 중...</span>
                             ) : (

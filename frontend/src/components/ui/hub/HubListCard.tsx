@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, AlertCircle, LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -69,7 +69,7 @@ export function HubListCard({
     >
       <div className="px-10 py-10 border-b border-primary/5 flex items-center justify-between bg-card">
         <h3 className="font-black text-2xl flex items-center gap-4 tracking-tight">
-          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", colorMap[color])}>
+          <div className={cn("w-10 h-10 rounded-[0.1rem] flex items-center justify-center", colorMap[color])}>
             {renderIcon()}
           </div>
           {title}
@@ -77,7 +77,7 @@ export function HubListCard({
         {moreHref && (
           <Link
             href={moreHref}
-            className="w-12 h-12 bg-muted/30 rounded-2xl flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="w-12 h-12 bg-muted/30 rounded-[0.1rem] flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             aria-label={`${title} 더보기`}
           >
             <ArrowRight size={20} />
@@ -91,7 +91,7 @@ export function HubListCard({
               key={`list-item-${title}-${item.id || item.nttId || idx}`}
               whileHover={{ x: 5 }}
               className={cn(
-                "flex flex-col gap-2 p-6 rounded-[2rem] border border-transparent transition-all cursor-pointer group/item",
+                "flex flex-col gap-2 p-6 rounded-[0.1rem] border border-transparent transition-all cursor-pointer group/item",
                 itemHoverColorMap[color]
               )}
             >

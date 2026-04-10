@@ -67,7 +67,7 @@ export function StandardAdminLayout<T extends { [key: string]: any }>({
  />
 
  {/* 2. Search Panel */}
- <div className="rounded-[2.5rem] bg-slate-50 border border-slate-100 p-8 shadow-inner">
+ <div className="rounded-[0.1rem] bg-slate-50 border border-slate-100 p-8 shadow-inner">
  <SmartSearchPanel
  fields={filterFields}
  onSearch={onSearch}
@@ -76,7 +76,7 @@ export function StandardAdminLayout<T extends { [key: string]: any }>({
  </div>
 
  {/* 3. Data Grid + Pagination */}
- <div className="rounded-[3rem] bg-white shadow-2xl border border-slate-100 overflow-hidden ring-1 ring-slate-50">
+ <div className="rounded-[0.1rem] bg-white shadow-2xl border border-slate-100 overflow-hidden ring-1 ring-slate-50">
  <UltimateDataGrid
  title={gridTitle}
  columns={columns}

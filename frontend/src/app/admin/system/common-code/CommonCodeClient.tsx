@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -316,7 +316,7 @@ export default function CommonCodeClient({
             <div className="flex flex-col lg:flex-row gap-8 min-h-[700px]">
                 {/* --- Left Sidebar: Code Tree --- */}
                 <aside className="w-full lg:w-96 flex flex-col gap-4">
-                    <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] border border-slate-200/50 shadow-sm overflow-hidden flex flex-col h-full ring-1 ring-slate-100/50">
+                    <div className="bg-white/95 backdrop-blur-xl rounded-[0.1rem] border border-slate-200/50 shadow-sm overflow-hidden flex flex-col h-full ring-1 ring-slate-100/50">
                         <div className="p-5 border-b border-slate-100 bg-slate-50/50 space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-xs font-black tracking-widest text-slate-900 flex items-center gap-2">
@@ -331,7 +331,7 @@ export default function CommonCodeClient({
                                     placeholder="그룹/이름 검색.."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="h-10 pl-10 bg-white border-transparent rounded-xl text-xs font-bold shadow-inner"
+                                    className="h-10 pl-10 bg-white border-transparent rounded-[0.1rem] text-xs font-bold shadow-inner"
                                 />
                             </div>
                         </div>
@@ -339,7 +339,7 @@ export default function CommonCodeClient({
                         <div className="flex-1 overflow-y-auto p-2 custom-scrollbar max-h-[600px]">
                             {filteredClusters.length === 0 ? (
                                 <div className="p-8 text-center space-y-4 opacity-50">
-                                    <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto text-slate-300">
+                                    <div className="w-12 h-12 rounded-[0.1rem] bg-slate-50 flex items-center justify-center mx-auto text-slate-300">
                                         <SearchSlash size={24} />
                                     </div>
                                     <p className="text-[10px] font-black tracking-widest uppercase">결과 없음</p>
@@ -362,7 +362,7 @@ export default function CommonCodeClient({
                                                         loadGroupDetails(group);
                                                     }}
                                                     className={cn(
-                                                        'w-full flex items-center justify-between p-3 rounded-2xl transition-all group/item',
+                                                        'w-full flex items-center justify-between p-3 rounded-[0.1rem] transition-all group/item',
                                                         selectedGroup?.codeId === group.codeId
                                                             ? 'bg-slate-900 text-white shadow-lg scale-[1.02]'
                                                             : 'hover:bg-slate-50 text-slate-600'
@@ -400,9 +400,9 @@ export default function CommonCodeClient({
                 <main className="flex-1 space-y-6">
                     {selectedGroup ? (
                         <div className="space-y-6">
-                            <div className="p-8 rounded-[2.5rem] bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 ring-1 ring-slate-100">
+                            <div className="p-8 rounded-[0.1rem] bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 ring-1 ring-slate-100">
                                 <div className="flex items-center gap-6">
-                                    <div className="w-16 h-16 rounded-3xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
+                                    <div className="w-16 h-16 rounded-[0.1rem] bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
                                         <Fingerprint size={28} />
                                     </div>
                                     <div className="space-y-1">
@@ -420,19 +420,19 @@ export default function CommonCodeClient({
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <Button onClick={handleCreateDetail} size="lg" className="h-12 px-6 rounded-2xl bg-primary text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:-translate-y-0.5 transition-all gap-2">
+                                    <Button onClick={handleCreateDetail} size="lg" className="h-12 px-6 rounded-[0.1rem] bg-primary text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:-translate-y-0.5 transition-all gap-2">
                                         <Plus size={16} /> 신규 등록
                                     </Button>
                                 </div>
                             </div>
 
                             <div className={cn(
-                                "bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden ring-1 ring-slate-100 transition-all",
+                                "bg-white rounded-[0.1rem] border border-slate-200 shadow-sm overflow-hidden ring-1 ring-slate-100 transition-all",
                                 detailsLoading ? "opacity-30 pointer-events-none scale-[0.99] grayscale" : "opacity-100"
                             )}>
                                 <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center text-primary shadow-sm">
+                                        <div className="w-10 h-10 rounded-[0.1rem] bg-white border-2 border-slate-100 flex items-center justify-center text-primary shadow-sm">
                                             {detailsLoading ? <RefreshCcw size={18} className="animate-spin" /> : <Layers size={18} />}
                                         </div>
                                         <div className="text-left">
@@ -464,8 +464,8 @@ export default function CommonCodeClient({
                             </div>
                         </div>
                     ) : (
-                        <div className="h-full flex flex-col items-center justify-center p-12 rounded-[3.5rem] bg-white border border-slate-200 shadow-sm ring-1 ring-slate-100 min-h-[500px]">
-                            <div className="w-24 h-24 rounded-[2.5rem] bg-slate-50 flex items-center justify-center text-slate-300 mb-8 border border-slate-100 shadow-inner">
+                        <div className="h-full flex flex-col items-center justify-center p-12 rounded-[0.1rem] bg-white border border-slate-200 shadow-sm ring-1 ring-slate-100 min-h-[500px]">
+                            <div className="w-24 h-24 rounded-[0.1rem] bg-slate-50 flex items-center justify-center text-slate-300 mb-8 border border-slate-100 shadow-inner">
                                 <Database size={40} className="animate-pulse" />
                             </div>
                             <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase mb-4">마스터 데이터 저장소</h3>
@@ -474,11 +474,11 @@ export default function CommonCodeClient({
                                 도메인 계층별 모든 마스터 데이터가 이곳에 노출됩니다.
                             </p>
                             <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
-                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
+                                <div className="p-6 rounded-[0.1rem] bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
                                     <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">도메인 클러스터</span>
                                     <span className="text-2xl font-black text-slate-900 font-mono italic">{initialClusters.length}</span>
                                 </div>
-                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
+                                <div className="p-6 rounded-[0.1rem] bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
                                     <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">활성 그룹 수</span>
                                     <span className="text-2xl font-black text-slate-900 font-mono italic">{groups.length}</span>
                                 </div>
@@ -496,11 +496,11 @@ export default function CommonCodeClient({
                 maxWidth="3xl"
                 footer={
                     <div className="flex w-full gap-4">
-                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
+                        <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-[0.1rem] font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
                         <Button
                             onClick={form.handleSubmit(onSubmit)}
                             disabled={form.formState.isSubmitting}
-                            className="flex-[2] h-14 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group"
+                            className="flex-[2] h-14 rounded-[0.1rem] bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group"
                         >
                             <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 저장
                         </Button>
@@ -515,7 +515,7 @@ export default function CommonCodeClient({
                                     <label className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                                         상위 그룹 식별자
                                     </label>
-                                    <div className="h-14 flex items-center px-6 rounded-2xl bg-slate-100 border-none font-mono text-xs font-black shadow-inner text-slate-500">
+                                    <div className="h-14 flex items-center px-6 rounded-[0.1rem] bg-slate-100 border-none font-mono text-xs font-black shadow-inner text-slate-500">
                                         {selectedGroup?.codeId}
                                     </div>
                                 </div>
@@ -532,7 +532,7 @@ export default function CommonCodeClient({
                                                 <Input
                                                     {...field}
                                                     readOnly={!!editingDetail}
-                                                    className="h-14 rounded-2xl font-mono text-xs font-black shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
+                                                    className="h-14 rounded-[0.1rem] font-mono text-xs font-black shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
                                                     placeholder="Unique code indicator"
                                                 />
                                             </FormControl>
@@ -552,7 +552,7 @@ export default function CommonCodeClient({
                                             <FormControl>
                                                 <Input
                                                     {...field}
-                                                    className="h-14 rounded-2xl text-sm font-black tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
+                                                    className="h-14 rounded-[0.1rem] text-sm font-black tracking-tight shadow-inner border-none bg-slate-50 focus:bg-white transition-all text-left"
                                                     placeholder="레이블 명칭 입력"
                                                 />
                                             </FormControl>
@@ -577,15 +577,15 @@ export default function CommonCodeClient({
                                                 value={field.value}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger className="h-14 rounded-2xl border-none bg-slate-50 font-black text-[10px] tracking-widest uppercase shadow-inner">
+                                                    <SelectTrigger className="h-14 rounded-[0.1rem] border-none bg-slate-50 font-black text-[10px] tracking-widest uppercase shadow-inner">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent className="rounded-2xl shadow-xl z-[9999]">
-                                                    <SelectItem value="Y" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-emerald-500">
+                                                <SelectContent className="rounded-[0.1rem] shadow-xl z-[9999]">
+                                                    <SelectItem value="Y" className="h-12 rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase text-emerald-500">
                                                         --- 사용 중 (ACTIVE) ---
                                                     </SelectItem>
-                                                    <SelectItem value="N" className="h-12 rounded-xl text-[10px] font-black tracking-widest uppercase text-rose-500">
+                                                    <SelectItem value="N" className="h-12 rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase text-rose-500">
                                                         --- 미사용 (INACTIVE) ---
                                                     </SelectItem>
                                                 </SelectContent>
@@ -606,7 +606,7 @@ export default function CommonCodeClient({
                                             <FormControl>
                                                 <textarea
                                                     {...field}
-                                                    className="w-full min-h-[160px] p-6 rounded-[2rem] border-none bg-slate-50 text-[11px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner text-left"
+                                                    className="w-full min-h-[160px] p-6 rounded-[0.1rem] border-none bg-slate-50 text-[11px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner text-left"
                                                     placeholder="코드 사용처 및 시스템 제약 조건 설명..."
                                                 />
                                             </FormControl>

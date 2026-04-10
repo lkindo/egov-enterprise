@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -120,7 +120,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
       header: '사용자 아이디 (Identity)',
       accessor: (item) => (
         <div className="flex items-center gap-5 py-4">
-          <div className="w-14 h-14 rounded-[1.25rem] bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+          <div className="w-14 h-14 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
             <Fingerprint size={24} className="text-primary" />
           </div>
           <div className="flex flex-col gap-1">
@@ -156,10 +156,10 @@ export default function UserManageClient({ initialData, initialParams }: { initi
       className: 'text-right w-32',
       accessor: (item) => (
         <div className="flex justify-end gap-2 pr-4">
-          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)} className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-200 transition-all font-black shadow-sm">
+          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)} className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-[0.1rem] border border-slate-200 transition-all font-black shadow-sm">
             <Settings size={16} />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(item.userId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all shadow-sm">
+          <Button variant="ghost" size="icon" onClick={() => handleDelete(item.userId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-[0.1rem] transition-all shadow-sm">
             <Trash2 size={16} />
           </Button>
         </div>
@@ -183,14 +183,14 @@ export default function UserManageClient({ initialData, initialParams }: { initi
           <div className="flex gap-4 p-2 items-center">
             <Button
               variant="ghost"
-              className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95"
+              className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95"
             >
               <Settings2 size={22} className="group-hover:rotate-90 transition-transform duration-500" />
             </Button>
             <Button
               onClick={handleOpenCreate}
               size="lg"
-              className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
+              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
             >
               <UserPlus size={20} /> 신규 등록
             </Button>
@@ -208,13 +208,13 @@ export default function UserManageClient({ initialData, initialParams }: { initi
       <div className="grid grid-cols-12 gap-12">
         {/* Search Panel */}
         <div className="col-span-12 lg:col-span-4 h-full">
-          <div className="rounded-[3.5rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
+          <div className="rounded-[0.1rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
             <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
               <ShieldCheck size={240} className="text-primary" />
             </div>
             <div className="relative z-10 space-y-12">
               <div className="space-y-3">
-                <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
+                <div className="w-16 h-16 rounded-[0.1rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                   <Zap size={32} className="text-primary" />
                 </div>
                 <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">인증<br />코어 프로토콜</h4>
@@ -228,7 +228,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                     <input
                       id="user-search-input"
                       onChange={(e) => setParams({ ...params, searchKeyword: e.target.value })}
-                      className="w-full h-16 pl-16 pr-8 bg-white/10 border-2 border-white/20 rounded-2xl focus:border-primary/50 focus:bg-white/20 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/40 uppercase"
+                      className="w-full h-16 pl-16 pr-8 bg-white/10 border-2 border-white/20 rounded-[0.1rem] focus:border-primary/50 focus:bg-white/20 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/40 uppercase"
                       placeholder="사용자명 또는 고유 ID"
                     />
                   </div>
@@ -239,7 +239,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                   <select
                     id="user-status-filter"
                     onChange={(e) => setParams({ ...params, sbscrbSttus: e.target.value })}
-                    className="w-full h-16 px-8 bg-white/10 border-2 border-white/20 rounded-2xl focus:border-primary/50 focus:bg-white/20 transition-all text-[10px] font-black tracking-widest text-white outline-none appearance-none cursor-pointer uppercase"
+                    className="w-full h-16 px-8 bg-white/10 border-2 border-white/20 rounded-[0.1rem] focus:border-primary/50 focus:bg-white/20 transition-all text-[10px] font-black tracking-widest text-white outline-none appearance-none cursor-pointer uppercase"
                   >
                     <option value="" className="bg-slate-900">--- ALL_ENTITIES (전체) ---</option>
                     <option value="P" className="bg-slate-900 text-amber-500">--- PENDING (승인대기) ---</option>
@@ -253,7 +253,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                 <p className="text-[10px] font-bold text-slate-400 leading-relaxed italic uppercase max-w-[180px]">
                   * 다요소인증(MFA) 적용 계정입니다.
                 </p>
-                <Button variant="ghost" className="h-10 px-4 rounded-xl bg-white/5 text-primary text-[9px] font-black tracking-widest uppercase hover:bg-primary hover:text-white transition-all">조회</Button>
+                <Button variant="ghost" className="h-10 px-4 rounded-[0.1rem] bg-white/5 text-primary text-[9px] font-black tracking-widest uppercase hover:bg-primary hover:text-white transition-all">조회</Button>
               </div>
             </div>
           </div>
@@ -285,8 +285,8 @@ export default function UserManageClient({ initialData, initialParams }: { initi
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2">취소</Button>
-            <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-14 rounded-2xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-14 rounded-[0.1rem] font-black text-[10px] tracking-widest border-2">취소</Button>
+            <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group">
               <Zap size={18} className="group-hover:animate-pulse" /> 실행
             </Button>
           </div>
@@ -309,7 +309,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                   readOnly={!!editingUser}
                   aria-required="true"
                   aria-describedby="userId-description"
-                  className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tighter shadow-inner bg-slate-50/50"
+                  className="h-16 pl-16 rounded-[0.1rem] border-2 text-md font-black tracking-tighter shadow-inner bg-slate-50/50"
                   placeholder="사용자 식별자"
                 />
               </div>
@@ -322,7 +322,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                   value={formData.userNm || ''}
                   onChange={e => setFormData({ ...formData, userNm: e.target.value })}
                   aria-required="true"
-                  className="h-16 pl-16 rounded-2xl border-2 text-md font-black tracking-tight shadow-inner"
+                  className="h-16 pl-16 rounded-[0.1rem] border-2 text-md font-black tracking-tight shadow-inner"
                   placeholder="표시 이름"
                 />
               </div>
@@ -344,7 +344,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                 onChange={e => setFormData({ ...formData, password: e.target.value })}
                 aria-required={!editingUser}
                 aria-describedby="password-description"
-                className="h-16 pl-16 rounded-2xl border-2 text-sm font-black tracking-widest shadow-inner py-4"
+                className="h-16 pl-16 rounded-[0.1rem] border-2 text-sm font-black tracking-widest shadow-inner py-4"
                 placeholder="••••••••••••••••"
               />
             </div>
@@ -358,7 +358,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                   type="email"
                   value={formData.email || ''}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
-                  className="h-14 pl-14 rounded-2xl border-2 font-black tracking-tighter text-xs shadow-inner lowercase"
+                  className="h-14 pl-14 rounded-[0.1rem] border-2 font-black tracking-tighter text-xs shadow-inner lowercase"
                   placeholder="이메일 주소"
                 />
               </div>
@@ -367,7 +367,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
               <select
                 value={formData.userSttusCode || ''}
                 onChange={e => setFormData({ ...formData, userSttusCode: e.target.value })}
-                className="w-full h-14 px-6 rounded-2xl border-2 bg-slate-50 font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/10 outline-none transition-all cursor-pointer shadow-inner"
+                className="w-full h-14 px-6 rounded-[0.1rem] border-2 bg-slate-50 font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/10 outline-none transition-all cursor-pointer shadow-inner"
               >
                 <option value="P">--- 대기 중 (비승인 대기) ---</option>
                 <option value="A">--- 활성 (정상) ---</option>
@@ -376,7 +376,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
             </FormField>
           </div>
 
-          <div className="p-8 rounded-[2rem] bg-indigo-50/30 border-2 border-indigo-100/50 flex items-start gap-4">
+          <div className="p-8 rounded-[0.1rem] bg-indigo-50/30 border-2 border-indigo-100/50 flex items-start gap-4">
             <ShieldCheck className="text-indigo-500 mt-1 shrink-0" size={20} />
             <div className="space-y-1">
               <h6 className="text-[10px] font-black text-indigo-900 tracking-widest">암호화 정책 활성</h6>

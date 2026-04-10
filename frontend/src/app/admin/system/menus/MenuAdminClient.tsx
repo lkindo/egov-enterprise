@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -35,7 +35,7 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { saveMenuAction, updateMenuOrdersAction, deleteMenuAction } from '@/app/actions/menuActions';
 import { motion, AnimatePresence } from 'framer-motion';
-import { z } from 'zod';
+import { menuSchema } from '@/lib/validation/schemas';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
@@ -45,16 +45,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-
-const menuSchema = z.object({
-  menuNo: z.number(),
-  menuNm: z.string().min(1, '메뉴 명칭은 필수 입력 사항입니다.'),
-  menuOrdr: z.number().min(0, '순서는 0 이상의 숫자여야 합니다.'),
-  upperMenuId: z.number(),
-  progrmFileNm: z.string().optional(),
-  modernRoute: z.string().optional(),
-  menuDc: z.string().optional()
-});
 
 type MenuFormValues = z.infer<typeof menuSchema>;
 
@@ -419,7 +409,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         )}
 
         <div className={cn(
-          "flex items-center justify-between p-5 rounded-[1.5rem] border-2 transition-all relative overflow-hidden",
+          "flex items-center justify-between p-5 rounded-[0.1rem] border-2 transition-all relative overflow-hidden",
           level === 0 ? "bg-white border-slate-100 shadow-sm" : "bg-slate-50/50 border-transparent",
           isDropTarget && dropPosition === 'inside' ? "border-primary bg-primary/5 scale-[1.02]" : "hover:border-primary/30",
           "cursor-grab active:cursor-grabbing bg-white/40 backdrop-blur-xl"
@@ -429,14 +419,14 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               {hasChildren && (
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleExpand(item.menuNo); }}
-                  className="p-1.5 hover:bg-slate-100 rounded-xl transition-colors text-muted-foreground mr-1"
+                  className="p-1.5 hover:bg-slate-100 rounded-[0.1rem] transition-colors text-muted-foreground mr-1"
                 >
                   <ChevronRight size={18} className={cn("transition-transform duration-300", isExpanded && "rotate-90")} />
                 </button>
               )}
               {!hasChildren && level < 2 ? <div className="w-8" /> : null}
               <div className={cn(
-                "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-6 duration-500",
+                "w-12 h-12 rounded-[0.1rem] flex items-center justify-center shadow-lg transition-transform group-hover:rotate-6 duration-500",
                 level === 0 ? "bg-slate-900 text-white shadow-slate-200" : level === 1 ? "bg-primary text-white shadow-primary/20" : "bg-white text-muted-foreground border border-slate-200 shadow-sm"
               )}>
                 {level === 0 ? <FolderTree size={22} /> : level === 1 ? <Layers size={18} /> : <FileCode size={16} />}
@@ -468,7 +458,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               <Button
                 variant="ghost" size="icon"
                 onClick={() => handleOpenCreate(item.menuNo)}
-                className="h-10 w-10 bg-slate-50 hover:bg-primary hover:text-white rounded-xl border border-slate-100 transition-all font-black"
+                className="h-10 w-10 bg-slate-50 hover:bg-primary hover:text-white rounded-[0.1rem] border border-slate-100 transition-all font-black"
               >
                 <Plus size={16} />
               </Button>
@@ -476,14 +466,14 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
             <Button
               variant="ghost" size="icon"
               onClick={() => handleOpenEdit(item)}
-              className="h-10 w-10 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-xl border border-slate-100 transition-all"
+              className="h-10 w-10 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-[0.1rem] border border-slate-100 transition-all"
             >
               <Settings size={16} />
             </Button>
             <Button
               variant="ghost" size="icon"
               onClick={() => handleDelete(item.menuNo)}
-              className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-xl transition-all"
+              className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-[0.1rem] transition-all"
             >
               <Trash2 size={16} />
             </Button>
@@ -518,7 +508,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
             <Button
               onClick={() => handleOpenCreate(0)}
               size="lg"
-              className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
+              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
             >
               <Plus size={20} /> 신규 등록
             </Button>
@@ -539,7 +529,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         icon={SearchCode}
         action={
           <div className="flex gap-4 items-center">
-            <div className="flex bg-white/10 backdrop-blur-md p-1 rounded-xl border border-white/10">
+            <div className="flex bg-white/10 backdrop-blur-md p-1 rounded-[0.1rem] border border-white/10">
               <Button
                 variant="ghost"
                 onClick={handleExpandAll}
@@ -559,7 +549,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               <Button
                 onClick={handleSaveChanges}
                 disabled={isSaving}
-                className="bg-emerald-500 text-white hover:bg-emerald-600 h-10 px-6 rounded-xl font-black text-[10px] tracking-widest uppercase gap-2 shadow-lg animate-in fade-in zoom-in duration-300 disabled:opacity-50"
+                className="bg-emerald-500 text-white hover:bg-emerald-600 h-10 px-6 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase gap-2 shadow-lg animate-in fade-in zoom-in duration-300 disabled:opacity-50"
               >
                 {isSaving ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -589,9 +579,9 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               e.currentTarget.classList.remove('bg-primary/5', 'border-primary', 'scale-[1.01]');
               handleDrop(e, 0, 'inside');
             }}
-            className="border-4 border-dashed border-slate-100 rounded-[2.5rem] p-16 flex flex-col items-center justify-center gap-6 transition-all hover:border-primary/30 group mt-16 bg-slate-50/30"
+            className="border-4 border-dashed border-slate-100 rounded-[0.1rem] p-16 flex flex-col items-center justify-center gap-6 transition-all hover:border-primary/30 group mt-16 bg-slate-50/30"
           >
-            <div className="w-20 h-20 rounded-3xl bg-white flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:rotate-12 group-hover:scale-110 shadow-inner border border-slate-100 transition-all duration-500">
+            <div className="w-20 h-20 rounded-[0.1rem] bg-white flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:rotate-12 group-hover:scale-110 shadow-inner border border-slate-100 transition-all duration-500">
               <Plus size={32} />
             </div>
             <div className="text-center space-y-2">
@@ -609,11 +599,11 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-[0.1rem] font-black text-[10px] tracking-widest border-2 border-slate-100 shadow-sm">취소</Button>
             <Button
               onClick={form.handleSubmit(onFormSubmit)}
               disabled={form.formState.isSubmitting}
-              className="flex-[2] h-14 rounded-2xl bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group"
+              className="flex-[2] h-14 rounded-[0.1rem] bg-primary border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group"
             >
               <Save size={18} className="group-hover:scale-110 transition-transform" /> {mode === 'create' ? '등록 완료' : '수정 완료'}
             </Button>
@@ -633,7 +623,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                   <FormControl>
                     <Input
                       {...field}
-                      className="h-14 rounded-2xl text-md font-black tracking-tight shadow-inner"
+                      className="h-14 rounded-[0.1rem] text-md font-black tracking-tight shadow-inner"
                       placeholder="메뉴 이름 입력 (팀 / 서비스 관리)"
                     />
                   </FormControl>
@@ -648,7 +638,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                 <label className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
                   상위 노드 식별자
                 </label>
-                <div className="h-14 rounded-2xl border-2 border-slate-100 flex items-center px-6 text-[10px] font-black tracking-widest uppercase bg-slate-50/50 text-muted-foreground/60 italic overflow-hidden shadow-inner">
+                <div className="h-14 rounded-[0.1rem] border-2 border-slate-100 flex items-center px-6 text-[10px] font-black tracking-widest uppercase bg-slate-50/50 text-muted-foreground/60 italic overflow-hidden shadow-inner">
                   {form.getValues('upperMenuId') === 0 ? 'SYSTEM_ROOT (최상위)' : `PARENT_NODE_${form.getValues('upperMenuId')}`}
                 </div>
               </div>
@@ -666,7 +656,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                         {...field}
                         type="number"
                         onChange={(e) => field.onChange(Number(e.target.value))}
-                        className="h-14 rounded-2xl text-xs font-black shadow-inner"
+                        className="h-14 rounded-[0.1rem] text-xs font-black shadow-inner"
                       />
                     </FormControl>
                     <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
@@ -689,11 +679,11 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                     value={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase focus:ring-4 focus:ring-primary/10 transition-all shadow-inner">
+                      <SelectTrigger className="h-14 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50 font-black text-[10px] tracking-widest uppercase focus:ring-4 focus:ring-primary/10 transition-all shadow-inner">
                         <SelectValue placeholder="--- UNLINKED (연동되지 않음) ---" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent className="rounded-2xl shadow-2xl p-2 z-[9999]">
+                    <SelectContent className="rounded-[0.1rem] shadow-2xl p-2 z-[9999]">
                       {programs.map((p) => (
                         <SelectItem key={p.progrmFileNm} value={p.progrmFileNm} className="text-xs font-bold">
                           {p.progrmKoreanNm} ({p.progrmFileNm})
@@ -719,7 +709,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                     <FormControl>
                       <Input
                         {...field}
-                        className="h-14 pl-16 rounded-2xl text-xs font-mono font-black italic shadow-inner border-2 border-slate-100"
+                        className="h-14 pl-16 rounded-[0.1rem] text-xs font-mono font-black italic shadow-inner border-2 border-slate-100"
                         placeholder="예: /admin/system/codes"
                       />
                     </FormControl>
@@ -741,7 +731,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
                   <FormControl>
                     <textarea
                       {...field}
-                      className="w-full min-h-[140px] p-6 rounded-2xl border-2 border-slate-100 bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
+                      className="w-full min-h-[140px] p-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner"
                       placeholder="메뉴에 대한 상세 설명 및 주석"
                     />
                   </FormControl>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -83,7 +83,7 @@ export default function ApprovalInboxPage() {
       accessor: (item: Approval) => (
         <div className="flex items-center gap-3">
           <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner shrink-0",
+            "w-10 h-10 rounded-[0.1rem] flex items-center justify-center shadow-inner shrink-0",
             item.status === 'Y' ? "bg-emerald-50 text-emerald-600" :
             item.status === 'N' ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
           )}>
@@ -132,13 +132,13 @@ export default function ApprovalInboxPage() {
         title="전자결재 관제 센터"
         breadcrumbs={[{ label: '업무지원' }, { label: '전자결재' }]}
         actions={
-          <Button className="rounded-2xl h-14 px-8 font-black shadow-2xl bg-slate-900 border-none text-white hover:bg-primary transition-all gap-2">
+          <Button className="rounded-[0.1rem] h-14 px-8 font-black shadow-2xl bg-slate-900 border-none text-white hover:bg-primary transition-all gap-2">
             <ClipboardCheck size={20} /> 새 결재 기안
           </Button>
         }
       />
 
-      <div className="flex p-2 bg-slate-100 rounded-[1.8rem] w-fit">
+      <div className="flex p-2 bg-slate-100 rounded-[0.1rem] w-fit">
         <TabButton
           active={tab === 'received'}
           onClick={() => setTab('received')}
@@ -156,7 +156,7 @@ export default function ApprovalInboxPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-10">
         <div className="xl:col-span-2 space-y-6">
-          <div className="bg-white border-2 border-slate-50 rounded-[3rem] shadow-xl overflow-hidden flex flex-col h-[750px]">
+          <div className="bg-white border-2 border-slate-50 rounded-[0.1rem] shadow-xl overflow-hidden flex flex-col h-[750px]">
             <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
               <h3 className="font-black text-xl flex items-center gap-3">
                 <History size={22} className="text-primary" />
@@ -181,7 +181,7 @@ export default function ApprovalInboxPage() {
 
         <div className="xl:col-span-3">
           {selectedItem ? (
-            <div className="bg-white border-2 border-slate-50 rounded-[3rem] shadow-2xl overflow-hidden animate-in slide-in-from-right-8 duration-700 flex flex-col h-full min-h-[750px] ring-1 ring-slate-100">
+            <div className="bg-white border-2 border-slate-50 rounded-[0.1rem] shadow-2xl overflow-hidden animate-in slide-in-from-right-8 duration-700 flex flex-col h-full min-h-[750px] ring-1 ring-slate-100">
               <div className="p-12 border-b border-slate-50 bg-slate-50/50">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-10">
                   <div className="space-y-3">
@@ -199,14 +199,14 @@ export default function ApprovalInboxPage() {
                     <div className="flex gap-4">
                       <Button
                         onClick={() => handleAction(selectedItem, 'Y')}
-                        className="h-16 px-10 rounded-[1.5rem] font-black bg-emerald-500 hover:bg-emerald-600 shadow-2xl shadow-emerald-500/20 gap-2 border-none"
+                        className="h-16 px-10 rounded-[0.1rem] font-black bg-emerald-500 hover:bg-emerald-600 shadow-2xl shadow-emerald-500/20 gap-2 border-none"
                       >
                         <Check size={20} /> 승인 처리
                       </Button>
                       <Button
                         variant="destructive"
                         onClick={() => handleAction(selectedItem, 'N')}
-                        className="h-16 px-10 rounded-[1.5rem] font-black shadow-2xl shadow-rose-500/20 gap-2 border-none"
+                        className="h-16 px-10 rounded-[0.1rem] font-black shadow-2xl shadow-rose-500/20 gap-2 border-none"
                       >
                         <X size={20} /> 반려
                       </Button>
@@ -214,7 +214,7 @@ export default function ApprovalInboxPage() {
                   )}
                 </div>
 
-                <div className="bg-white rounded-[2.5rem] p-10 border-2 border-slate-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                <div className="bg-white rounded-[0.1rem] p-10 border-2 border-slate-50 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
                   <div className="flex items-center justify-between mb-8">
                     <h4 className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-2 uppercase">
                       <Zap size={14} className="text-primary" /> Approval Workflow 
@@ -235,7 +235,7 @@ export default function ApprovalInboxPage() {
                   <h4 className="text-[10px] font-black text-slate-300 tracking-[0.3em] flex items-center gap-2 uppercase">
                     <Info size={14} className="text-primary" /> Submission Content
                   </h4>
-                  <div className="p-10 bg-white rounded-[2.5rem] border-2 border-slate-50 min-h-[250px] shadow-sm">
+                  <div className="p-10 bg-white rounded-[0.1rem] border-2 border-slate-50 min-h-[250px] shadow-sm">
                     <p className="text-lg font-bold leading-[1.8] text-slate-700 whitespace-pre-wrap">
                       본 결재 건은 시스템 표준 프로세스에 따라 상신되었습니다. <br />
                       상세 내용은 첨부된 부서별 주간 업무 보고서 및 리소스 활용 현황을 참조하여 주시기 바랍니다.
@@ -251,8 +251,8 @@ export default function ApprovalInboxPage() {
               </div>
             </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center p-24 bg-slate-50/30 border-4 border-dashed border-slate-100 rounded-[3.5rem] animate-pulse">
-              <div className="w-24 h-24 bg-white rounded-[2.5rem] flex items-center justify-center mb-8 shadow-xl">
+            <div className="h-full flex flex-col items-center justify-center text-center p-24 bg-slate-50/30 border-4 border-dashed border-slate-100 rounded-[0.1rem] animate-pulse">
+              <div className="w-24 h-24 bg-white rounded-[0.1rem] flex items-center justify-center mb-8 shadow-xl">
                 <ClipboardCheck size={48} className="text-slate-200" />
               </div>
               <h3 className="text-2xl font-black text-slate-300 tracking-tighter uppercase mb-2">결재 항목을 선택하세요</h3>
@@ -270,7 +270,7 @@ function TabButton({ active, onClick, icon, label, count }: any) {
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-10 py-5 text-[11px] font-black rounded-2xl transition-all duration-500 relative uppercase tracking-widest",
+        "flex items-center gap-3 px-10 py-5 text-[11px] font-black rounded-[0.1rem] transition-all duration-500 relative uppercase tracking-widest",
         active
           ? "bg-white text-slate-900 shadow-2xl shadow-slate-200 scale-[1.05] z-10"
           : "text-slate-400 hover:text-slate-600"
@@ -294,7 +294,7 @@ function DetailSection({ icon, title, value, desc }: any) {
   return (
     <div className="space-y-4 group">
       <div className="flex items-center gap-3 text-slate-400">
-        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-primary shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+        <div className="w-10 h-10 rounded-[0.1rem] bg-white flex items-center justify-center text-primary shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
           {icon}
         </div>
         <span className="text-[10px] font-black tracking-[0.2em] uppercase">{title}</span>

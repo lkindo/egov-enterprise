@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -159,7 +159,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
       accessor: (user) => (
         <div className="flex items-center gap-6 py-2">
           <div className={cn(
-            "w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg transition-transform group-hover:rotate-6",
+            "w-14 h-14 rounded-[0.1rem] flex items-center justify-center font-black text-xl shadow-lg transition-transform group-hover:rotate-6",
             selectedItemId === user.esntlId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-300"
           )}>
             {user.userNm?.[0]}
@@ -181,7 +181,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
       accessor: (dept) => (
         <div className="flex items-center gap-6 py-2">
           <div className={cn(
-            "w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-6",
+            "w-14 h-14 rounded-[0.1rem] flex items-center justify-center shadow-lg transition-transform group-hover:rotate-6",
             selectedItemId === dept.orgnztId ? "bg-white/10 text-indigo-400" : "bg-indigo-50/50 text-indigo-200"
           )}>
             <Building2 size={24} />
@@ -213,11 +213,11 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
           <div className="flex gap-4 p-2 items-center">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="lg" className="h-14 w-14 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
+                <Button variant="ghost" size="lg" className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
                   <Settings size={22} className="group-hover:rotate-90 transition-transform duration-500" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[0.1rem] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
                 개인화 UI 및 필터 환경 설정
               </TooltipContent>
             </Tooltip>
@@ -226,7 +226,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
               <TooltipTrigger asChild>
                 <Button 
                   size="lg" 
-                  className="h-14 px-10 rounded-2xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                  className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
                   onClick={() => {
                     setFormMode('create');
                     if (activeTab === 'DEPTS') {
@@ -243,7 +243,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                   <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+              <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[0.1rem] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
                 {activeTab === 'DEPTS' ? '디렉토리에 새로운 조직 노드 추가' : '새로운 아이덴티티 프로필 생성'}
               </TooltipContent>
             </Tooltip>
@@ -253,19 +253,19 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
 
       <div className="grid grid-cols-12 gap-12 min-h-[900px]">
         <div className="col-span-12 lg:col-span-3 space-y-8 flex flex-col h-full">
-          <div className="rounded-[3.5rem] bg-white border-2 border-slate-100 shadow-xl p-4 flex flex-col gap-4">
+          <div className="rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-xl p-4 flex flex-col gap-4">
             <NavButton icon={<Users size={22} />} subLabel="Section_01" label="사용자" active={activeTab === 'USERS'} onClick={() => { setActiveTab('USERS'); setSelectedItemId(null); }} />
             <NavButton icon={<Network size={22} />} subLabel="Section_02" label="부서 관리" active={activeTab === 'DEPTS'} onClick={() => { setActiveTab('DEPTS'); setSelectedItemId(null); }} />
             <NavButton icon={<UserMinus size={22} />} subLabel="Section_03" label="부재 관리" active={activeTab === 'ABSENCES'} onClick={() => { setActiveTab('ABSENCES'); setSelectedItemId(null); }} />
             <NavButton icon={<ShieldCheck size={22} />} subLabel="Section_04" label="조직 정책" active={activeTab === 'POLICIES'} onClick={() => { setActiveTab('POLICIES'); setSelectedItemId(null); }} />
           </div>
 
-          <div className="mt-auto rounded-[3.5rem] bg-slate-900 text-white p-12 space-y-8 shadow-2xl relative overflow-hidden group border-none">
+          <div className="mt-auto rounded-[0.1rem] bg-slate-900 text-white p-12 space-y-8 shadow-2xl relative overflow-hidden group border-none">
             <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
               <CloudLightning size={240} className="text-primary" />
             </div>
             <div className="relative z-10 space-y-6 text-center lg:text-left">
-              <div className="w-16 h-16 bg-white/10 rounded-[1.5rem] flex items-center justify-center mx-auto lg:mx-0 border border-white/5 shadow-inner group-hover:rotate-12 transition-transform">
+              <div className="w-16 h-16 bg-white/10 rounded-[0.1rem] flex items-center justify-center mx-auto lg:mx-0 border border-white/5 shadow-inner group-hover:rotate-12 transition-transform">
                 <Activity size={32} className="text-primary" />
               </div>
               <div className="space-y-4">
@@ -289,11 +289,11 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-12 rounded-2xl px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
+                    <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-12 rounded-[0.1rem] px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
                       <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> SYNCHRONIZE
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                  <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-[0.1rem] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
                     서버 지능형 엔진과 데이터 정합성 맞추기
                   </TooltipContent>
                 </Tooltip>
@@ -302,7 +302,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
               <div className="relative group/search">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                 <Input
-                  className="pl-16 h-16 bg-slate-50/50 border-none rounded-2xl text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/20 uppercase"
+                  className="pl-16 h-16 bg-slate-50/50 border-none rounded-[0.1rem] text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/20 uppercase"
                   placeholder="Probing for identity..."
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -357,14 +357,14 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                 exit={{ opacity: 0, x: -30 }}
                 className="h-full flex flex-col gap-8"
               >
-                <div className="rounded-[4rem] bg-white border-2 border-slate-100 shadow-2xl h-full p-12 space-y-12 flex flex-col relative overflow-hidden">
+                <div className="rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-2xl h-full p-12 space-y-12 flex flex-col relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000">
                     <SearchCode size={320} className="text-primary" />
                   </div>
 
                   <div className="flex items-start justify-between border-b border-slate-100 pb-12 relative z-10">
                     <div className="flex items-center gap-10">
-                      <div className="w-28 h-28 bg-slate-900 rounded-[2.5rem] flex items-center justify-center font-black text-5xl text-white shadow-2xl rotate-3 group hover:rotate-6 transition-transform">
+                      <div className="w-28 h-28 bg-slate-900 rounded-[0.1rem] flex items-center justify-center font-black text-5xl text-white shadow-2xl rotate-3 group hover:rotate-6 transition-transform">
                         <span className="text-primary drop-shadow-[0_0_15px_rgba(var(--primary),0.5)]">
                           {activeTab === 'DEPTS' ? (selectedItem as Department)?.orgnztNm?.[0] : (selectedItem as UserManage)?.userNm?.[0]}
                         </span>
@@ -374,11 +374,11 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                           {activeTab === 'DEPTS' ? (selectedItem as Department)?.orgnztNm : (selectedItem as UserManage)?.userNm}
                         </h2>
                         <div className="flex gap-4">
-                          <span className="bg-primary/5 text-primary text-[10px] font-black px-6 py-2 rounded-xl tracking-widest uppercase border border-primary/10 shadow-sm flex items-center gap-2 font-mono italic">
+                          <span className="bg-primary/5 text-primary text-[10px] font-black px-6 py-2 rounded-[0.1rem] tracking-widest uppercase border border-primary/10 shadow-sm flex items-center gap-2 font-mono italic">
                             <ShieldCheck size={14} /> 신원 확인됨
                           </span>
                           {activeTab === 'ABSENCES' && (
-                            <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-6 py-2 rounded-xl tracking-widest uppercase border border-amber-200 shadow-sm animate-pulse font-mono italic">
+                            <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-6 py-2 rounded-[0.1rem] tracking-widest uppercase border border-amber-200 shadow-sm animate-pulse font-mono italic">
                               부재중
                             </span>
                           )}
@@ -388,7 +388,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-16 w-16 rounded-[1.5rem] bg-slate-50 hover:bg-slate-900 hover:text-white shadow-sm border border-slate-100 transition-all group"
+                      className="h-16 w-16 rounded-[0.1rem] bg-slate-50 hover:bg-slate-900 hover:text-white shadow-sm border border-slate-100 transition-all group"
                       onClick={() => {
                         setFormMode('edit');
                         if (activeTab === 'DEPTS') {
@@ -426,7 +426,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                     <div className="pt-12 border-t border-slate-100 space-y-10">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                          <div className="w-10 h-10 rounded-[0.1rem] bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                             <ShieldCheck size={20} />
                           </div>
                           <div>
@@ -434,11 +434,11 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                             <p className="text-sm font-black text-foreground tracking-tighter uppercase font-mono italic">활성 권한 매트릭스</p>
                           </div>
                         </div>
-                        <Button variant="ghost" className="h-12 px-6 rounded-2xl bg-slate-50 text-[10px] font-black text-primary gap-3 uppercase tracking-widest hover:bg-primary hover:text-white transition-all font-mono italic">MANAGE_MATRIX <ChevronRight size={14} /></Button>
+                        <Button variant="ghost" className="h-12 px-6 rounded-[0.1rem] bg-slate-50 text-[10px] font-black text-primary gap-3 uppercase tracking-widest hover:bg-primary hover:text-white transition-all font-mono italic">MANAGE_MATRIX <ChevronRight size={14} /></Button>
                       </div>
                       <div className="flex flex-wrap gap-4">
                         {['ACCESS_CMS', 'SYSTEM_ADMIN_LEVEL_4', 'ANALYTICS_DASHBOARD_LIVE', 'USER_DIRECTORY_CONTROLLER', 'SECURITY_AUDIT_PROBE'].map(p => (
-                          <div key={p} className="pl-6 pr-8 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-[10px] font-black text-slate-500 tracking-widest uppercase shadow-sm flex items-center gap-3 group/tag hover:border-primary/30 transition-all cursor-default font-mono italic">
+                          <div key={p} className="pl-6 pr-8 py-4 bg-slate-50 border-2 border-slate-100 rounded-[0.1rem] text-[10px] font-black text-slate-500 tracking-widest uppercase shadow-sm flex items-center gap-3 group/tag hover:border-primary/30 transition-all cursor-default font-mono italic">
                             <div className="w-2 h-2 rounded-full bg-primary opacity-30 group-hover:opacity-100 transition-opacity" />
                             {p}
                           </div>
@@ -448,16 +448,16 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                   </div>
 
                   <div className="flex gap-6 pt-12 mt-auto border-t border-slate-100 relative z-10">
-                    <Button className="flex-1 h-16 bg-slate-100 text-rose-500 rounded-2xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white uppercase transition-all shadow-sm font-mono italic">REVOKE_ACCESS</Button>
-                    <Button className="flex-[2] h-16 bg-slate-900 text-white rounded-2xl font-black tracking-[0.4em] text-[10px] shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 uppercase group font-mono italic">
+                    <Button className="flex-1 h-16 bg-slate-100 text-rose-500 rounded-[0.1rem] font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white uppercase transition-all shadow-sm font-mono italic">REVOKE_ACCESS</Button>
+                    <Button className="flex-[2] h-16 bg-slate-900 text-white rounded-[0.1rem] font-black tracking-[0.4em] text-[10px] shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 uppercase group font-mono italic">
                       <Zap size={18} className="text-primary group-hover:animate-pulse" /> COMMIT_SPECIFICATION_CHANGE
                     </Button>
                   </div>
                 </div>
               </motion.div>
             ) : (
-              <div className="h-full rounded-[4rem] border-4 border-dashed border-slate-100 bg-slate-50/50 flex flex-col items-center justify-center p-24 text-center select-none group">
-                <div className="w-32 h-32 rounded-[2.5rem] bg-white border-2 border-slate-100 flex items-center justify-center text-slate-200 shadow-xl mb-12 group-hover:rotate-12 transition-transform duration-1000">
+              <div className="h-full rounded-[0.1rem] border-4 border-dashed border-slate-100 bg-slate-50/50 flex flex-col items-center justify-center p-24 text-center select-none group">
+                <div className="w-32 h-32 rounded-[0.1rem] bg-white border-2 border-slate-100 flex items-center justify-center text-slate-200 shadow-xl mb-12 group-hover:rotate-12 transition-transform duration-1000">
                   <Contact2 size={64} className="opacity-20 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <h3 className="text-4xl font-black text-slate-200 tracking-tighter uppercase font-mono italic">Idle_Probe_State</h3>
@@ -480,10 +480,10 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsUserModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
+            <Button variant="outline" onClick={() => setIsUserModalOpen(false)} className="flex-1 h-14 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
             <Button 
                 onClick={handleUserSubmit} 
-                className="flex-[2] h-14 rounded-2xl font-black text-[10px] tracking-widest shadow-xl bg-slate-900 text-white hover:bg-primary transition-all"
+                className="flex-[2] h-14 rounded-[0.1rem] font-black text-[10px] tracking-widest shadow-xl bg-slate-900 text-white hover:bg-primary transition-all"
             >
               {formMode === 'create' ? '신규 등록' : '정보 수정'}
             </Button>
@@ -497,7 +497,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                 {...userForm.register('userId')}
                 readOnly={formMode === 'edit'}
                 className={cn(
-                    "h-14 rounded-2xl text-xs font-mono font-black tracking-widest uppercase shadow-inner", 
+                    "h-14 rounded-[0.1rem] text-xs font-mono font-black tracking-widest uppercase shadow-inner", 
                     formMode === 'edit' && "bg-muted/50 border-none",
                     userForm.formState.errors.userId ? "border-rose-500 bg-rose-50" : "border-slate-100"
                 )}
@@ -509,7 +509,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
               <Input
                 {...userForm.register('userNm')}
                 className={cn(
-                    "h-14 rounded-2xl text-sm font-black tracking-tight",
+                    "h-14 rounded-[0.1rem] text-sm font-black tracking-tight",
                     userForm.formState.errors.userNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
                 )}
                 placeholder="NAME"
@@ -523,7 +523,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
               <Input
                 {...userForm.register('email')}
                 className={cn(
-                    "h-14 rounded-2xl text-xs font-medium border-slate-100 shadow-sm",
+                    "h-14 rounded-[0.1rem] text-xs font-medium border-slate-100 shadow-sm",
                     userForm.formState.errors.email ? "border-rose-500 bg-rose-50" : ""
                 )}
                 placeholder="example@nuri.com"
@@ -533,7 +533,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
             <FormField label="연락처">
               <Input
                 {...userForm.register('moblphonNo')}
-                className="h-14 rounded-2xl text-xs font-medium border-slate-100 shadow-sm"
+                className="h-14 rounded-[0.1rem] text-xs font-medium border-slate-100 shadow-sm"
                 placeholder="010-0000-0000"
               />
             </FormField>
@@ -545,7 +545,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                 {...userForm.register('password')}
                 type="password"
                 className={cn(
-                    "h-14 rounded-2xl text-xs border-slate-100 shadow-sm",
+                    "h-14 rounded-[0.1rem] text-xs border-slate-100 shadow-sm",
                     userForm.formState.errors.password ? "border-rose-500 bg-rose-50" : ""
                 )}
                 placeholder="PASSWORD (MIN_8)"
@@ -557,7 +557,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
           <FormField label="소속 부서">
             <select
               {...userForm.register('orgnztId')}
-              className="w-full h-14 px-6 rounded-2xl border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none shadow-inner"
+              className="w-full h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none shadow-inner"
             >
               <option value="">소속 없음 / GLOBAL</option>
               {departments.map((d: any) => (
@@ -575,10 +575,10 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
         maxWidth="lg"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsDeptModalOpen(false)} className="flex-1 h-12 rounded-xl font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
+            <Button variant="outline" onClick={() => setIsDeptModalOpen(false)} className="flex-1 h-12 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase border-2">취소</Button>
             <Button 
                 onClick={handleDeptSubmit} 
-                className="flex-[2] h-12 rounded-xl font-black text-[10px] tracking-widest shadow-xl bg-slate-900 text-white hover:bg-primary transition-all"
+                className="flex-[2] h-12 rounded-[0.1rem] font-black text-[10px] tracking-widest shadow-xl bg-slate-900 text-white hover:bg-primary transition-all"
             >
               {formMode === 'create' ? '부서 등록' : '정보 수정'}
             </Button>
@@ -590,7 +590,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
             <Input
               {...deptForm.register('orgnztNm')}
               className={cn(
-                  "h-14 rounded-2xl text-sm font-black tracking-tight",
+                  "h-14 rounded-[0.1rem] text-sm font-black tracking-tight",
                   deptForm.formState.errors.orgnztNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
               )}
               placeholder="DEPT_NAME"
@@ -601,7 +601,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
           <FormField label="부서 설명명세">
             <textarea
               {...deptForm.register('orgnztDc')}
-              className="w-full min-h-[120px] p-6 rounded-2xl border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none resize-none shadow-inner"
+              className="w-full min-h-[120px] p-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none resize-none shadow-inner"
               placeholder="부서의 역할 및 책임 정의..."
             />
           </FormField>
@@ -618,14 +618,14 @@ function NavButton({ icon, subLabel, label, active, onClick }: { icon: React.Rea
         <button
           onClick={onClick}
           className={cn(
-            "w-full group p-8 rounded-[2.5rem] border-2 transition-all flex items-center gap-6 relative overflow-hidden",
+            "w-full group p-8 rounded-[0.1rem] border-2 transition-all flex items-center gap-6 relative overflow-hidden",
             active
               ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.03] z-10"
               : "bg-transparent border-transparent hover:bg-slate-50 text-slate-400 hover:text-slate-900"
           )}
         >
           <div className={cn(
-            "w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-lg relative z-10",
+            "w-14 h-14 rounded-[0.1rem] flex items-center justify-center transition-all shadow-lg relative z-10",
             active ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-primary/10 group-hover:text-primary"
           )}>
             {icon}
@@ -639,7 +639,7 @@ function NavButton({ icon, subLabel, label, active, onClick }: { icon: React.Rea
           )}
         </button>
       </TooltipTrigger>
-      <TooltipContent side="right" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+      <TooltipContent side="right" className="bg-slate-900 text-white border-none rounded-[0.1rem] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
         {label} 섹션으로 이동
       </TooltipContent>
     </Tooltip>
@@ -648,7 +648,7 @@ function NavButton({ icon, subLabel, label, active, onClick }: { icon: React.Rea
 
 function InfoBlock({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
   return (
-    <div className="space-y-4 p-8 rounded-[2.5rem] bg-slate-50/50 shadow-inner border border-slate-100 transition-all hover:bg-white hover:shadow-2xl hover:scale-105 group cursor-default relative overflow-hidden">
+    <div className="space-y-4 p-8 rounded-[0.1rem] bg-slate-50/50 shadow-inner border border-slate-100 transition-all hover:bg-white hover:shadow-2xl hover:scale-105 group cursor-default relative overflow-hidden">
       <div className="absolute top-0 right-0 p-8 opacity-[0.02] scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
         {icon}
       </div>

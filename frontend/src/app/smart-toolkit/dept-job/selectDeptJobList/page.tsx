@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -74,7 +74,7 @@ const DeptJobListPage = () => {
     <div className="flex flex-col gap-6 p-6">
       <DynamicBreadcrumb />
 
-      <Card className="border-none shadow-xl overflow-hidden rounded-3xl">
+      <Card className="border-none shadow-xl overflow-hidden rounded-[0.1rem]">
         <CardHeader className="flex flex-row items-center justify-between pb-8 pt-8 px-8 border-b bg-muted/20">
           <div className="space-y-1">
             <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
@@ -92,14 +92,14 @@ const DeptJobListPage = () => {
         </CardHeader>
         <CardContent className="pt-10 px-8">
           <div className="mb-8 flex items-center gap-4">
-            <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 ring-8 ring-slate-50">
+            <div className="bg-slate-900 text-white px-6 py-3 rounded-[0.1rem] shadow-xl flex items-center gap-3 ring-8 ring-slate-50">
               <CheckSquare className="w-5 h-5 text-primary" />
               <span className="text-sm font-bold opacity-60 tracking-tight">전체 진행 건수</span>
               <span className="text-xl font-black">{totalCount}건</span>
             </div>
           </div>
 
-          <div className="rounded-2xl border-2 border-slate-50 overflow-hidden shadow-sm bg-white ring-1 ring-slate-100">
+          <div className="rounded-[0.1rem] border-2 border-slate-50 overflow-hidden shadow-sm bg-white ring-1 ring-slate-100">
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
@@ -161,7 +161,7 @@ const DeptJobListPage = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(item.deptJobId)}
-                          className="h-10 w-10 text-slate-300 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100 rounded-xl"
+                          className="h-10 w-10 text-slate-300 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100 rounded-[0.1rem]"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -180,11 +180,11 @@ const DeptJobListPage = () => {
                 size="lg"
                 onClick={() => setPageNo(p => Math.max(1, p - 1))}
                 disabled={pageNo === 1}
-                className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
+                className="px-12 h-14 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
               >
                 이전
               </Button>
-              <div className="bg-slate-50 text-slate-900 border-2 border-white px-10 py-3 rounded-2xl shadow-xl flex items-center gap-4 ring-8 ring-slate-100/50">
+              <div className="bg-slate-50 text-slate-900 border-2 border-white px-10 py-3 rounded-[0.1rem] shadow-xl flex items-center gap-4 ring-8 ring-slate-100/50">
                 <span className="text-xl font-black">{pageNo}</span>
                 <div className="h-4 w-px bg-slate-200" />
                 <span className="text-sm font-bold text-slate-400">{totalPages}</span>
@@ -194,7 +194,7 @@ const DeptJobListPage = () => {
                 size="lg"
                 onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
                 disabled={pageNo === totalPages}
-                className="px-12 h-14 rounded-2xl font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
+                className="px-12 h-14 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
               >
                 다음
               </Button>

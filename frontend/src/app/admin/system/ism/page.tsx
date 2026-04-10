@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+﻿import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { ismAdminService, InfrmlSanctn } from '@/services/foundation/system/IsmAdminService';
 import IsmClient from './IsmClient';
@@ -37,11 +37,11 @@ export default async function InformalSanctionPage() {
 function IsmLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-20">
-      <div className="h-20 w-1/3 bg-slate-100 rounded-2xl" />
+      <div className="h-20 w-1/3 bg-slate-100 rounded-[0.1rem]" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {[1, 2, 3].map(i => <div key={i} className="h-44 bg-slate-50 rounded-[3rem]" />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-44 bg-slate-50 rounded-[0.1rem]" />)}
       </div>
-      <div className="h-[600px] bg-slate-50 rounded-[4rem]" />
+      <div className="h-[600px] bg-slate-50 rounded-[0.1rem]" />
     </div>
   );
 }

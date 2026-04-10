@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -44,10 +44,10 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
     { value: 100 - value }
   ];
 
-  if (!mounted) return <div className={cn("h-[240px] w-full bg-slate-50/50 rounded-3xl animate-pulse", className)} />;
+  if (!mounted) return <div className={cn("h-[240px] w-full bg-slate-50/50 rounded-[0.1rem] animate-pulse", className)} />;
 
   return (
-    <div className={cn("flex flex-col items-center justify-center relative p-6 bg-card border rounded-3xl shadow-sm overflow-hidden group", className)}>
+    <div className={cn("flex flex-col items-center justify-center relative p-6 bg-card border rounded-[0.1rem] shadow-sm overflow-hidden group", className)}>
       <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity">
         <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
       </div>
@@ -99,10 +99,10 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) return <div className="h-20 w-full bg-slate-50 border border-slate-100 rounded-2xl animate-pulse" />;
+  if (!mounted) return <div className="h-20 w-full bg-slate-50 border border-slate-100 rounded-[0.1rem] animate-pulse" />;
 
   return (
-    <div className="space-y-2 p-4 bg-muted/20 border border-white/5 rounded-2xl">
+    <div className="space-y-2 p-4 bg-muted/20 border border-white/5 rounded-[0.1rem]">
       <div className="flex justify-between items-center">
         <span className="text-[10px] font-black text-slate-600 tracking-tight">{label}</span>
         <span className="text-sm font-black text-foreground">
@@ -139,7 +139,7 @@ interface RadarProps {
 
 export function SystemStatusRadar({ data, title }: RadarProps) {
  return (
- <div className="p-8 border rounded-[2.5rem] bg-card shadow-lg flex flex-col items-center">
+ <div className="p-8 border rounded-[0.1rem] bg-card shadow-lg flex flex-col items-center">
  <h3 className="text-sm font-black text-foreground tracking-[0.2em] mb-8">{title}</h3>
  <div className="w-full h-[300px]">
  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>

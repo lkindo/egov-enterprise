@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -72,7 +72,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
   if (!mounted || !editor) return null;
 
   return (
-    <div className={cn("relative group border-2 border-border/50 rounded-[2.5rem] bg-white dark:bg-muted/10 overflow-hidden transition-all focus-within:border-primary/20 focus-within:shadow-2xl focus-within:shadow-primary/5", className)}>
+    <div className={cn("relative group border-2 border-border/50 rounded-[0.1rem] bg-white dark:bg-muted/10 overflow-hidden transition-all focus-within:border-primary/20 focus-within:shadow-2xl focus-within:shadow-primary/5", className)}>
       
       {/* --- Top Persistent Toolbar --- */}
       <div className="flex items-center flex-wrap gap-2 p-4 bg-slate-50 dark:bg-muted/20 border-b border-border/50 relative z-20">
@@ -189,7 +189,7 @@ function ToolbarButton({ onClick, active, icon, className }: ToolbarButtonProps)
       variant="ghost"
       onClick={onClick}
       className={cn(
-        "w-10 h-10 p-0 rounded-xl transition-all duration-300",
+        "w-10 h-10 p-0 rounded-[0.1rem] transition-all duration-300",
         active 
           ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" 
           : "hover:bg-primary/10 hover:text-primary text-muted-foreground",
@@ -202,7 +202,7 @@ function ToolbarButton({ onClick, active, icon, className }: ToolbarButtonProps)
 }
 
 function ToolbarGroup({ children }: { children: React.ReactNode }) {
-  return <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-muted/40 rounded-2xl border border-border/40 shadow-sm">{children}</div>;
+  return <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-muted/40 rounded-[0.1rem] border border-border/40 shadow-sm">{children}</div>;
 }
 
 function ToolbarDivider() {

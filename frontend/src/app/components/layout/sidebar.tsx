@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -241,7 +241,7 @@ const MobileDomainNode = ({
       <button
         onClick={onSelect}
         className={cn(
-          "flex items-center justify-between w-full px-4 py-3.5 rounded-xl transition-all duration-300 border text-sm font-semibold tracking-tight",
+          "flex items-center justify-between w-full px-4 py-3.5 rounded-[0.1rem] transition-all duration-300 border text-sm font-semibold tracking-tight",
           isActive
             ? "bg-primary text-primary-foreground border-primary shadow-lg"
             : "bg-muted/30 text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
@@ -272,7 +272,7 @@ const MobileDomainNode = ({
             {loading ? (
               <div className="space-y-3 py-2 animate-pulse pl-4">
                 {[1, 2, 3].map(i => (
-                  <div key={`domain-loading-${i}`} className="h-10 bg-muted/20 rounded-xl w-full" />
+                  <div key={`domain-loading-${i}`} className="h-10 bg-muted/20 rounded-[0.1rem] w-full" />
                 ))}
               </div>
             ) : menus.length === 0 ? (
@@ -354,7 +354,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
           {/* Mobile Header in Sidebar */}
           <div className="flex items-center justify-between mb-10 px-2 lg:hidden">
             <Link href="/" className="flex items-center gap-3.5" onClick={() => setSidebarOpen(false)}>
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-primary rounded-[0.1rem] flex items-center justify-center shadow-lg">
                 <span className="text-primary-foreground font-bold text-lg">eG</span>
               </div>
               <div className="flex flex-col">
@@ -428,7 +428,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
 
           {/* Sidebar Footer */}
           <div className="mt-auto pt-12 px-2">
-            <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
+            <div className="p-4 rounded-[0.1rem] bg-muted/20 border border-border/50">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles size={14} className="text-primary" />
                 <span className="text-[10px] font-bold text-primary tracking-tight">eGovFrame 5.0</span>

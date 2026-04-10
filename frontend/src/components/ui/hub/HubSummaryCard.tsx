@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion, Variants } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -56,13 +56,13 @@ export function HubSummaryCard({
       variants={cardVariants}
       whileHover={{ y: -8, transition: { duration: 0.2 } }}
       className={cn(
-        "p-10 rounded-[var(--radius-hub-section)] border transition-all flex flex-col justify-between h-[320px] relative overflow-hidden group",
+        "p-10 rounded-[0.1rem] border transition-all flex flex-col justify-between h-[320px] relative overflow-hidden group",
         colorMap[color],
         className
       )}
     >
       <div className="flex justify-between items-start relative z-10">
-        <div className={cn("p-5 rounded-[1.5rem] transition-transform duration-500 group-hover:rotate-12", iconBgMap[color])}>
+        <div className={cn("p-5 rounded-[0.1rem] transition-transform duration-500 group-hover:rotate-12", iconBgMap[color])}>
           {icon}
         </div>
         {trend !== undefined && trend !== 0 && (

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -77,13 +77,13 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                 title="외부인사정보 관리"
                 breadcrumbs={[{ label: '운영지원' }, { label: '행사관리' }, { label: '외부인사정보' }]}
                 actions={
-                    <button className="h-11 px-6 bg-slate-900 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200">
+                    <button className="h-11 px-6 bg-slate-900 text-white rounded-[0.1rem] font-bold flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200">
                         <Plus size={18} /> 인사 정보 등록
                     </button>
                 }
             />
 
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+            <div className="bg-white p-6 rounded-[0.1rem] border border-slate-100 shadow-sm">
                 <StandardSearchFilter
                     fields={[
                         { name: 'name', label: '인사 성명', type: 'text', placeholder: '성명을 입력하세요...' }
@@ -92,7 +92,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                 />
             </div>
 
-            <div className="bg-white p-2 rounded-[2.5rem] border border-slate-100 shadow-xl">
+            <div className="bg-white p-2 rounded-[0.1rem] border border-slate-100 shadow-xl">
                 <StandardDataTable
                     columns={columns}
                     data={data}
