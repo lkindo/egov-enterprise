@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
@@ -29,18 +29,25 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { menuService } from '@/services/business/user/MenuService';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { MenuInfo } from '@/types/foundation/menu';
 
 const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
-  10: LayoutGrid, // 워크스페이스
-  11: Users, // 커뮤니티
-  12: HeartHandshake, // 고객지원센터
-  90: ShieldCheck, // 통합 관리 센터
+  1000000: LayoutGrid, // 워크스페이스
+  2000000: Users, // 커뮤니티
+  3000000: HeartHandshake, // 고객지원센터
+  9000000: ShieldCheck, // 통합 관리 센터
+};
+
+const DOMAIN_ROUTE_MAP: Record<number, string> = {
+  1000000: '/admin/work-hub',
+  2000000: '/admin/collaboration',
+  9000000: '/admin/system/menus',
 };
 
 export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
@@ -128,7 +135,13 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
                       ? "bg-background text-primary shadow-sm border border-border/50"
                       : "text-slate-600 hover:text-foreground hover:bg-background/50"
                   )}
-                  onClick={() => setActiveMenuNo(menu.menuNo)}
+                  onClick={() => {
+                    setActiveMenuNo(menu.menuNo);
+                    const targetRoute = menu.modernRoute || DOMAIN_ROUTE_MAP[menu.menuNo];
+                    if (targetRoute) {
+                      router.push(targetRoute);
+                    }
+                  }}
                 >
                   <Icon size={14} className={cn("transition-transform", isActive ? "scale-110" : "opacity-100")} />
                   {menu.menuNm}

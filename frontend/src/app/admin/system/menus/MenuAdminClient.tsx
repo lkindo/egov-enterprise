@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { MenuInfo } from '@/types/foundation/menu';
@@ -128,16 +129,16 @@ const SortableMenuNode = ({
     } = useSortable({ id: item.menuNo });
 
     const style = {
-        transform: CSS.Translate.toString(transform),
-        transition,
+        transform: isOverlay ? undefined : CSS.Translate.toString(transform),
+        transition: isOverlay ? undefined : (transition || 'transform 200ms ease, margin-left 200ms ease'),
         marginLeft: isOverlay ? 0 : `${depth * INDENTATION_WIDTH}px`,
     };
 
     const content = (
         <div className={cn(
-            "group select-none relative transition-all duration-200",
-            isDragging && !isOverlay && "opacity-20",
-            isOverlay && "shadow-3xl scale-[1.01] cursor-grabbing"
+            "group select-none relative transition-all duration-300",
+            isDragging && !isOverlay && "opacity-40 scale-[0.98] ring-2 ring-primary/30 ring-dashed bg-primary/5 rounded-xl",
+            isOverlay && "shadow-3xl z-[9999] pointer-events-none"
         )}>
             {/* 계층 연결 라인 */}
             {!isOverlay && depth > 0 && (
@@ -258,10 +259,12 @@ const SortableMenuNode = ({
         </div>
     );
 
-    if (isOverlay) return content;
-
     return (
-        <div ref={setNodeRef} style={style}>
+        <div 
+            ref={setNodeRef} 
+            style={style}
+            className={isOverlay ? "z-[9999] pointer-events-none" : undefined}
+        >
             {content}
         </div>
     );
@@ -439,7 +442,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   const activeItem = activeId ? flattenedMenus.find(m => m.menuNo === activeId) : null;
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-700">
+    <div className="space-y-12 pb-24">
       <PageHeader title="시스템 메뉴 아키텍처" breadcrumbs={[{ label: '시스템관리' }, { label: '메뉴 관리' }]} />
 
       <HubHeader
@@ -507,18 +510,21 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
               </div>
             </SortableContext>
 
-            <DragOverlay dropAnimation={dropAnimation}>
+            {typeof document !== 'undefined' && createPortal(
+              <DragOverlay dropAnimation={dropAnimation}>
                 {activeId && activeItem ? (
-                    <SortableMenuNode
-                        item={activeItem}
-                        depth={projected ? projected.depth : activeItem.depth}
-                        isSaving={isSaving}
-                        onEdit={() => {}} onCreate={() => {}} onDelete={() => {}} onToggle={() => {}}
-                        isExpanded={false} hasChildren={false}
-                        isOverlay
-                    />
+                  <SortableMenuNode
+                    item={activeItem}
+                    depth={activeItem.depth}
+                    isSaving={isSaving}
+                    onEdit={() => {}} onCreate={() => {}} onDelete={() => {}} onToggle={() => {}}
+                    isExpanded={false} hasChildren={false}
+                    isOverlay
+                  />
                 ) : null}
-            </DragOverlay>
+              </DragOverlay>,
+              document.body
+            )}
           </DndContext>
         </div>
       </HubSectionCard>
