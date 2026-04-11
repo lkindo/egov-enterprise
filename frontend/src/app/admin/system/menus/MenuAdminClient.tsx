@@ -157,7 +157,8 @@ const SortableMenuNode = ({
                   : depth === 1 
                     ? "bg-white border-slate-200 shadow-sm" 
                     : "bg-slate-50 border-transparent",
-                "hover:border-primary/40 bg-white/60 backdrop-blur-xl mb-2",
+                "hover:border-primary/40 backdrop-blur-xl mb-2",
+                depth !== 0 && "bg-white/60",
                 isOverlay && "border-primary bg-white shadow-3xl ring-8 ring-primary/5 scale-[1.02]",
                 !isOverlay && depth > 0 && "ml-3"
             )}>

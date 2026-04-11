@@ -1,7 +1,0 @@
-"name","MissedLines","CoveredLines"
-"nuri/foundation/service/auth/UserAuthorityManageService","22","31"
-"nuri/foundation/service/auth/AuthorManageService","1","31"
-"nuri/foundation/service/auth/EgovAuthService",,
-"nuri/foundation/service/auth/RoleManageService","4","36"
-"nuri/foundation/service/auth/AuthService",,
-"nuri/foundation/service/auth/AuthorRoleManageService","0","17"

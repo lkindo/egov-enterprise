@@ -34,7 +34,15 @@ import {
   HelpCircle,
   CalendarDays,
   Book,
-  MessageSquare
+  MessageSquare,
+  Settings2,
+  BookOpen,
+  List,
+  ImageIcon,
+  Lock,
+  UserCircle,
+  UserMinus,
+  Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -338,20 +346,22 @@ export function BoardMakerWizard() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
+                style={{ pointerEvents: 'auto' }}
               >
                 {currentStep === 1 && (
                   <div className="space-y-10 text-left">
                     <div className="space-y-4 text-left">
-                      <Label htmlFor="bbsNm" className="text-xl font-black text-slate-800 flex items-center gap-2">
+                      <Label htmlFor="bbsNm" className="text-xl font-black text-foreground flex items-center gap-2">
                         <span className="w-1.5 h-6 bg-primary rounded-full inline-block" />
                         게시판 명칭
                       </Label>
                       <Input
                         id="bbsNm"
+                        autoFocus
                         placeholder="예) 사내 소식 공유 게시판"
                         className={cn(
                           "h-16 text-xl rounded-[0.1rem] border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm",
-                          errors.bbsNm ? "border-red-500 bg-red-50/10" : "border-slate-100 bg-slate-50/50"
+                          errors.bbsNm ? "border-red-500 bg-red-50/10" : "border-border bg-muted/50"
                         )}
                         {...register('bbsNm')}
                       />
@@ -359,14 +369,14 @@ export function BoardMakerWizard() {
                     </div>
 
                     <div className="space-y-4 text-left">
-                      <Label htmlFor="bbsIntrcn" className="text-xl font-black text-slate-800 flex items-center gap-2">
-                        <span className="w-1.5 h-6 bg-slate-300 rounded-full inline-block" />
+                      <Label htmlFor="bbsIntrcn" className="text-xl font-black text-foreground flex items-center gap-2">
+                        <span className="w-1.5 h-6 bg-muted rounded-full inline-block" />
                         게시판 소개
                       </Label>
                       <Textarea
                         id="bbsIntrcn"
                         placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요."
-                        className="min-h-[140px] text-lg rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm text-left"
+                        className="min-h-[140px] text-lg rounded-[0.1rem] border-2 border-border bg-muted/50 px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm text-left"
                         {...register('bbsIntrcn')}
                       />
                     </div>
