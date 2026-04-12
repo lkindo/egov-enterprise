@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -26,8 +26,8 @@ const SystemLogAdminPage = () => {
         }),
     });
 
-    const logs = (data?.resultList || data?.list || []) as SysLog[];
-    const totalPageCount = data?.totalPage || data?.paginationInfo?.totalPageCount || 1;
+    const logs = (data?.list || []) as SysLog[];
+    const totalPageCount = data?.totalPage || 1;
 
     const columns: Column<SysLog>[] = [
         {

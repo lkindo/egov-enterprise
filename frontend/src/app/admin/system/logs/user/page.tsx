@@ -25,8 +25,8 @@ const UserLogAdminPage = () => {
         }),
     });
 
-    const logs = (data?.resultList || data?.list || []) as UserLog[];
-    const totalPageCount = data?.totalPage || data?.paginationInfo?.totalPageCount || 1;
+    const logs = (data?.list || []) as UserLog[];
+    const totalPageCount = data?.totalPage || 1;
 
     const columns: Column<UserLog>[] = [
         {

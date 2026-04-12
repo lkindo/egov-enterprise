@@ -83,6 +83,32 @@ export class BoardMasterPage {
     }
   }
 
+  async search(keyword: string) {
+    const responsePromise = this.page.waitForResponse(
+      response => response.url().includes('/board-masters') && 
+                  !response.url().includes('/tmplats') && 
+                  response.status() === 200,
+      { timeout: 5000 }
+    ).catch(() => null);
+
+    const searchInput = this.page.locator('input[placeholder*="검색"], input[placeholder*="Search"]').first();
+    if (await searchInput.isVisible()) {
+      await searchInput.fill(keyword);
+      
+      const response = await responsePromise;
+      if (response) {
+        const data = await response.json();
+        // Check for PageResponse standardization (list vs content)
+        if (data.content && !data.list) {
+          throw new Error(`[Field Mismatch] Backend returned 'content' instead of standardized 'list' for board master data.`);
+        }
+      }
+      
+      await this.page.waitForTimeout(1000);
+      await this.page.waitForLoadState('domcontentloaded').catch(() => {});
+    }
+  }
+
   async verifySuccess(menuName: string) {
     const pageContent = await this.page.content();
     if (pageContent.includes('MISSION COMPLETE') || pageContent.includes('성공') || pageContent.includes(menuName)) {

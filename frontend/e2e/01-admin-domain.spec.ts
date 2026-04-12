@@ -108,7 +108,7 @@ test.describe('Advanced User Management E2E', () => {
         const userIdInput = page.locator('input[name="userId"], input[placeholder*="ID"], input[placeholder*="이름"]').first();
         const userNmInput = page.locator('input[name="userNm"], input[placeholder*="이름"], input[placeholder*="Name"]').first();
         const passwordInput = page.locator('input[name="password"], input[placeholder*="비밀번호"], input[placeholder*="Password"]').first();
-        const emailInput = page.locator('input[name="email"], input[type="email"], input[placeholder*="email"]').first();
+        const emailInput = page.locator('input[name="emailAdres"], input[type="email"], input[placeholder*="email"]').first();
 
         if (await userIdInput.isVisible()) await userIdInput.fill(testId);
         if (await userNmInput.isVisible()) await userNmInput.fill(testName);

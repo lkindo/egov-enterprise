@@ -13,12 +13,12 @@ export interface KnoListResponse {
 }
 
 export const getKnoList = async (params: KnoSearchParams = {}, config?: AxiosRequestConfig): Promise<KnoListResponse> => {
-  const response = await client.get<{ result: { content: KnoManagementVO[]; totalElements: number; totalPages: number } }>(BASE_URL, { ...config, params });
+  const response = await client.get<{ result: { list: KnoManagementVO[]; total: number; totalPage: number } }>(BASE_URL, { ...config, params });
   return {
-    list: response.result?.content || [],
+    list: response.result?.list || [],
     pagination: {
-      totalCount: response.result?.totalElements || 0,
-      totalPages: response.result?.totalPages || 0
+      totalCount: response.result?.total || 0,
+      totalPages: response.result?.totalPage || 0
     }
   };
 };

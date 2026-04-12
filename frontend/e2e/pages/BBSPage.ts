@@ -23,16 +23,29 @@ export class BBSPage {
   async search(keyword: string) {
     if (await this.searchInput.isVisible()) {
       await this.searchInput.fill(keyword);
-      await this.page.keyboard.press('Enter');
-
+      
       try {
-        await Promise.race([
-          this.page.waitForResponse(response => response.url().includes('/api/v1/boards/') && response.status() === 200, { timeout: 3000 }),
-          this.page.waitForLoadState('domcontentloaded', { timeout: 3000 }),
-          this.page.waitForTimeout(2000)
-        ]);
+        const responsePromise = this.page.waitForResponse(response => 
+          response.url().includes('/api/v1/boards/') && response.status() === 200, 
+          { timeout: 5000 }
+        );
+        await this.page.keyboard.press('Enter');
+        
+        const response = await responsePromise;
+        const body = await response.json();
+        const data = body.result || body.data || body;
+        
+        // 필드명 불일치 엄격 검증 (Strict Field Validation)
+        if (data && !Array.isArray(data.list) && Array.isArray(data.content)) {
+          throw new Error(`[FIELD MISMATCH] Backend returned 'content' instead of 'list' for ${response.url()}`);
+        }
       } catch (e) {
-        // Silently continue if no API hit (Static Hub state)
+        console.log(`>>> API check skipped or failed: ${e.message}`);
+        // Fallback or explicit re-throw
+        if (e.message.includes('FIELD MISMATCH')) {
+          throw e;
+        }
+        await this.page.waitForLoadState('domcontentloaded');
       }
     }
   }

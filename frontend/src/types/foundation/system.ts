@@ -21,16 +21,10 @@ export interface PaginationInfo {
  */
 export interface PageResponse<T = unknown> {
   list: T[];
-  content?: T[]; // Spring Data JPA
-  resultList?: T[]; // eGovFrame Legacy
   total: number;
-  totalElements?: number; // Spring Data JPA
   page: number;
   size: number;
   totalPage: number;
-  paginationInfo?: PaginationInfo; // eGovFrame Legacy
-  totalCount?: number; // eGovFrame Legacy
-  [key: string]: unknown; // 모든 추가 필드 허용
 }
 
 export interface ApiResponse<T = unknown> {

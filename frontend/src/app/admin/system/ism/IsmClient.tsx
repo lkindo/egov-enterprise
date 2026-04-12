@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -55,7 +55,7 @@ type IsmFormValues = z.infer<typeof ismSchema>;
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
-export default function IsmClient({ initialData }: { initialData: { content: InfrmlSanctn[] } }) {
+export default function IsmClient({ initialData }: { initialData: { list: InfrmlSanctn[] } }) {
   const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -70,7 +70,7 @@ export default function IsmClient({ initialData }: { initialData: { content: Inf
     }
   });
 
-  const ismList = initialData.content || [];
+  const ismList = initialData.list || [];
 
   const handleOpenConfirm = (sanctn: InfrmlSanctn) => {
     setSelectedSanctn(sanctn);

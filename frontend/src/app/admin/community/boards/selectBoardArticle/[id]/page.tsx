@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, Suspense, useActionState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -62,23 +62,23 @@ const InsertBBSContent = () => {
         <span className="text-foreground font-black">글쓰기</span>
       </div>
 
-      <Card className="shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] border-none overflow-hidden rounded-[0.1rem] bg-card ring-1 ring-primary/5">
-        <CardHeader className="border-b bg-slate-950 pb-20 pt-20 px-12 md:px-20 text-white relative overflow-hidden">
+      <Card className="shadow-2xl border-none overflow-hidden rounded-[0.1rem] bg-card ring-1 ring-slate-200/50 dark:ring-primary/5">
+        <CardHeader className="border-b bg-slate-50 dark:bg-slate-950 pb-20 pt-20 px-12 md:px-20 text-slate-900 dark:text-white relative overflow-hidden transition-colors">
           {/* Background Accents */}
           <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
           <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-blue-500/10 rounded-full blur-[100px]" />
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-10 relative z-10">
             <div className="space-y-6 text-center md:text-left">
-              <div className="flex items-center gap-3 px-5 py-2 bg-white/10 w-fit rounded-full border border-white/10 backdrop-blur-xl mx-auto md:mx-0">
+              <div className="flex items-center gap-3 px-5 py-2 bg-primary/5 dark:bg-white/10 w-fit rounded-full border border-primary/10 dark:border-white/10 backdrop-blur-xl mx-auto md:mx-0">
                 <Edit3 className="w-4 h-4 text-primary animate-bounce" />
-                <span className="text-[10px] font-black tracking-[0.3em] text-white">Create Article</span>
+                <span className="text-[10px] font-black tracking-[0.3em] text-primary dark:text-white">Create Article</span>
               </div>
               <CardTitle className="text-3xl md:text-3xl font-black tracking-tighter leading-tight ">
                 Share your <br />
                 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Insight</span>
               </CardTitle>
-              <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed">
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-lg max-w-lg leading-relaxed">
                 새로운 아이디어와 소식을 공유하여 <br className="hidden md:block" /> 소통을 가치 있게 만드세요.
               </p>
             </div>
@@ -156,14 +156,14 @@ const InsertBBSContent = () => {
             </div>
 
             {/* Visual Guide / Notice */}
-            <div className="p-10 bg-slate-900 rounded-[0.1rem] flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group/notice">
-              <div className="absolute right-[-20%] top-[-50%] bg-primary/20 w-[400px] h-[400px] rounded-full blur-[100px] group-hover/notice:bg-primary/30 transition-all duration-1000" />
-              <div className="w-20 h-20 bg-slate-800 rounded-[0.1rem] border border-slate-700 shadow-2xl flex items-center justify-center shrink-0 group-hover/notice:rotate-12 transition-transform">
+            <div className="p-10 bg-slate-50 dark:bg-slate-900 rounded-[0.1rem] flex flex-col md:flex-row items-center gap-10 shadow-xl dark:shadow-2xl relative overflow-hidden group/notice border border-slate-100 dark:border-slate-800">
+              <div className="absolute right-[-20%] top-[-50%] bg-primary/10 dark:bg-primary/20 w-[400px] h-[400px] rounded-full blur-[100px] group-hover/notice:bg-primary/20 transition-all duration-1000" />
+              <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-[0.1rem] border border-slate-100 dark:border-slate-700 shadow-2xl flex items-center justify-center shrink-0 group-hover/notice:rotate-12 transition-transform">
                 <CheckCircle2 className="w-8 h-8 text-primary" />
               </div>
               <div className="space-y-3 relative z-10 text-center md:text-left">
-                <h4 className="text-2xl font-black text-white tracking-tight ">Final Check</h4>
-                <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xl">
+                <h4 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight ">Final Check</h4>
+                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed max-w-xl">
                   게시글이 등록되기 전에 개인정보가 포함되어 있는지 다시 한번 확인해 주세요. <br />
                   등록된 글은 모든 사원이 열람할 수 있습니다.
                 </p>

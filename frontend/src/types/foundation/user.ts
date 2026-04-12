@@ -6,23 +6,23 @@ export interface UserManage {
   password?: string;
   passwordHint?: string;
   passwordCnsr?: string;
-  email: string;
+  emailAdres: string; // Aligned with backend emailAdres
   groupId?: string;
   userSttusCode: string;
   sbscrbDe?: string;
   esntlId?: string;
   moblphonNo?: string;
   areaNo?: string;
-  middleTelno?: string;
-  endTelno?: string;
-  faxNo?: string;
+  homemiddleTelno?: string; // Aligned with backend homemiddleTelno
+  homeendTelno?: string; // Aligned with backend homeendTelno
+  fxnum?: string; // Aligned with backend fxnum
   zip?: string;
-  adres?: string;
+  homeadres?: string; // Aligned with backend homeadres
   detailAdres?: string;
   orgnztId?: string;
   emplNo?: string;
   sexdstnCode?: string;
-  brthdy?: string;
+  brth?: string; // Aligned with backend brth
 }
 
 export interface UserSearchParams {

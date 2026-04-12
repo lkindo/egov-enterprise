@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -153,11 +153,11 @@ export default function BoardMasterListPage() {
         actions={
           <Button 
             onClick={() => router.push('/admin/community/boards/maker')}
-            className="h-16 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all gap-4 ring-8 ring-slate-900/5 group"
+            className="h-16 px-10 rounded-[0.1rem] bg-slate-900 dark:bg-primary border-none text-white font-black text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all gap-4 ring-8 ring-slate-900/5 dark:ring-primary/5 group"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
             생성 마법사
-            <Rocket className="w-4 h-4 text-primary opacity-40 group-hover:text-primary group-hover:opacity-100 transition-all" />
+            <Rocket className="w-4 h-4 text-primary dark:text-white opacity-40 group-hover:text-primary group-hover:opacity-100 transition-all" />
           </Button>
         }
       />
@@ -186,13 +186,13 @@ export default function BoardMasterListPage() {
         />
       </div>
 
-      <div className="p-12 rounded-[0.1rem] bg-slate-900 border-none text-white overflow-hidden relative group">
-        <div className="absolute top-0 right-0 p-20 opacity-[0.03] group-hover:scale-110 transition-transform duration-[10s] pointer-events-none grayscale">
+      <div className="p-12 rounded-[0.1rem] bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-none text-slate-900 dark:text-white overflow-hidden relative group transition-colors">
+        <div className="absolute top-0 right-0 p-20 opacity-[0.03] dark:opacity-[0.05] group-hover:scale-110 transition-transform duration-[10s] pointer-events-none grayscale">
            <Rocket size={400} />
         </div>
         <div className="max-w-3xl space-y-8 relative z-10">
-           <h3 className="text-5xl font-black italic tracking-tighter leading-tight uppercase">Ready to scale your <span className="text-primary underline decoration-primary/30 decoration-8 underline-offset-8">ecosystem?</span></h3>
-           <p className="text-xl text-slate-400 font-bold leading-relaxed tracking-tight">생태계를 확장할 준비가 되셨습니까? 마법사를 통해 복잡한 과정 없이 단 4단계만으로 사내 지식 허브를 구축하십시오.</p>
+           <h3 className="text-5xl font-black italic tracking-tighter leading-tight uppercase transition-colors">Ready to scale your <span className="text-primary underline decoration-primary/30 decoration-8 underline-offset-8">ecosystem?</span></h3>
+           <p className="text-xl text-slate-500 dark:text-slate-400 font-bold leading-relaxed tracking-tight transition-colors">생태계를 확장할 준비가 되셨습니까? 마법사를 통해 복잡한 과정 없이 단 4단계만으로 사내 지식 허브를 구축하십시오.</p>
            <Button 
               onClick={() => router.push('/admin/community/boards/maker')}
               className="h-20 px-12 rounded-[0.1rem] bg-primary text-white text-2xl font-black tracking-tighter shadow-[0_30px_60px_-15px_rgba(59,130,246,0.4)] hover:scale-110 active:scale-95 transition-all gap-4 ring-8 ring-primary/5 italic"
@@ -209,15 +209,15 @@ function InsightCard({ label, value, desc, icon: Icon, color }: InsightCardProps
     return (
       <motion.div variants={item} className="hub-card-premium p-8 space-y-6 group hover:ring-[30px] hover:ring-slate-100/30 transition-all border-2 border-slate-50/50">
         <div className="flex items-center justify-between">
-           <div className={cn("w-14 h-14 rounded-[0.1rem] bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:scale-110 transition-transform text-slate-400", color)}>
+           <div className={cn("w-14 h-14 rounded-[0.1rem] bg-slate-50 dark:bg-slate-900 flex items-center justify-center border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-transform text-slate-400", color)}>
               <Icon size={28} />
            </div>
-           <MoreVertical className="text-slate-200" size={20} />
+           <MoreVertical className="text-slate-200 dark:text-slate-700" size={20} />
         </div>
         <div className="space-y-1">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none text-left">{label}</p>
-           <h4 className="text-4xl font-black text-slate-900 italic tracking-tighter leading-none group-hover:text-primary transition-colors text-left">{value}</h4>
-           <p className="text-[10px] font-black text-slate-300 uppercase leading-none mt-2 text-left">{desc}</p>
+            <p className="text-[10px] font-black text-slate-400 dark:text-white/40 uppercase tracking-widest leading-none text-left">{label}</p>
+            <h4 className="text-4xl font-black text-slate-900 dark:text-white italic tracking-tighter leading-none group-hover:text-primary transition-colors text-left">{value}</h4>
+            <p className="text-[10px] font-black text-slate-400/60 dark:text-slate-300 uppercase leading-none mt-2 text-left">{desc}</p>
         </div>
       </motion.div>
     );

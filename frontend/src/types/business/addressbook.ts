@@ -11,7 +11,7 @@ export interface NameCard {
  cmpnyNm: string;
  deptNm: string;
  telNo: string;
- mbtlNum: string;
+ moblphonNo: string; // Aligned with backend moblphonNo
  emailAdres: string;
 }
 

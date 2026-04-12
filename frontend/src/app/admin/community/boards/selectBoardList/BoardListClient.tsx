@@ -198,18 +198,18 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
       {isAdmin && isManagementView && <BoardStats />}
 
       <Card className="border-none shadow-2xl overflow-hidden rounded-[0.1rem] ring-1 ring-slate-200 bg-white">
-        <CardHeader className="flex flex-row items-center justify-between bg-slate-900 pb-12 pt-12 px-10 text-white relative overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 pb-12 pt-12 px-10 text-slate-900 dark:text-white relative overflow-hidden transition-colors">
           <div className="space-y-2 relative z-10">
             <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
               {tmplatId === 'TMPLT_HUB' ? <BookOpen className="w-8 h-8 text-primary" /> : <MessageSquare className="w-8 h-8 text-primary" />}
               <span>{masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공지사항' : '자유 게시판')}</span>
             </CardTitle>
-            <p className="text-slate-400 font-bold text-sm">총 <span className="text-white">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
+            <p className="text-slate-500 dark:text-slate-400 font-bold text-sm">총 <span className="text-primary dark:text-white">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
           </div>
           <CardAction className="relative z-10 flex items-center gap-3">
             {isAdmin && (
               <Link href="/admin/community/boards/master">
-                <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-white/20 bg-white/10 text-white hover:bg-white hover:text-slate-900 font-black shadow-xl transition-all rounded-[0.1rem] backdrop-blur-md">
+                <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 font-black shadow-xl transition-all rounded-[0.1rem] backdrop-blur-md">
                   <Settings2 className="w-6 h-6" /> 마스터 콘솔
                 </Button>
               </Link>
@@ -323,7 +323,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                   </Select>
                 </div>
 
-                <Button type="submit" size="lg" className="h-16 px-12 gap-3 bg-slate-900 border-4 border-white shadow-2xl hover:scale-105 transition-all active:scale-95 font-black rounded-[0.1rem]">
+                <Button type="submit" size="lg" className="h-16 px-12 gap-3 bg-slate-900 dark:bg-primary border-4 border-white dark:border-slate-800 shadow-2xl hover:scale-105 transition-all active:scale-95 font-black text-white rounded-[0.1rem]">
                   <Search className="w-6 h-6" /> 조회
                 </Button>
               </div>
@@ -350,28 +350,28 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                 {/* Hub Featured Section */}
                 {page === 1 && (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <Card className="lg:col-span-12 p-10 bg-slate-900 rounded-[0.1rem] text-white relative overflow-hidden group border-none">
-                      <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-primary/20 blur-[100px] rounded-full" />
+                    <Card className="lg:col-span-12 p-10 bg-slate-50 dark:bg-slate-900 rounded-[0.1rem] text-slate-900 dark:text-white relative overflow-hidden group border-none shadow-xl">
+                      <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-primary/10 dark:bg-primary/20 blur-[100px] rounded-full" />
                       <div className="relative z-10 space-y-6">
-                        <Badge className="bg-primary hover:bg-primary text-white border-none font-black tracking-[0.4em] uppercase py-1 px-4">FEATURED_KNOWLEDGE</Badge>
+                        <Badge className="bg-primary hover:bg-primary text-white border-none font-black tracking-[0.4em] uppercase py-1 px-4 text-[10px]">FEATURED_KNOWLEDGE</Badge>
                         <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${list[0].nttId}`}>
                           <h3 className="text-4xl font-black tracking-tight leading-tight group-hover:text-primary transition-colors cursor-pointer">{list[0].nttSj}</h3>
                         </Link>
                         <div className="flex items-center gap-8 mt-8">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-primary italic font-black text-xs border border-white/10">OP</div>
+                            <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-white/10 flex items-center justify-center text-primary italic font-black text-xs border border-primary/20 dark:border-white/10">OP</div>
                             <div className="flex flex-col">
-                              <span className="text-[11px] font-black text-white/40 italic uppercase tracking-widest leading-none mb-1">Author</span>
+                              <span className="text-[11px] font-black text-slate-400 dark:text-white/40 italic uppercase tracking-widest leading-none mb-1">Author</span>
                               <span className="text-sm font-black">{list[0].frstRegisterNm}</span>
                             </div>
                           </div>
-                          <div className="h-8 w-px bg-white/10" />
-                          <div className="flex items-center gap-3 text-white/40">
+                          <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
+                          <div className="flex items-center gap-3 text-slate-400 dark:text-white/40">
                              <Clock size={16} />
                              <span className="text-xs font-bold">{list[0].createdDate ? String(list[0].createdDate).substring(0, 10) : 'Just now'}</span>
                           </div>
-                          <div className="h-8 w-px bg-white/10" />
-                          <div className="flex items-center gap-3 text-white/40">
+                          <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
+                          <div className="flex items-center gap-3 text-slate-400 dark:text-white/40">
                              <Eye size={16} />
                              <span className="text-xs font-bold">{list[0].inqireCo} views</span>
                           </div>
@@ -423,9 +423,9 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                       </Link>
                       <div className="flex items-center justify-between pt-6 border-t border-slate-50">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-black text-[10px] italic">OP</div>
+                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-white font-black text-[10px] italic border border-slate-200 dark:border-slate-800">OP</div>
                           <div className="flex flex-col">
-                            <span className="text-sm font-black text-slate-700 leading-none mb-1">{item.frstRegisterNm}</span>
+                            <span className="text-sm font-black text-slate-700 dark:text-slate-200 leading-none mb-1">{item.frstRegisterNm}</span>
                             <span className="text-[10px] font-bold text-slate-400">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
                           </div>
                         </div>
@@ -489,7 +489,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
               </div>
             ) : tmplatId === 'TMPLT_CALENDAR' ? (
               <div className="p-10 space-y-8">
-                <div className="flex justify-between items-center bg-slate-900 p-8 rounded-[0.1rem] text-white">
+                <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-8 rounded-[0.1rem] text-slate-900 dark:text-white border border-slate-100 dark:border-slate-800 transition-colors">
                   <div className="space-y-1">
                     <p className="text-primary font-black tracking-[0.2em] text-[10px] uppercase">Event schedule</p>
                     <h3 className="text-3xl font-black italic tracking-tighter uppercase">
@@ -503,7 +503,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                         const prev = new Date(year, month - 1, 1);
                         setStartDate(prev);
                       }}
-                      className="h-12 w-12 border-white/20 bg-white/10 hover:bg-white hover:text-slate-900 rounded-[0.1rem] transition-all text-white"
+                      className="h-12 w-12 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-[0.1rem] transition-all text-slate-900 dark:text-white"
                     >
                       <ChevronRight className="rotate-180" size={20} />
                     </Button>
@@ -513,7 +513,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                         const next = new Date(year, month + 1, 1);
                         setStartDate(next);
                       }}
-                      className="h-12 w-12 border-white/20 bg-white/10 hover:bg-white hover:text-slate-900 rounded-[0.1rem] transition-all text-white"
+                      className="h-12 w-12 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-[0.1rem] transition-all text-slate-900 dark:text-white"
                     >
                       <ChevronRight size={20} />
                     </Button>
@@ -684,10 +684,10 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
               >
                 이전
               </Button>
-              <div className="flex items-center gap-4 bg-slate-900 px-8 py-3 rounded-[0.1rem] shadow-xl">
-                <span className="text-lg font-black text-white">{page}</span>
-                <div className="h-4 w-px bg-white/20" />
-                <span className="text-sm font-bold text-white/50">{totalPages}</span>
+              <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-900 px-8 py-3 rounded-[0.1rem] shadow-xl border border-slate-200 dark:border-slate-800">
+                <span className="text-lg font-black text-slate-900 dark:text-white">{page}</span>
+                <div className="h-4 w-px bg-slate-300 dark:bg-white/20" />
+                <span className="text-sm font-bold text-slate-400 dark:text-white/50">{totalPages}</span>
               </div>
               <Button
                 variant="outline"

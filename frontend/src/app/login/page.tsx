@@ -21,8 +21,15 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [authStep, setAuthStep] = useState(0); // 0: Idle, 1: Connecting, 2: Finalizing
-    const { login } = useAuth();
+    const { login, user, loading } = useAuth();
     const router = useRouter();
+
+    // 이미 로그인된 상태라면 대시보드로 자동 이동
+    React.useEffect(() => {
+        if (!loading && user) {
+            router.replace('/admin/work-hub');
+        }
+    }, [user, loading, router]);
 
     const searchParams = useSearchParams();
     const redirectUrl = searchParams.get('redirect') || '/admin/work-hub';

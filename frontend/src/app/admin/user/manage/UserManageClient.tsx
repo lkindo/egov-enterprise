@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -56,7 +56,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
     userId: '',
     userNm: '',
     password: '',
-    email: '',
+    emailAdres: '',
     userSttusCode: 'P',
   });
 
@@ -65,7 +65,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
 
   const handleOpenCreate = () => {
     setEditingUser(null);
-    setFormData({ userId: '', userNm: '', password: '', email: '', userSttusCode: 'P' });
+    setFormData({ userId: '', userNm: '', password: '', emailAdres: '', userSttusCode: 'P' });
     setIsModalOpen(true);
   };
 
@@ -142,7 +142,7 @@ export default function UserManageClient({ initialData, initialParams }: { initi
       accessor: (item) => (
         <div className="flex items-center gap-3 text-slate-700 font-bold tracking-tighter lowercase">
           <Mail size={14} className="text-slate-400" />
-          <span className="text-[13px]">{item.email}</span>
+          <span className="text-[13px]">{item.emailAdres}</span>
         </div>
       )
     },
@@ -356,8 +356,8 @@ export default function UserManageClient({ initialData, initialParams }: { initi
                 <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/email:opacity-100 transition-opacity" />
                 <Input
                   type="email"
-                  value={formData.email || ''}
-                  onChange={e => setFormData({ ...formData, email: e.target.value })}
+                  value={formData.emailAdres || ''}
+                  onChange={e => setFormData({ ...formData, emailAdres: e.target.value })}
                   className="h-14 pl-14 rounded-[0.1rem] border-2 font-black tracking-tighter text-xs shadow-inner lowercase"
                   placeholder="이메일 주소"
                 />

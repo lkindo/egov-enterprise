@@ -59,12 +59,12 @@ export default function LogDashboardPage() {
     }
   });
 
-  const logs = (data?.resultList || data?.list || []) as any[];
+  const logs = (data?.list || []) as any[];
   const pagination = data?.paginationInfo || {
     currentPageNo: Number(params.page),
     recordCountPerPage: 10,
-    totalRecordCount: Number(data?.totalCount || data?.total || 0),
-    totalPageCount: Number(data?.totalPage || data?.totalPageCount || 1)
+    totalRecordCount: Number(data?.total || 0),
+    totalPageCount: Number(data?.totalPage || 1)
   };
 
   const columns = useMemo(() => {

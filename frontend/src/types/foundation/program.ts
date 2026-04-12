@@ -1,4 +1,4 @@
-﻿import { PaginationInfo } from './system';
+import { PaginationInfo } from './system';
 
 export interface Program {
   progrmFileNm: string;
@@ -10,9 +10,9 @@ export interface Program {
 
 /** 님client님ApiResponse.data瑜吏곸젒 諛섑솚?섎濡님섏씠吏ㅼ씠님援ъ“ */
 export interface ProgramResponse {
-  content?: Program[];
-  totalElements?: number;
-  totalPages?: number;
-  resultList?: Program[];
-  paginationInfo?: PaginationInfo;
+  list: Program[];
+  total: number;
+  totalPage: number;
+  page: number;
+  size: number;
 }

@@ -25,8 +25,8 @@ const WebLogAdminPage = () => {
         }),
     });
 
-    const logs = (data?.resultList || data?.list || []) as WebLog[];
-    const totalPageCount = data?.totalPage || data?.paginationInfo?.totalPageCount || 1;
+    const logs = (data?.list || []) as WebLog[];
+    const totalPageCount = data?.totalPage || 1;
 
     const columns: Column<WebLog>[] = [
         {

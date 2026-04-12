@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/app/components/ui/toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { saveBoardArticle } from '@/app/actions/boardActions';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import { BoardPost } from '@/types/business/board';
@@ -17,6 +18,7 @@ export default function InsertBoardArticlePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
   const parntsId = searchParams.get('parntsId') || undefined;
 
@@ -52,8 +54,11 @@ export default function InsertBoardArticlePage() {
 
       const result = await saveBoardArticle(null, formData);
       if (result.success) {
+        // 캐시 무효화 추가
+        queryClient.invalidateQueries({ queryKey: ['boardList'] });
+        
         toast('지식 자산이 성공적으로 등록되었습니다.', 'success');
-        router.push(`/admin/community/boards?bbsId=${bbsId}`);
+        router.push(`/admin/community/boards/selectBoardList?bbsId=${bbsId}`);
       } else {
         toast(result.message || '등록 실패', 'error');
       }
@@ -79,27 +84,27 @@ export default function InsertBoardArticlePage() {
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-black tracking-[0.5em] text-primary uppercase leading-none px-3 py-1 bg-primary/5 rounded-full border border-primary/10">Enterprise Intelligence</span>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">New Knowledge Asset</h1>
+          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic leading-none transition-colors">New Knowledge Asset</h1>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-10 px-2">
         {/* Title Input Area */}
-        <div className="hub-card-premium p-10 bg-slate-900 border-none shadow-2xl relative overflow-hidden group rounded-[0.1rem]">
-          <div className="absolute top-0 right-0 p-12 opacity-[0.05] pointer-events-none group-focus-within:opacity-10 transition-opacity">
-            <Layers size={140} className="rotate-12" />
+        <div className="hub-card-premium p-10 bg-slate-50 dark:bg-slate-900 border-none shadow-2xl relative overflow-hidden group rounded-[0.1rem]">
+          <div className="absolute top-0 right-0 p-12 opacity-[0.05] dark:opacity-[0.02] pointer-events-none group-focus-within:opacity-10 transition-opacity">
+            <Layers size={140} className="rotate-12 text-slate-900 dark:text-white" />
           </div>
           <div className="relative z-10 space-y-6">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-[0.1rem] bg-white/10 flex items-center justify-center text-primary border border-white/10">
+              <div className="w-10 h-10 rounded-[0.1rem] bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                 <Zap size={20} />
               </div>
-              <span className="text-[10px] font-black tracking-widest text-white/40 uppercase">Dataset Core Subject</span>
+              <span className="text-[10px] font-black tracking-widest text-slate-500 dark:text-white/40 uppercase">Dataset Core Subject</span>
             </div>
             <Input
               value={form.nttSj}
               onChange={(e) => setForm({ ...form, nttSj: e.target.value })}
-              className="h-20 bg-transparent border-none text-white text-3xl font-black placeholder:text-white/10 focus-visible:ring-0 p-0 tracking-tight"
+              className="h-20 bg-transparent border-none text-slate-900 dark:text-white text-3xl font-black placeholder:text-slate-900/10 dark:placeholder:text-white/10 focus-visible:ring-0 p-0 tracking-tight"
               placeholder="제목을 입력하십시오..."
               autoFocus
               required
@@ -113,7 +118,7 @@ export default function InsertBoardArticlePage() {
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
               <Package size={18} className="text-primary" />
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">지식 노드 콘텐츠</h3>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest transition-colors">지식 노드 콘텐츠</h3>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -132,7 +137,7 @@ export default function InsertBoardArticlePage() {
           <div className="flex items-center gap-8">
             <div className="flex flex-col">
               <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Dataset Type</span>
-              <span className="text-xs font-black text-slate-800 mt-1 uppercase italic">{bbsId.split('_')[1] || 'CORE'}</span>
+              <span className="text-xs font-black text-slate-800 dark:text-slate-200 mt-1 uppercase italic transition-colors">{bbsId.split('_')[1] || 'CORE'}</span>
             </div>
             <div className="w-[1px] h-8 bg-border/40" />
             <div className="flex flex-col">

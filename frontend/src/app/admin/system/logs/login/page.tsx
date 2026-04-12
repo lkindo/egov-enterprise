@@ -28,8 +28,8 @@ const LoginLogAdminPage = () => {
         }),
     });
 
-    const logs = (data?.resultList || data?.list || []) as LoginLog[];
-    const totalPageCount = data?.totalPage || data?.paginationInfo?.totalPageCount || 1;
+    const logs = (data?.list || []) as LoginLog[];
+    const totalPageCount = data?.totalPage || 1;
 
     const columns: Column<LoginLog>[] = [
         {

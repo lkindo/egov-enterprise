@@ -1,11 +1,11 @@
 export interface ConnectStats {
-  date: string;
-  count: number;
+  statsDate: string; // Aligned with backend statsDate
+  statsCo: number; // Aligned with backend statsCo
 }
 
 export interface MenuStats {
   menuNm: string;
-  count: number;
+  statsCo: number; // Aligned with backend statsCo
   percentage: number;
 }
 

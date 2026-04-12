@@ -18,17 +18,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const checkAuth = useCallback(async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('accessToken');
 
     // 토큰이 없으면 인증 확인 건너뜀
     if (!token) {
       setUser(null);
       setLoading(false);
+      // 쿠키도 명시적으로 제거하여 싱크 맞춤
+      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       return;
     }
 
-    // 토큰이 만료되었더라도 interceptor에서 reissue를 시도하므로
-    // /auth/me를 호출하여 최종 유효성을 검증합니다.
+    // [중요] localStorage 에는 토큰이 있으나 쿠키가 없는 경우 동기화하여 미들웨어 통과 지원
+    const hasCookie = document.cookie.split(';').some(c => c.trim().startsWith('accessToken='));
+    if (!hasCookie && token) {
+      document.cookie = `accessToken=${token}; path=/; max-age=86400; SameSite=Lax`;
+    }
+
     try {
       const userData = await authService.getCurrentUser();
       if (userData) {
@@ -37,12 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
     } catch (error) {
-      // 401 에러가 interceptor 가 토큰 재발급 실패 후 최종적으로 남겨집니다.
+      console.warn('[AuthContext] 인증 유효성 검사 실패:', error);
       setUser(null);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      }
+      localStorage.removeItem('accessToken');
+      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     } finally {
       setLoading(false);
     }

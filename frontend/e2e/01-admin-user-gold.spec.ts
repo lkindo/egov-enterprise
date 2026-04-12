@@ -11,21 +11,15 @@ import { validateContract } from './fixtures/contract-validator';
 const userManageSchema = z.object({
   userId: z.string().min(1),
   userNm: z.string().min(1),
-  email: z.string().email().or(z.string().length(0)), // Allow empty for legacy
-  userSttusCode: z.enum(['P', 'A', 'D', 'N']), // Added 'N' if exists
+  emailAdres: z.string().email().or(z.string().length(0)), // Standardized to emailAdres
+  userSttusCode: z.enum(['P', 'A', 'D', 'N']),
   emplNo: z.string().optional().nullable(),
   ofcpsNm: z.string().optional().nullable(),
 });
 
 const userListResponseSchema = z.object({
   list: z.array(userManageSchema),
-  paginationInfo: z.object({
-    totalRecordCount: z.number(),
-    currentPageNo: z.number(),
-    recordCountPerPage: z.number(),
-    pageSize: z.number(),
-    totalPageCount: z.number(),
-  }),
+  totalPage: z.number().optional(), // Standardized to PageResponse format
 });
 
 test.describe('Admin User Management - Gold Flow (No-Mock & Contract)', () => {

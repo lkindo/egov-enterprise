@@ -1,4 +1,4 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { statsAdminService } from '@/services/foundation/system/StatsAdminService';
 import AdminStatsClient from './AdminStatsClient';
@@ -31,7 +31,7 @@ export default async function AdminStatsPage() {
     // Transform connect data for area chart
     initialConnectData = Array.isArray(connRes) ? connRes.map((item: any) => ({
       name: item.statsDate ? `${item.statsDate.substring(4, 6)}/${item.statsDate.substring(6, 8)}` : 'N/A',
-      count: item.statsCo || 0
+      statsCo: item.statsCo || 0
     })) : [];
 
     initialMenuData = (Array.isArray(menuRes) ? menuRes : []) as any as MenuStats[];

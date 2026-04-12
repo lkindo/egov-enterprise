@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -89,11 +89,10 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
   });
 
   const [data, setData] = useState<Program[]>(() => {
-    return (initialData?.list || initialData?.content || initialData?.resultList || []) as Program[];
+    return (initialData?.list || []) as Program[];
   });
   const [total, setTotal] = useState<number>(() => {
-    const t = initialData?.total || initialData?.totalElements || initialData?.totalRecordCount || 0;
-    return typeof t === 'number' ? t : Number(t) || 0;
+    return initialData?.total || 0;
   });
   const [loading, setLoading] = useState(false);
   const [currentSearchWrd, setCurrentSearchWrd] = useState(searchWrd);
@@ -103,8 +102,8 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
       setLoading(true);
       const res = await programAdminService.getProgramList({ page: page - 1, size: 10, searchWrd: wrd });
 
-      const list = (res.list || res.content || res.resultList || []) as Program[];
-      const totalCount = (res.total || res.totalElements || res.totalRecordCount || 0) as number;
+      const list = (res.list || []) as Program[];
+      const totalCount = res.total || 0;
 
       setData(list);
       setTotal(totalCount);

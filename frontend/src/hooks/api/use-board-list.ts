@@ -27,11 +27,11 @@ export const useBoardList = (params: BoardListParams, initialData?: { resultList
 
       const data = await client.get<BoardResponse>(`/boards/${bbsId}`, { params: queryParams });
 
-      // Spring Data Page 구조 반영
+      // PageResponse 구조 반영 (list, total, totalPage)
       return {
-        resultList: data.content || [],
-        totalCount: data.totalElements || 0,
-        totalPages: data.totalPages || 0
+        resultList: data.list || [],
+        totalCount: data.total || 0,
+        totalPages: data.totalPage || 0
       };
     },
     staleTime: 60 * 1000,

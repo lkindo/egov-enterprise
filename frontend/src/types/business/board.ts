@@ -18,9 +18,9 @@ export interface BoardPost {
 }
 
 export interface BoardResponse {
- content: BoardPost[];
- totalElements: number;
- totalPages: number;
- size: number;
- number: number;
+  list: BoardPost[];
+  total: number;
+  totalPage: number;
+  size: number;
+  page: number;
 }

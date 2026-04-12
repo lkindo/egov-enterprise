@@ -2,10 +2,10 @@ import client from './client';
 import { Survey, QustnrRespondInfo } from '@/types/business/survey';
 
 export const getQustnrRespondInfoList = async (params: { keyword?: string; page?: number; size?: number } = {}) => {
- return client.get<{ content: Survey[]; totalElements: number }>(
- '/api/v1/surveys',
- { params, headers: { Accept: 'application/json' } }
- );
+  return client.get<{ list: Survey[]; total: number }>(
+    '/api/v1/surveys',
+    { params, headers: { Accept: 'application/json' } }
+  );
 };
 
 export const getQustnrRespondInfoDetail = async (id: string): Promise<QustnrRespondInfo> => {

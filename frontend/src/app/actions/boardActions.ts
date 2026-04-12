@@ -70,7 +70,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
     }
 
     if (response) {
-      revalidatePath(`/admin/community/boards`);
+      revalidatePath(`/admin/community/boards/selectBoardList`);
       const targetId = isEdit ? nttId : response as string;
       return {
         success: true,
@@ -99,7 +99,7 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
     const response: unknown = await client.delete(`/bbs/${bbsId}/${nttId}`, axiosConfig);
 
     if (response !== undefined) {
-      revalidatePath(`/admin/community/boards`);
+      revalidatePath(`/admin/community/boards/selectBoardList`);
       return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
     } else {
       return { success: false, message: '삭제에 실패했습니다.' };

@@ -29,7 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { menuService } from '@/services/business/user/MenuService';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { MenuInfo } from '@/types/foundation/menu';
 
 const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -68,37 +68,67 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
     }
   }, [menus.length]);
 
-  // Sync activeMenuNo with pathname
+  // Sync activeMenuNo with pathname and query params
+  const searchParams = useSearchParams();
+  const searchBbsId = searchParams.get('bbsId');
+
   useEffect(() => {
     if (menus.length === 0) return;
 
     const currentPath = pathname;
     
-    // Find top menu containing the current path
+    // Find top menu containing the current path with priority
     const matchTopMenu = () => {
-      for (const m of menus) {
-        // Check children (LNB)
-        const hasMatch = (m.children || []).some((c: MenuInfo) => {
-          if (c.modernRoute && currentPath.startsWith(c.modernRoute)) return true;
-          if (c.children?.some((cc: MenuInfo) => cc.modernRoute && currentPath.startsWith(cc.modernRoute))) return true;
-          return false;
-        });
-        
-        if (hasMatch) {
-          return m.menuNo;
+      // 1순위: bbsId가 포함된 경우 정밀 매칭
+      if (searchBbsId) {
+        for (const m of menus) {
+          const hasBbsMatch = (m.children || []).some((c: MenuInfo) => {
+            if (c.modernRoute?.includes(`bbsId=${searchBbsId}`)) return true;
+            return c.children?.some(cc => cc.modernRoute?.includes(`bbsId=${searchBbsId}`));
+          });
+          if (hasBbsMatch || m.modernRoute?.includes(`bbsId=${searchBbsId}`)) {
+            return m.menuNo;
+          }
         }
-
-        // Also check top menu itself
-        if (m.modernRoute && currentPath.startsWith(m.modernRoute)) return m.menuNo;
       }
-      return null;
+
+      // 2순위: 가장 긴 경로 일치 (Longest Prefix Match)
+      let bestMatch = { menuNo: null as number | null, score: 0 };
+
+      const calculateScore = (route?: string) => {
+        if (!route) return 0;
+        const pureRoute = route.split('?')[0];
+        if (currentPath === pureRoute) return 10000; // 완전 일치 시 최우선
+        if (currentPath.startsWith(pureRoute + '/') || (pureRoute !== '/' && currentPath === pureRoute)) {
+          return pureRoute.length;
+        }
+        return 0;
+      };
+
+      for (const m of menus) {
+        let menuMaxScore = calculateScore(m.modernRoute);
+        
+        // 하위 메뉴들 확인
+        m.children?.forEach(c => {
+          menuMaxScore = Math.max(menuMaxScore, calculateScore(c.modernRoute));
+          c.children?.forEach(cc => {
+            menuMaxScore = Math.max(menuMaxScore, calculateScore(cc.modernRoute));
+          });
+        });
+
+        if (menuMaxScore > bestMatch.score) {
+          bestMatch = { menuNo: m.menuNo, score: menuMaxScore };
+        }
+      }
+
+      return bestMatch.menuNo;
     };
 
     const matchedNo = matchTopMenu();
     if (matchedNo && matchedNo !== activeMenuNo) {
       setActiveMenuNo(matchedNo);
     }
-  }, [pathname, menus, activeMenuNo, setActiveMenuNo]);
+  }, [pathname, searchBbsId, menus, activeMenuNo, setActiveMenuNo]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

@@ -37,11 +37,11 @@ export async function getInitialBoardData(params: {
       client.get(`/admin/system/board-masters/${bbsId}`, axiosConfig)
     ]);
 
-    // Spring Data Page 객체 구조에 맞춰 데이터 추출 (content, totalElements, totalPages)
+    // PageResponse 구조에 맞춰 데이터 추출 (list, total, totalPage)
     return {
-      resultList: listResponse.content || [],
-      totalCount: listResponse.totalElements || 0,
-      totalPages: listResponse.totalPages || 0,
+      resultList: listResponse.list || [],
+      totalCount: listResponse.total || 0,
+      totalPages: listResponse.totalPage || 0,
       masterInfo: masterResponse || null
     };
   } catch (error: any) {

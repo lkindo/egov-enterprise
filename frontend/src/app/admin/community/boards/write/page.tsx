@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
 import { useToast } from '@/app/components/ui/toast';
@@ -36,6 +37,7 @@ import { z } from 'zod';
 
 export default function BoardWritePage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
@@ -58,6 +60,8 @@ export default function BoardWritePage() {
       console.log('>>> Submitting to boardAdminService.createBoardArticle...', data);
       const response = await boardAdminService.createBoardArticle(data as any);
       console.log('>>> API Response Success:', response);
+      // 캐시 무효화 추가
+      queryClient.invalidateQueries({ queryKey: ['boardList'] });
       toast('새 게시물이 성공적으로 생성되었습니다.', 'success');
       router.push(`/admin/community/boards/selectBoardList?bbsId=${data.bbsId}`);
     } catch (error) {
@@ -88,20 +92,24 @@ export default function BoardWritePage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-10">
             <Card className="border-none shadow-2xl rounded-[0.1rem] overflow-hidden bg-white ring-1 ring-slate-100">
-              <CardHeader className="bg-slate-900 text-white p-10 pb-16">
-                <div className="flex justify-between items-start">
+              <CardHeader className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white p-10 pb-16 border-b border-slate-100 dark:border-slate-800 relative overflow-hidden">
+                <div className="flex justify-between items-start relative z-10">
                   <div className="space-y-3">
                     <CardTitle className="text-4xl font-black tracking-tighter flex items-center gap-4">
-                      <div className="p-3 bg-white/10 rounded-[0.1rem]">
+                      <div className="p-3 bg-primary/10 rounded-[0.1rem]">
                         <FileText className="w-8 h-8 text-primary" />
                       </div>
                       새 콘텐츠 전개
                     </CardTitle>
-                    <p className="text-slate-400 font-bold text-lg">시스템 전역에 배포될 새로운 게시물 데이터를 정의합니다.</p>
+                    <p className="text-slate-500 dark:text-slate-400 font-bold text-lg">시스템 전역에 배포될 새로운 게시물 데이터를 정의합니다.</p>
                   </div>
-                  <div className="p-4 bg-white/5 rounded-[0.1rem] backdrop-blur-xl border border-white/10 text-right">
+                  <div className="p-4 bg-primary/5 dark:bg-white/5 rounded-[0.1rem] backdrop-blur-xl border border-primary/10 dark:border-white/10 text-right">
                     <span className="text-[10px] font-black tracking-widest text-primary uppercase animate-pulse">Waiting for Submit</span>
                   </div>
+                </div>
+                {/* Background Decor */}
+                <div className="absolute right-[-5%] top-[-10%] opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
+                   <FileText size={180} className="rotate-12" />
                 </div>
               </CardHeader>
 
@@ -287,7 +295,7 @@ export default function BoardWritePage() {
                     <Button 
                       type="submit" 
                       disabled={loading}
-                      className="h-20 px-16 bg-slate-900 hover:bg-black text-white rounded-[0.1rem] font-black text-[11px] tracking-[0.4em] uppercase shadow-[0_24px_48px_-8px_theme(colors.slate.900/40)] transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-4"
+                      className="h-20 px-16 bg-slate-900 dark:bg-primary text-white rounded-[0.1rem] font-black text-[11px] tracking-[0.4em] uppercase shadow-[0_24px_48px_-8px_rgba(15,23,42,0.3)] dark:shadow-primary/40 transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-4"
                     >
                       <Save size={20} />
                       {loading ? 'DEPLOYING...' : '이벤트 게시'}

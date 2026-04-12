@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -83,7 +83,7 @@ export default function AdminStatsClient({
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-primary opacity-40 italic" />
-          <span className="font-mono font-black text-primary text-lg tracking-tighter tabular-nums underline decoration-primary/20 decoration-4 underline-offset-4">{item.count.toLocaleString()}</span>
+          <span className="font-mono font-black text-primary text-lg tracking-tighter tabular-nums underline decoration-primary/20 decoration-4 underline-offset-4">{item.statsCo.toLocaleString()}</span>
         </div>
       )
     },
@@ -138,7 +138,7 @@ export default function AdminStatsClient({
                 data={initialMenuData}
                 headers={[
                   { label: '메뉴명', key: 'menuNm' },
-                  { label: '사용자 수', key: 'count' },
+                  { label: '사용자 수', key: 'statsCo' },
                   { label: '비중(%)', key: 'percentage' }
                 ]}
                 filename="system_intelligence_stats"
@@ -166,7 +166,7 @@ export default function AdminStatsClient({
                 title="NETWORK TRAFFIC EVOLUTION"
                 type="area"
                 data={initialConnectData}
-                dataKeys={['count']}
+                dataKeys={['statsCo']}
                 loading={loading}
                 height={350}
                 className="relative z-10"
@@ -187,7 +187,7 @@ export default function AdminStatsClient({
                 title="ENVIRONMENT DISTRIBUTION"
                 type="pie"
                 data={browserData}
-                dataKeys={['count']}
+                dataKeys={['statsCo']}
                 loading={loading}
                 height={350}
                 className="relative z-10"
@@ -211,8 +211,8 @@ export default function AdminStatsClient({
               <StandardChartWrapper
                 title="HIGH-INTERACTION SERVICES"
                 type="bar"
-                data={initialMenuData.slice(0, 5).map(m => ({ name: m.menuNm, count: m.count }))}
-                dataKeys={['count']}
+                data={initialMenuData.slice(0, 5).map(m => ({ name: m.menuNm, statsCo: m.statsCo }))}
+                dataKeys={['statsCo']}
                 loading={loading}
                 height={380}
               />

@@ -1,4 +1,4 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { ismAdminService, InfrmlSanctn } from '@/services/foundation/system/IsmAdminService';
 import IsmClient from './IsmClient';
@@ -14,7 +14,7 @@ export default async function InformalSanctionPage() {
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  let rawData: any = { content: [] as InfrmlSanctn[], totalElements: 0, totalPages: 0 };
+  let rawData: any = { list: [] as InfrmlSanctn[], total: 0, totalPage: 0 };
 
   try {
     rawData = await ismAdminService.getInfrmlSanctnList({ page: 0, size: 50 }, axiosConfig);
@@ -23,13 +23,13 @@ export default async function InformalSanctionPage() {
   }
 
   // [Server Serialization Optimization]
-  const optimizedContent = selectFieldsList(rawData.content as InfrmlSanctn[], [
+  const optimizedContent = selectFieldsList(rawData.list as InfrmlSanctn[], [
     'infrmlSanctnId', 'jobSe', 'jobSeCode', 'applcntId', 'confmAt', 'sancltNm'
   ] as (keyof InfrmlSanctn)[]);
 
   return (
     <Suspense fallback={<IsmLoading />}>
-      <IsmClient initialData={{ ...rawData, content: optimizedContent as InfrmlSanctn[] }} />
+      <IsmClient initialData={{ ...rawData, list: optimizedContent as InfrmlSanctn[] }} />
     </Suspense>
   );
 }
