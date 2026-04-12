@@ -2,6 +2,7 @@ package nuri.business.service.board;
 
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;
+import nuri.business.service.board.dto.BoardStatsResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
@@ -10,7 +11,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * 寃뚯퉬???명꽣??씠??
+ * 寃뚯€퉬???명꽣??씠??
  * - ?꾩옄???꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ⑹꾪븳 ?명꽣??씠???꾨?? */
 public interface EgovBoardService {
 
@@ -18,6 +19,8 @@ public interface EgovBoardService {
 
         Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
                         @NonNull Pageable pageable);
+
+        BoardStatsResponse getBoardStats(@NonNull String bbsId);
 
         Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request);
 

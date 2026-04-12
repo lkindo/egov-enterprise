@@ -26,4 +26,12 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
 
         @Query("SELECT COALESCE(MAX(b.nttId), 0L) FROM Board b")
         Long findMaxNttId();
+
+        long countByBbsIdAndUseAt(String bbsId, String useAt);
+
+        @Query("SELECT COALESCE(SUM(b.inqireCo), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.useAt = :useAt")
+        long sumInqireCoByBbsIdAndUseAt(@Param("bbsId") String bbsId, @Param("useAt") String useAt);
+
+        @Query("SELECT b.ntcrNm FROM Board b WHERE b.bbsId = :bbsId AND b.useAt = :useAt GROUP BY b.ntcrNm ORDER BY COUNT(b) DESC LIMIT 1")
+        String findTopContributorByBbsIdAndUseAt(@Param("bbsId") String bbsId, @Param("useAt") String useAt);
 }

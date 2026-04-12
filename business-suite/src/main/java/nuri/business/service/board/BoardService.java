@@ -11,6 +11,7 @@ import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.board.BoardSearchCondition;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;
+import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.business.service.board.event.PostCreatedEvent;
 import nuri.business.service.file.EgovFileService;
 import nuri.foundation.service.user.EgovUserService;
@@ -80,6 +81,24 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 return boardRepository.searchArticles(condition, required(pageable, "pageable 는 null 일 수 없습니다"))
                                 .map(BoardDto::from);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public BoardStatsResponse getBoardStats(@NonNull String bbsId) {
+                long totalArticles = boardRepository.countByBbsIdAndUseAt(bbsId, "Y");
+                long totalViews = boardRepository.sumInqireCoByBbsIdAndUseAt(bbsId, "Y");
+                String topContributor = boardRepository.findTopContributorByBbsIdAndUseAt(bbsId, "Y");
+                
+                // Logic derived from frontend: (count * 2) + 70, capped at 100
+                int intelligenceScore = (int) Math.min(100, (totalArticles * 2) + 70);
+
+                return BoardStatsResponse.builder()
+                                .totalArticles(totalArticles)
+                                .totalViews(totalViews)
+                                .topContributor(topContributor != null ? topContributor : "System")
+                                .intelligenceScore(intelligenceScore)
+                                .build();
         }
 
         @Override

@@ -33,37 +33,83 @@ test.describe('Board Article Lifecycle Management', () => {
 
     test('Create new article and verify rendering in detail view (List Template)', async ({ page }) => {
         const testTitle = `E2E Article List ${Date.now()}`;
-        const testContent = `Playwright Test Content ${new Date().toISOString()}`;
+        const testContent = `Playwright Test Content for List Template`;
         const testBbsId = 'BBSMSTR_AAAAAAAAAAAA';
 
-        await executeBoardArticleTest(page, testTitle, testContent, testBbsId);
+        await executeBoardArticleTest(page, {
+            bbsId: testBbsId,
+            title: testTitle,
+            content: testContent
+        });
     });
 
     test('Create new article and verify rendering in detail view (Q&A Template)', async ({ page }) => {
         const testTitle = `E2E Article QNA ${Date.now()}`;
-        const testContent = `Playwright Test Content ${new Date().toISOString()}`;
+        const testContent = `Playwright Test Content for Q&A Template`;
         const testBbsId = 'BBSMSTR_DDDDDDDDDDDD';
 
-        await executeBoardArticleTest(page, testTitle, testContent, testBbsId);
+        await executeBoardArticleTest(page, {
+            bbsId: testBbsId,
+            title: testTitle,
+            content: testContent,
+            qnaStatus: 'OPEN',
+            qnaCategory: 'Q&A_TECHNICAL_CONSULT'
+        });
     });
 
     test('Create new article and verify rendering in detail view (Calendar Template)', async ({ page }) => {
         const testTitle = `E2E Article Calendar ${Date.now()}`;
-        const testContent = `Playwright Test Content ${new Date().toISOString()}`;
+        const testContent = `Playwright Test Content for Calendar Template`;
         const testBbsId = 'BBSMSTR_EEEEEEEEEEEE';
+        const eventDate = new Date();
+        eventDate.setDate(eventDate.getDate() + 7); // 7 days later
+        const eventDateStr = eventDate.toISOString().split('T')[0];
 
-        await executeBoardArticleTest(page, testTitle, testContent, testBbsId);
+        await executeBoardArticleTest(page, {
+            bbsId: testBbsId,
+            title: testTitle,
+            content: testContent,
+            eventDate: eventDateStr
+        });
     });
 });
 
-async function executeBoardArticleTest(page: any, testTitle: string, testContent: string, testBbsId: string) {
-    console.log(`>>> Step 1: Navigating to Article Write Page for BBS: ${testBbsId}`);
-    await page.goto('/admin/community/boards/write', { waitUntil: 'networkidle' });
+interface BoardTestParams {
+    bbsId: string;
+    title: string;
+    content: string;
+    qnaCategory?: string;
+    qnaStatus?: string;
+    eventDate?: string;
+}
+
+async function executeBoardArticleTest(page: any, params: BoardTestParams) {
+    const { bbsId, title, content, qnaCategory, qnaStatus, eventDate } = params;
+
+    console.log(`>>> Step 1: Navigating to Article Write Page for BBS: ${bbsId}`);
+    await page.goto('/admin/community/boards/write', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('input[name="bbsId"]');
 
     console.log('>>> Step 2: Filling Article Data');
-    await page.locator('input[name="bbsId"]').fill(testBbsId);
-    await page.locator('input[name="nttSj"]').fill(testTitle);
-    await page.locator('textarea[name="nttCn"]').fill(testContent);
+    await page.locator('input[name="bbsId"]').fill(bbsId);
+    await page.locator('input[name="nttSj"]').fill(title);
+    await page.locator('textarea[name="nttCn"]').fill(content);
+
+    // Fill optional fields if present
+    if (qnaCategory) {
+        // Try both hidden input and visible selector if applicable
+        const qnaCatInput = page.locator('input[name="qnaCategory"], select[name="qnaCategory"]');
+        if (await qnaCatInput.isVisible()) {
+            await qnaCatInput.fill(qnaCategory);
+        }
+    }
+    
+    if (eventDate) {
+        const eventDateInput = page.locator('input[name="eventDate"]');
+        if (await eventDateInput.isVisible()) {
+            await eventDateInput.fill(eventDate);
+        }
+    }
 
     console.log('>>> Step 3: Submitting Article');
     const submitButton = page.locator('button[type="submit"]');
@@ -73,46 +119,48 @@ async function executeBoardArticleTest(page: any, testTitle: string, testContent
     // Wait for redirect to list
     console.log('>>> Waiting for redirect to list...');
     await page.waitForURL(url => url.pathname.includes('/admin/community/boards/selectBoardList'), { timeout: 15000 });
-    console.log(`>>> Redirected to: ${page.url()}`);
     
-    await page.waitForLoadState('networkidle');
-
     console.log('>>> Step 4: Verification - Searching for the article');
-    // Actual search input in BoardListClient
-    const searchInput = page.locator('input[placeholder*="어떤"], input[placeholder*="검색"]');
-    await searchInput.fill(testTitle);
+    const searchInput = page.locator('input[placeholder*="어떤"], input[placeholder*="검색"]').first();
+    await searchInput.fill(title);
     await page.keyboard.press('Enter');
     
-    await page.waitForTimeout(3000); // Wait for list animation/refresh
-    
-    // Use text-based selector since it's a Card, not a Table Row
-    const articleCard = page.locator(`text=${testTitle}`).first();
-    try {
-        await expect(articleCard).toBeVisible({ timeout: 10000 });
-        console.log('>>> Article found in list view');
-    } catch (e) {
-        console.error('>>> Article NOT found in list. Saving state.');
-        await page.screenshot({ path: `playwright/screenshots/list-fail-${testBbsId}-${Date.now()}.png`, fullPage: true });
-        throw e;
-    }
+    // Use text-based selector
+    const articleCard = page.locator(`text=${title}`).first();
+    await expect(articleCard).toBeVisible({ timeout: 10000 });
+    console.log('>>> Article found in list view');
 
     console.log('>>> Step 5: Rendering Check - Opening Detail View');
-    // Click the title link specifically to ensure navigation
-    const titleLink = page.locator(`a:has-text("${testTitle}")`).first();
-    if (await titleLink.count() > 0) {
-        await titleLink.click();
-    } else {
-        await articleCard.click();
-    }
+    const titleLink = page.locator(`a:has-text("${title}")`).first();
+    await titleLink.click();
     
     // Wait for detail page
     await page.waitForURL(url => url.pathname.includes('/admin/community/boards/detail'), { timeout: 10000 });
-    await page.waitForLoadState('networkidle');
     
-    // Verify content
-    const pageContent = await page.content();
-    expect(pageContent).toContain(testTitle);
-    expect(pageContent).toContain(testContent);
+    // Verify basis content
+    await expect(page.locator(`text=${title}`).first()).toBeVisible();
+    await expect(page.locator(`text=${content}`).first()).toBeVisible();
+
+    // Verify template specific fields
+    if (bbsId === 'BBSMSTR_DDDDDDDDDDDD') { // Q&A
+        if (qnaCategory) {
+            await expect(page.locator(`text=${qnaCategory}`).first()).toBeVisible();
+        }
+        // Should show Solve button if OPEN
+        if (qnaStatus === 'OPEN') {
+            const solveBtn = page.getByRole('button', { name: /Mark as Solved|해결/i });
+            await expect(solveBtn).toBeVisible();
+        }
+    }
+
+    if (bbsId === 'BBSMSTR_EEEEEEEEEEEE') { // Calendar
+        if (eventDate) {
+            await expect(page.locator('text=Event Date')).toBeVisible();
+            // Checking for partial date string to avoid locale issues
+            const dayStr = eventDate.split('-')[2];
+            await expect(page.locator(`text=${dayStr}`)).toBeVisible();
+        }
+    }
     
-    console.log(`>>> SUCCESS: Board Article flow is fully operational for ${testBbsId}`);
+    console.log(`>>> SUCCESS: Board Article flow is fully operational for ${bbsId}`);
 }

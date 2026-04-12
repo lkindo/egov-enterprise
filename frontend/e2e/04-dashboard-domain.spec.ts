@@ -37,52 +37,51 @@ test.describe('Dashboard Features', () => {
     });
 
     test('should display main dashboard widgets', async ({ page }) => {
-        await page.waitForTimeout(3000);
+        // Wait for data to load
+        await page.waitForLoadState('networkidle');
         
-        // Flexible main content check
-        const mainVisible = await page.locator('main, [role="main"], .main-content, .dashboard-container').isVisible({ timeout: 15000 }).catch(() => false);
-        if (mainVisible) {
-            console.log('>>> Dashboard main content visible');
-        } else {
-            console.log('>>> Dashboard main content not found');
-        }
+        // Flexible main content check with strict expectations
+        const mainContainer = page.locator('main, [role="main"], .main-content, .dashboard-container').first();
+        await expect(mainContainer).toBeVisible({ timeout: 15000 });
         
-        // Look for dashboard-related content
-        const pageContent = await page.content();
-        const hasDashboardContent = pageContent.includes('dashboard') || 
-                                    pageContent.includes('Dashboard') || 
-                                    pageContent.includes('대시보드') ||
-                                    pageContent.includes('Home') ||
-                                    pageContent.includes('Intelligence');
-        
-        if (hasDashboardContent) {
-            console.log('>>> Dashboard content detected');
-        } else {
-            console.log('>>> Dashboard content not detected');
+        // Ensure key dashboard sections are present
+        const sections = [
+            { name: 'Dashboard Title', locator: page.getByRole('heading', { name: /Dashboard|대시보드|Intelligence/i }) },
+            { name: 'Latest Activity', locator: page.locator('text=Activity|TEXT=활동|TEXT=Latest').first() },
+            { name: 'Stats Section', locator: page.locator('text=Stat|TEXT=통계|TEXT=Metric').first() }
+        ];
+
+        for (const section of sections) {
+            console.log(`>>> Verifying ${section.name}`);
+            await expect(section.locator).toBeVisible().catch(() => {
+                console.warn(`>>> Optional section ${section.name} not found, continuing...`);
+            });
         }
     });
 
     test('should verify quick links', async ({ page }) => {
         await page.goto('/admin');
-        console.log('>>> Navigated to dashboard');
+        await page.waitForLoadState('domcontentloaded');
         
-        // Check for any links or buttons
-        const links = page.locator('a, button');
+        // Check for interactive elements - dashboard should have navigation or action buttons
+        const links = page.locator('a[href*="/admin/"], button:visible');
         const count = await links.count();
-        console.log(`>>> Found ${count} interactive elements`);
+        expect(count).toBeGreaterThan(0);
+        console.log(`>>> Verified ${count} interactive elements on dashboard`);
     });
 
     test('should handle logout', async ({ page }) => {
         await page.goto('/admin');
-        await page.waitForTimeout(2000);
         
-        // Try to find user menu
-        const userMenu = page.getByRole('button', { name: /사용자|프로필|User|Profile|Logout/i }).first();
-        if (await userMenu.isVisible().catch(() => false)) {
-            console.log('>>> User menu found');
-        } else {
-            console.log('>>> No user menu found');
-        }
+        // Find and click user menu/profile
+        const userMenu = page.getByRole('button', { name: /사용자|프로필|User|Profile/i }).first();
+        await expect(userMenu).toBeVisible();
+        await userMenu.click();
+        
+        // Find logout button
+        const logoutBtn = page.getByRole('menuitem', { name: /로그아웃|Logout/i }).or(page.locator('text=로그아웃|Logout')).first();
+        await expect(logoutBtn).toBeVisible();
+        console.log('>>> Logout functionality verified in UI');
     });
 });
 
@@ -94,67 +93,46 @@ test.describe('Advanced Dashboard & Stats Interaction', () => {
         await page.goto('/admin');
         
         const refreshButton = page.getByRole('button', { name: /새로고침|Refresh|Reload/i }).first();
-        if (await refreshButton.isVisible().catch(() => false)) {
-            console.log('>>> Refresh button found');
-        } else {
-            console.log('>>> No refresh button found');
+        if (await refreshButton.isVisible()) {
+            await refreshButton.click();
+            // Verify that navigation or data fetching happens (no strict check for loading overlay as it might be too fast)
+            console.log('>>> Refresh action triggered');
         }
     });
 
     test('should verify statistical summary cards', async ({ page }) => {
         await page.goto('/admin');
+        await page.waitForLoadState('networkidle');
+
+        // Look for statistical metrics (e.g., Total Reach, Score, etc.)
+        const statsCard = page.locator('.card, .stat-card, .metric-container').filter({ hasText: /Score|Reach|Count|Total/i }).first();
+        await expect(statsCard).toBeVisible();
         
-        // Look for any stat cards or metrics
-        const pageContent = await page.content();
-        const hasStatsContent = pageContent.includes('stat') || 
-                                pageContent.includes('Stat') || 
-                                pageContent.includes('통계') ||
-                                pageContent.includes('지표') ||
-                                pageContent.includes('Registry');
-        
-        if (hasStatsContent) {
-            console.log('>>> Statistical content detected');
-        } else {
-            console.log('>>> Statistical content not detected');
-        }
+        const cardTitle = await statsCard.innerText();
+        console.log(`>>> Verified stat card with text: ${cardTitle.split('\n')[0]}`);
     });
 
-    test('should interact with date range filter', async ({ page }) => {
+    test('should verify task and notice lists', async ({ page }) => {
         await page.goto('/admin');
+        await page.waitForLoadState('networkidle');
+
+        // Verify taskList and notiList from DashboardApiController are rendered
+        const lists = page.locator('ul, .list-container, .hub-table');
+        const listCount = await lists.count();
+        expect(listCount).toBeGreaterThan(0);
         
-        const dateFilter = page.getByRole('button', { name: /날짜|기간|Date|Range|Period/i }).first();
-        if (await dateFilter.isVisible().catch(() => false)) {
-            console.log('>>> Date filter found');
-        } else {
-            console.log('>>> No date filter found');
-        }
+        console.log(`>>> Verified ${listCount} list elements on dashboard`);
     });
 
     test('should verify chart accessibility and rendering', async ({ page }) => {
         await page.goto('/admin');
         
-        // Look for chart elements
-        const chartElements = page.locator('canvas, svg, .chart, .graph, .visualization');
+        // Charts should be rendered as canvas or svg
+        const chartElements = page.locator('canvas, svg, .recharts-surface');
         const count = await chartElements.count();
         
-        if (count > 0) {
-            console.log(`>>> Found ${count} chart elements`);
-        } else {
-            console.log('>>> No chart elements found');
-        }
-    });
-
-    test('should verify deep intelligence report table', async ({ page }) => {
-        await page.goto('/admin');
-        
-        const tableElements = page.locator('table, [role="grid"], .data-table, .hub-table');
-        const count = await tableElements.count();
-        
-        if (count > 0) {
-            console.log(`>>> Found ${count} table elements`);
-        } else {
-            console.log('>>> No table elements found');
-        }
+        // If the dashboard has data, it should have charts
+        console.log(`>>> Found ${count} chart/visualization elements`);
     });
 
     test('should verify responsive behavior on mobile', async ({ page }) => {
@@ -162,13 +140,16 @@ test.describe('Advanced Dashboard & Stats Interaction', () => {
         
         // Set mobile viewport
         await page.setViewportSize({ width: 375, height: 667 });
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(1000);
         
-        const mainVisible = await page.locator('main, [role="main"], .main-content').isVisible({ timeout: 10000 }).catch(() => false);
-        if (mainVisible) {
-            console.log('>>> Mobile layout verified');
-        } else {
-            console.log('>>> Mobile layout check completed');
+        // Ensure main content is still accessible
+        const mainContent = page.locator('main, [role="main"], .main-content').first();
+        await expect(mainContent).toBeVisible();
+        
+        // Check for mobile menu/hamburger if applicable
+        const menuButton = page.locator('button').filter({ hasText: /menu|Menu|메뉴/i }).or(page.locator('nav button')).first();
+        if (await menuButton.isVisible()) {
+            console.log('>>> Mobile menu button visible');
         }
     });
 });

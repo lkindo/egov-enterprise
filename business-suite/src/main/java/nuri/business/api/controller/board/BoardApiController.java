@@ -5,6 +5,7 @@ import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;
+import nuri.business.service.board.dto.BoardStatsResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +34,13 @@ public class BoardApiController {
             @PageableDefault(size = 10) Pageable pageable) {
         Page<BoardDto> result = boardService.getBoardPosts(bbsId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
+    }
+
+    @Operation(summary = "게시판 통계 조회", description = "특정 게시판의 전체 게시글 수, 조회수 총합 등의 통계 정보를 조회합니다.")
+    @GetMapping("/{bbsId}/stats")
+    public ResponseEntity<ApiResponse<BoardStatsResponse>> getStats(
+            @Parameter(description = "게시판 ID", example = "BBSMSTR_AAAAAAAAAAAA") @PathVariable String bbsId) {
+        return ResponseEntity.ok(ApiResponse.success(boardService.getBoardStats(bbsId)));
     }
 
     @Operation(summary = "게시글 상세 조회", description = "특정 게시판의 게시글 상세 정보를 조회합니다.")

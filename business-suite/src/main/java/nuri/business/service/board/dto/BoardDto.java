@@ -101,13 +101,33 @@ public class BoardDto {
     @Schema(description = "Description")
     private final String qnaCategory;
 
-    @Schema(description = "Description")
+    @Schema(description = "Aliased Knowledge ID")
+    private final String knoId;
+
+    @Schema(description = "Aliased Knowledge Name")
+    private final String knoNm;
+
+    @Schema(description = "Aliased Knowledge Content")
+    private final String knoCn;
+
+    @Schema(description = "Aliased Status Code")
+    private final String statusCd;
+
+    @Schema(description = "Aliased Category Code")
+    private final String categoryCd;
+
+    @Schema(description = "Formatted Event Date String")
     private final String eventDateStr;
 
     public static BoardDto from(Board entity) {
-        // ... (existing from method)
+        String eventDateStr = entity.getEventDate() != null ? entity.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "";
         return BoardDto.builder()
                 .id(entity.getNttId())
+                .knoId(String.valueOf(entity.getNttId()))
+                .knoNm(entity.getNttSj())
+                .knoCn(entity.getNttCn())
+                .statusCd(entity.getQnaStatus())
+                .categoryCd(entity.getQnaCategory())
                 .bbsId(entity.getBbsId())
                 .nttSj(entity.getNttSj())
                 .nttCn(entity.getNttCn())
@@ -137,13 +157,17 @@ public class BoardDto {
                 .eventDate(entity.getEventDate())
                 .qnaStatus(entity.getQnaStatus())
                 .qnaCategory(entity.getQnaCategory())
-                .eventDateStr(entity.getEventDate() != null ? entity.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "")
+                .eventDateStr(eventDateStr)
                 .build();
     }
 
     public static BoardDto from(nuri.business.domain.board.BoardSearchResult result) {
         return BoardDto.builder()
                 .id(result.getNttId())
+                .knoId(String.valueOf(result.getNttId()))
+                .knoNm(result.getNttSj())
+                .statusCd(result.getQnaStatus())
+                .categoryCd(result.getQnaCategory())
                 .bbsId(result.getBbsId())
                 .nttSj(result.getNttSj())
                 .ntcrNm(result.getFrstRegisterNm())
@@ -173,6 +197,11 @@ public class BoardDto {
     public static BoardDto from(nuri.business.domain.board.BoardDetailResult detail) {
         return BoardDto.builder()
                 .id(detail.getNttId())
+                .knoId(String.valueOf(detail.getNttId()))
+                .knoNm(detail.getNttSj())
+                .knoCn(detail.getNttCn())
+                .statusCd(detail.getQnaStatus())
+                .categoryCd(detail.getQnaCategory())
                 .bbsId(detail.getBbsId())
                 .nttSj(detail.getNttSj())
                 .nttCn(detail.getNttCn())

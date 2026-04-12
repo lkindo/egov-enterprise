@@ -66,19 +66,7 @@ export const knowledgeService = {
     const res = await client.get<any>('admin/board/articles', { params: boardParams });
     
     // Map Board fields to Knowledge fields for UI compatibility
-    return {
-      ...res,
-      list: (res.list || []).map((item: any) => ({
-        ...item,
-        id: item.nttId,
-        knoId: item.nttId,
-        knoNm: item.nttSj,
-        knoCn: item.nttCn,
-        statusCd: item.qnaStatus, // Use the new qnaStatus field!
-        categoryCd: item.qnaCategory,
-        frstRegisterPnttmStr: item.frstRegistPnttm?.split('T')[0] || item.frstRegistPnttm
-      }))
-    };
+    return res;
   },
 
   getHotArticles: async (bbsId?: string) => {
@@ -100,16 +88,9 @@ export const knowledgeService = {
   },
 
   getStats: async (bbsId?: string) => {
-    const res = await client.get<any>('admin/board/articles', { 
-      params: { bbsId: bbsId || 'BBSMSTR_AAAAAAAAAAAA', size: 100 } 
-    });
-    const articles = res.list || [];
-    return {
-      totalCount: res.total || articles.length,
-      totalViews: articles.reduce((acc: number, cur: any) => acc + (cur.inqireCo || 0), 0),
-      topContributor: articles.length > 0 ? articles[0]?.ntcrNm : 'N/A',
-      intelligenceScore: Math.min(100, (articles.length * 2) + 70) 
-    };
+    const targetBbsId = bbsId || 'BBSMSTR_AAAAAAAAAAAA';
+    const res = await client.get<any>(`boards/${targetBbsId}/stats`);
+    return res;
   },
 
   getActivities: async (bbsId?: string) => {
