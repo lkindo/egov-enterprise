@@ -163,12 +163,18 @@
     scrollbar-gutter: stable;
   }
 
+  /* Form elements reset to inherit colors properly */
+  input, textarea, select, button {
+    color: inherit;
+    font-family: inherit;
+  }
+
   /* Global Theme-Aware Overrides (Smart Theming) */
   /* Text colors */
-  .text-slate-950, .text-slate-900, .text-black { @apply dark:text-slate-50; }
-  .text-slate-800 { @apply dark:text-slate-100; }
-  .text-slate-700 { @apply dark:text-slate-200; }
-  .text-slate-600 { @apply dark:text-slate-300; }
+  .text-slate-950, .text-slate-900, .text-gray-900, .text-black { @apply dark:text-slate-50; }
+  .text-slate-800, .text-gray-800 { @apply dark:text-slate-100; }
+  .text-slate-700, .text-gray-700 { @apply dark:text-slate-200; }
+  .text-slate-600, .text-gray-600 { @apply dark:text-slate-300; }
   .text-slate-500, .text-gray-500 { @apply dark:text-slate-400; }
   .text-slate-400, .text-gray-400 { @apply dark:text-slate-500; }
 
@@ -180,6 +186,7 @@
   /* Border colors */
   .border-slate-100, .border-gray-100 { @apply dark:border-slate-800; }
   .border-slate-200, .border-gray-200 { @apply dark:border-slate-700; }
+  .border-slate-300, .border-gray-300 { @apply dark:border-slate-600; }
 }
 
 @layer utilities {

@@ -4,6 +4,8 @@ import nuri.foundation.domain.auth.UserAuthority;
 import nuri.foundation.domain.auth.UserAuthorityRepository;
 import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.domain.user.repository.UserRepository;
+import nuri.business.domain.board.BoardMaster;
+import nuri.business.domain.board.BoardMasterRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,7 @@ public class EgovTestDataConfig {
 
     private final UserRepository userRepository;
     private final UserAuthorityRepository userAuthorityRepository;
+    private final BoardMasterRepository boardMasterRepository;
     private final PasswordEncoder passwordEncoder;
 
     @PostConstruct
@@ -33,6 +36,32 @@ public class EgovTestDataConfig {
     public void initTestData() {
         createTestUser("webmaster", "관리자", "ROLE_ADMIN", "USRCNFRM_00000000001");
         createTestUser("user_regular", "일반사용자", "ROLE_USER", "USRCNFRM_00000000002");
+        
+        // Initialize Test Boards for E2E
+        createTestBoard("BBSMSTR_AAAAAAAAAAAA", "E2E 공지사항 (List)", "BBST01");
+        createTestBoard("BBSMSTR_DDDDDDDDDDDD", "E2E Q&A (QnA)", "BBST03");
+        createTestBoard("BBSMSTR_EEEEEEEEEEEE", "E2E 일정관리 (Calendar)", "BBST04");
+    }
+
+    private void createTestBoard(String bbsId, String bbsNm, String tyCode) {
+        boardMasterRepository.findById(bbsId).ifPresentOrElse(board -> {
+            log.info(">>> Test board already exists: {}", bbsId);
+        }, () -> {
+            log.info(">>> Creating test board: {} ({})", bbsNm, bbsId);
+            BoardMaster board = BoardMaster.builder()
+                    .bbsId(bbsId)
+                    .bbsNm(bbsNm)
+                    .bbsIntrcn(bbsNm + " 설명")
+                    .bbsTyCode(tyCode)
+                    .bbsAttrbCode("BBSA01")
+                    .useAt("Y")
+                    .replyPosblAt("Y")
+                    .fileAtchPosblAt("Y")
+                    .atchPosblFileNumber(3)
+                    .optnFrstRegisterId("webmaster")
+                    .build();
+            boardMasterRepository.save(board);
+        });
     }
 
     private void createTestUser(String userId, String userNm, String role, String esntlId) {
