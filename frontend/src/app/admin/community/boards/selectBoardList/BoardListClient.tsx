@@ -354,7 +354,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                       <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-primary/20 blur-[100px] rounded-full" />
                       <div className="relative z-10 space-y-6">
                         <Badge className="bg-primary hover:bg-primary text-white border-none font-black tracking-[0.4em] uppercase py-1 px-4">FEATURED_KNOWLEDGE</Badge>
-                        <Link href={`/admin/community/boards/selectBoardArticle/${list[0].nttId}?bbsId=${bbsId}`}>
+                        <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${list[0].nttId}`}>
                           <h3 className="text-4xl font-black tracking-tight leading-tight group-hover:text-primary transition-colors cursor-pointer">{list[0].nttSj}</h3>
                         </Link>
                         <div className="flex items-center gap-8 mt-8">
@@ -388,7 +388,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 group-hover:scale-125 transition-all text-primary">
                         <BookOpen size={60} />
                       </div>
-                      <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`}>
+                      <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
                         <h4 className="font-black text-slate-800 text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors">{item.nttSj}</h4>
                       </Link>
                       <div className="flex justify-between items-center pt-4 border-t border-slate-200/50">
@@ -418,7 +418,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                       <div className="absolute top-6 right-6 px-4 py-1.5 bg-slate-900/60 backdrop-blur-md rounded-full text-white text-[10px] font-black tracking-widest uppercase">INSIGHT</div>
                     </div>
                     <CardContent className="p-8 space-y-6">
-                      <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`}>
+                      <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
                         <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors cursor-pointer line-clamp-2">{item.nttSj}</h3>
                       </Link>
                       <div className="flex items-center justify-between pt-6 border-t border-slate-50">
@@ -461,7 +461,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                           </Badge>
                         <span className="text-[11px] font-bold text-slate-300 italic flex items-center gap-1.5"><Clock size={12} /> {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
                       </div>
-                      <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`}>
+                      <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
                         <h4 className="text-2xl font-black text-slate-800 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase italic">{item.nttSj}</h4>
                       </Link>
                       <div className="flex flex-wrap items-center gap-6 pt-2">
@@ -554,7 +554,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                           {dayPosts.map((post) => (
                             <Link 
                               key={post.nttId}
-                              href={`/admin/community/boards/selectBoardArticle/${post.nttId}?bbsId=${bbsId}`}
+                              href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${post.nttId}`}
                               className={cn(
                                 "block p-2 text-[10px] font-black leading-tight rounded-sm shadow-sm transition-all hover:scale-105 cursor-pointer truncate",
                                 post.noticeAt === 'Y' ? "bg-rose-500 text-white" : "bg-slate-900 text-white"
@@ -595,7 +595,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                           <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest text-slate-400 rounded-none border-slate-200">Doc v1.0</Badge>
                           <span className="text-[11px] font-bold text-slate-300 italic">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
                         </div>
-                        <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`}>
+                        <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
                           <h4 className="text-2xl font-black text-slate-900 leading-tight group-hover:underline decoration-slate-900 decoration-4 underline-offset-8 transition-all">{item.nttSj}</h4>
                         </Link>
                         <p className="text-slate-500 font-medium line-clamp-2 leading-relaxed">{item.nttCn}</p>
@@ -637,7 +637,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                         {totalCount - ((page - 1) * 10) - idx}
                       </TableCell>
                       <TableCell className="px-6 py-8">
-                        <Link href={`/admin/community/boards/selectBoardArticle/${item.nttId}?bbsId=${bbsId}`} className="group/link flex flex-col gap-1">
+                        <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`} className="group/link flex flex-col gap-1">
                           <div className="text-xl font-black text-slate-800 group-hover/link:text-primary transition-colors line-clamp-1">
                             {item.nttSj}
                           </div>

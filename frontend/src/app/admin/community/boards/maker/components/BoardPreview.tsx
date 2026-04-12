@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { cn } from '@/lib/utils';
@@ -17,8 +17,10 @@ import {
   ImageIcon,
   HelpCircle,
   CheckCircle2,
-  CalendarDays
+  CalendarDays,
+  User
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface PreviewProps {
   tmplatId: string;

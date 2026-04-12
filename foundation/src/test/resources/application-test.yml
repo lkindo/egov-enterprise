@@ -2,6 +2,8 @@
 # Used for integration tests with H2 (In-memory) - No Docker required
 
 spring:
+  main:
+    allow-bean-definition-overriding: true
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
@@ -38,9 +40,6 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-
-  main:
-    allow-bean-definition-overriding: true
 
 # Logging
 logging:

@@ -8,8 +8,14 @@ import { LayoutContext } from '@/contexts/LayoutContext';
 
 // Mock dependencies
 vi.mock('next/navigation', () => ({
- usePathname: vi.fn(),
- useSearchParams: vi.fn(),
+  usePathname: vi.fn(),
+  useSearchParams: vi.fn(),
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { userId: 'webmaster', userNm: '관리자' },
+  }),
 }));
 
 // Mock the API client

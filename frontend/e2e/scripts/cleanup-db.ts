@@ -105,5 +105,18 @@ async function cleanup() {
   }
 }
 
-export default cleanup;
-cleanup();
+export default async function globalTeardown() {
+  await cleanup();
+}
+
+if (require.main === module) {
+  cleanup()
+    .then(() => {
+      console.log('>>> [DB Cleanup] Script completed successfully.');
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('>>> [DB Cleanup] Script failed with error:', err);
+      process.exit(1);
+    });
+}

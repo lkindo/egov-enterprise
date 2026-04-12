@@ -24,12 +24,12 @@ async function authenticate(request: any, id: string, authFilePath: string) {
         } else {
             console.warn(`[AUTH SETUP] Backend login failed for ${id} (status: ${response.status()}). Using fallback mock session.`);
             token = 'MOCK_TOKEN';
-            role = id === 'webmaster' ? 'ROLE_ADMIN' : 'ROLE_USER';
+            role = id.toUpperCase() === 'WEBMASTER' ? 'ROLE_ADMIN' : 'ROLE_USER';
         }
     } catch (err: any) {
         console.warn(`[AUTH SETUP] Backend unreachable for ${id} (${err.message}). Using fallback mock session.`);
         token = 'MOCK_TOKEN';
-        role = id === 'webmaster' ? 'ROLE_ADMIN' : 'ROLE_USER';
+        role = id.toUpperCase() === 'WEBMASTER' ? 'ROLE_ADMIN' : 'ROLE_USER';
     }
 
     const storageState = {
@@ -67,5 +67,5 @@ setup('authenticate-admin', async ({ request }) => {
 });
 
 setup('authenticate-user', async ({ request }) => {
-    await authenticate(request, 'user_regular', userFile);
+    await authenticate(request, 'USER', userFile);
 });

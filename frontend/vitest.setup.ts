@@ -71,6 +71,22 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
+// Mock lucide-react with a proxy to handle any icon
+vi.mock('lucide-react', () => {
+  const React = require('react');
+  const icons: Record<string, any> = {};
+
+  return new Proxy(icons, {
+    get: (target, prop: string) => {
+      if (prop === '__esModule') return true;
+      return (props: any) => React.createElement('span', { 
+        ...props,
+        'data-testid': `icon-${prop.toLowerCase()}` 
+      }, `ICON_${prop.toUpperCase()}`);
+    }
+  });
+});
+
 window.scrollTo = vi.fn();
 
 // Mock DOM elements for Radix UI

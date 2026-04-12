@@ -63,30 +63,7 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
   ) 
 }));
 
-vi.mock('lucide-react', () => ({
-  Plus: () => <span>+</span>,
-  Code: () => <span>C</span>,
-  Globe: () => <span>G</span>,
-  Trash2: () => <span>T</span>,
-  Edit: () => <span>E</span>,
-  Terminal: () => <span>TR</span>,
-  Layers: () => <span>L</span>,
-  Cpu: () => <span>CP</span>,
-  Activity: () => <span>A</span>,
-  FileCode: () => <span>FC</span>,
-  Link: () => <span>LN</span>,
-  ShieldCheck: () => <span>SC</span>,
-  Search: () => <span>S</span>,
-  Settings: () => <span>ST</span>,
-  ChevronRight: () => <span>{'>'}</span>,
-  RefreshCcw: () => <span>R</span>,
-  Box: () => <span>B</span>,
-  Zap: () => <span>Z</span>,
-  CheckCircle2: () => <span>V</span>,
-  ShieldAlert: () => <span>SA</span>,
-  SearchCode: () => <span>SC</span>,
-  Database: () => <span>DB</span>,
-}));
+// Lucide icons are mocked globally in vitest.setup.ts
 
 vi.mock('@/app/actions/programActions', () => ({ 
   saveProgramAction: vi.fn(), 
@@ -138,7 +115,7 @@ describe('ProgramAdminClient Component', () => {
   it('opens the edit modal with correct data when settings icon is clicked', async () => {
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
 
-    const settingsBtns = screen.getAllByText('ST');
+    const settingsBtns = screen.getAllByText('ICON_SETTINGS');
     fireEvent.click(settingsBtns[0]);
 
     const modal = await screen.findByTestId('modal');
@@ -156,7 +133,7 @@ describe('ProgramAdminClient Component', () => {
 
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
     
-    const trashBtns = screen.getAllByText('T');
+    const trashBtns = screen.getAllByText('ICON_TRASH2');
     fireEvent.click(trashBtns[0]);
 
     expect(mockConfirm).toHaveBeenCalled();

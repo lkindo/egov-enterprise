@@ -73,9 +73,10 @@ dependencies {
     testImplementation 'com.h2database:h2'
     
     // Testcontainers for integration testing with real PostgreSQL
-    testImplementation platform(libs.testcontainers.bom)
-    testImplementation libs.testcontainers.postgresql
-    testImplementation libs.testcontainers.junit.jupiter
+    testImplementation 'org.testcontainers:postgresql:1.20.4'
+    testImplementation 'org.testcontainers:jdbc:1.20.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+    testRuntimeOnly libs.postgresql
     
     // ArchUnit - disabled due to test engine conflicts
     // testImplementation libs.archunit.junit5
@@ -91,8 +92,8 @@ dependencies {
     testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
     testFixturesApi 'org.springframework.security:spring-security-test'
     testFixturesApi 'com.h2database:h2'
-    testFixturesApi platform(libs.testcontainers.bom)
-    testFixturesApi libs.testcontainers.postgresql
+    testFixturesApi 'org.testcontainers:postgresql:1.20.4'
+    testFixturesApi 'org.testcontainers:jdbc:1.20.4'
 }
 
 test {

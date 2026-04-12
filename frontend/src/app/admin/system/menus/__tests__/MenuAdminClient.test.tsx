@@ -41,33 +41,8 @@ vi.mock('@/app/components/ui/standard-form', () => ({
 }));
 vi.mock('@/app/components/layout/page-header', () => ({ PageHeader: ({ title, actions }: any) => <div><h1>{title}</h1>{actions}</div> }));
 
-vi.mock('lucide-react', () => ({
- Plus: () => <span>ICON_PLUS</span>,
- FolderTree: () => <span>ICON_FOLDER_TREE</span>,
- Settings: () => <span>ICON_SETTINGS</span>,
- Trash2: () => <span>ICON_TRASH</span>,
- ChevronRight: () => <span>ICON_CHEVRON_RIGHT</span>,
- FileCode: () => <span>ICON_FILE_CODE</span>,
- Layers: () => <span>ICON_LAYERS</span>,
- Link: () => <span>ICON_LINK</span>,
- CheckCircle2: () => <span>ICON_CHECK_CIRCLE</span>,
- ChevronsUpDown: () => <span>ICON_CHEVRONS_UP_DOWN</span>,
- ChevronsDownUp: () => <span>ICON_CHEVRONS_DOWN_UP</span>,
- Save: () => <span>ICON_SAVE</span>,
- ListTree: () => <span>ICON_LIST_TREE</span>,
- Info: () => <span>ICON_INFO</span>,
- X: () => <span>ICON_X</span>,
- Search: () => <span>ICON_SEARCH</span>,
- SearchCode: () => <span>ICON_SEARCH_CODE</span>,
- Activity: () => <span>ICON_ACTIVITY</span>,
- Box: () => <span>ICON_BOX</span>,
- Zap: () => <span>ICON_ZAP</span>,
- LayoutGrid: () => <span>ICON_LAYOUT_GRID</span>,
- ShieldCheck: () => <span>ICON_SHIELD_CHECK</span>,
- Network: () => <span>ICON_NETWORK</span>,
- Database: () => <span>ICON_DATABASE</span>,
- Home: () => <span>ICON_HOME</span>,
-}));
+// Lucide icons are mocked globally in vitest.setup.ts
+
 
 vi.mock('@/app/actions/menuActions', () => ({ saveMenuAction: vi.fn(), updateMenuOrdersAction: vi.fn(), deleteMenuAction: vi.fn() }));
 

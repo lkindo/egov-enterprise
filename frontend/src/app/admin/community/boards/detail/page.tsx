@@ -9,9 +9,10 @@ import {
   Download, MessageSquare,
   Calendar, Eye, User,
   FileText, Share2, Quote,
-  MessageCircle, CornerDownRight, Plus, Package
+  MessageCircle, CornerDownRight, Plus, Package, CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/app/components/ui/toast';

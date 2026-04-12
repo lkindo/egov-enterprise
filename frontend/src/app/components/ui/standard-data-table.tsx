@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, memo, useCallback } from 'react';
+import React, { useState, useMemo, memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -387,7 +387,7 @@ function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => v
         <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">데이터 로드 실패</p>
         <div className="p-4 bg-rose-50/50 rounded-[0.1rem] border border-rose-100 inline-block">
           <p className="text-[10px] font-black font-mono text-rose-800 tracking-tight opacity-70">
-            ERROR_STREAM: {error.message || 'UNKNOWN_EXCEPTION'}
+            ERROR_STREAM: {(error as any)?.response?.data?.message || error.message || 'UNKNOWN_EXCEPTION'}
           </p>
         </div>
         <p className="text-xs text-slate-700 font-bold tracking-tight max-w-[360px] mx-auto leading-relaxed mt-4">

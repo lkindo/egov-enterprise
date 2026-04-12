@@ -16,7 +16,9 @@ export interface KnowledgeDto {
   bbsId?: string;
   statusCd?: string;
   categoryCd?: string;
-  inqireCo?: number;
+  qnaStatus?: string;
+  qnaCategory?: string;
+  eventDate?: string;
 }
 
 export type BoardArticle = KnowledgeDto;

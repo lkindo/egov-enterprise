@@ -1,0 +1,14 @@
+.git
+.gradle
+.next
+node_modules
+**/build
+**/node_modules
+out
+.qwen
+.gemini
+tasks
+records
+test-uploads
+tmp
+docs

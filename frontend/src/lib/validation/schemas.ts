@@ -61,3 +61,50 @@ export const boardMasterSchema = z.object({
   tmplatId: z.string().min(1, '템플릿 선택은 필수입니다.'),
   useAt: z.enum(['Y', 'N']),
 });
+
+// --- 게시판(BBS) 상세 스키마 ---
+export const boardSchema = z.object({
+  nttId: z.number().optional(),
+  bbsId: z.string(),
+  nttSj: z.string().min(1, '제목은 필수이며 유효해야 합니다.'),
+  nttCn: z.string().min(1, '내용을 입력해주세요.'),
+  ntceBgnde: z.string().optional(),
+  ntceEndde: z.string().optional(),
+  password: z.string().optional(),
+  ntcrId: z.string().optional(),
+  ntcrNm: z.string().optional(),
+  ntceAt: z.enum(['Y', 'N']).optional(),
+  secretAt: z.enum(['Y', 'N']).optional(),
+  useAt: z.enum(['Y', 'N']).optional(),
+});
+
+// --- 온라인 매뉴얼 스키m ---
+export const manualSchema = z.object({
+  onlineMnlId: z.string().optional(),
+  onlineMnlNm: z.string().min(1, '매뉴얼 명칭은 필수입니다.'),
+  onlineMnlDc: z.string().min(1, '매뉴얼 설명은 필수입니다.'),
+  onlineMnlDt: z.string().optional(),
+});
+
+// --- 사용자 관리 스키마 (Contract Testing용) ---
+export const userManageSchema = z.object({
+  userId: z.string().min(1, '아이디는 필수입니다.'),
+  userNm: z.string().min(1, '성명은 필수입니다.'),
+  email: z.string().email('유효한 이메일 형식이 아닙니다.'),
+  userSttusCode: z.enum(['P', 'A', 'D']),
+  password: z.string().optional(),
+  moblphonNo: z.string().optional(),
+  orgnztId: z.string().optional(),
+  groupId: z.string().optional(),
+});
+
+export const userListResponseSchema = z.object({
+  list: z.array(userManageSchema),
+  paginationInfo: z.object({
+    totalRecordCount: z.number(),
+    currentPageNo: z.number(),
+    recordCountPerPage: z.number(),
+    pageSize: z.number(),
+    totalPageCount: z.number(),
+  }),
+});

@@ -54,7 +54,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragStart,
+  DragStartEvent,
   DragOverlay,
   DragEndEvent,
   DragOverEvent,
@@ -350,7 +350,7 @@ export default function MenuAdminClient({ initialMenus, programs }: { initialMen
   /*                                Handlers                                    */
   /* -------------------------------------------------------------------------- */
 
-  const handleDragStart = (event: DragStart) => {
+  const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as number);
     setOverId(event.active.id as number);
     setOffsetLeft(0);

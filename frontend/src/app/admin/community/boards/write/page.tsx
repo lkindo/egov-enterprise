@@ -1,9 +1,9 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { boardAdminService } from '@/services/foundation/community/BoardAdminService';
+import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,10 +55,13 @@ export default function BoardWritePage() {
   const onFormSubmit = async (data: z.infer<typeof boardSchema>) => {
     setLoading(true);
     try {
-      await boardAdminService.createBoardArticle(data as any);
+      console.log('>>> Submitting to boardAdminService.createBoardArticle...', data);
+      const response = await boardAdminService.createBoardArticle(data as any);
+      console.log('>>> API Response Success:', response);
       toast('새 게시물이 성공적으로 생성되었습니다.', 'success');
-      router.push('/admin/community/boards');
+      router.push(`/admin/community/boards/selectBoardList?bbsId=${data.bbsId}`);
     } catch (error) {
+      console.error('>>> API Submission ERROR:', error);
       toast('게시물 저장 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);

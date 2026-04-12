@@ -75,6 +75,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               t.type === 'info' && "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400",
               t.type === 'loading' && "bg-white border-border text-foreground dark:bg-zinc-900"
             )}
+            role="alert"
+            aria-live="assertive"
           >
             <div className="flex items-center gap-3">
               {t.type === 'success' ? <CheckCircle size={18} /> : null}

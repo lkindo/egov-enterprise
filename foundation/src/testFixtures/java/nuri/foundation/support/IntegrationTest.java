@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @SpringBootTest(classes = FoundationTestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @Import({ TestSecurityConfig.class, TestMessagingConfig.class, QuerydslConfig.class, TestCacheConfig.class })
-@ActiveProfiles("test")
+@ActiveProfiles(value = { "tc" }) // Changed from 'test' to 'tc' for production parity
 @Transactional
 public @interface IntegrationTest {
 }

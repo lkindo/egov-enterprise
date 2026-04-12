@@ -30,30 +30,8 @@ vi.mock('@/hooks/useMessage', () => ({
   useMessage: vi.fn(() => ({ t: (key: string) => key })) 
 }));
 
-vi.mock('lucide-react', () => ({
-  Pencil: () => <span>ICON_PENCIL</span>,
-  Trash2: () => <span>ICON_TRASH</span>,
-  Plus: () => <span>ICON_PLUS</span>,
-  Mail: () => <span>ICON_MAIL</span>,
-  Users: () => <span>ICON_USERS</span>,
-  ShieldCheck: () => <span>ICON_SHIELD_CHECK</span>,
-  Clock: () => <span>ICON_CLOCK</span>,
-  Search: () => <span>ICON_SEARCH</span>,
-  Settings2: () => <span>ICON_SETTINGS2</span>,
-  Filter: () => <span>ICON_FILTER</span>,
-  UserCheck: () => <span>ICON_USER_CHECK</span>,
-  UserX: () => <span>ICON_USER_X</span>,
-  UserPlus: () => <span>ICON_USER_PLUS</span>,
-  Fingerprint: () => <span>ICON_FINGERPRINT</span>,
-  Zap: () => <span>ICON_ZAP</span>,
-  LayoutGrid: () => <span>ICON_LAYOUT_GRID</span>,
-  SearchCode: () => <span>ICON_SEARCH_CODE</span>,
-  ShieldAlert: () => <span>ICON_SHIELD_ALERT</span>,
-  Settings: () => <span>ICON_SETTINGS</span>,
-  MoreHorizontal: () => <span>ICON_MORE_HORIZONTAL</span>,
-  Home: () => <span>ICON_HOME</span>,
-  ChevronRight: () => <span>ICON_CHEVRON_RIGHT</span>,
-}));
+// Lucide icons are mocked globally in vitest.setup.ts
+
 
 vi.mock('@/app/components/ui/standard-modal', () => ({ 
   StandardModal: ({ children, isOpen, title, onClose, footer }: any) => isOpen ? (
@@ -163,7 +141,7 @@ describe('UserManageClient Component', () => {
 
     render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
     
-    const deleteBtns = screen.getAllByText('ICON_TRASH');
+    const deleteBtns = screen.getAllByText('ICON_TRASH2');
     fireEvent.click(deleteBtns[0].closest('button')!);
 
     await waitFor(() => {

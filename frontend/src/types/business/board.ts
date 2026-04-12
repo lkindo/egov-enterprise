@@ -12,6 +12,9 @@ export interface BoardPost {
  noticeAt: 'Y' | 'N';
  secretAt: 'Y' | 'N';
  useAt: 'Y' | 'N';
+ qnaStatus?: string;
+ qnaCategory?: string;
+ eventDate?: string;
 }
 
 export interface BoardResponse {

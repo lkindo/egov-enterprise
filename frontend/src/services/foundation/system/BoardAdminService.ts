@@ -1,4 +1,4 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -62,6 +62,28 @@ class BoardAdminService extends AdminService {
     /** 寃뚯떆님님젣 */
     async deleteBoardMaster(id: string, userId: string, config?: AxiosRequestConfig): Promise<void> {
         return this.delete(`/${id}`, { ...config, params: { userId } });
+    }
+
+    /** 게시글 등록 (Article) */
+    async createBoardArticle(data: any, config?: AxiosRequestConfig): Promise<void> {
+        // 백엔드 BbsApiController.createBoard는 @RequestPart("board")와 @RequestPart(value = "file", required = false)를 기대함
+        // multipart/form-data 형식으로 전송 필요
+        const formData = new FormData();
+        
+        // 'board' 파트 추가 (JSON 데이터를 Blob으로 감싸서 Content-Type 지정)
+        const boardBlob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        formData.append('board', boardBlob);
+        
+        // 파일이 있을 경우 'file' 파트 추가 (현재 UI에는 파일 업로드 기능이 없으므로 생략 가능하나 규격상 대응)
+        
+        // bbsId를 경로 파라미터로 사용 (/api/v1/bbs/{bbsId})
+        return this.client.post(`/bbs/${data.bbsId}`, formData, {
+            ...config,
+            headers: {
+                ...config?.headers,
+                'Content-Type': 'multipart/form-data',
+            },
+        });
     }
 }
 

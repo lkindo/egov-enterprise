@@ -71,13 +71,8 @@ vi.mock('@/components/ui/checkbox', () => ({
   Checkbox: ({ id }: any) => <input type="checkbox" id={id} />,
 }));
 
-vi.mock('lucide-react', () => ({
-  User: () => <div data-testid="user-icon" />,
-  Lock: () => <div data-testid="lock-icon" />,
-  Eye: () => <div data-testid="eye-icon" />,
-  EyeOff: () => <div data-testid="eye-off-icon" />,
-  LogIn: () => <div data-testid="login-icon" />,
-}));
+// Lucide icons are mocked globally in vitest.setup.ts
+
 
 describe('LoginPage Component', () => {
 

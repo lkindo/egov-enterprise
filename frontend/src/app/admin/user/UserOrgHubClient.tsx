@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -145,6 +145,20 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
       toast('부서 저장 중 오류가 발생했습니다.', 'error');
     }
   });
+
+  // --- Resilience Monitoring: Global Error Feedback ---
+  React.useEffect(() => {
+    if (usersError) {
+      const msg = (usersError as any)?.response?.data?.message || '사용자 데이터를 불러오는데 오류가 발생했습니다.';
+      toast(msg, 'error');
+    }
+  }, [usersError, toast]);
+
+  React.useEffect(() => {
+    if (deptsError) {
+      toast('부서 데이터를 불러오는데 실패했습니다.', 'error');
+    }
+  }, [deptsError, toast]);
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;

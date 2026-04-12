@@ -43,7 +43,10 @@ public final class ValidationUtils {
      * @throws IllegalArgumentException 객체가 null 인 경우
      */
     public static <T> T required(T value) {
-        return Objects.requireNonNull(value, "값은 null 일 수 없습니다");
+        if (value == null) {
+            throw new IllegalArgumentException("값은 null 일 수 없습니다");
+        }
+        return value;
     }
 
     /**
@@ -56,7 +59,10 @@ public final class ValidationUtils {
      * @throws IllegalArgumentException 객체가 null 인 경우
      */
     public static <T> T required(T value, String message) {
-        return Objects.requireNonNull(value, message);
+        if (value == null) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
     }
 
     /**
@@ -70,7 +76,10 @@ public final class ValidationUtils {
      */
     public static <T> T required(Supplier<T> supplier, String message) {
         T value = supplier.get();
-        return Objects.requireNonNull(value, message);
+        if (value == null) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
     }
 
     /**
@@ -84,7 +93,10 @@ public final class ValidationUtils {
      * @throws IllegalArgumentException 객체가 null 인 경우
      */
     public static <T, R> R required(T value, Function<T, R> mapper) {
-        return mapper.apply(Objects.requireNonNull(value));
+        if (value == null) {
+            throw new IllegalArgumentException("값은 null 일 수 없습니다");
+        }
+        return mapper.apply(value);
     }
 
     /**
