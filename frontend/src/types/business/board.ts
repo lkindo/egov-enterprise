@@ -1,20 +1,41 @@
 export interface BoardPost {
- nttId: number;
- bbsId: string;
- nttSj: string;
- nttCn: string;
- ntcrId?: string;
- ntcrNm?: string;
- frstRegisterNm?: string;
- createdDate: string;
- inqireCo: number;
- atchFileId?: string;
- noticeAt: 'Y' | 'N';
- secretAt: 'Y' | 'N';
- useAt: 'Y' | 'N';
- qnaStatus?: string;
- qnaCategory?: string;
- eventDate?: string;
+  id: number;
+  bbsId: string;
+  nttSj: string;
+  nttCn: string;
+  ntcrNm?: string;
+  inqireCo: number;
+  frstRegisterPnttm: string;
+  atchFileId?: string;
+  nttNo: number;
+  sortOrdr: number;
+  parnts: string;
+  replyAt: string;
+  replyLc: number;
+  ntceBgnde: string;
+  ntceEndde: string;
+  useAt: string;
+  isExpired: string;
+  frstRegisterPnttmStr: string;
+  ntcrId?: string;
+  frstRegisterId: string;
+  lastUpdusrId: string;
+  lastUpdtPnttm: string;
+  password: string;
+  secretAt: string;
+  blogAt: string;
+  commentCo: number;
+  bbsNm: string;
+  eventDate: string;
+  qnaStatus: string;
+  qnaCategory: string;
+  noticeAt: string;
+  knoId: string;
+  knoNm: string;
+  knoCn: string;
+  statusCd: string;
+  categoryCd: string;
+  eventDateStr: string;
 }
 
 export interface BoardResponse {

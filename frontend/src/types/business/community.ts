@@ -5,10 +5,13 @@ export interface CommunityVO {
   cmmntyNm: string;
   cmmntyIntrcn: string;
   useAt: string;
-  registSeCode?: string; // 등록구분코드 (REGC01: 등록신청, REGC02: 등록거절, REGC03: 등록완료)
+  registSeCode?: string;
+  registSeCodeNm?: string;
+  tmplatId?: string;
+  tmplatNm?: string;
   frstRegisterId?: string;
   frstRegisterNm?: string;
-  frstRegistPnttm?: string;
+  frstRegisterPnttm?: string;
   lastUpdtPnttm?: string;
 }
 

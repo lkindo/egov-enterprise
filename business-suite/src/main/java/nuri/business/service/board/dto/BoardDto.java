@@ -123,7 +123,9 @@ public class BoardDto {
     private final String eventDateStr;
 
     public static BoardDto from(Board entity) {
-        String eventDateStr = entity.getEventDate() != null ? entity.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "";
+        String eventDateStr = entity.getEventDate() != null
+                ? entity.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                : "";
         return BoardDto.builder()
                 .id(entity.getNttId())
                 .knoId(String.valueOf(entity.getNttId()))
@@ -194,7 +196,9 @@ public class BoardDto {
                 .eventDate(result.getEventDate())
                 .qnaStatus(result.getQnaStatus())
                 .qnaCategory(result.getQnaCategory())
-                .eventDateStr(result.getEventDate() != null ? result.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "")
+                .eventDateStr(result.getEventDate() != null
+                        ? result.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                        : "")
                 .noticeAt(result.getNoticeAt())
                 .build();
     }
@@ -234,13 +238,16 @@ public class BoardDto {
                 .eventDate(detail.getEventDate())
                 .qnaStatus(detail.getQnaStatus())
                 .qnaCategory(detail.getQnaCategory())
-                .eventDateStr(detail.getEventDate() != null ? detail.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "")
+                .eventDateStr(detail.getEventDate() != null
+                        ? detail.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                        : "")
                 .noticeAt(detail.getNoticeAt())
                 .build();
     }
 
     private static String getExpiredFlag(String ntceEndde) {
-        if (ntceEndde == null || ntceEndde.isEmpty()) return "N";
+        if (ntceEndde == null || ntceEndde.isEmpty())
+            return "N";
         String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         return ntceEndde.compareTo(today) < 0 ? "Y" : "N";
     }

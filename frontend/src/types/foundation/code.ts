@@ -7,7 +7,7 @@ export interface GroupCode extends CmmnCode {
 }
 
 export interface DomainCluster extends CmmnClCode {
-    id: string; // clCode alias or normalized id
-    name: string; // clCodeNm alias
+    id: string;
+    name: string;
     groups: GroupCode[];
 }

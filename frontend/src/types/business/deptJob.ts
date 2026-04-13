@@ -1,21 +1,31 @@
 export interface DeptJobVO {
   deptJobId?: string;
-  deptJobNm: string; // 부서업무명
-  deptJobCn: string; // 부서업무내용
-  deptJobBxId?: string; // 부서업무함ID
-  deptJobBxNm?: string; // 부서업무함명
-  chargerId?: string; // 담당자ID
-  chargerNm?: string; // 담당자명
-  priort: string; // 우선순위 (1:높음, 2:보통, 3:낮음)
+  deptJobNm: string;
+  deptJobCn: string;
+  deptJobbxId?: string;
+  deptJobbxNm?: string;
+  deptId?: string;
+  deptNm?: string;
+  chargerId?: string;
+  chargerNm?: string;
+  priort: string;
+  atchFileId?: string;
   frstRegisterId?: string;
   frstRegistPnttm?: string;
+  lastUpdusrId?: string;
+  lastUpdtPnttm?: string;
 }
 
 export interface DeptJobBxVO {
-  deptJobBxId: string;
-  deptJobBxNm: string;
+  deptJobbxId: string;
+  deptJobbxNm: string;
   deptId?: string;
   deptNm?: string;
+  indictOrdr?: number;
+  frstRegisterId?: string;
+  frstRegistPnttm?: string;
+  lastUpdusrId?: string;
+  lastUpdtPnttm?: string;
 }
 
 export interface DeptJobSearchParams {

@@ -46,16 +46,12 @@ export interface ScheduleSearchParams {
 
 export interface WorkReport {
   reportId: string;
-  reportNm: string;
-  reportCn: string;
-  writngBgnde: string;
-  writngEndde: string;
-  reportDeptId: string;
-  reportDeptNm: string;
-  chargerId: string;
-  chargerNm: string;
-  createdDate: string;
-  sanctnSttus: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED';
+  reportSubject: string;
+  reportContent: string;
+  reportType: string;
+  reportDate: string;
+  writerId: string;
+  reportStatus: string;
 }
 
 export interface ReportSearchParams {

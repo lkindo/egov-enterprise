@@ -46,7 +46,8 @@ public class QustnrRespondInfoDto {
     private LocalDateTime createdDate;
 
     public static QustnrRespondInfoDto from(QustnrRespondInfo entity) {
-        if (entity == null) return null;
+        if (entity == null)
+            return null;
         return QustnrRespondInfoDto.builder()
                 .qestnrQesrspnsId(entity.getQestnrQesrspnsId())
                 .qestnrQesitmId(entity.getQestnrQesitmId())

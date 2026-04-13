@@ -34,7 +34,8 @@ public class OnlinePollItemDto {
     private LocalDateTime createdDate;
 
     public static OnlinePollItemDto from(OnlinePollItem entity) {
-        if (entity == null) return null;
+        if (entity == null)
+            return null;
         return OnlinePollItemDto.builder()
                 .pollIemId(entity.getPollIemId())
                 .pollId(entity.getPollId())

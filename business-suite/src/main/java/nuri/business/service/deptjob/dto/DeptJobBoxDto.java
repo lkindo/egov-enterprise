@@ -4,9 +4,6 @@ import nuri.business.domain.deptjob.DeptJobBox;
 import lombok.*;
 import java.time.LocalDateTime;
 
-/**
- * 뾽?댄?DTO
- */
 @Getter
 @Setter
 @NoArgsConstructor

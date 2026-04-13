@@ -39,17 +39,49 @@ public class PopupDto {
     @Schema(description = "생성 일시")
     private LocalDateTime createdDate;
 
-    public String getPopupTitleNm() { return popupTitleName; }
-    public String getPopupWlc() { return popupWidthLocation; }
-    public String getPopupHlc() { return popupHeightLocation; }
-    public String getPopupHSize() { return popupHeightSize; }
-    public String getPopupWSize() { return popupWidthSize; }
-    public String getNtceBgnde() { return noticeBeginDate; }
-    public String getNtceEndde() { return noticeEndDate; }
-    public String getStopVewAt() { return isStopView; }
-    public String getNtceAt() { return isNotice; }
-    public String getFrstRegisterId() { return createdBy; }
-    public LocalDateTime getFrstRegistPnttm() { return createdDate; }
+    public String getPopupTitleNm() {
+        return popupTitleName;
+    }
+
+    public String getPopupWlc() {
+        return popupWidthLocation;
+    }
+
+    public String getPopupHlc() {
+        return popupHeightLocation;
+    }
+
+    public String getPopupHSize() {
+        return popupHeightSize;
+    }
+
+    public String getPopupWSize() {
+        return popupWidthSize;
+    }
+
+    public String getNtceBgnde() {
+        return noticeBeginDate;
+    }
+
+    public String getNtceEndde() {
+        return noticeEndDate;
+    }
+
+    public String getStopVewAt() {
+        return isStopView;
+    }
+
+    public String getNtceAt() {
+        return isNotice;
+    }
+
+    public String getFrstRegisterId() {
+        return createdBy;
+    }
+
+    public LocalDateTime getFrstRegistPnttm() {
+        return createdDate;
+    }
 
     public static PopupDto from(Popup entity) {
         if (entity == null)

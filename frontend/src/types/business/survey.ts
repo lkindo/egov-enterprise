@@ -4,24 +4,36 @@ export interface Survey {
   qestnrPurps: string;
   qestnrWritngGuidanceCn: string;
   qestnrTrget: string;
-  qestnrBgnde: string;
-  qestnrEndde: string;
-  frstRegisterNm?: string;
+  qestnrBeginDe: string;
+  qestnrEndDe: string;
+  qestnrTmplatId?: string;
+  createdBy?: string;
   createdDate: string;
-  status: 'OPEN' | 'CLOSED' | 'UPCOMING';
 }
 
 export interface SurveyQuestion {
   qestnrQesitmId: string;
+  qestnrId: string;
+  qestnSn: number;
+  qestnTyCode: string;
   qestnCn: string;
-  qestnTyCode: string; // 1: 객관식, 2: 주관식
   mxmmChoiseCo: number;
+  qestnrTmplatId: string;
+  createdBy: string;
+  createdDate: string;
+  items: SurveyAnswer[];
 }
 
 export interface SurveyAnswer {
   qustnrIemId: string;
+  qestnrQesitmId: string;
+  qestnrId: string;
+  iemSn: number;
   iemCn: string;
   etcAnswerAt: string;
+  qestnrTmplatId: string;
+  createdBy: string;
+  createdDate: string;
 }
 
 export interface SurveyResultStats {
@@ -31,16 +43,16 @@ export interface SurveyResultStats {
 }
 
 export interface QustnrRespondInfo {
-  respondId: string;
+  qestnrQesrspnsId: string;
   qestnrId: string;
   qestnrQesitmId: string;
-  qestnrSj?: string; // 설문제목 (Join 필드)
+  qestnrTmplatId: string;
+  qustnrIemId: string;
+  respondAnswerCn: string;
   respondNm: string;
-  respondDe: string;
-  respondCn?: string;
-  respondAnswerCn?: string;
-  etcAnswerCn?: string;
-  frstRegisterPnttm?: string;
+  etcAnswerCn: string;
+  createdBy: string;
+  createdDate: string;
 }
 
 export interface QustnrRespondInfoVO {

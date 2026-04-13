@@ -46,7 +46,8 @@ public class QestnrInfoDto {
     private LocalDateTime createdDate;
 
     public static QestnrInfoDto from(QestnrInfo entity) {
-        if (entity == null) return null;
+        if (entity == null)
+            return null;
         return QestnrInfoDto.builder()
                 .qestnrId(entity.getQestnrId())
                 .qestnrSj(entity.getQestnrSj())

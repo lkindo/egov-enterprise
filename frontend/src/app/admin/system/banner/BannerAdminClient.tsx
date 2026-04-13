@@ -67,18 +67,18 @@ const bannerSchema = z.object({
 });
 
 const popupSchema = z.object({
-  popupTitleNm: z.string().min(1, '팝업 제목은 필수 입력 사항입니다.'),
-  ntceBgnde: z.string().min(1, '게시 시작일은 필수입니다.'),
-  ntceEndde: z.string().min(1, '게시 종료일은 필수입니다.'),
-  popupWlc: z.coerce.number().min(0),
-  popupHlc: z.coerce.number().min(0),
-  popupWSize: z.coerce.number().min(100),
-  popupHSize: z.coerce.number().min(100),
-  ntceAt: z.enum(['Y', 'N']),
-  stopVewAt: z.enum(['Y', 'N']),
-}).refine(data => new Date(data.ntceEndde) >= new Date(data.ntceBgnde), {
+  popupTitleName: z.string().min(1, '팝업 제목은 필수 입력 사항입니다.'),
+  noticeBeginDate: z.string().min(1, '게시 시작일은 필수입니다.'),
+  noticeEndDate: z.string().min(1, '게시 종료일은 필수입니다.'),
+  popupWidthLocation: z.coerce.number().min(0),
+  popupHeightLocation: z.coerce.number().min(0),
+  popupWidthSize: z.coerce.number().min(100),
+  popupHeightSize: z.coerce.number().min(100),
+  isNotice: z.enum(['Y', 'N']),
+  isStopView: z.enum(['Y', 'N']),
+}).refine(data => new Date(data.noticeEndDate) >= new Date(data.noticeBeginDate), {
   message: '종료일은 시작일보다 빠를 수 없습니다.',
-  path: ['ntceEndde']
+  path: ['noticeEndDate']
 });
 
 type BannerFormValues = z.infer<typeof bannerSchema>;
@@ -110,15 +110,15 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
   const popupForm = useAppForm(popupSchema, {
     defaultValues: {
-      popupTitleNm: '',
-      ntceBgnde: '',
-      ntceEndde: '',
-      popupWlc: 0 as any,
-      popupHlc: 0 as any,
-      popupWSize: 400 as any,
-      popupHSize: 400 as any,
-      ntceAt: 'Y' as any,
-      stopVewAt: 'Y' as any
+      popupTitleName: '',
+      noticeBeginDate: '',
+      noticeEndDate: '',
+      popupWidthLocation: 0 as any,
+      popupHeightLocation: 0 as any,
+      popupWidthSize: 400 as any,
+      popupHeightSize: 400 as any,
+      isNotice: 'Y' as any,
+      isStopView: 'Y' as any
     }
   });
 
@@ -136,15 +136,15 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       } else {
         const item = editingItem as Popup;
         popupForm.reset({
-          popupTitleNm: item?.popupTitleNm || '',
-          ntceBgnde: item?.ntceBgnde || '',
-          ntceEndde: item?.ntceEndde || '',
-          popupWlc: item?.popupWlc || 0,
-          popupHlc: item?.popupHlc || 0,
-          popupWSize: item?.popupWSize || 400,
-          popupHSize: item?.popupHSize || 300,
-          ntceAt: (item?.ntceAt as 'Y' | 'N') || 'Y',
-          stopVewAt: (item?.stopVewAt as 'Y' | 'N') || 'Y'
+          popupTitleName: item?.popupTitleName || '',
+          noticeBeginDate: item?.noticeBeginDate || '',
+          noticeEndDate: item?.noticeEndDate || '',
+          popupWidthLocation: item?.popupWidthLocation || 0,
+          popupHeightLocation: item?.popupHeightLocation || 0,
+          popupWidthSize: item?.popupWidthSize || 400,
+          popupHeightSize: item?.popupHeightSize || 300,
+          isNotice: (item?.isNotice as 'Y' | 'N') || 'Y',
+          isStopView: (item?.isStopView as 'Y' | 'N') || 'Y'
         });
       }
     }
@@ -202,7 +202,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
   const onBannerSubmit = async (values: any) => {
     try {
-      const data = { 
+      const data = {
         ...values,
         reflctAt: values.reflctAt as "Y" | "N"
       } as any;
@@ -238,10 +238,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
   const onPopupSubmit = async (values: any) => {
     try {
-      const data = { 
+      const data = {
         ...values,
-        ntceAt: values.ntceAt as "Y" | "N",
-        stopVewAt: values.stopVewAt as "Y" | "N"
+        isNotice: values.isNotice as "Y" | "N",
+        isStopView: values.isStopView as "Y" | "N"
       } as any;
       if (formFiles.length > 0) {
         const uploadRes = await fileAdminService.uploadFiles(formFiles);
@@ -321,7 +321,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
     {
       header: '게시 상태',
       accessor: (item: Banner | Popup) => {
-        const isLive = 'reflctAt' in item ? item.reflctAt === 'Y' : item.ntceAt === 'Y';
+        const isLive = 'reflctAt' in item ? item.reflctAt === 'Y' : item.isNotice === 'Y';
         return <HubStatusBadge status={isLive ? '게시 중' : '대기 중'} />;
       },
       className: 'w-32'
@@ -347,12 +347,12 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       header: '팝업 명세 (Architecture)',
       accessor: (item: Popup) => (
         <div className="flex flex-col gap-2 py-4">
-          <span className="font-black tracking-tighter text-foreground text-md uppercase leading-tight">{item.popupTitleNm}</span>
+          <span className="font-black tracking-tighter text-foreground text-md uppercase leading-tight">{item.popupTitleName}</span>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg">
               <Calendar size={12} className="text-primary opacity-40" />
               <span className="text-[10px] font-black text-muted-foreground/60 font-mono tracking-tighter tabular-nums uppercase italic">
-                {item.ntceBgnde} ~ {item.ntceEndde}
+                {item.noticeBeginDate} ~ {item.noticeEndDate}
               </span>
             </div>
           </div>
@@ -367,11 +367,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
             <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shadow-inner border border-slate-100 text-slate-400">
               <Monitor size={14} />
             </div>
-            <span className="text-xs font-black font-mono tracking-widest text-slate-900 uppercase">{item.popupWSize}px x {item.popupHSize}px</span>
+            <span className="text-xs font-black font-mono tracking-widest text-slate-900 uppercase">{item.popupWidthSize}px x {item.popupHeightSize}px</span>
           </div>
           <div className="flex items-center gap-2 pl-11">
             <div className="w-1 h-1 rounded-full bg-slate-300" />
-            <span className="text-[9px] font-bold text-muted-foreground/40 italic">Coordinates: (X:{item.popupWlc}, Y:{item.popupHlc})</span>
+            <span className="text-[9px] font-bold text-muted-foreground/40 italic">Coordinates: (X:{item.popupWidthLocation}, Y:{item.popupHeightLocation})</span>
           </div>
         </div>
       ),
@@ -379,7 +379,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
     },
     {
       header: '게시 여부',
-      accessor: (item: Popup) => <HubStatusBadge status={item.ntceAt === 'Y' ? '게시 중' : '대기 중'} />,
+      accessor: (item: Popup) => <HubStatusBadge status={item.isNotice === 'Y' ? '게시 중' : '대기 중'} />,
       className: 'w-32'
     },
     {
@@ -423,8 +423,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
       <HubMetricGrid>
         <HubMetricCard title="활성 배너" value={banners.filter(b => b.reflctAt === 'Y').length} icon={ImageIcon} color="primary" />
-        <HubMetricCard title="활성 팝업" value={popups.filter(p => p.ntceAt === 'Y').length} icon={Monitor} color="emerald" status="게시 중" />
-        <HubMetricCard title="예약 자산" value={popups.filter(p => new Date(p.ntceBgnde) > new Date()).length} icon={Calendar} color="amber" />
+        <HubMetricCard title="활성 팝업" value={popups.filter(p => p.isNotice === 'Y').length} icon={Monitor} color="emerald" status="게시 중" />
+        <HubMetricCard title="예약 자산" value={popups.filter(p => new Date(p.noticeBeginDate) > new Date()).length} icon={Calendar} color="amber" />
         <HubMetricCard title="전체 자산" value={banners.length + popups.length} icon={Layers} color="indigo" />
       </HubMetricGrid>
 
@@ -646,7 +646,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                   <div className="space-y-8">
                     <ShadcnFormField
                       control={popupForm.control}
-                      name="popupTitleNm"
+                      name="popupTitleName"
                       render={({ field }) => (
                         <FormItem className="space-y-1.5 p-0.5">
                           <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">팝업 타이틀 (Header) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
@@ -660,7 +660,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                     <div className="grid grid-cols-2 gap-8 p-10 bg-slate-50 border-2 border-dashed border-slate-100 rounded-[0.1rem] shadow-inner">
                       <ShadcnFormField
                         control={popupForm.control}
-                        name="ntceBgnde"
+                        name="noticeBeginDate"
                         render={({ field }) => (
                           <FormItem className="space-y-1.5 p-0.5">
                             <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 시작 시점 (T-0) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
@@ -673,7 +673,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                       />
                       <ShadcnFormField
                         control={popupForm.control}
-                        name="ntceEndde"
+                        name="noticeEndDate"
                         render={({ field }) => (
                           <FormItem className="space-y-1.5 p-0.5">
                             <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 종료 시점 (T-End) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
@@ -688,7 +688,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                     <div className="grid grid-cols-2 gap-8">
                       <ShadcnFormField
                         control={popupForm.control}
-                        name="popupWlc"
+                        name="popupWidthLocation"
                         render={({ field }) => (
                           <FormItem className="space-y-1.5 p-0.5">
                             <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 좌표 (X_Pivot) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
@@ -701,7 +701,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                       />
                       <ShadcnFormField
                         control={popupForm.control}
-                        name="popupHlc"
+                        name="popupHeightLocation"
                         render={({ field }) => (
                           <FormItem className="space-y-1.5 p-0.5">
                             <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 좌표 (Y_Pivot) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
@@ -716,7 +716,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                     <div className="grid grid-cols-2 gap-8">
                       <ShadcnFormField
                         control={popupForm.control}
-                        name="popupWSize"
+                        name="popupWidthSize"
                         render={({ field }) => (
                           <FormItem className="space-y-1.5 p-0.5">
                             <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 폭 (W_Res) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
@@ -729,7 +729,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                       />
                       <ShadcnFormField
                         control={popupForm.control}
-                        name="popupHSize"
+                        name="popupHeightSize"
                         render={({ field }) => (
                           <FormItem className="space-y-1.5 p-0.5">
                             <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 높이 (H_Res) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
@@ -770,7 +770,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                       <div className="grid grid-cols-2 gap-6">
                         <ShadcnFormField
                           control={popupForm.control}
-                          name="ntceAt"
+                          name="isNotice"
                           render={({ field }) => (
                             <FormItem className="space-y-1.5 p-0.5">
                               <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">게시 설정</FormLabel>
@@ -791,7 +791,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                         />
                         <ShadcnFormField
                           control={popupForm.control}
-                          name="stopVewAt"
+                          name="isStopView"
                           render={({ field }) => (
                             <FormItem className="space-y-1.5 p-0.5">
                               <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">다시보지않기 처리</FormLabel>
