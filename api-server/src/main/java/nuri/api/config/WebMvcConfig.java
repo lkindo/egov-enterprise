@@ -42,13 +42,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 정적 리소스(CSS, JS, Images) 설정
-        registry.addResourceHandler("/css/**").addResourceLocations("/css/");
-
-        registry.addResourceHandler("/js/**").addResourceLocations("/js/");
-
-        registry.addResourceHandler("/images/**").addResourceLocations("/images/");
-
+        // 정적 리소스(CSS, JS, Images) 설정 - classpath 접두어 사용으로 안전성 확보
+        registry.addResourceHandler("/css/**").addResourceLocations("classpath:/static/css/");
+        registry.addResourceHandler("/js/**").addResourceLocations("classpath:/static/js/");
+        registry.addResourceHandler("/images/**").addResourceLocations("classpath:/static/images/");
+        registry.addResourceHandler("/favicon.ico").addResourceLocations("classpath:/static/favicon.ico");
     }
 
     @Override

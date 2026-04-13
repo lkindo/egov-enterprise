@@ -1,13 +1,13 @@
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import client from '@/lib/api/client';
+import { programAdminService } from '../ProgramAdminService';
+
 vi.mock('next/config', () => ({
   default: () => ({
     publicRuntimeConfig: {},
     serverRuntimeConfig: {},
   }),
 }));
-
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import client from '@/lib/api/client';
-import { programAdminService } from '../ProgramAdminService';
 
 vi.mock('@/lib/api/client', () => ({
   default: {

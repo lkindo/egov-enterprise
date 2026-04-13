@@ -84,6 +84,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * JSON 역직렬화 오류 처리 (예: 정의되지 않은 필드 전송 시)
+     */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(
+            org.springframework.http.converter.HttpMessageNotReadableException e) {
+        log.warn(">>> JSON Deserialization Failed: {}", e.getMessage());
+        String detailMessage = "잘못된 데이터 형식이거나 정의되지 않은 필드가 포함되어 있습니다.";
+        if (e.getCause() instanceof com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException) {
+            com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException cause = 
+                (com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException) e.getCause();
+            detailMessage = String.format("정의되지 않은 필드 '%s'가 포함되어 있습니다.", cause.getPropertyName());
+        }
+        return ResponseEntity.badRequest().body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, detailMessage));
+    }
+
+    /**
      * 지원하지 않는 HTTP 메서드 호출 예외 처리
      */
     @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)

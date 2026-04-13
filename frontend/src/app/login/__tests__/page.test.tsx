@@ -16,7 +16,7 @@ vi.mock('next/navigation', () => ({
     push: vi.fn(),
   }),
   useSearchParams: () => ({
-    get: vi.fn().mockReturnValue('/'),
+    get: vi.fn().mockReturnValue('/admin/work-hub'),
   }),
 }));
 
@@ -24,17 +24,15 @@ vi.mock('@/hooks/useMessage', () => ({
   useMessage: () => ({
     t: (key: string) => {
         const messages: Record<string, string> = {
-            'login.title': '로그인',
-            'login.idLabel': 'ID',
-            'login.pwLabel': 'Password',
-            'login.idPlaceholder': 'Username',
-            'login.pwPlaceholder': 'Password',
-            'login.rememberId': 'ID 저장',
-            'login.submit': 'Sign In',
-            'login.errorEmpty': 'Please enter id and password',
-            'login.errorFailed': 'Invalid credentials',
-            'login.viewPassword': 'View Password',
-            'login.hidePassword': 'Hide Password'
+            'login.title': '엔터프라이즈',
+            'login.idLabel': '사용자 아이디',
+            'login.pwLabel': '액세스 키',
+            'login.idPlaceholder': '시스템 아이디를 입력하세요',
+            'login.pwPlaceholder': '············',
+            'login.rememberId': '로그인 상태 유지',
+            'login.submit': '시스템 접속하기',
+            'login.errorEmpty': '아이디와 패스워드를 입력해주세요',
+            'login.errorFailed': '로그인에 실패했습니다',
         };
         return messages[key] || key;
     }

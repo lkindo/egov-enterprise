@@ -56,6 +56,64 @@ global.IntersectionObserver = class IntersectionObserver {
   disconnect() { }
 } as any;
 
+// Mock Common UI Components
+vi.mock('@/components/ui/tooltip', () => ({
+  Tooltip: ({ children }: any) => children,
+  TooltipTrigger: ({ children }: any) => children,
+  TooltipContent: ({ children }: any) => children,
+  TooltipProvider: ({ children }: any) => children,
+}));
+
+vi.mock('@/components/ui/dialog', () => ({
+  Dialog: ({ children }: any) => children,
+  DialogTrigger: ({ children }: any) => children,
+  DialogContent: ({ children }: any) => children,
+  DialogHeader: ({ children }: any) => children,
+  DialogTitle: ({ children }: any) => children,
+  DialogDescription: ({ children }: any) => children,
+  DialogFooter: ({ children }: any) => children,
+}));
+
+vi.mock('@/components/ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: any) => children,
+  DropdownMenuTrigger: ({ children }: any) => children,
+  DropdownMenuContent: ({ children }: any) => children,
+  DropdownMenuItem: ({ children }: any) => children,
+  DropdownMenuSeparator: () => null,
+  DropdownMenuLabel: ({ children }: any) => children,
+}));
+
+vi.mock('@/components/ui/tabs', () => ({
+  Tabs: ({ children }: any) => children,
+  TabsList: ({ children }: any) => children,
+  TabsTrigger: ({ children }: any) => children,
+  TabsContent: ({ children }: any) => children,
+}));
+
+// Mock framer-motion
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, ...props }: any) => React.createElement('div', props, children),
+    header: ({ children, ...props }: any) => React.createElement('header', props, children),
+    main: ({ children, ...props }: any) => React.createElement('main', props, children),
+    section: ({ children, ...props }: any) => React.createElement('section', props, children),
+    nav: ({ children, ...props }: any) => React.createElement('nav', props, children),
+    a: ({ children, ...props }: any) => React.createElement('a', props, children),
+    button: ({ children, ...props }: any) => React.createElement('button', props, children),
+    span: ({ children, ...props }: any) => React.createElement('span', props, children),
+    li: ({ children, ...props }: any) => React.createElement('li', props, children),
+    ul: ({ children, ...props }: any) => React.createElement('ul', props, children),
+    p: ({ children, ...props }: any) => React.createElement('p', props, children),
+    h1: ({ children, ...props }: any) => React.createElement('h1', props, children),
+    h2: ({ children, ...props }: any) => React.createElement('h2', props, children),
+    h3: ({ children, ...props }: any) => React.createElement('h3', props, children),
+  },
+  AnimatePresence: ({ children }: any) => children,
+  useScroll: () => ({ scrollY: { onChange: vi.fn() } }),
+  useTransform: () => ({}),
+  useSpring: () => ({}),
+}));
+
 // Mock window APIs
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -72,19 +130,22 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock lucide-react with a proxy to handle any icon
+// Mock lucide-react with a robust proxy
 vi.mock('lucide-react', () => {
-  const React = require('react');
-  const icons: Record<string, any> = {};
-
-  return new Proxy(icons, {
-    get: (target, prop: string) => {
-      if (prop === '__esModule') return true;
-      return (props: any) => React.createElement('span', { 
-        ...props,
-        'data-testid': `icon-${prop.toLowerCase()}` 
-      }, `ICON_${prop.toUpperCase()}`);
-    }
-  });
+    const React = require('react');
+    const proxy = new Proxy({}, {
+        get: (target, name) => {
+            if (name === '__esModule') return true;
+            if (typeof name !== 'string') return undefined;
+            const Icon = (props: any) => React.createElement('span', { ...props, 'data-testid': `icon-${name.toLowerCase()}` }, name);
+            Icon.displayName = name;
+            return Icon;
+        }
+    });
+    return {
+        ...proxy,
+        __esModule: true
+    };
 });
 
 window.scrollTo = vi.fn();

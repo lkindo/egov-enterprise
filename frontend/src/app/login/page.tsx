@@ -179,6 +179,7 @@ export default function LoginPage() {
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
+                                    data-testid="login-error"
                                     className="text-xs font-bold text-rose-500 text-center bg-rose-50 p-3 rounded-xl border border-rose-100"
                                 >
                                     {error}

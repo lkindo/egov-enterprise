@@ -39,7 +39,6 @@ describe('Button', () => {
   it('shows loading state', () => {
     render(<Button isLoading>로딩 중</Button>);
     expect(screen.getByRole('button')).toBeDisabled();
-    const loader = screen.getByRole('button').querySelector('.animate-spin');
-    expect(loader).not.toBeNull();
+    expect(screen.getByTestId('icon-loader2')).toBeDefined();
   });
 });

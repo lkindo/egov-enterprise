@@ -8,12 +8,12 @@ spring:
     resources:
       add-mappings: false
       static-locations:
-        [
-          "classpath:/static/",
-          "classpath:/public/",
-          "classpath:/resources/",
-          "classpath:/META-INF/resources/",
-        ]
+        - "classpath:/static/"
+        - "classpath:/public/"
+        - "classpath:/resources/"
+        - "classpath:/META-INF/resources/"
+        - "file:src/main/webapp/"
+        - "file:api-server/src/main/webapp/"
   resources:
     add-mappings: false
   mvc:

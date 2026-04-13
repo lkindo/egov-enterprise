@@ -89,6 +89,7 @@ class UserApiControllerIntegrationTest extends BaseControllerTest {
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mismatchedRequestBody))
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
                 .andExpect(status().isBadRequest());
     }
 }

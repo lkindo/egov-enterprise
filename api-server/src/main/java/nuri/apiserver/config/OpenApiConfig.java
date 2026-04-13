@@ -78,6 +78,29 @@ public class OpenApiConfig {
     }
 
     /**
+     * 파운데이션 API 그룹
+     */
+    @Bean
+    public GroupedOpenApi foundationApi() {
+        return GroupedOpenApi.builder()
+            .group("1-foundation")
+            .pathsToMatch("/api/v1/auth/**", "/api/v1/users/**", "/api/v1/codes/**")
+            .build();
+    }
+
+    /**
+     * 비즈니스 스위트 API 그룹
+     */
+    @Bean
+    public GroupedOpenApi businessApi() {
+        return GroupedOpenApi.builder()
+            .group("2-business-suite")
+            .pathsToMatch("/api/v1/**")
+            .pathsToExclude("/api/v1/auth/**", "/api/v1/users/**", "/api/v1/codes/**")
+            .build();
+    }
+
+    /**
      * OpenAPI 커스텀 설정
      */
     @Bean

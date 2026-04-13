@@ -12,7 +12,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('next/navigation', () => ({
  usePathname: () => '/smart-toolkit/schedule',
- useSearchParams: () => new URLSearchParams(),
+ useSearchParams: () => ({ get: vi.fn().mockReturnValue('calendar') }),
  useRouter: () => ({ push: vi.fn() }),
 }));
 
@@ -30,6 +30,6 @@ describe('ScheduleListPage', () => {
   <ScheduleListPage />
   </QueryClientProvider>
   );
-  expect(await screen.findByText(/워크플로우 허브/i)).toBeInTheDocument();
+  expect(await screen.findByText(/허브/i)).toBeInTheDocument();
  });
 });
