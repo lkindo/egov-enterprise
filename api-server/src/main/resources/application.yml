@@ -7,6 +7,8 @@ spring:
   jackson:
     serialization:
       fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: true
   sql:
     init:
       mode: never

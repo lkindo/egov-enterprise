@@ -26,18 +26,6 @@ public class DeptJobDto {
     private String lastUpdusrId;
     private LocalDateTime lastUpdtPnttm;
 
-    public String getDeptJobBxId() {
-        return deptJobbxId;
-    }
-
-    public String getDeptJobBxNm() {
-        return deptJobbxNm;
-    }
-
-    public LocalDateTime getCreatedDate() {
-        return frstRegistPnttm;
-    }
-
     public static DeptJobDto from(DeptJob entity) {
         return DeptJobDto.builder()
                 .deptJobId(entity.getDeptJobId())

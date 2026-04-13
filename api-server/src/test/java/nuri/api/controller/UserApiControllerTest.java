@@ -1,43 +1,28 @@
 package nuri.api.controller;
 
-import nuri.foundation.core.exception.GlobalExceptionHandler;
+import nuri.foundation.test.BaseControllerTest;
+
 import nuri.foundation.service.user.UserService;
 import nuri.foundation.service.user.dto.UserResponse;
 import nuri.foundation.service.user.dto.UserSignupRequest;
 import nuri.foundation.domain.user.entity.Role;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-public class UserApiControllerTest {
-
-    private MockMvc mockMvc;
-
-    @Mock
+public class UserApiControllerTest extends BaseControllerTest {
     private UserService userService;
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
-    @InjectMocks
-    private UserApiController userController;
-
-    private ObjectMapper objectMapper = new ObjectMapper();
-
-    @BeforeEach
-    public void setup() {
-        MockitoAnnotations.openMocks(this);
-
-        mockMvc = MockMvcBuilders.standaloneSetup(userController)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
+    @Override
+    protected Object getController() {
+        userService = mock(UserService.class);
+        return new UserApiController(userService);
     }
 
     @Test

@@ -4,6 +4,7 @@ import nuri.business.domain.notification.Notification;
 import lombok.Builder;
 import lombok.Getter;
 import java.time.LocalDateTime;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Getter
 @Builder

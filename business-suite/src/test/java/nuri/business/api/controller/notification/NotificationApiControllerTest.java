@@ -1,22 +1,20 @@
 package nuri.business.api.controller.notification;
 
+import nuri.foundation.test.BaseControllerTest;
+
 import nuri.business.service.notification.NotificationService;
 import nuri.business.service.notification.dto.NotificationDto;
-import nuri.foundation.core.exception.GlobalExceptionHandler;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import java.util.Collections;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -24,17 +22,19 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class NotificationApiControllerTest {
+class NotificationApiControllerTest extends BaseControllerTest {
 
-    private MockMvc mockMvc;
     private NotificationService notificationService;
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
-    @BeforeEach
-    void setUp() {
+    @Override
+    protected Object getController() {
         notificationService = mock(NotificationService.class);
-        
-        // Mock UserDetails resolver
+        return new NotificationApiController(notificationService);
+    }
+
+    @Override
+    protected HandlerMethodArgumentResolver[] getCustomArgumentResolvers() {
         HandlerMethodArgumentResolver userDetailsResolver = new HandlerMethodArgumentResolver() {
             @Override
             public boolean supportsParameter(MethodParameter parameter) {
@@ -43,17 +43,14 @@ class NotificationApiControllerTest {
 
             @Override
             public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                                        NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+                                         NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
                 UserDetails user = mock(UserDetails.class);
                 when(user.getUsername()).thenReturn("testUser");
                 return user;
             }
         };
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new NotificationApiController(notificationService))
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(userDetailsResolver, new org.springframework.data.web.PageableHandlerMethodArgumentResolver())
-                .build();
+        return new HandlerMethodArgumentResolver[] { userDetailsResolver, new PageableHandlerMethodArgumentResolver() };
     }
 
     @Test

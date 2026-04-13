@@ -1,32 +1,26 @@
 package nuri.api.controller;
 
+import nuri.foundation.test.BaseControllerTest;
+
 import nuri.foundation.service.user.UserService;
 import nuri.foundation.service.user.dto.UserResponse;
 import nuri.foundation.service.user.dto.UserSignupRequest;
-import nuri.foundation.core.exception.GlobalExceptionHandler;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-class UserApiControllerIntegrationTest {
-
-    private MockMvc mockMvc;
+class UserApiControllerIntegrationTest extends BaseControllerTest {
     private UserService userService;
 
-    @BeforeEach
-    void setUp() {
+    @Override
+    protected Object getController() {
         userService = mock(UserService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
+        return new UserApiController(userService);
     }
 
     @Test
@@ -74,6 +68,24 @@ class UserApiControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidRequestBody))
+                .andExpect(status().isBadRequest());
+    }
+    @Test
+    @DisplayName("POST /api/v1/users/signup - 회원 가입 실패 (필드 이름 불일치)")
+    void signup_fail_withMismatchedFields() throws Exception {
+        // userId 대신 user_id 사용
+        String mismatchedRequestBody = """
+                {
+                  "user_id": "newUser",
+                  "password": "password123!",
+                  "userNm": "새로운사용자",
+                  "role": "USER"
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mismatchedRequestBody))
                 .andExpect(status().isBadRequest());
     }
 }

@@ -1,16 +1,15 @@
 package nuri.business.api.controller.admin.content.banner;
 
+import nuri.foundation.test.BaseControllerTest;
+
 import nuri.foundation.service.system.content.banner.EgovBannerService;
 import nuri.foundation.service.system.content.banner.dto.BannerDto;
-import nuri.foundation.core.exception.GlobalExceptionHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import java.util.Collections;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -18,19 +17,20 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("BannerApiController 테스트")
-class BannerApiControllerTest {
+class BannerApiControllerTest extends BaseControllerTest {
 
-    private MockMvc mockMvc;
     private EgovBannerService bannerService;
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
-    @BeforeEach
-    void setUp() {
+    @Override
+    protected Object getController() {
         bannerService = mock(EgovBannerService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new BannerApiController(bannerService))
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(new org.springframework.data.web.PageableHandlerMethodArgumentResolver())
-                .build();
+        return new BannerApiController(bannerService);
+    }
+
+    @Override
+    protected HandlerMethodArgumentResolver[] getCustomArgumentResolvers() {
+        return new HandlerMethodArgumentResolver[] { new PageableHandlerMethodArgumentResolver() };
     }
 
     @Test

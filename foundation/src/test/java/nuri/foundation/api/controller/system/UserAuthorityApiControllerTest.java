@@ -1,19 +1,15 @@
 package nuri.foundation.api.controller.system;
 
-import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.foundation.service.auth.UserAuthorityManageService;
-import nuri.foundation.service.auth.dto.UserAuthorityDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import nuri.foundation.test.BaseControllerTest;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import nuri.foundation.service.auth.UserAuthorityManageService;
+import nuri.foundation.service.auth.dto.UserAuthorityDto;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,24 +22,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("UserAuthorityApiController 테스트")
-class UserAuthorityApiControllerTest {
+class UserAuthorityApiControllerTest extends BaseControllerTest {
 
-    private MockMvc mockMvc;
-
-    @Mock
     private UserAuthorityManageService userAuthorityManageService;
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
-    @InjectMocks
-    private UserAuthorityApiController userAuthorityApiController;
+    @Override
+    protected Object getController() {
+        userAuthorityManageService = mock(UserAuthorityManageService.class);
+        return new UserAuthorityApiController(userAuthorityManageService);
+    }
 
-    private ObjectMapper objectMapper = new ObjectMapper();
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(userAuthorityApiController)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
+    @Override
+    protected HandlerMethodArgumentResolver[] getCustomArgumentResolvers() {
+        return new HandlerMethodArgumentResolver[] { new PageableHandlerMethodArgumentResolver() };
     }
 
     @Test

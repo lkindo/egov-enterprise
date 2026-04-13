@@ -1,0 +1,52 @@
+package nuri.foundation.test;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+/**
+ * 전역적인 엄격한 Jackson 설정과 예외 처리를 공유하는 베이스 컨트롤러 테스트 클래스
+ * foundation 모듈의 testFixtures 에 위치하여 모든 모듈에서 재사용 가능합니다.
+ */
+public abstract class BaseControllerTest {
+
+    protected MockMvc mockMvc;
+
+    @BeforeEach
+    void setupInternal() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        // 실제 운영 환경과 동일하게 알 수 없는 속성에 대해 실패하도록 설정
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
+
+        mockMvc = MockMvcBuilders.standaloneSetup(getController())
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setMessageConverters(converter)
+                .setCustomArgumentResolvers(getCustomArgumentResolvers())
+                .addInterceptors(getInterceptors())
+                .build();
+    }
+
+    /**
+     * 테스트할 대상 컨트롤러를 반환해야 합니다.
+     */
+    protected abstract Object getController();
+
+    /**
+     * 커스텀 Argument Resolver가 필요한 경우 오버라이드합니다.
+     */
+    protected org.springframework.web.method.support.HandlerMethodArgumentResolver[] getCustomArgumentResolvers() {
+        return new org.springframework.web.method.support.HandlerMethodArgumentResolver[0];
+    }
+
+    /**
+     * 인터셉터가 필요한 경우 오버라이드합니다.
+     */
+    protected org.springframework.web.servlet.HandlerInterceptor[] getInterceptors() {
+        return new org.springframework.web.servlet.HandlerInterceptor[0];
+    }
+}

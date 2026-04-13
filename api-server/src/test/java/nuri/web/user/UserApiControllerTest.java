@@ -1,27 +1,24 @@
 package nuri.web.user;
 
-import nuri.api.controller.UserApiController;
-import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.foundation.domain.user.entity.Role;
-import nuri.foundation.service.user.UserService;
-import nuri.foundation.service.user.dto.UserDto;
-import nuri.foundation.service.user.dto.UserResponse;
-import nuri.foundation.service.user.dto.UserSignupRequest;
-import nuri.foundation.security.service.CustomUserDetails;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import nuri.foundation.test.BaseControllerTest;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
+import nuri.api.controller.UserApiController;
+import nuri.foundation.domain.user.entity.Role;
+import nuri.foundation.service.user.UserService;
+import nuri.foundation.service.user.dto.UserDto;
+import nuri.foundation.service.user.dto.UserResponse;
+import nuri.foundation.service.user.dto.UserSignupRequest;
+import nuri.foundation.security.service.CustomUserDetails;
 import java.util.Collections;
 import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,18 +32,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * UserApiController 통합 테스트 (Standalone)
  * 일반 사용자 및 관리자용 사용자 관리 API를 모두 테스트합니다.
  */
-class UserApiControllerTest {
+class UserApiControllerTest extends BaseControllerTest {
 
-    private MockMvc mockMvc;
     private UserService userService;
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
     private static final String TEST_USER_ID = "testUser";
 
-    @BeforeEach
-    void setUp() {
+    @Override
+    protected Object getController() {
         userService = mock(UserService.class);
-        
-        // Mock LoginUser resolver with consistent user identity
+        return new UserApiController(userService);
+    }
+
+    @Override
+    protected HandlerMethodArgumentResolver[] getCustomArgumentResolvers() {
         HandlerMethodArgumentResolver loginUserResolver = new HandlerMethodArgumentResolver() {
             @Override
             public boolean supportsParameter(MethodParameter parameter) {
@@ -55,17 +54,14 @@ class UserApiControllerTest {
 
             @Override
             public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                                        NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+                                         NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
                 CustomUserDetails user = mock(CustomUserDetails.class);
                 when(user.getUserId()).thenReturn(TEST_USER_ID);
                 return user;
             }
         };
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(loginUserResolver, new PageableHandlerMethodArgumentResolver())
-                .build();
+        return new HandlerMethodArgumentResolver[] { loginUserResolver, new PageableHandlerMethodArgumentResolver() };
     }
 
     private UserDto createMockUser() {

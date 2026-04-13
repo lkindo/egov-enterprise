@@ -1,13 +1,7 @@
 package nuri.openapi;
 
-import nuri.api.controller.UserApiController;
-import nuri.api.interceptor.OperationalAuditInterceptor;
-import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.foundation.service.user.UserService;
-import nuri.foundation.service.user.dto.UserDto;
-import nuri.foundation.service.user.dto.UserResponse;
-import nuri.foundation.service.user.dto.UserSignupRequest;
-import nuri.foundation.domain.user.entity.Role;
+import nuri.foundation.test.BaseControllerTest;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,9 +10,16 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.HandlerInterceptor;
+import nuri.api.controller.UserApiController;
+import nuri.api.interceptor.OperationalAuditInterceptor;
+import nuri.foundation.service.user.UserService;
+import nuri.foundation.service.user.dto.UserDto;
+import nuri.foundation.service.user.dto.UserResponse;
+import nuri.foundation.service.user.dto.UserSignupRequest;
+import nuri.foundation.domain.user.entity.Role;
 import java.util.List;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,21 +31,38 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * 요청/응답 스키마 검증 테스트 (Standalone)
  */
-class RequestResponseSchemaValidationTest {
+class RequestResponseSchemaValidationTest extends BaseControllerTest {
 
-    private MockMvc mockMvc;
     private UserService userService;
     private OperationalAuditInterceptor operationalAuditInterceptor;
 
     private UserDto testUserDto;
     private UserResponse testUserResponse;
 
-    @BeforeEach
-    void setUp() throws Exception {
+    @Override
+    protected Object getController() {
         userService = mock(UserService.class);
-        operationalAuditInterceptor = mock(OperationalAuditInterceptor.class);
-        when(operationalAuditInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+        return new UserApiController(userService);
+    }
 
+    @Override
+    protected HandlerInterceptor[] getInterceptors() {
+        operationalAuditInterceptor = mock(OperationalAuditInterceptor.class);
+        try {
+            when(operationalAuditInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return new HandlerInterceptor[] { operationalAuditInterceptor };
+    }
+
+    @Override
+    protected HandlerMethodArgumentResolver[] getCustomArgumentResolvers() {
+        return new HandlerMethodArgumentResolver[] { new PageableHandlerMethodArgumentResolver() };
+    }
+
+    @BeforeEach
+    void setUpData() {
         testUserDto = UserDto.builder()
                 .userId("testUser")
                 .userNm("테스트사용자이름")
@@ -53,12 +71,6 @@ class RequestResponseSchemaValidationTest {
                 .build();
 
         testUserResponse = new UserResponse("testUser", "테스트사용자이름", Role.USER);
-
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
-                .addInterceptors(operationalAuditInterceptor)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
     }
 
     @Test
@@ -257,6 +269,7 @@ class RequestResponseSchemaValidationTest {
                   "userId": "updateUser",
                   "userNm": "수정사용자",
                   "esntlId": "USR_0000000000000001",
+                  "password": "password123!",
                   "passwordHint": "new hint",
                   "passwordCnsr": "new answer",
                   "role": "ADMIN"

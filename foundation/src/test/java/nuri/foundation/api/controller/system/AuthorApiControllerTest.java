@@ -1,18 +1,13 @@
 package nuri.foundation.api.controller.system;
 
-import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.foundation.service.auth.AuthorManageService;
-import nuri.foundation.service.auth.dto.AuthorManageDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import nuri.foundation.test.BaseControllerTest;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import nuri.foundation.service.auth.AuthorManageService;
+import nuri.foundation.service.auth.dto.AuthorManageDto;
+import nuri.foundation.service.menu.MenuService;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,27 +19,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("AuthorApiController 테스트")
-class AuthorApiControllerTest {
+class AuthorApiControllerTest extends BaseControllerTest {
 
-    private MockMvc mockMvc;
-
-    @Mock
     private AuthorManageService authorManageService;
+    private MenuService menuService;
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
-    @Mock
-    private nuri.foundation.service.menu.MenuService menuService;
-
-    @InjectMocks
-    private AuthorApiController authorApiController;
-
-    private ObjectMapper objectMapper = new ObjectMapper();
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(authorApiController)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
+    @Override
+    protected Object getController() {
+        authorManageService = mock(AuthorManageService.class);
+        menuService = mock(MenuService.class);
+        return new AuthorApiController(authorManageService, menuService);
     }
 
     @Test

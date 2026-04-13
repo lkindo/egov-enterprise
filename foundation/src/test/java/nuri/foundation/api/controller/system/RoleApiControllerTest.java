@@ -1,18 +1,12 @@
 package nuri.foundation.api.controller.system;
 
-import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.foundation.service.auth.RoleManageService;
-import nuri.foundation.service.auth.dto.RoleManageDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import nuri.foundation.test.BaseControllerTest;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import nuri.foundation.service.auth.RoleManageService;
+import nuri.foundation.service.auth.dto.RoleManageDto;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,24 +18,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("RoleApiController 테스트")
-class RoleApiControllerTest {
+class RoleApiControllerTest extends BaseControllerTest {
 
-    private MockMvc mockMvc;
-
-    @Mock
     private RoleManageService roleManageService;
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
-    @InjectMocks
-    private RoleApiController roleApiController;
-
-    private ObjectMapper objectMapper = new ObjectMapper();
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(roleApiController)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
+    @Override
+    protected Object getController() {
+        roleManageService = mock(RoleManageService.class);
+        return new RoleApiController(roleManageService);
     }
 
     @Test
