@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion, Variants } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -77,11 +77,11 @@ export function HubSummaryCard({
       </div>
 
       <div className="space-y-2 relative z-10">
-        <p className="text-[11px] font-black tracking-[0.3em] opacity-60 mb-2 uppercase">{title}</p>
+        <p className="text-[11px] font-black tracking-[0.3em] opacity-80 mb-2 uppercase">{title}</p>
         <h4 className="text-3xl font-black tracking-tighter leading-none tabular-nums">{value}</h4>
         {description && (
           <div className="pt-6">
-            <div className="text-[11px] opacity-40 font-bold leading-relaxed max-w-[180px]">
+            <div className="text-[11px] opacity-80 font-bold leading-relaxed max-w-[180px]">
               {description}
             </div>
           </div>

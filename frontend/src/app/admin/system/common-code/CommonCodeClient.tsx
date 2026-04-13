@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -274,7 +274,7 @@ export default function CommonCodeClient({
             accessor: (item: CodeDetail) => (
                 <div className="flex flex-col">
                     <span className="font-semibold text-slate-900">{item.codeNm}</span>
-                    <span className="text-[11px] text-slate-400 line-clamp-1">{item.codeDc}</span>
+                    <span className="text-[11px] text-slate-500 line-clamp-1">{item.codeDc}</span>
                 </div>
             )
         },
@@ -292,6 +292,7 @@ export default function CommonCodeClient({
                         type="button"
                         variant="ghost"
                         size="icon"
+                        aria-label={`${item.codeNm} 수정`}
                         className="h-8 w-8 hover:bg-slate-100 rounded-lg"
                         onClick={(e) => { e.preventDefault(); handleEditDetail(item); }}
                     >
@@ -301,6 +302,7 @@ export default function CommonCodeClient({
                         type="button"
                         variant="ghost"
                         size="icon"
+                        aria-label={`${item.codeNm} 삭제`}
                         className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-lg"
                         onClick={(e) => { e.preventDefault(); handleDeleteDetail(item.code); }}
                     >
@@ -323,12 +325,13 @@ export default function CommonCodeClient({
                                     <Database size={14} className="text-primary" />
                                     CODE EXPLORER
                                 </h3>
-                                <span className="text-[10px] font-bold text-slate-400">{filteredClusters.length} Domains</span>
+                                <span className="text-[10px] font-bold text-slate-500">{filteredClusters.length} Domains</span>
                             </div>
                             <div className="relative group">
-                                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
+                                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" aria-hidden="true" />
                                 <Input
                                     placeholder="그룹/이름 검색.."
+                                    aria-label="코드 그룹 및 이름 검색"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="h-10 pl-10 bg-white border-transparent rounded-[0.1rem] text-xs font-bold shadow-inner"
@@ -347,7 +350,7 @@ export default function CommonCodeClient({
                             ) : (
                                 filteredClusters.map((cluster) => (
                                     <div key={cluster.id} className="mb-2">
-                                        <div className="px-3 py-2 text-[10px] font-black text-slate-400 tracking-widest uppercase flex items-center justify-between group">
+                                        <div className="px-3 py-2 text-[10px] font-black text-slate-500 tracking-widest uppercase flex items-center justify-between group">
                                             <span>{cluster.name}</span>
                                         </div>
                                         <div className="space-y-0.5 mt-1">
@@ -378,8 +381,8 @@ export default function CommonCodeClient({
                                                         <div className="flex flex-col truncate items-start">
                                                             <span className="text-[11px] font-bold truncate leading-tight">{group.codeIdNm}</span>
                                                             <span className={cn(
-                                                                'text-[9px] font-mono font-bold tracking-tighter opacity-40',
-                                                                selectedGroup?.codeId === group.codeId ? "text-white/40" : 'text-slate-400'
+                                                                'text-[9px] font-mono font-bold tracking-tighter opacity-80',
+                                                                selectedGroup?.codeId === group.codeId ? "text-white/80" : 'text-slate-500'
                                                             )}>{group.codeId}</span>
                                                         </div>
                                                     </div>
@@ -414,7 +417,7 @@ export default function CommonCodeClient({
                                                 {selectedGroup.codeId}
                                             </div>
                                         </div>
-                                        <p className="text-xs font-bold text-slate-400 italic">
+                                        <p className="text-xs font-bold text-slate-500 italic">
                                             {selectedGroup.codeIdDc || '정의된 명세가 없습니다.'}
                                         </p>
                                     </div>
@@ -437,7 +440,7 @@ export default function CommonCodeClient({
                                         </div>
                                         <div className="text-left">
                                             <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase leading-none mb-1.5">시스템 구성 명세</h3>
-                                            <p className="text-[10px] font-bold text-slate-400 leading-none">
+                                            <p className="text-[10px] font-bold text-slate-500 leading-none">
                                                 {detailsLoading ? '서버로부터 명세를 읽어오는 중..' : `총 ${selectedGroup.details?.length || 0}개의 파라미터가 정의됨`}
                                             </p>
                                         </div>
@@ -469,17 +472,17 @@ export default function CommonCodeClient({
                                 <Database size={40} className="animate-pulse" />
                             </div>
                             <h3 className="text-xl font-black tracking-tight text-slate-900 uppercase mb-4">마스터 데이터 저장소</h3>
-                            <p className="text-xs font-bold text-slate-400 text-center max-w-sm leading-relaxed mb-10">
+                            <p className="text-xs font-bold text-slate-500 text-center max-w-sm leading-relaxed mb-10">
                                 왼쪽 코드 익스플로러에서 관리 대상을 선택하십시오.<br />
                                 도메인 계층별 모든 마스터 데이터가 이곳에 노출됩니다.
                             </p>
                             <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
                                 <div className="p-6 rounded-[0.1rem] bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
-                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">도메인 클러스터</span>
+                                    <span className="text-[10px] font-black text-slate-500 tracking-widest uppercase">도메인 클러스터</span>
                                     <span className="text-2xl font-black text-slate-900 font-mono italic">{initialClusters.length}</span>
                                 </div>
                                 <div className="p-6 rounded-[0.1rem] bg-slate-50 border border-slate-100 flex flex-col gap-2 items-start">
-                                    <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">활성 그룹 수</span>
+                                    <span className="text-[10px] font-black text-slate-500 tracking-widest uppercase">활성 그룹 수</span>
                                     <span className="text-2xl font-black text-slate-900 font-mono italic">{groups.length}</span>
                                 </div>
                             </div>

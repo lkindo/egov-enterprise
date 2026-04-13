@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
@@ -112,6 +112,7 @@ export default function UnifiedDashboardClient({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => router.push('/admin/community/boards')}
+            aria-label={t('dashboard.createNewPost') || '새 포스팅 작성'}
             className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-slate-900 dark:text-white dark:border-white/10 rounded-[0.1rem] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
           >
             <Plus size={20} /> 새 포스팅
@@ -233,7 +234,7 @@ export default function UnifiedDashboardClient({
             <div className="space-y-8">
                <div className="space-y-2">
                  <div className="flex justify-between text-sm font-black">
-                   <span className="opacity-40">CPU 사용률</span>
+                   <span className="opacity-80">CPU 사용률</span>
                    <span className="text-primary">24%</span>
                  </div>
                  <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
@@ -246,7 +247,7 @@ export default function UnifiedDashboardClient({
                </div>
                <div className="space-y-2">
                  <div className="flex justify-between text-sm font-black">
-                   <span className="opacity-40">메모리</span>
+                   <span className="opacity-80">메모리</span>
                    <span className="text-emerald-500">42%</span>
                  </div>
                  <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">

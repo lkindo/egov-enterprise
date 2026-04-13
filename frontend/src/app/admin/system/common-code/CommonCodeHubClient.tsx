@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -144,12 +144,12 @@ function HubTabButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon
         "relative flex items-center gap-3 px-10 py-4 rounded-[0.1rem] text-[11px] font-black tracking-tight transition-all active:scale-95 overflow-hidden group",
         active 
           ? "bg-white text-slate-900 shadow-2xl ring-1 ring-slate-200" 
-          : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+          : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
       )}
     >
       <div className={cn(
         "transition-all duration-500 group-hover:rotate-12",
-        active ? "scale-110 text-primary" : "opacity-40"
+        active ? "scale-110 text-primary" : "opacity-70"
       )}>
         <Icon size={18} />
       </div>
