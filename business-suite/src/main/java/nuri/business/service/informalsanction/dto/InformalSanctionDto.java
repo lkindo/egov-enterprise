@@ -57,6 +57,11 @@ public class InformalSanctionDto {
     @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
 
+    public String getInfrmlSanctnId() { return informalSanctionId; }
+    public String getApplcntId() { return applicantId; }
+    public String getReqstDe() { return requestDe; }
+    public String getSancltNm() { return jobSeNm; }
+
     public static InformalSanctionDto from(InformalSanction entity) {
         if (entity == null)
             return null;

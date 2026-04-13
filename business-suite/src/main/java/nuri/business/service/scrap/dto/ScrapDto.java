@@ -20,6 +20,10 @@ public class ScrapDto {
     private String frstRegisterId;
     private LocalDateTime frstRegisterPnttm;
 
+    public LocalDateTime getCreatedDate() {
+        return frstRegisterPnttm;
+    }
+
     public static ScrapDto from(Scrap entity) {
         return ScrapDto.builder()
                 .scrapId(entity.getScrapId())

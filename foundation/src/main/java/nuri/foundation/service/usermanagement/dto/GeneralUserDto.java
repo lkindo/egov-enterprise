@@ -81,6 +81,11 @@ public class GeneralUserDto {
     @Schema(description = "Description")
     private LocalDateTime createdDate;
 
+    public String getUserId() { return mberId; }
+    public String getUserNm() { return mberNm; }
+    public String getEmailAdres() { return mberEmailAdres; }
+    public String getUserSttusCode() { return mberSttus; }
+
     public static GeneralUserDto from(GeneralUser entity) {
         if (entity == null)
             return null;

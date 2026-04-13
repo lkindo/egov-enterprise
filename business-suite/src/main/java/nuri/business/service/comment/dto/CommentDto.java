@@ -24,6 +24,10 @@ public class CommentDto {
         return id;
     }
 
+    public Long getCommentNo() {
+        return id;
+    }
+
     public Long getNttId() {
         return nttId;
     }

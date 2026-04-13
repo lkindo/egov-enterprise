@@ -29,4 +29,12 @@ public class LoginLogDto {
     private String errorCode;
     /** ??꽦??떆 */
     private String creatDt;
+
+    public String getLoginDt() {
+        return creatDt;
+    }
+
+    public String getErrorOccrrAt() {
+        return errOccrrAt;
+    }
 }

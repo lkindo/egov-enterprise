@@ -40,6 +40,11 @@ public class EnterpriseUserDto {
     private String lockAt;
     private LocalDateTime createdDate;
 
+    public String getUserId() { return entrprsmberId; }
+    public String getUserNm() { return applcntNm; }
+    public String getEmailAdres() { return applcntEmailAdres; }
+    public String getUserSttusCode() { return entrprsMberSttus; }
+
     public static EnterpriseUserDto from(EnterpriseUser entity) {
         if (entity == null)
             return null;

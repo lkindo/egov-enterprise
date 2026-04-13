@@ -30,4 +30,7 @@ public class AddressBookDto {
     private LocalDateTime frstRegistPnttm;
     private String lastUpdusrId;
     private LocalDateTime lastUpdtPnttm;
+
+    public LocalDateTime getCreatedDate() { return frstRegistPnttm; }
+    public List<AddressBookUserDto> getNameCards() { return adbkMan; }
 }

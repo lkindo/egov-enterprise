@@ -31,4 +31,8 @@ public class SysLogDto {
     private String rqesterIp;
     /** 諛쒖??*/
     private String occrrncDe;
+
+    public String getOcccrrncDe() {
+        return occrrncDe;
+    }
 }

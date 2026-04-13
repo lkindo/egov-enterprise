@@ -45,6 +45,9 @@ public class SmsDto {
         return createdDate;
     }
 
+    public LocalDateTime getTrnsmitPnttm() { return createdDate; }
+    public LocalDateTime getFrstRegistPnttm() { return createdDate; }
+
     @Schema(description = "Description")
     private List<SmsRecptnDto> recipients;
 

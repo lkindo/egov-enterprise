@@ -45,6 +45,14 @@ public class FaqDto {
     @Schema(description = "Description")
     private LocalDateTime lastUpdusrPnttm;
 
+    public LocalDateTime getFrstRegistPnttm() {
+        return frstRegisterPnttm;
+    }
+
+    public LocalDateTime getLastUpdtPnttm() {
+        return lastUpdusrPnttm;
+    }
+
     public static FaqDto from(Faq entity) {
         if (entity == null) return null;
         return FaqDto.builder()

@@ -23,6 +23,10 @@ public class BlogDto {
     private LocalDateTime lastUpdusrPnttm;
     private String blogAt;
 
+    public LocalDateTime getCreatedDate() {
+        return frstRegisterPnttm;
+    }
+
     public static BlogDto from(Blog entity) {
         if (entity == null)
             return null;

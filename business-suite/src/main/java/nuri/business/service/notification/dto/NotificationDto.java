@@ -16,7 +16,12 @@ public class NotificationDto {
     private String receiverId;
     private String isRead;
     private String uniqId; // For linkUrl mapping
+    @Schema(description = "등록 일시")
     private LocalDateTime createdDate;
+
+    public String getNtfcId() { return ntfcNo; }
+    public LocalDateTime getNtfcPnttm() { return createdDate; }
+    public String getReadYn() { return isRead; }
 
     public static NotificationDto from(Notification entity) {
         return NotificationDto.builder()

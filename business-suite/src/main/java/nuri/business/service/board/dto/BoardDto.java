@@ -101,6 +101,9 @@ public class BoardDto {
     @Schema(description = "Description")
     private final String qnaCategory;
 
+    @Schema(description = "Description")
+    private final String noticeAt;
+
     @Schema(description = "Aliased Knowledge ID")
     private final String knoId;
 
@@ -158,6 +161,7 @@ public class BoardDto {
                 .qnaStatus(entity.getQnaStatus())
                 .qnaCategory(entity.getQnaCategory())
                 .eventDateStr(eventDateStr)
+                .noticeAt(entity.getNoticeAt())
                 .build();
     }
 
@@ -191,6 +195,7 @@ public class BoardDto {
                 .qnaStatus(result.getQnaStatus())
                 .qnaCategory(result.getQnaCategory())
                 .eventDateStr(result.getEventDate() != null ? result.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "")
+                .noticeAt(result.getNoticeAt())
                 .build();
     }
 
@@ -230,6 +235,7 @@ public class BoardDto {
                 .qnaStatus(detail.getQnaStatus())
                 .qnaCategory(detail.getQnaCategory())
                 .eventDateStr(detail.getEventDate() != null ? detail.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "")
+                .noticeAt(detail.getNoticeAt())
                 .build();
     }
 
@@ -246,6 +252,10 @@ public class BoardDto {
 
     public String getFrstRegisterNm() {
         return ntcrNm;
+    }
+
+    public LocalDateTime getCreatedDate() {
+        return frstRegisterPnttm;
     }
 
     public String getCommentCoLegacy() {

@@ -48,6 +48,11 @@ public class RoughMapDto {
     @Schema(description = "Description")
     private LocalDateTime createdDate;
 
+    public Double getLat() { return la != null ? Double.parseDouble(la) : 0.0; }
+    public Double getLng() { return lo != null ? Double.parseDouble(lo) : 0.0; }
+    public String getRoughMapCn() { return roughMapAddress; }
+    public LocalDateTime getFrstRegistPnttm() { return createdDate; }
+
     public static RoughMapDto from(RoughMap entity) {
         if (entity == null) return null;
         return RoughMapDto.builder()

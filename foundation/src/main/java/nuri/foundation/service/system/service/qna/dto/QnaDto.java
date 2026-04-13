@@ -72,6 +72,10 @@ public class QnaDto {
     @Schema(description = "Description")
     private LocalDateTime lastUpdusrPnttm;
 
+    public LocalDateTime getCreatedDate() {
+        return frstRegisterPnttm;
+    }
+
     public static QnaDto from(Qna entity) {
         if (entity == null) return null;
         return QnaDto.builder()

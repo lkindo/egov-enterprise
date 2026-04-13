@@ -36,6 +36,10 @@ public class OnlineManualDto {
     @Schema(description = "Description")
     private LocalDateTime createdDate;
 
+    public String getMnlId() { return onlineMnlId; }
+    public String getMnlNm() { return onlineMnlNm; }
+    public String getMnlDc() { return onlineMnlDc; }
+
     public static OnlineManualDto from(OnlineManual entity) {
         if (entity == null) return null;
         return OnlineManualDto.builder()

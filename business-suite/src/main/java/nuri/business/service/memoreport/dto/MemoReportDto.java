@@ -58,6 +58,12 @@ public class MemoReportDto {
         return wrterId;
     }
 
+    public String getReprtDe() { return reportDe; }
+    public String getReprtCn() { return reportCn; }
+    public String getRecptnId() { return reportrId; }
+    public String getRecptnNm() { return reportrNm; }
+    public String getReadAt() { return reportrInqireDt; }
+
     public LocalDateTime getFrstRegistPnttm() {
         return createdDate;
     }
