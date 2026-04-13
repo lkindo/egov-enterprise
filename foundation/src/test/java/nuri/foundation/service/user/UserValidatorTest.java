@@ -1,6 +1,5 @@
 package nuri.foundation.service.user;
 
-import nuri.foundation.domain.user.entity.Role;
 import nuri.foundation.service.user.dto.UserSignupRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,13 +22,14 @@ class UserValidatorTest {
   @Test
   @DisplayName("회원가입 요청 검증 - 사용자 ID 누락 또는 형식 위반 시 예외 발생")
   void validateUserSignupRequest_fail_withNullUserId() {
-    UserSignupRequest request = new UserSignupRequest(
-        null,
-        "password123!",
-        "테스트사용자",
-        Role.USER,
-        "hint",
-        "answer");
+    UserSignupRequest request = UserSignupRequest.builder()
+        .userId(null)
+        .password("password123!")
+        .userNm("테스트사용자")
+        .role("USER")
+        .passwordHint("hint")
+        .passwordCnsr("answer")
+        .build();
 
     assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
         .isInstanceOf(IllegalArgumentException.class)
@@ -39,13 +39,14 @@ class UserValidatorTest {
   @Test
   @DisplayName("회원가입 요청 검증 - 비밀번호 복잡성 위반 시 예외 발생")
   void validateUserSignupRequest_fail_withInvalidPassword() {
-    UserSignupRequest request = new UserSignupRequest(
-        "validUserId",
-        "short",
-        "테스트사용자",
-        Role.USER,
-        "hint",
-        "answer");
+    UserSignupRequest request = UserSignupRequest.builder()
+        .userId("validUserId")
+        .password("short")
+        .userNm("테스트사용자")
+        .role("USER")
+        .passwordHint("hint")
+        .passwordCnsr("answer")
+        .build();
 
     assertThatThrownBy(() -> UserValidator.validateUserSignupRequest(request))
         .isInstanceOf(IllegalArgumentException.class)

@@ -24,28 +24,28 @@ public class UserValidator {
         if (request == null) {
             throw new IllegalArgumentException("User signup request cannot be null");
         }
-        if (!StringUtils.hasText(request.userId())) {
+        if (!StringUtils.hasText(request.getUserId())) {
             throw new IllegalArgumentException("User ID must be 4-20 alphanumeric characters");
         }
 
-        if (!StringUtils.hasText(request.password()) || !PASSWORD_PATTERN.matcher(request.password()).matches()) {
+        if (!StringUtils.hasText(request.getPassword()) || !PASSWORD_PATTERN.matcher(request.getPassword()).matches()) {
             throw new IllegalArgumentException(
                     "Password must be at least 8 characters with letters, numbers, and special characters");
         }
 
-        if (!StringUtils.hasText(request.userNm())) {
+        if (!StringUtils.hasText(request.getUserNm())) {
             throw new IllegalArgumentException("User name cannot be null or empty");
         }
 
-        if (!NAME_PATTERN.matcher(request.userNm()).matches()) {
+        if (!NAME_PATTERN.matcher(request.getUserNm()).matches()) {
             throw new IllegalArgumentException("User name contains invalid characters");
         }
 
-        if (request.passwordHint() != null && request.passwordHint().length() > 300) {
+        if (request.getPasswordHint() != null && request.getPasswordHint().length() > 300) {
             throw new IllegalArgumentException("Password hint is too long");
         }
 
-        if (request.passwordCnsr() != null && request.passwordCnsr().length() > 300) {
+        if (request.getPasswordCnsr() != null && request.getPasswordCnsr().length() > 300) {
             throw new IllegalArgumentException("Password answer is too long");
         }
     }

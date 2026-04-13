@@ -66,7 +66,7 @@ public class UserApiController {
     @Operation(summary = "회원가입", description = "새로운 사용자 계정을 생성합니다.")
     @PostMapping("/users/signup")
     public ResponseEntity<ApiResponse<UserResponse>> signup(@RequestBody @Valid UserSignupRequest request) {
-        log.info("User signup request: {}", request.userId());
+        log.info("User signup request: {}", request.getUserId());
         return ResponseEntity.ok(ApiResponse.success(userService.signup(request)));
     }
 

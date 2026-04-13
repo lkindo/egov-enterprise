@@ -11,18 +11,22 @@ class AuthDtoTest {
     @Test
     @DisplayName("LoginRequest 생성 테스트")
     void loginRequestTest() {
-        LoginRequest request = new LoginRequest("user01", "pass123");
-        assertThat(request.userId()).isEqualTo("user01");
-        assertThat(request.password()).isEqualTo("pass123");
+        LoginRequest request = LoginRequest.builder().userId("user01").password("pass123").build();
+        assertThat(request.getUserId()).isEqualTo("user01");
+        assertThat(request.getPassword()).isEqualTo("pass123");
     }
 
     @Test
     @DisplayName("TokenResponse 생성 테스트")
     void tokenResponseTest() {
-        TokenResponse response = new TokenResponse("atoken", "rtoken", "ROLE_USER");
-        assertThat(response.accessToken()).isEqualTo("atoken");
-        assertThat(response.refreshToken()).isEqualTo("rtoken");
-        assertThat(response.role()).isEqualTo("ROLE_USER");
+        TokenResponse response = TokenResponse.builder()
+                .accessToken("atoken")
+                .refreshToken("rtoken")
+                .role("ROLE_USER")
+                .build();
+        assertThat(response.getAccessToken()).isEqualTo("atoken");
+        assertThat(response.getRefreshToken()).isEqualTo("rtoken");
+        assertThat(response.getRole()).isEqualTo("ROLE_USER");
     }
 
     @Test

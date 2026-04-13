@@ -234,21 +234,21 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         public UserResponse signup(UserSignupRequest request) {
                 UserValidator.validateUserSignupRequest(required(request, "회원가입 요청은 null 일 수 없습니다"));
 
-                if (userRepository.existsById(required(request.userId(), "사용자 ID 는 null 일 수 없습니다"))) {
+                if (userRepository.existsById(required(request.getUserId(), "사용자 ID 는 null 일 수 없습니다"))) {
                         throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);
                 }
 
                 String esntlId = "USR_" + UUID.randomUUID().toString().substring(0, 16);
-                String encodedPassword = passwordEncoder.encode(request.password());
+                String encodedPassword = passwordEncoder.encode(request.getPassword());
 
                 User user = User.builder()
-                                .userId(required(request.userId()))
+                                .userId(required(request.getUserId()))
                                 .password(required(encodedPassword))
-                                .userNm(required(request.userNm()))
+                                .userNm(required(request.getUserNm()))
                                 .esntlId(esntlId)
-                                .passwordHint(request.passwordHint())
-                                .passwordCnsr(request.passwordCnsr())
-                                .role(request.role() != null ? request.role() : Role.USER)
+                                .passwordHint(request.getPasswordHint())
+                                .passwordCnsr(request.getPasswordCnsr())
+                                .role(request.getRole() != null ? Role.valueOf(request.getRole()) : Role.USER)
                                 .build();
 
                 userRepository.save(required(user));

@@ -158,14 +158,21 @@ class UserServiceTest {
     @Test
     @DisplayName("회원가입 - 성공")
     void signup_Success() {
-        UserSignupRequest req = new UserSignupRequest("user1", "Pass1234!", "TestUser", Role.USER, "Hint", "Ans");
+        UserSignupRequest req = UserSignupRequest.builder()
+                .userId("user1")
+                .password("Pass1234!")
+                .userNm("TestUser")
+                .role("USER")
+                .passwordHint("Hint")
+                .passwordCnsr("Ans")
+                .build();
         given(userRepository.existsById("user1")).willReturn(false);
         given(passwordEncoder.encode(anyString())).willReturn("enc");
-        given(userMapper.toResponse(any())).willReturn(new UserResponse("user1", "TestUser", Role.USER));
+        given(userMapper.toResponse(any())).willReturn(UserResponse.builder().userId("user1").userNm("TestUser").role(Role.USER).build());
 
         UserResponse resp = userService.signup(req);
 
-        assertThat(resp.userId()).isEqualTo("user1");
+        assertThat(resp.getUserId()).isEqualTo("user1");
         verify(userRepository).save(any(User.class));
     }
 

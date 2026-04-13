@@ -31,7 +31,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public TokenResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.userId(), request.password()));
+                new UsernamePasswordAuthenticationToken(request.getUserId(), request.getPassword()));
         
         String userId = authentication.getName();
         String role = authentication.getAuthorities().stream()

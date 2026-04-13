@@ -51,13 +51,14 @@ class UserServiceBusinessLogicExceptionTest {
 
         @BeforeEach
         void setUp() {
-                signupRequest = new UserSignupRequest(
-                                "newUser",
-                                "password123!",
-                                "테스트사용자",
-                                Role.USER,
-                                "hint",
-                                "answer");
+                signupRequest = UserSignupRequest.builder()
+                                .userId("newUser")
+                                .password("password123!")
+                                .userNm("테스트사용자")
+                                .role("USER")
+                                .passwordHint("hint")
+                                .passwordCnsr("answer")
+                                .build();
         }
 
         @Test

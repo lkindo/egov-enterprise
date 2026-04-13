@@ -26,10 +26,11 @@ class UserApiControllerIntegrationTest extends BaseControllerTest {
     @Test
     @DisplayName("POST /api/v1/users/signup - 회원 가입 성공")
     void signup_success() throws Exception {
-        UserResponse response = new UserResponse(
-                "newUser",
-                "새로운사용자",
-                nuri.foundation.domain.user.entity.Role.USER);
+        UserResponse response = UserResponse.builder()
+                .userId("newUser")
+                .userNm("새로운사용자")
+                .role(nuri.foundation.domain.user.entity.Role.USER)
+                .build();
 
         when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
 
@@ -70,10 +71,11 @@ class UserApiControllerIntegrationTest extends BaseControllerTest {
                 .content(invalidRequestBody))
                 .andExpect(status().isBadRequest());
     }
+
     @Test
     @DisplayName("POST /api/v1/users/signup - 회원 가입 실패 (필드 이름 불일치)")
     void signup_fail_withMismatchedFields() throws Exception {
-        // userId 대신 user_id 사용
+        // userId 대신 user_id 사용 -> FAIL_ON_UNKNOWN_PROPERTIES 작동 확인
         String mismatchedRequestBody = """
                 {
                   "user_id": "newUser",
@@ -83,6 +85,7 @@ class UserApiControllerIntegrationTest extends BaseControllerTest {
                 }
                 """;
 
+        // Jackson deserialization failure often returns 400 Bad Request
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mismatchedRequestBody))

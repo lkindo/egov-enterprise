@@ -17,7 +17,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 public class UserApiControllerTest extends BaseControllerTest {
     private UserService userService;
-    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper()
+            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     @Override
     protected Object getController() {
@@ -28,8 +29,14 @@ public class UserApiControllerTest extends BaseControllerTest {
     @Test
     public void signup_ShouldFail_WhenInputIsInvalid() throws Exception {
         // Invalid request: empty userId, short password, empty userNm
-        UserSignupRequest request = new UserSignupRequest(
-                "", "123", "", Role.USER, "hint", "123");
+        UserSignupRequest request = UserSignupRequest.builder()
+                .userId("")
+                .password("123")
+                .userNm("")
+                .role("USER")
+                .passwordHint("hint")
+                .passwordCnsr("123")
+                .build();
 
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -40,11 +47,20 @@ public class UserApiControllerTest extends BaseControllerTest {
     @Test
     public void signup_ShouldSucceed_WhenInputIsValid() throws Exception {
         // Valid request
-        UserSignupRequest request = new UserSignupRequest(
-                "validUser", "ValidPass123!", "Valid Name", Role.USER, "hint", "ValidPass123!");
+        UserSignupRequest request = UserSignupRequest.builder()
+                .userId("validUser")
+                .password("ValidPass123!")
+                .userNm("Valid Name")
+                .role("USER")
+                .passwordHint("hint")
+                .passwordCnsr("ValidPass123!")
+                .build();
 
-        UserResponse response = new UserResponse(
-                "validUser", "Valid Name", Role.USER);
+        UserResponse response = UserResponse.builder()
+                .userId("validUser")
+                .userNm("Valid Name")
+                .role(Role.USER)
+                .build();
 
         when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
 

@@ -56,7 +56,7 @@ class AuthServiceTest {
     @DisplayName("로그인 성공")
     void testLoginSuccess() {
         // Given
-        LoginRequest request = new LoginRequest("user", "password");
+        LoginRequest request = LoginRequest.builder().userId("user").password("password").build();
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("user");
         when(authentication.getAuthorities()).thenAnswer(i -> Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
@@ -70,9 +70,9 @@ class AuthServiceTest {
 
         // Then
         assertNotNull(response);
-        assertEquals("access_token", response.accessToken());
-        assertEquals("refresh_token", response.refreshToken());
-        assertEquals("ROLE_USER", response.role());
+        assertEquals("access_token", response.getAccessToken());
+        assertEquals("refresh_token", response.getRefreshToken());
+        assertEquals("ROLE_USER", response.getRole());
     }
 
     @Test
@@ -90,7 +90,7 @@ class AuthServiceTest {
 
         // Then
         assertNotNull(response);
-        assertEquals("new_access_token", response.accessToken());
+        assertEquals("new_access_token", response.getAccessToken());
     }
 
     @Test
@@ -119,8 +119,8 @@ class AuthServiceTest {
 
         // Then
         assertNotNull(response);
-        assertEquals("ROLE_ADMIN", response.role());
-        assertEquals("new_access_token_admin", response.accessToken());
+        assertEquals("ROLE_ADMIN", response.getRole());
+        assertEquals("new_access_token_admin", response.getAccessToken());
     }
 
     @Test
@@ -148,14 +148,14 @@ class AuthServiceTest {
 
         // Then
         assertNotNull(response);
-        assertEquals("ROLE_USER", response.role());
+        assertEquals("ROLE_USER", response.getRole());
     }
 
     @Test
     @DisplayName("로그인 성공 - 권한 접두어 처리 확인")
     void testLoginRolePrefix() {
         // Case 1: Already has ROLE_
-        LoginRequest request1 = new LoginRequest("admin", "pass");
+        LoginRequest request1 = LoginRequest.builder().userId("admin").password("pass").build();
         Authentication auth1 = mock(Authentication.class);
         when(auth1.getName()).thenReturn("admin");
         when(auth1.getAuthorities()).thenAnswer(i -> Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")));
@@ -163,10 +163,10 @@ class AuthServiceTest {
         when(jwtTokenProvider.createAccessToken(any(), any())).thenReturn("token1");
 
         TokenResponse resp1 = authService.login(request1);
-        assertEquals("ROLE_ADMIN", resp1.role());
+        assertEquals("ROLE_ADMIN", resp1.getRole());
 
         // Case 2: No ROLE_ prefix
-        LoginRequest request2 = new LoginRequest("user", "pass");
+        LoginRequest request2 = LoginRequest.builder().userId("user").password("pass").build();
         Authentication auth2 = mock(Authentication.class);
         when(auth2.getName()).thenReturn("user");
         when(auth2.getAuthorities()).thenAnswer(i -> Collections.singletonList(new SimpleGrantedAuthority("USER")));
@@ -174,7 +174,7 @@ class AuthServiceTest {
         when(jwtTokenProvider.createAccessToken(any(), any())).thenReturn("token2");
 
         TokenResponse resp2 = authService.login(request2);
-        assertEquals("ROLE_USER", resp2.role());
+        assertEquals("ROLE_USER", resp2.getRole());
     }
 
     @Test

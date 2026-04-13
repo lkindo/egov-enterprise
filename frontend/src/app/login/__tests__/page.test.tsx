@@ -82,19 +82,19 @@ describe('LoginPage Component', () => {
 
   it('renders login page correctly', () => {
     render(<LoginPage />);
-    expect(screen.getByText('전자정부 엔터프라이즈')).toBeInTheDocument();
-    expect(screen.getByLabelText('ID')).toBeInTheDocument();
-    expect(screen.getByLabelText('Password')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Sign In/i })).toBeInTheDocument();
+    expect(screen.getByText('엔터프라이즈')).toBeInTheDocument();
+    expect(screen.getByLabelText('사용자 아이디')).toBeInTheDocument();
+    expect(screen.getByLabelText('액세스 키')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /시스템 접속하기/i })).toBeInTheDocument();
   });
 
   it('calls login service with credentials', async () => {
     mockLogin.mockResolvedValueOnce({});
     render(<LoginPage />);
     
-    const idInput = screen.getByLabelText('ID');
-    const pwInput = screen.getByLabelText('Password');
-    const submitButton = screen.getByRole('button', { name: /Sign In/i });
+    const idInput = screen.getByLabelText('사용자 아이디');
+    const pwInput = screen.getByLabelText('액세스 키');
+    const submitButton = screen.getByRole('button', { name: /시스템 접속하기/i });
 
     fireEvent.change(idInput, { target: { value: 'testuser' } });
     fireEvent.change(pwInput, { target: { value: 'password123' } });
@@ -109,9 +109,9 @@ describe('LoginPage Component', () => {
     mockLogin.mockRejectedValueOnce(new Error('Invalid credentials'));
     render(<LoginPage />);
     
-    const idInput = screen.getByLabelText('ID');
-    const pwInput = screen.getByLabelText('Password');
-    const submitButton = screen.getByRole('button', { name: /Sign In/i });
+    const idInput = screen.getByLabelText('사용자 아이디');
+    const pwInput = screen.getByLabelText('액세스 키');
+    const submitButton = screen.getByRole('button', { name: /시스템 접속하기/i });
 
     fireEvent.change(idInput, { target: { value: 'baduser' } });
     fireEvent.change(pwInput, { target: { value: 'wrongpass' } });

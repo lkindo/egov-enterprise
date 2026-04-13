@@ -46,21 +46,21 @@ class UserDtoTest {
     @DisplayName("UserSignupRequest 생성 테스트")
     void userSignupRequestTest() {
         // Given & When
-        UserSignupRequest request = new UserSignupRequest(
-                "signupUser",
-                "password123!",
-                "가입자",
-                Role.USER,
-                "Hint",
-                "Answer"
-        );
+        UserSignupRequest request = UserSignupRequest.builder()
+                .userId("signupUser")
+                .password("password123!")
+                .userNm("가입자")
+                .role("USER")
+                .passwordHint("Hint")
+                .passwordCnsr("Answer")
+                .build();
 
         // Then
-        assertThat(request.userId()).isEqualTo("signupUser");
-        assertThat(request.password()).isEqualTo("password123!");
-        assertThat(request.userNm()).isEqualTo("가입자");
-        assertThat(request.role()).isEqualTo(Role.USER);
-        assertThat(request.passwordHint()).isEqualTo("Hint");
-        assertThat(request.passwordCnsr()).isEqualTo("Answer");
+        assertThat(request.getUserId()).isEqualTo("signupUser");
+        assertThat(request.getPassword()).isEqualTo("password123!");
+        assertThat(request.getUserNm()).isEqualTo("가입자");
+        assertThat(request.getRole()).isEqualTo("USER");
+        assertThat(request.getPasswordHint()).isEqualTo("Hint");
+        assertThat(request.getPasswordCnsr()).isEqualTo("Answer");
     }
 }

@@ -29,9 +29,9 @@ public class AuthApiController {
     @PostMapping("/login")
     public ApiResponse<TokenResponse> login(@RequestBody LoginRequest loginRequest,
             HttpServletResponse response) {
-        log.info(">>> [Login] Attempting login for userId: {}", loginRequest.userId());
+        log.info(">>> [Login] Attempting login for userId: {}", loginRequest.getUserId());
         TokenResponse tokenResponse = authService.login(loginRequest);
-        jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.refreshToken());
+        jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.getRefreshToken());
         return ApiResponse.success(tokenResponse);
     }
 

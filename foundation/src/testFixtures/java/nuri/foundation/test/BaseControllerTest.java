@@ -1,9 +1,12 @@
 package nuri.foundation.test;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -18,9 +21,12 @@ public abstract class BaseControllerTest {
 
     @BeforeEach
     void setupInternal() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        // 실제 운영 환경과 동일하게 알 수 없는 속성에 대해 실패하도록 설정
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json()
+                .modules(new JavaTimeModule(), new ParameterNamesModule())
+                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .failOnUnknownProperties(true)
+                .build();
+        
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
 
         mockMvc = MockMvcBuilders.standaloneSetup(getController())

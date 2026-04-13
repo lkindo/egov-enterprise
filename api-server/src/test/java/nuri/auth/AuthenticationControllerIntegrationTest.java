@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -16,9 +15,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @IntegrationTest
-@AutoConfigureMockMvc
-@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "nuri")
-@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "nuri")
 @DisplayName("인증 컨트롤러 통합 테스트")
 public class AuthenticationControllerIntegrationTest {
 

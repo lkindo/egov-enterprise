@@ -63,8 +63,12 @@ class AuthApiControllerTest {
     @DisplayName("로그인 성공")
     void testLoginSuccess() throws Exception {
         // Given
-        LoginRequest request = new LoginRequest("user01", "password");
-        TokenResponse tokenResponse = new TokenResponse("access-token", "refresh-token", "ROLE_USER");
+        LoginRequest request = LoginRequest.builder().userId("user01").password("password").build();
+        TokenResponse tokenResponse = TokenResponse.builder()
+                .accessToken("access-token")
+                .refreshToken("refresh-token")
+                .role("ROLE_USER")
+                .build();
  
         when(authService.login(any())).thenReturn(tokenResponse);
  
@@ -81,7 +85,7 @@ class AuthApiControllerTest {
     @DisplayName("로그인 실패 - 잘못된 비밀번호")
     void testLoginFail() throws Exception {
         // Given
-        LoginRequest request = new LoginRequest("user01", "wrong-password");
+        LoginRequest request = LoginRequest.builder().userId("user01").password("wrong-password").build();
         when(authService.login(any())).thenThrow(new RuntimeException("인증 실패"));
  
         // When & Then
@@ -90,19 +94,23 @@ class AuthApiControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isInternalServerError());
     }
-
+ 
     @Test
     @DisplayName("토큰 재발급")
     void testReissue() throws Exception {
-        TokenResponse tokenResponse = new TokenResponse("new-access", "new-refresh", "ROLE_USER");
+        TokenResponse tokenResponse = TokenResponse.builder()
+                .accessToken("new-access")
+                .refreshToken("new-refresh")
+                .role("ROLE_USER")
+                .build();
         when(authService.reissue(any())).thenReturn(tokenResponse);
-
+ 
         mockMvc.perform(post("/api/v1/auth/reissue")
                 .cookie(new jakarta.servlet.http.Cookie("refreshToken", "old-refresh")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").value("new-access"));
     }
-
+ 
     @Test
     @DisplayName("로그아웃")
     void testLogout() throws Exception {
@@ -110,7 +118,7 @@ class AuthApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("Logged out successfully"));
     }
-
+ 
     @Test
     @DisplayName("내 정보 조회")
     void testMe() throws Exception {
@@ -121,62 +129,62 @@ class AuthApiControllerTest {
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                 userDetails, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
         SecurityContextHolder.getContext().setAuthentication(auth);
-
+ 
         UserDto userDto = UserDto.builder()
                 .userId("user01")
                 .userNm("Test User")
                 .role(Role.USER.name())
                 .build();
         when(userService.getUserById("user01")).thenReturn(userDto);
-
+ 
         // When & Then
         mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value("user01"))
-                .andExpect(jsonPath("$.data.name").value("Test User"));
+                .andExpect(jsonPath("$.data.userId").value("user01"))
+                .andExpect(jsonPath("$.data.userNm").value("Test User"));
         
         SecurityContextHolder.clearContext();
     }
-
+ 
     @Test
     @DisplayName("내 정보 조회 - 인증 정보 없음")
     void testMeUnauthorized() throws Exception {
         SecurityContextHolder.clearContext();
-
+ 
         mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isUnauthorized());
     }
-
+ 
     @Test
     @DisplayName("내 정보 조회 - 익명 사용자")
     void testMeAnonymous() throws Exception {
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                 "anonymousUser", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
         SecurityContextHolder.getContext().setAuthentication(auth);
-
+ 
         mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isUnauthorized());
         
         SecurityContextHolder.clearContext();
     }
-
+ 
     @Test
     @DisplayName("내 정보 조회 - UserDetails가 아닌 Principal")
     void testMeSimplePrincipal() throws Exception {
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                 "user01", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
         SecurityContextHolder.getContext().setAuthentication(auth);
-
+ 
         UserDto userDto = UserDto.builder()
                 .userId("user01")
                 .userNm("Test User")
                 .role(Role.USER.name())
                 .build();
         when(userService.getUserById("user01")).thenReturn(userDto);
-
+ 
         mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value("user01"));
+                .andExpect(jsonPath("$.data.userId").value("user01"));
         
         SecurityContextHolder.clearContext();
     }

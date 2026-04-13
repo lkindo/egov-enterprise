@@ -60,13 +60,14 @@ class UserServiceCrudTest {
         .password("encodedPassword")
         .build();
 
-    signupRequest = new UserSignupRequest(
-        "newUser",
-        "password123!",
-        "신규사용자",
-        Role.USER,
-        "hint",
-        "answer");
+    signupRequest = UserSignupRequest.builder()
+        .userId("newUser")
+        .password("password123!")
+        .userNm("신규사용자")
+        .role("USER")
+        .passwordHint("hint")
+        .passwordCnsr("answer")
+        .build();
   }
 
   @Test
@@ -147,11 +148,11 @@ class UserServiceCrudTest {
     when(userRepository.existsById(any())).thenReturn(false);
     when(passwordEncoder.encode(any())).thenReturn("encoded");
     when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-    when(userMapper.toResponse(any())).thenReturn(new UserResponse("newUser", "name", Role.USER));
+    when(userMapper.toResponse(any())).thenReturn(UserResponse.builder().userId("newUser").userNm("name").role(Role.USER).build());
 
     UserResponse result = userService.signup(signupRequest);
 
-    assertThat(result.userId()).isEqualTo("newUser");
+    assertThat(result.getUserId()).isEqualTo("newUser");
     verify(userRepository).save(any());
   }
 
@@ -167,7 +168,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 회원가입 실패 - null 값 포함")
   void signup_fail_withNullValues() {
-    UserSignupRequest nullRequest = new UserSignupRequest(null, "pw", "name", Role.USER, "h", "c");
+    UserSignupRequest nullRequest = UserSignupRequest.builder().userId(null).password("pw").userNm("name").role("USER").passwordHint("h").passwordCnsr("c").build();
 
     assertThatThrownBy(() -> userService.signup(nullRequest))
         .isInstanceOf(IllegalArgumentException.class);
