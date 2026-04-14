@@ -123,7 +123,7 @@ describe('UserManageClient Component', () => {
   it('opens edit dialog with user data when settings icon is clicked', async () => {
     render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
     
-    const editBtns = screen.getAllByText('ICON_SETTINGS');
+    const editBtns = screen.getAllByText('Settings');
     fireEvent.click(editBtns[0].closest('button')!);
 
     const dialog = await screen.findByTestId('dialog');
@@ -141,7 +141,7 @@ describe('UserManageClient Component', () => {
 
     render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
     
-    const deleteBtns = screen.getAllByText('ICON_TRASH2');
+    const deleteBtns = screen.getAllByText('Trash2');
     fireEvent.click(deleteBtns[0].closest('button')!);
 
     await waitFor(() => {

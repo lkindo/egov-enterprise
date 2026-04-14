@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -33,8 +33,7 @@ export default function PollManagePage() {
     queryFn: () => getPollList(params),
   });
 
-  const polls: OnlinePollManageVO[] = data?.resultList || [];
-  const pagination = data?.paginationInfo;
+  const polls: OnlinePollManageVO[] = data?.list || [];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,10 +139,12 @@ export default function PollManagePage() {
         </CardContent>
       </Card>
 
-      {pagination && (
+      {data && (
         <div className="flex justify-center pt-10 pb-20">
           <PagePagination
-            pagination={pagination}
+            total={data.total}
+            page={data.page}
+            size={data.size}
             onPageChange={(page) => setParams(prev => ({ ...prev, page }))}
           />
         </div>

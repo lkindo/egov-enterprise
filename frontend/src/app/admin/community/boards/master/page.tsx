@@ -60,7 +60,7 @@ export default function BoardMasterListPage() {
     queryFn: () => boardAdminService.getBoardMasterList({ searchWrd })
   });
 
-  const boardList = (boardData?.resultList || []) as BoardMaster[];
+  const boardList = (boardData?.list || []) as BoardMaster[];
 
   const columns: Column<BoardMaster>[] = [
     {

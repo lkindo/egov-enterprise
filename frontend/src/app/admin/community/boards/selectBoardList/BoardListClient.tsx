@@ -139,9 +139,9 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
     endDate: endDate ? format(endDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined
   }, initialData);
 
-  const list: BoardPost[] = data?.resultList || [];
-  const totalCount = data?.totalCount || 0;
-  const totalPages = data?.totalPages || 0;
+  const list: BoardPost[] = data?.list || [];
+  const totalCount = data?.total || 0;
+  const totalPages = data?.totalPage || 0;
 
   // 캘린더 데이터 가공 로직
   const currentViewDate = startDate || new Date();

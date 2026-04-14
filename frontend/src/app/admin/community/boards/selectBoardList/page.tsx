@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { getInitialBoardData } from './BoardListServer';
@@ -51,7 +51,7 @@ export default async function BoardListPage({ searchParams }: { searchParams: Pr
     if (error.response?.status === 401) {
       redirect(`/login?expired=true&redirect=/admin/community/boards/selectBoardList?bbsId=${params.bbsId}`);
     }
-    initialData = { resultList: [], totalCount: 0, totalPages: 0 };
+    initialData = { list: [], total: 0, totalPage: 0 };
   }
 
   return (

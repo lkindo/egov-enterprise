@@ -29,7 +29,7 @@ describe('DeptJobListPage', () => {
  it('renders list of department jobs', async () => {
  const mockData = {
  data: {
- resultList: [
+ list: [
  {
  deptJobId: 'JOB_0001',
  deptJobNm: '주간 보고 작성',
@@ -38,8 +38,8 @@ describe('DeptJobListPage', () => {
  frstRegisterPnttm: '2024-06-01'
  }
  ],
- totalCount: 1,
- totalPages: 1
+ total: 1,
+ totalPage: 1
  }
  };
  (axios.get as any).mockResolvedValue(mockData);

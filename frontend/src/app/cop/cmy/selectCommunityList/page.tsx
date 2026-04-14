@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -37,9 +37,9 @@ const CommunityListPage = () => {
     try {
       const params = { pageIndex: page, pageUnit: 10 };
       const data = await getCommunityList(params);
-      setList((data.resultList as any) || []);
-      setTotalCount(data.totalCount || 0);
-      setTotalPages(Math.ceil((data.totalCount || 0) / 10));
+      setList((data.list as any) || []);
+      setTotalCount(data.total || 0);
+      setTotalPages(data.totalPage || 0);
     } catch (error) {
       console.error('Failed to fetch communities', error);
     } finally {

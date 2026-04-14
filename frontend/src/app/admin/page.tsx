@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import {
@@ -140,7 +140,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <DashboardStatCard
           title="ID 레지스트리"
-          value={usersData?.totalRecordCount?.toLocaleString() || "IDLE"}
+          value={usersData?.total?.toLocaleString() || "IDLE"}
           icon={<Users className="w-5 h-5" />}
           trend="+12 활성"
           color="blue"
@@ -149,7 +149,7 @@ export default function AdminDashboardPage() {
         />
         <DashboardStatCard
           title="보안 거버넌스"
-          value={`${authorsData?.totalRecordCount || 0} ROLES`}
+          value={`${authorsData?.total || 0} ROLES`}
           icon={<ShieldCheck className="w-5 h-5" />}
           trend="보호됨"
           color="emerald"
@@ -167,7 +167,7 @@ export default function AdminDashboardPage() {
         />
         <DashboardStatCard
           title="업무 인텔리전스"
-          value={auditData?.totalRecordCount || "LIVE"}
+          value={auditData?.total || "LIVE"}
           icon={<Activity className="w-5 h-5" />}
           trend="REALTIME"
           color="rose"

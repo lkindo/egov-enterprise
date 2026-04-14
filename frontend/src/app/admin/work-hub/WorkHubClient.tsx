@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -85,7 +85,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
-    if (activeTab === 'job') return jobs.find(j => j.deptJobBxId === selectedItemId);
+    if (activeTab === 'job') return jobs.find(j => j.deptJobbxId === selectedItemId);
     if (activeTab === 'report') return reports.find(r => r.reprtId === selectedItemId);
     if (activeTab === 'calendar') return schedules.find(s => s.schdulId === selectedItemId);
     return null;
@@ -138,12 +138,12 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
         <div className="p-10 text-center opacity-30 font-black text-xs tracking-widest border-2 border-dashed border-border rounded-[0.1rem]">등록된 업무가 없습니다.</div>
       ) : jobs.map((item: any) => (
         <WorkListItem
-          key={item.deptJobBxId}
-          title={item.deptJobBxNm}
-          subtitle={`부서: ${item.deptId || '글로벌'} • ID: ${item.deptJobBxId}`}
+          key={item.deptJobbxId}
+          title={item.deptJobbxNm}
+          subtitle={`부서: ${item.deptId || '글로벌'} • ID: ${item.deptJobbxId}`}
           icon={<ClipboardList size={22} />}
-          selected={selectedItemId === item.deptJobBxId}
-          onClick={() => setSelectedItemId(item.deptJobBxId)}
+          selected={selectedItemId === item.deptJobbxId}
+          onClick={() => setSelectedItemId(item.deptJobbxId)}
         />
       ))}
     </div>

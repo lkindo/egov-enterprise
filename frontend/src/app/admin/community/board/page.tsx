@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -74,7 +74,7 @@ function CommunityDetailContent() {
             className: 'min-w-[300px]'
         },
         { header: '작성자', accessor: (item: BoardPost) => item.ntcrNm || '익명' },
-        { header: '날짜', accessor: (item: BoardPost) => item.createdDate.substring(0, 10) },
+        { header: '날짜', accessor: (item: BoardPost) => item.createdDate?.substring(0, 10) || '-' },
         {
             header: '조회',
             accessor: (item: BoardPost) => (

@@ -44,18 +44,19 @@ describe('CommunityListPage', () => {
 
  it('renders list of communities', async () => {
  const { getCommunityList } = await import('@/services/business/community/communityService');
- (getCommunityList as any).mockResolvedValue({
- resultList: [
- {
- cmmntyId: 'CMM_0001',
- cmmntyNm: '개발팀 커뮤니티',
- cmmntyIntrcn: '개발 관련 논의',
- frstRegisterNm: '테스트님',
- frstRegisterPnttm: '2024-05-01'
- }
- ],
- totalCount: 1,
- });
+  (getCommunityList as any).mockResolvedValue({
+    list: [
+      {
+        cmmntyId: 'CMM_0001',
+        cmmntyNm: '개발팀 커뮤니티',
+        cmmntyIntrcn: '개발 관련 논의',
+        frstRegisterNm: '테스트님',
+        frstRegisterPnttm: '2024-05-01'
+      }
+    ],
+    total: 1,
+    totalPage: 1
+  });
 
  render(<CommunityListPage />);
 

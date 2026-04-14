@@ -53,6 +53,7 @@ export interface QustnrRespondInfo {
   etcAnswerCn: string;
   createdBy: string;
   createdDate: string;
+  qestnrSj?: string; // Optinally included in detail responses
 }
 
 export interface QustnrRespondInfoVO {

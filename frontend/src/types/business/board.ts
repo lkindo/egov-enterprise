@@ -1,11 +1,14 @@
 export interface BoardPost {
   id: number;
+  nttId: number;
   bbsId: string;
   nttSj: string;
   nttCn: string;
   ntcrNm?: string;
+  frstRegisterNm?: string;
   inqireCo: number;
   frstRegisterPnttm: string;
+  createdDate?: string;
   atchFileId?: string;
   nttNo: number;
   sortOrdr: number;
@@ -30,7 +33,6 @@ export interface BoardPost {
   eventDate: string;
   qnaStatus: string;
   qnaCategory: string;
-  noticeAt: string;
   knoId: string;
   knoNm: string;
   knoCn: string;

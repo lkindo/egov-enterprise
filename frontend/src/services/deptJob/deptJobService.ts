@@ -16,7 +16,7 @@ export const createDeptJob = async (data: Partial<DeptJobBxVO>): Promise<DeptJob
  client.post(`${BASE_URL}/boxes`, data);
 
 export const updateDeptJob = async (data: Partial<DeptJobBxVO>): Promise<void> => {
- const id = data.deptJobBxId;
+ const id = data.deptJobbxId;
  return client.put(`${BASE_URL}/boxes/${id}`, data);
 };
 

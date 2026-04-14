@@ -33,18 +33,7 @@ export default function SurveyListPage() {
   }, [toast]);
 
   const columns = [
-    {
-      header: '상태',
-      accessor: (item: Survey) => (
-        <span className={cn(
-          "px-2 py-1 rounded text-[10px] font-black ",
-          item.status === 'OPEN' ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"
-        )}>
-          {item.status === 'OPEN' ? '진행중' : '종료'}
-        </span>
-      ),
-      className: 'w-24'
-    },
+
     {
       header: '설문 제목',
       accessor: (item: Survey) => (

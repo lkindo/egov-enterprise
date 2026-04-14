@@ -30,6 +30,7 @@ describe('Common Support Services', () => {
  });
 
  it('commentService calls correct endpoints', async () => {
+    (client.get as any).mockResolvedValue({ list: [], total: 0 });
  // Correct method is getComments
  await commentService.getComments({} as any);
  expect(client.get).toHaveBeenCalledWith('/v1/comments', expect.any(Object));

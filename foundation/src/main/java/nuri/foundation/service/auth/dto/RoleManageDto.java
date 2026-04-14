@@ -60,14 +60,17 @@ public class RoleManageDto {
     }
 
     // Compatibility getters for legacy JSP
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public String getRoleTyp() {
         return roleTy;
     }
-
+    
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public String getRoleCreatDe() {
         return creatDt;
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public String getRolePtn() {
         return rolePttrn;
     }

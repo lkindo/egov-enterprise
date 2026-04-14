@@ -5,6 +5,7 @@ import nuri.foundation.security.config.TestSecurityConfig;
 import nuri.foundation.core.config.TestMessagingConfig;
 import nuri.foundation.core.config.QuerydslConfig;
 import nuri.foundation.core.config.TestCacheConfig;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
@@ -30,8 +31,9 @@ import java.lang.annotation.Target;
     "spring.web.resources.static-locations=classpath:/static/",
     "spring.main.allow-bean-definition-overriding=true"
 })
+@AutoConfigureMockMvc
 @Import({ TestSecurityConfig.class, TestMessagingConfig.class, QuerydslConfig.class, TestCacheConfig.class })
-@ActiveProfiles(value = { "tc" }) // Changed from 'test' to 'tc' for production parity
+@ActiveProfiles(value = { "test" }) 
 @Transactional
 public @interface IntegrationTest {
 }

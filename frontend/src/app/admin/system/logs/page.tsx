@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -60,7 +60,7 @@ export default function LogDashboardPage() {
   });
 
   const logs = (data?.list || []) as any[];
-  const pagination = data?.paginationInfo || {
+  const pagination = {
     currentPageNo: Number(params.page),
     recordCountPerPage: 10,
     totalRecordCount: Number(data?.total || 0),

@@ -18,7 +18,7 @@ export async function getInitialBoardData(params: {
 
   // 토큰이 없는 경우 API를 호출하지 않고 빈 데이터 반환 (401 에러 방지)
   if (!accessToken) {
-    return { resultList: [], totalCount: 0, totalPages: 0 };
+    return { list: [], total: 0, totalPage: 0 };
   }
 
   const axiosConfig = { headers: { Authorization: `Bearer ${accessToken}` } };
@@ -39,9 +39,9 @@ export async function getInitialBoardData(params: {
 
     // PageResponse 구조에 맞춰 데이터 추출 (list, total, totalPage)
     return {
-      resultList: listResponse.list || [],
-      totalCount: listResponse.total || 0,
-      totalPages: listResponse.totalPage || 0,
+      list: listResponse.list || [],
+      total: listResponse.total || 0,
+      totalPage: listResponse.totalPage || 0,
       masterInfo: masterResponse || null
     };
   } catch (error: any) {
@@ -50,6 +50,6 @@ export async function getInitialBoardData(params: {
       throw error;
     }
     console.error('BoardListServer: Failed to fetch board list', error);
-    return { resultList: [], totalCount: 0, totalPages: 0 };
+    return { list: [], total: 0, totalPage: 0 };
   }
 }

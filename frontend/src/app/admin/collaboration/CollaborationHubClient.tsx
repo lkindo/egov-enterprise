@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -42,21 +42,21 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
     queryFn: () => noteService.getReceivedNotes({ page: 1, size: 50 }),
     enabled: activeTab === 'MESSAGES'
   });
-  const notes = (noteData as any)?.resultList || [];
+  const notes = (noteData as any)?.list || [];
 
   const { data: addressData } = useQuery({
     queryKey: ['collab-addressbook', searchKeyword],
     queryFn: () => addressbookUserService.getAddressBooks({ pageUnit: 50, searchWrd: searchKeyword }),
     enabled: activeTab === 'ADDRESS_BOOK'
   });
-  const addresses = (addressData as any)?.resultList || [];
+  const addresses = (addressData as any)?.list || [];
 
   const { data: scrapData } = useQuery({
     queryKey: ['collab-scraps', searchKeyword],
     queryFn: () => scrapService.getMyScraps({ page: 1, size: 50 }),
     enabled: activeTab === 'SCRAPS'
   });
-  const scraps = (scrapData as any)?.resultList || [];
+  const scraps = (scrapData as any)?.list || [];
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;

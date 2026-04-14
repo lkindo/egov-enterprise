@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { MessageSquare, User, Clock, Trash2, Edit2, Send, X, Check } from 'lucide-react';
@@ -28,7 +28,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
     try {
       setLoading(true);
       const result = await commentService.getComments({ nttId, bbsId, size: 100 });
-      setComments(result.resultList || []);
+      setComments(result.list || []);
     } catch (error) {
       console.error('Failed to fetch comments', error);
     } finally {

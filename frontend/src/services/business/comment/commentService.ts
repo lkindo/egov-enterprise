@@ -1,11 +1,7 @@
-﻿import { ApiService } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
 import { CommentVO, CommentSearchParams, CommentSaveRequest } from '@/types/business/comment';
 import { AxiosRequestConfig } from 'axios';
-
-interface CommentListResult {
- resultList: CommentVO[];
- paginationInfo: unknown;
-}
+import { PageResponse } from '@/types/foundation/system';
 
 /**
  * ?볤? ?쒕퉬님 */
@@ -14,10 +10,18 @@ class CommentService extends ApiService {
  super('/v1/comments');
  }
 
- /** ?볤? 紐⑸줉 조회 */
- async getComments(params: CommentSearchParams, config?: AxiosRequestConfig): Promise<CommentListResult> {
- return this.get<CommentListResult>('', { ...config, params });
- }
+  /** ?볤? 紐⑸줉 조회 */
+  async getComments(params: CommentSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CommentVO>> {
+    const response = await this.get<any>('', { ...config, params });
+    // Handle both legacy and new structures if necessary, but here we assume normalization
+    return {
+      list: response.list || response.resultList || [],
+      total: response.total || response.paginationInfo?.totalRecordCount || 0,
+      page: response.page || 1,
+      size: response.size || 10,
+      totalPage: response.totalPage || 1
+    };
+  }
 
  /** ?볤? 등록 */
  async createComment(data: CommentSaveRequest, config?: AxiosRequestConfig): Promise<number> {

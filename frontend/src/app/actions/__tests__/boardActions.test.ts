@@ -73,7 +73,7 @@ describe('boardActions', () => {
       const result = await saveBoardArticle({}, formData);
 
       expect(client.post).toHaveBeenCalled();
-      expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards');
+      expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/selectBoardList');
       expect(result.success).toBe(true);
       expect(result.message).toBe('게시글이 성공적으로 등록되었습니다.');
       expect(result.redirect).toBe('/admin/community/boards/detail?bbsId=BBS_001&nttId=100');
@@ -98,7 +98,7 @@ describe('boardActions', () => {
       expect(client.put).toHaveBeenCalledWith('/bbs/BBS_001/100', expect.any(FormData), expect.objectContaining({
         headers: { Authorization: 'Bearer token', 'Content-Type': 'multipart/form-data' }
       }));
-      expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards');
+      expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/selectBoardList');
       expect(result.success).toBe(true);
       expect(result.message).toBe('게시글이 성공적으로 수정되었습니다.');
       expect(result.redirect).toBe('/admin/community/boards/detail?bbsId=BBS_001&nttId=100');
@@ -148,7 +148,7 @@ describe('boardActions', () => {
       const result = await deleteBoardArticle({}, formData);
 
       expect(client.delete).toHaveBeenCalledWith('/bbs/BBS_001/100', { headers: { Authorization: 'Bearer token' } });
-      expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards');
+      expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/selectBoardList');
       expect(result.success).toBe(true);
     });
 

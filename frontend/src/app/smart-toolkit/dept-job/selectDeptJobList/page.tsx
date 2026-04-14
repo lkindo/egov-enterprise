@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -38,9 +38,9 @@ const DeptJobListPage = () => {
     try {
       const params = { pageNo, pageUnit: 10 };
       const response = (await axios.get('/deptjob', { params })) as any;
-      setList(response.data.resultList || []);
-      setTotalCount(response.data.totalCount || 0);
-      setTotalPages(response.data.totalPages || 0);
+      setList(response.data.list || []);
+      setTotalCount(response.data.total || 0);
+      setTotalPages(response.data.totalPage || 0);
     } catch (error) {
       console.error('Failed to fetch dept jobs', error);
     } finally {

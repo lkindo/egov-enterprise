@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -41,7 +41,7 @@ export function AuditTimelineClient() {
   });
 
   const logs = (auditData?.list || []) as AuditLog[];
-  const totalItems = auditData?.totalCount || 0;
+  const totalItems = auditData?.total || 0;
 
   const handleInspect = (log: AuditLog) => {
     setSelectedLog(log);

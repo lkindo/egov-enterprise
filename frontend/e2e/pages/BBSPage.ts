@@ -40,9 +40,10 @@ export class BBSPage {
           throw new Error(`[FIELD MISMATCH] Backend returned 'content' instead of 'list' for ${response.url()}`);
         }
       } catch (e) {
-        console.log(`>>> API check skipped or failed: ${e.message}`);
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.log(`>>> API check skipped or failed: ${errorMessage}`);
         // Fallback or explicit re-throw
-        if (e.message.includes('FIELD MISMATCH')) {
+        if (errorMessage.includes('FIELD MISMATCH')) {
           throw e;
         }
         await this.page.waitForLoadState('domcontentloaded');

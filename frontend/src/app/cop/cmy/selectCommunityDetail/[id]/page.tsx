@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
@@ -69,7 +69,7 @@ function BoardListContent() {
       className: 'min-w-[300px]'
     },
     { header: '작성자', accessor: (item: BoardPost) => item.frstRegisterNm || item.ntcrNm || '익명' },
-    { header: '날짜', accessor: (item: BoardPost) => item.createdDate.substring(0, 10) },
+    { header: '날짜', accessor: (item: BoardPost) => item.createdDate?.substring(0, 10) || '-' },
     {
       header: '조회',
       accessor: (item: BoardPost) => (

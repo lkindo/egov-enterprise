@@ -34,7 +34,7 @@ class EgovPasswordEncoderTest {
     void encodeFail() {
         assertThatThrownBy(() -> passwordEncoder.encode("password"))
                 .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("Requires user ID as salt");
+                .hasMessageContaining("requires user ID as salt");
     }
 
     @Test

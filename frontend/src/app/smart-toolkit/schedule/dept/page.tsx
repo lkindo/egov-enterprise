@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useCallback, useEffect } from 'react';
 
@@ -51,8 +51,8 @@ export default function DeptSchedulePage() {
     const fetchList = useCallback(async () => {
         try {
             const response = await getDeptScheduleList(params);
-            if (response && response.resultList) {
-                setSchedules(response.resultList);
+            if (response && response.list) {
+                setSchedules(response.list);
             } else {
                 setSchedules([]);
             }

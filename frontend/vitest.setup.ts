@@ -129,23 +129,43 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock lucide-react with a proxy to handle any icon
-// Mock lucide-react with a robust proxy
+// Mock lucide-react with an exhaustive list of components to satisfy Vitest's named import checks
 vi.mock('lucide-react', () => {
     const React = require('react');
-    const proxy = new Proxy({}, {
-        get: (target, name) => {
-            if (name === '__esModule') return true;
-            if (typeof name !== 'string') return undefined;
-            const Icon = (props: any) => React.createElement('span', { ...props, 'data-testid': `icon-${name.toLowerCase()}` }, name);
-            Icon.displayName = name;
-            return Icon;
-        }
-    });
-    return {
-        ...proxy,
-        __esModule: true
+    const mockIcon = (name: string) => {
+        const Icon = (props: any) => React.createElement('span', { ...props, 'data-testid': `icon-${name.toLowerCase()}` }, name);
+        Icon.displayName = name;
+        return Icon;
     };
+
+    const icons = [
+        'Users', 'Briefcase', 'Search', 'Home', 'Zap', 'Loader2', 'CheckIcon', 
+        'ChevronDownIcon', 'SlidersHorizontal', 'X', 'MessageSquare', 'User', 
+        'Clock', 'Trash2', 'Edit2', 'Send', 'Check', 'ArrowRight', 'ArrowLeft',
+        'ChevronLeft', 'ChevronRight', 'Plus', 'Settings', 'Bell', 'Calendar',
+        'FileText', 'LayoutDashboard', 'ShieldCheck', 'Database', 'Globe',
+        'Menu', 'ChevronUp', 'ChevronDown', 'ChevronsUpDown', 'Download',
+        'ChevronUpIcon', 'ChevronDownIcon',
+        'Mail', 'Phone', 'Lock', 'LogOut', 'UserPlus', 'AlertCircle', 'ExternalLink',
+        'LogIn', 'UserRound', 'LockKeyhole', 'Monitor', 'Smartphone', 'Laptop',
+        'Activity', 'CheckSquare', 'Workflow', 'Rocket', 'Cpu', 'Layers', 'Shield',
+        'RotateCcw', 'RotateCw', 'History', 'Undo', 'Redo',
+        'List', 'Grid', 'Columns', 'PlusCircle', 'MinusCircle',
+        'UserCheck', 'UserX', 'Fingerprint', 'LayoutGrid', 'SearchCode', 
+        'ShieldAlert', 'Settings2', 'Filter', 'Pencil', 'MoreHorizontal', 'XCircle',
+        'CheckCircle2', 'Info', 'AlertTriangle', 'ArrowUpDown', 'Eye', 'EyeOff',
+        'Copy', 'RefreshCw', 'CheckCircle'
+    ];
+
+    const exports: any = {
+        __esModule: true,
+    };
+
+    icons.forEach(name => {
+        exports[name] = mockIcon(name);
+    });
+
+    return exports;
 });
 
 window.scrollTo = vi.fn();

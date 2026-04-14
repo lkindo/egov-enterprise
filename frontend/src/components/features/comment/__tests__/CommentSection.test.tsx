@@ -17,18 +17,6 @@ vi.mock('date-fns', () => ({
   format: vi.fn(() => '2024-03-10 12:00'),
 }));
 
-// Mock lucide icons to have accessible names for testing
-vi.mock('lucide-react', () => ({
-  MessageSquare: () => <div data-testid="icon-message-square" />,
-  User: () => <div data-testid="icon-user" />,
-  Clock: () => <div data-testid="icon-clock" />,
-  Trash2: () => <div data-testid="icon-trash" />,
-  Edit2: () => <div data-testid="icon-edit" />,
-  Send: () => <div data-testid="icon-send" />,
-  X: () => <div data-testid="icon-x" />,
-  Check: () => <div data-testid="icon-check" />,
-}));
-
 describe('CommentSection Component', () => {
   const mockNttId = 1;
   const mockBbsId = 'BBS_001';
@@ -52,8 +40,11 @@ describe('CommentSection Component', () => {
 
   it('renders comments correctly', async () => {
     vi.mocked(commentService.getComments).mockResolvedValue({
-      resultList: mockComments,
-      paginationInfo: {},
+      list: mockComments,
+      total: 1,
+      page: 1,
+      size: 10,
+      totalPage: 1,
     });
 
     const { container } = render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} />);
@@ -69,8 +60,11 @@ describe('CommentSection Component', () => {
 
   it('handles empty comment list', async () => {
     vi.mocked(commentService.getComments).mockResolvedValue({
-      resultList: [],
-      paginationInfo: {},
+      list: [],
+      total: 0,
+      page: 1,
+      size: 10,
+      totalPage: 0,
     });
 
     render(<CommentSection nttId={mockNttId} bbsId={mockBbsId} />);
@@ -82,8 +76,11 @@ describe('CommentSection Component', () => {
 
   it('submits a new comment', async () => {
     vi.mocked(commentService.getComments).mockResolvedValue({
-      resultList: [],
-      paginationInfo: {},
+      list: [],
+      total: 0,
+      page: 1,
+      size: 10,
+      totalPage: 0,
     });
     vi.mocked(commentService.createComment).mockResolvedValue(201);
 
@@ -107,8 +104,11 @@ describe('CommentSection Component', () => {
 
   it('handles comment update', async () => {
     vi.mocked(commentService.getComments).mockResolvedValue({
-      resultList: mockComments,
-      paginationInfo: {},
+      list: mockComments,
+      total: 1,
+      page: 1,
+      size: 10,
+      totalPage: 1,
     });
     vi.mocked(commentService.updateComment).mockResolvedValue(undefined);
 
@@ -118,7 +118,7 @@ describe('CommentSection Component', () => {
       expect(screen.getByText('First Comment')).toBeDefined();
     });
 
-    const editButton = screen.getByTestId('icon-edit').closest('button')!;
+    const editButton = screen.getByTestId('icon-edit2').closest('button')!;
     fireEvent.click(editButton);
 
     const editArea = screen.getByDisplayValue('First Comment');
@@ -138,8 +138,11 @@ describe('CommentSection Component', () => {
 
   it('handles comment deletion', async () => {
     vi.mocked(commentService.getComments).mockResolvedValue({
-      resultList: mockComments,
-      paginationInfo: {},
+      list: mockComments,
+      total: 1,
+      page: 1,
+      size: 10,
+      totalPage: 1,
     });
     vi.mocked(commentService.deleteComment).mockResolvedValue(undefined);
     
@@ -151,7 +154,7 @@ describe('CommentSection Component', () => {
       expect(screen.getByText('First Comment')).toBeDefined();
     });
 
-    const deleteButton = screen.getByTestId('icon-trash').closest('button')!;
+    const deleteButton = screen.getByTestId('icon-trash2').closest('button')!;
     fireEvent.click(deleteButton);
 
     expect(confirmSpy).toHaveBeenCalled();

@@ -13,7 +13,7 @@ export interface BoardListParams {
   endDate?: string;
 }
 
-export const useBoardList = (params: BoardListParams, initialData?: { resultList: BoardPost[]; totalCount: number; totalPages: number }) => {
+export const useBoardList = (params: BoardListParams, initialData?: { list: BoardPost[]; total: number; totalPage: number }) => {
   return useQuery({
     queryKey: ['boardList', params],
     initialData,
@@ -29,9 +29,9 @@ export const useBoardList = (params: BoardListParams, initialData?: { resultList
 
       // PageResponse 구조 반영 (list, total, totalPage)
       return {
-        resultList: data.list || [],
-        totalCount: data.total || 0,
-        totalPages: data.totalPage || 0
+        list: data.list || [],
+        total: data.total || 0,
+        totalPage: data.totalPage || 0
       };
     },
     staleTime: 60 * 1000,

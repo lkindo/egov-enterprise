@@ -140,8 +140,8 @@ class AuthApiControllerTest {
         // When & Then
         mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.userId").value("user01"))
-                .andExpect(jsonPath("$.data.userNm").value("Test User"));
+                .andExpect(jsonPath("$.data.id").value("user01"))
+                .andExpect(jsonPath("$.data.name").value("Test User"));
         
         SecurityContextHolder.clearContext();
     }
@@ -184,7 +184,7 @@ class AuthApiControllerTest {
  
         mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.userId").value("user01"));
+                .andExpect(jsonPath("$.data.id").value("user01"));
         
         SecurityContextHolder.clearContext();
     }

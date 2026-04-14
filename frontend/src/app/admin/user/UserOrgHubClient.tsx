@@ -64,7 +64,7 @@ type UserOrgTab = 'USERS' | 'DEPTS' | 'ABSENCES' | 'POLICIES';
 const userSchema = z.object({
   userId: z.string().min(1, '아이디는 필수입니다.').max(20, '아이디는 20자 이내여야 합니다.'),
   userNm: z.string().min(1, '이름은 필수입니다.').max(30, '이름은 30자 이내여야 합니다.'),
-  email: z.string().email('유효한 이메일 형식이 아닙니다.').optional().or(z.literal('')),
+  emailAdres: z.string().email('유효한 이메일 형식이 아닙니다.').optional().or(z.literal('')),
   moblphonNo: z.string().optional().or(z.literal('')),
   orgnztId: z.string().optional().or(z.literal('')),
   password: z.string().min(8, '비밀번호는 8자 이상이어야 합니다.').optional().or(z.literal('')),
@@ -93,7 +93,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
 
   const userForm = useAppForm(userSchema, {
-    defaultValues: { userId: '', userNm: '', email: '', moblphonNo: '', orgnztId: '', password: '' }
+    defaultValues: { userId: '', userNm: '', emailAdres: '', moblphonNo: '', orgnztId: '', password: '' }
   });
 
   const deptForm = useAppForm(deptSchema, {
@@ -247,7 +247,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                       deptForm.reset({ orgnztNm: '', orgnztDc: '' });
                       setIsDeptModalOpen(true);
                     } else {
-                      userForm.reset({ userId: '', userNm: '', email: '', moblphonNo: '', orgnztId: '', password: '' });
+                      userForm.reset({ userId: '', userNm: '', emailAdres: '', moblphonNo: '', orgnztId: '', password: '' });
                       setIsUserModalOpen(true);
                     }
                   }}
@@ -416,7 +416,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
                           userForm.reset({
                             userId: user.userId || '',
                             userNm: user.userNm || '',
-                            email: user.email || '',
+                            emailAdres: user.emailAdres || '',
                             moblphonNo: user.moblphonNo || '',
                             orgnztId: user.orgnztId || '',
                             password: ''
@@ -431,7 +431,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
 
                   <div className="flex-1 space-y-12 relative z-10">
                     <div className="grid grid-cols-2 gap-8">
-                      <InfoBlock icon={<Mail size={18} />} label="Communication Endpoint" value={(selectedItem as UserManage)?.email || (activeTab === 'DEPTS' ? 'DEPT_INBOX' : 'PENDING_DNS')} />
+                      <InfoBlock icon={<Mail size={18} />} label="Communication Endpoint" value={(selectedItem as UserManage)?.emailAdres || (activeTab === 'DEPTS' ? 'DEPT_INBOX' : 'PENDING_DNS')} />
                       <InfoBlock icon={<Phone size={18} />} label="Hotline Contact" value={(selectedItem as UserManage)?.moblphonNo || (selectedItem as Department)?.orgnztNm || 'NOT_DECLARED'} />
                       <InfoBlock icon={<Building2 size={18} />} label="Topology Cluster" value={(selectedItem as UserManage)?.orgnztId || (selectedItem as Department)?.orgnztId || 'GLOBAL_ROOT'} />
                       <InfoBlock icon={<MapPin size={18} />} label="Operational Zone" value="본사 클러스터" />
@@ -535,14 +535,14 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <FormField label="이메일 주소">
               <Input
-                {...userForm.register('email')}
+                {...userForm.register('emailAdres')}
                 className={cn(
                     "h-14 rounded-[0.1rem] text-xs font-medium border-slate-100 shadow-sm",
-                    userForm.formState.errors.email ? "border-rose-500 bg-rose-50" : ""
+                    userForm.formState.errors.emailAdres ? "border-rose-500 bg-rose-50" : ""
                 )}
                 placeholder="example@nuri.com"
               />
-              {userForm.formState.errors.email && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{userForm.formState.errors.email.message}</p>}
+              {userForm.formState.errors.emailAdres && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2">{userForm.formState.errors.emailAdres.message}</p>}
             </FormField>
             <FormField label="연락처">
               <Input

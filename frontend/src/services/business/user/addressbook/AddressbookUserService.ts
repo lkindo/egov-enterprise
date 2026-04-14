@@ -2,15 +2,7 @@ import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
-export interface NameCard {
-  ncrdId: string;
-  ncrdNm: string;
-  cmpnyNm: string;
-  deptNm: string;
-  telNo: string;
-  mbtlNum: string;
-  emailAdres: string;
-}
+import { NameCard } from '@/types/business/addressbook';
 
 export interface AddressBook {
   adbkId: string;
