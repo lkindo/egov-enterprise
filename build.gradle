@@ -107,6 +107,10 @@ subprojects {
         }
     }
 
+    configurations.all {
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
+    }
+
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter'
         implementation libs.springdoc.openapi

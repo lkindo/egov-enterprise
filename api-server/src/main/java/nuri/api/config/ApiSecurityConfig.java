@@ -142,6 +142,7 @@ public class ApiSecurityConfig {
                                                                 AntPathRequestMatcher.antMatcher("/favicon.ico"),
                                                                 AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
                                                                 AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
+                                                                AntPathRequestMatcher.antMatcher("/actuator/**"),
                                                                 AntPathRequestMatcher.antMatcher("/error"))
                                                 .permitAll()
                                                 .anyRequest().authenticated())

@@ -19,7 +19,8 @@
       "Bash(curl *)",
       "Bash(timeout *)",
       "Bash(foreach-object *)",
-      "Bash(start-sleep *)"
+      "Bash(start-sleep *)",
+      "Bash(docker info)"
     ]
   },
   "$version": 3

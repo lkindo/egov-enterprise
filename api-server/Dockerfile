@@ -23,11 +23,14 @@ RUN ./gradlew :api-server:bootJar -x test --no-daemon
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Create non-root user
-RUN addgroup -S spring && adduser -S spring -G spring
+# Create non-root user and setup directory permissions
+RUN addgroup -S spring && adduser -S spring -G spring && \
+    mkdir -p logs && \
+    chown -R spring:spring /app
+
 USER spring:spring
 
-COPY --from=builder /app/api-server/build/libs/*.jar app.jar
+COPY --from=builder --chown=spring:spring /app/api-server/build/libs/*.jar app.jar
 
 ENV TZ=Asia/Seoul
 ENV JAVA_OPTS="-Xms512m -Xmx512m -XX:+UseParallelGC"
