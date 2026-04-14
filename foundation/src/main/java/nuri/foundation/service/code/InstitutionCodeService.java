@@ -36,7 +36,8 @@ public class InstitutionCodeService {
                 .orElse(null);
     }
 
-    public Page<InstitutionCodeRecptnDto> getInstitutionCodeRecptnList(String searchWrd, String processSe, Pageable pageable) {
+    public Page<InstitutionCodeRecptnDto> getInstitutionCodeRecptnList(String searchWrd, String processSe,
+            Pageable pageable) {
         Page<InstitutionCodeRecptnLog> entities;
         if (processSe != null && !processSe.isEmpty()) {
             entities = recptnLogRepository.findByAllInsttNmContainingAndProcessSe(searchWrd, processSe, pageable);
@@ -48,22 +49,23 @@ public class InstitutionCodeService {
 
     @Transactional
     public void processInstitutionCodeRecptn(String occrrncDe, String insttCode, Long opertSn, String userId) {
-        InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId.builder()
+        InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId
+                .builder()
                 .occrrncDe(occrrncDe)
                 .insttCode(insttCode)
                 .opertSn(opertSn)
                 .build();
-        
+
         InstitutionCodeRecptnLog logEntity = recptnLogRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Institution code reception log not found"));
-        
+
         // 1. Mark log as processed
         logEntity.updateProcessSe("1", userId);
-        
+
         // 2. Sync to main InstitutionCode table
         InstitutionCode instt = institutionCodeRepository.findById(insttCode)
                 .orElseGet(() -> InstitutionCode.builder().insttCode(insttCode).build());
-        
+
         instt.update(
                 logEntity.getAllInsttNm(),
                 logEntity.getLowestInsttNm(),
@@ -86,9 +88,8 @@ public class InstitutionCodeService {
                 logEntity.getChangeTime(),
                 logEntity.getBsisDe(),
                 logEntity.getSortOrdr(),
-                userId
-        );
-        
+                userId);
+
         institutionCodeRepository.save(instt);
     }
 
@@ -130,7 +131,7 @@ public class InstitutionCodeService {
                 .creatDe(entity.getCreatDe())
                 .ablDe(entity.getAblDe())
                 .ablEnnc(entity.getAblEnnc())
-                .frstRegistPnttm(entity.getFrstRegistPnttm())
+                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
                 .frstRegisterId(entity.getFrstRegisterId())
                 .build();
     }

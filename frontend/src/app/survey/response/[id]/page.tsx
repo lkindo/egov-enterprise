@@ -66,7 +66,7 @@ export default function SurveyResponseDetailPage() {
                         <div className="space-y-4 pt-4 border-t border-white/10">
                             <div className="flex items-center gap-3">
                                 <Calendar className="w-4 h-4 text-primary" />
-                                <span className="text-sm font-medium">{response?.frstRegisterPnttm}</span>
+                                <span className="text-sm font-medium">{response?.createdDate}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <ClipboardCheck className="w-4 h-4 text-emerald-400" />

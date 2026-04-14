@@ -11,7 +11,7 @@ export interface ManualDto {
   onlineMnlDc: string;
   onlineMnlCours: string;
   frstRegisterId?: string;
-  frstRegistPnttm?: string;
+  createdDate?: string;
 }
 
 class ManualAdminService extends ApiService {

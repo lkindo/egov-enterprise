@@ -21,7 +21,7 @@ public class EventInfoDto {
     private String eventConfmAt;
     private String eventConfmDe;
     private String frstRegisterId;
-    private LocalDateTime frstRegistPnttm;
+    private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
     private LocalDateTime lastUpdtPnttm;
 
@@ -40,7 +40,7 @@ public class EventInfoDto {
                 .eventConfmAt(entity.getEventConfmAt())
                 .eventConfmDe(entity.getEventConfmDe())
                 .frstRegisterId(entity.getFrstRegisterId())
-                .frstRegistPnttm(entity.getFrstRegistPnttm())
+                .frstRegisterPnttm(entity.getFrstRegisterPnttm())
                 .lastUpdusrId(entity.getLastUpdusrId())
                 .lastUpdtPnttm(entity.getLastUpdtPnttm())
                 .build();

@@ -24,6 +24,6 @@ public class InstitutionCodeRecptnDto {
     private String creatDe;
     private String ablDe;
     private String ablEnnc;
-    private LocalDateTime frstRegistPnttm;
+    private LocalDateTime frstRegisterPnttm;
     private String frstRegisterId;
 }

@@ -17,7 +17,7 @@ public class DeptJobBoxDto {
     private String deptNm;
     private Integer indictOrdr;
     private String frstRegisterId;
-    private LocalDateTime frstRegistPnttm;
+    private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
     private LocalDateTime lastUpdtPnttm;
 
@@ -30,7 +30,7 @@ public class DeptJobBoxDto {
                 .deptId(entity.getDeptId())
                 .indictOrdr(entity.getIndictOrdr())
                 .frstRegisterId(entity.getCreatedBy())
-                .frstRegistPnttm(entity.getCreatedDate())
+                .frstRegisterPnttm(entity.getCreatedDate())
                 .lastUpdusrId(entity.getLastModifiedBy())
                 .lastUpdtPnttm(entity.getLastModifiedDate())
                 .build();

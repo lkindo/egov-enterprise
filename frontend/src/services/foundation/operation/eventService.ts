@@ -10,7 +10,7 @@ export interface EventInfo {
   rceptBeginDe: string;
   rceptEndDe: string;
   frstRegisterId?: string;
-  frstRegistPnttm?: string;
+  frstRegisterPnttm?: string;
   lastUpdtPnttm?: string;
 }
 

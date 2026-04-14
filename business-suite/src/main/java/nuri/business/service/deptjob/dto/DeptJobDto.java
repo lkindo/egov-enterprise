@@ -22,7 +22,7 @@ public class DeptJobDto {
     private String priort;
     private String atchFileId;
     private String frstRegisterId;
-    private LocalDateTime frstRegistPnttm;
+    private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
     private LocalDateTime lastUpdtPnttm;
 
@@ -36,7 +36,7 @@ public class DeptJobDto {
                 .priort(entity.getPriort())
                 .atchFileId(entity.getAtchFileId())
                 .frstRegisterId(entity.getCreatedBy())
-                .frstRegistPnttm(entity.getCreatedDate())
+                .frstRegisterPnttm(entity.getCreatedDate())
                 .lastUpdusrId(entity.getLastModifiedBy())
                 .lastUpdtPnttm(entity.getLastModifiedDate())
                 .build();

@@ -9,7 +9,7 @@ export interface RoughMapInfo {
   lng: number;
   markerType: string;
   frstRegisterId?: string;
-  frstRegistPnttm?: string;
+  createdDate?: string;
 }
 
 export interface PageResponse<T> {

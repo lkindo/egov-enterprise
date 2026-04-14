@@ -55,7 +55,7 @@ public class EventInfo {
     private String eventConfmDe;
 
     @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegistPnttm;
+    private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
@@ -68,9 +68,9 @@ public class EventInfo {
 
     @Builder
     public EventInfo(String eventId, String bsnsYear, String bsnsCode, String eventCn, String eventSvcBgnde,
-                     String eventSvcEndde, Long svcUseNmprCo, String chargerNm, String prparetgCn,
-                     String eventTyCode, String eventConfmAt, String eventConfmDe,
-                     String frstRegisterId, String lastUpdusrId) {
+            String eventSvcEndde, Long svcUseNmprCo, String chargerNm, String prparetgCn,
+            String eventTyCode, String eventConfmAt, String eventConfmDe,
+            String frstRegisterId, String lastUpdusrId) {
         this.eventId = eventId;
         this.bsnsYear = bsnsYear;
         this.bsnsCode = bsnsCode;
@@ -84,7 +84,7 @@ public class EventInfo {
         this.eventConfmAt = eventConfmAt == null ? "N" : eventConfmAt;
         this.eventConfmDe = eventConfmDe;
         this.frstRegisterId = frstRegisterId;
-        this.frstRegistPnttm = LocalDateTime.now();
+        this.frstRegisterPnttm = LocalDateTime.now();
         this.lastUpdusrId = lastUpdusrId;
         this.lastUpdtPnttm = LocalDateTime.now();
     }

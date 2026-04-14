@@ -73,7 +73,7 @@ export const boardSchema = z.object({
   password: z.string().optional(),
   ntcrId: z.string().optional(),
   ntcrNm: z.string().optional(),
-  ntceAt: z.enum(['Y', 'N']).optional(),
+  noticeAt: z.enum(['Y', 'N']).optional(),
   secretAt: z.enum(['Y', 'N']).optional(),
   useAt: z.enum(['Y', 'N']).optional(),
 });

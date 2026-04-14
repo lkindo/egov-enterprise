@@ -89,7 +89,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 long totalArticles = boardRepository.countByBbsIdAndUseAt(bbsId, "Y");
                 long totalViews = boardRepository.sumInqireCoByBbsIdAndUseAt(bbsId, "Y");
                 String topContributor = boardRepository.findTopContributorByBbsIdAndUseAt(bbsId, "Y");
-                
+
                 // Logic derived from frontend: (count * 2) + 70, capped at 100
                 int intelligenceScore = (int) Math.min(100, (totalArticles * 2) + 70);
 
@@ -126,14 +126,14 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         }
 
                         Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
-                        
+
                         java.time.LocalDateTime eventDate = null;
                         if (StringUtils.hasText(request.eventDate())) {
-                            try {
-                                eventDate = java.time.LocalDateTime.parse(request.eventDate());
-                            } catch (Exception e) {
-                                log.warn("Failed to parse eventDate: {}", request.eventDate());
-                            }
+                                try {
+                                        eventDate = java.time.LocalDateTime.parse(request.eventDate());
+                                } catch (Exception e) {
+                                        log.warn("Failed to parse eventDate: {}", request.eventDate());
+                                }
                         }
 
                         Board board = Board.builder()
@@ -150,6 +150,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                         .parnts(0L)
                                         .replyAt("N")
                                         .replyLc(0)
+                                        .noticeAt(request.noticeAt())
                                         .eventDate(eventDate)
                                         .qnaStatus(request.qnaStatus() != null ? request.qnaStatus() : "OPEN")
                                         .qnaCategory(request.qnaCategory())
@@ -181,7 +182,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.nttSj(), request.nttCn(),
                                 request.ntceBgnde(), request.ntceEndde(), atchFileId,
-                                request.eventDate(), request.qnaStatus(), request.qnaCategory());
+                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory());
 
                 return createPost(userId, newRequest);
         }
@@ -227,6 +228,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 .sortOrdr(parent.getSortOrdr())
                                 .replyAt("Y")
                                 .replyLc(parent.getReplyLc() + 1)
+                                .noticeAt(request.noticeAt())
                                 .build();
 
                 Long nttId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
@@ -251,7 +253,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.nttSj(), request.nttCn(),
                                 request.ntceBgnde(), request.ntceEndde(), atchFileId,
-                                request.eventDate(), request.qnaStatus(), request.qnaCategory());
+                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory());
 
                 return replyPost(userId, parentId, newRequest);
         }
@@ -276,17 +278,17 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 java.time.LocalDateTime eventDate = null;
                 if (StringUtils.hasText(request.eventDate())) {
-                    try {
-                        eventDate = java.time.LocalDateTime.parse(request.eventDate());
-                    } catch (Exception e) {
-                        log.warn("Failed to parse eventDate for update: {}", request.eventDate());
-                    }
+                        try {
+                                eventDate = java.time.LocalDateTime.parse(request.eventDate());
+                        } catch (Exception e) {
+                                log.warn("Failed to parse eventDate for update: {}", request.eventDate());
+                        }
                 }
 
                 board.update(request.nttSj(), request.nttCn(), board.getNtcrId(), board.getNtcrNm(),
                                 board.getPassword(), request.ntceBgnde(), request.ntceEndde(),
-                                request.atchFileId(), eventDate, 
-                                request.qnaStatus() != null ? request.qnaStatus() : board.getQnaStatus(), 
+                                request.atchFileId(), eventDate,
+                                request.qnaStatus() != null ? request.qnaStatus() : board.getQnaStatus(),
                                 request.qnaCategory());
         }
 
@@ -308,7 +310,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.nttSj(), request.nttCn(),
                                 request.ntceBgnde(), request.ntceEndde(), atchFileId,
-                                request.eventDate(), request.qnaStatus(), request.qnaCategory());
+                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory());
 
                 updatePost(required(bbsId, "bbsId 는 null 일 수 없습니다"), required(nttId, "nttId 는 null 일 수 없습니다"),
                                 newRequest);

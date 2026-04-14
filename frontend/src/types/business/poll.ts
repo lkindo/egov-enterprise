@@ -4,18 +4,18 @@ export interface OnlinePollManageVO {
   pollBeginDe: string; // YYYY-MM-DD
   pollEndDe: string; // YYYY-MM-DD
   pollKindCode: string; // COM039 (001: 찬반, 002: 선택)
-  pollDsuseYn: string; // N: 사용, Y: 폐기 (Backend naming seems to be 'Y' for disuse?) 
+  pollDsuseYn: string; // N: 사용, Y: 폐기 (Backend naming seems to be 'Y' for disuse?)
   frstRegisterId?: string;
   frstRegisterNm?: string;
-  frstRegistPnttm?: string;
+  createdDate?: string;
 }
 
 export interface OnlinePollItemVO {
   pollId: string;
   pollIemId?: string;
-  pollIemNm: string; 
+  pollIemNm: string;
   frstRegisterId?: string;
-  frstRegistPnttm?: string;
+  createdDate?: string;
 }
 
 export interface OnlinePollPartcptnVO {

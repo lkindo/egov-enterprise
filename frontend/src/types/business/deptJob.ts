@@ -11,7 +11,7 @@ export interface DeptJobVO {
   priort: string;
   atchFileId?: string;
   frstRegisterId?: string;
-  frstRegistPnttm?: string;
+  frstRegisterPnttm?: string;
   lastUpdusrId?: string;
   lastUpdtPnttm?: string;
 }
@@ -23,7 +23,7 @@ export interface DeptJobBxVO {
   deptNm?: string;
   indictOrdr?: number;
   frstRegisterId?: string;
-  frstRegistPnttm?: string;
+  frstRegisterPnttm?: string;
   lastUpdusrId?: string;
   lastUpdtPnttm?: string;
 }

@@ -22,6 +22,7 @@ export interface BoardPost {
   lastUpdusrId: string;
   lastUpdtPnttm: string;
   password: string;
+  noticeAt: string;
   secretAt: string;
   blogAt: string;
   commentCo: number;

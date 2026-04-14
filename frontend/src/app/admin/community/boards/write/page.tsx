@@ -12,12 +12,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { 
-  Save, 
-  ArrowLeft, 
-  Layout, 
-  FileText, 
-  MessageSquare, 
+import {
+  Save,
+  ArrowLeft,
+  Layout,
+  FileText,
+  MessageSquare,
   ShieldCheck,
   Calendar,
   Settings2,
@@ -48,7 +48,7 @@ export default function BoardWritePage() {
       nttCn: '',
       ntceBgnde: '',
       ntceEndde: '',
-      ntceAt: 'N' as 'Y' | 'N',
+      noticeAt: 'N' as 'Y' | 'N',
       secretAt: 'N' as 'Y' | 'N',
       useAt: 'Y' as 'Y' | 'N'
     }
@@ -78,8 +78,8 @@ export default function BoardWritePage() {
         title="게시물 아키텍처 정의"
         breadcrumbs={[{ label: '커뮤니티' }, { label: '게시판 관리' }, { label: '새 게시물' }]}
         actions={
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => router.back()}
             className="h-12 rounded-[0.1rem] font-black gap-2 border-slate-200"
           >
@@ -109,7 +109,7 @@ export default function BoardWritePage() {
                 </div>
                 {/* Background Decor */}
                 <div className="absolute right-[-5%] top-[-10%] opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
-                   <FileText size={180} className="rotate-12" />
+                  <FileText size={180} className="rotate-12" />
                 </div>
               </CardHeader>
 
@@ -131,9 +131,9 @@ export default function BoardWritePage() {
                             <Layout size={14} className="text-primary" /> 게시판 식별자 (BBS_ID)
                           </FormLabel>
                           <FormControl>
-                            <Input 
+                            <Input
                               {...field}
-                              placeholder="BBS_0000000000000001" 
+                              placeholder="BBS_0000000000000001"
                               className="h-14 rounded-[0.1rem] bg-slate-50/50 border-slate-100 font-black text-lg focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                             />
                           </FormControl>
@@ -151,9 +151,9 @@ export default function BoardWritePage() {
                             <MessageSquare size={14} className="text-primary" /> 게시물 제목
                           </FormLabel>
                           <FormControl>
-                            <Input 
+                            <Input
                               {...field}
-                              placeholder="게시물의 핵심 제목을 입력하십시오." 
+                              placeholder="게시물의 핵심 제목을 입력하십시오."
                               className="h-14 rounded-[0.1rem] font-black text-lg focus:ring-4 focus:ring-primary/10 transition-all shadow-sm"
                             />
                           </FormControl>
@@ -177,7 +177,7 @@ export default function BoardWritePage() {
                     render={({ field }) => (
                       <FormItem className="space-y-4">
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             {...field}
                             placeholder="본문 내용을 상세히 기술하십시오. 마크다운 및 HTML 파싱을 지원합니다."
                             className="min-h-[400px] p-10 rounded-[0.1rem] border-2 border-slate-50 bg-slate-50/30 focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all text-lg font-medium leading-relaxed resize-none shadow-inner"
@@ -191,85 +191,85 @@ export default function BoardWritePage() {
 
                 {/* Policy & Date Node */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                   <div className="bg-slate-50/50 rounded-[0.1rem] p-8 border border-slate-100 space-y-6">
-                      <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
-                        <ShieldCheck size={18} className="text-primary" />
-                        <h4 className="font-black text-sm uppercase tracking-widest text-slate-900">배포 및 보안 정책</h4>
-                      </div>
-                      
-                      <div className="space-y-6">
-                        <FormField
-                          control={form.control}
-                          name="ntceAt"
-                          render={({ field }) => (
-                            <div className="flex items-center justify-between p-4 bg-white rounded-[0.1rem] shadow-sm border border-slate-100">
-                              <div className="space-y-0.5">
-                                <Label className="text-sm font-black text-slate-800">공지사항 설정</Label>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Notification Priority</p>
-                              </div>
-                              <Switch 
-                                checked={field.value === 'Y'} 
-                                onCheckedChange={(checked) => field.onChange(checked ? 'Y' : 'N')}
-                              />
+                  <div className="bg-slate-50/50 rounded-[0.1rem] p-8 border border-slate-100 space-y-6">
+                    <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
+                      <ShieldCheck size={18} className="text-primary" />
+                      <h4 className="font-black text-sm uppercase tracking-widest text-slate-900">배포 및 보안 정책</h4>
+                    </div>
+
+                    <div className="space-y-6">
+                      <FormField
+                        control={form.control}
+                        name="noticeAt"
+                        render={({ field }) => (
+                          <div className="flex items-center justify-between p-4 bg-white rounded-[0.1rem] shadow-sm border border-slate-100">
+                            <div className="space-y-0.5">
+                              <Label className="text-sm font-black text-slate-800">공지사항 설정</Label>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Notification Priority</p>
                             </div>
-                          )}
-                        />
+                            <Switch
+                              checked={field.value === 'Y'}
+                              onCheckedChange={(checked) => field.onChange(checked ? 'Y' : 'N')}
+                            />
+                          </div>
+                        )}
+                      />
 
-                        <FormField
-                          control={form.control}
-                          name="secretAt"
-                          render={({ field }) => (
-                            <div className="flex items-center justify-between p-4 bg-white rounded-[0.1rem] shadow-sm border border-slate-100">
-                              <div className="space-y-0.5">
-                                <Label className="text-sm font-black text-slate-800">비밀글 보호</Label>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Privacy Guard</p>
-                              </div>
-                              <Switch 
-                                checked={field.value === 'Y'} 
-                                onCheckedChange={(checked) => field.onChange(checked ? 'Y' : 'N')}
-                              />
+                      <FormField
+                        control={form.control}
+                        name="secretAt"
+                        render={({ field }) => (
+                          <div className="flex items-center justify-between p-4 bg-white rounded-[0.1rem] shadow-sm border border-slate-100">
+                            <div className="space-y-0.5">
+                              <Label className="text-sm font-black text-slate-800">비밀글 보호</Label>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Privacy Guard</p>
                             </div>
-                          )}
-                        />
-                      </div>
-                   </div>
+                            <Switch
+                              checked={field.value === 'Y'}
+                              onCheckedChange={(checked) => field.onChange(checked ? 'Y' : 'N')}
+                            />
+                          </div>
+                        )}
+                      />
+                    </div>
+                  </div>
 
-                   <div className="bg-slate-50/50 rounded-[0.1rem] p-8 border border-slate-100 space-y-6">
-                      <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
-                        <Calendar size={18} className="text-primary" />
-                        <h4 className="font-black text-sm uppercase tracking-widest text-slate-900">게시 기간 스케줄링</h4>
-                      </div>
+                  <div className="bg-slate-50/50 rounded-[0.1rem] p-8 border border-slate-100 space-y-6">
+                    <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
+                      <Calendar size={18} className="text-primary" />
+                      <h4 className="font-black text-sm uppercase tracking-widest text-slate-900">게시 기간 스케줄링</h4>
+                    </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="ntceBgnde"
-                          render={({ field }) => (
-                            <FormItem className="space-y-2">
-                              <FormLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest">게시 시작일</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} className="h-14 rounded-[0.1rem] border-slate-200 font-bold" />
-                              </FormControl>
-                              <FormMessage className="text-[10px] font-bold text-rose-500" />
-                            </FormItem>
-                          )}
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="ntceBgnde"
+                        render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest">게시 시작일</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} className="h-14 rounded-[0.1rem] border-slate-200 font-bold" />
+                            </FormControl>
+                            <FormMessage className="text-[10px] font-bold text-rose-500" />
+                          </FormItem>
+                        )}
+                      />
 
-                        <FormField
-                          control={form.control}
-                          name="ntceEndde"
-                          render={({ field }) => (
-                            <FormItem className="space-y-2">
-                              <FormLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest">게시 종료일</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} className="h-14 rounded-[0.1rem] border-slate-200 font-bold" />
-                              </FormControl>
-                              <FormMessage className="text-[10px] font-bold text-rose-500" />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                   </div>
+                      <FormField
+                        control={form.control}
+                        name="ntceEndde"
+                        render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest">게시 종료일</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} className="h-14 rounded-[0.1rem] border-slate-200 font-bold" />
+                            </FormControl>
+                            <FormMessage className="text-[10px] font-bold text-rose-500" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Final Action Area */}
@@ -284,16 +284,16 @@ export default function BoardWritePage() {
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
+                    <Button
+                      type="button"
+                      variant="ghost"
                       onClick={() => router.back()}
                       className="h-16 px-10 rounded-[0.1rem] font-black text-sm uppercase tracking-widest hover:bg-slate-50"
                     >
                       취소
                     </Button>
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       disabled={loading}
                       className="h-20 px-16 bg-slate-900 dark:bg-primary text-white rounded-[0.1rem] font-black text-[11px] tracking-[0.4em] uppercase shadow-[0_24px_48px_-8px_rgba(15,23,42,0.3)] dark:shadow-primary/40 transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-4"
                     >

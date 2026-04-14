@@ -58,7 +58,7 @@ export default function SurveyListPage() {
       accessor: (item: Survey) => (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar size={12} />
-          {item.qestnrBgnde} ~ {item.qestnrEndde}
+          {item.qestnrBeginDe} ~ {item.qestnrEndDe}
         </div>
       )
     },

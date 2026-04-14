@@ -3,7 +3,7 @@ export interface KnoManagementVO {
   knoNm: string;
   knoCn: string;
   othbcAt: string;
-  frstRegistPnttm: string;
+  frstRegisterPnttm: string;
   frstRegisterId: string;
   lastUpdtPnttm: string;
   lastUpdusrId: string;

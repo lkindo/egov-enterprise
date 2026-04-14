@@ -11,7 +11,7 @@ export interface SmsDto {
   trnsmitCn: string;
   trnsmitPnttm?: string;
   frstRegisterId?: string;
-  frstRegistPnttm?: string;
+  createdDate?: string;
   recptnTelno?: string; // 諛쒖넚 님사용자님?덉쓬
   recipients?: SmsRecptnDto[];
 }

@@ -10,7 +10,7 @@ export interface TmplatInfo {
   tmplatCours: string;
   useAt: string;
   frstRegisterId?: string;
-  frstRegistPnttm?: string;
+  frstRegisterPnttm?: string;
 }
 
 class TemplateAdminService extends AdminService {

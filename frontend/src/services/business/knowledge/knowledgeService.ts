@@ -64,14 +64,14 @@ export const knowledgeService = {
       size: params.size || 20
     };
     const res = await client.get<any>('admin/board/articles', { params: boardParams });
-    
+
     // Map Board fields to Knowledge fields for UI compatibility
     return res;
   },
 
   getHotArticles: async (bbsId?: string) => {
-    const res = await client.get<any>('admin/board/articles', { 
-      params: { bbsId: bbsId || 'BBSMSTR_AAAAAAAAAAAA', size: 5, sort: 'inqireCo,desc' } 
+    const res = await client.get<any>('admin/board/articles', {
+      params: { bbsId: bbsId || 'BBSMSTR_AAAAAAAAAAAA', size: 5, sort: 'inqireCo,desc' }
     });
     return {
       list: (res.list || []).map((item: any) => ({
@@ -94,15 +94,15 @@ export const knowledgeService = {
   },
 
   getActivities: async (bbsId?: string) => {
-    const res = await client.get<any>('admin/board/articles', { 
-      params: { bbsId: bbsId || 'BBSMSTR_AAAAAAAAAAAA', size: 10 } 
+    const res = await client.get<any>('admin/board/articles', {
+      params: { bbsId: bbsId || 'BBSMSTR_AAAAAAAAAAAA', size: 10 }
     });
     return (res.list || []).map((item: any) => ({
       id: item.nttId,
       type: 'SHARE',
       title: item.nttSj,
       user: item.ntcrNm || item.frstRegisterId,
-      time: item.frstRegistPnttm?.split('T')[0] || 'Just now',
+      time: item.frstRegisterPnttm?.split('T')[0] || 'Just now',
       impact: `+${(item.inqireCo || 0) % 100} Reach`
     }));
   }

@@ -8,7 +8,7 @@ export interface FaqVO {
   inqireCo?: number;
   frstRegisterId?: string;
   frstRegisterNm?: string;
-  frstRegistPnttm?: string;
+  frstRegisterPnttm?: string;
   lastUpdtPnttm?: string;
   atchFileId?: string;
 }

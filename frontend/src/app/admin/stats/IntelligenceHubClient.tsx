@@ -4,18 +4,18 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  BarChart3, 
-  PieChart, 
-  LineChart, 
-  Activity, 
-  Users, 
-  Monitor, 
-  Database, 
-  FileText, 
-  TrendingUp, 
-  Filter, 
-  Download, 
+import {
+  BarChart3,
+  PieChart,
+  LineChart,
+  Activity,
+  Users,
+  Monitor,
+  Database,
+  FileText,
+  TrendingUp,
+  Filter,
+  Download,
   ChevronRight,
   Search,
   RefreshCcw,
@@ -95,7 +95,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
       </div>
 
       <div className="grid grid-cols-12 gap-8 px-2">
-        
+
         {/* --- Left Column: Navigation (20%) --- */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
           <Card className="rounded-[0.1rem] border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100">
@@ -122,7 +122,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
 
         {/* --- Center/Right Columns: Interactive Data (80%) --- */}
         <div className="col-span-12 lg:col-span-9 space-y-8">
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <StatSummaryCard icon={<Activity size={24} />} label="활성 세션" value={`${userStats?.length || 0}`} trend="+12%" />
             <StatSummaryCard icon={<Monitor size={24} />} label="화면 요청" value={`${screenStats?.length || 0}k`} trend="+5.4k" color="primary" />
@@ -134,12 +134,12 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
               <div className="space-y-1">
                 <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] italic">심층 분석 뷰포트</h3>
                 <CardTitle className="text-2xl font-black text-slate-900 tracking-tighter italic">
-                  {activeTab === 'DASHBOARD' ? '글로벌 개요' : 
-                   activeTab === 'USER_STATS' ? '사용자 통계 분석' :
-                   activeTab === 'CONTENT_STATS' ? '콘텐츠 지표 분석' :
-                   activeTab === 'SYSTEM_STATS' ? '시스템 활성 지표' :
-                   activeTab === 'SURVEYS' ? '설문조사 결과 분석' :
-                   activeTab === 'REPORTS' ? '운영 보고서 아카이브' : activeTab}
+                  {activeTab === 'DASHBOARD' ? '글로벌 개요' :
+                    activeTab === 'USER_STATS' ? '사용자 통계 분석' :
+                      activeTab === 'CONTENT_STATS' ? '콘텐츠 지표 분석' :
+                        activeTab === 'SYSTEM_STATS' ? '시스템 활성 지표' :
+                          activeTab === 'SURVEYS' ? '설문조사 결과 분석' :
+                            activeTab === 'REPORTS' ? '운영 보고서 아카이브' : activeTab}
                 </CardTitle>
               </div>
               <div className="flex gap-4">
@@ -149,7 +149,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-12">
               <AnimatePresence mode="wait">
-                <motion.div 
+                <motion.div
                   key={activeTab}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -170,7 +170,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                                 {s.qestnrSj}
                               </h4>
                               <p className="text-[10px] font-bold text-slate-400 tracking-tight">
-                                상태: {s.qestnrEndde > new Date().toISOString() ? '활성 진행중' : '기간 종료 보관됨'} • 마감: {s.qestnrEndde}
+                                상태: {s.qestnrEndDe > new Date().toISOString() ? '활성 진행중' : '기간 종료 보관됨'} • 마감: {s.qestnrEndDe}
                               </p>
                             </div>
                           </div>
@@ -211,12 +211,12 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
 
 function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button 
+    <button
       onClick={onClick}
       className={cn(
         "w-full group p-6 rounded-[0.1rem] border-2 transition-all flex items-center gap-5 mb-2",
-        active 
-          ? "bg-slate-900 border-slate-900 text-white shadow-xl" 
+        active
+          ? "bg-slate-900 border-slate-900 text-white shadow-xl"
           : "bg-white border-transparent hover:border-slate-50 text-slate-500 hover:text-slate-900"
       )}
     >

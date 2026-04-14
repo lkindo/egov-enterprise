@@ -154,7 +154,7 @@ export default function SurveyResponseListPage() {
                         <span className="line-clamp-1">{item.respondAnswerCn}</span>
                       </TableCell>
                       <TableCell className="text-sm font-mono text-muted-foreground">
-                        {item.frstRegisterPnttm}
+                        {item.createdDate}
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-center space-x-1">

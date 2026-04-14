@@ -95,7 +95,7 @@ public class InstitutionCodeRecptnLog {
     private Integer sortOrdr;
 
     @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegistPnttm;
+    private LocalDateTime frstRegisterPnttm;
 
     @Column(name = "FRST_REGISTER_ID", length = 20)
     private String frstRegisterId;
@@ -164,7 +164,7 @@ public class InstitutionCodeRecptnLog {
         this.sortOrdr = sortOrdr;
         this.frstRegisterId = frstRegisterId;
         this.lastUpdusrId = frstRegisterId;
-        this.frstRegistPnttm = LocalDateTime.now();
+        this.frstRegisterPnttm = LocalDateTime.now();
         this.lastUpdtPnttm = LocalDateTime.now();
     }
 
