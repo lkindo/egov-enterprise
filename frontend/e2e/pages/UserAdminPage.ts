@@ -25,7 +25,7 @@ export class UserAdminPage {
   async search(keyword: string) {
     // [Strict Validation] Monitor API response for field mismatches
     const responsePromise = this.page.waitForResponse(
-      response => response.url().includes('/users') && response.status() === 200,
+      response => response.url().includes('/users'),
       { timeout: 5000 }
     ).catch(() => null);
 
@@ -33,7 +33,11 @@ export class UserAdminPage {
       await this.searchInput.fill(keyword);
       
       const response = await responsePromise;
-      if (response) {
+      if (response && response.status() !== 200) {
+        console.error(`[Search API Error] URL: ${response.url()}, Status: ${response.status()}`);
+      }
+      
+      if (response && response.status() === 200) {
         const data = await response.json();
         // Check for PageResponse standardization (list vs content)
         if (data.content && !data.list) {

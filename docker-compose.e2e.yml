@@ -87,12 +87,16 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        BACKEND_API_URL: http://api-e2e:8080/api/v1
+        NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
     container_name: egov-e2e-frontend
     restart: "no"
     ports:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+      BACKEND_API_URL: http://api-e2e:8080/api/v1
     depends_on:
       api-e2e:
         condition: service_healthy

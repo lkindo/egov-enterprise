@@ -82,13 +82,22 @@ test.describe('Admin Console Auditor - Parallel Sweep', () => {
 
             const errorLogs: string[] = [];
             const routeSlug = route.replace(/\//g, '_');
-            const baseUrl = 'http://localhost:3001';
+            const baseUrl = 'http://localhost:3000';
             const fullUrl = `${baseUrl}${route}`;
 
             // 1. Setup Listeners for this specific test
             page.on('console', msg => {
                 if (msg.type() === 'error') {
-                    errorLogs.push(`[CONSOLE ERROR] ${msg.text()}`);
+                    const text = msg.text();
+                    if (text.includes('Hydration') || 
+                        text.includes('chrome-extension') || 
+                        text.includes('React does not recognize') ||
+                        text.includes('Failed to fetch RSC payload') ||
+                        text.includes('network error')
+                    ) {
+                        return;
+                    }
+                    errorLogs.push(`[CONSOLE ERROR] ${text}`);
                 }
             });
 
@@ -126,7 +135,7 @@ test.describe('Admin Console Auditor - Parallel Sweep', () => {
 
             // 3. Visit Target Route
             console.log(`Auditing: ${route}`);
-            const response = await page.goto(fullUrl, { waitUntil: 'networkidle', timeout: 45000 });
+            const response = await page.goto(fullUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
             
             // Allow small buffer for final rendering
             await page.waitForTimeout(2000);

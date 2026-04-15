@@ -10,6 +10,7 @@ async function authenticate(request: any, id: string, authFilePath: string) {
     const url = `${apiUrl.endsWith('/') ? apiUrl : apiUrl + '/'}auth/login`;
 
     let token: string;
+    let refreshToken: string;
     let role: string;
 
     try {
@@ -20,35 +21,31 @@ async function authenticate(request: any, id: string, authFilePath: string) {
         if (response.ok()) {
             const resBody = await response.json();
             token = resBody.data.accessToken;
+            refreshToken = resBody.data.refreshToken;
             role = resBody.data.role;
         } else {
-            console.warn(`[AUTH SETUP] Backend login failed for ${id} (status: ${response.status()}). Using fallback mock session.`);
-            token = 'MOCK_TOKEN';
-            role = id.toUpperCase() === 'WEBMASTER' ? 'ROLE_ADMIN' : 'ROLE_USER';
+            throw new Error(`[AUTH SETUP] Backend login failed for ${id} (status: ${response.status()}).`);
         }
     } catch (err: any) {
-        console.warn(`[AUTH SETUP] Backend unreachable for ${id} (${err.message}). Using fallback mock session.`);
-        token = 'MOCK_TOKEN';
-        role = id.toUpperCase() === 'WEBMASTER' ? 'ROLE_ADMIN' : 'ROLE_USER';
+        throw new Error(`[AUTH SETUP] Backend unreachable for ${id} (${err.message}).`);
     }
 
     const storageState = {
         cookies: [
-            { name: 'accessToken', value: token, domain: 'localhost', path: '/', expires: -1 },  
-            { name: 'userRole', value: role, domain: 'localhost', path: '/', expires: -1 },
-            { name: 'accessToken', value: token, domain: '127.0.0.1', path: '/', expires: -1 },  
-            { name: 'userRole', value: role, domain: '127.0.0.1', path: '/', expires: -1 }       
+            { name: 'accessToken', value: token, domain: 'localhost', path: '/', expires: -1 },
+            { name: 'refreshToken', value: refreshToken, domain: 'localhost', path: '/', expires: -1, httpOnly: true },
+            { name: 'userRole', value: role, domain: 'localhost', path: '/', expires: -1 }
         ],
         origins: [
             {
-                origin: 'http://localhost:3001',
+                origin: 'http://localhost:3000',
                 localStorage: [
                     { name: 'accessToken', value: token },
                     { name: 'egov_smart_tour_v1', value: 'true' }
                 ]
             },
             {
-                origin: 'http://127.0.0.1:3001',
+                origin: 'http://127.0.0.1:3000',
                 localStorage: [
                     { name: 'accessToken', value: token },
                     { name: 'egov_smart_tour_v1', value: 'true' }
@@ -67,5 +64,5 @@ setup('authenticate-admin', async ({ request }) => {
 });
 
 setup('authenticate-user', async ({ request }) => {
-    await authenticate(request, 'tester_regular', userFile);
+    await authenticate(request, 'TEST1', userFile);
 });

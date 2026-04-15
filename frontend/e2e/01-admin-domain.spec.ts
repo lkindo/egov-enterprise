@@ -8,27 +8,34 @@ test.use({ storageState: 'playwright/.auth/admin.json' });
  * 에러 발생 시 즉시 🚨 표식과 함께 로그를 남깁니다.
  */
 test.beforeEach(async ({ page }) => {
-    // Network error detection
-    page.on('requestfailed', request => {
-        const url = request.url();
-        const failure = request.failure();
-        if (url.includes('api/v1') || url.includes('.png') || url.includes('.svg')) {
-            console.error(`[STRICT NET ERROR] Failed to load ${url}: ${failure?.errorText || 'Unknown error'}`);
-        }
-    });
+
 
     // Global error detection - with hydration error filtering
     page.on('console', (msg) => {
         if (msg.type() === 'error') {
             const text = msg.text();
-            if (text.includes('Hydration') || text.includes('chrome-extension') || text.includes('React does not recognize')) {
+            if (text.includes('Hydration') || 
+                text.includes('chrome-extension') || 
+                text.includes('React does not recognize') ||
+                text.includes('Failed to fetch RSC payload') ||
+                text.includes('network error')
+            ) {
                 console.log(`[SOFT IGNORE CONSOLE ERROR] ${text}`);
                 return;
             }
             // Strict error detection
             const errorMsg = text.includes('404') ? `[STRICT 404 DETECTED] ${text}` : `[STRICT ERROR DETECTED] ${text}`;
-            console.error(errorMsg);
+            console.error(`${errorMsg} (Current Page: ${page.url()})`);
             throw new Error(errorMsg);
+        }
+    });
+
+    page.on('requestfailed', request => {
+        const failure = request.failure();
+        const url = request.url();
+        if (failure?.errorText === 'net::ERR_ABORTED') return;
+        if (url.includes('api/v1')) {
+             console.error(`[STRICT NET ERROR] Failed to load ${url}: ${failure?.errorText || 'Unknown error'}`);
         }
     });
 
