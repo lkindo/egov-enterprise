@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Profile;
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@Profile("!stress-test & !bottleneck-test")
+@Profile("!stress-test & !bottleneck-test & !e2e")
 public class RateLimitFilter implements Filter {
 
     private static final int MAX_REQUESTS_PER_MINUTE = 200;

@@ -67,5 +67,5 @@ setup('authenticate-admin', async ({ request }) => {
 });
 
 setup('authenticate-user', async ({ request }) => {
-    await authenticate(request, 'user_regular', userFile);
+    await authenticate(request, 'tester_regular', userFile);
 });
