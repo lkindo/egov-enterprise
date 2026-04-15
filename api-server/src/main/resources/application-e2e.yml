@@ -1,0 +1,50 @@
+server:
+  port: 8080
+  error:
+    include-stacktrace: never
+    include-exception: false
+
+spring:
+  config:
+    activate:
+      on-profile: e2e
+
+  datasource:
+    url: jdbc:postgresql://localhost:5434/egovdb?currentSchema=public&prepareThreshold=0
+    jdbc-url: jdbc:postgresql://localhost:5434/egovdb?currentSchema=public&prepareThreshold=0
+    username: egov
+    password: egov123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      jdbc-url: jdbc:postgresql://localhost:5434/egovdb?currentSchema=public&prepareThreshold=0
+      maximum-pool-size: 10
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  mvc:
+    view:
+      prefix: /WEB-INF/jsp/
+      suffix: .jsp
+
+logging:
+  level:
+    root: warn
+    nuri: info
+    egovframework: info
+    org.hibernate.SQL: warn
+    org.springframework.security: warn
+
+jwt:
+  secret: dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==
+
+management:
+  health:
+    mail:
+      enabled: false
