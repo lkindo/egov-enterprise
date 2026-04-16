@@ -49,7 +49,8 @@ public class SmsDto {
     public LocalDateTime getFrstRegistPnttm() { return createdDate; }
 
     @Schema(description = "Description")
-    private List<SmsRecptnDto> recipients;
+    @Builder.Default
+    private List<SmsRecptnDto> recipients = new java.util.ArrayList<>();
 
     @Schema(description = "Description")
     private String searchCondition;
@@ -67,7 +68,7 @@ public class SmsDto {
                 .recptnCnt(0)
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())
-                .recipients(null)
+                .recipients(new java.util.ArrayList<>())
                 .build();
     }
 }

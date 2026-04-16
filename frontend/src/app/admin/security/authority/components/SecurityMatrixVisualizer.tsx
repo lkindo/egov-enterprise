@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -58,7 +58,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
   const [searchMenu, setSearchMenu] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const filteredMenus = menus.filter(m => m.menuNm.toLowerCase().includes(searchMenu.toLowerCase()));
+  const filteredMenus = menus.filter(m => String(m.menuNm || '').toLowerCase().includes(searchMenu.toLowerCase()));
 
   // 통계 계산
   const totalCells = authors.length * menus.length;

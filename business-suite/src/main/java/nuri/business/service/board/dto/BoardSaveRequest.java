@@ -25,5 +25,15 @@ public record BoardSaveRequest(
 
                 @Schema(description = "Q&A Status (OPEN/SOLVED)") String qnaStatus,
 
-                @Schema(description = "Q&A Category") String qnaCategory) {
+                @Schema(description = "Q&A Category") String qnaCategory,
+                
+                @Schema(description = "Secret Flag (Y/N)") String secretAt,
+
+                @Schema(description = "Use Flag (Y/N)") String useAt,
+
+                @Schema(description = "Author ID") String ntcrId,
+
+                @Schema(description = "Author Name") String ntcrNm,
+
+                @Schema(description = "Post Password") String password) {
 }

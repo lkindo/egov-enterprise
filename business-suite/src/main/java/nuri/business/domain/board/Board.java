@@ -111,7 +111,7 @@ public class Board extends BaseEntity implements Serializable {
     private Integer fileCo = 0;
 
     public void update(String nttSj, String nttCn, String ntcrId, String ntcrNm, String password, String ntceBgnde,
-            String ntceEndde, String atchFileId, java.time.LocalDateTime eventDate, String qnaStatus, String qnaCategory) {
+            String ntceEndde, String atchFileId, java.time.LocalDateTime eventDate, String qnaStatus, String qnaCategory, String secretAt) {
         this.nttSj = nttSj;
         this.nttCn = nttCn;
         this.ntcrId = ntcrId;
@@ -123,6 +123,7 @@ public class Board extends BaseEntity implements Serializable {
         this.eventDate = eventDate;
         this.qnaStatus = qnaStatus;
         this.qnaCategory = qnaCategory;
+        this.secretAt = secretAt;
     }
 
     public void delete() {

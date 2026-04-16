@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -47,8 +47,8 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
     const [editingNode, setEditingNode] = useState<Network | null>(null);
 
     const filteredNodes = initialNetworks.filter(node =>
-        (node.manageIem?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-        (node.ntwrkId?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+        String(node.manageIem || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(node.ntwrkId || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleCreate = () => {

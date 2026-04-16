@@ -63,15 +63,15 @@ export const knowledgeService = {
       page: params.page || 0,
       size: params.size || 20
     };
-    const res = await client.get<any>('admin/board/articles', { params: boardParams });
+    const res = await client.get<any>(`bbs/${boardParams.bbsId}`, { params: boardParams });
 
     // Map Board fields to Knowledge fields for UI compatibility
     return res;
   },
 
   getHotArticles: async (bbsId?: string) => {
-    const res = await client.get<any>('admin/board/articles', {
-      params: { bbsId: bbsId || 'BBSMSTR_AAAAAAAAAAAA', size: 5, sort: 'inqireCo,desc' }
+    const res = await client.get<any>(`bbs/${bbsId || 'BBSMSTR_AAAAAAAAAAAA'}`, {
+      params: { size: 5, sort: 'inqireCo,desc' }
     });
     return {
       list: (res.list || []).map((item: any) => ({
@@ -82,9 +82,8 @@ export const knowledgeService = {
     };
   },
 
-  getArticle: async (knoId: string) => {
-    // Note: Detail view should also ideally come from board detail API
-    return client.get<KnowledgeDto>(`admin/board/articles/${knoId}`);
+  getArticle: async (bbsId: string, nttId: string) => {
+    return client.get<KnowledgeDto>(`bbs/${bbsId}/${nttId}`);
   },
 
   getStats: async (bbsId?: string) => {
@@ -94,8 +93,8 @@ export const knowledgeService = {
   },
 
   getActivities: async (bbsId?: string) => {
-    const res = await client.get<any>('admin/board/articles', {
-      params: { bbsId: bbsId || 'BBSMSTR_AAAAAAAAAAAA', size: 10 }
+    const res = await client.get<any>(`bbs/${bbsId || 'BBSMSTR_AAAAAAAAAAAA'}`, {
+      params: { size: 10 }
     });
     return (res.list || []).map((item: any) => ({
       id: item.nttId,

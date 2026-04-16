@@ -15,7 +15,7 @@ class BoardEntityTest {
                 .nttCn("Old Content")
                 .build();
         
-        board.update("New Title", "New Content", "user01", "홍길동", "pwd", "20240101", "20241231", "FILE_001", null, null, null);
+        board.update("New Title", "New Content", "user01", "홍길동", "pwd", "20240101", "20241231", "FILE_001", null, null, null, "N");
         
         assertThat(board.getNttSj()).isEqualTo("New Title");
         assertThat(board.getNttCn()).isEqualTo("New Content");

@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/app/components/ui/toast';
 import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
+import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
 
 function DetailContent() {
@@ -29,15 +30,15 @@ function DetailContent() {
   // 마스터 정보 조회 (템플릿 확인용)
   const { data: masterInfo } = useQuery({
     queryKey: ['board-master', bbsId],
-    queryFn: () => client.get<any>(`/admin/system/board-masters/${bbsId}`),
+    queryFn: () => boardAdminService.getBoardMaster(bbsId!),
     enabled: !!bbsId,
   });
 
-  const tmplatId = masterInfo?.tmplatId || 'TMPLT_LIST';
+  const tmplatId = (masterInfo as any)?.tmplatId || (masterInfo as any)?.tmplat_id || 'TMPLT_LIST';
 
   const { data: article, isLoading, refetch } = useQuery({
     queryKey: ['article-detail', bbsId, nttId],
-    queryFn: () => knowledgeService.getArticle(nttId!),
+    queryFn: () => knowledgeService.getArticle(bbsId!, nttId!),
     enabled: !!bbsId && !!nttId,
   });
 

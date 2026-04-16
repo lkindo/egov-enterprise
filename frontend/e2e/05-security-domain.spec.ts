@@ -25,7 +25,7 @@ test.describe('Rigorous RBAC Check - Regular User Access Control', () => {
             if (msg.type() === 'error') {
                 const text = msg.text();
                 // 403 Forbidden is expected for RBAC tests, don't fail strictly here
-                if (text.includes('403') || text.includes('Forbidden') || text.includes('unauthorized')) {
+                if (text.includes('403') || text.includes('Forbidden') || text.includes('unauthorized') || text.includes('Access Denied') || text.includes('Insufficient privileges')) {
                     console.log(`[EXPECTED SECURITY ERROR] ${text}`);
                     return;
                 }

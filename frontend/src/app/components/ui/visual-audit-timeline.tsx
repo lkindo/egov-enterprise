@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState } from 'react';
 import {
  History as HistoryIcon,
@@ -41,13 +41,13 @@ interface VisualAuditTimelineProps {
 }
 
 export function VisualAuditTimeline({ logs, className, title = "Security Audit Intelligence" }: VisualAuditTimelineProps) {
- const [expandedLog, setExpandedLog] = useState<string | null>(logs[0]?.id);
- const [filter, setFilter] = useState<string>('');
+  const [expandedLog, setExpandedLog] = useState<string | null>(logs?.[0]?.id || null);
+  const [filter, setFilter] = useState<string>('');
 
- const filteredLogs = logs.filter(log =>
- log.entityName.toLowerCase().includes(filter.toLowerCase()) ||
- log.performedBy.toLowerCase().includes(filter.toLowerCase())
- );
+  const filteredLogs = (logs || []).filter(Boolean).filter(log =>
+    String(log.entityName || '').toLowerCase().includes((filter || '').toLowerCase()) ||
+    String(log.performedBy || '').toLowerCase().includes((filter || '').toLowerCase())
+  );
 
  const getSeverityColor = (severity: string) => {
  switch (severity) {

@@ -134,9 +134,9 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
 
   const renderJobList = () => (
     <div className="space-y-4">
-      {jobs.length === 0 ? (
+      {!(jobs || []).length ? (
         <div className="p-10 text-center opacity-30 font-black text-xs tracking-widest border-2 border-dashed border-border rounded-[0.1rem]">등록된 업무가 없습니다.</div>
-      ) : jobs.map((item: any) => (
+      ) : (jobs || []).map((item: any) => (
         <WorkListItem
           key={item.deptJobbxId}
           title={item.deptJobbxNm}
@@ -151,9 +151,9 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
 
   const renderReportList = () => (
     <div className="space-y-4">
-      {reports.length === 0 ? (
+      {!(reports || []).length ? (
         <div className="p-10 text-center opacity-30 font-black text-xs tracking-widest border-2 border-dashed border-border rounded-[0.1rem]">등록된 보고서가 없습니다.</div>
-      ) : reports.map((item: any) => (
+      ) : (reports || []).map((item: any) => (
         <WorkListItem
           key={item.reprtId}
           title={item.reprtSj}

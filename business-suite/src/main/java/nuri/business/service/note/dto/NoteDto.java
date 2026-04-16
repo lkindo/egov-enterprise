@@ -47,5 +47,6 @@ public class NoteDto {
     public LocalDateTime getSendDt() { return regDate; }
 
     @Schema(description = "수신자 목록")
-    private List<NoteRecipientDto> recipients;
+    @Builder.Default
+    private List<NoteRecipientDto> recipients = new java.util.ArrayList<>();
 }

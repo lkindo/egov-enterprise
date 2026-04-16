@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -72,8 +72,8 @@ export default function DeptAuthorityPage() {
   const roles: AuthorInfo[] = (rolesData as any)?.list || (rolesData as any)?.resultList || rolesData || [];
 
   const filteredDepts = depts.filter(d =>
-    d.orgnztNm.toLocaleLowerCase().includes(searchKeyword.toLocaleLowerCase()) ||
-    d.orgnztId.toLocaleLowerCase().includes(searchKeyword.toLocaleLowerCase())
+    String(d.orgnztNm || '').toLocaleLowerCase().includes(searchKeyword.toLocaleLowerCase()) ||
+    String(d.orgnztId || '').toLocaleLowerCase().includes(searchKeyword.toLocaleLowerCase())
   );
 
   const loading = deptsLoading || rolesLoading;

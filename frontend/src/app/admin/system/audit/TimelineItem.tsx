@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -26,9 +26,10 @@ interface TimelineItemProps {
 }
 
 export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspect, isSelected }) => {
-  const isSecurity = log.histCn.includes('로그인') || log.histCn.includes('보안');
-  const isSystem = log.histCn.includes('시스템') || log.histCn.includes('배포');
-  const isError = log.histCn.includes('오류') || log.histCn.includes('실패');
+  const content = String(log.histCn || (log as any).methodNm || '');
+  const isSecurity = content.includes('로그인') || content.includes('보안') || content.includes('login') || content.includes('security');
+  const isSystem = content.includes('시스템') || content.includes('배포') || content.includes('system') || content.includes('deploy');
+  const isError = content.includes('오류') || content.includes('실패') || content.includes('error') || content.includes('fail');
   
   const getIcon = () => {
     if (isError) return <AlertCircle size={20} />;
@@ -95,7 +96,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
                 {log.frstRegisterPnttm}
              </span>
              <h4 className="text-lg font-black tracking-tighter text-slate-800 uppercase italic text-left">
-                {log.histCn}
+                {log.histCn || (log as any).methodNm || 'System Action'}
              </h4>
           </div>
           <div className="flex items-center gap-2">

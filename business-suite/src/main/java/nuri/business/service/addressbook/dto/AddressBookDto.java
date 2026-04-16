@@ -24,7 +24,8 @@ public class AddressBookDto {
     private String trgetOrgnztId;
     private String useAt;
     private String wrterId;
-    private List<AddressBookUserDto> adbkMan;
+    @Builder.Default
+    private List<AddressBookUserDto> adbkMan = new java.util.ArrayList<>();
 
     private String frstRegisterId;
     private LocalDateTime frstRegistPnttm;

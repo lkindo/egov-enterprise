@@ -82,11 +82,11 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
       // 1순위: bbsId가 포함된 경우 정밀 매칭
       if (searchBbsId) {
         for (const m of menus) {
-          const hasBbsMatch = (m.children || []).some((c: MenuInfo) => {
-            if (c.modernRoute?.includes(`bbsId=${searchBbsId}`)) return true;
-            return c.children?.some(cc => cc.modernRoute?.includes(`bbsId=${searchBbsId}`));
+          const hasBbsMatch = m.children?.some(c => {
+            if (String(c.modernRoute || '').includes(`bbsId=${searchBbsId}`)) return true;
+            return c.children?.some(cc => String(cc.modernRoute || '').includes(`bbsId=${searchBbsId}`));
           });
-          if (hasBbsMatch || m.modernRoute?.includes(`bbsId=${searchBbsId}`)) {
+          if (hasBbsMatch || String(m.modernRoute || '').includes(`bbsId=${searchBbsId}`)) {
             return m.menuNo;
           }
         }

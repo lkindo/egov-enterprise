@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -98,19 +98,19 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
     const formatted = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
     
     // Legacy mapping (expand as needed)
-    if (formatted.includes('selectBoardList.do')) return '/admin/community/boards/selectBoardList';
-    if (formatted.includes('AdminStats.do')) return '/admin/stats';
-    if (formatted.includes('selectAddressBookList.do')) return '/admin/collaboration/address-book/selectAddressBookList';
+    if (String(formatted).includes('selectBoardList.do')) return '/admin/community/boards/selectBoardList';
+    if (String(formatted).includes('AdminStats.do')) return '/admin/stats';
+    if (String(formatted).includes('selectAddressBookList.do')) return '/admin/collaboration/address-book/selectAddressBookList';
     
     return formatted;
   }, [item.modernRoute, item.chkURL]);
 
   const isActive = useMemo(() => {
-    if (href !== '#' && pathname.startsWith(href)) return true;
+    if (href !== '#' && String(pathname).startsWith(String(href))) return true;
     if (hasChildren && item.children) {
       return item.children.some(child => {
         const childHref = child.modernRoute || child.chkURL;
-        return childHref && pathname.startsWith(childHref.startsWith('/') ? childHref : `/${childHref}`);
+        return childHref && String(pathname).startsWith(String(childHref).startsWith('/') ? String(childHref) : `/${String(childHref)}`);
       });
     }
     return false;

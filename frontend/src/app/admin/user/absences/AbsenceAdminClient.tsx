@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -224,7 +224,7 @@ export default function AbsenceAdminClient({
             <div className="overflow-hidden">
               <StandardDataTable
                 columns={columns}
-                data={users.filter((u: any) => u.userNm.includes(searchKeyword) || u.emplyrId.includes(searchKeyword))}
+                data={users.filter((u: any) => String(u.userNm || '').includes(searchKeyword) || String(u.emplyrId || '').includes(searchKeyword))}
                 loading={loading}
                 emptyMessage="리소스 데이터를 분석 중입니다..."
                 className="border-none bg-transparent"

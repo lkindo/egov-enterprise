@@ -49,10 +49,11 @@ export function AuditTimelineClient() {
 
   // 통계 계산 (데모 지표)
   const stats = useMemo(() => {
+    const validLogs = logs?.filter(Boolean) || [];
     return {
-       total: totalItems,
-       security: logs.filter(l => l.histCn.includes('로그인')).length + 125,
-       system: logs.filter(l => l.histCn.includes('시스템')).length + 42,
+       total: totalItems || 0,
+       security: validLogs.filter(l => (String(l.histCn || (l as any).methodNm || '')).toLowerCase().includes('login') || (String(l.histCn || '')).includes('로그인')).length + 125,
+       system: validLogs.filter(l => (String(l.histCn || (l as any).methodNm || '')).toLowerCase().includes('system') || (String(l.histCn || '')).includes('시스템')).length + 42,
        recent: 8
     };
   }, [logs, totalItems]);

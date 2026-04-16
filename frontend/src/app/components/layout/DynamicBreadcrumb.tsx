@@ -33,7 +33,7 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
           for (const menu of menuList) {
             // 정의된 라우트(modernRoute)가 있고, 현재 경로와 일치하거나 해당 메뉴의 쿼리 스트링에 bbsId가 포함되어 있는지 확인
             const isMatch = (menu.modernRoute && (targetPath === menu.modernRoute || targetPath.startsWith(menu.modernRoute + '/'))) 
-                          || (searchBbsId && menu.modernRoute?.includes(`bbsId=${searchBbsId}`));
+                          || (searchBbsId && String(menu.modernRoute || '').includes(`bbsId=${searchBbsId}`));
 
             if (isMatch) {
               path.push({ name: menu.menuNm, href: menu.modernRoute });

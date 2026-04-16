@@ -32,8 +32,7 @@ import { auditAdminService } from '@/services/foundation/system/AuditAdminServic
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { authorAdminService } from '@/services/foundation/system/AuthorAdminService';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
@@ -65,6 +64,13 @@ const MOCK_DISTRIBUTION_DATA = [
 ];
 
 export default function AdminDashboardPage() {
+  React.useEffect(() => {
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.error(`[GLOBAL ERROR] ${message} at ${source}:${lineno}:${colno}`);
+      if (error && error.stack) console.error(`[STACK TRACE] ${error.stack}`);
+    };
+  }, []);
+
   const { data: auditData } = useQuery({
     queryKey: ['admin-dashboard-recent-audits'],
     queryFn: () => auditAdminService.getAuditLogs({ page: 0, size: 5 }),
@@ -87,18 +93,45 @@ export default function AdminDashboardPage() {
     retryDelay: 5000,
   });
 
-  const recentLogs: UIAuditLog[] = (auditData?.list || []).map(log => ({
-    id: log.histId,
-    action: log.histCn.includes('생성') || log.histCn.includes('등록') ? 'CREATE' :
-      log.histCn.includes('삭제') ? 'DELETE' :
-        log.histCn.includes('복원') ? 'RESTORE' : 'UPDATE',
-    entityName: log.histCn,
-    performedBy: log.frstRegisterId,
-    timestamp: log.frstRegisterPnttm,
-    ipAddress: log.sysNm || 'Unknown Subsystem',
-    severity: log.histCn.includes('오류') || log.histCn.includes('실패') || log.histCn.includes('삭제') ? 'high' :
-      log.histCn.includes('보안') || log.histCn.includes('권한') ? 'medium' : 'low'
-  }));
+  const recentLogs: UIAuditLog[] = React.useMemo(() => {
+    const list = auditData?.list || [];
+    const results: UIAuditLog[] = [];
+    
+    for (let i = 0; i < list.length; i++) {
+        const log = list[i] as any;
+        if (!log) continue;
+
+        const { 
+            histCn = '', 
+            methodNm = '', 
+            histId = '', 
+            requstId = '', 
+            frstRegisterId = '', 
+            rqesterId = '', 
+            frstRegisterPnttm = '', 
+            occrrncDe = '', 
+            sysNm = '', 
+            rqesterIp = '' 
+        } = log;
+
+        const content = String(histCn || methodNm || '');
+        const safeContent = content.toLowerCase();
+        
+        results.push({
+            id: String(histId || requstId || `log-${i}`),
+            action: safeContent.includes('생성') || safeContent.includes('등록') || safeContent.includes('create') ? 'CREATE' :
+                    safeContent.includes('삭제') || safeContent.includes('delete') ? 'DELETE' :
+                    safeContent.includes('복원') || safeContent.includes('restore') ? 'RESTORE' : 'UPDATE',
+            entityName: content || 'System Action',
+            performedBy: String(frstRegisterId || rqesterId || 'System'),
+            timestamp: String(frstRegisterPnttm || occrrncDe || new Date().toISOString()),
+            ipAddress: String(sysNm || rqesterIp || 'Unknown'),
+            severity: safeContent.includes('오류') || safeContent.includes('실패') || safeContent.includes('삭제') || safeContent.includes('error') ? 'high' :
+                      safeContent.includes('보안') || safeContent.includes('권한') || safeContent.includes('security') ? 'medium' : 'low'
+        });
+    }
+    return results;
+  }, [auditData]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 px-4 md:px-0 pb-20 animate-in fade-in duration-700">
@@ -321,8 +354,6 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-import { motion } from 'framer-motion';
 
 function DashboardStatCard({ title, value, icon, trend, color, link, description }: any) {
   const colorMap: any = {

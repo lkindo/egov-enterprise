@@ -61,9 +61,8 @@ test.describe('Board Article Lifecycle Management', () => {
         const testTitle = `E2E Article Calendar ${Date.now()}`;
         const testContent = `Playwright Test Content for Calendar Template`;
         const testBbsId = 'BBSMSTR_EEEEEEEEEEEE';
-        const eventDate = new Date();
-        eventDate.setDate(eventDate.getDate() + 7); // 7 days later
-        const eventDateStr = eventDate.toISOString().split('T')[0];
+        const today = new Date();
+        const eventDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
         await executeBoardArticleTest(page, {
             bbsId: testBbsId,
@@ -156,9 +155,10 @@ async function executeBoardArticleTest(page: any, params: BoardTestParams) {
     if (bbsId === 'BBSMSTR_EEEEEEEEEEEE') { // Calendar
         if (eventDate) {
             await expect(page.locator('text=Event Date')).toBeVisible();
-            // Checking for partial date string to avoid locale issues
+            // Checking for partial date string in the Event Date section specifically
             const dayStr = eventDate.split('-')[2];
-            await expect(page.locator(`text=${dayStr}`)).toBeVisible();
+            const eventDateSection = page.locator('div:has-text("Event Date")').last();
+            await expect(eventDateSection.getByText(new RegExp(dayStr))).toBeVisible();
         }
     }
     

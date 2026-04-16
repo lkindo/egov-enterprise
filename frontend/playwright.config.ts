@@ -18,7 +18,7 @@ export default defineConfig({
     workers: process.env.CI ? 2 : undefined, // Allow some parallelism in CI if possible
     reporter: 'html',
     use: {
-        baseURL: process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3000',
+        baseURL: process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3002',
         trace: 'retain-on-failure',
         video: 'on-first-retry',
         screenshot: 'only-on-failure',
@@ -48,4 +48,3 @@ export default defineConfig({
         },
     ],
 });
-

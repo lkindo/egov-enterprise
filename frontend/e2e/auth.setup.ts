@@ -38,14 +38,14 @@ async function authenticate(request: any, id: string, authFilePath: string) {
         ],
         origins: [
             {
-                origin: 'http://localhost:3000',
+                origin: 'http://localhost:3002',
                 localStorage: [
                     { name: 'accessToken', value: token },
                     { name: 'egov_smart_tour_v1', value: 'true' }
                 ]
             },
             {
-                origin: 'http://127.0.0.1:3000',
+                origin: 'http://127.0.0.1:3002',
                 localStorage: [
                     { name: 'accessToken', value: token },
                     { name: 'egov_smart_tour_v1', value: 'true' }

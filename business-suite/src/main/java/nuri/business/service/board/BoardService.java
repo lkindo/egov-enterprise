@@ -154,6 +154,11 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                         .eventDate(eventDate)
                                         .qnaStatus(request.qnaStatus() != null ? request.qnaStatus() : "OPEN")
                                         .qnaCategory(request.qnaCategory())
+                                        .secretAt(request.secretAt())
+                                        .useAt(request.useAt() != null ? request.useAt() : "Y")
+                                        .ntcrId(request.ntcrId() != null ? request.ntcrId() : userId)
+                                        .ntcrNm(request.ntcrNm() != null ? request.ntcrNm() : (author != null ? author.getUserNm() : "익명"))
+                                        .password(request.password())
                                         .build();
 
                         Long nttId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
@@ -182,7 +187,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.nttSj(), request.nttCn(),
                                 request.ntceBgnde(), request.ntceEndde(), atchFileId,
-                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory());
+                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
+                                request.secretAt(), request.useAt(), request.ntcrId(), request.ntcrNm(), request.password());
 
                 return createPost(userId, newRequest);
         }
@@ -229,6 +235,9 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 .replyAt("Y")
                                 .replyLc(parent.getReplyLc() + 1)
                                 .noticeAt(request.noticeAt())
+                                .secretAt(request.secretAt())
+                                .useAt(request.useAt() != null ? request.useAt() : "Y")
+                                .password(request.password())
                                 .build();
 
                 Long nttId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
@@ -253,7 +262,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.nttSj(), request.nttCn(),
                                 request.ntceBgnde(), request.ntceEndde(), atchFileId,
-                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory());
+                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
+                                request.secretAt(), request.useAt(), request.ntcrId(), request.ntcrNm(), request.password());
 
                 return replyPost(userId, parentId, newRequest);
         }
@@ -285,11 +295,14 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         }
                 }
 
-                board.update(request.nttSj(), request.nttCn(), board.getNtcrId(), board.getNtcrNm(),
-                                board.getPassword(), request.ntceBgnde(), request.ntceEndde(),
+                board.update(request.nttSj(), request.nttCn(), 
+                                request.ntcrId() != null ? request.ntcrId() : board.getNtcrId(), 
+                                request.ntcrNm() != null ? request.ntcrNm() : board.getNtcrNm(),
+                                request.password() != null ? request.password() : board.getPassword(), 
+                                request.ntceBgnde(), request.ntceEndde(),
                                 request.atchFileId(), eventDate,
                                 request.qnaStatus() != null ? request.qnaStatus() : board.getQnaStatus(),
-                                request.qnaCategory());
+                                request.qnaCategory(), request.secretAt());
         }
 
         @Override
@@ -310,7 +323,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.nttSj(), request.nttCn(),
                                 request.ntceBgnde(), request.ntceEndde(), atchFileId,
-                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory());
+                                request.noticeAt(), request.eventDate(), request.qnaStatus(), request.qnaCategory(), 
+                                request.secretAt(), request.useAt(), request.ntcrId(), request.ntcrNm(), request.password());
 
                 updatePost(required(bbsId, "bbsId 는 null 일 수 없습니다"), required(nttId, "nttId 는 null 일 수 없습니다"),
                                 newRequest);

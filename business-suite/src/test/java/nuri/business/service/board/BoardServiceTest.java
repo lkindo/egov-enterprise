@@ -99,7 +99,7 @@ class BoardServiceTest {
         String userId = "user01";
         String bbsId = "BBS_001";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Title", "Content", "20240101", "20241231", null, null,
-                null, null, null);
+                null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
         UserDto user = UserDto.builder().userId(userId).userNm("John Doe").esntlId("E1").build();
 
@@ -119,7 +119,7 @@ class BoardServiceTest {
         String userId = "user01";
         String bbsId = "BBS_001";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Title", "Content", null, null, null, null, null, null,
-                null);
+                null, null, null, null, null, null);
         List<MultipartFile> files = List.of(mock(MultipartFile.class));
 
         when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
@@ -138,7 +138,7 @@ class BoardServiceTest {
         Long parentId = 10L;
         String bbsId = "BBS_001";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Reply Title", "Reply Content", null, null, null, null,
-                null, null, null);
+                null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
         Board parent = Board.builder().nttId(parentId).bbsId(bbsId).sortOrdr(100L).replyLc(0).build();
 
@@ -159,7 +159,7 @@ class BoardServiceTest {
         Long parentId = 10L;
         String bbsId = "BBS_001";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Reply Title", "Reply Content", null, null, null, null,
-                null, null, null);
+                null, null, null, null, null, null, null, null);
         List<MultipartFile> files = List.of(mock(MultipartFile.class));
 
         when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
@@ -205,7 +205,7 @@ class BoardServiceTest {
         String bbsId = "BBS_001";
         Long nttId = 1L;
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated Title", "Updated Content", null, null, null,
-                null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
         Board board = Board.builder().bbsId(bbsId).nttId(nttId).build();
 
         when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
@@ -221,7 +221,7 @@ class BoardServiceTest {
         String bbsId = "BBS_001";
         Long nttId = 1L;
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Updated", null, null, null, null, null,
-                null, null);
+                null, null, null, null, null, null, null);
         List<MultipartFile> files = List.of(mock(MultipartFile.class));
         Board board = Board.builder().bbsId(bbsId).nttId(nttId).build();
 
@@ -239,7 +239,7 @@ class BoardServiceTest {
         String bbsId = "BBS_001";
         Long nttId = 1L;
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Updated", null, null, "OLD_FILE_ID", null,
-                null, null, null);
+                null, null, null, null, null, null, null, null);
         List<MultipartFile> files = List.of(mock(MultipartFile.class));
         Board board = Board.builder().bbsId(bbsId).nttId(nttId).build();
 
@@ -269,7 +269,7 @@ class BoardServiceTest {
         String userId = "unknown";
         String bbsId = "BBS_001";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Title", "Content", null, null, null, null, null, null,
-                null);
+                null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
 
         when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
@@ -289,7 +289,7 @@ class BoardServiceTest {
         Long parentId = 10L;
         String bbsId = "BBS_001";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Reply", "Content", null, null, null, null, null, null,
-                null);
+                null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
         Board parent = Board.builder().nttId(parentId).bbsId(bbsId).sortOrdr(100L).replyLc(0).build();
 
@@ -310,7 +310,7 @@ class BoardServiceTest {
         String userId = "user01";
         String bbsId = "BBS_001";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Title", "Content", null, null, "EXISTING_ID", null,
-                null, null, null);
+                null, null, null, null, null, null, null, null);
 
         when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
         when(boardRepository.save(any())).thenReturn(Board.builder().nttId(100L).bbsId(bbsId).build());
@@ -346,7 +346,7 @@ class BoardServiceTest {
         String bbsId = "BBS_001";
         Long nttId = 1L;
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Updated", null, null, null, null, null,
-                null, null);
+                null, null, null, null, null, null, null);
         List<MultipartFile> files = List.of(mock(MultipartFile.class));
         Board board = Board.builder().bbsId(bbsId).nttId(nttId).build();
 
@@ -365,7 +365,7 @@ class BoardServiceTest {
         String bbsId = "BBS_001";
         Long nttId = 1L;
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Updated", null, null, "OLD_FILE_ID", null,
-                null, null, null);
+                null, null, null, null, null, null, null, null);
         List<MultipartFile> files = List.of(mock(MultipartFile.class));
         Board board = Board.builder().bbsId(bbsId).nttId(nttId).atchFileId("OLD_FILE_ID").build();
 
@@ -382,7 +382,7 @@ class BoardServiceTest {
         String userId = "user01";
         Long parentId = 999L;
         BoardSaveRequest request = new BoardSaveRequest("BBS_001", "Reply", "Content", null, null, null, null, null,
-                null, null);
+                null, null, null, null, null, null, null);
 
         when(boardMasterRepository.findById(anyString())).thenReturn(Optional.of(mock(BoardMaster.class)));
         when(boardRepository.findById(parentId)).thenReturn(Optional.empty());
@@ -397,7 +397,7 @@ class BoardServiceTest {
     void createPost_BoardNotFound() {
         String userId = "user01";
         BoardSaveRequest request = new BoardSaveRequest("NON_EXIST", "Title", "Content", null, null, null, null, null,
-                null, null);
+                null, null, null, null, null, null, null);
 
         when(boardMasterRepository.findById("NON_EXIST")).thenReturn(Optional.empty());
 

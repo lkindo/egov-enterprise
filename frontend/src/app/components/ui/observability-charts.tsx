@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -237,7 +237,7 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
               strokeWidth={4} 
               fillOpacity={1} 
               fill="url(#colorValue)" 
-              animationDuration={1500}
+              animationDuration={0}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -278,8 +278,8 @@ export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: D
               outerRadius={80}
               paddingAngle={8}
               dataKey="value"
-              animationDuration={2000}
-              animationBegin={200}
+              animationDuration={0}
+              animationBegin={0}
               stroke="none"
             >
               {data.map((_, index) => (

@@ -196,11 +196,11 @@ export default function CommonCodeClient({
         return initialClusters.map(c => ({
             ...c,
             groups: c.groups.filter(g =>
-                g.codeIdNm.toLowerCase().includes(lowerQuery) ||
-                g.codeId.toLowerCase().includes(lowerQuery)
+                String(g.codeIdNm || '').toLowerCase().includes(lowerQuery) ||
+                String(g.codeId || '').toLowerCase().includes(lowerQuery)
             )
         })).filter(c =>
-            c.name.toLowerCase().includes(lowerQuery) ||
+            String(c.name || '').toLowerCase().includes(lowerQuery) ||
             c.groups.length > 0
         );
     }, [initialClusters, searchQuery]);

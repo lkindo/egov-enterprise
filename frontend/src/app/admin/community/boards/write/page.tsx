@@ -50,7 +50,8 @@ export default function BoardWritePage() {
       ntceEndde: '',
       noticeAt: 'N' as 'Y' | 'N',
       secretAt: 'N' as 'Y' | 'N',
-      useAt: 'Y' as 'Y' | 'N'
+      useAt: 'Y' as 'Y' | 'N',
+      eventDate: ''
     }
   });
 
@@ -263,6 +264,20 @@ export default function BoardWritePage() {
                             <FormLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest">게시 종료일</FormLabel>
                             <FormControl>
                               <Input type="date" {...field} className="h-14 rounded-[0.1rem] border-slate-200 font-bold" />
+                            </FormControl>
+                            <FormMessage className="text-[10px] font-bold text-rose-500" />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="eventDate"
+                        render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest">행사/이벤트 일자</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} className="h-14 rounded-[0.1rem] border-slate-200 font-bold bg-primary/5" />
                             </FormControl>
                             <FormMessage className="text-[10px] font-bold text-rose-500" />
                           </FormItem>

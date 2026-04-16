@@ -76,6 +76,7 @@ export const boardSchema = z.object({
   noticeAt: z.enum(['Y', 'N']).optional(),
   secretAt: z.enum(['Y', 'N']).optional(),
   useAt: z.enum(['Y', 'N']).optional(),
+  eventDate: z.string().optional(),
 });
 
 // --- 온라인 매뉴얼 스키m ---

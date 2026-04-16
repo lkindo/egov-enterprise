@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState } from 'react';
 import {
   Bell,
@@ -96,7 +96,8 @@ export function SmartNotificationHub() {
 
   const filteredLogs = MOCK_NOTIFICATIONS.filter(log => {
     const matchTab = activeTab === 'all' || log.type === activeTab;
-    const matchSearch = log.title.toLowerCase().includes(search.toLowerCase()) || log.content.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = String(log.title || '').toLowerCase().includes(search.toLowerCase()) || 
+                      String(log.content || '').toLowerCase().includes(search.toLowerCase());
     return matchTab && matchSearch;
   });
 
