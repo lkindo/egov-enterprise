@@ -45,6 +45,7 @@
 - **잔여 과제**: `06-board-article-validation` 및 `admin-console-auditor`에서의 일부 404/500 에러는 DB 데이터(메뉴/권타/프로그램 정보) 부족으로 보임.
 
 ### Next Steps (차후 과제)
-1. **DB 시드 보완**: `nbbsmaster` 외에 필요한 메뉴(`nmenuinfo`) 및 권한(`nauthorinfo`) 데이터 추가 매핑.
-2. **A11y 최적화**: 접근성 위반 항목(Color Contrast 등) UI 수정.
-3. **통계 데이터 생성**: `nstsfdg`, `nstsreport` 등 통계 관련 테이블에 샘플 데이터 적재하여 통계 테스트 통과 유도.
+1. [x] **DB 시드 보완**: 임시 `seed_dashboard.sql`을 `dump/03_seed_extra.sql`로 이관하여 E2E 초기화 시 영구 적용. `docker-compose.e2e.yml` 볼륨 매핑 완료.
+2. [ ] **전체 회귀 테스트**: E2E 스위트(`npx playwright test`)를 실행하여 100% Green 검증 (Flakiness 확인).
+3. [ ] **A11y 최적화**: 접근성 위반 항목(Color Contrast 등) UI 수정.
+4. [ ] **테스트 스크립트 정밀화**: 프리미엄 UI 애니메이션 대기 등 추가 안정화.
