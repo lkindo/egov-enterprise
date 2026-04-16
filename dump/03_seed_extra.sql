@@ -1,6 +1,6 @@
 
 -- Seed data for Satisfaction (nstsfdg)
-INSERT INTO nstsfdg (stsfdg_no, ntt_id, bbs_id, stsfdg, stsfdg_cn, wrter_id, wrter_nm, frst_regist_pnttm)
+INSERT INTO nstsfdg (stsfdg_no, ntt_id, bbs_id, stsfdg, stsfdg_cn, wrter_id, wrter_nm, frst_regist_pnttm, use_at, frst_register_id)
 SELECT 
     i, 
     1, 
@@ -9,7 +9,9 @@ SELECT
     'Satisfactory Performance', 
     'webmaster', 
     'Admin', 
-    NOW() - (i || ' hours')::interval
+    NOW() - (i || ' hours')::interval,
+    'Y',
+    'webmaster'
 FROM generate_series(1, 20) i;
 
 -- Seed data for System Log (nsyslog)

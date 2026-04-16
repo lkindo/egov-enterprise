@@ -174,7 +174,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
         <div className="flex items-center gap-6 py-2">
           <div className={cn(
             "w-14 h-14 rounded-[0.1rem] flex items-center justify-center font-black text-xl shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === user.esntlId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-300"
+            selectedItemId === user.esntlId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-500"
           )}>
             {user.userNm?.[0]}
           </div>
@@ -182,7 +182,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
             <h4 className={cn("text-md font-black tracking-tighter leading-none uppercase", selectedItemId === user.esntlId ? "text-white" : "text-foreground")}>
               {user.userNm}
             </h4>
-            <p className={cn("text-[8px] font-black tracking-[0.3em] uppercase opacity-40 font-mono italic")}>{user.userId}</p>
+            <p className={cn("text-[8px] font-black tracking-[0.3em] uppercase opacity-70 font-mono italic")}>{user.userId}</p>
           </div>
         </div>
       )
@@ -196,7 +196,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
         <div className="flex items-center gap-6 py-2">
           <div className={cn(
             "w-14 h-14 rounded-[0.1rem] flex items-center justify-center shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === dept.orgnztId ? "bg-white/10 text-indigo-400" : "bg-indigo-50/50 text-indigo-200"
+            selectedItemId === dept.orgnztId ? "bg-white/10 text-indigo-400" : "bg-indigo-50/50 text-indigo-500"
           )}>
             <Building2 size={24} />
           </div>
@@ -204,7 +204,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
             <h4 className={cn("text-md font-black tracking-tighter leading-none uppercase", selectedItemId === dept.orgnztId ? "text-white" : "text-foreground")}>
               {dept.orgnztNm}
             </h4>
-            <p className={cn("text-[8px] font-black tracking-[0.4em] uppercase opacity-40 font-mono italic")}>NODE_{dept.orgnztId}</p>
+            <p className={cn("text-[8px] font-black tracking-[0.4em] uppercase opacity-70 font-mono italic")}>NODE_{dept.orgnztId}</p>
           </div>
         </div>
       )
@@ -299,7 +299,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
             <div className="space-y-8">
               <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-8">
                 <div>
-                  <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic">실시간 디렉토리 동기화</span>
+                  <span className="text-[10px] font-black text-muted-foreground/70 tracking-[0.4em] uppercase font-mono italic">실시간 디렉토리 동기화</span>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -635,7 +635,7 @@ function NavButton({ icon, subLabel, label, active, onClick }: { icon: React.Rea
             "w-full group p-8 rounded-[0.1rem] border-2 transition-all flex items-center gap-6 relative overflow-hidden",
             active
               ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.03] z-10"
-              : "bg-transparent border-transparent hover:bg-slate-50 text-slate-400 hover:text-slate-900"
+              : "bg-transparent border-transparent hover:bg-slate-50 text-slate-600 hover:text-slate-900"
           )}
         >
           <div className={cn(
@@ -645,7 +645,7 @@ function NavButton({ icon, subLabel, label, active, onClick }: { icon: React.Rea
             {icon}
           </div>
           <div className="flex flex-col text-left relative z-10">
-            <span className={cn("text-[10px] font-black tracking-widest uppercase mb-1 opacity-30", active && "opacity-40 font-mono italic")}>{subLabel}</span>
+            <span className={cn("text-[10px] font-black tracking-widest uppercase mb-1 opacity-60", active && "opacity-80 font-mono italic")}>{subLabel}</span>
             <span className="text-md font-black tracking-tighter uppercase leading-tight font-mono italic">{label}</span>
           </div>
           {active && (
@@ -666,7 +666,7 @@ function InfoBlock({ icon, label, value }: { icon: React.ReactNode, label: strin
       <div className="absolute top-0 right-0 p-8 opacity-[0.02] scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
         {icon}
       </div>
-      <h5 className="text-[11px] font-black text-muted-foreground/30 tracking-[0.3em] flex items-center gap-3 uppercase group-hover:text-primary transition-colors font-mono relative z-10 italic">
+      <h5 className="text-[11px] font-black text-muted-foreground/60 tracking-[0.3em] flex items-center gap-3 uppercase group-hover:text-primary transition-colors font-mono relative z-10 italic">
         {icon} {label}
       </h5>
       <p className="text-2xl font-black tracking-tighter text-slate-900 truncate leading-none relative z-10 py-1 font-mono italic">

@@ -82,8 +82,8 @@ test.describe('Admin Console Auditor - Parallel Sweep', () => {
 
             const errorLogs: string[] = [];
             const routeSlug = route.replace(/\//g, '_');
-            const baseUrl = 'http://localhost:3000';
-            const fullUrl = `${baseUrl}${route}`;
+            const baseUrl = '';
+            const fullUrl = route;
 
             // 1. Setup Listeners for this specific test
             page.on('console', msg => {

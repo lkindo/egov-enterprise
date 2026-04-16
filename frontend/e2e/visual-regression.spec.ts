@@ -16,6 +16,7 @@ test.describe('Visual Regression - Admin Pages', () => {
 
     test('should match dashboard snapshot', async ({ page }) => {
         await page.goto('/admin', { waitUntil: 'networkidle' });
+        await expect(page.locator('aside')).toBeVisible({ timeout: 15000 });
         await page.waitForTimeout(2000); // Wait for animations to complete
 
         // 전체 페이지 스냅샷
@@ -28,6 +29,7 @@ test.describe('Visual Regression - Admin Pages', () => {
     test('should match login page snapshot', async ({ page }) => {
         // 로그아웃 상태로 로그인 페이지 접근
         await page.goto('/login', { waitUntil: 'networkidle' });
+        await expect(page.locator('form')).toBeVisible({ timeout: 15000 });
         await page.waitForTimeout(1000);
 
         await expect(page).toHaveScreenshot('login-page.png', {
@@ -37,7 +39,8 @@ test.describe('Visual Regression - Admin Pages', () => {
     });
 
     test('should match common code management snapshot', async ({ page }) => {
-        await page.goto('/admin/common-codes', { waitUntil: 'networkidle' });
+        await page.goto('/admin/system/common-code', { waitUntil: 'networkidle' });
+        await expect(page.locator('aside')).toBeVisible({ timeout: 15000 });
         await page.waitForTimeout(2000);
 
         await expect(page).toHaveScreenshot('admin-common-codes.png', {
@@ -47,7 +50,8 @@ test.describe('Visual Regression - Admin Pages', () => {
     });
 
     test('should match menu management snapshot', async ({ page }) => {
-        await page.goto('/admin/menus', { waitUntil: 'networkidle' });
+        await page.goto('/admin/system/menus', { waitUntil: 'networkidle' });
+        await expect(page.locator('aside')).toBeVisible({ timeout: 15000 });
         await page.waitForTimeout(2000);
 
         await expect(page).toHaveScreenshot('admin-menus.png', {
@@ -57,7 +61,8 @@ test.describe('Visual Regression - Admin Pages', () => {
     });
 
     test('should match user management snapshot', async ({ page }) => {
-        await page.goto('/admin/users', { waitUntil: 'networkidle' });
+        await page.goto('/admin/user/manage', { waitUntil: 'networkidle' });
+        await expect(page.locator('aside')).toBeVisible({ timeout: 15000 });
         await page.waitForTimeout(2000);
 
         await expect(page).toHaveScreenshot('admin-users.png', {
@@ -67,7 +72,8 @@ test.describe('Visual Regression - Admin Pages', () => {
     });
 
     test('should match board management snapshot', async ({ page }) => {
-        await page.goto('/admin/boards', { waitUntil: 'networkidle' });
+        await page.goto('/admin/community/boards', { waitUntil: 'networkidle' });
+        await expect(page.locator('aside')).toBeVisible({ timeout: 15000 });
         await page.waitForTimeout(2000);
 
         await expect(page).toHaveScreenshot('admin-boards.png', {
@@ -77,7 +83,8 @@ test.describe('Visual Regression - Admin Pages', () => {
     });
 
     test('should match statistics dashboard snapshot', async ({ page }) => {
-        await page.goto('/admin/statistics', { waitUntil: 'networkidle' });
+        await page.goto('/admin/stats/board', { waitUntil: 'networkidle' });
+        await expect(page.locator('aside')).toBeVisible({ timeout: 15000 });
         await page.waitForTimeout(3000); // Wait for charts to render
 
         await expect(page).toHaveScreenshot('admin-statistics.png', {

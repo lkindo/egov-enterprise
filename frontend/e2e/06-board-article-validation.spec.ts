@@ -117,7 +117,7 @@ async function executeBoardArticleTest(page: any, params: BoardTestParams) {
 
     // Wait for redirect to list
     console.log('>>> Waiting for redirect to list...');
-    await page.waitForURL(url => url.pathname.includes('/admin/community/boards/selectBoardList'), { timeout: 15000 });
+    await page.waitForURL((url: URL) => url.pathname.includes('/admin/community/boards/selectBoardList'), { timeout: 15000 });
     
     console.log('>>> Step 4: Verification - Searching for the article');
     const searchInput = page.locator('input[placeholder*="어떤"], input[placeholder*="검색"]').first();
@@ -134,7 +134,7 @@ async function executeBoardArticleTest(page: any, params: BoardTestParams) {
     await titleLink.click();
     
     // Wait for detail page
-    await page.waitForURL(url => url.pathname.includes('/admin/community/boards/detail'), { timeout: 10000 });
+    await page.waitForURL((url: URL) => url.pathname.includes('/admin/community/boards/detail'), { timeout: 10000 });
     
     // Verify basis content
     await expect(page.locator(`text=${title}`).first()).toBeVisible();

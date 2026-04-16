@@ -89,8 +89,8 @@ vi.mock('next/navigation', () => ({
 describe('UserManageClient Component', () => {
   const mockInitialData = {
     list: [
-      { userId: 'user1', userNm: 'User One', email: 'user1@test.com', userSttusCode: 'A' },
-      { userId: 'user2', userNm: 'User Two', email: 'user2@test.com', userSttusCode: 'P' },
+      { userId: 'user1', userNm: 'User One', emailAdres: 'user1@test.com', userSttusCode: 'A' },
+      { userId: 'user2', userNm: 'User Two', emailAdres: 'user2@test.com', userSttusCode: 'P' },
     ],
     total: 2,
     page: 1,
