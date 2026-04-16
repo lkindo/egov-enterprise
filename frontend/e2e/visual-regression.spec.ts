@@ -72,7 +72,7 @@ test.describe('Visual Regression - Admin Pages', () => {
     });
 
     test('should match board management snapshot', async ({ page }) => {
-        await page.goto('/admin/community/boards', { waitUntil: 'networkidle' });
+        await page.goto('/admin/community/boards/selectBoardList', { waitUntil: 'networkidle' });
         await expect(page.locator('aside')).toBeVisible({ timeout: 15000 });
         await page.waitForTimeout(2000);
 
