@@ -25,6 +25,20 @@ public interface EgovUserService {
     Page<UserDto> getPagedUserList(String searchKeyword, @NonNull Pageable pageable);
 
     /**
+     * 사용자 목록 페이지 조회 (검색어 없음)
+     */
+    default Page<UserDto> getUserPage(@NonNull Pageable pageable) {
+        return getPagedUserList(null, pageable);
+    }
+
+    /**
+     * 사용자 목록 페이지 조회 (기본 페이징 적용)
+     */
+    default Page<UserDto> searchUserPage(String searchKeyword) {
+        return getPagedUserList(searchKeyword, org.springframework.data.domain.PageRequest.of(0, 10));
+    }
+
+    /**
      * 사용자 상세 조회
      */
     UserDto getUserById(@NonNull String userId);

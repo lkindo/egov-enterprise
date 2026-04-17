@@ -146,7 +146,7 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
     void userGetList_responseSchema_validation() throws Exception {
         Pageable pageRequest = PageRequest.of(0, 10);
         Page<UserDto> page = new PageImpl<>(List.of(testUserDto), pageRequest, 1);
-        when(userService.getPagedUserList(any())).thenReturn(page);
+        when(userService.getPagedUserList(any(String.class), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON))
@@ -182,7 +182,7 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
     void pagedUserList_responseSchema_validation() throws Exception {
         Pageable pageRequest = PageRequest.of(0, 10);
         Page<UserDto> page = new PageImpl<>(List.of(testUserDto), pageRequest, 1);
-        when(userService.getPagedUserList(any())).thenReturn(page);
+        when(userService.getPagedUserList(any(String.class), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/users?page=0&size=10")
                 .contentType(MediaType.APPLICATION_JSON))

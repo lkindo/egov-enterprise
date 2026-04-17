@@ -124,7 +124,7 @@ class UserApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("관리자: 사용자 목록 조회 - 성공")
     void getUsers_admin_success() throws Exception {
-        when(userService.getPagedUserList(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(userService.getPagedUserList(any(String.class), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/admin/system/users")
                 .param("page", "0")

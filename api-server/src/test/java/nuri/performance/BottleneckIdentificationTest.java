@@ -77,7 +77,7 @@ class BottleneckIdentificationTest {
     org.springframework.data.domain.Page<UserDto> page = new org.springframework.data.domain.PageImpl<>(
         List.of(defaultUser), org.springframework.data.domain.PageRequest.of(0, 10), 1
     );
-    doReturn(page).when(userService).getPagedUserList(any(org.springframework.data.domain.Pageable.class));
+    doReturn(page).when(userService).getPagedUserList(any(String.class), any(org.springframework.data.domain.Pageable.class));
   }
 
   @AfterEach

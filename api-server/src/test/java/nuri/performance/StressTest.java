@@ -65,7 +65,7 @@ class StressTest {
 
     // 간단한 목록 반환 - doReturn 사용
     doReturn(List.of(defaultUser)).when(userService).getUserList();
-    doReturn(new PageImpl<>(List.of(defaultUser))).when(userService).getPagedUserList(any(Pageable.class));
+    doReturn(new PageImpl<>(List.of(defaultUser))).when(userService).getPagedUserList(any(String.class), any(Pageable.class));
     doReturn(defaultUser).when(userService).getUserById(any(String.class));
     doReturn(new UserResponse("newUser", "신규사용자", Role.USER)).when(userService).signup(any(UserSignupRequest.class));
 

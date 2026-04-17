@@ -81,7 +81,7 @@ class UserServiceTest {
         given(userAuthorityRepository.findByUniqIdIn(anyList())).willReturn(Collections.emptyList());
         given(userMapper.toDtoWithAuthority(any(), any())).willReturn(new UserDto());
 
-        Page<UserDto> result = userService.getPagedUserList(PageRequest.of(0, 10));
+        Page<UserDto> result = userService.getUserPage(PageRequest.of(0, 10));
 
         assertThat(result).isNotNull();
     }

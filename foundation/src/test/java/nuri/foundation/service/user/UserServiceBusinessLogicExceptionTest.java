@@ -191,7 +191,7 @@ class UserServiceBusinessLogicExceptionTest {
                 when(userRepository.findAll(pageable)).thenThrow(new RuntimeException("Database connection error"));
 
                 // When & Then
-                assertThatThrownBy(() -> userService.getPagedUserList(pageable))
+                assertThatThrownBy(() -> userService.getUserPage(pageable))
                                 .isInstanceOf(RuntimeException.class)
                                 .hasMessage("Database connection error");
         }

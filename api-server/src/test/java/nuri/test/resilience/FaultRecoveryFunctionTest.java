@@ -44,7 +44,7 @@ public class FaultRecoveryFunctionTest {
     @DisplayName("Temporary DB Failure - Recovery Success")
     void temporaryDbFailure_recovery_success() throws Exception {
         // Given
-        when(userService.getPagedUserList(any(Pageable.class)))
+        when(userService.getPagedUserList(any(String.class), any(Pageable.class)))
                 .thenThrow(new RuntimeException("Database temporarily unavailable"))
                 .thenReturn(new PageImpl<>(Arrays.asList(
                         UserDto.builder().userId("user1").userNm("User 1").esntlId("USR001").build(),
@@ -68,7 +68,7 @@ public class FaultRecoveryFunctionTest {
     @DisplayName("Exception then Recovery - Normal Service Recovery")
     void exceptionThenRecovery_normalServiceRecovery() throws Exception {
         // Given
-        when(userService.getPagedUserList(any(Pageable.class)))
+        when(userService.getPagedUserList(any(String.class), any(Pageable.class)))
                 .thenThrow(new RuntimeException("Temporary error"))
                 .thenReturn(new PageImpl<>(Arrays.asList(
                         UserDto.builder().userId("user1").userNm("User 1").esntlId("USR001").build())));
@@ -129,7 +129,7 @@ public class FaultRecoveryFunctionTest {
     @DisplayName("Circuit Breaker - Operation and Recovery")
     void circuitBreaker_operationAndRecovery() throws Exception {
         // Given
-        when(userService.getPagedUserList(any(Pageable.class)))
+        when(userService.getPagedUserList(any(String.class), any(Pageable.class)))
                 .thenThrow(new RuntimeException("Service unavailable"))
                 .thenThrow(new RuntimeException("Service still unavailable"))
                 .thenThrow(new BusinessException(ErrorCode.INTERNAL_ERROR))
@@ -160,7 +160,7 @@ public class FaultRecoveryFunctionTest {
     @DisplayName("DB Connection Pool Exhaustion - Recovery")
     void dbConnectionPoolExhaustion_recovery() throws Exception {
         // Given
-        when(userService.getPagedUserList(any(Pageable.class)))
+        when(userService.getPagedUserList(any(String.class), any(Pageable.class)))
                 .thenThrow(new RuntimeException("Connection pool exhausted"))
                 .thenReturn(new PageImpl<>(Arrays.asList(
                         UserDto.builder().userId("poolUser").userNm("User").esntlId("USR001").build())));
@@ -181,7 +181,7 @@ public class FaultRecoveryFunctionTest {
     @DisplayName("Out Of Memory Recovery - After GC")
     void outOfMemoryRecovery_afterGC() throws Exception {
         // Given
-        when(userService.getPagedUserList(any(Pageable.class)))
+        when(userService.getPagedUserList(any(String.class), any(Pageable.class)))
                 .thenThrow(new RuntimeException("Memory exhausted"))
                 .thenReturn(new PageImpl<>(Arrays.asList(
                         UserDto.builder().userId("memoryUser").userNm("User").esntlId("USR001").build())));

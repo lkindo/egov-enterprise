@@ -136,7 +136,7 @@ class UserServiceCrudTest {
     when(userMapper.toDtoWithAuthority(any(), any()))
         .thenReturn(new UserDto("testUser", "테스트사용자", "USR_1234567890123456", null, null, null, null));
 
-    Page<UserDto> result = userService.getPagedUserList(PageRequest.of(0, 10));
+    Page<UserDto> result = userService.getUserPage(PageRequest.of(0, 10));
 
     assertThat(result).isNotNull().hasSize(1);
     assertThat(result.getContent().get(0).getUserId()).isEqualTo("testUser");

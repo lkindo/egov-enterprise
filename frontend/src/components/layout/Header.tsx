@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
@@ -85,17 +85,28 @@ const Header = () => {
 
         <div className="gnb">
           <ul>
-            {menus.map((menu) => (
-              <li key={menu.menuNo}>
-                <Link
-                  href={menu.modernRoute || menu.chkURL || '#'}
-                  className={`${activeMenuNo === menu.menuNo ? 'on' : ''}`}
-                  onClick={() => setActiveMenuNo(menu.menuNo)}
-                >
-                  {menu.menuNm}
-                </Link>
-              </li>
-            ))}
+            {menus.map((menu) => {
+              // 대메뉴 자체 경로가 없으면 첫 번째 자식의 경로를 사용
+              const getMenuLink = (m: MenuInfo): string => {
+                if (m.modernRoute && m.modernRoute !== '#') return m.modernRoute;
+                if (m.chkURL && m.chkURL !== '#') return m.chkURL;
+                if (m.children && m.children.length > 0) return getMenuLink(m.children[0]);
+                return '#';
+              };
+              const targetHref = getMenuLink(menu);
+
+              return (
+                <li key={menu.menuNo}>
+                  <Link
+                    href={targetHref}
+                    className={`${activeMenuNo === menu.menuNo ? 'on' : ''}`}
+                    onClick={() => setActiveMenuNo(menu.menuNo)}
+                  >
+                    {menu.menuNm}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
