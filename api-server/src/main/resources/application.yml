@@ -54,10 +54,6 @@ spring:
           scrollable_result_set_enabled: false
           time_zone_in_legacy_mapping: false
 
-  mvc:
-    view:
-      prefix: /WEB-INF/jsp/
-      suffix: .jsp
 
 jwt:
   secret: dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==
@@ -107,3 +103,7 @@ management:
     export:
       prometheus:
         enabled: true
+
+Globals:
+  File:
+    algorithmKey: egovframe

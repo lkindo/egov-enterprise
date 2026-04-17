@@ -21,10 +21,6 @@ spring:
     properties:
       hibernate:
         format_sql: false
-  mvc:
-    view:
-      prefix: /WEB-INF/jsp/
-      suffix: .jsp
 
 management:
   endpoints:
