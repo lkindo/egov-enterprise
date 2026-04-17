@@ -146,8 +146,8 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div className="space-y-1">
  <div className="flex items-center gap-3">
  <span className="text-sm font-black text-foreground">{log.performedBy}</span>
- <span className={cn("text-[10px] font-black px-2 py-0.5 rounded-full border", getSeverityColor(log.severity))}>
- {log.severity.toUpperCase()}
+ <span className={cn("text-[10px] font-black px-2 py-0.5 rounded-full border", getSeverityColor(log.severity || 'low'))}>
+ {(log.severity || 'low').toUpperCase()}
  </span>
  </div>
  <p className="text-sm font-bold text-slate-600 tracking-tight">
@@ -174,7 +174,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
    <Cpu size={12} /> AI 기반 변경 감지 엔진
  </h4>
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
- {log.changes.map((change, cIdx) => (
+ {log.changes?.map((change, cIdx) => (
  <div key={cIdx} className="space-y-3 p-5 rounded-[0.1rem] bg-white border border-primary/5 shadow-sm group/change">
  <label className="text-[10px] font-black text-slate-600 tracking-tight">{change.field}</label>
  <div className="flex items-center gap-4">
@@ -220,7 +220,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  </div>
  </div>
  <p className="text-[10px] font-black text-slate-600 tracking-tight opacity-70 mt-4 md:mt-0">
- Total Audit Records: {logs.length} 데이터 무결성 검증 완료
+ Total Audit Records: {logs?.length || 0} 데이터 무결성 검증 완료
  </p>
  </div>
  </div>

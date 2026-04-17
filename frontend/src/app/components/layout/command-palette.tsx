@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -72,8 +72,8 @@ export function CommandPalette() {
 
     // 필터링된 결과
     const filteredResults = results.filter(item =>
-        item.title.toLowerCase().includes(query.toLowerCase()) ||
-        item.category.toLowerCase().includes(query.toLowerCase()) ||
+        (item.title || '').toLowerCase().includes(query.toLowerCase()) ||
+        (item.category || '').toLowerCase().includes(query.toLowerCase()) ||
         (item.description && item.description.toLowerCase().includes(query.toLowerCase()))
     );
 

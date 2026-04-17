@@ -41,7 +41,7 @@ const ADMIN_ROUTES = [
     '/admin/survey/templates',
     '/admin/system/audit',
     '/admin/system/banner',
-    '/admin/system/codes',
+    '/admin/system/administ-code',
     '/admin/system/comments',
     '/admin/system/common-code',
     '/admin/system/files',

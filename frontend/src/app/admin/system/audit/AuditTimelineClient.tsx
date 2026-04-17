@@ -40,7 +40,11 @@ export function AuditTimelineClient() {
     refetchInterval: 60000 // 1분마다 리프레시
   });
 
-  const logs = (auditData?.list || []) as AuditLog[];
+  const logs = useMemo(() => {
+    const list = auditData?.list;
+    return (Array.isArray(list) ? list.filter(Boolean) : []) as AuditLog[];
+  }, [auditData]);
+
   const totalItems = auditData?.total || 0;
 
   const handleInspect = (log: AuditLog) => {

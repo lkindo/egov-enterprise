@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -58,10 +58,10 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
   };
 
   const stats = useMemo(() => {
-    const totalCount = total;
-    const legalDist = data.filter((item: any) => item.administZoneSe === '1').length;
-    const adminDist = data.filter((item: any) => item.administZoneSe === '2').length;
-    const syncStatus = (data.filter((item: any) => item.useAt === 'Y').length / (data.length || 1) * 100).toFixed(0);
+    const totalCount = total || 0;
+    const legalDist = (data || []).filter((item: any) => item?.administZoneSe === '1').length;
+    const adminDist = (data || []).filter((item: any) => item?.administZoneSe === '2').length;
+    const syncStatus = ((data || []).filter((item: any) => item?.useAt === 'Y').length / ((data || []).length || 1) * 100).toFixed(0);
     
     return { totalCount, legalDist, adminDist, syncStatus };
   }, [total, data]);

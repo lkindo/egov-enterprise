@@ -69,17 +69,17 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
   }, [menus.length]);
 
   // Sync activeMenuNo with pathname and query params
+function HeaderSearchParamSync({ menus, activeMenuNo, setActiveMenuNo }: { menus: MenuInfo[], activeMenuNo: number | null, setActiveMenuNo: (no: number | null) => void }) {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const searchBbsId = searchParams.get('bbsId');
+  const searchBbsId = searchParams?.get('bbsId');
 
   useEffect(() => {
     if (menus.length === 0) return;
 
     const currentPath = pathname;
     
-    // Find top menu containing the current path with priority
     const matchTopMenu = () => {
-      // 1순위: bbsId가 포함된 경우 정밀 매칭
       if (searchBbsId) {
         for (const m of menus) {
           const hasBbsMatch = m.children?.some(c => {
@@ -92,13 +92,12 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
         }
       }
 
-      // 2순위: 가장 긴 경로 일치 (Longest Prefix Match)
       let bestMatch = { menuNo: null as number | null, score: 0 };
 
       const calculateScore = (route?: string) => {
         if (!route) return 0;
         const pureRoute = route.split('?')[0];
-        if (currentPath === pureRoute) return 10000; // 완전 일치 시 최우선
+        if (currentPath === pureRoute) return 10000;
         if (currentPath.startsWith(pureRoute + '/') || (pureRoute !== '/' && currentPath === pureRoute)) {
           return pureRoute.length;
         }
@@ -107,8 +106,6 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
 
       for (const m of menus) {
         let menuMaxScore = calculateScore(m.modernRoute);
-        
-        // 하위 메뉴들 확인
         m.children?.forEach(c => {
           menuMaxScore = Math.max(menuMaxScore, calculateScore(c.modernRoute));
           c.children?.forEach(cc => {
@@ -130,11 +127,39 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
     }
   }, [pathname, searchBbsId, menus, activeMenuNo, setActiveMenuNo]);
 
+  return null;
+}
+
+export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
+  const router = useRouter();
+  const { setTheme, resolvedTheme } = useTheme();
+  const { user, logout } = useAuth();
+  const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
+  const { unreadCount } = useNotifications();
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [menus, setMenus] = useState<MenuInfo[]>(initialMenus);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (menus.length === 0) {
+      menuService.getHeadMenus()
+        .then(res => setMenus(res || []))
+        .catch(() => setMenus([]));
+    }
+  }, [menus.length]);
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-[100] w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <React.Suspense fallback={null}>
+        <HeaderSearchParamSync menus={menus} activeMenuNo={activeMenuNo} setActiveMenuNo={setActiveMenuNo} />
+      </React.Suspense>
       <div className="flex h-16 items-center px-4 md:px-6 gap-4">
         {/* Mobile Sidebar Toggle */}
-        <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground mr-1" onClick={toggleSidebar} aria-label="사이드바 열기/닫기">
+        <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground mr-1" onClick={toggleSidebar} aria-label="사이드바 메뉴 열기/닫기">
           {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </Button>
 
@@ -203,6 +228,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
           </Button>
 
           <Button
+            id="e2e-bell-button"
             variant="ghost"
             size="icon"
             onClick={() => setIsNotifOpen(true)}
@@ -212,7 +238,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
               unreadCount > 0 && "text-primary bg-primary/5 ring-4 ring-primary/5"
             )}
           >
-            <Bell size={20} className={cn("transition-transform group-hover:rotate-12", unreadCount > 0 && "animate-bounce-subtle")} />
+            <Bell size={20} className={cn(unreadCount > 0 && "animate-bounce-subtle")} />
             {unreadCount > 0 && (
               <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-rose-500 text-white border-2 border-background font-black text-[9px] shadow-lg">
                 {unreadCount > 9 ? '9+' : unreadCount}
@@ -270,7 +296,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
       <AppNotificationDrawer
         isOpen={isNotifOpen}
         onClose={() => setIsNotifOpen(false)}
-        notifications={(notifications || []).map((n, i) => ({
+        notifications={(notifications || []).filter(Boolean).map((n, i) => ({
           id: n.ntfcId || `notif-${i}`,
           title: n.ntfcSj,
           message: n.ntfcCn,

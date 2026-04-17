@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -119,7 +119,7 @@ export default function MemoReportManagementClient() {
                                selectedReportId === report.reprtId ? "bg-white/10 border-white/20" : "bg-slate-50 border-slate-100 group-hover:bg-primary/5"
                              )}>
                                  <span className={cn("text-[8px] font-black", selectedReportId === report.reprtId ? "text-white/40" : "text-slate-400")}>REPORT</span>
-                                 <span className={cn("text-xl font-black leading-none", selectedReportId === report.reprtId ? "text-primary" : "text-slate-800")}>{report.reprtDe.slice(-2)}</span>
+                                 <span className={cn("text-xl font-black leading-none", selectedReportId === report.reprtId ? "text-primary" : "text-slate-800")}>{(report.reprtDe || '').slice(-2)}</span>
                              </div>
                              <div className="space-y-1 pr-4 min-w-0">
                                  <div className="flex items-center gap-2">

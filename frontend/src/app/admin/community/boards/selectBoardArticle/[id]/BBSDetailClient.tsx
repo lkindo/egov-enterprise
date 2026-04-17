@@ -71,9 +71,9 @@ const InsertBBSContent = () => {
       {/* Breadcrumb - 동적 메뉴 시스템 연동 */}
       <DynamicBreadcrumb 
         customItems={[
-          { name: pathname.includes('/admin/system') ? '시스템 관리' : '커뮤니티 및 콘텐츠' },
+          { name: pathname?.includes('/admin/system') ? '시스템 관리' : '커뮤니티 및 콘텐츠' },
           { name: '게시물 상세' },
-          { name: pathname.includes('insertBoardArticle') ? '신규 작성' : '수정' }
+          { name: pathname?.includes('insertBoardArticle') ? '신규 작성' : '수정' }
         ]}
       />
 
@@ -91,7 +91,7 @@ const InsertBBSContent = () => {
               )}>
                 <Edit3 className={cn("w-4 h-4 animate-bounce", tmplatId === 'TMPLT_QNA' ? "text-amber-400" : "text-primary")} />
                 <span className="text-[10px] font-black tracking-[0.3em] text-white">
-                  {pathname.includes('insertBoardArticle') ? 'NEW POST : ' : 'EDIT : '} 
+                  {pathname?.includes('insertBoardArticle') ? 'NEW POST : ' : 'EDIT : '} 
                   {tmplatId === 'TMPLT_HUB' ? 'KNOWLEDGE_BASE' : 
                    tmplatId === 'TMPLT_GALLERY' ? 'MEDIA_ASSET' : 
                    tmplatId === 'TMPLT_QNA' ? 'CONSULT_SESSION' : 
@@ -99,7 +99,7 @@ const InsertBBSContent = () => {
                 </span>
               </div>
               <CardTitle className="text-3xl md:text-3xl font-black tracking-tighter leading-tight ">
-                {pathname.includes('insertBoardArticle') ? (
+                {pathname?.includes('insertBoardArticle') ? (
                   <>새로운 소식을<br /><span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">기록하세요</span></>
                 ) : (
                   <>게시글 내용을<br /><span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">수정하세요</span></>

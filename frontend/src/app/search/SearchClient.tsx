@@ -1,4 +1,4 @@
-﻿
+
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
@@ -57,7 +57,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                     menus: [
                         { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },
                         { name: '자유 게시판', path: '/admin/community/boards', category: '커뮤니티' }
-                    ].filter(m => m.name.includes(query))
+                    ].filter(m => m.name.includes(String(query || '')))
                 });
             } catch (error) {
                 console.error('Search failed', error);

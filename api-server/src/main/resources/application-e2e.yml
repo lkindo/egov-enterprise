@@ -8,6 +8,10 @@ spring:
   config:
     activate:
       on-profile: e2e
+  
+  # eGovFrame Property Service 지원을 위한 기본값 설정 (SystemLogApiController 등에서 사용)
+  pageUnit: 10
+  pageSize: 10
 
   datasource:
     url: jdbc:postgresql://localhost:5434/egovdb?currentSchema=public&prepareThreshold=0

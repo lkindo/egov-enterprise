@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Tag(name = "Informal Sanction", description = "비정형 결재 관리 API")
 @RestController
-@RequestMapping("/api/v1/informal-sanctions")
+@RequestMapping({"/api/v1/informal-sanctions", "/api/v1/admin/system/ism"})
 @RequiredArgsConstructor
 public class InformalSanctionApiController {
 

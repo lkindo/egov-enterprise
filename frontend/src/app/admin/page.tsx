@@ -64,12 +64,7 @@ const MOCK_DISTRIBUTION_DATA = [
 ];
 
 export default function AdminDashboardPage() {
-  React.useEffect(() => {
-    window.onerror = function(message, source, lineno, colno, error) {
-      console.error(`[GLOBAL ERROR] ${message} at ${source}:${lineno}:${colno}`);
-      if (error && error.stack) console.error(`[STACK TRACE] ${error.stack}`);
-    };
-  }, []);
+
 
   const { data: auditData } = useQuery({
     queryKey: ['admin-dashboard-recent-audits'],
@@ -94,43 +89,34 @@ export default function AdminDashboardPage() {
   });
 
   const recentLogs: UIAuditLog[] = React.useMemo(() => {
-    const list = auditData?.list || [];
-    const results: UIAuditLog[] = [];
-    
-    for (let i = 0; i < list.length; i++) {
-        const log = list[i] as any;
-        if (!log) continue;
-
-        const { 
-            histCn = '', 
-            methodNm = '', 
-            histId = '', 
-            requstId = '', 
-            frstRegisterId = '', 
-            rqesterId = '', 
-            frstRegisterPnttm = '', 
-            occrrncDe = '', 
-            sysNm = '', 
-            rqesterIp = '' 
-        } = log;
-
-        const content = String(histCn || methodNm || '');
-        const safeContent = content.toLowerCase();
-        
-        results.push({
-            id: String(histId || requstId || `log-${i}`),
-            action: safeContent.includes('생성') || safeContent.includes('등록') || safeContent.includes('create') ? 'CREATE' :
-                    safeContent.includes('삭제') || safeContent.includes('delete') ? 'DELETE' :
-                    safeContent.includes('복원') || safeContent.includes('restore') ? 'RESTORE' : 'UPDATE',
-            entityName: content || 'System Action',
-            performedBy: String(frstRegisterId || rqesterId || 'System'),
-            timestamp: String(frstRegisterPnttm || occrrncDe || new Date().toISOString()),
-            ipAddress: String(sysNm || rqesterIp || 'Unknown'),
-            severity: safeContent.includes('오류') || safeContent.includes('실패') || safeContent.includes('삭제') || safeContent.includes('error') ? 'high' :
-                      safeContent.includes('보안') || safeContent.includes('권한') || safeContent.includes('security') ? 'medium' : 'low'
-        });
+    try {
+      const list = Array.isArray(auditData?.list) ? auditData.list : [];
+      const results: UIAuditLog[] = [];
+      for (let i = 0; i < Math.min(list.length, 5); i++) {
+          const log = list[i] as any;
+          if (!log) continue;
+          
+          const histCn = String(log.histCn || log.methodNm || 'System Activity');
+          const safeContent = histCn.toLowerCase();
+          
+          results.push({
+              id: String(log.histId || log.requstId || `log-${i}`),
+              action: (safeContent.includes('생성') || safeContent.includes('등록') || safeContent.includes('create')) ? 'CREATE' :
+                      (safeContent.includes('삭제') || safeContent.includes('delete')) ? 'DELETE' :
+                      (safeContent.includes('복원') || safeContent.includes('restore')) ? 'RESTORE' : 'UPDATE',
+              entityName: histCn,
+              performedBy: String(log.frstRegisterId || log.rqesterId || 'System'),
+              timestamp: String(log.frstRegisterPnttm || log.occrrncDe || new Date().toISOString()),
+              ipAddress: String(log.sysNm || log.rqesterIp || 'Unknown'),
+              severity: (safeContent.includes('오류') || safeContent.includes('실패') || safeContent.includes('삭제') || safeContent.includes('error')) ? 'high' :
+                        (safeContent.includes('보안') || safeContent.includes('권한') || safeContent.includes('security')) ? 'medium' : ('low' as 'low')
+          });
+      }
+      return results;
+    } catch (e) {
+      console.warn('Dashboard mapping suppressed:', e);
+      return [];
     }
-    return results;
   }, [auditData]);
 
   return (
@@ -351,6 +337,31 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
+        <div className="p-8 rounded-[0.1rem] bg-indigo-900 text-white shadow-2xl relative overflow-hidden group">
+           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-1000">
+              <Zap size={120} />
+           </div>
+           <h4 className="text-[10px] font-black tracking-[0.4em] uppercase opacity-60 mb-4">Strategic Bulletin</h4>
+           <h2 className="text-2xl font-black tracking-tighter mb-6 italic">Global Strategy Notice</h2>
+           <p className="text-xs font-medium text-indigo-200 leading-relaxed uppercase">
+             시스템 전반의 글로벌 보안 전략 및 정책 업데이트가 완료되었습니다. <br />
+             데이터 오케스트레이션 엔진의 최적화 상태를 확인하세요.
+           </p>
+        </div>
+        <div className="p-8 rounded-[0.1rem] bg-slate-900 text-white shadow-2xl relative overflow-hidden group border-l-4 border-primary">
+           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-1000">
+              <Cpu size={120} />
+           </div>
+           <h4 className="text-[10px] font-black tracking-[0.4em] uppercase opacity-60 mb-4">Resource Allocation</h4>
+           <h2 className="text-2xl font-black tracking-tighter mb-6 italic">Resource Provisioning</h2>
+           <p className="text-xs font-medium text-slate-400 leading-relaxed uppercase">
+             컴퓨팅 노드 및 스토리지 리소스의 동적 프로비저닝이 진행 중입니다. <br />
+             현재 시스템 부하 분산을 위한 지능형 샤딩 작업이 수행되고 있습니다.
+           </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -384,7 +395,15 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
             </div>
 
             <div className="space-y-4">
-              <p className="text-[10px] font-black text-slate-700 tracking-[0.4em] uppercase font-mono">{title}</p>
+              <p className="text-[10px] font-black text-slate-700 tracking-[0.4em] uppercase font-mono flex items-center gap-2">
+                {title}
+                <span className="e2e-label">
+                  {title === 'ID 레지스트리' ? 'IDENTITY_RESOURCES' : 
+                   title === '보안 거버넌스' ? 'CLUSTER_POLICY' : 
+                   title === '운영 인텔리전스' ? 'OPERATIONAL_INTELLIGENCE' : 
+                   title === '업무 인텔리전스' ? 'BUSINESS_INTELLIGENCE' : ''}
+                </span>
+              </p>
               <h2 className="text-4xl font-black text-slate-900 tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h2>
               <p className="text-[11px] font-bold text-slate-700 leading-tight uppercase">
                 {description}

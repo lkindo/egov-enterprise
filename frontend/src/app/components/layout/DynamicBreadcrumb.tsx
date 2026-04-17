@@ -47,12 +47,12 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
           return false;
         };
 
-        findPath(menus, pathname, bbsIdParam);
+        findPath(menus, pathname || '', bbsIdParam);
         
         // 만약 메뉴 트리에서 못 찾았다면 (관리자/특수 페이지 등)
         if (path.length === 0) {
-          if (pathname.includes('/admin/system')) path.push({ name: '시스템 관리' });
-          if (pathname.includes('/community/boards')) path.push({ name: '커뮤니티 및 콘텐츠' });
+          if (pathname?.includes('/admin/system')) path.push({ name: '시스템 관리' });
+          if (pathname?.includes('/community/boards')) path.push({ name: '커뮤니티 및 콘텐츠' });
         }
 
         setItems(path);

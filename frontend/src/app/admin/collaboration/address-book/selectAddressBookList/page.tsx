@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 export const dynamic = 'force-dynamic';
 
@@ -190,7 +190,7 @@ const AddressBookListPage = () => {
                                             </TableCell>
                                             <TableCell className="text-center py-8">
                                                 <div className="inline-flex items-center px-4 py-1.5 bg-slate-50 border-2 border-white rounded-full text-slate-400 font-bold font-mono text-[11px] shadow-sm tracking-tight text-center">
-                                                    {item.createdDate?.substring(0, 10).replace(/-/g, '.')}
+                                                    {(item.createdDate || '').substring(0, 10).replace(/-/g, '.')}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center">

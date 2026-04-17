@@ -105,14 +105,20 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
     queryFn: () => userAdminService.getUserList({ pageNo: userPage, searchKeyword }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES'
   });
-  const users = usersData?.list || [];
+  const users = useMemo(() => {
+    const list = usersData?.list;
+    return (Array.isArray(list) ? list.filter(Boolean) : []) as UserManage[];
+  }, [usersData]);
 
   const { data: deptsData, isLoading: isDeptsLoading, error: deptsError, refetch: refetchDepts } = useQuery({
     queryKey: ['admin-depts', searchKeyword, deptPage],
     queryFn: () => deptAdminService.getDeptList({ pageNo: deptPage, searchKeyword }),
     enabled: activeTab === 'DEPTS'
   });
-  const departments = deptsData?.list || [];
+  const departments = useMemo(() => {
+    const list = deptsData?.list;
+    return (Array.isArray(list) ? list.filter(Boolean) : []) as Department[];
+  }, [deptsData]);
 
   const handleUserSubmit = userForm.handleSubmit(async (values: UserFormValues) => {
     try {
@@ -162,8 +168,8 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
-    if (activeTab === 'USERS' || activeTab === 'ABSENCES') return users.find(u => u.esntlId === selectedItemId);
-    if (activeTab === 'DEPTS') return departments.find(d => d.orgnztId === selectedItemId);
+    if (activeTab === 'USERS' || activeTab === 'ABSENCES') return (users || []).find(u => u?.esntlId === selectedItemId);
+    if (activeTab === 'DEPTS') return (departments || []).find(d => d?.orgnztId === selectedItemId);
     return null;
   }, [selectedItemId, activeTab, users, departments]);
 
@@ -174,9 +180,9 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
         <div className="flex items-center gap-6 py-2">
           <div className={cn(
             "w-14 h-14 rounded-[0.1rem] flex items-center justify-center font-black text-xl shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === user.esntlId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-500"
+            selectedItemId === user?.esntlId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-500"
           )}>
-            {user.userNm?.[0]}
+            {user?.userNm?.[0]}
           </div>
           <div className="space-y-1">
             <h4 className={cn("text-md font-black tracking-tighter leading-none uppercase", selectedItemId === user.esntlId ? "text-white" : "text-foreground")}>
@@ -574,7 +580,7 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
               className="w-full h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none shadow-inner"
             >
               <option value="">소속 없음 / GLOBAL</option>
-              {departments.map((d: any) => (
+              {(departments || []).filter(Boolean).map((d: any) => (
                 <option key={d.orgnztId} value={d.orgnztId}>{d.orgnztNm}</option>
               ))}
             </select>

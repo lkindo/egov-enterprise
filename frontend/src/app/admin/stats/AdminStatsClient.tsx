@@ -83,7 +83,7 @@ export default function AdminStatsClient({
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-primary opacity-40 italic" />
-          <span className="font-mono font-black text-primary text-lg tracking-tighter tabular-nums underline decoration-primary/20 decoration-4 underline-offset-4">{item.statsCo.toLocaleString()}</span>
+          <span className="font-mono font-black text-primary text-lg tracking-tighter tabular-nums underline decoration-primary/20 decoration-4 underline-offset-4">{item?.statsCo?.toLocaleString() || '0'}</span>
         </div>
       )
     },
@@ -94,10 +94,10 @@ export default function AdminStatsClient({
           <div className="flex-1 h-3 bg-slate-100 dark:bg-muted/30 rounded-full overflow-hidden shadow-inner border border-border/10">
             <div
               className="h-full bg-gradient-to-r from-primary via-indigo-500 to-violet-500 transition-all duration-1000 ease-out shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]"
-              style={{ width: `${item.percentage}%` }}
+              style={{ width: `${item?.percentage || 0}%` }}
             />
           </div>
-          <span className="text-[12px] font-black text-foreground w-12 text-right tracking-tighter tabular-nums">{item.percentage}%</span>
+          <span className="text-[12px] font-black text-foreground w-12 text-right tracking-tighter tabular-nums">{item?.percentage || 0}%</span>
         </div>
       )
     }
@@ -135,7 +135,7 @@ export default function AdminStatsClient({
             </Button>
             <div className="hidden sm:block">
               <DataExportExcel
-                data={initialMenuData}
+                data={initialMenuData || []}
                 headers={[
                   { label: '메뉴명', key: 'menuNm' },
                   { label: '사용자 수', key: 'statsCo' },
@@ -149,9 +149,9 @@ export default function AdminStatsClient({
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-2">
-        <LuxuryStatCard title="누적 데이터 노드" value={initialSummary?.totalUsers} icon={<Database size={26} />} trend="+2.5%" color="slate" />
-        <LuxuryStatCard title="활성 커넥션" value={initialSummary?.todayConnects} icon={<CloudLightning size={26} />} trend="+12%" color="primary" />
-        <LuxuryStatCard title="데이터 영속성" value={initialSummary?.totalPosts} icon={<ShieldCheck size={26} />} trend="+0.8%" color="indigo" />
+        <LuxuryStatCard title="누적 데이터 노드" value={initialSummary?.totalUsers || 0} icon={<Database size={26} />} trend="+2.5%" color="slate" />
+        <LuxuryStatCard title="활성 커넥션" value={initialSummary?.todayConnects || 0} icon={<CloudLightning size={26} />} trend="+12%" color="primary" />
+        <LuxuryStatCard title="데이터 영속성" value={initialSummary?.totalPosts || 0} icon={<ShieldCheck size={26} />} trend="+0.8%" color="indigo" />
       </div>
 
       <div className="grid grid-cols-12 gap-10 px-2 mt-4">
@@ -165,7 +165,7 @@ export default function AdminStatsClient({
               <StandardChartWrapper
                 title="NETWORK TRAFFIC EVOLUTION"
                 type="area"
-                data={initialConnectData}
+                data={initialConnectData || []}
                 dataKeys={['statsCo']}
                 loading={loading}
                 height={350}
@@ -211,7 +211,7 @@ export default function AdminStatsClient({
               <StandardChartWrapper
                 title="HIGH-INTERACTION SERVICES"
                 type="bar"
-                data={initialMenuData.slice(0, 5).map(m => ({ name: m.menuNm, statsCo: m.statsCo }))}
+                data={(initialMenuData || []).slice(0, 5).map(m => ({ name: m?.menuNm || 'Unknown', statsCo: m?.statsCo || 0 }))}
                 dataKeys={['statsCo']}
                 loading={loading}
                 height={380}
@@ -244,7 +244,7 @@ export default function AdminStatsClient({
         <div className="px-2 overflow-x-auto">
           <StandardDataTable
             columns={menuColumns}
-            data={initialMenuData.slice(0, 10)}
+            data={(initialMenuData || []).slice(0, 10)}
             loading={loading}
             emptyMessage="시스템 패턴 분석 중..."
             className="border-none rounded-none bg-transparent min-w-[700px]"

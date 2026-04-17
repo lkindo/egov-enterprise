@@ -31,7 +31,7 @@ export const useTopologyData = () => {
 };
 
 function inferNodeType(name: string): 'api' | 'db' | 'cache' | 'ext' | 'lb' {
-    const n = name.toUpperCase();
+    const n = String(name || '').toUpperCase();
     if (n.includes('LB') || n.includes('GATEWAY')) return 'lb';
     if (n.includes('DB') || n.includes('POSTGRES')) return 'db';
     if (n.includes('REDIS') || n.includes('CACHE')) return 'cache';

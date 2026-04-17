@@ -106,12 +106,12 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
       <div className="flex justify-between items-center">
         <span className="text-[10px] font-black text-slate-600 tracking-tight">{label}</span>
         <span className="text-sm font-black text-foreground">
-          {data[data.length - 1]?.value?.toFixed(1) || '0.0'}%
+          {(data || [])[(data || []).length - 1]?.value?.toFixed(1) || '0.0'}%
         </span>
       </div>
       <div className="h-12 w-full">
         <ResponsiveContainer width="100%" height={48} minWidth={50} minHeight={30}>
-          <LineChart data={data}>
+          <LineChart data={data || []}>
             <Line
               type="monotone"
               dataKey="value"
@@ -143,7 +143,7 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
  <h3 className="text-sm font-black text-foreground tracking-[0.2em] mb-8">{title}</h3>
  <div className="w-full h-[300px]">
  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
- <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
+ <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data || []}>
  <PolarGrid stroke="#475569" strokeOpacity={0.2} />
  <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }} />
  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
@@ -158,10 +158,10 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
  </ResponsiveContainer>
  </div>
  <div className="mt-4 grid grid-cols-2 gap-4 w-full">
- {data.map((item, idx) => (
+ {(data || []).map((item, idx) => (
  <div key={`radar-item-${idx}`} className="flex flex-col">
  <span className="text-[9px] font-black text-slate-600 ">{item.subject}</span>
- <span className="text-sm font-black">{item.A}%</span>
+ <span className="text-sm font-black">{item?.A || 0}%</span>
  </div>
  ))}
  </div>
@@ -197,7 +197,7 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
       </div>
       <div style={{ width: '100%', height: height }}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <AreaChart data={data || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
@@ -271,7 +271,7 @@ export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: D
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={data}
+              data={data || []}
               cx="50%"
               cy="50%"
               innerRadius={60}
@@ -282,7 +282,7 @@ export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: D
               animationBegin={0}
               stroke="none"
             >
-              {data.map((_, index) => (
+              {(data || []).map((_, index) => (
                 <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
               ))}
             </Pie>
@@ -300,11 +300,11 @@ export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: D
         </ResponsiveContainer>
       </div>
       <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4 w-full px-4">
-        {data.map((item, index) => (
+        {(data || []).map((item, index) => (
           <div key={`legend-${index}`} className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: colors[index % colors.length] }} />
-            <span className="text-[10px] font-black text-foreground/60 truncate uppercase">{item.name}</span>
-            <span className="text-[10px] font-black text-foreground ml-auto">{item.value}%</span>
+            <span className="text-[10px] font-black text-foreground/60 truncate uppercase">{item?.name || 'Unknown'}</span>
+            <span className="text-[10px] font-black text-foreground ml-auto">{item?.value || 0}%</span>
           </div>
         ))}
       </div>

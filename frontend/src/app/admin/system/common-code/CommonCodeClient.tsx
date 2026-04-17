@@ -115,12 +115,16 @@ export default function CommonCodeClient({
     }, [isModalOpen, editingDetail, form]);
 
     const initialClusters: DomainCluster[] = React.useMemo(() => {
-        return clCodes.map(cl => ({
+        const safeClCodes = Array.isArray(clCodes) ? clCodes.filter(Boolean) : [];
+        const safeGroups = Array.isArray(groups) ? groups.filter(Boolean) : [];
+        const safeDetails = Array.isArray(details) ? details.filter(Boolean) : [];
+
+        return safeClCodes.map(cl => ({
             ...(cl as CmmnClCode),
             id: cl.clCode,
             name: cl.clCodeNm,
             icon: Layers,
-            groups: groups
+            groups: safeGroups
                 .filter(g => g.clCode === cl.clCode)
                 .map(g => ({
                     ...(g as CmmnCode),
@@ -129,7 +133,7 @@ export default function CommonCodeClient({
                     name: g.codeIdNm,
                     icon: LayoutGrid,
                     description: g.codeIdDc,
-                    details: g.codeId === selectedGroupId ? details : []
+                    details: g.codeId === selectedGroupId ? safeDetails : []
                 }))
         }));
     }, [clCodes, groups, details, selectedGroupId]);
@@ -175,14 +179,14 @@ export default function CommonCodeClient({
 
     // Synchronize initial state from props
     useEffect(() => {
-        if (selectedGroupId && initialClusters.length > 0) {
+        if (selectedGroupId && (initialClusters || []).length > 0) {
             if (!selectedGroup || selectedGroup.codeId !== selectedGroupId) {
-                const cluster = initialClusters.find(c => c.groups.some(g => g.codeId === selectedGroupId));
+                const cluster = initialClusters.find(c => (c.groups || []).some(g => g?.codeId === selectedGroupId));
                 if (cluster) {
-                    const group = cluster.groups.find(g => g.codeId === selectedGroupId);
+                    const group = (cluster.groups || []).find(g => g?.codeId === selectedGroupId);
                     if (group) {
                         setSelectedCluster(cluster);
-                        setSelectedGroup({ ...group, details: details as CodeDetail[] });
+                        setSelectedGroup({ ...group, details: (details || []) as CodeDetail[] });
                     }
                 }
             }
@@ -191,17 +195,17 @@ export default function CommonCodeClient({
 
     // Filtered Tree Data
     const filteredClusters = React.useMemo(() => {
-        if (!searchQuery) return initialClusters;
+        if (!searchQuery) return initialClusters || [];
         const lowerQuery = searchQuery.toLowerCase();
-        return initialClusters.map(c => ({
+        return (initialClusters || []).map(c => ({
             ...c,
-            groups: c.groups.filter(g =>
-                String(g.codeIdNm || '').toLowerCase().includes(lowerQuery) ||
-                String(g.codeId || '').toLowerCase().includes(lowerQuery)
+            groups: (c.groups || []).filter(g =>
+                String(g?.codeIdNm || '').toLowerCase().includes(lowerQuery) ||
+                String(g?.codeId || '').toLowerCase().includes(lowerQuery)
             )
         })).filter(c =>
-            String(c.name || '').toLowerCase().includes(lowerQuery) ||
-            c.groups.length > 0
+            String(c?.name || '').toLowerCase().includes(lowerQuery) ||
+            (c.groups || []).length > 0
         );
     }, [initialClusters, searchQuery]);
 

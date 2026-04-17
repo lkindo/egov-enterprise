@@ -46,8 +46,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const queryTab = searchParams.get('tab');
   const initialTab = (queryTab === 'calendar' ? 'calendar' :
     queryTab === 'report' ? 'report' :
-      defaultTab.toLowerCase().includes('report') ? 'report' :
-        defaultTab.toLowerCase().includes('calendar') || defaultTab.toLowerCase().includes('schedule') ? 'calendar' : 'job') as 'job' | 'report' | 'calendar';
+      (defaultTab || '').toLowerCase().includes('report') ? 'report' :
+        (defaultTab || '').toLowerCase().includes('calendar') || (defaultTab || '').toLowerCase().includes('schedule') ? 'calendar' : 'job') as 'job' | 'report' | 'calendar';
 
   const [activeTab, setTabState] = useState<'job' | 'report' | 'calendar'>(initialTab);
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);

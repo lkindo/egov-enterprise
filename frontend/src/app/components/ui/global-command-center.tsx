@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -129,8 +129,8 @@ export function GlobalCommandCenter() {
     // 검색어가 있을 경우 필터링
     let results = search
       ? combined.filter(item =>
-        item.name.toLowerCase().includes(search.toLowerCase()) ||
-        item.category.toLowerCase().includes(search.toLowerCase())
+        ((item.name || '')).toLowerCase().includes(search.toLowerCase()) ||
+        ((item.category || '')).toLowerCase().includes(search.toLowerCase())
       )
       : combined;
 

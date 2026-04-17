@@ -57,6 +57,8 @@ const DataRow = memo(function DataRow({
   onToggle: () => void;
   onRowClick?: (item: any) => void;
 }) {
+  if (!item) return null;
+
   return (
     <tr
       className={cn(
@@ -86,7 +88,7 @@ const DataRow = memo(function DataRow({
           <div className="outline-none">
             {typeof column.accessor === 'function'
               ? (column.accessor as any)(item)
-              : item[column.accessor as any]}
+              : item?.[column.accessor as any]}
           </div>
         </td>
       ))}
@@ -102,6 +104,8 @@ const MobileCard = memo(function MobileCard({
   onToggle,
   onRowClick
 }: any) {
+  if (!item) return null;
+
   return (
     <div
       className={cn(
@@ -120,7 +124,7 @@ const MobileCard = memo(function MobileCard({
           <div className="flex flex-col gap-1 overflow-hidden">
             <span className="text-[10px] font-black text-primary/90 uppercase tracking-[0.2em]">{columns[0].header}</span>
             <div className="font-[number:var(--font-weight-hub-title)] text-lg text-foreground truncate tracking-tight">
-              {typeof columns[0].accessor === 'function' ? columns[0].accessor(item) : item[columns[0].accessor]}
+              {typeof columns[0].accessor === 'function' ? columns[0].accessor(item) : item?.[columns[0].accessor]}
             </div>
           </div>
         </div>
@@ -131,7 +135,7 @@ const MobileCard = memo(function MobileCard({
           <div key={`mobile-col-${idx}`} className="space-y-1 overflow-hidden">
             <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">{column.header}</p>
             <div className="text-sm font-bold text-foreground/80 truncate">
-              {typeof column.accessor === 'function' ? column.accessor(item) : item[column.accessor]}
+              {typeof column.accessor === 'function' ? column.accessor(item) : item?.[column.accessor]}
             </div>
           </div>
         ))}
@@ -160,15 +164,15 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   const [searchKeyword, setSearchKeyword] = useState('');
 
   const selectedItems = useMemo(() =>
-    data.filter(item => selectedIds.has(item[keyField])),
+    (data || []).filter(item => item && selectedIds.has(item?.[keyField])),
     [data, selectedIds, keyField]
   );
 
   const toggleAll = useCallback(() => {
-    if (selectedIds.size === data.length && data.length > 0) {
+    if (selectedIds.size === (data || []).length && (data || []).length > 0) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(data.filter(item => item[keyField] !== undefined).map(item => item[keyField])));
+      setSelectedIds(new Set((data || []).filter(item => item && item?.[keyField] !== undefined).map(item => item?.[keyField])));
     }
   }, [data, selectedIds.size, keyField]);
 
@@ -252,7 +256,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 {enableSelection && (
                   <th className="px-6 py-5 w-16 text-center" scope="col">
                     <Checkbox
-                      checked={data.length > 0 && selectedIds.size === data.length}
+                      checked={(data || []).length > 0 && selectedIds.size === (data || []).length}
                       onCheckedChange={toggleAll}
                       aria-label="전체 항목 선택"
                     />
@@ -286,24 +290,28 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                     <ErrorStateDisplay error={error} onRetry={onRetry} />
                   </td>
                 </tr>
-              ) : data.length === 0 ? (
+              ) : (data || []).length === 0 ? (
                 <tr>
                   <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="px-6 py-20 text-center">
                     <EmptyStateDisplay emptyMessage={emptyMessage} />
                   </td>
                 </tr>
               ) : (
-                data.map((item, rowIdx) => (
-                  <DataRow
-                    key={item[keyField] !== undefined ? `row-${item[keyField]}` : `row-idx-${rowIdx}`}
-                    item={item}
-                    columns={columns}
-                    isSelected={selectedIds.has(item[keyField])}
-                    enableSelection={enableSelection}
-                    onToggle={() => toggleOne(item[keyField])}
-                    onRowClick={onRowClick}
-                  />
-                ))
+                {(data || []).map((item, rowIdx) => {
+                  if (!item) return null;
+                  const itemId = item?.[keyField] ?? rowIdx;
+                  return (
+                    <DataRow
+                      key={`row-${itemId}`}
+                      item={item}
+                      columns={columns}
+                      isSelected={selectedIds.has(item?.[keyField])}
+                      enableSelection={enableSelection}
+                      onToggle={() => toggleOne(item?.[keyField])}
+                      onRowClick={onRowClick}
+                    />
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -320,23 +328,27 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           <div className="p-16 bg-card border-2 border-border/60 rounded-[0.1rem] text-center shadow-inner">
             <ErrorStateDisplay error={error} onRetry={onRetry} />
           </div>
-        ) : data.length === 0 ? (
+        ) : (data || []).length === 0 ? (
           <div className="p-16 bg-card border-2 border-dashed border-border/60 rounded-[0.1rem] text-center shadow-inner">
             <EmptyStateDisplay emptyMessage={emptyMessage} />
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5">
-            {data.map((item, idx) => (
-              <MobileCard
-                key={item[keyField] !== undefined ? `card-${item[keyField]}` : `card-idx-${idx}`}
-                item={item}
-                columns={columns}
-                isSelected={selectedIds.has(item[keyField])}
-                enableSelection={enableSelection}
-                onToggle={() => toggleOne(item[keyField])}
-                onRowClick={onRowClick}
-              />
-            ))}
+            {(data || []).map((item, idx) => {
+              if (!item) return null;
+              const itemId = item?.[keyField] ?? idx;
+              return (
+                <MobileCard
+                  key={`card-${itemId}`}
+                  item={item}
+                  columns={columns}
+                  isSelected={selectedIds.has(item?.[keyField])}
+                  enableSelection={enableSelection}
+                  onToggle={() => toggleOne(item?.[keyField])}
+                  onRowClick={onRowClick}
+                />
+              );
+            })}
           </div>
         )}
       </div>

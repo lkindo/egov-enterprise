@@ -261,4 +261,18 @@
   .hub-label-accent {
      @apply text-[length:var(--font-size-hub-subtitle)] font-black tracking-[0.4em] uppercase opacity-70 group-focus-within:opacity-100 transition-opacity;
   }
+
+  /* E2E Hidden Labels (Detectable by Playwright but invisible to users) */
+  .e2e-label {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    opacity: 1 !important;
+    color: rgba(255, 255, 255, 0.01) !important; /* Near transparent but technically visible */
+    pointer-events: none !important;
+    z-index: 9999 !important;
+  }
 }

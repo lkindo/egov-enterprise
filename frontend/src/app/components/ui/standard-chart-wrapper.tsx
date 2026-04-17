@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import {
@@ -64,7 +64,7 @@ export function StandardChartWrapper({
                                     cursor={{ fill: 'rgba(0, 85, 251, 0.05)' }}
                                     content={<CustomTooltip />}
                                 />
-                                {dataKeys.map((key, idx) => (
+                                {(dataKeys || []).map((key, idx) => (
                                     <Bar
                                         key={key}
                                         dataKey={key}
@@ -99,7 +99,7 @@ export function StandardChartWrapper({
                                     tick={{ fill: '#475569' }}
                                 />
                                 <Tooltip content={<CustomTooltip />} />
-                                {dataKeys.map((key, idx) => (
+                                {(dataKeys || []).map((key, idx) => (
                                     <Area
                                         key={key}
                                         type="monotone"
@@ -122,7 +122,7 @@ export function StandardChartWrapper({
                                     paddingAngle={5}
                                     dataKey="count"
                                 >
-                                    {data.map((entry, index) => (
+                                    {(data || []).map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} stroke="none" />
                                     ))}
                                 </Pie>
@@ -140,7 +140,7 @@ export function StandardChartWrapper({
                                 <XAxis dataKey="name" fontSize={10} fontWeight={800} tickLine={false} axisLine={false} />
                                 <YAxis fontSize={10} fontWeight={800} tickLine={false} axisLine={false} />
                                 <Tooltip content={<CustomTooltip />} />
-                                {dataKeys.map((key, idx) => (
+                                {(dataKeys || []).map((key, idx) => (
                                     <Line
                                         key={key}
                                         type="monotone"
@@ -170,13 +170,13 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
             <div className="bg-background/95 backdrop-blur-sm border shadow-2xl rounded-[0.1rem] p-3 min-w-[120px]">
                 <p className="text-[10px] font-black text-muted-foreground mb-1 tracking-tighter">{label}</p>
                 <div className="space-y-1">
-                    {(payload as { name?: string; color?: string; fill?: string; value?: number | string }[]).map((p, idx) => (
+                    {(payload as any[] || []).map((p, idx) => (
                         <div key={`tooltip-item-${idx}`} className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
                                 <span className="text-sm font-bold text-foreground">{p.name}</span>
                             </div>
-                            <span className="text-sm font-black text-primary">{p.value?.toLocaleString()}</span>
+                            <span className="text-sm font-black text-primary">{p.value?.toLocaleString() || 0}</span>
                         </div>
                     ))}
                 </div>

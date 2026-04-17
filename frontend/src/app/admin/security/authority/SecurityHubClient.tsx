@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -140,14 +140,16 @@ export default function SecurityHubClient() {
 
   useEffect(() => {
     if (usersData?.list) {
-      const registeredUsers = usersData.list.filter(u => u.regYn === 'Y').map(u => u.uniqId);
+      const list = Array.isArray(usersData.list) ? usersData.list : [];
+      const registeredUsers = list.filter(u => u?.regYn === 'Y').map(u => u?.uniqId);
       setTempUserMappings(new Set(registeredUsers));
     }
   }, [usersData, selectedAuthorCode]);
 
   useEffect(() => {
     if (menusData?.authorMenus) {
-      const mappedMenuIds = (menusData.authorMenus as MenuByAuthority[]).map(m => m.menuNo);
+      const menus = Array.isArray(menusData.authorMenus) ? menusData.authorMenus : [];
+      const mappedMenuIds = (menus as MenuByAuthority[]).map(m => m.menuNo);
       setTempMenuMappings(new Set(mappedMenuIds));
     }
   }, [menusData, selectedAuthorCode]);
@@ -223,7 +225,8 @@ export default function SecurityHubClient() {
       const allMappings = new Map<string, Set<number>>();
       const promises = (authorities as AuthorInfo[]).map(async (auth) => {
         const menus = await authorAdminService.getAuthorMenus(auth.authorCode);
-        allMappings.set(auth.authorCode, new Set((menus as MenuByAuthority[]).map(m => m.menuNo)));
+        const menuList = Array.isArray(menus) ? menus : [];
+        allMappings.set(auth.authorCode, new Set(menuList.map(m => m.menuNo)));
       });
       await Promise.all(promises);
       setGlobalMappings(allMappings);

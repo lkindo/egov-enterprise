@@ -126,7 +126,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
   const masterInfo = initialData.masterInfo || null;
   const tmplatId = masterInfo?.tmplatId || 'TMPLT_LIST';
   // 관리자 대시보드용이 아닌 실제 서비스용 위치 확인
-  const isManagementView = pathname.includes('/admin/system/board-masters') || !bbsId.startsWith('BBSMSTR_');
+  const isManagementView = pathname?.includes('/admin/system/board-masters') || !bbsId?.startsWith('BBSMSTR_');
 
   const { data, isLoading: loading } = useBoardList({
     bbsId,
@@ -175,8 +175,8 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
       {/* Breadcrumb - 동적 메뉴 시스템 연동 */}
       <DynamicBreadcrumb 
         customItems={[
-          { name: pathname.includes('/admin/system') ? '시스템 관리' : '커뮤니티 및 콘텐츠' },
-          { name: masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공지사항' : '게시판') }
+          { name: pathname?.includes('/admin/system') ? '시스템 관리' : '커뮤니티 및 콘텐츠' },
+          { name: masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판') }
         ]}
       />
 
@@ -185,7 +185,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
         <div className="flex items-center gap-3">
           <div className={cn("w-1.5 h-8 rounded-full", tmplatId === 'TMPLT_HUB' ? "bg-indigo-500" : "bg-primary")} />
           <h2 className="text-3xl font-black tracking-tight">
-            {masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공지사항' : '게시판')}
+            {masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
           </h2>
           {tmplatId === 'TMPLT_HUB' && <Badge className="bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold ml-2">지식 허브</Badge>}
         </div>
@@ -202,7 +202,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
           <div className="space-y-2 relative z-10">
             <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
               {tmplatId === 'TMPLT_HUB' ? <BookOpen className="w-8 h-8 text-primary" /> : <MessageSquare className="w-8 h-8 text-primary" />}
-              <span>{masterInfo?.bbsNm || (bbsId.includes('NOTICE') ? '공지사항' : '자유 게시판')}</span>
+              <span>{masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '자유 게시판')}</span>
             </CardTitle>
             <p className="text-slate-500 dark:text-slate-400 font-bold text-sm">총 <span className="text-primary dark:text-white">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
           </div>

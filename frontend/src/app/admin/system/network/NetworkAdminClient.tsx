@@ -46,10 +46,10 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
     const [isModalOpen, setIsOpen] = useState(false);
     const [editingNode, setEditingNode] = useState<Network | null>(null);
 
-    const filteredNodes = initialNetworks.filter(node =>
+    const filteredNodes = (initialNetworks || []).filter(node => node && (
         String(node.manageIem || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         String(node.ntwrkId || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    ));
 
     const handleCreate = () => {
         setEditingNode(null);
@@ -110,7 +110,7 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                         <Cpu size={18} />
                     </div>
                     <div className="text-left">
-                        <span className="font-black tracking-tighter text-foreground block text-sm uppercase leading-none">{item.ntwrkId}</span>
+                        <span className="font-black tracking-tighter text-foreground block text-sm uppercase leading-none">{item?.ntwrkId}</span>
                         <span className="text-[8px] font-black text-muted-foreground tracking-[0.3em] mt-1.5 uppercase opacity-40">INFRA_NODE_UUID</span>
                     </div>
                 </div>
@@ -120,10 +120,10 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             header: '네트워크 자산 정보',
             accessor: (item: Network) => (
                 <div className="space-y-1 text-left">
-                    <span className="text-sm font-black text-foreground uppercase tracking-tight">{item.manageIem}</span>
+                    <span className="text-sm font-black text-foreground uppercase tracking-tight">{item?.manageIem}</span>
                     <div className="flex items-center gap-2">
                         <Globe size={10} className="text-primary opacity-40" />
-                        <span className="text-[10px] font-bold text-muted-foreground/60 tabular-nums lowercase">{item.ntwrkIp}</span>
+                        <span className="text-[10px] font-bold text-muted-foreground/60 tabular-nums lowercase">{item?.ntwrkIp}</span>
                     </div>
                 </div>
             )
@@ -174,8 +174,8 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             />
 
             <HubMetricGrid>
-                <HubMetricCard title="관리 대상 노드" value={initialNetworks.length} icon={Server} color="primary" />
-                <HubMetricCard title="할당 고정 IP" value={initialNetworks.filter(n => n.ntwrkIp).length} icon={Database} color="emerald" status="안전" />
+                <HubMetricCard title="관리 대상 노드" value={(initialNetworks || []).filter(Boolean).length} icon={Server} color="primary" />
+                <HubMetricCard title="할당 고정 IP" value={(initialNetworks || []).filter(n => n?.ntwrkIp).length} icon={Database} color="emerald" status="안전" />
                 <HubMetricCard title="네트워크 가용성" value="99.9%" icon={Activity} color="amber" />
                 <HubMetricCard title="평균 응답 속도" value="4ms" icon={Zap} color="indigo" />
             </HubMetricGrid>
