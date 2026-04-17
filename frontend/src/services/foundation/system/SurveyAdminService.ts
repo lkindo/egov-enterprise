@@ -1,4 +1,4 @@
-﻿import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { Survey as SurveyInfo, Survey as SurveyTemplate } from '@/types/business/survey';
@@ -13,7 +13,13 @@ class SurveyAdminService extends AdminService {
 
   /** 설문 紐⑸줉 조회 */
   async getSurveyList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SurveyInfo>> {
-    return this.get<PageResponse<SurveyInfo>>('', { ...config, params });
+    return this.get<PageResponse<SurveyInfo>>('', {
+      ...config,
+      params: {
+        ...params,
+        keyword: params?.searchKeyword || params?.searchWrd || '',
+      },
+    });
   }
 
   /** 설문 상세 조회 */
@@ -38,7 +44,13 @@ class SurveyAdminService extends AdminService {
 
   /** 설문 ?쒗뵆由紐⑸줉 조회 */
   async getTemplateList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SurveyTemplate>> {
-    return this.get<PageResponse<SurveyTemplate>>('/templates', { ...config, params });
+    return this.get<PageResponse<SurveyTemplate>>('/templates', {
+      ...config,
+      params: {
+        ...params,
+        keyword: params?.searchKeyword || params?.searchWrd || '',
+      },
+    });
   }
 }
 

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useBoardList } from '@/hooks/api/use-board-list';
 import {
   Table,
@@ -115,19 +115,37 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
   const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
   const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
 
-  const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd || '');
-  const [page, setPage] = useState(initialParams.page || 1);
-  const [searchCnd, setSearchCnd] = useState(initialParams.searchCnd || '0');
-  const [orderBy, setOrderBy] = useState(initialParams.orderBy || 'date');
-  const [startDate, setStartDate] = useState<Date | undefined>(initialParams.startDate ? new Date(initialParams.startDate) : undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(initialParams.endDate ? new Date(initialParams.endDate) : undefined);
+  const router = useRouter(); // router 추가
+  const [searchWrd, setSearchWrd] = useState(searchParams.get('searchWrd') || '');
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
+  const [searchCnd, setSearchCnd] = useState(searchParams.get('searchCnd') || '0');
+  const [orderBy, setOrderBy] = useState(searchParams.get('orderBy') || 'date');
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined
+  );
+  const [endDate, setEndDate] = useState<Date | undefined>(
+    searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined
+  );
   
+  // URL 파라미터가 변경될 때마다 로컬 상태 동기화 (새로고침/뒤로가기 대응)
+  useEffect(() => {
+    setSearchWrd(searchParams.get('searchWrd') || '');
+    setPage(Number(searchParams.get('page')) || 1);
+    setSearchCnd(searchParams.get('searchCnd') || '0');
+    setOrderBy(searchParams.get('orderBy') || 'date');
+    const sd = searchParams.get('startDate');
+    const ed = searchParams.get('endDate');
+    setStartDate(sd ? new Date(sd) : undefined);
+    setEndDate(ed ? new Date(ed) : undefined);
+  }, [searchParams]);
+
   // 마스터 정보 및 템플릿 확인
   const masterInfo = initialData.masterInfo || null;
   const tmplatId = masterInfo?.tmplatId || 'TMPLT_LIST';
   // 관리자 대시보드용이 아닌 실제 서비스용 위치 확인
   const isManagementView = pathname?.includes('/admin/system/board-masters') || !bbsId?.startsWith('BBSMSTR_');
 
+  // useQuery는 현재 로컬 상태를 기반으로 동작하며, handleSearch가 URL을 바꾸면 컴포넌트가 재시작되면서 최신 상태를 반영함
   const { data, isLoading: loading } = useBoardList({
     bbsId,
     page,
@@ -135,8 +153,8 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
     searchWrd,
     searchCnd,
     orderBy,
-    startDate: startDate ? format(startDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined,
-    endDate: endDate ? format(endDate, "yyyy-MM-dd'T'HH:mm:ss") : undefined
+    startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
+    endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined
   }, initialData);
 
   const list: BoardPost[] = data?.list || [];
@@ -167,7 +185,19 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1);
+    
+    // URL 파라미터 생성
+    const params = new URLSearchParams();
+    params.set('bbsId', bbsId);
+    if (searchWrd) params.set('searchWrd', searchWrd);
+    if (searchCnd) params.set('searchCnd', searchCnd);
+    if (orderBy) params.set('orderBy', orderBy);
+    if (startDate) params.set('startDate', format(startDate, 'yyyy-MM-dd'));
+    if (endDate) params.set('endDate', format(endDate, 'yyyy-MM-dd'));
+    params.set('page', '1'); // 검색 시 항상 1페이지로
+
+    // URL 이동을 통해 조회 트리거 (react-query가 params 변경 감지)
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   return (
@@ -198,40 +228,37 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
       {isAdmin && isManagementView && <BoardStats />}
 
       <Card className="border-none shadow-2xl overflow-hidden rounded-[0.1rem] ring-1 ring-slate-200 bg-white">
-        <CardHeader className="flex flex-row items-center justify-between bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 pb-12 pt-12 px-10 text-slate-900 dark:text-white relative overflow-hidden transition-colors">
-          <div className="space-y-2 relative z-10">
+        <CardHeader className="bg-white py-12 px-12 md:px-20 flex flex-col md:flex-row items-center justify-between gap-10 border-b border-slate-50">
+          <div className="flex-1 space-y-4">
             <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
               {tmplatId === 'TMPLT_HUB' ? <BookOpen className="w-8 h-8 text-primary" /> : <MessageSquare className="w-8 h-8 text-primary" />}
-              <span>{masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '자유 게시판')}</span>
+              <span>{masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}</span>
             </CardTitle>
-            <p className="text-slate-500 dark:text-slate-400 font-bold text-sm">총 <span className="text-primary dark:text-white">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
+            <p className="text-slate-500 font-bold text-sm">총 <span className="text-primary">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
           </div>
-          <CardAction className="relative z-10 flex items-center gap-3">
+          <CardAction className="flex items-center gap-3">
             {isAdmin && (
               <Link href="/admin/community/boards/master">
-                <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 font-black shadow-xl transition-all rounded-[0.1rem] backdrop-blur-md">
-                  <Settings2 className="w-6 h-6" /> 마스터 콘솔
+                <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-slate-200 dark:border-white/20 bg-white text-slate-900 dark:text-white hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 font-black shadow-xl transition-all rounded-[0.1rem]">
+                  <Settings2 className="w-6 h-6" /> 게시판 관리
                 </Button>
               </Link>
             )}
             <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
               <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-[0.1rem]">
                 <div className="flex items-center gap-2">
-                  <Plus className="w-6 h-6" /> 신규 등록
+                  <Plus className="w-6 h-6" /> 글쓰기
                 </div>
               </Button>
             </Link>
           </CardAction>
-          <div className="absolute right-[-5%] top-[-20%] opacity-10 scale-[2]">
-            <MessageSquare size={200} />
-          </div>
         </CardHeader>
         <CardContent className="pt-10 px-10">
-          <div className="flex flex-col gap-6 mb-12 bg-slate-50/50 p-8 rounded-[0.1rem] border-2 border-slate-50 shadow-inner">
-            <form onSubmit={handleSearch} className="flex flex-col gap-6">
-              <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-row items-center gap-3 mb-4 bg-slate-50/50 p-6 rounded-[0.1rem] border border-slate-200 shadow-inner">
+            <form onSubmit={handleSearch} className="flex flex-col gap-3 w-full">
+              <div className="flex flex-col md:flex-row items-center gap-3 w-full">
                 <Select value={searchCnd} onValueChange={setSearchCnd}>
-                  <SelectTrigger className="w-full md:w-[150px] h-16 rounded-[0.1rem] border-2 border-white bg-white font-bold shadow-sm">
+                  <SelectTrigger className="w-full md:w-[220px] !h-12 rounded-[0.1rem] border border-slate-200 bg-white font-bold shadow-sm flex items-center leading-none">
                     <SelectValue placeholder="검색 조건" />
                   </SelectTrigger>
                   <SelectContent>
@@ -240,11 +267,11 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                     <SelectItem value="2">작성자</SelectItem>
                   </SelectContent>
                 </Select>
-                <div className="relative flex-1 group">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10 group-focus-within:text-primary transition-colors" />
+                <div className="relative flex-1 group !h-12">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10 group-focus-within:text-primary transition-colors" />
                   <Input
                     type="text"
-                    className="pl-14 h-16 text-lg border-2 border-white bg-white shadow-sm rounded-[0.1rem] focus-visible:ring-primary/20 transition-all font-bold"
+                    className="pl-12 !h-12 text-sm border border-slate-200 bg-white shadow-sm rounded-[0.1rem] focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
                     placeholder="어떤 정보를 찾으시나요?"
                     value={searchWrd}
                     onChange={(e) => setSearchWrd(e.target.value)}
@@ -252,41 +279,41 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                <div className="flex items-center gap-2 flex-1 w-full overflow-x-auto pb-2 md:pb-0">
+              <div className="flex flex-col md:flex-row items-center gap-3 w-full">
+                <div className="flex items-center gap-2 flex-1 w-full overflow-x-auto">
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          "h-14 px-6 justify-start text-left font-bold rounded-[0.1rem] border-2 border-white bg-white shadow-sm w-full md:w-[280px]",
+                          "!h-12 px-5 justify-start text-left font-bold rounded-[0.1rem] border border-slate-200 bg-white shadow-sm w-full md:w-[220px] flex items-center leading-none",
                           !startDate && "text-muted-foreground"
                         )}
                       >
-                        <CalendarIcon className="mr-3 h-5 w-5 text-primary opacity-50" />
-                        {startDate ? (
-                          endDate ? (
-                            <span>
-                              {format(startDate, "yyyy.MM.dd")} - {format(endDate, "yyyy.MM.dd")}
-                            </span>
+                        <CalendarIcon className="mr-3 h-4 w-4 text-primary opacity-50 shrink-0" />
+                        <span className="text-sm truncate">
+                          {startDate ? (
+                            endDate ? (
+                              `${format(startDate, "yyyy.MM.dd")} - ${format(endDate, "yyyy.MM.dd")}`
+                            ) : (
+                              format(startDate, "yyyy.MM.dd")
+                            )
                           ) : (
-                            format(startDate, "yyyy.MM.dd")
-                          )
-                        ) : (
-                          <span>기간 선택</span>
-                        )}
+                            "기간 선택"
+                          )}
+                        </span>
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 rounded-[0.1rem] overflow-hidden border-none shadow-2xl" align="start">
-                      <div className="p-4 bg-white border-b flex items-center justify-between">
-                        <span className="font-black text-slate-800">기간 설정</span>
+                      <div className="p-3 bg-white border-b flex items-center justify-between">
+                        <span className="font-black text-slate-800 text-sm">기간 설정</span>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => { setStartDate(undefined); setEndDate(undefined); }}
-                          className="h-8 px-2 text-sm font-bold text-slate-400 hover:text-red-500"
+                          className="!h-7 px-2 text-xs font-bold text-slate-400 hover:text-red-500"
                         >
-                          <X size={14} className="mr-1" /> 초기화
+                          <X size={12} className="mr-1" /> 초기화
                         </Button>
                       </div>
                       <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x">
@@ -296,7 +323,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                           onSelect={setStartDate}
                           initialFocus
                           locale={ko}
-                          className="p-4"
+                          className="p-3"
                         />
                         <Calendar
                           mode="single"
@@ -304,15 +331,15 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                           onSelect={setEndDate}
                           initialFocus
                           locale={ko}
-                          className="p-4"
+                          className="p-3"
                         />
                       </div>
                     </PopoverContent>
                   </Popover>
 
                   <Select value={orderBy} onValueChange={setOrderBy}>
-                    <SelectTrigger className="w-full md:w-[150px] h-14 rounded-[0.1rem] border-2 border-white bg-white font-bold shadow-sm">
-                      <ArrowUpDown className="mr-2 h-4 w-4 text-primary opacity-50" />
+                    <SelectTrigger className="w-full md:w-[140px] !h-12 rounded-[0.1rem] border border-slate-200 bg-white font-bold shadow-sm text-sm flex items-center leading-none">
+                      <ArrowUpDown className="mr-2 h-3.5 w-3.5 text-primary opacity-50 shrink-0" />
                       <SelectValue placeholder="정렬 방식" />
                     </SelectTrigger>
                     <SelectContent>
@@ -323,8 +350,8 @@ export const BoardListClient = ({ initialData, params: initialParams }: { initia
                   </Select>
                 </div>
 
-                <Button type="submit" size="lg" className="h-16 px-12 gap-3 bg-slate-900 dark:bg-primary border-4 border-white dark:border-slate-800 shadow-2xl hover:scale-105 transition-all active:scale-95 font-black text-white rounded-[0.1rem]">
-                  <Search className="w-6 h-6" /> 조회
+                <Button type="submit" size="lg" className="!h-12 px-10 gap-2 bg-slate-900 border border-slate-900 shadow-xl hover:scale-105 transition-all active:scale-95 font-black text-white rounded-[0.1rem] flex items-center leading-none">
+                  <Search className="w-4 h-4 shrink-0" /> 조회
                 </Button>
               </div>
             </form>

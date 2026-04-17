@@ -45,31 +45,7 @@ const DOMAIN_ROUTE_MAP: Record<number, string> = {
   9000000: '/admin/system/menus',
 };
 
-export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { theme, setTheme, resolvedTheme } = useTheme();
-  const { user, logout } = useAuth();
-  const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
-  const { notifications, unreadCount } = useNotifications();
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [menus, setMenus] = useState<MenuInfo[]>(initialMenus);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (menus.length === 0) {
-      menuService.getHeadMenus()
-        .then(res => setMenus(res || []))
-        .catch(() => setMenus([]));
-    }
-  }, [menus.length]);
-
-  // Sync activeMenuNo with pathname and query params
-function HeaderSearchParamSync({ menus, activeMenuNo, setActiveMenuNo }: { menus: MenuInfo[], activeMenuNo: number | null, setActiveMenuNo: (no: number | null) => void }) {
+function HeaderSearchParamSync({ menus, activeMenuNo, setActiveMenuNo }: { menus: MenuInfo[], activeMenuNo: number | null, setActiveMenuNo: (no: number) => void }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchBbsId = searchParams?.get('bbsId');
@@ -135,7 +111,7 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
   const { setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
-  const { unreadCount } = useNotifications();
+  const { notifications, unreadCount } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [menus, setMenus] = useState<MenuInfo[]>(initialMenus);
   const [mounted, setMounted] = useState(false);
@@ -178,29 +154,30 @@ export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
             {menus.map((menu, index) => {
               const Icon = DOMAIN_ICON_MAP[menu.menuNo] || CircleDot;
               const isActive = activeMenuNo === menu.menuNo;
+              
+              let targetRoute = menu.modernRoute;
+              if (!targetRoute || targetRoute === 'dir' || targetRoute === '#') {
+                targetRoute = DOMAIN_ROUTE_MAP[menu.menuNo] || '/';
+              }
 
               return (
-                <Button
+                <Link
                   key={menu.menuNo || `head-${index}`}
-                  variant="ghost"
-                  size="sm"
+                  href={targetRoute}
+                  onClick={(e) => {
+                    setActiveMenuNo(menu.menuNo);
+                    // No need to prevent default or push manually; Link handles instant client-side transition.
+                  }}
                   className={cn(
-                    "px-4 h-9 font-semibold text-sm transition-all rounded-lg gap-2",
+                    "inline-flex items-center justify-center whitespace-nowrap px-4 h-9 font-semibold text-sm transition-all rounded-lg gap-2",
                     isActive
                       ? "bg-background text-primary shadow-sm border border-border/50"
                       : "text-slate-600 hover:text-foreground hover:bg-background/50"
                   )}
-                  onClick={() => {
-                    setActiveMenuNo(menu.menuNo);
-                    const targetRoute = menu.modernRoute || DOMAIN_ROUTE_MAP[menu.menuNo];
-                    if (targetRoute) {
-                      router.push(targetRoute);
-                    }
-                  }}
                 >
                   <Icon size={14} className={cn("transition-transform", isActive ? "scale-110" : "opacity-100")} />
                   {menu.menuNm}
-                </Button>
+                </Link>
               );
             })}
           </nav>

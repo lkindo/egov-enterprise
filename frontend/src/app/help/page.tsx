@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -24,7 +24,7 @@ export default function HelpCenterPage() {
         setLoading(true);
         if (tab === 'faq') {
           const res = await helpUserService.getFaqs({});
-          setFaqs(res || []);
+          setFaqs(res.list || []);
         } else {
           const res = await helpUserService.getQnas({ page: 0, size: 10 });
           setQnas(res.list || []);

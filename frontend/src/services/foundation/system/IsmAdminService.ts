@@ -1,4 +1,4 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -18,39 +18,44 @@ export interface InfrmlSanctn {
 }
 
 /**
- * ?꾩궛 ?좎껌(Informal Sanction) 관리님쒕퉬님(Admin)
+ * 약식결재(Informal Sanction) 관리 서비스(Admin)
  */
 class IsmAdminService extends AdminService {
  constructor() {
- super('/ism'); // /api/v1/admin/system/ism
+ super('/approvals'); // /api/v1/admin/system/ism
  }
 
- /** ?좎껌 紐⑸줉 조회 */
- async getInfrmlSanctnList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<InfrmlSanctn>> {
- return this.get<PageResponse<InfrmlSanctn>>('', { ...config, params });
- }
+  /** 대기 신청 목록 조회 */
+  async getPendingList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<InfrmlSanctn>> {
+    return this.get<PageResponse<InfrmlSanctn>>('/pending', { ...config, params });
+  }
 
- /** ?좎껌 상세 조회 */
+  /** 신청 내역 목록 조회 */
+  async getHistoryList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<InfrmlSanctn>> {
+    return this.get<PageResponse<InfrmlSanctn>>('/my', { ...config, params });
+  }
+
+ /** 신청 상세 조회 */
  async getInfrmlSanctn(id: string, config?: AxiosRequestConfig): Promise<InfrmlSanctn> {
  return this.get<InfrmlSanctn>(`/${id}`, config);
  }
 
- /** ?좎껌 등록 */
+ /** 신청 등록 */
  async createInfrmlSanctn(data: Partial<InfrmlSanctn>, config?: AxiosRequestConfig): Promise<InfrmlSanctn> {
  return this.post<InfrmlSanctn>('', data, config);
  }
 
- /** ?좎껌 ?섏젙 */
+ /** 신청 수정 */
  async updateInfrmlSanctn(id: string, data: Partial<InfrmlSanctn>, config?: AxiosRequestConfig): Promise<void> {
  return this.put(`/${id}`, data, config);
  }
 
- /** ?좎껌 ?뱀씤/諛섎젮 */
- async confirmInfrmlSanctn(id: string, confmAt: string, returnResn?: string, config?: AxiosRequestConfig): Promise<void> {
- return this.patch(`/${id}/confirm`, null, { ...config, params: { confmAt, returnResn } });
+ /** 신청 승인/반려 */
+ async confirmInfrmlSanctn(id: string, status: string, reason?: string, config?: AxiosRequestConfig): Promise<void> {
+ return this.put(`/${id}/confirm`, { status, reason }, config);
  }
 
- /** ?좎껌 님젣 */
+ /** 신청 삭제 */
  async deleteInfrmlSanctn(id: string, config?: AxiosRequestConfig): Promise<void> {
  return this.delete(`/${id}`, config);
  }

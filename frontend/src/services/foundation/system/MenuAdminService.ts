@@ -72,7 +72,13 @@ class MenuAdminService extends AdminService {
 
   /** 권한별 메뉴 생성 관리 목록 조회 */
   async getMenuCreationManageList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<MenuCreate>> {
-    return this.get<PageResponse<MenuCreate>>('/creation-manage', { ...config, params });
+    return this.get<PageResponse<MenuCreate>>('/creation-manage', {
+      ...config,
+      params: {
+        ...params,
+        searchWrd: params?.searchKeyword || params?.searchWrd || '',
+      },
+    });
   }
 
   /** 권한별 메뉴 할당 저장 */

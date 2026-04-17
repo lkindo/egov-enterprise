@@ -82,13 +82,22 @@ public class UserService extends BaseAbstractService implements EgovUserService 
          * 사용자 목록 페이지 조회 구현
          */
         @Override
-        @Cacheable(value = "users", key = "'pagedUserList:' + #pageable.pageNumber + ':' + #pageable.pageSize")
-        public Page<UserDto> getPagedUserList(@NonNull Pageable pageable) {
-                Page<User> userPage = userRepository.findAll(required(pageable, "Pageable 은 null 일 수 없습니다"));
+        @Cacheable(value = "users", key = "'pagedUserList:' + (#searchKeyword ?: '') + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
+        public Page<UserDto> getPagedUserList(String searchKeyword, @NonNull Pageable pageable) {
+                Page<User> userPage;
+                if (org.springframework.util.StringUtils.hasText(searchKeyword)) {
+                        userPage = userRepository.findByUserNmContainingIgnoreCase(searchKeyword, required(pageable));
+                } else {
+                        userPage = userRepository.findAll(required(pageable, "Pageable 은 null 일 수 없습니다"));
+                }
 
                 List<String> userIds = userPage.getContent().stream()
                                 .map(User::getEsntlId)
                                 .collect(Collectors.toList());
+
+                if (userIds.isEmpty()) {
+                        return new PageImpl<>(java.util.Collections.emptyList(), pageable, userPage.getTotalElements());
+                }
 
                 List<UserAuthority> authorities = userAuthorityRepository
                                 .findByUniqIdIn(required(userIds, "사용자 ID 목록은 null 일 수 없습니다"));

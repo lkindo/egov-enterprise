@@ -1,4 +1,4 @@
-﻿import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { Popup } from '@/types/foundation/banner';
@@ -8,7 +8,7 @@ import { Popup } from '@/types/foundation/banner';
  */
 class PopupAdminService extends AdminService {
   constructor() {
-    super('/popups');
+    super('/popup', 'content');
   }
 
   /** ?앹뾽李紐⑸줉 조회 */

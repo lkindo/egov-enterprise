@@ -22,7 +22,7 @@ public interface EgovUserService {
     /**
      * 사용자 목록 페이지 조회
      */
-    Page<UserDto> getPagedUserList(@NonNull Pageable pageable);
+    Page<UserDto> getPagedUserList(String searchKeyword, @NonNull Pageable pageable);
 
     /**
      * 사용자 상세 조회

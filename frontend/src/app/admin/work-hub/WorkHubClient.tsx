@@ -64,7 +64,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   // --- Queries ---
   const { data: scheduleData } = useQuery({
     queryKey: ['work-schedule', searchKeyword],
-    queryFn: () => scheduleService.getScheduleList({ pageNo: 1 }),
+    queryFn: () => scheduleService.getScheduleList({ pageIndex: 1 }),
     enabled: activeTab === 'calendar'
   });
   const schedules = scheduleData?.list || [];

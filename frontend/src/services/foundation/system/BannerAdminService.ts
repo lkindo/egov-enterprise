@@ -1,4 +1,4 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { Banner } from '@/types/foundation/banner';
 import { AxiosRequestConfig } from 'axios';
@@ -8,7 +8,7 @@ import { AxiosRequestConfig } from 'axios';
  */
 class BannerAdminService extends AdminService {
  constructor() {
- super('/banners');
+ super('/banners', 'content');
  }
 
  /** 諛곕꼫 紐⑸줉 조회 */

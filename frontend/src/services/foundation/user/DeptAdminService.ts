@@ -1,4 +1,4 @@
-﻿import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
@@ -13,7 +13,7 @@ export interface DeptDto {
 
 class DeptAdminService extends AdminService {
   constructor() {
-    super('/depts');
+    super('/departments');
   }
 
   /** 遺님紐⑸줉 ?섏씠吏조회 */

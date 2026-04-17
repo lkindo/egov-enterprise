@@ -23,4 +23,14 @@ public interface EgovStatsService {
     /**
      * ?붿껌 議고??     */
     List<StatsDto> getRequestStats(String fromDate, String toDate, String statsKind);
+
+    /**
+     * 요약 통계 조회
+     */
+    java.util.Map<String, Object> getSummary();
+
+    /**
+     * 메뉴별 통계 조회
+     */
+    List<java.util.Map<String, Object>> getMenuStats();
 }

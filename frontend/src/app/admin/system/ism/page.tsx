@@ -17,7 +17,7 @@ export default async function InformalSanctionPage() {
   let rawData: any = { list: [] as InfrmlSanctn[], total: 0, totalPage: 0 };
 
   try {
-    rawData = await ismAdminService.getInfrmlSanctnList({ page: 0, size: 50 }, axiosConfig);
+    rawData = await ismAdminService.getPendingList({ page: 0, size: 50 }, axiosConfig);
   } catch (error) {
     console.error('Server-side fetch ism failed:', error);
   }

@@ -1,4 +1,4 @@
-﻿import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 
@@ -17,12 +17,19 @@ export interface Community {
  */
 class CommunityAdminService extends AdminService {
   constructor() {
-    super('/communities');
+    super('/community', 'content');
   }
 
   /** 而ㅻ님덊떚 紐⑸줉 조회 */
   async getCommunityList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Community>> {
-    return this.get<PageResponse<Community>>('', { ...config, params });
+    return this.get<PageResponse<Community>>('', {
+      ...config,
+      params: {
+        ...params,
+        searchCnd: params?.searchCondition || '',
+        searchWrd: params?.searchKeyword || params?.searchWrd || '',
+      },
+    });
   }
 
   /** 而ㅻ님덊떚 상세 조회 */

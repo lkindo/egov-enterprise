@@ -68,9 +68,9 @@ export abstract class UserService extends ApiService {
  * 관리자용 서비스 클래스
  */
 export abstract class AdminService extends ApiService {
-  constructor(domainPath: string) {
+  constructor(domainPath: string, category: string = 'system') {
     // baseURL에 이어지는 상대 경로로 변경 (슬래시 제거)
-    // /admin/system 대신 admin/system 사용
-    super(`admin/system${domainPath}`);
+    // category를 동적으로 받아 system, content, operation 등 지원
+    super(`admin/${category}${domainPath}`);
   }
 }

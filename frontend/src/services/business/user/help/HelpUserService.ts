@@ -1,50 +1,69 @@
-﻿import { UserService } from '@/services/core/ApiService';
+import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface FAQ {
- faqId: string;
- qestnSj: string;
- qestnCn: string;
- answerCn: string;
- inqireCo: number;
- lastUpdusrPnttm: string;
+  faqId: string;
+  qestnSj: string;
+  qestnCn: string;
+  answerCn: string;
+  inqireCo: number;
+  lastUpdusrPnttm: string;
 }
 
 export interface QNA {
- qaId: string;
- qestnSj: string;
- qestnCn: string;
- answerCn?: string;
- writngPassword?: string;
- wrterNm: string;
- writngDe: string;
- qnaProcessSttusCode: string; // 1: ?묒닔, 2: 泥섎━以 3: ?듬님꾨즺
+  qaId: string;
+  qestnSj: string;
+  qestnCn: string;
+  answerCn?: string;
+  writngPassword?: string;
+  wrterNm: string;
+  writngDe: string;
+  qnaProcessSttusCode: string; // 1: 접수, 2: 처리중, 3: 답변완료
 }
 
 /**
- * ?꾩留님쇳꽣 ?쒕퉬님(User)
+ * 도움말 센터 서비스(User)
+ * - Q&A, FAQ 기능을 통합 게시판(BBS) 엔진으로 연결
  */
 class HelpUserService extends UserService {
- constructor() {
- super('');
- }
+  constructor() {
+    super('/boards');
+  }
 
- /** FAQ 紐⑸줉 조회 */
- async getFaqs(params: { searchWrd?: string }, config?: AxiosRequestConfig): Promise<FAQ[]> {
- // FAQ님蹂댄넻 ?꾩껜 紐⑸줉님媛몄삤님寃쎌슦媛 留롮쓬 (諛곌꼍 援ъ“님?곕씪 PageResponse님?섎룄 ?덉쑝님현재 UI님諛곗뿴 湲곕?)
- return this.get<FAQ[]>('/faqs', { ...config, params });
- }
+  /** FAQ 목록 조회 (전용 ID: BBSMSTR_BBBBBBBBBBBB) */
+  async getFaqs(params: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig): Promise<PageResponse<FAQ>> {
+    return this.get<PageResponse<FAQ>>('/BBSMSTR_BBBBBBBBBBBB', { 
+      ...config, 
+      params: {
+        ...params,
+        searchWrd: params.keyword
+      }
+    });
+  }
 
- /** Q&A 紐⑸줉 조회 (?섏씠吏 */
- async getQnas(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<QNA>> {
- return this.get<PageResponse<QNA>>('/qnas', { ...config, params });
- }
+  /** Q&A 목록 조회 (페이징) */
+  async getQnas(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<QNA>> {
+    return this.get<PageResponse<QNA>>('/BBSMSTR_DDDDDDDDDDDD', {
+      ...config,
+      params: {
+        ...params,
+        searchWrd: params?.keyword || ''
+      }
+    });
+  }
 
- /** Q&A 등록 */
- async createQna(data: Partial<QNA>, config?: AxiosRequestConfig): Promise<void> {
- return this.post<void>('/qnas', data, config);
- }
+  /** Q&A 등록 */
+  async createQna(data: Partial<QNA>, config?: AxiosRequestConfig): Promise<void> {
+    const boardData = {
+      bbsId: 'BBSMSTR_DDDDDDDDDDDD',
+      nttSj: data.qestnSj,
+      nttCn: data.qestnCn,
+      password: data.writngPassword,
+      ntcrNm: data.wrterNm
+    };
+    return this.post<void>('/posts', boardData, config);
+  }
 }
 
 export const helpUserService = new HelpUserService();

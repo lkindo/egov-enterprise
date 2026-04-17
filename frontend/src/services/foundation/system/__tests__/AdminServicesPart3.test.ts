@@ -39,8 +39,8 @@ describe('Admin System Services Part 3 (Specialized)', () => {
   });
 
   it('IsmAdminService calls correct endpoints', async () => {
-    await ismAdminService.getInfrmlSanctnList({ page: 0 });
-    expect(client.get).toHaveBeenCalledWith('admin/system/ism', expect.objectContaining({ 
+    await ismAdminService.getPendingList({ page: 0 });
+    expect(client.get).toHaveBeenCalledWith('admin/system/approvals/pending', expect.objectContaining({ 
       params: expect.objectContaining({ pageIndex: 1 }) 
     }));
   });

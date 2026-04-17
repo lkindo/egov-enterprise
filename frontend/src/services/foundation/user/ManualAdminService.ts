@@ -1,4 +1,4 @@
-﻿import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
@@ -16,7 +16,7 @@ export interface ManualDto {
 
 class ManualAdminService extends ApiService {
   constructor() {
-    super('/api/v1/help');
+    super('/help');
   }
 
   /** 留ㅻ돱님紐⑸줉 조회 */

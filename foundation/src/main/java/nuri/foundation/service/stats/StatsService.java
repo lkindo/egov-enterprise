@@ -77,6 +77,46 @@ public class StatsService implements EgovStatsService {
         return executeStatsQuery(sql, fromDate, toDate);
     }
 
+    @Override
+    public java.util.Map<String, Object> getSummary() {
+        java.util.Map<String, Object> summary = new java.util.HashMap<>();
+        try {
+            summary.put("userCount", ((Number) entityManager.createNativeQuery("SELECT COUNT(*) FROM COMTNGNRLMBER").getSingleResult()).longValue());
+            summary.put("bbsCount", ((Number) entityManager.createNativeQuery("SELECT COUNT(*) FROM COMTNBBSMASTER").getSingleResult()).longValue());
+            summary.put("menuCount", ((Number) entityManager.createNativeQuery("SELECT COUNT(*) FROM COMTNMENUINFO").getSingleResult()).longValue());
+            summary.put("todayVisit", ((Number) entityManager.createNativeQuery("SELECT COALESCE(SUM(rdcnt), 0) FROM sweblogsummary WHERE OCCRRNC_DE = CURRENT_DATE").getSingleResult()).longValue());
+        } catch (Exception e) {
+            log.warn(">>> Error fetching summary stats: {}", e.getMessage());
+        }
+        return summary;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<java.util.Map<String, Object>> getMenuStats() {
+        List<java.util.Map<String, Object>> result = new ArrayList<>();
+        try {
+            String sql = """
+                    SELECT m.MENU_NM, COUNT(*) as visit_count
+                    FROM COMTNWEBLOG l
+                    JOIN COMTNMENUINFO m ON l.URL LIKE CONCAT('%', m.PROGRM_FILE_NM, '%')
+                    GROUP BY m.MENU_NM
+                    ORDER BY visit_count DESC
+                    LIMIT 10
+                    """;
+            List<Object[]> rows = entityManager.createNativeQuery(sql).getResultList();
+            for (Object[] row : rows) {
+                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                map.put("menuNm", row[0]);
+                map.put("visitCount", row[1]);
+                result.add(map);
+            }
+        } catch (Exception e) {
+            log.warn(">>> Error fetching menu stats: {}", e.getMessage());
+        }
+        return result;
+    }
+
     /**
      * 통계 쿼리 실행 및 DTO 매핑
      */

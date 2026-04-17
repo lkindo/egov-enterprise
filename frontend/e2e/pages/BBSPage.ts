@@ -8,7 +8,7 @@ export class BBSPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.searchInput = page.getByPlaceholder(/위키|FAQ|기술 포럼|검색|Search/i).first();
+    this.searchInput = page.getByPlaceholder(/위키|FAQ|기술 포럼|검색|Search|어떤 정보를 찾으시나요/i).first();
     // Generalized selector: supports legacy tables and modern Hub cards/item streams
     this.dataTable = page.locator('main, .hub-card-section, table, [role="grid"]').first();
     this.firstRow = page.locator('.hub-table-container, table tbody tr, .hub-card-item').first();

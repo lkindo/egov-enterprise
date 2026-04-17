@@ -297,7 +297,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                   </td>
                 </tr>
               ) : (
-                {(data || []).map((item, rowIdx) => {
+                (data || []).map((item, rowIdx) => {
                   if (!item) return null;
                   const itemId = item?.[keyField] ?? rowIdx;
                   return (

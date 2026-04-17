@@ -18,9 +18,12 @@ import {
   HelpCircle,
   CheckCircle2,
   CalendarDays,
-  User
+  User,
+  ChevronDown,
+  Book
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 
 interface PreviewProps {
   tmplatId: string;
@@ -68,6 +71,8 @@ export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {
         {tmplatId === 'TMPLT_GALLERY' && <GalleryLayout posts={MOCK_POSTS} />}
         {tmplatId === 'TMPLT_QNA' && <QnaLayout posts={MOCK_POSTS} />}
         {tmplatId === 'TMPLT_CALENDAR' && <CalendarLayout posts={MOCK_POSTS} />}
+        {tmplatId === 'TMPLT_FAQ' && <FaqLayout posts={MOCK_POSTS} />}
+        {tmplatId === 'TMPLT_WIKI' && <WikiLayout posts={MOCK_POSTS} />}
       </div>
 
       <div className="h-10 bg-slate-100 flex items-center justify-center border-t border-slate-200">
@@ -202,6 +207,56 @@ function QnaLayout({ posts }: { posts: any[] }) {
              </div>
           </div>
        ))}
+    </div>
+  );
+}
+
+function FaqLayout({ posts }: { posts: any[] }) {
+  return (
+    <div className="space-y-4">
+      {posts.slice(0, 3).map((post, idx) => (
+        <Card key={idx} className="border-2 border-slate-50 overflow-hidden rounded-[0.1rem] hover:border-purple-500 transition-all group">
+          <div className="p-6 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className={cn(
+                "w-12 h-12 rounded-lg flex items-center justify-center font-black text-xl transition-all",
+                idx === 0 ? "bg-purple-500 text-white shadow-lg" : "bg-slate-100 text-slate-400"
+              )}>
+                Q
+              </div>
+              <h4 className="font-black text-slate-800 text-lg uppercase tracking-tight italic">{post.title}</h4>
+            </div>
+            <ChevronDown className="w-6 h-6 text-slate-300" />
+          </div>
+          {idx === 0 && (
+            <div className="px-24 pb-10">
+               <div className="p-8 bg-slate-50 rounded-[0.1rem] border-l-8 border-purple-500 text-slate-600 font-medium leading-relaxed">
+                  {post.content}
+               </div>
+            </div>
+          )}
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function WikiLayout({ posts }: { posts: any[] }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {posts.map((post, idx) => (
+        <Card key={idx} className="group overflow-hidden border-2 border-slate-50 hover:border-slate-900 transition-all rounded-[0.1rem]">
+          <div className="flex">
+            <div className="w-16 bg-slate-50 flex items-center justify-center shrink-0 border-r border-slate-100 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+               <Book size={24} className="opacity-40" />
+            </div>
+            <div className="p-8 space-y-4">
+              <h4 className="text-xl font-black text-slate-800 uppercase tracking-tighter italic group-hover:text-primary transition-colors">{post.title}</h4>
+              <p className="text-sm text-slate-400 font-black tracking-widest uppercase">Last modified by {post.author}</p>
+            </div>
+          </div>
+        </Card>
+      ))}
     </div>
   );
 }

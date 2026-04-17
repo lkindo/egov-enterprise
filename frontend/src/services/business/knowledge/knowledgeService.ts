@@ -54,23 +54,32 @@ export interface FileDto {
 
 export const knowledgeService = {
   getArticles: async (params: { bbsId?: string; category?: string; searchWrd?: string; searchCnd?: string; page?: number; size?: number } = {}) => {
-    // Redirect to Board API
+    // 5-Tier Knowledge Board Mapping
+    let targetBbsId = params.bbsId;
+    if (!targetBbsId) {
+      if (params.category === 'FAQ') targetBbsId = 'BBSMSTR_BBBBBBBBBBBB';
+      else if (params.category === 'QNA') targetBbsId = 'BBSMSTR_DDDDDDDDDDDD';
+      else if (params.category === 'WIKI') targetBbsId = 'BBSMSTR_EEEEEEEEEEEE';
+      else if (params.category === 'COMMUNITY') targetBbsId = 'BBSMSTR_CCCCCCCCCCCC';
+      else targetBbsId = 'BBSMSTR_AAAAAAAAAAAA'; // Default: Notice
+    }
+
     const boardParams = {
-      bbsId: params.bbsId || 'BBSMSTR_AAAAAAAAAAAA',
       qnaCategory: params.category, // Map Hub category to BBS qnaCategory
       searchWrd: params.searchWrd,
       searchCnd: params.searchCnd || '0',
       page: params.page || 0,
       size: params.size || 20
     };
-    const res = await client.get<any>(`bbs/${boardParams.bbsId}`, { params: boardParams });
+    const res = await client.get<any>(`boards/${targetBbsId}`, { params: boardParams });
 
     // Map Board fields to Knowledge fields for UI compatibility
     return res;
   },
 
   getHotArticles: async (bbsId?: string) => {
-    const res = await client.get<any>(`bbs/${bbsId || 'BBSMSTR_AAAAAAAAAAAA'}`, {
+    const targetBbsId = bbsId || 'BBSMSTR_AAAAAAAAAAAA';
+    const res = await client.get<any>(`boards/${targetBbsId}`, {
       params: { size: 5, sort: 'inqireCo,desc' }
     });
     return {
@@ -83,7 +92,7 @@ export const knowledgeService = {
   },
 
   getArticle: async (bbsId: string, nttId: string) => {
-    return client.get<KnowledgeDto>(`bbs/${bbsId}/${nttId}`);
+    return client.get<KnowledgeDto>(`boards/${bbsId}/posts/${nttId}`);
   },
 
   getStats: async (bbsId?: string) => {
@@ -93,7 +102,8 @@ export const knowledgeService = {
   },
 
   getActivities: async (bbsId?: string) => {
-    const res = await client.get<any>(`bbs/${bbsId || 'BBSMSTR_AAAAAAAAAAAA'}`, {
+    const targetBbsId = bbsId || 'BBSMSTR_AAAAAAAAAAAA';
+    const res = await client.get<any>(`boards/${targetBbsId}`, {
       params: { size: 10 }
     });
     return (res.list || []).map((item: any) => ({

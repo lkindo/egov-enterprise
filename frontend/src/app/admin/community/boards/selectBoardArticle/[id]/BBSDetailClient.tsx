@@ -2,7 +2,6 @@
 
 import React, { useState, Suspense, useActionState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import client from '@/lib/api/client';
@@ -16,23 +15,20 @@ import {
   Edit3,
   Send,
   ArrowLeft,
-  Home,
-  ChevronRight,
   MessageSquare,
-  Info,
   Type,
   FileText,
   Paperclip,
   CheckCircle2,
-  AlertCircle,
+  ShieldCheck,
   Calendar
 } from "lucide-react";
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
-import { StandardForm, FormField } from '@/app/components/ui/standard-form';
+import { StandardForm } from '@/app/components/ui/standard-form';
 import { useToast } from '@/app/components/ui/toast';
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
-const InsertBBSContent = () => {
+const BBSDetailClient = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -87,26 +83,42 @@ const InsertBBSContent = () => {
             <div className="space-y-6 text-center md:text-left">
               <div className={cn(
                 "flex items-center gap-3 px-5 py-2 w-fit rounded-full border backdrop-blur-xl mx-auto md:mx-0",
-                tmplatId === 'TMPLT_QNA' ? "bg-amber-500/20 border-amber-500/30" : "bg-white/10 border-white/10"
+                tmplatId === 'TMPLT_QNA' ? "bg-amber-500/20 border-amber-500/30" : 
+                tmplatId === 'TMPLT_HUB' ? "bg-indigo-500/20 border-indigo-500/30" :
+                tmplatId === 'TMPLT_FAQ' ? "bg-purple-500/20 border-purple-500/30" :
+                tmplatId === 'TMPLT_WIKI' ? "bg-emerald-500/20 border-emerald-500/30" :
+                tmplatId === 'TMPLT_GALLERY' ? "bg-rose-500/20 border-rose-500/30" :
+                tmplatId === 'TMPLT_CALENDAR' ? "bg-cyan-500/20 border-cyan-500/30" :
+                "bg-white/10 border-white/10"
               )}>
-                <Edit3 className={cn("w-4 h-4 animate-bounce", tmplatId === 'TMPLT_QNA' ? "text-amber-400" : "text-primary")} />
+                <Edit3 className={cn(
+                  "w-4 h-4 animate-bounce", 
+                  tmplatId === 'TMPLT_QNA' ? "text-amber-400" : 
+                  tmplatId === 'TMPLT_HUB' ? "text-indigo-400" :
+                  tmplatId === 'TMPLT_FAQ' ? "text-purple-400" :
+                  tmplatId === 'TMPLT_WIKI' ? "text-emerald-400" :
+                  tmplatId === 'TMPLT_GALLERY' ? "text-rose-400" :
+                  tmplatId === 'TMPLT_CALENDAR' ? "text-cyan-400" :
+                  "text-primary"
+                )} />
                 <span className="text-[10px] font-black tracking-[0.3em] text-white">
                   {pathname?.includes('insertBoardArticle') ? 'NEW POST : ' : 'EDIT : '} 
                   {tmplatId === 'TMPLT_HUB' ? 'KNOWLEDGE_BASE' : 
                    tmplatId === 'TMPLT_GALLERY' ? 'MEDIA_ASSET' : 
                    tmplatId === 'TMPLT_QNA' ? 'CONSULT_SESSION' : 
-                   tmplatId === 'TMPLT_CALENDAR' ? 'EVENT_LOG' : 'BOARD'}
+                   tmplatId === 'TMPLT_CALENDAR' ? 'EVENT_LOG' : 
+                   tmplatId === 'TMPLT_FAQ' ? 'FAQ_CONTENT' :
+                   tmplatId === 'TMPLT_WIKI' ? 'WIKI_ARTICLE' : 'BOARD'}
                 </span>
               </div>
               <CardTitle className="text-3xl md:text-3xl font-black tracking-tighter leading-tight ">
-                {pathname?.includes('insertBoardArticle') ? (
-                  <>새로운 소식을<br /><span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">기록하세요</span></>
-                ) : (
-                  <>게시글 내용을<br /><span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">수정하세요</span></>
-                )}
+                {pathname?.includes('insertBoardArticle') ? '새로운 통찰을' : '내용을 수정하여'} <br />
+                <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">Insight</span> 공유하세요
               </CardTitle>
               <p className="text-slate-400 font-medium text-lg max-w-lg leading-relaxed">
-                함께 공유할 가치 있는 정보를 정성스럽게 작성하여 <br className="hidden md:block" />소통의 깊이를 더해보세요.
+                {tmplatId === 'TMPLT_QNA' 
+                  ? '궁금한 점을 상세히 적어주시면 정확한 답변을 드릴 수 있습니다.'
+                  : '새로운 아이디어나 소식을 공유하여 커뮤니티의 가치를 높여주세요.'}
               </p>
             </div>
             <div className="hidden lg:block relative">
@@ -123,36 +135,34 @@ const InsertBBSContent = () => {
         <StandardForm action={formAction}>
           <input type="hidden" name="bbsId" value={bbsId} />
           <CardContent className="pt-20 px-12 md:px-20 space-y-20">
-            {/* Title Input */}
+            {/* 제목 입력 */}
             <div className="space-y-6 group">
               <div className="flex items-center justify-between">
-                <Label htmlFor="nttSj" className="text-[10px] font-black tracking-[0.3em] text-slate-400 group-focus-within:text-primary transition-all flex items-center gap-3 uppercase">
-                  <span className="w-2 h-2 rounded-full bg-primary" /> 게시글 제목 (Title)
+                <Label htmlFor="nttSj" className={cn(
+                  "text-[11px] font-black tracking-[0.3em] text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-3",
+                  tmplatId === 'TMPLT_QNA' && "group-focus-within:text-amber-500"
+                )}>
+                  <Type className="w-4 h-4" /> 01. {tmplatId === 'TMPLT_QNA' ? 'QUESTION TITLE' : 'POST TITLE'}
                 </Label>
                 <span className="text-[10px] font-bold text-primary/40 tracking-tight">필수</span>
               </div>
               <Input
                 id="nttSj"
                 name="nttSj"
-                placeholder="매력적이고 명확한 제목을 입력하세요"
+                placeholder={tmplatId === 'TMPLT_QNA' ? "질문 제목을 입력하세요." : "매력적이고 명확한 제목을 입력하세요."}
                 className={cn(
                   "h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[0.1rem] px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
+                  tmplatId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
                   state?.field === 'nttSj' && "border-rose-500 bg-rose-50"
                 )}
                 required
               />
             </div>
 
-            {/* Hidden Inputs for Action Data */}
-            <input type="hidden" name="qnaCategory" value={selectedCategory} />
-            <input type="hidden" name="eventDate" value={selectedEventDate} />
-            <input type="hidden" name="qnaStatus" value="OPEN" />
-
-            {/* Template Specific Fields */}
             {tmplatId === 'TMPLT_QNA' && (
-              <div className="space-y-6 animate-in slide-in-from-left-4 duration-500">
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <Label className="text-[11px] font-black tracking-[0.3em] text-amber-500 flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4" /> 00. CONSULTATION CATEGORY
+                  <ShieldCheck className="w-4 h-4" /> CATEGORY_SELECT
                 </Label>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {['TECHNICAL', 'HR_POLICY', 'PROJECT_MGMT', 'GENERAL'].map(cat => (
@@ -193,7 +203,7 @@ const InsertBBSContent = () => {
               </div>
             )}
 
-            {/* Content Area */}
+            {/* 본문 입력 영역 */}
             <div className="space-y-6 group">
               <div className="flex items-center justify-between">
                 <Label htmlFor="nttCn" className={cn(
@@ -226,7 +236,7 @@ const InsertBBSContent = () => {
               </div>
             </div>
 
-            {/* File Attachment Area */}
+            {/* 파일 첨부 영역 */}
             <div className="space-y-6 group">
               <Label className="text-[11px] font-black tracking-[0.3em] text-muted-foreground flex items-center gap-3">
                 <Paperclip className="w-4 h-4" /> 03. 첨부 파일
@@ -240,7 +250,7 @@ const InsertBBSContent = () => {
               </div>
             </div>
 
-            {/* Visual Guide / Notice */}
+            {/* 보안 공지 */}
             <div className="p-10 bg-slate-900 rounded-[0.1rem] flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group/notice">
               <div className="absolute right-[-20%] top-[-50%] bg-primary/20 w-[400px] h-[400px] rounded-full blur-[100px] group-hover/notice:bg-primary/30 transition-all duration-1000" />
               <div className="w-20 h-20 bg-slate-800 rounded-[0.1rem] border border-slate-700 shadow-2xl flex items-center justify-center shrink-0 group-hover/notice:rotate-12 transition-transform">
@@ -286,17 +296,4 @@ const InsertBBSContent = () => {
   );
 };
 
-const InsertBoardArticlePage = () => {
-  return (
-    <Suspense fallback={
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="font-black text-muted-foreground animate-pulse">에디터 로드 중...</p>
-      </div>
-    }>
-      <InsertBBSContent />
-    </Suspense>
-  );
-};
-
-export default InsertBoardArticlePage;
+export default BBSDetailClient;

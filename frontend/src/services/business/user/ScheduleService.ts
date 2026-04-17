@@ -4,13 +4,13 @@ import { Schedule, MonthlyScheduleResponse } from '@/types/business/schedule';
 
 class ScheduleService extends ApiService {
   constructor() {
-    super('/schedule');
+    super('/schedules');
   }
 
   /**
    * 전체 일정 목록 조회 (페이징)
    */
-  async getScheduleList(params: { pageNo?: number; pageUnit?: number }): Promise<PageResponse<Schedule>> {
+  async getScheduleList(params: { pageIndex?: number; pageUnit?: number }): Promise<PageResponse<Schedule>> {
     return this.get<PageResponse<Schedule>>('', { params });
   }
 

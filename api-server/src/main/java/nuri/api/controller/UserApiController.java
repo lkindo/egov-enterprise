@@ -81,8 +81,9 @@ public class UserApiController {
     @Operation(summary = "사용자 목록 조회", description = "전체 사용자 목록을 페이징하여 조회합니다.")
     @GetMapping("/admin/system/users")
     public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getUsers(
+            @RequestParam(required = false) String searchKeyword,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<UserDto> result = userService.getPagedUserList(pageable);
+        Page<UserDto> result = userService.getPagedUserList(searchKeyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 

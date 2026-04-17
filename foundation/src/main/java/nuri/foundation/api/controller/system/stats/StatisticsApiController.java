@@ -91,6 +91,18 @@ public class StatisticsApiController {
         return ResponseEntity.ok(ApiResponse.success(convertToStatsDto(stats)));
     }
 
+    @Operation(summary = "요약 통계 조회(대시보드)")
+    @GetMapping("/summary")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> getSummary() {
+        return ResponseEntity.ok(ApiResponse.success(statsService.getSummary()));
+    }
+
+    @Operation(summary = "메뉴별 이용 통계")
+    @GetMapping("/menu")
+    public ResponseEntity<ApiResponse<List<java.util.Map<String, Object>>>> getMenuStats() {
+        return ResponseEntity.ok(ApiResponse.success(statsService.getMenuStats()));
+    }
+
     private List<StatsDto> convertToStatsDto(List<Object[]> stats) {
         return stats.stream()
                 .map(row -> StatsDto.builder()

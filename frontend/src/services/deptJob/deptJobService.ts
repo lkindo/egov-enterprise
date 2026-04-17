@@ -2,7 +2,7 @@ import client from '@/lib/api/client';
 import { PageResponse } from '@/types/foundation/system';
 import { DeptJobBxVO, DeptJobSearchParams } from '@/types/business/deptJob';
 
-const BASE_URL = '/deptjob';
+const BASE_URL = '/dept-jobs';
 
 export const getDeptJobList = async (params: DeptJobSearchParams = {}): Promise<PageResponse<DeptJobBxVO>> => {
  return client.get<PageResponse<DeptJobBxVO>>(`${BASE_URL}/boxes`, { params });

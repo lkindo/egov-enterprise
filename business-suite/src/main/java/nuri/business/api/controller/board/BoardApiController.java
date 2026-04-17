@@ -31,8 +31,10 @@ public class BoardApiController {
     @GetMapping("/{bbsId}")
     public ResponseEntity<ApiResponse<PageResponse<BoardDto>>> getPosts(
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
+            @RequestParam(required = false, defaultValue = "0") String searchCnd,
+            @RequestParam(required = false, defaultValue = "") String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<BoardDto> result = boardService.getBoardPosts(bbsId, pageable);
+        Page<BoardDto> result = boardService.getBoardPosts(bbsId, searchCnd, searchWrd, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 

@@ -73,6 +73,36 @@ public class SurveyApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
+    @Operation(summary = "설문 정보 수정")
+    @PutMapping("/{qestnrId}")
+    public ResponseEntity<ApiResponse<Void>> updateSurvey(@PathVariable String qestnrId, @RequestBody QestnrInfoDto dto) {
+        dto.setQestnrId(qestnrId);
+        surveyService.updateSurvey(dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "설문 정보 삭제")
+    @DeleteMapping("/{qestnrId}")
+    public ResponseEntity<ApiResponse<Void>> deleteSurvey(@PathVariable String qestnrId) {
+        surveyService.deleteSurvey(qestnrId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "설문 템플릿 수정")
+    @PutMapping("/templates/{tmplatId}")
+    public ResponseEntity<ApiResponse<Void>> updateTemplate(@PathVariable String tmplatId, @RequestBody QestnrTmplatDto dto) {
+        dto.setQestnrTmplatId(tmplatId);
+        surveyService.updateTmplat(dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "설문 템플릿 삭제")
+    @DeleteMapping("/templates/{tmplatId}")
+    public ResponseEntity<ApiResponse<Void>> deleteTemplate(@PathVariable String tmplatId) {
+        surveyService.deleteTmplat(tmplatId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
     // --- Questions & Items ---
 
     @Operation(summary = "설문 문항 목록 조회")
@@ -81,12 +111,43 @@ public class SurveyApiController {
         return ResponseEntity.ok(ApiResponse.success(surveyService.getQuestionList(qestnrId)));
     }
 
+    @Operation(summary = "설문 문항 수정")
+    @PutMapping("/{qestnrId}/questions/{qesitmId}")
+    public ResponseEntity<ApiResponse<Void>> updateQuestion(@PathVariable String qestnrId, @PathVariable String qesitmId, @RequestBody QustnrQesitmDto dto) {
+        dto.setQestnrId(qestnrId);
+        dto.setQestnrQesitmId(qesitmId);
+        surveyService.updateQuestion(dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "설문 문항 삭제")
+    @DeleteMapping("/{qestnrId}/questions/{qesitmId}")
+    public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable String qesitmId) {
+        surveyService.deleteQuestion(qesitmId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
     @Operation(summary = "설문 문항 등록")
     @PostMapping("/{qestnrId}/questions")
     public ResponseEntity<ApiResponse<Void>> insertQuestion(@PathVariable String qestnrId,
             @RequestBody QustnrQesitmDto dto) {
         dto.setQestnrId(qestnrId);
         surveyService.insertQuestion(dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "설문 항목 수정")
+    @PutMapping("/questions/items/{iemId}")
+    public ResponseEntity<ApiResponse<Void>> updateItem(@PathVariable String iemId, @RequestBody QustnrIemDto dto) {
+        dto.setQustnrIemId(iemId);
+        surveyService.updateItem(dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "설문 항목 삭제")
+    @DeleteMapping("/questions/items/{iemId}")
+    public ResponseEntity<ApiResponse<Void>> deleteItem(@PathVariable String iemId) {
+        surveyService.deleteItem(iemId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

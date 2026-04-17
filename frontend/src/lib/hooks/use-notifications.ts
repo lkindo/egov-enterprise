@@ -85,7 +85,7 @@ export function useNotifications() {
 
   const markAsRead = async (id: string) => {
     try {
-      await client.put(`/notifications/${id}/read`);
+      await client.post(`/notifications/${id}/read`);
       fetchNotifications();
     } catch (error) {
       console.error('Failed to mark notification as read:', error);

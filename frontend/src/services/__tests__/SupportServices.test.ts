@@ -36,15 +36,15 @@ describe('Common Support Services', () => {
  expect(client.get).toHaveBeenCalledWith('/v1/comments', expect.any(Object));
  });
 
- it('fileService calls correct endpoints', async () => {
- // Correct method is getAdminFileList
- await fileService.getAdminFileList({} as any);
- expect(client.get).toHaveBeenCalledWith('/admin/cmm/fms/selectFileList.do', expect.any(Object));
- });
+  it('fileService calls correct endpoints', async () => {
+  // Correct method is getFileList
+  await fileService.getFileList('TEST_ATCH_ID');
+  expect(client.get).toHaveBeenCalledWith('/files/TEST_ATCH_ID');
+  });
 
- it('securityService calls correct endpoints', async () => {
- // Correct method is getAuthorList
- await securityService.getAuthorList({});
- expect(client.get).toHaveBeenCalledWith('/admin/system/authorities', expect.any(Object));
- });
+  it('securityService calls correct endpoints', async () => {
+  // Correct method is getAuthorList
+  await securityService.getAuthorList({});
+  expect(client.get).toHaveBeenCalledWith('/admin/system/authorities', expect.any(Object));
+  });
 });

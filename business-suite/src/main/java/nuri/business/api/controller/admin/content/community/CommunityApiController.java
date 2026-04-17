@@ -19,7 +19,7 @@ import java.util.List;
 
 @Tag(name = "Community", description = "커뮤니티 관리 API (Admin)")
 @RestController("systemCommunityApiController")
-@RequestMapping("/api/v1/admin/system/communities")
+@RequestMapping("/api/v1/admin/content/community")
 @RequiredArgsConstructor
 public class CommunityApiController {
 

@@ -1,4 +1,4 @@
-﻿import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { UserManage, UserSearchParams } from '@/types/foundation/user';
@@ -43,7 +43,7 @@ class UserAdminService extends AdminService {
 
   /** 鍮꾨踰덊샇 蹂寃*/
   async updatePassword(userId: string, data: { newPassword: string }, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${userId}/password`, data, config);
+    return this.patch<void>(`/${userId}/password`, data, config);
   }
 
   /** ?꾩씠님以묐났 확인 */
