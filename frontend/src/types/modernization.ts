@@ -1,0 +1,94 @@
+/**
+ * Modernization Supplement Types
+ * This file adds missing types from the backend that are not yet in generated-api.d.ts
+ */
+
+export interface ApiResponse<T> {
+  success: boolean;
+  status: number;
+  code: string;
+  message: string;
+  data: T;
+  timestamp: string;
+}
+
+export interface PageResponse<T> {
+  list: T[];
+  total: number;
+  page: number;
+  size: number;
+  totalPage: number;
+}
+
+export interface BaseSearchDto {
+  searchCondition?: string;
+  searchKeyword?: string;
+  pageIndex?: number;
+  pageUnit?: number;
+  pageSize?: number;
+  recordCountPerPage?: number;
+  searchKeywordFrom?: string;
+  searchKeywordTo?: string;
+}
+
+export interface CommunityDto {
+  cmmntyId?: string;
+  cmmntyNm?: string;
+  cmmntyIntrcn?: string;
+  registSeCode?: string;
+  registSeCodeNm?: string;
+  tmplatId?: string;
+  tmplatNm?: string;
+  useAt?: string;
+  frstRegisterId?: string;
+  frstRegisterNm?: string;
+  frstRegisterPnttm?: string;
+}
+
+export interface BoardMasterDto {
+  bbsId?: string;
+  bbsNm?: string;
+  bbsIntrcn?: string;
+  bbsTyCode?: string;
+  bbsAttrbCode?: string;
+  replyPosblAt?: string;
+  fileAtchPosblAt?: string;
+  atchPosblFileNumber?: number;
+  atchPosblFileSize?: number;
+  tmplatId?: string;
+  frstRegisterId?: string;
+  frstRegisterPnttm?: string;
+  lastUpdusrId?: string;
+  lastUpdusrPnttm?: string;
+  useAt?: string;
+  cmmntyId?: string;
+  blogId?: string;
+  blogAt?: string;
+  commentAt?: string;
+  stsfdgAt?: string;
+  // UI related fields (often joined in backend but may be missing in core DTO)
+  bbsTyCodeNm?: string;
+  tmplatNm?: string;
+  frstRegisterNm?: string;
+}
+
+
+export interface ScheduleDto {
+  schdulId?: string;
+  schdulSe?: string;
+  schdulDeptId?: string;
+  schdulKindCode?: string;
+  schdulBgnde?: string;
+  schdulEndde?: string;
+  schdulNm?: string;
+  schdulCn?: string;
+  schdulPlace?: string;
+  schdulIpcrCode?: string;
+  schdulChargerId?: string;
+  atchFileId?: string;
+  reptitSeCode?: string;
+  frstRegisterId?: string;
+  createdDate?: string;
+  lastUpdusrId?: string;
+  modifiedDate?: string;
+}

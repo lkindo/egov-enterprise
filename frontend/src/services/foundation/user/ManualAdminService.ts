@@ -1,6 +1,7 @@
 import { ApiService } from '@/services/core/ApiService';
-import { PageResponse } from '@/types/foundation/system';
+import { PageResponse } from '@/types/modernization';
 import { AxiosRequestConfig } from 'axios';
+
 
 /**
  * 온라인 매뉴얼 DTO

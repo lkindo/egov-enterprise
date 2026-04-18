@@ -25,17 +25,16 @@ export abstract class ApiService {
       // 0-based page -> 1-based pageIndex
       if (params.page !== undefined && params.pageIndex === undefined) {
         params.pageIndex = (Number(params.page) || 0) + 1;
-        delete params.page;
+        // Do NOT delete params.page to support Spring Data Pageable
       }
       // size -> recordCountPerPage 매핑 (BaseSearchDto 표준)
       if (params.size !== undefined && params.recordCountPerPage === undefined) {
         params.recordCountPerPage = params.size;
-        delete params.size;
+        // Do NOT delete params.size to support Spring Data Pageable
       }
       // page 번호 -> pageIndex (legacy support)
       if (params['page 번호'] !== undefined && params.pageIndex === undefined) {
         params.pageIndex = Number(params['page 번호']) || 1;
-        delete params['page 번호'];
       }
       requestConfig = { ...config, params };
     }
