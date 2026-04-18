@@ -1,11 +1,11 @@
 package nuri.foundation.service.program;
 
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.foundation.domain.program.Program;
 import nuri.foundation.domain.program.ProgramRepository;
 import nuri.foundation.service.program.dto.ProgramDto;
-import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
@@ -29,7 +29,7 @@ public class ProgramService {
     /**
      * 프로그램 목록 조회
      */
-    public List<ProgramDto> selectProgrmList(ComDefaultVO searchVO) {
+    public List<ProgramDto> selectProgrmList(BaseSearchDto searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
                 Sort.by("progrmFileNm").ascending());
         String keyword = searchVO.getSearchKeyword();
@@ -49,7 +49,7 @@ public class ProgramService {
     /**
      * 프로그램 목록 총 갯수 조회
      */
-    public int selectProgrmListTotCnt(ComDefaultVO searchVO) {
+    public int selectProgrmListTotCnt(BaseSearchDto searchVO) {
         String keyword = searchVO.getSearchKeyword();
         if (keyword != null && !keyword.isEmpty()) {
             return (int) programRepository.searchByKeyword(keyword, PageRequest.of(0, 1)).getTotalElements();
@@ -60,7 +60,7 @@ public class ProgramService {
     /**
      * 프로그램 상세 조회
      */
-    public ProgramDto selectProgrm(ComDefaultVO searchVO) {
+    public ProgramDto selectProgrm(BaseSearchDto searchVO) {
         if (searchVO.getSearchKeyword() == null)
             throw new BusinessException(ErrorCode.ENTITY_NOT_FOUND);
         return programRepository.findById(searchVO.getSearchKeyword())

@@ -7,7 +7,7 @@ import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.domain.user.repository.UserRepository;
 import nuri.business.service.schedule.dto.ScheduleDto;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,7 +29,7 @@ public class ScheduleService implements EgovScheduleService {
     private final UserRepository userRepository;
 
     @Override
-    public List<Map<String, Object>> selectEmpLyrPopup(@org.springframework.lang.NonNull ComDefaultVO searchVO) {
+    public List<Map<String, Object>> selectEmpLyrPopup(@org.springframework.lang.NonNull BaseSearchDto searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageSize());
         Page<User> users = userRepository.searchUsers(null, searchVO.getSearchCondition(), searchVO.getSearchKeyword(),
                 Objects.requireNonNull(pageable));

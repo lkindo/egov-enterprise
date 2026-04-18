@@ -1,11 +1,11 @@
 package nuri.foundation.service.login.dto;
 
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class LoginPolicyVO extends ComDefaultVO {
-    // Extends ComDefaultVO which has searchCondition and searchKeyword
+public class LoginPolicyVO extends BaseSearchDto {
+    // Extends BaseSearchDto which has searchCondition and searchKeyword
 }

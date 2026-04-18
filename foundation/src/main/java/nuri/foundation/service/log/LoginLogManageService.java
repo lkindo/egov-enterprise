@@ -1,9 +1,9 @@
 package nuri.foundation.service.log;
 
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.domain.log.LoginLog;
 import nuri.foundation.domain.log.LoginLogRepository;
 import nuri.foundation.service.log.dto.LoginLogDto;
-import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 濡쒓濡쒓퉬??
+ * 로그인 로그 관리 서비스
  */
 @Service("loginLogManageService")
 @RequiredArgsConstructor
@@ -26,8 +26,9 @@ public class LoginLogManageService {
     private final LoginLogRepository loginLogRepository;
 
     /**
-     * 濡쒓濡쒓紐⑸議고??     */
-    public List<LoginLogDto> selectLoginLogList(ComDefaultVO searchVO) {
+     * 로그인 로그 목록 조회
+     */
+    public List<LoginLogDto> selectLoginLogList(BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
@@ -37,13 +38,15 @@ public class LoginLogManageService {
     }
 
     /**
-     * 濡쒓濡쒓紐⑸嫄댁??     */
-    public int selectLoginLogListTotCnt(ComDefaultVO searchVO) {
+     * 로그인 로그 목록 건수 조회
+     */
+    public int selectLoginLogListTotCnt(BaseSearchDto searchVO) {
         return (int) loginLogRepository.count();
     }
 
     /**
-     * 濡쒓濡쒓???곸꽭 議고??     */
+     * 로그인 로그 상세 조회
+     */
     public LoginLogDto selectLoginLog(String logId) {
         return loginLogRepository.findById(Objects.requireNonNull(logId))
                 .map(this::toDto)

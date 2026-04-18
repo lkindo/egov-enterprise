@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * DTO
+ * 권한 정보 DTO
  */
 @Getter
 @Setter
@@ -15,19 +15,19 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoleManageDto {
-    /** ??붾?*/
+    /** 권한코드 */
     private String roleCode;
-    /** ??*/
+    /** 권한명 */
     private String roleNm;
-    /** ???? */
+    /** 권한패턴 */
     private String rolePttrn;
-    /** ???챸 */
+    /** 권한설명 */
     private String roleDc;
-    /** ??좏삎 */
+    /** 권한유형 */
     private String roleTy;
-    /** ??뺣젹??꽌 */
+    /** 권한정렬순서 */
     private String roleSort;
-    /** ??꽦??떆 */
+    /** 등록일시 */
     private String creatDt;
 
     // Manual getters to bypass potential Lombok issues

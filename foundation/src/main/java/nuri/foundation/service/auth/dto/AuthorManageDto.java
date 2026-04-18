@@ -1,6 +1,5 @@
 package nuri.foundation.service.auth.dto;
 
-import egovframework.com.cmm.ComDefaultVO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -11,30 +10,30 @@ import lombok.Setter;
 import org.springframework.lang.NonNull;
 
 /**
- * 沅뚰DTO
+ * 권한 정보 DTO
  */
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthorManageDto extends ComDefaultVO {
-    /** 沅뚰??붾?*/
-    @NotBlank(message = "沅뚰??붾???꾩닔 ??젰 ?????땲??")
+public class AuthorManageDto {
+    /** 권한코드 */
+    @NotBlank(message = "권한코드는 필수 입력 사항입니다.")
     @Size(max = 30)
     @NonNull
     private String authorCode;
 
-    /** 沅뚰??*/
-    @NotBlank(message = "沅뚰紐낆? ?꾩닔 ??젰 ?????땲??")
+    /** 권한명 */
+    @NotBlank(message = "권한명은 필수 입력 사항입니다.")
     @Size(max = 60)
     @NonNull
     private String authorNm;
 
-    /** 沅뚰???챸 */
+    /** 권한설명 */
     @Size(max = 200)
     private String authorDc;
 
-    /** 沅뚰???꽦??*/
+    /** 권한생성일 */
     private String authorCreatDe;
 }

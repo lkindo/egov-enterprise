@@ -2,6 +2,7 @@ package nuri.foundation.api.controller.code;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.service.code.AdministCodeService;
 import nuri.foundation.service.code.dto.AdministCodeDto;
@@ -31,12 +32,10 @@ public class AdministCodeApiController {
     @Operation(summary = "행정코드 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AdministCodeDto>>> getAdministCodeList(
-            @RequestParam(defaultValue = "") String searchWrd,
-            @RequestParam(defaultValue = "1") int pageIndex,
-            @RequestParam(defaultValue = "10") int pageUnit) {
+            @ModelAttribute BaseSearchDto searchDto) {
 
-        PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
-        Page<AdministCodeDto> pageResult = administCodeService.getAdministCodeList(searchWrd, pageable);
+        PageRequest pageable = PageRequest.of(searchDto.getPageIndex() - 1, searchDto.getPageUnit());
+        Page<AdministCodeDto> pageResult = administCodeService.getAdministCodeList(searchDto.getSearchKeyword(), pageable);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }

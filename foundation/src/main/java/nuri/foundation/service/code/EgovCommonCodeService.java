@@ -5,7 +5,7 @@ import nuri.foundation.service.code.dto.CommonCodeSaveRequest;
 import nuri.foundation.service.code.dto.CmmnClCodeDto;
 import nuri.foundation.service.code.dto.CmmnCodeDto;
 import nuri.foundation.service.code.dto.CmmnDetailCodeDto;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.springframework.lang.NonNull;
 import java.util.List;
 
@@ -26,9 +26,9 @@ public interface EgovCommonCodeService {
     CommonCodeDto createCode(@NonNull CommonCodeSaveRequest request);
 
     // --- 공통분류코드 (CmmnClCode) ---
-    List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull ComDefaultVO searchVO);
+    List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull BaseSearchDto searchVO);
 
-    int selectCmmnClCodeListTotCnt(@NonNull ComDefaultVO searchVO);
+    int selectCmmnClCodeListTotCnt(@NonNull BaseSearchDto searchVO);
 
     CmmnClCodeDto selectCmmnClCodeDetail(@NonNull CmmnClCodeDto dto);
 
@@ -39,9 +39,9 @@ public interface EgovCommonCodeService {
     void deleteCmmnClCode(@NonNull CmmnClCodeDto dto);
 
     // --- 공통코드 (CmmnCode) ---
-    List<CmmnCodeDto> selectCmmnCodeList(@NonNull ComDefaultVO searchVO);
+    List<CmmnCodeDto> selectCmmnCodeList(@NonNull BaseSearchDto searchVO);
 
-    int selectCmmnCodeListTotCnt(@NonNull ComDefaultVO searchVO);
+    int selectCmmnCodeListTotCnt(@NonNull BaseSearchDto searchVO);
 
     CmmnCodeDto selectCmmnCodeDetail(@NonNull CmmnCodeDto dto);
 
@@ -52,9 +52,9 @@ public interface EgovCommonCodeService {
     void deleteCmmnCode(@NonNull CmmnCodeDto dto);
 
     // --- 공통상세코드 (CmmnDetailCode) ---
-    List<CmmnDetailCodeDto> selectCmmnDetailCodeList(@NonNull ComDefaultVO searchVO);
+    List<CmmnDetailCodeDto> selectCmmnDetailCodeList(@NonNull BaseSearchDto searchVO);
 
-    int selectCmmnDetailCodeListTotCnt(@NonNull ComDefaultVO searchVO);
+    int selectCmmnDetailCodeListTotCnt(@NonNull BaseSearchDto searchVO);
 
     CmmnDetailCodeDto selectCmmnDetailCodeDetail(@NonNull CmmnDetailCodeDto dto);
 

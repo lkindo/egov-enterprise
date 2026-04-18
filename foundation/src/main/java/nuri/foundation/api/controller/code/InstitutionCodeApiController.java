@@ -2,6 +2,7 @@ package nuri.foundation.api.controller.code;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.service.code.InstitutionCodeService;
 import nuri.foundation.service.code.dto.InstitutionCodeDto;
@@ -32,12 +33,10 @@ public class InstitutionCodeApiController {
     @Operation(summary = "기관코드 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<InstitutionCodeDto>>> getInstitutionCodeList(
-            @RequestParam(defaultValue = "") String searchWrd,
-            @RequestParam(defaultValue = "1") int pageIndex,
-            @RequestParam(defaultValue = "10") int pageUnit) {
+            @ModelAttribute BaseSearchDto searchDto) {
 
-        PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
-        Page<InstitutionCodeDto> pageResult = institutionCodeService.getInstitutionCodeList(searchWrd, pageable);
+        PageRequest pageable = PageRequest.of(searchDto.getPageIndex() - 1, searchDto.getPageUnit());
+        Page<InstitutionCodeDto> pageResult = institutionCodeService.getInstitutionCodeList(searchDto.getSearchKeyword(), pageable);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }
@@ -52,13 +51,11 @@ public class InstitutionCodeApiController {
     @Operation(summary = "기관코드 수신 내역 조회")
     @GetMapping("/receptions")
     public ResponseEntity<ApiResponse<PageResponse<InstitutionCodeRecptnDto>>> getInstitutionCodeRecptnList(
-            @RequestParam(defaultValue = "") String searchWrd,
-            @RequestParam(required = false) String processSe,
-            @RequestParam(defaultValue = "1") int pageIndex,
-            @RequestParam(defaultValue = "10") int pageUnit) {
+            @ModelAttribute BaseSearchDto searchDto,
+            @RequestParam(required = false) String processSe) {
 
-        PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
-        Page<InstitutionCodeRecptnDto> pageResult = institutionCodeService.getInstitutionCodeRecptnList(searchWrd, processSe, pageable);
+        PageRequest pageable = PageRequest.of(searchDto.getPageIndex() - 1, searchDto.getPageUnit());
+        Page<InstitutionCodeRecptnDto> pageResult = institutionCodeService.getInstitutionCodeRecptnList(searchDto.getSearchKeyword(), processSe, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }

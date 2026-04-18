@@ -5,7 +5,7 @@ import nuri.foundation.domain.login.LoginPolicyRepository;
 import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.domain.user.repository.UserRepository;
 import nuri.foundation.service.login.dto.LoginPolicyDto;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ public class LoginPolicyManageServiceTest {
     @DisplayName("로그인 정책 목록 조회 성공")
     public void testSelectLoginPolicyList_Success() {
         // Given
-        ComDefaultVO searchVO = new ComDefaultVO();
+        BaseSearchDto searchVO = new BaseSearchDto();
         searchVO.setPageIndex(1);
         searchVO.setPageUnit(10);
 

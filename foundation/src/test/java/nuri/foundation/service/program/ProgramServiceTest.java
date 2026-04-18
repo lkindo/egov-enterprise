@@ -4,7 +4,7 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.domain.program.Program;
 import nuri.foundation.domain.program.ProgramRepository;
 import nuri.foundation.service.program.dto.ProgramDto;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ class ProgramServiceTest {
         @DisplayName("프로그램 목록 조회 성공")
         void testSelectProgrmList_Success() {
             // Given
-            ComDefaultVO searchVO = new ComDefaultVO();
+            BaseSearchDto searchVO = new BaseSearchDto();
             searchVO.setPageIndex(1);
             searchVO.setPageUnit(10);
 
@@ -68,7 +68,7 @@ class ProgramServiceTest {
         @DisplayName("키워드로 프로그램 목록 조회 성공")
         void testSelectProgrmList_WithKeyword() {
             // Given
-            ComDefaultVO searchVO = new ComDefaultVO();
+            BaseSearchDto searchVO = new BaseSearchDto();
             searchVO.setPageIndex(1);
             searchVO.setPageUnit(10);
             searchVO.setSearchKeyword("Test");

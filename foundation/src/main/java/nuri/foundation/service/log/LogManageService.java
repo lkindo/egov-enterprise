@@ -1,9 +1,9 @@
 package nuri.foundation.service.log;
 
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.domain.log.SysLog;
 import nuri.foundation.domain.log.SysLogRepository;
 import nuri.foundation.service.log.dto.SysLogDto;
-import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 濡쒓퉬??
+ * 로그인 로그 관리 서비스
  */
 @Service("logManageService")
 @RequiredArgsConstructor
@@ -47,8 +47,9 @@ public class LogManageService {
     }
 
     /**
-     * ??뒪濡쒓紐⑸議고??     */
-    public List<SysLogDto> selectSysLogList(ComDefaultVO searchVO) {
+     * 시스템 로그 목록 조회
+     */
+    public List<SysLogDto> selectSysLogList(BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
@@ -62,8 +63,9 @@ public class LogManageService {
     }
 
     /**
-     * ??뒪濡쒓紐⑸嫄댁??     */
-    public int selectSysLogListTotCnt(ComDefaultVO searchVO) {
+     * 시스템 로그 목록 건수 조회
+     */
+    public int selectSysLogListTotCnt(BaseSearchDto searchVO) {
         return (int) sysLogRepository.searchSysLogs(
                 searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "",
                 null,
@@ -72,7 +74,8 @@ public class LogManageService {
     }
 
     /**
-     * ??뒪濡쒓???곸꽭 議고??     */
+     * 시스템 로그 상세 조회
+     */
     public SysLogDto selectSysLog(String requstId) {
         return sysLogRepository.findById(Objects.requireNonNull(requstId))
                 .map(this::toSysLogDto)

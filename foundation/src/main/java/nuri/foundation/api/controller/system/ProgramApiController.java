@@ -1,14 +1,13 @@
 package nuri.foundation.api.controller.system;
 
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.service.program.ProgramService;
 import nuri.foundation.service.program.dto.ProgramDto;
-import egovframework.com.cmm.ComDefaultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -27,18 +26,12 @@ public class ProgramApiController {
     @Operation(summary = "프로그램 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ProgramDto>>> getProgramList(
-            @RequestParam(required = false) String searchWrd,
-            Pageable pageable) throws Exception {
+            @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
-        ComDefaultVO searchVO = new ComDefaultVO();
-        searchVO.setSearchKeyword(searchWrd);
-        searchVO.setFirstIndex((int) pageable.getOffset());
-        searchVO.setRecordCountPerPage(pageable.getPageSize());
+        List<ProgramDto> list = programService.selectProgrmList(searchDto);
+        int total = programService.selectProgrmListTotCnt(searchDto);
 
-        List<ProgramDto> list = programService.selectProgrmList(searchVO);
-        int total = programService.selectProgrmListTotCnt(searchVO);
-
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, pageable.getPageNumber() + 1, pageable.getPageSize(), total)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), total)));
     }
 
     @Operation(summary = "프로그램 상세 조회")

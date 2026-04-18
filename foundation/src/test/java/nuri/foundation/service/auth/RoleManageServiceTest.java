@@ -3,7 +3,7 @@ package nuri.foundation.service.auth;
 import nuri.foundation.domain.auth.RoleInfo;
 import nuri.foundation.domain.auth.RoleInfoRepository;
 import nuri.foundation.service.auth.dto.RoleManageDto;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +36,7 @@ class RoleManageServiceTest {
     @DisplayName("롤 목록 조회 테스트")
     void selectRoleListTest() {
         // Given
-        ComDefaultVO searchVO = new ComDefaultVO();
+        BaseSearchDto searchVO = new BaseSearchDto();
         searchVO.setPageIndex(1);
         searchVO.setPageUnit(10);
         

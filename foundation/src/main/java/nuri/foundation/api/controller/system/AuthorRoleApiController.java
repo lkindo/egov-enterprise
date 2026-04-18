@@ -3,8 +3,8 @@ package nuri.foundation.api.controller.system;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.domain.auth.AuthorRoleProjection;
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.service.auth.AuthorRoleManageService;
-import egovframework.com.cmm.ComDefaultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -31,13 +31,9 @@ public class AuthorRoleApiController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuthorRoleProjection>>> getAuthorRoles(
             @PathVariable String authorCode,
-            @RequestParam(value = "pageIndex", defaultValue = "1") int pageIndex) {
+            @ModelAttribute BaseSearchDto searchDto) {
 
-        ComDefaultVO searchVO = new ComDefaultVO();
-        searchVO.setPageIndex(pageIndex);
-        searchVO.setPageUnit(10);
-
-        Page<AuthorRoleProjection> result = authorRoleManageService.selectAuthorRoleList(authorCode, searchVO);
+        Page<AuthorRoleProjection> result = authorRoleManageService.selectAuthorRoleList(authorCode, searchDto);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
                 result.getContent(),

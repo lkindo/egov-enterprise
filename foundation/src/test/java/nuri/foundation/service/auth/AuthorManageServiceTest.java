@@ -3,7 +3,7 @@ package nuri.foundation.service.auth;
 import nuri.foundation.domain.auth.Authority;
 import nuri.foundation.domain.auth.AuthorityRepository;
 import nuri.foundation.service.auth.dto.AuthorManageDto;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +39,7 @@ class AuthorManageServiceTest {
         Page<Authority> page = new PageImpl<>(List.of(auth));
         given(authorityRepository.findAll(any(Pageable.class))).willReturn(page);
 
-        ComDefaultVO vo = new ComDefaultVO();
+        BaseSearchDto vo = new BaseSearchDto();
         List<AuthorManageDto> result = authorManageService.selectAuthorList(vo);
         
         assertThat(result).hasSize(1);
@@ -50,7 +50,7 @@ class AuthorManageServiceTest {
     @DisplayName("권한 전체 건수 조회 성공")
     void selectAuthorListTotCnt_Success() {
         given(authorityRepository.count()).willReturn(50L);
-        int result = authorManageService.selectAuthorListTotCnt(new ComDefaultVO());
+        int result = authorManageService.selectAuthorListTotCnt(new BaseSearchDto());
         assertThat(result).isEqualTo(50);
     }
 

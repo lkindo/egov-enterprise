@@ -8,7 +8,7 @@ import nuri.foundation.domain.program.Program;
 import nuri.foundation.domain.program.ProgramRepository;
 import nuri.foundation.service.menu.dto.MenuCreateDto;
 import nuri.foundation.service.menu.dto.MenuDto;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -173,7 +173,7 @@ class MenuServiceTest {
         Object[] result = new Object[]{menu, null};
         given(menuRepository.findAllWithPrograms()).willReturn(Collections.singletonList(result));
 
-        List<MenuDto> list = menuService.selectMenuManageList(new ComDefaultVO());
+        List<MenuDto> list = menuService.selectMenuManageList(new BaseSearchDto());
 
         assertThat(list).hasSize(1);
     }
@@ -181,7 +181,7 @@ class MenuServiceTest {
     @Test
     @DisplayName("메뉴 생성 관리 목록 조회")
     void selectMenuCreatManagList() {
-        ComDefaultVO vo = new ComDefaultVO();
+        BaseSearchDto vo = new BaseSearchDto();
         vo.setPageIndex(1);
         vo.setRecordCountPerPage(10);
         
@@ -319,7 +319,7 @@ class MenuServiceTest {
     @DisplayName("메뉴 관리 목록 총 개수 조회")
     void selectMenuManageListTotCnt() {
         given(menuRepository.count()).willReturn(10L);
-        int cnt = menuService.selectMenuManageListTotCnt(new ComDefaultVO());
+        int cnt = menuService.selectMenuManageListTotCnt(new BaseSearchDto());
         assertThat(cnt).isEqualTo(10);
     }
 }

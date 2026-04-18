@@ -3,9 +3,9 @@ package nuri.api.controller.system;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.domain.auth.DeptAuthorProjection;
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.service.auth.UserAuthorityManageService;
 import nuri.foundation.service.auth.dto.DeptAuthorBatchRequest;
-import egovframework.com.cmm.ComDefaultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -31,13 +31,9 @@ public class DeptAuthorityApiController {
     @GetMapping("/{deptId}")
     public ResponseEntity<ApiResponse<PageResponse<DeptAuthorProjection>>> getDeptAuthorities(
             @PathVariable String deptId,
-            @RequestParam(value = "pageIndex", defaultValue = "1") int pageIndex) {
+            @ModelAttribute BaseSearchDto searchDto) {
 
-        ComDefaultVO searchVO = new ComDefaultVO();
-        searchVO.setPageIndex(pageIndex);
-        searchVO.setPageUnit(10);
-
-        Page<DeptAuthorProjection> result = userAuthorityManageService.selectDeptAuthorityList(deptId, searchVO);
+        Page<DeptAuthorProjection> result = userAuthorityManageService.selectDeptAuthorityList(deptId, searchDto);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
                 result.getContent(),

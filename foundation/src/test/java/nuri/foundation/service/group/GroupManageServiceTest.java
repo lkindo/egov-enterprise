@@ -3,7 +3,7 @@ package nuri.foundation.service.group;
 import nuri.foundation.domain.group.GroupManage;
 import nuri.foundation.domain.group.GroupManageRepository;
 import nuri.foundation.service.group.dto.GroupManageDto;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +35,7 @@ class GroupManageServiceTest {
     @DisplayName("그룹 목록 조회 성공")
     void selectGroupList_Success() {
         // Given
-        ComDefaultVO searchVO = new ComDefaultVO();
+        BaseSearchDto searchVO = new BaseSearchDto();
         searchVO.setPageIndex(1);
         searchVO.setPageSize(10);
         GroupManage entity = GroupManage.builder().groupId("G1").groupNm("Group1").build();

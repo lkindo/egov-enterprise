@@ -8,7 +8,7 @@ import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.domain.user.repository.UserRepository;
 import nuri.foundation.service.auth.dto.DeptAuthorBatchRequest;
 import nuri.foundation.service.auth.dto.UserAuthorityDto;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ class UserAuthorityManageServiceTest {
         @DisplayName("사용자별 권한 목록 조회 성공")
         void testSelectUserAuthorityList_Success() {
             // Given
-            ComDefaultVO searchVO = new ComDefaultVO();
+            BaseSearchDto searchVO = new BaseSearchDto();
             searchVO.setPageIndex(1);
             searchVO.setPageUnit(10);
             searchVO.setSearchKeyword("user01");
@@ -84,7 +84,7 @@ class UserAuthorityManageServiceTest {
         void testSelectDeptAuthorityList_Success() {
             // Given
             String deptCode = "DEPT001";
-            ComDefaultVO searchVO = new ComDefaultVO();
+            BaseSearchDto searchVO = new BaseSearchDto();
             searchVO.setPageIndex(1);
 
             Page<DeptAuthorProjection> page = new PageImpl<>(Collections.emptyList());

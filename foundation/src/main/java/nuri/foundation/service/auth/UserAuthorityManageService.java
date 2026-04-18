@@ -4,11 +4,11 @@ import nuri.foundation.domain.auth.AuthorGroupProjection;
 import nuri.foundation.domain.auth.DeptAuthorProjection;
 import nuri.foundation.domain.auth.UserAuthority;
 import nuri.foundation.domain.auth.UserAuthorityRepository;
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.domain.user.repository.UserRepository;
 import nuri.foundation.service.auth.dto.DeptAuthorBatchRequest;
 import nuri.foundation.service.auth.dto.UserAuthorityDto;
-import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,7 +33,7 @@ public class UserAuthorityManageService {
     /**
      * 사용자별 권한 목록 조회
      */
-    public Page<AuthorGroupProjection> selectUserAuthorityList(ComDefaultVO searchVO) {
+    public Page<AuthorGroupProjection> selectUserAuthorityList(BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageSize = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageSize);
@@ -47,7 +47,7 @@ public class UserAuthorityManageService {
     /**
      * 부서별 권한 목록 조회
      */
-    public Page<DeptAuthorProjection> selectDeptAuthorityList(String deptCode, ComDefaultVO searchVO) {
+    public Page<DeptAuthorProjection> selectDeptAuthorityList(String deptCode, BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageSize = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageSize);

@@ -2,14 +2,13 @@ package nuri.foundation.api.controller.system.log;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.service.log.LoginLogManageService;
 import nuri.foundation.service.log.dto.LoginLogDto;
-import egovframework.com.cmm.ComDefaultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -25,24 +24,16 @@ import java.util.List;
 public class LoginLogApiController {
 
     private final LoginLogManageService loginLogManageService;
-    private final EgovPropertyService propertiesService;
 
     @Operation(summary = "로그인 로그 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<LoginLogDto>>> getLoginLogList(
-            @ModelAttribute ComDefaultVO searchVO) throws Exception {
+            @ModelAttribute BaseSearchDto searchDto) throws Exception {
         
-        searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
-        searchVO.setPageSize(propertiesService.getInt("pageSize"));
+        List<LoginLogDto> list = loginLogManageService.selectLoginLogList(searchDto);
+        int totCnt = loginLogManageService.selectLoginLogListTotCnt(searchDto);
 
-        searchVO.setFirstIndex((searchVO.getPageIndex() - 1) * searchVO.getPageUnit());
-        searchVO.setLastIndex(searchVO.getPageIndex() * searchVO.getPageUnit());
-        searchVO.setRecordCountPerPage(searchVO.getPageUnit());
-
-        List<LoginLogDto> list = loginLogManageService.selectLoginLogList(searchVO);
-        int totCnt = loginLogManageService.selectLoginLogListTotCnt(searchVO);
-
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchVO.getPageIndex(), searchVO.getPageUnit(), totCnt)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
     }
 
     @Operation(summary = "로그인 로그 상세 조회")

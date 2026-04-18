@@ -3,7 +3,7 @@ package nuri.foundation.service.log;
 import nuri.foundation.domain.log.SysLog;
 import nuri.foundation.domain.log.SysLogRepository;
 import nuri.foundation.service.log.dto.SysLogDto;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -67,7 +67,7 @@ class LogManageServiceTest {
         @DisplayName("시스템 로그 목록 조회 성공")
         void testSelectSysLogList_Success() {
             // Given
-            ComDefaultVO searchVO = new ComDefaultVO();
+            BaseSearchDto searchVO = new BaseSearchDto();
             searchVO.setPageIndex(1);
             searchVO.setPageUnit(10);
             searchVO.setSearchKeyword("UserService");
@@ -96,7 +96,7 @@ class LogManageServiceTest {
         @DisplayName("시스템 로그 목록 총 갯수 조회 성공")
         void testSelectSysLogListTotCnt_Success() {
             // Given
-            ComDefaultVO searchVO = new ComDefaultVO();
+            BaseSearchDto searchVO = new BaseSearchDto();
             searchVO.setSearchKeyword("test");
 
             Page<SysLog> page = new PageImpl<>(Arrays.asList(SysLog.builder().build()), Pageable.unpaged(), 5);

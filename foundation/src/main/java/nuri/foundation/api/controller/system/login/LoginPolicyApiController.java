@@ -2,9 +2,9 @@ package nuri.foundation.api.controller.system.login;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.service.login.LoginPolicyManageService;
 import nuri.foundation.service.login.dto.LoginPolicyDto;
-import nuri.foundation.service.login.dto.LoginPolicyVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,25 +30,12 @@ public class LoginPolicyApiController {
     @Operation(summary = "로그인 정책 목록 조회", description = "시스템 사용자의 로그인 정책 목록을 페이징 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<LoginPolicyDto>>> getLoginPolicyList(
-            @ModelAttribute LoginPolicyVO searchVO) throws Exception {
+            @ModelAttribute BaseSearchDto searchDto) throws Exception {
+        
+        List<LoginPolicyDto> resultList = loginPolicyManageService.selectLoginPolicyList(searchDto);
+        int totCnt = loginPolicyManageService.selectLoginPolicyListTotCnt(searchDto);
 
-        try {
-            searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
-            searchVO.setPageSize(propertiesService.getInt("pageSize"));
-        } catch (Exception e) {
-            log.warn("Failed to load pageUnit/pageSize from properties, using defaults");
-            searchVO.setPageUnit(10);
-            searchVO.setPageSize(10);
-        }
-
-        searchVO.setFirstIndex((searchVO.getPageIndex() - 1) * searchVO.getPageUnit());
-        searchVO.setLastIndex(searchVO.getPageIndex() * searchVO.getPageUnit());
-        searchVO.setRecordCountPerPage(searchVO.getPageUnit());
-
-        List<LoginPolicyDto> resultList = loginPolicyManageService.selectLoginPolicyList(searchVO);
-        int totCnt = loginPolicyManageService.selectLoginPolicyListTotCnt(searchVO);
-
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(resultList, searchVO.getPageIndex(), searchVO.getPageUnit(), totCnt)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(resultList, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
     }
 
     @Operation(summary = "로그인 정책 상세 조회")

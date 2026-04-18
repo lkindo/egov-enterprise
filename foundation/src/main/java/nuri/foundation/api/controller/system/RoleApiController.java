@@ -1,10 +1,10 @@
 package nuri.foundation.api.controller.system;
 
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.service.auth.RoleManageService;
 import nuri.foundation.service.auth.dto.RoleManageDto;
-import egovframework.com.cmm.ComDefaultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -28,18 +28,12 @@ public class RoleApiController {
     @Operation(summary = "롤 목록 조회", description = "시스템에 정의된 전체 권한(Role) 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<RoleManageDto>>> getRoles(
-            @RequestParam(value = "pageIndex", defaultValue = "1") int pageIndex,
-            @RequestParam(value = "searchKeyword", defaultValue = "") String searchKeyword) {
+            @ModelAttribute BaseSearchDto searchDto) {
 
-        ComDefaultVO searchVO = new ComDefaultVO();
-        searchVO.setPageIndex(pageIndex);
-        searchVO.setSearchKeyword(searchKeyword);
-        searchVO.setPageUnit(10);
+        List<RoleManageDto> list = roleManageService.selectRoleList(searchDto);
+        int total = roleManageService.selectRoleListTotCnt(searchDto);
 
-        List<RoleManageDto> list = roleManageService.selectRoleList(searchVO);
-        int total = roleManageService.selectRoleListTotCnt(searchVO);
-
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, pageIndex, 10, total)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), total)));
     }
 
     @Operation(summary = "롤 상세 조회", description = "특정 권한(Role)의 상세 정보를 조회합니다.")

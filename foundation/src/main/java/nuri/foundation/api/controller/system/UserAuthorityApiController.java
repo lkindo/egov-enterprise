@@ -3,9 +3,9 @@ package nuri.foundation.api.controller.system;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.domain.auth.AuthorGroupProjection;
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.service.auth.UserAuthorityManageService;
 import nuri.foundation.service.auth.dto.UserAuthorityDto;
-import egovframework.com.cmm.ComDefaultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -31,13 +31,9 @@ public class UserAuthorityApiController {
     @Operation(summary = "사용자별 권한 목록 조회", description = "시스템 사용자 목록과 각 사용자의 권한 할당 상태를 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuthorGroupProjection>>> getUserAuthorities(
-            @ModelAttribute ComDefaultVO searchVO) {
+            @ModelAttribute BaseSearchDto searchDto) {
 
-        if (searchVO.getPageUnit() <= 0) {
-            searchVO.setPageUnit(10);
-        }
-
-        Page<AuthorGroupProjection> result = userAuthorityManageService.selectUserAuthorityList(searchVO);
+        Page<AuthorGroupProjection> result = userAuthorityManageService.selectUserAuthorityList(searchDto);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
                 result.getContent(),

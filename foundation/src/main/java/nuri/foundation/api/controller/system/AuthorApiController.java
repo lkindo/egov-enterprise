@@ -31,18 +31,17 @@ public class AuthorApiController {
     @Operation(summary = "권한 그룹 목록 조회", description = "시스템에 정의된 권한 그룹(Author) 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuthorManageDto>>> getAuthors(
-            @RequestParam(value = "pageIndex", defaultValue = "1") int pageIndex,
-            @RequestParam(value = "searchKeyword", defaultValue = "") String searchKeyword) {
+            @ModelAttribute BaseSearchDto searchDto) {
 
-        BaseSearchDto searchVO = new BaseSearchDto();
-        searchVO.setPageIndex(pageIndex);
-        searchVO.setSearchKeyword(searchKeyword);
-        searchVO.setPageUnit(10);
+        List<AuthorManageDto> list = authorManageService.selectAuthorList(searchDto);
+        int total = authorManageService.selectAuthorListTotCnt(searchDto);
 
-        List<AuthorManageDto> list = authorManageService.selectAuthorList(searchVO);
-        int total = authorManageService.selectAuthorListTotCnt(searchVO);
-
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, pageIndex, 10, total)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
+                list,
+                searchDto.getPageIndex(),
+                searchDto.getPageUnit(),
+                total
+        )));
     }
 
     @Operation(summary = "권한 그룹 상세 조회", description = "특정 권한 그룹의 상세 정보를 조회합니다.")

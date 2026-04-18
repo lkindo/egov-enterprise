@@ -1,5 +1,6 @@
 package nuri.foundation.service.menu;
 
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.domain.auth.MenuAuthority;
 import nuri.foundation.domain.auth.MenuAuthorityRepository;
 import nuri.foundation.domain.menu.Menu;
@@ -10,7 +11,6 @@ import nuri.foundation.service.menu.dto.MenuCreateDto;
 import nuri.foundation.service.menu.dto.MenuDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.cache.annotation.CacheEvict;
@@ -211,7 +211,7 @@ public class MenuService {
         return programRepository.findAll();
     }
 
-    public List<MenuCreateDto> selectMenuCreatManagList(@NonNull ComDefaultVO searchVO) {
+    public List<MenuCreateDto> selectMenuCreatManagList(@NonNull BaseSearchDto searchVO) {
         Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
                 Sort.by("authorCode").ascending());
         String searchKeyword = searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "";
@@ -228,7 +228,7 @@ public class MenuService {
                 .collect(Collectors.toList());
     }
 
-    public int selectMenuCreatManagTotCnt(@NonNull ComDefaultVO searchVO) {
+    public int selectMenuCreatManagTotCnt(@NonNull BaseSearchDto searchVO) {
         String searchKeyword = searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "";
         return (int) menuAuthorityRepository.selectMenuCreatManagList(searchKeyword, PageRequest.of(0, 1))
                 .getTotalElements();
@@ -397,7 +397,7 @@ public class MenuService {
     /**
      * 메뉴 관리 목록 조회 (N+1 쿼리 개선 버전)
      */
-    public List<MenuDto> selectMenuManageList(@NonNull ComDefaultVO searchVO) {
+    public List<MenuDto> selectMenuManageList(@NonNull BaseSearchDto searchVO) {
         // [성능 개선] 단일 쿼리로 메뉴와 프로그램 정보를 함께 조회
         List<Object[]> menuWithProgramResults = menuRepository.findAllWithPrograms();
 
@@ -427,7 +427,7 @@ public class MenuService {
     /**
      * 메뉴 관리 목록 총 개수
      */
-    public int selectMenuManageListTotCnt(@NonNull ComDefaultVO searchVO) {
+    public int selectMenuManageListTotCnt(@NonNull BaseSearchDto searchVO) {
         return (int) menuRepository.count();
     }
 

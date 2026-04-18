@@ -1,9 +1,9 @@
 package nuri.foundation.service.auth;
 
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.domain.auth.RoleInfo;
 import nuri.foundation.domain.auth.RoleInfoRepository;
 import nuri.foundation.service.auth.dto.RoleManageDto;
-import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,8 +27,9 @@ public class RoleManageService {
     private final RoleInfoRepository roleInfoRepository;
 
     /**
-     * 紐⑸議고??     */
-    public List<RoleManageDto> selectRoleList(ComDefaultVO searchVO) {
+     * 목록 조회
+     */
+    public List<RoleManageDto> selectRoleList(BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
@@ -38,13 +39,15 @@ public class RoleManageService {
     }
 
     /**
-     * 紐⑸嫄댁??     */
-    public int selectRoleListTotCnt(ComDefaultVO searchVO) {
+     * 목록 건수 조회
+     */
+    public int selectRoleListTotCnt(BaseSearchDto searchVO) {
         return (int) roleInfoRepository.count();
     }
 
     /**
-     * ??곸꽭 議고??     */
+     * 상세 조회
+     */
     public RoleManageDto selectRole(String roleCode) {
         return roleInfoRepository.findById(Objects.requireNonNull(roleCode))
                 .map(this::toDto)
@@ -52,7 +55,7 @@ public class RoleManageService {
     }
 
     /**
-     * ??깅줉
+     * 등록
      */
     @Transactional
     public void insertRole(RoleManageDto dto) {
@@ -73,7 +76,7 @@ public class RoleManageService {
     }
 
     /**
-     * ???젙
+     * 수정
      */
     @Transactional
     public void updateRole(RoleManageDto dto) {
@@ -83,14 +86,16 @@ public class RoleManageService {
     }
 
     /**
-     * ?????     */
+     * 삭제
+     */
     @Transactional
     public void deleteRole(String roleCode) {
         roleInfoRepository.deleteById(Objects.requireNonNull(roleCode));
     }
 
     /**
-     * ???쨷 ????     */
+     * 다중 삭제
+     */
     @Transactional
     public void deleteRoles(String[] roleCodes) {
         roleInfoRepository

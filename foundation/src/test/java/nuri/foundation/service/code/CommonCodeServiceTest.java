@@ -3,7 +3,7 @@ package nuri.foundation.service.code;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.domain.code.*;
 import nuri.foundation.service.code.dto.*;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -76,7 +76,7 @@ class CommonCodeServiceTest {
     @Test
     @DisplayName("분류코드 목록 조회")
     void selectCmmnClCodeList() {
-        ComDefaultVO vo = new ComDefaultVO();
+        BaseSearchDto vo = new BaseSearchDto();
         vo.setPageIndex(1);
         CommonCodeCategory category = CommonCodeCategory.builder().clCode("CL1").clCodeNm("Name").build();
         given(commonCodeCategoryRepository.searchCommonCodeCategories(any(), any(), any())).willReturn(new PageImpl<>(List.of(category)));
@@ -141,7 +141,7 @@ class CommonCodeServiceTest {
     @Test
     @DisplayName("분류코드 토탈 카운트 조회")
     void selectCmmnClCodeListTotCnt() {
-        ComDefaultVO vo = new ComDefaultVO();
+        BaseSearchDto vo = new BaseSearchDto();
         given(commonCodeCategoryRepository.searchCommonCodeCategories(any(), any(), any())).willReturn(new PageImpl<>(List.of(), PageRequest.of(0, 1), 5));
 
         int cnt = commonCodeService.selectCmmnClCodeListTotCnt(vo);
@@ -187,7 +187,7 @@ class CommonCodeServiceTest {
     @Test
     @DisplayName("코드그룹 목록 조회")
     void selectCmmnCodeList() {
-        ComDefaultVO vo = new ComDefaultVO();
+        BaseSearchDto vo = new BaseSearchDto();
         CommonCodeGroupProjection projection = mock(CommonCodeGroupProjection.class);
         given(projection.getCodeId()).willReturn("G1");
         given(commonCodeGroupRepository.searchCommonCodeGroups(any(), any(), any())).willReturn(new PageImpl<>(List.of(projection)));
@@ -223,7 +223,7 @@ class CommonCodeServiceTest {
     @Test
     @DisplayName("상세코드 목록 조회")
     void selectCmmnDetailCodeList() {
-        ComDefaultVO vo = new ComDefaultVO();
+        BaseSearchDto vo = new BaseSearchDto();
         CommonCodeDetailProjection projection = mock(CommonCodeDetailProjection.class);
         given(projection.getCode()).willReturn("C1");
         given(commonCodeRepository.searchCommonCodeDetails(any(), any(), any())).willReturn(new PageImpl<>(List.of(projection)));

@@ -6,11 +6,10 @@ import nuri.foundation.service.code.dto.CmmnCodeDto;
 import nuri.foundation.service.code.dto.CmmnDetailCodeDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -23,14 +22,12 @@ import java.util.List;
 public class CommonCodeApiController {
 
     private final CommonCodeService commonCodeService;
-    private final EgovPropertyService propertiesService;
 
     // --- Classification Code (분류코드) ---
 
     @Operation(summary = "분류코드 목록 조회")
     @GetMapping("/cl")
-    public ResponseEntity<ApiResponse<PageResponse<CmmnClCodeDto>>> getClCodeList(@ModelAttribute ComDefaultVO searchVO) throws Exception {
-        setupPagination(searchVO);
+    public ResponseEntity<ApiResponse<PageResponse<CmmnClCodeDto>>> getClCodeList(@ModelAttribute BaseSearchDto searchVO) throws Exception {
         List<CmmnClCodeDto> list = commonCodeService.selectCmmnClCodeList(searchVO);
         int total = commonCodeService.selectCmmnClCodeListTotCnt(searchVO);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchVO.getPageIndex(), searchVO.getPageUnit(), total)));
@@ -72,8 +69,7 @@ public class CommonCodeApiController {
 
     @Operation(summary = "공통코드 목록 조회")
     @GetMapping("/cmmn")
-    public ResponseEntity<ApiResponse<PageResponse<CmmnCodeDto>>> getCmmnCodeList(@ModelAttribute ComDefaultVO searchVO) throws Exception {
-        setupPagination(searchVO);
+    public ResponseEntity<ApiResponse<PageResponse<CmmnCodeDto>>> getCmmnCodeList(@ModelAttribute BaseSearchDto searchVO) throws Exception {
         List<CmmnCodeDto> list = commonCodeService.selectCmmnCodeList(searchVO);
         int total = commonCodeService.selectCmmnCodeListTotCnt(searchVO);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchVO.getPageIndex(), searchVO.getPageUnit(), total)));
@@ -115,8 +111,7 @@ public class CommonCodeApiController {
 
     @Operation(summary = "상세코드 목록 조회")
     @GetMapping("/detail")
-    public ResponseEntity<ApiResponse<PageResponse<CmmnDetailCodeDto>>> getDetailCodeList(@ModelAttribute ComDefaultVO searchVO) throws Exception {
-        setupPagination(searchVO);
+    public ResponseEntity<ApiResponse<PageResponse<CmmnDetailCodeDto>>> getDetailCodeList(@ModelAttribute BaseSearchDto searchVO) throws Exception {
         List<CmmnDetailCodeDto> list = commonCodeService.selectCmmnDetailCodeList(searchVO);
         int total = commonCodeService.selectCmmnDetailCodeListTotCnt(searchVO);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchVO.getPageIndex(), searchVO.getPageUnit(), total)));
@@ -155,19 +150,5 @@ public class CommonCodeApiController {
         vo.setCode(code);
         commonCodeService.deleteCmmnDetailCode(vo);
         return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    // --- Helper Methods ---
-
-    private void setupPagination(ComDefaultVO searchVO) {
-        if (searchVO.getPageUnit() <= 0) {
-            searchVO.setPageUnit(propertiesService.getInt("pageUnit"));
-        }
-        if (searchVO.getPageSize() <= 0) {
-            searchVO.setPageSize(propertiesService.getInt("pageSize"));
-        }
-        searchVO.setFirstIndex((searchVO.getPageIndex() - 1) * searchVO.getPageUnit());
-        searchVO.setLastIndex(searchVO.getPageIndex() * searchVO.getPageUnit());
-        searchVO.setRecordCountPerPage(searchVO.getPageUnit());
     }
 }

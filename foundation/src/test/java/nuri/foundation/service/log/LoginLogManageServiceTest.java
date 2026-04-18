@@ -3,7 +3,7 @@ package nuri.foundation.service.log;
 import nuri.foundation.domain.log.LoginLog;
 import nuri.foundation.domain.log.LoginLogRepository;
 import nuri.foundation.service.log.dto.LoginLogDto;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ class LoginLogManageServiceTest {
         @DisplayName("로그인 로그 목록 조회 성공")
         void testSelectLoginLogList_Success() {
             // Given
-            ComDefaultVO searchVO = new ComDefaultVO();
+            BaseSearchDto searchVO = new BaseSearchDto();
             searchVO.setPageIndex(1);
             searchVO.setPageUnit(10);
 
@@ -73,7 +73,7 @@ class LoginLogManageServiceTest {
             when(loginLogRepository.count()).thenReturn(10L);
 
             // When
-            int count = loginLogManageService.selectLoginLogListTotCnt(new ComDefaultVO());
+            int count = loginLogManageService.selectLoginLogListTotCnt(new BaseSearchDto());
 
             // Then
             assertEquals(10, count);

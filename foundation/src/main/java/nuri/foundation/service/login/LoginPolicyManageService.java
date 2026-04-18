@@ -2,12 +2,12 @@ package nuri.foundation.service.login;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.domain.login.LoginPolicy;
 import nuri.foundation.domain.login.LoginPolicyRepository;
 import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.domain.user.repository.UserRepository;
 import nuri.foundation.service.login.dto.LoginPolicyDto;
-import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,7 +32,7 @@ public class LoginPolicyManageService {
     /**
      * 로그인 정책 목록 조회
      */
-    public List<LoginPolicyDto> selectLoginPolicyList(ComDefaultVO searchVO) {
+    public List<LoginPolicyDto> selectLoginPolicyList(BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
@@ -60,7 +60,7 @@ public class LoginPolicyManageService {
     /**
      * 로그인 정책 목록 총 갯수 조회
      */
-    public int selectLoginPolicyListTotCnt(ComDefaultVO searchVO) {
+    public int selectLoginPolicyListTotCnt(BaseSearchDto searchVO) {
         return (int) userRepository.count();
     }
 

@@ -2,7 +2,7 @@ package nuri.foundation.service.auth;
 
 import nuri.foundation.domain.auth.AuthorRoleProjection;
 import nuri.foundation.domain.auth.AuthorityRoleRepository;
-import egovframework.com.cmm.ComDefaultVO;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ class AuthorRoleManageServiceTest {
         void testSelectAuthorRoleList_Success() {
             // Given
             String authorCode = "ROLE_ADMIN";
-            ComDefaultVO searchVO = new ComDefaultVO();
+            BaseSearchDto searchVO = new BaseSearchDto();
             searchVO.setPageIndex(1);
 
             AuthorRoleProjection projection = AuthorRoleProjection.builder()
