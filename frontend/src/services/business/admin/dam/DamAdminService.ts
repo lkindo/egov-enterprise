@@ -1,6 +1,6 @@
 import { AdminService } from '@/services/core/ApiService';
 import { KnoManagementVO, KnoSearchParams } from '@/types/business/dam';
-import { PageResponse } from '@/services/core/ApiService';
+import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 /**

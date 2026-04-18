@@ -23,7 +23,7 @@ export default async function ManualAdminPage({
     keyword, 
     page, 
     size: 10 
-  }, axiosConfig).catch((error) => {
+  }, axiosConfig).catch((error: any) => {
     console.error('Failed to fetch initial manuals:', error);
     return {
       list: [],

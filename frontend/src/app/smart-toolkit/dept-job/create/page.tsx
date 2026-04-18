@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,13 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { deptJobUserService, DeptJob } from '@/services/business/user/deptJob/DeptJobUserService';
+import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
+import { DeptJobVO } from '@/types/business/deptJob';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, ArrowLeft, Send, Sparkles } from "lucide-react";
 
 export default function CreateDeptJobPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState<Partial<DeptJob>>({
+  const [formData, setFormData] = useState<Partial<DeptJobVO>>({
     deptJobNm: '',
     deptJobCn: '',
     priort: '2', // Default: 보통
@@ -33,7 +34,7 @@ export default function CreateDeptJobPage() {
     }
 
     try {
-      await deptJobUserService.saveDeptJob(formData);
+      await deptJobUserService.createDeptJob(formData as DeptJobVO);
       alert('업무가 성공적으로 등록되었습니다.');
       router.push('/smart-toolkit/dept-job/selectDeptJobList');
     } catch (error) {
@@ -71,7 +72,7 @@ export default function CreateDeptJobPage() {
               <Input
                 id="deptJobNm"
                 value={formData.deptJobNm}
-                onChange={(e) => setFormData(prev => ({ ...prev, deptJobNm: e.target.value }))}
+                onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptJobNm: e.target.value }))}
                 placeholder="과업의 핵심 명칭을 입력하세요"
                 className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
               />
@@ -81,7 +82,7 @@ export default function CreateDeptJobPage() {
               <Label htmlFor="priort" className="text-sm font-black text-slate-500 ml-1">우선 순위</Label>
               <Select
                 value={formData.priort}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, priort: value }))}
+                onValueChange={(value: string) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, priort: value }))}
               >
                 <SelectTrigger className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 font-bold px-6">
                   <SelectValue placeholder="순위 선택" />
@@ -100,7 +101,7 @@ export default function CreateDeptJobPage() {
             <Input
               id="chargerNm"
               value={formData.chargerNm}
-              onChange={(e) => setFormData(prev => ({ ...prev, chargerNm: e.target.value }))}
+              onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, chargerNm: e.target.value }))}
               placeholder="담당자 성함을 입력하세요"
               className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
             />
@@ -111,7 +112,7 @@ export default function CreateDeptJobPage() {
             <Textarea
               id="deptJobCn"
               value={formData.deptJobCn}
-              onChange={(e) => setFormData(prev => ({ ...prev, deptJobCn: e.target.value }))}
+              onChange={(e) => setFormData((prev: Partial<DeptJobVO>) => ({ ...prev, deptJobCn: e.target.value }))}
               className="min-h-[250px] p-8 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white text-lg font-medium leading-relaxed transition-all resize-none"
               placeholder="업무의 구체적인 수행 방법과 목표를 서술하세요..."
             />

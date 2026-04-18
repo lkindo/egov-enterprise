@@ -17,7 +17,7 @@ class CommunityService extends ApiService {
    * @returns 커뮤니티 페이지 결과
    */
   public async getCommunityList(params: CommunitySearchParams = {}): Promise<PageResponse<CommunityVO>> {
-    return this.get<PageResponse<CommunityVO>>('', params);
+    return this.get<PageResponse<CommunityVO>>('', { params });
   }
 
   /**
@@ -57,3 +57,9 @@ class CommunityService extends ApiService {
 }
 
 export const communityService = new CommunityService();
+
+export const getCommunityList = communityService.getCommunityList.bind(communityService);
+export const getCommunity = communityService.getCommunity.bind(communityService);
+export const createCommunity = communityService.createCommunity.bind(communityService);
+export const updateCommunity = communityService.updateCommunity.bind(communityService);
+export const deleteCommunity = communityService.deleteCommunity.bind(communityService);

@@ -91,7 +91,7 @@ class KnowledgeService extends ApiService {
       size: params.size || 20,
     };
 
-    return this.get<PageResponse<KnowledgeDto>>(`/${targetBbsId}`, boardParams);
+    return this.get<PageResponse<KnowledgeDto>>(`/${targetBbsId}`, { params: boardParams });
   }
 
   /**
@@ -99,7 +99,7 @@ class KnowledgeService extends ApiService {
    */
   public async getHotArticles(bbsId?: string): Promise<{ list: KnowledgeDto[] }> {
     const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
-    const res = await this.get<any>(`/${targetBbsId}`, { size: 5, sort: 'inqireCo,desc' });
+    const res = await this.get<any>(`/${targetBbsId}`, { params: { size: 5, sort: 'inqireCo,desc' } });
     
     return {
       list: (res.list || []).map((item: any) => ({
@@ -130,7 +130,7 @@ class KnowledgeService extends ApiService {
    */
   public async getActivities(bbsId?: string): Promise<any[]> {
     const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
-    const res = await this.get<any>(`/${targetBbsId}`, { size: 10 });
+    const res = await this.get<any>(`/${targetBbsId}`, { params: { size: 10 } });
     
     return (res.list || []).map((item: any) => ({
       id: item.nttId,

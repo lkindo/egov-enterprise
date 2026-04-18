@@ -1,6 +1,6 @@
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
-import { DeptJobBxVO } from '@/types/business/deptJob';
+import { DeptJobVO, DeptJobBxVO } from '@/types/business/deptJob';
 import { AxiosRequestConfig } from 'axios';
 
 /**
@@ -57,7 +57,65 @@ class DeptJobUserService extends UserService {
   async deleteDeptJobBox(id: string, config?: AxiosRequestConfig): Promise<void> {
     return this.delete<void>(`/boxes/${id}`, config);
   }
+
+  /**
+   * 부서 업무 목록 조회
+   */
+  async getDeptJobList(
+    params: { 
+      page?: number; 
+      size?: number; 
+      searchWrd?: string;
+      deptJobbxId?: string;
+    }, 
+    config?: AxiosRequestConfig
+  ): Promise<PageResponse<DeptJobVO>> {
+    return this.get<PageResponse<DeptJobVO>>('', { 
+      ...config, 
+      params 
+    });
+  }
+
+  /**
+   * 부서 업무 상세 조회
+   */
+  async getDeptJob(id: string, config?: AxiosRequestConfig): Promise<DeptJobVO> {
+    return this.get<DeptJobVO>(`/${id}`, config);
+  }
+
+  /**
+   * 부서 업무 등록
+   */
+  async createDeptJob(data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<void> {
+    return this.post<void>('', data, config);
+  }
+
+  /**
+   * 부서 업무 수정
+   */
+  async updateDeptJob(id: string, data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/${id}`, data, config);
+  }
+
+  /**
+   * 부서 업무 삭제
+   */
+  async deleteDeptJob(id: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/${id}`, config);
+  }
 }
 
 export const deptJobUserService = new DeptJobUserService();
 
+// Individual function exports for legacy/functional styles
+export const getDeptJobBoxes = deptJobUserService.getDeptJobBoxes.bind(deptJobUserService);
+export const getDeptJobBox = deptJobUserService.getDeptJobBox.bind(deptJobUserService);
+export const createDeptJobBox = deptJobUserService.createDeptJobBox.bind(deptJobUserService);
+export const updateDeptJobBox = deptJobUserService.updateDeptJobBox.bind(deptJobUserService);
+export const deleteDeptJobBox = deptJobUserService.deleteDeptJobBox.bind(deptJobUserService);
+
+export const getDeptJobList = deptJobUserService.getDeptJobList.bind(deptJobUserService);
+export const getDeptJob = deptJobUserService.getDeptJob.bind(deptJobUserService);
+export const createDeptJob = deptJobUserService.createDeptJob.bind(deptJobUserService);
+export const updateDeptJob = deptJobUserService.updateDeptJob.bind(deptJobUserService);
+export const deleteDeptJob = deptJobUserService.deleteDeptJob.bind(deptJobUserService);

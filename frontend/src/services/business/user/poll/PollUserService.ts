@@ -7,7 +7,7 @@ import { AxiosRequestConfig } from 'axios';
  * 온라인 설문(Poll) 서비스
  * 백엔드 PollApiController 연동 (/api/v1/polls)
  */
-class PollService extends ApiService {
+export class PollUserService extends ApiService {
   constructor() {
     super('polls');
   }
@@ -55,15 +55,13 @@ class PollService extends ApiService {
   }
 }
 
-export const pollService = new PollService();
+export const pollUserService = new PollUserService();
 
-// Backward compatibility exports
-export const getPollList = pollService.getPollList.bind(pollService);
-export const getPollDetail = pollService.getPollDetail.bind(pollService);
-export const createPoll = pollService.createPoll.bind(pollService);
-export const updatePoll = pollService.updatePoll.bind(pollService);
-export const deletePoll = pollService.deletePoll.bind(pollService);
-export const getPollItemList = pollService.getPollItemList.bind(pollService);
-export const participatePoll = pollService.participatePoll.bind(pollService);
-
-export default pollService;
+// Individual method exports for convenience
+export const getPollList = pollUserService.getPollList.bind(pollUserService);
+export const getPollDetail = pollUserService.getPollDetail.bind(pollUserService);
+export const createPoll = pollUserService.createPoll.bind(pollUserService);
+export const updatePoll = pollUserService.updatePoll.bind(pollUserService);
+export const deletePoll = pollUserService.deletePoll.bind(pollUserService);
+export const getPollItemList = pollUserService.getPollItemList.bind(pollUserService);
+export const participatePoll = pollUserService.participatePoll.bind(pollUserService);

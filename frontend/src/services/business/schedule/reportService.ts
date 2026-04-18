@@ -1,4 +1,5 @@
-import { ApiService, PageResponse } from '@/services/core/ApiService';
+import { ApiService } from '@/services/core/ApiService';
+import { PageResponse } from '@/types/foundation/system';
 
 export interface WorkReportDto {
     reportId?: string;
@@ -63,4 +64,3 @@ class WorkReportService extends ApiService {
 }
 
 export const workReportService = new WorkReportService();
-export default workReportService;

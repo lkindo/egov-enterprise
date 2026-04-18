@@ -25,18 +25,17 @@ describe('Comprehensive User Services', () => {
 
   it('addressbookUserService calls correct endpoints', async () => {
     (client.get as any).mockResolvedValue({ result: { content: [] } });
-    await addressbookUserService.getAddressBooks({ pageNo: 1 });
+    await addressbookUserService.getAddressBooks({ page: 1 });
     expect(client.get).toHaveBeenCalledWith('address-books', expect.any(Object));
   });
 
   it('communityUserService calls correct endpoints', async () => {
     await communityUserService.getCommunityList({} as any);
-    // Path matches what UserService.get prepends/handles
-    expect(client.get).toHaveBeenCalledWith('cop/cmy/selectCommuMasterList.do', expect.any(Object));
+    expect(client.get).toHaveBeenCalledWith('communities', expect.any(Object));
   });
 
   it('deptJobUserService calls correct endpoints', async () => {
-    await deptJobUserService.getDeptJobs({ page: 0 });
-    expect(client.get).toHaveBeenCalledWith('deptjob', expect.any(Object));
+    await deptJobUserService.getDeptJobBoxes({ page: 0 });
+    expect(client.get).toHaveBeenCalledWith('dept-jobs/boxes', expect.any(Object));
   });
 });

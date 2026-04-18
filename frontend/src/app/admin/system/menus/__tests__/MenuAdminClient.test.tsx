@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 
@@ -97,14 +97,31 @@ describe('MenuAdminClient Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders correctly', () => {
-    render(<MenuAdminClient initialMenus={mockInitialMenus} programs={mockPrograms} />);
-    expect(screen.getByText('Main Menu')).toBeInTheDocument();
+  it('renders correctly', async () => {
+    const menusPromise = Promise.resolve(mockInitialMenus);
+    const programsPromise = Promise.resolve(mockPrograms);
+    await act(async () => {
+      render(
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <MenuAdminClient menusPromise={menusPromise} programsPromise={programsPromise} />
+        </React.Suspense>
+      );
+    });
+    expect(await screen.findByText('Main Menu')).toBeInTheDocument();
   });
 
   it('opens create modal on "신규 등록" click', async () => {
-    render(<MenuAdminClient initialMenus={mockInitialMenus} programs={mockPrograms} />);
-    fireEvent.click(screen.getByText(/신규 등록/i));
+    const menusPromise = Promise.resolve(mockInitialMenus);
+    const programsPromise = Promise.resolve(mockPrograms);
+    await act(async () => {
+      render(
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <MenuAdminClient menusPromise={menusPromise} programsPromise={programsPromise} />
+        </React.Suspense>
+      );
+    });
+    const btn = await screen.findByText(/신규 등록/i);
+    fireEvent.click(btn);
     expect(await screen.findByText(/신규 메뉴 정의/i)).toBeInTheDocument();
   });
 });

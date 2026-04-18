@@ -6,7 +6,7 @@ import { AxiosRequestConfig } from 'axios';
 /**
  * 권한 관리 서비스 (Admin)
  */
-class AuthorityAdminService extends AdminService {
+export class AuthorityAdminService extends AdminService {
   constructor() {
     super('/authorities', 'system');
   }
@@ -40,7 +40,7 @@ class AuthorityAdminService extends AdminService {
 /**
  * 롤 관리 서비스 (Admin)
  */
-class RoleAdminService extends AdminService {
+export class RoleAdminService extends AdminService {
   constructor() {
     super('/roles', 'system');
   }
@@ -69,7 +69,7 @@ class RoleAdminService extends AdminService {
 /**
  * 그룹 관리 서비스 (Admin)
  */
-class GroupAdminService extends AdminService {
+export class GroupAdminService extends AdminService {
   constructor() {
     super('/groups', 'system');
   }
@@ -99,22 +99,11 @@ export const authorityAdminService = new AuthorityAdminService();
 export const roleAdminService = new RoleAdminService();
 export const groupAdminService = new GroupAdminService();
 
-// Backward compatibility exports
 export const getAuthorList = authorityAdminService.getAuthorList.bind(authorityAdminService);
 export const getAuthor = authorityAdminService.getAuthor.bind(authorityAdminService);
 export const createAuthor = authorityAdminService.createAuthor.bind(authorityAdminService);
 export const updateAuthor = authorityAdminService.updateAuthor.bind(authorityAdminService);
 export const deleteAuthor = authorityAdminService.deleteAuthor.bind(authorityAdminService);
-export const getMenuCreatList = authorityAdminService.getMenuByAuthority.bind(authorityAdminService);
 
 export const getRoleList = roleAdminService.getRoleList.bind(roleAdminService);
-export const getRole = roleAdminService.getRole.bind(roleAdminService);
-export const createRole = roleAdminService.createRole.bind(roleAdminService);
-export const updateRole = roleAdminService.updateRole.bind(roleAdminService);
-export const deleteRole = roleAdminService.deleteRole.bind(roleAdminService);
-
 export const getGroupList = groupAdminService.getGroupList.bind(groupAdminService);
-export const getGroup = groupAdminService.getGroup.bind(groupAdminService);
-export const createGroup = groupAdminService.createGroup.bind(groupAdminService);
-export const updateGroup = groupAdminService.updateGroup.bind(groupAdminService);
-export const deleteGroup = groupAdminService.deleteGroup.bind(groupAdminService);

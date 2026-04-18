@@ -46,7 +46,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
 
   const { data: addressData } = useQuery({
     queryKey: ['collab-addressbook', searchKeyword],
-    queryFn: () => addressbookUserService.getAddressBooks({ pageUnit: 50, searchWrd: searchKeyword }),
+    queryFn: () => addressbookUserService.getAddressBooks({ size: 50, searchWrd: searchKeyword }),
     enabled: activeTab === 'ADDRESS_BOOK'
   });
   const addresses = (addressData as any)?.list || [];

@@ -13,7 +13,7 @@ export const getCnsltList = async (params: CnsltSearchParams): Promise<Paginatio
   });
   return {
     list: result.list,
-    totalCount: result.totalCount
+    totalRecordCount: result.total
   };
 };
 

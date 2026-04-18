@@ -1,5 +1,6 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
+import { AxiosRequestConfig } from 'axios';
 
 /**
  * 온라인 매뉴얼 DTO
@@ -27,8 +28,8 @@ class ManualAdminService extends ApiService {
    * @param params 검색 파라미터
    * @returns 온라인 매뉴얼 페이지 결과
    */
-  public async getManuals(params: any): Promise<PageResponse<ManualDto>> {
-    return this.get<PageResponse<ManualDto>>('/manuals', params);
+  public async getManualList(params: any = {}, config?: AxiosRequestConfig): Promise<PageResponse<ManualDto>> {
+    return this.get<PageResponse<ManualDto>>('/manuals', { ...config, params });
   }
 
   /**
@@ -45,7 +46,7 @@ class ManualAdminService extends ApiService {
    * @param manual 매뉴얼 정보
    * @returns 생성된 매뉴얼 ID
    */
-  public async insertManual(manual: ManualDto): Promise<string> {
+  public async createManual(manual: ManualDto): Promise<string> {
     return this.post<string>('/manuals', manual);
   }
 

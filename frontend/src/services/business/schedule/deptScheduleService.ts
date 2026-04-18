@@ -17,7 +17,7 @@ class DeptScheduleService extends ApiService {
    * @returns 일정 페이지 결과
    */
   public async getDeptScheduleList(params: ScheduleSearchParams = {}): Promise<PageResponse<DeptSchedule>> {
-    return this.get<PageResponse<DeptSchedule>>('', params);
+    return this.get<PageResponse<DeptSchedule>>('', { params });
   }
 
   /**
@@ -26,7 +26,7 @@ class DeptScheduleService extends ApiService {
    * @returns 일정 배열
    */
   public async getDeptScheduleMonthList(params: { yearMonth: string }): Promise<DeptSchedule[]> {
-    return this.get<DeptSchedule[]>('/monthly', params);
+    return this.get<DeptSchedule[]>('/monthly', { params });
   }
 
   /**
@@ -36,7 +36,7 @@ class DeptScheduleService extends ApiService {
    * @returns 일정 배열
    */
   public async getDeptScheduleByRange(startDate: string, endDate: string): Promise<DeptSchedule[]> {
-    return this.get<DeptSchedule[]>('/range', { startDate, endDate });
+    return this.get<DeptSchedule[]>('/range', { params: { startDate, endDate } });
   }
 
   /**
@@ -76,3 +76,11 @@ class DeptScheduleService extends ApiService {
 }
 
 export const deptScheduleService = new DeptScheduleService();
+
+export const getDeptScheduleList = deptScheduleService.getDeptScheduleList.bind(deptScheduleService);
+export const getDeptScheduleMonthList = deptScheduleService.getDeptScheduleMonthList.bind(deptScheduleService);
+export const getDeptScheduleByRange = deptScheduleService.getDeptScheduleByRange.bind(deptScheduleService);
+export const getDeptSchedule = deptScheduleService.getDeptSchedule.bind(deptScheduleService);
+export const createDeptSchedule = deptScheduleService.createDeptSchedule.bind(deptScheduleService);
+export const updateDeptSchedule = deptScheduleService.updateDeptSchedule.bind(deptScheduleService);
+export const deleteDeptSchedule = deptScheduleService.deleteDeptSchedule.bind(deptScheduleService);
