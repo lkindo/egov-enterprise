@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, use } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -275,7 +275,15 @@ const SortableMenuNode = ({
 /*                                Main Component                              */
 /* -------------------------------------------------------------------------- */
 
-export default function MenuAdminClient({ initialMenus, programs }: { initialMenus: MenuInfo[]; programs: any[] }) {
+export default function MenuAdminClient({ 
+  menusPromise, 
+  programsPromise 
+}: { 
+  menusPromise: Promise<MenuInfo[]>; 
+  programsPromise: Promise<any[]>; 
+}) {
+  const initialMenus = use(menusPromise);
+  const programs = use(programsPromise);
   const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();

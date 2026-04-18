@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import React, { useState } from 'react';
+import React, { useState, use } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { templateAdminService, TmplatInfo } from '@/services/foundation/system/TemplateAdminService';
@@ -36,10 +36,11 @@ import {
 import { toast } from 'sonner';
 
 export default function TemplateAdminClient({
-    initialTemplates
+    templatesPromise
 }: {
-    initialTemplates: TmplatInfo[]
+    templatesPromise: Promise<TmplatInfo[]>
 }) {
+    const initialTemplates = use(templatesPromise);
     const [loading, setLoading] = useState(false);
     const [templates, setTemplates] = useState(initialTemplates);
     const [isAddOpen, setIsAddOpen] = useState(false);

@@ -1,9 +1,9 @@
 package nuri.foundation.service.group;
 
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.domain.group.GroupManage;
 import nuri.foundation.domain.group.GroupManageRepository;
 import nuri.foundation.service.group.dto.GroupManageDto;
-import egovframework.com.cmm.ComDefaultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 洹몃퉬??
+ * 그룹 관리 서비스
  */
 @Service("projectGroupManageService")
 @RequiredArgsConstructor
@@ -27,8 +27,9 @@ public class GroupManageService {
     private final GroupManageRepository groupManageRepository;
 
     /**
-     * 洹몃紐⑸議고??     */
-    public List<GroupManageDto> selectGroupList(ComDefaultVO searchVO) {
+     * 그룹 목록 조회
+     */
+    public List<GroupManageDto> selectGroupList(BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
         Pageable pageable = PageRequest.of(pageIndex, pageUnit);
@@ -44,8 +45,9 @@ public class GroupManageService {
     }
 
     /**
-     * 洹몃紐⑸嫄댁??     */
-    public int selectGroupListTotCnt(ComDefaultVO searchVO) {
+     * 그룹 목록 총 건수
+     */
+    public int selectGroupListTotCnt(BaseSearchDto searchVO) {
         String keyword = searchVO.getSearchKeyword();
         if (keyword != null && !keyword.isEmpty()) {
             return (int) groupManageRepository.searchByKeyword(keyword, Pageable.unpaged()).getTotalElements();
@@ -54,7 +56,8 @@ public class GroupManageService {
     }
 
     /**
-     * 洹몃??곸꽭 議고??     */
+     * 그룹 상세 조회
+     */
     public GroupManageDto selectGroup(String groupId) {
         return groupManageRepository.findById(Objects.requireNonNull(groupId))
                 .map(this::toDto)
@@ -62,7 +65,7 @@ public class GroupManageService {
     }
 
     /**
-     * 洹몃??깅줉
+     * 그룹 등록
      */
     @Transactional
     public String insertGroup(GroupManageDto dto) {
@@ -82,7 +85,7 @@ public class GroupManageService {
     }
 
     /**
-     * 洹몃???젙
+     * 그룹 수정
      */
     @Transactional
     public void updateGroup(GroupManageDto dto) {
@@ -92,14 +95,16 @@ public class GroupManageService {
     }
 
     /**
-     * 洹몃?????     */
+     * 그룹 삭제
+     */
     @Transactional
     public void deleteGroup(String groupId) {
         groupManageRepository.deleteById(Objects.requireNonNull(groupId));
     }
 
     /**
-     * 洹몃???쨷 ????     */
+     * 그룹 다중 삭제
+     */
     @Transactional
     public void deleteGroups(String[] groupIds) {
         groupManageRepository.deleteAllById(Objects.requireNonNull(Arrays.asList(groupIds)));

@@ -1,25 +1,15 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { getInitialBoardData } from './BoardListServer';
 import { Skeleton } from "@/components/ui/skeleton";
-import { redirect } from 'next/navigation';
 
 /** 
  * 클라이언트 컴포넌트를 지연 로딩하여 서버/클라이언트 경계를 명확히 함 
  */
 const BoardListClient = dynamic(() => import('./BoardListClient').then(mod => mod.BoardListClient), {
   ssr: true,
-  loading: () => (
-    <div className="flex flex-col gap-6 p-6">
-      <Skeleton className="h-10 w-48 rounded-full" />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <Skeleton className="lg:col-span-2 h-64 rounded-[0.1rem]" />
-        <Skeleton className="h-64 rounded-[0.1rem]" />
-      </div>
-      <Skeleton className="h-[600px] w-full rounded-[0.1rem]" />
-    </div>
-  )
+  loading: () => <BoardListSkeleton />
 });
 
 export const metadata: Metadata = {
@@ -30,31 +20,45 @@ export const metadata: Metadata = {
 /**
  * 서버 컴포넌트: 페이지 진입점
  */
-export default async function BoardListPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+export default async function BoardListPage({ searchParams }: { searchParams: Promise<any> }) {
   const resolvedSearchParams = await searchParams;
+  const bbsId = resolvedSearchParams.bbsId || 'BBSMSTR_000000000001';
+  const page = Number(resolvedSearchParams.page) || 1;
+  const searchWrd = resolvedSearchParams.searchWrd || '';
+  const searchCnd = resolvedSearchParams.searchCnd || '0';
+  const orderBy = resolvedSearchParams.orderBy || 'date';
+  const startDate = resolvedSearchParams.startDate;
+  const endDate = resolvedSearchParams.endDate;
 
-  const params = {
-    bbsId: (resolvedSearchParams.bbsId as string) || 'BBSMSTR_AAAAAAAAAAAA',
-    page: Number(resolvedSearchParams.page) || 1,
-    searchWrd: (resolvedSearchParams.searchWrd as string) || '',
-    searchCnd: (resolvedSearchParams.searchCnd as string) || '0',
-    orderBy: (resolvedSearchParams.orderBy as string) || 'date',
-    startDate: (resolvedSearchParams.startDate as string) || undefined,
-    endDate: (resolvedSearchParams.endDate as string) || undefined,
-  };
-
-  // 서버 전용 함수를 통해 데이터 페칭
-  let initialData;
-  try {
-    initialData = await getInitialBoardData(params);
-  } catch (error: any) {
-    if (error.response?.status === 401) {
-      redirect(`/login?expired=true&redirect=/admin/community/boards/selectBoardList?bbsId=${params.bbsId}`);
-    }
-    initialData = { list: [], total: 0, totalPage: 0 };
-  }
+  const dataPromise = getInitialBoardData({
+    bbsId,
+    page,
+    searchWrd,
+    searchCnd,
+    orderBy,
+    startDate,
+    endDate
+  });
 
   return (
-    <BoardListClient initialData={initialData} params={params} />
+    <Suspense fallback={<BoardListSkeleton />}>
+      <BoardListClient 
+        dataPromise={dataPromise} 
+        params={{ bbsId, page, searchWrd, searchCnd, orderBy, startDate, endDate }} 
+      />
+    </Suspense>
+  );
+}
+
+function BoardListSkeleton() {
+  return (
+    <div className="flex flex-col gap-6 p-6">
+      <Skeleton className="h-10 w-48 rounded-full" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <Skeleton className="lg:col-span-2 h-64 rounded-[0.1rem]" />
+        <Skeleton className="h-64 rounded-[0.1rem]" />
+      </div>
+      <Skeleton className="h-[600px] w-full rounded-[0.1rem]" />
+    </div>
   );
 }

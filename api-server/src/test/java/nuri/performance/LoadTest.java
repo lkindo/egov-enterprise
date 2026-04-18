@@ -63,7 +63,7 @@ class LoadTest {
     Page<UserDto> page = new PageImpl<>(
         List.of(defaultUser), PageRequest.of(0, 10), 1
     );
-    when(userService.getPagedUserList(any(String.class), any())).thenReturn(page);
+    when(userService.getPagedUserList(any(), any())).thenReturn(page);
     when(userService.signup(any())).thenReturn(new UserResponse("newUser", "신규사용자", Role.USER));
   }
 

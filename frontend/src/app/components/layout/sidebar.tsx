@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, use } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -294,7 +294,14 @@ const MobileDomainNode = ({
   );
 };
 
-export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
+export function Sidebar({ 
+  initialMenus = [],
+  menusPromise
+}: { 
+  initialMenus?: MenuInfo[];
+  menusPromise?: Promise<MenuInfo[]>;
+}) {
+  const resolvedMenus = menusPromise ? use(menusPromise) : initialMenus;
   const { isSidebarOpen, setSidebarOpen, activeMenuNo, setActiveMenuNo } = useLayout();
   const queryClient = useQueryClient();
 
@@ -302,7 +309,7 @@ export function Sidebar({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
   const { data: topMenus = initialMenus } = useQuery({
     queryKey: ['menus', 'head'],
     queryFn: () => menuService.getHeadMenus(),
-    initialData: initialMenus,
+    initialData: resolvedMenus,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 

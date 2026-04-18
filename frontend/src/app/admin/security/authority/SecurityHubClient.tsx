@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, use } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ShieldCheck,
@@ -83,7 +83,12 @@ interface MenuNode extends Menu {
   isChecked?: boolean;
 }
 
-export default function SecurityHubClient() {
+export default function SecurityHubClient({ 
+  authoritiesPromise 
+}: { 
+  authoritiesPromise: Promise<any> 
+}) {
+  const initialAuthorities = use(authoritiesPromise);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [selectedAuthorCode, setSelectedAuthorCode] = useState<string>('');
@@ -113,6 +118,7 @@ export default function SecurityHubClient() {
   const { data: authorsData, isLoading: isAuthorsLoading, error: authorsError, refetch: refetchAuthors } = useQuery({
     queryKey: ['admin-authorities', roleSearchKeyword, rolePage],
     queryFn: () => authorAdminService.getAuthorList({ pageIndex: rolePage, searchKeyword: roleSearchKeyword }),
+    initialData: (rolePage === 1 && !roleSearchKeyword) ? initialAuthorities : undefined
   });
   const authorities = authorsData?.list || [];
 

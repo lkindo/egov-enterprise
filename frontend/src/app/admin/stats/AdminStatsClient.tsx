@@ -34,7 +34,17 @@ import {
   Target
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { NationalDistributionMap } from '@/app/components/ui/national-distribution-map';
+import dynamic from 'next/dynamic';
+
+const NationalDistributionMap = dynamic(() => import('@/app/components/ui/national-distribution-map').then(mod => mod.NationalDistributionMap), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[480px] flex flex-col items-center justify-center bg-white rounded-[0.1rem] space-y-4">
+      <div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-500 rounded-full animate-spin" />
+      <p className="text-[10px] font-black tracking-[0.4em] text-slate-300 uppercase animate-pulse">Mapping Regional Traffic Intelligence...</p>
+    </div>
+  )
+});
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';

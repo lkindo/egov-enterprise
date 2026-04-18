@@ -1,4 +1,4 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import UnifiedDashboardClient from './UnifiedDashboardClient';
@@ -36,16 +36,13 @@ async function getDashboardData() {
 }
 
 export default async function UnifiedDashboardPage() {
- const data = await getDashboardData();
- return (
- <Suspense fallback={<DashboardSkeleton />}>
- <UnifiedDashboardClient
- initialNotiList={data.initialNotiList}
- initialTaskList={data.initialTaskList}
- pendingApprovalCount={data.pendingApprovalCount}
- />
- </Suspense>
- );
+  const dataPromise = getDashboardData();
+
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <UnifiedDashboardClient dataPromise={dataPromise} />
+    </Suspense>
+  );
 }
 
 function DashboardSkeleton() {

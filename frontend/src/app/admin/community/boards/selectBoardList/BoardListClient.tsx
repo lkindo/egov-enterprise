@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useBoardList } from '@/hooks/api/use-board-list';
@@ -108,7 +108,8 @@ function FAQItem({ item }: { item: BoardPost }) {
   );
 }
 
-export const BoardListClient = ({ initialData, params: initialParams }: { initialData: any; params: any }) => {
+export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPromise: Promise<any>; params: any }) => {
+  const initialData = use(dataPromise);
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { user } = useAuth();

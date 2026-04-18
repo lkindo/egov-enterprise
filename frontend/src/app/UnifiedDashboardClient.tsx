@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -50,16 +50,20 @@ const DashboardVisitorChart = dynamic(
 );
 
 interface UnifiedDashboardClientProps {
-  initialNotiList: DashboardTask[];
-  initialTaskList: DashboardTask[];
-  pendingApprovalCount: number;
+  dataPromise: Promise<{
+    initialNotiList: DashboardTask[];
+    initialTaskList: DashboardTask[];
+    pendingApprovalCount: number;
+  }>;
 }
 
 export default function UnifiedDashboardClient({ 
-  initialNotiList = [], 
-  initialTaskList = [], 
-  pendingApprovalCount = 0 
+  dataPromise 
 }: UnifiedDashboardClientProps) {
+  const data = use(dataPromise);
+  const initialNotiList = data.initialNotiList || [];
+  const initialTaskList = data.initialTaskList || [];
+  const pendingApprovalCount = data.pendingApprovalCount || 0;
   const { t } = useMessage();
   const { user, loading } = useAuth();
   const router = useRouter();

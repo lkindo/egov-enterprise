@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -51,7 +51,17 @@ import {
   SystemStatusRadar,
   ActivityAreaChart
 } from '@/app/components/ui/observability-charts';
-import { TopologyMap } from '@/app/components/ui/topology-map';
+import dynamic from 'next/dynamic';
+
+const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').then(mod => mod.TopologyMap), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[700px] flex flex-col items-center justify-center bg-slate-950 rounded-[0.1rem] space-y-6">
+      <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <p className="text-[10px] font-black tracking-[0.5em] text-white/30 uppercase animate-pulse">Initializing Topology Stream...</p>
+    </div>
+  )
+});
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { useRouter, useSearchParams } from 'next/navigation';
 

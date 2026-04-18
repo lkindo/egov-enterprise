@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useTheme } from 'next-themes';
 import {
   Moon,
@@ -106,14 +106,21 @@ function HeaderSearchParamSync({ menus, activeMenuNo, setActiveMenuNo }: { menus
   return null;
 }
 
-export function Header({ initialMenus = [] }: { initialMenus?: MenuInfo[] }) {
+export function Header({ 
+  initialMenus = [],
+  menusPromise
+}: { 
+  initialMenus?: MenuInfo[];
+  menusPromise?: Promise<MenuInfo[]>;
+}) {
+  const resolvedMenus = menusPromise ? use(menusPromise) : initialMenus;
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   const { notifications, unreadCount } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [menus, setMenus] = useState<MenuInfo[]>(initialMenus);
+  const [menus, setMenus] = useState<MenuInfo[]>(resolvedMenus);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

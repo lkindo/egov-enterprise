@@ -80,7 +80,7 @@ class ExceptionResponseTest {
     @Test
     @DisplayName("인증 에러 발생 - 401 에러 반환")
     void authenticationException_occurs_returns401Error() throws Exception {
-        when(userService.getPagedUserList(any(String.class), any(Pageable.class)))
+        when(userService.getPagedUserList(any(), any(Pageable.class)))
                 .thenThrow(new BadCredentialsException("Authentication required"));
 
         mockMvc.perform(get("/api/v1/admin/system/users")
@@ -92,7 +92,7 @@ class ExceptionResponseTest {
     @Test
     @DisplayName("접근 에러 발생 - 403 에러 반환")
     void accessDeniedException_occurs_returns403Error() throws Exception {
-        when(userService.getPagedUserList(any(String.class), any(Pageable.class)))
+        when(userService.getPagedUserList(any(), any(Pageable.class)))
                 .thenThrow(new AccessDeniedException("Access denied"));
 
         mockMvc.perform(get("/api/v1/admin/system/users")

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, use } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -78,7 +78,17 @@ const deptSchema = z.object({
 type UserFormValues = z.infer<typeof userSchema>;
 type DeptFormValues = z.infer<typeof deptSchema>;
 
-export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?: UserOrgTab }) {
+export default function UserOrgHubClient({ 
+  defaultTab = 'USERS',
+  usersPromise,
+  deptsPromise
+}: { 
+  defaultTab?: UserOrgTab;
+  usersPromise: Promise<any>;
+  deptsPromise: Promise<any>;
+}) {
+  const initialUsers = use(usersPromise);
+  const initialDepts = use(deptsPromise);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<UserOrgTab>(defaultTab);
@@ -103,7 +113,8 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
   const { data: usersData, isLoading: isUsersLoading, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', searchKeyword, userPage],
     queryFn: () => userAdminService.getUserList({ pageNo: userPage, searchKeyword }),
-    enabled: activeTab === 'USERS' || activeTab === 'ABSENCES'
+    enabled: activeTab === 'USERS' || activeTab === 'ABSENCES',
+    initialData: (userPage === 1 && !searchKeyword) ? initialUsers : undefined
   });
   const users = useMemo(() => {
     const list = usersData?.list;
@@ -113,7 +124,8 @@ export default function UserOrgHubClient({ defaultTab = 'USERS' }: { defaultTab?
   const { data: deptsData, isLoading: isDeptsLoading, error: deptsError, refetch: refetchDepts } = useQuery({
     queryKey: ['admin-depts', searchKeyword, deptPage],
     queryFn: () => deptAdminService.getDeptList({ pageNo: deptPage, searchKeyword }),
-    enabled: activeTab === 'DEPTS'
+    enabled: activeTab === 'DEPTS',
+    initialData: (deptPage === 1 && !searchKeyword) ? initialDepts : undefined
   });
   const departments = useMemo(() => {
     const list = deptsData?.list;

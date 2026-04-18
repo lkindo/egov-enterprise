@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react';
 import { templateAdminService } from '@/services/foundation/system/TemplateAdminService';
 import { cookies } from 'next/headers';
 import TemplateAdminClient from './TemplateAdminClient';
@@ -11,9 +12,12 @@ export default async function TemplateAdminPage() {
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  const initialTemplates = await templateAdminService.getTemplateList(axiosConfig).catch(() => []);
+  // [P1: Waterfall Elimination] Initiate data promise without awaiting
+  const templatesPromise = templateAdminService.getTemplateList(axiosConfig).catch(() => []);
 
   return (
-    <TemplateAdminClient initialTemplates={initialTemplates} />
+    <Suspense fallback={<div className="p-24 text-center">Loading Blueprint Library...</div>}>
+      <TemplateAdminClient templatesPromise={templatesPromise} />
+    </Suspense>
   );
 }

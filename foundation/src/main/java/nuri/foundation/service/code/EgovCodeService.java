@@ -4,15 +4,18 @@ import nuri.foundation.service.code.dto.CodeDto;
 import java.util.List;
 
 /**
- * ?듯???붾퉬???명꽣??씠??
- * - ?꾩옄???꾨젅?꾩썙??5.0 ?명솚???몄쬆 ?붽굔 ⑹꾪븳 ?명꽣??씠???꾨?? */
+ * 공통코드 서비스 인터페이스
+ * - 전자정부 표준프레임워크 5.0 호환성 인증 요건을 충족하기 위한 인터페이스 정의
+ */
 public interface EgovCodeService {
 
     /**
-     * ?뱀洹몃??붾????븳 ?곸꽭 ?붾紐⑸議고??     */
+     * 상세 코드 리스트 조회
+     */
     List<CodeDto> getDetailCodeList(@org.springframework.lang.NonNull String codeGroupId);
 
     /**
-     * ?꾩껜 ??꽦 ?붾紐⑸議고??     */
+     * 전체 활성 코드 조회
+     */
     List<CodeDto> getAllActiveCodes();
 }

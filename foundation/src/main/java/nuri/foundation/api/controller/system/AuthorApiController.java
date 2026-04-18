@@ -2,11 +2,11 @@ package nuri.foundation.api.controller.system;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.service.auth.AuthorManageService;
 import nuri.foundation.service.auth.dto.AuthorManageDto;
 import nuri.foundation.service.menu.MenuService;
 import nuri.foundation.service.menu.dto.MenuCreateDto;
-import egovframework.com.cmm.ComDefaultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class AuthorApiController {
             @RequestParam(value = "pageIndex", defaultValue = "1") int pageIndex,
             @RequestParam(value = "searchKeyword", defaultValue = "") String searchKeyword) {
 
-        ComDefaultVO searchVO = new ComDefaultVO();
+        BaseSearchDto searchVO = new BaseSearchDto();
         searchVO.setPageIndex(pageIndex);
         searchVO.setSearchKeyword(searchKeyword);
         searchVO.setPageUnit(10);
