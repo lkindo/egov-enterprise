@@ -1,21 +1,66 @@
-import client from '@/lib/api/client';
-import { PageResponse } from '@/types/foundation/system';
-import { WorkReport, ReportSearchParams } from '@/types/business/schedule';
+import { ApiService, PageResponse } from '@/services/core/ApiService';
 
-export const getReportList = async (params: ReportSearchParams): Promise<PageResponse<WorkReport>> =>
- client.get<PageResponse<WorkReport>>('/smart-toolkit/work-report/EgovWikMnthngReprtList.do', { params });
+export interface WorkReportDto {
+    reportId?: string;
+    reportSubject: string;
+    reportContent: string;
+    reportType: string;
+    reportDate: string;
+    writerId?: string;
+    reportStatus: string;
+}
 
-export const getReport = async (reprtId: string): Promise<WorkReport> =>
- client.get<WorkReport>(`/smart-toolkit/work-report/selectWikMnthngReprt.do?reprtId=${reprtId}`);
+/**
+ * 주간/월간 보고 서비스
+ * legacy path: /smart-toolkit/work-report/
+ * modern path: /api/v1/work-reports
+ */
+class WorkReportService extends ApiService {
+    constructor() {
+        super('work-reports');
+    }
 
-export const createReport = async (report: WorkReport): Promise<void> =>
- client.post('/smart-toolkit/work-report/insertWikMnthngReprt.do', report);
+    /**
+     * 업무보고 목록 조회
+     * @param params 페이징 및 검색 파라미터
+     */
+    async getWorkReports(params?: any) {
+        return this.get<PageResponse<WorkReportDto>>('', params);
+    }
 
-export const updateReport = async (report: WorkReport): Promise<void> =>
- client.post('/smart-toolkit/work-report/updateWikMnthngReprt.do', report);
+    /**
+     * 업무보고 상세 조회
+     * @param id 보고 ID
+     */
+    async getWorkReport(id: string) {
+        return this.get<WorkReportDto>(`/${id}`);
+    }
 
-export const deleteReport = async (reprtId: string): Promise<void> =>
- client.post(`/smart-toolkit/work-report/deleteWikMnthngReprt.do?reprtId=${reprtId}`);
+    /**
+     * 업무보고 등록
+     * @param report 보고 데이터
+     */
+    async createWorkReport(report: WorkReportDto) {
+        return this.post<void>('', report);
+    }
 
-export const confirmReport = async (reprtId: string): Promise<void> =>
- client.post(`/smart-toolkit/work-report/confirmWikMnthngReprt.do?reprtId=${reprtId}`);
+    /**
+     * 업무보고 수정
+     * @param id 보고 ID
+     * @param report 수정 데이터
+     */
+    async updateWorkReport(id: string, report: WorkReportDto) {
+        return this.put<void>(`/${id}`, report);
+    }
+
+    /**
+     * 업무보고 삭제
+     * @param id 보고 ID
+     */
+    async deleteWorkReport(id: string) {
+        return this.delete<void>(`/${id}`);
+    }
+}
+
+export const workReportService = new WorkReportService();
+export default workReportService;

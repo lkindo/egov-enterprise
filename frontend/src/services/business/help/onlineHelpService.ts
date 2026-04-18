@@ -1,18 +1,53 @@
-import client from '@/lib/api/client';
-import { PaginationResponse } from '@/types/foundation/system';
+import { ApiService } from '@/services/core/ApiService';
+import { PageResponse } from '@/types/foundation/system';
 import { FaqVO, OnlineHelpSearchParams } from '@/types/business/onlineHelp';
+import { AxiosRequestConfig } from 'axios';
 
-export const getFaqList = async (params: OnlineHelpSearchParams): Promise<PaginationResponse<FaqVO>> =>
- client.get<PaginationResponse<FaqVO>>('/uss/olh/faq/selectFaqList.do', { params });
+/**
+ * 온라인 헬프(FAQ) 서비스
+ * 백엔드 FaqApiController 연동 (/api/v1/faqs)
+ */
+class OnlineHelpService extends ApiService {
+  constructor() {
+    super('faqs');
+  }
 
-export const getFaq = async (faqId: string): Promise<FaqVO> =>
- client.get<FaqVO>(`/uss/olh/faq/selectFaqDetail.do?faqId=${faqId}`);
+  /** FAQ 목록 조회 */
+  async getFaqList(params: OnlineHelpSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<FaqVO>> {
+    return this.get<PageResponse<FaqVO>>('', {
+      ...config,
+      params: {
+        ...params,
+        keyword: params.searchKeyword
+      }
+    });
+  }
 
-export const createFaq = async (faq: FaqVO): Promise<void> =>
- client.post('/uss/olh/faq/insertFaq.do', faq);
+  /** FAQ 상세 조회 */
+  async getFaqDetail(faqId: string, config?: AxiosRequestConfig): Promise<FaqVO> {
+    return this.get<FaqVO>(`/${faqId}`, config);
+  }
 
-export const updateFaq = async (faq: FaqVO): Promise<void> =>
- client.post('/uss/olh/faq/updateFaq.do', faq);
+  /** FAQ 등록 (관리용) */
+  async createFaq(faq: Partial<FaqVO>, config?: AxiosRequestConfig): Promise<string> {
+    return this.post<string>('', faq, config);
+  }
 
-export const deleteFaq = async (faqId: string): Promise<void> =>
- client.post(`/uss/olh/faq/deleteFaq.do?faqId=${faqId}`);
+  /** FAQ 수정 (관리용) */
+  async updateFaq(faqId: string, faq: Partial<FaqVO>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put(`/${faqId}`, faq, config);
+  }
+
+  /** FAQ 삭제 (관리용) */
+  async deleteFaq(faqId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete(`/${faqId}`, config);
+  }
+}
+
+export const onlineHelpService = new OnlineHelpService();
+
+// Backward compatibility exports
+export const getFaqList = onlineHelpService.getFaqList.bind(onlineHelpService);
+export const getFaqDetail = onlineHelpService.getFaqDetail.bind(onlineHelpService);
+
+export default onlineHelpService;

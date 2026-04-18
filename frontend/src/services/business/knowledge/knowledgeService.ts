@@ -1,5 +1,9 @@
-import client from '@/lib/api/client';
+import { ApiService } from '@/services/core/ApiService';
+import { PageResponse } from '@/types/foundation/system';
 
+/**
+ * 지식 기반 서비스 DTO
+ */
 export interface KnowledgeDto {
   knoId: string;
   knoNm: string;
@@ -23,7 +27,6 @@ export interface KnowledgeDto {
 
 export type BoardArticle = KnowledgeDto;
 
-
 export interface CommentDto {
   id: number;
   nttId: number;
@@ -32,15 +35,6 @@ export interface CommentDto {
   wrterNm: string;
   commentCn: string;
   createdDate: string;
-}
-
-
-export interface PageResponse<T> {
-  list: T[];
-  total: number;
-  totalPage: number;
-  size: number;
-  page: number;
 }
 
 export interface FileDto {
@@ -52,67 +46,101 @@ export interface FileDto {
   streFileNm: string;
 }
 
-export const knowledgeService = {
-  getArticles: async (params: { bbsId?: string; category?: string; searchWrd?: string; searchCnd?: string; page?: number; size?: number } = {}) => {
-    // 5-Tier Knowledge Board Mapping
+/**
+ * 지식 허브 서비스
+ * 공지사항, FAQ, QNA, WIKI, 커뮤니티 등 게시판 기반 지식 데이터 연동
+ */
+class KnowledgeService extends ApiService {
+  private readonly BBS_IDS = {
+    NOTICE: 'BBSMSTR_AAAAAAAAAAAA',
+    FAQ: 'BBSMSTR_BBBBBBBBBBBB',
+    COMMUNITY: 'BBSMSTR_CCCCCCCCCCCC',
+    QNA: 'BBSMSTR_DDDDDDDDDDDD',
+    WIKI: 'BBSMSTR_EEEEEEEEEEEE',
+  };
+
+  constructor() {
+    super('/boards');
+  }
+
+  /**
+   * 게시물 목록 조회 (지식 카테고리 기반)
+   */
+  public async getArticles(params: {
+    bbsId?: string;
+    category?: string;
+    searchWrd?: string;
+    searchCnd?: string;
+    page?: number;
+    size?: number;
+  } = {}): Promise<PageResponse<KnowledgeDto>> {
     let targetBbsId = params.bbsId;
     if (!targetBbsId) {
-      if (params.category === 'FAQ') targetBbsId = 'BBSMSTR_BBBBBBBBBBBB';
-      else if (params.category === 'QNA') targetBbsId = 'BBSMSTR_DDDDDDDDDDDD';
-      else if (params.category === 'WIKI') targetBbsId = 'BBSMSTR_EEEEEEEEEEEE';
-      else if (params.category === 'COMMUNITY') targetBbsId = 'BBSMSTR_CCCCCCCCCCCC';
-      else targetBbsId = 'BBSMSTR_AAAAAAAAAAAA'; // Default: Notice
+      if (params.category === 'FAQ') targetBbsId = this.BBS_IDS.FAQ;
+      else if (params.category === 'QNA') targetBbsId = this.BBS_IDS.QNA;
+      else if (params.category === 'WIKI') targetBbsId = this.BBS_IDS.WIKI;
+      else if (params.category === 'COMMUNITY') targetBbsId = this.BBS_IDS.COMMUNITY;
+      else targetBbsId = this.BBS_IDS.NOTICE;
     }
 
     const boardParams = {
-      qnaCategory: params.category, // Map Hub category to BBS qnaCategory
+      qnaCategory: params.category,
       searchWrd: params.searchWrd,
       searchCnd: params.searchCnd || '0',
       page: params.page || 0,
-      size: params.size || 20
+      size: params.size || 20,
     };
-    const res = await client.get<any>(`boards/${targetBbsId}`, { params: boardParams });
 
-    // Map Board fields to Knowledge fields for UI compatibility
-    return res;
-  },
+    return this.get<PageResponse<KnowledgeDto>>(`/${targetBbsId}`, boardParams);
+  }
 
-  getHotArticles: async (bbsId?: string) => {
-    const targetBbsId = bbsId || 'BBSMSTR_AAAAAAAAAAAA';
-    const res = await client.get<any>(`boards/${targetBbsId}`, {
-      params: { size: 5, sort: 'inqireCo,desc' }
-    });
+  /**
+   * 인기 게시물 조회
+   */
+  public async getHotArticles(bbsId?: string): Promise<{ list: KnowledgeDto[] }> {
+    const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
+    const res = await this.get<any>(`/${targetBbsId}`, { size: 5, sort: 'inqireCo,desc' });
+    
     return {
       list: (res.list || []).map((item: any) => ({
         ...item,
         id: item.nttId,
-        nttSj: item.nttSj
-      }))
+        nttSj: item.nttSj,
+      })),
     };
-  },
+  }
 
-  getArticle: async (bbsId: string, nttId: string) => {
-    return client.get<KnowledgeDto>(`boards/${bbsId}/posts/${nttId}`);
-  },
+  /**
+   * 게시물 상세 조회
+   */
+  public async getArticle(bbsId: string, nttId: string): Promise<KnowledgeDto> {
+    return this.get<KnowledgeDto>(`/${bbsId}/posts/${nttId}`);
+  }
 
-  getStats: async (bbsId?: string) => {
-    const targetBbsId = bbsId || 'BBSMSTR_AAAAAAAAAAAA';
-    const res = await client.get<any>(`boards/${targetBbsId}/stats`);
-    return res;
-  },
+  /**
+   * 게시판 통계 조회
+   */
+  public async getStats(bbsId?: string): Promise<any> {
+    const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
+    return this.get<any>(`/${targetBbsId}/stats`);
+  }
 
-  getActivities: async (bbsId?: string) => {
-    const targetBbsId = bbsId || 'BBSMSTR_AAAAAAAAAAAA';
-    const res = await client.get<any>(`boards/${targetBbsId}`, {
-      params: { size: 10 }
-    });
+  /**
+   * 최근 활동 피드 조회
+   */
+  public async getActivities(bbsId?: string): Promise<any[]> {
+    const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
+    const res = await this.get<any>(`/${targetBbsId}`, { size: 10 });
+    
     return (res.list || []).map((item: any) => ({
       id: item.nttId,
       type: 'SHARE',
       title: item.nttSj,
       user: item.ntcrNm || item.frstRegisterId,
       time: item.frstRegisterPnttm?.split('T')[0] || 'Just now',
-      impact: `+${(item.inqireCo || 0) % 100} Reach`
+      impact: `+${(item.inqireCo || 0) % 100} Reach`,
     }));
   }
-};
+}
+
+export const knowledgeService = new KnowledgeService();

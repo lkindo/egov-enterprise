@@ -29,25 +29,16 @@ class AddressbookUserService extends UserService {
    */
   async getAddressBooks(
     params: { 
-      pageNo?: number; 
-      pageIndex?: number; 
       page?: number; 
-      pageUnit?: number; 
+      size?: number; 
       searchWrd?: string; 
       searchCnd?: string 
     }, 
     config?: AxiosRequestConfig
   ): Promise<PageResponse<AddressBook>> {
-    const page = params.pageNo || params.pageIndex || (params.page !== undefined ? params.page + 1 : 1);
-    
     return this.get<PageResponse<AddressBook>>('', {
       ...config,
-      params: {
-        page: page - 1,
-        size: params.pageUnit || 10,
-        searchWrd: params.searchWrd,
-        searchCnd: params.searchCnd
-      }
+      params
     });
   }
 

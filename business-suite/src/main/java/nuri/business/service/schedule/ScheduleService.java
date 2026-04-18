@@ -103,7 +103,7 @@ public class ScheduleService implements EgovScheduleService {
     @Override
     public ScheduleDto getSchedule(String id) {
         Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(nuri.foundation.core.exception.ErrorCode.RESOURCE_NOT_FOUND));
         return ScheduleDto.from(schedule);
     }
 
@@ -137,7 +137,7 @@ public class ScheduleService implements EgovScheduleService {
     @Transactional
     public void updateSchedule(String id, String userId, ScheduleDto dto) {
         Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(nuri.foundation.core.exception.ErrorCode.RESOURCE_NOT_FOUND));
 
         schedule.update(
                 dto.getSchdulSe(),
@@ -156,7 +156,7 @@ public class ScheduleService implements EgovScheduleService {
     @Transactional
     public void deleteSchedule(String id, String userId) {
         Schedule schedule = scheduleRepository.findById(Objects.requireNonNull(id))
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(nuri.foundation.core.exception.ErrorCode.RESOURCE_NOT_FOUND));
         scheduleRepository.delete(Objects.requireNonNull(schedule));
     }
 }

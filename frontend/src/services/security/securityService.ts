@@ -1,73 +1,120 @@
-import client from '@/lib/api/client';
+import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AuthorManage, RoleManage, GroupManage, MenuByAuthority } from '@/types/foundation/security';
-
-// Authority Management
-export const getAuthorList = async (params: SearchParams): Promise<PageResponse<AuthorManage>> => {
- return client.get<PageResponse<AuthorManage>>('/admin/system/authorities', { params });
-};
-
-export const getAuthor = async (authorCode: string): Promise<AuthorManage> => {
- return client.get<AuthorManage>(`/admin/system/authorities/${authorCode}`);
-};
-
-export const createAuthor = async (author: Partial<AuthorManage>): Promise<void> => {
- return client.post('/admin/system/authorities', author);
-};
-
-export const updateAuthor = async (author: Partial<AuthorManage>): Promise<void> => {
- return client.put(`/admin/system/authorities/${author.authorCode}`, author);
-};
-
-export const deleteAuthor = async (authorCode: string): Promise<void> => {
- return client.delete(`/admin/system/authorities/${authorCode}`);
-};
-
-// Role Management
-export const getRoleList = async (params: SearchParams): Promise<PageResponse<RoleManage>> => {
- return client.get<PageResponse<RoleManage>>('/admin/system/roles', { params });
-};
-
-export const getRole = async (roleCode: string): Promise<RoleManage> => {
- return client.get<RoleManage>(`/admin/system/roles/${roleCode}`);
-};
-
-export const createRole = async (role: Partial<RoleManage>): Promise<void> => {
- return client.post('/admin/system/roles', role);
-};
-
-export const updateRole = async (role: Partial<RoleManage>): Promise<void> => {
- return client.put(`/admin/system/roles/${role.roleCode}`, role);
-};
-
-export const deleteRole = async (roleCode: string): Promise<void> => {
- return client.delete(`/admin/system/roles/${roleCode}`);
-};
-
-// Group Management
-export const getGroupList = async (params: SearchParams): Promise<PageResponse<GroupManage>> => {
- return client.get<PageResponse<GroupManage>>('/admin/system/groups', { params });
-};
-
-export const getGroup = async (groupId: string): Promise<GroupManage> => {
- return client.get<GroupManage>(`/admin/system/groups/${groupId}`);
-};
-
-export const createGroup = async (group: Partial<GroupManage>): Promise<void> => {
- return client.post('/admin/system/groups', group);
-};
-
-export const updateGroup = async (group: Partial<GroupManage>): Promise<void> => {
- return client.put(`/admin/system/groups/${group.groupId}`, group);
-};
-
-export const deleteGroup = async (groupId: string): Promise<void> => {
- return client.delete(`/admin/system/groups/${groupId}`);
-};
+import { AxiosRequestConfig } from 'axios';
 
 /**
- * Get menu list for a specific authority
+ * 권한 관리 서비스 (Admin)
  */
-export const getMenuCreatList = async (authorCode: string): Promise<PageResponse<MenuByAuthority>> => {
-  return client.get<PageResponse<MenuByAuthority>>(`/admin/system/authorities/${authorCode}/menus`);
-};
+class AuthorityAdminService extends AdminService {
+  constructor() {
+    super('/authorities', 'system');
+  }
+
+  async getAuthorList(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<AuthorManage>> {
+    return this.get<PageResponse<AuthorManage>>('', { ...config, params });
+  }
+
+  async getAuthor(authorCode: string, config?: AxiosRequestConfig): Promise<AuthorManage> {
+    return this.get<AuthorManage>(`/${authorCode}`, config);
+  }
+
+  async createAuthor(author: Partial<AuthorManage>, config?: AxiosRequestConfig): Promise<void> {
+    return this.post<void>('', author, config);
+  }
+
+  async updateAuthor(author: Partial<AuthorManage>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/${author.authorCode}`, author, config);
+  }
+
+  async deleteAuthor(authorCode: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/${authorCode}`, config);
+  }
+
+  /** 특정 권한에 할당된 메뉴 목록 조회 */
+  async getMenuByAuthority(authorCode: string, config?: AxiosRequestConfig): Promise<PageResponse<MenuByAuthority>> {
+    return this.get<PageResponse<MenuByAuthority>>(`/${authorCode}/menus`, config);
+  }
+}
+
+/**
+ * 롤 관리 서비스 (Admin)
+ */
+class RoleAdminService extends AdminService {
+  constructor() {
+    super('/roles', 'system');
+  }
+
+  async getRoleList(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<RoleManage>> {
+    return this.get<PageResponse<RoleManage>>('', { ...config, params });
+  }
+
+  async getRole(roleCode: string, config?: AxiosRequestConfig): Promise<RoleManage> {
+    return this.get<RoleManage>(`/${roleCode}`, config);
+  }
+
+  async createRole(role: Partial<RoleManage>, config?: AxiosRequestConfig): Promise<void> {
+    return this.post<void>('', role, config);
+  }
+
+  async updateRole(role: Partial<RoleManage>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/${role.roleCode}`, role, config);
+  }
+
+  async deleteRole(roleCode: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/${roleCode}`, config);
+  }
+}
+
+/**
+ * 그룹 관리 서비스 (Admin)
+ */
+class GroupAdminService extends AdminService {
+  constructor() {
+    super('/groups', 'system');
+  }
+
+  async getGroupList(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<GroupManage>> {
+    return this.get<PageResponse<GroupManage>>('', { ...config, params });
+  }
+
+  async getGroup(groupId: string, config?: AxiosRequestConfig): Promise<GroupManage> {
+    return this.get<GroupManage>(`/${groupId}`, config);
+  }
+
+  async createGroup(group: Partial<GroupManage>, config?: AxiosRequestConfig): Promise<void> {
+    return this.post<void>('', group, config);
+  }
+
+  async updateGroup(group: Partial<GroupManage>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/${group.groupId}`, group, config);
+  }
+
+  async deleteGroup(groupId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/${groupId}`, config);
+  }
+}
+
+export const authorityAdminService = new AuthorityAdminService();
+export const roleAdminService = new RoleAdminService();
+export const groupAdminService = new GroupAdminService();
+
+// Backward compatibility exports
+export const getAuthorList = authorityAdminService.getAuthorList.bind(authorityAdminService);
+export const getAuthor = authorityAdminService.getAuthor.bind(authorityAdminService);
+export const createAuthor = authorityAdminService.createAuthor.bind(authorityAdminService);
+export const updateAuthor = authorityAdminService.updateAuthor.bind(authorityAdminService);
+export const deleteAuthor = authorityAdminService.deleteAuthor.bind(authorityAdminService);
+export const getMenuCreatList = authorityAdminService.getMenuByAuthority.bind(authorityAdminService);
+
+export const getRoleList = roleAdminService.getRoleList.bind(roleAdminService);
+export const getRole = roleAdminService.getRole.bind(roleAdminService);
+export const createRole = roleAdminService.createRole.bind(roleAdminService);
+export const updateRole = roleAdminService.updateRole.bind(roleAdminService);
+export const deleteRole = roleAdminService.deleteRole.bind(roleAdminService);
+
+export const getGroupList = groupAdminService.getGroupList.bind(groupAdminService);
+export const getGroup = groupAdminService.getGroup.bind(groupAdminService);
+export const createGroup = groupAdminService.createGroup.bind(groupAdminService);
+export const updateGroup = groupAdminService.updateGroup.bind(groupAdminService);
+export const deleteGroup = groupAdminService.deleteGroup.bind(groupAdminService);

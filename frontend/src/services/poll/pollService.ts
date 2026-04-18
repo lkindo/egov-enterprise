@@ -5,68 +5,53 @@ import { AxiosRequestConfig } from 'axios';
 
 /**
  * 온라인 설문(Poll) 서비스
- * 
- * NOTE: 이 서비스는 레거시 .do 서버 엔드포인트를 호출하는 과도기적 스펙을 유지하고 있습니다.
- * 점진적으로 AdminService 기반의 RESTful 환경으로 이행할 예정입니다.
+ * 백엔드 PollApiController 연동 (/api/v1/polls)
  */
 class PollService extends ApiService {
   constructor() {
-    super('/uss/olp/opm');
+    super('polls');
   }
 
   /** 설문 목록 조회 */
   async getPollList(params: PollSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<OnlinePollManageVO>> {
-    return this.get<PageResponse<OnlinePollManageVO>>('/listOnlinePollManage.do', { ...config, params });
+    return this.get<PageResponse<OnlinePollManageVO>>('', { 
+      ...config, 
+      params: {
+        ...params,
+        searchWrd: params.searchKeyword 
+      }
+    });
   }
 
   /** 설문 상세 조회 */
   async getPollDetail(pollId: string, config?: AxiosRequestConfig): Promise<OnlinePollManageVO> {
-    return this.get<OnlinePollManageVO>(`/detailOnlinePollManage.do`, { ...config, params: { pollId } });
+    return this.get<OnlinePollManageVO>(`/${pollId}`, config);
   }
 
   /** 설문 등록 */
   async createPoll(poll: Partial<OnlinePollManageVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post('/registOnlinePollManage.do', poll, config);
+    return this.post('', poll, config);
   }
 
   /** 설문 수정 */
   async updatePoll(poll: Partial<OnlinePollManageVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post('/updtOnlinePollManage.do', poll, config);
+    if (!poll.pollId) throw new Error('pollId is required for update');
+    return this.put(`/${poll.pollId}`, poll, config);
   }
 
   /** 설문 삭제 */
   async deletePoll(pollId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.post(`/detailOnlinePollManage.do`, null, { ...config, params: { cmd: 'del', pollId } });
+    return this.delete(`/${pollId}`, config);
   }
 
   /** 설문 항목 목록 조회 */
   async getPollItemList(pollId: string, config?: AxiosRequestConfig): Promise<OnlinePollItemVO[]> {
-    return this.get<OnlinePollItemVO[]>(`/listOnlinePollItem.do`, { ...config, params: { pollId } });
+    return this.get<OnlinePollItemVO[]>(`/${pollId}/items`, config);
   }
 
-  /** 설문 항목 등록 */
-  async createPollItem(item: Partial<OnlinePollItemVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post('/registOnlinePollItem.do', item, config);
-  }
-
-  /** 설문 항목 수정 */
-  async updatePollItem(item: Partial<OnlinePollItemVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post('/updtOnlinePollItem.do', item, config);
-  }
-
-  /** 설문 항목 삭제 */
-  async deletePollItem(pollId: string, pollIemId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.post(`/delOnlinePollItem.do`, null, { ...config, params: { pollId, pollIemId } });
-  }
-
-  /** 설문 참여 */
+  /** 설문 참여(투표) */
   async participatePoll(participation: OnlinePollPartcptnVO, config?: AxiosRequestConfig): Promise<void> {
-    return this.post('/uss/olp/opp/registOnlinePollPartcptn.do'.replace('/uss/olp/opm', ''), participation, config); 
-  }
-
-  /** 설문 통계 결과 조회 */
-  async getPollResult(pollId: string, config?: AxiosRequestConfig): Promise<Record<string, unknown>> {
-    return this.get<Record<string, unknown>>('/uss/olp/opp/egovOnlinePollManageStatistics.do'.replace('/uss/olp/opm', ''), { ...config, params: { pollId } });
+    return this.post(`/${participation.pollId}/vote/${participation.pollIemId}`, null, config);
   }
 }
 
@@ -79,8 +64,6 @@ export const createPoll = pollService.createPoll.bind(pollService);
 export const updatePoll = pollService.updatePoll.bind(pollService);
 export const deletePoll = pollService.deletePoll.bind(pollService);
 export const getPollItemList = pollService.getPollItemList.bind(pollService);
-export const createPollItem = pollService.createPollItem.bind(pollService);
-export const updatePollItem = pollService.updatePollItem.bind(pollService);
-export const deletePollItem = pollService.deletePollItem.bind(pollService);
 export const participatePoll = pollService.participatePoll.bind(pollService);
-export const getPollResult = pollService.getPollResult.bind(pollService);
+
+export default pollService;

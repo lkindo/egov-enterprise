@@ -79,7 +79,17 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
                 }
                 
                 if (isMatched) {
-                    log.info(">>> Authentication successful (Egov pattern) for user: {}", userId);
+                    log.info(">>> Authentication successful (Egov pattern) for user: {}. Migrating to BCrypt.", userId);
+                    // [Security Modernization] 성공적인 로그인 시 BCrypt로 자동 마이그레이션
+                    try {
+                        String newEncodedPassword = passwordEncoder.encode(password);
+                        userEntity.updatePassword(newEncodedPassword);
+                        // Save will be handled by @Transactional at the end of method or explicit save
+                        userRepository.save(userEntity);
+                        log.info(">>> User {} password migrated to BCrypt successfully.", userId);
+                    } catch (Exception e) {
+                        log.error(">>> Failed to migrate password to BCrypt for user: {}", userId, e);
+                    }
                 }
             }
             

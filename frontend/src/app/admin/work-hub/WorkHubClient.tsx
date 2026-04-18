@@ -29,7 +29,8 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { scheduleService } from '@/services/business/user/ScheduleService';
-import { getDeptJobList } from '@/services/deptJob/deptJobService';
+import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
+
 import { reportService } from '@/services/business/user/ReportService';
 
 interface WorkHubClientProps {
@@ -71,7 +72,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
 
   const { data: jobData } = useQuery({
     queryKey: ['work-jobs', searchKeyword],
-    queryFn: () => getDeptJobList({ searchKeyword }),
+    queryFn: () => deptJobUserService.getDeptJobBoxes({ searchWrd: searchKeyword }),
     enabled: activeTab === 'job'
   });
   const jobs = jobData?.list || [];

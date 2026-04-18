@@ -10,27 +10,32 @@ export abstract class ApiService {
   protected client = client;
 
   constructor(basePath: string) {
-    this.basePath = basePath;
+    this.basePath = basePath.replace(/^\//, '');
+    // Ensure basePath ends with / if path is provided later, 
+    // but the current implementation uses `${this.basePath}${path}`
+    // so if basePath is 'boards' and path is '/1', it's 'boards/1'.
+    // If path is '', it's 'boards'.
   }
 
   protected async get<T = unknown>(path: string = '', config?: AxiosRequestConfig): Promise<T> {
-    // Spring Boot Backend (ComDefaultVO) 파라미터 매핑 지원
+    // Spring Boot Backend (BaseSearchDto) 파라미터 매핑 지원
     let requestConfig = config;
     if (config?.params) {
       const { params } = config;
       // 0-based page -> 1-based pageIndex
       if (params.page !== undefined && params.pageIndex === undefined) {
         params.pageIndex = (Number(params.page) || 0) + 1;
-        delete params.page; // page 제거 (pageIndex 전송)
+        delete params.page;
       }
-      // page 번호 -> pageIndex
+      // size -> recordCountPerPage 매핑 (BaseSearchDto 표준)
+      if (params.size !== undefined && params.recordCountPerPage === undefined) {
+        params.recordCountPerPage = params.size;
+        delete params.size;
+      }
+      // page 번호 -> pageIndex (legacy support)
       if (params['page 번호'] !== undefined && params.pageIndex === undefined) {
         params.pageIndex = Number(params['page 번호']) || 1;
         delete params['page 번호'];
-      }
-      // size -> pageSize 매핑 (선택 사항)
-      if (params.size !== undefined && params.pageSize === undefined) {
-        params.pageSize = params.size;
       }
       requestConfig = { ...config, params };
     }

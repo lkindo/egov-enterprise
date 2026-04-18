@@ -25,7 +25,6 @@ import java.util.List;
 public class LoginPolicyApiController {
 
     private final LoginPolicyManageService loginPolicyManageService;
-    private final EgovPropertyService propertiesService;
 
     @Operation(summary = "로그인 정책 목록 조회", description = "시스템 사용자의 로그인 정책 목록을 페이징 조회합니다.")
     @GetMapping

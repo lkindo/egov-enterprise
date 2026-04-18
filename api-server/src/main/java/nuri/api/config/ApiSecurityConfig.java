@@ -28,7 +28,6 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import nuri.foundation.security.service.EgovPasswordEncoder;
 import java.util.HashMap;
@@ -59,9 +58,6 @@ public class ApiSecurityConfig {
                 String encodingId = "bcrypt";
                 Map<String, PasswordEncoder> encoders = new HashMap<>();
                 encoders.put("bcrypt", new BCryptPasswordEncoder());
-                @SuppressWarnings("deprecation")
-                PasswordEncoder noOp = NoOpPasswordEncoder.getInstance();
-                encoders.put("egov", noOp);
                 return new DelegatingPasswordEncoder(encodingId, encoders);
         }
 

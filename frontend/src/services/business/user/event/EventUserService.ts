@@ -27,19 +27,14 @@ class EventUserService extends UserService {
   async getEvents(
     params: { 
       page?: number; 
-      pageNo?: number;
       size?: number; 
       searchWrd?: string 
     }, 
     config?: AxiosRequestConfig
   ): Promise<PageResponse<Event>> {
-    const page = params.page ?? (params.pageNo ? params.pageNo - 1 : 0);
     return this.get<PageResponse<Event>>('', { 
       ...config, 
-      params: { 
-        ...params, 
-        page 
-      } 
+      params 
     });
   }
 

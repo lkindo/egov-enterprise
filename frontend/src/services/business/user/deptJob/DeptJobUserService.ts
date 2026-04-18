@@ -1,77 +1,63 @@
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
+import { DeptJobBxVO } from '@/types/business/deptJob';
 import { AxiosRequestConfig } from 'axios';
-
-export interface DeptJob {
-  deptJobId: string;
-  deptJobNm: string;
-  deptJobCn: string;
-  deptJobSe: string; // 1:주요업무, 2:일반업무
-  deptId: string;
-  deptNm?: string;
-  chargerId: string;
-  chargerNm?: string;
-  priort: string; // 1:긴급, 2:보통, 3:여유
-  sttus: string; // 1:진행중, 2:완료
-  frstRegisterId: string;
-  createdDate: string;
-}
 
 /**
  * 부서업무 관리 서비스(User)
+ * 백엔드 DeptJobApiController 연동 (/api/v1/dept-jobs)
  */
 class DeptJobUserService extends UserService {
   constructor() {
-    super('/deptjob');
+    super('/dept-jobs');
   }
 
   /**
-   * 부서업무 목록 조회
+   * 부서 업무함 목록 조회
    */
-  async getDeptJobs(
+  async getDeptJobBoxes(
     params: { 
-      pageNo?: number; 
-      pageIndex?: number; 
       page?: number; 
-      pageUnit?: number; 
-      searchWrd?: string 
+      size?: number; 
+      searchWrd?: string;
+      deptId?: string;
     }, 
     config?: AxiosRequestConfig
-  ): Promise<PageResponse<DeptJob>> {
-    const pageIndex = params.pageIndex ?? params.pageNo ?? params.page ?? 0;
-    
-    return this.get<PageResponse<DeptJob>>('', { 
+  ): Promise<PageResponse<DeptJobBxVO>> {
+    return this.get<PageResponse<DeptJobBxVO>>('/boxes', { 
       ...config, 
-      params: { 
-        ...params, 
-        pageIndex 
-      } 
+      params
     });
   }
 
   /**
-   * 부서업무 상세 조회
+   * 부서 업무함 상세 조회
    */
-  async getDeptJob(id: string, config?: AxiosRequestConfig): Promise<DeptJob> {
-    return this.get<DeptJob>(`/${id}`, config);
+  async getDeptJobBox(id: string, config?: AxiosRequestConfig): Promise<DeptJobBxVO> {
+    return this.get<DeptJobBxVO>(`/boxes/${id}`, config);
   }
 
   /**
-   * 부서업무 등록/수정
+   * 부서 업무함 등록
    */
-  async saveDeptJob(data: Partial<DeptJob>, config?: AxiosRequestConfig): Promise<void> {
-    if (data.deptJobId) {
-      return this.put<void>(`/${data.deptJobId}`, data, config);
-    }
-    return this.post<void>('', data, config);
+  async createDeptJobBox(data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<string> {
+    return this.post<string>('/boxes', data, config);
   }
 
   /**
-   * 상태 변경(완료 처리 등)
+   * 부서 업무함 수정
    */
-  async updateStatus(id: string, sttus: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.patch<void>(`/${id}/status`, { sttus }, config);
+  async updateDeptJobBox(id: string, data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/boxes/${id}`, data, config);
+  }
+
+  /**
+   * 부서 업무함 삭제
+   */
+  async deleteDeptJobBox(id: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/boxes/${id}`, config);
   }
 }
 
 export const deptJobUserService = new DeptJobUserService();
+

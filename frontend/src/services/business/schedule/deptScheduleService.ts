@@ -1,30 +1,78 @@
-import client from '@/lib/api/client';
+import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { DeptSchedule, ScheduleSearchParams } from '@/types/business/schedule';
 
-const BASE_URL = '/schedule';
+/**
+ * 부서 일정 관리 서비스
+ * 백엔드 ScheduleApiController (business-suite)와 연동
+ */
+class DeptScheduleService extends ApiService {
+  constructor() {
+    super('/schedule');
+  }
 
-export const getDeptScheduleList = async (params: ScheduleSearchParams = {}): Promise<PageResponse<DeptSchedule>> => {
- return client.get<PageResponse<DeptSchedule>>(BASE_URL, { params });
-};
+  /**
+   * 부서 일정 목록 조회
+   * @param params 검색 파라미터
+   * @returns 일정 페이지 결과
+   */
+  public async getDeptScheduleList(params: ScheduleSearchParams = {}): Promise<PageResponse<DeptSchedule>> {
+    return this.get<PageResponse<DeptSchedule>>('', params);
+  }
 
-export const getDeptScheduleMonthList = async (params: { yearMonth: string }): Promise<DeptSchedule[]> => {
- return client.get<DeptSchedule[]>(`${BASE_URL}/monthly`, { params });
-};
+  /**
+   * 월별 일정 데이터 조회
+   * @param params { yearMonth: 'YYYY-MM' }
+   * @returns 일정 배열
+   */
+  public async getDeptScheduleMonthList(params: { yearMonth: string }): Promise<DeptSchedule[]> {
+    return this.get<DeptSchedule[]>('/monthly', params);
+  }
 
-export const getDeptScheduleByRange = async (startDate: string, endDate: string): Promise<DeptSchedule[]> => {
- return client.get<DeptSchedule[]>(`${BASE_URL}/range`, { params: { startDate, endDate } });
-};
+  /**
+   * 기간 내 일정 조회
+   * @param startDate 시작일
+   * @param endDate 종료일
+   * @returns 일정 배열
+   */
+  public async getDeptScheduleByRange(startDate: string, endDate: string): Promise<DeptSchedule[]> {
+    return this.get<DeptSchedule[]>('/range', { startDate, endDate });
+  }
 
-export const getDeptSchedule = async (id: string): Promise<DeptSchedule> => {
- return client.get<DeptSchedule>(`${BASE_URL}/${id}`);
-};
+  /**
+   * 일정 상세 조회
+   * @param id 일정 ID
+   * @returns 일정 상세 정보
+   */
+  public async getDeptSchedule(id: string): Promise<DeptSchedule> {
+    return this.get<DeptSchedule>(`/${id}`);
+  }
 
-export const createDeptSchedule = async (schedule: Partial<DeptSchedule>): Promise<DeptSchedule> =>
- client.post(BASE_URL, schedule);
+  /**
+   * 일정 등록
+   * @param schedule 일정 정보
+   * @returns 생성된 일정 정보
+   */
+  public async createDeptSchedule(schedule: Partial<DeptSchedule>): Promise<DeptSchedule> {
+    return this.post<DeptSchedule>('', schedule);
+  }
 
-export const updateDeptSchedule = async (id: string, schedule: Partial<DeptSchedule>): Promise<void> =>
- client.put(`${BASE_URL}/${id}`, schedule);
+  /**
+   * 일정 수정
+   * @param id 일정 ID
+   * @param schedule 수정할 일정 정보
+   */
+  public async updateDeptSchedule(id: string, schedule: Partial<DeptSchedule>): Promise<void> {
+    return this.put<void>(`/${id}`, schedule);
+  }
 
-export const deleteDeptSchedule = async (id: string): Promise<void> =>
- client.delete(`${BASE_URL}/${id}`);
+  /**
+   * 일정 삭제
+   * @param id 일정 ID
+   */
+  public async deleteDeptSchedule(id: string): Promise<void> {
+    return this.delete<void>(`/${id}`);
+  }
+}
+
+export const deptScheduleService = new DeptScheduleService();

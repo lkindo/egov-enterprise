@@ -5,6 +5,7 @@ import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.domain.user.repository.UserRepository;
 import nuri.business.service.schedule.dto.ScheduleDto;
+import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -83,7 +84,7 @@ class ScheduleServiceTest {
     @DisplayName("사용자 팝업 조회 성공")
     void selectEmpLyrPopup_Success() {
         // Given
-        egovframework.com.cmm.ComDefaultVO searchVO = new egovframework.com.cmm.ComDefaultVO();
+        BaseSearchDto searchVO = new BaseSearchDto();
         searchVO.setPageIndex(1);
         searchVO.setPageSize(10);
         Page<User> page = new PageImpl<>(List.of(User.builder().userId("user1").userNm("Name").esntlId("E1").password("pass").build()));

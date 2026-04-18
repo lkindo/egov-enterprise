@@ -1,47 +1,69 @@
-import { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * ⑤씪님留ㅻ돱님DTO
+ * 온라인 매뉴얼 DTO
  */
 export interface ManualDto {
-  onlineMnlId?: string;
-  onlineMnlNm: string;
-  onlineMnlDc: string;
-  onlineMnlCours: string;
-  frstRegisterId?: string;
-  createdDate?: string;
+  onlineMnlId?: string; // 온라인매뉴얼ID
+  onlineMnlNm: string; // 온라인매뉴얼명
+  onlineMnlDc: string; // 온라인매뉴얼설명
+  onlineMnlCours: string; // 온라인매뉴얼경로
+  frstRegisterId?: string; // 최초등록자ID
+  createdDate?: string; // 생성일시
 }
 
+/**
+ * 온라인 매뉴얼 관리 서비스
+ * 백엔드 HelpApiController (/api/v1/help/manuals)와 연동
+ */
 class ManualAdminService extends ApiService {
   constructor() {
     super('/help');
   }
 
-  /** 留ㅻ돱님紐⑸줉 조회 */
-  async getManualList(params?: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig) {
-    return this.get<PageResponse<ManualDto>>('/manuals', { ...config, params });
+  /**
+   * 온라인 매뉴얼 목록 조회
+   * @param params 검색 파라미터
+   * @returns 온라인 매뉴얼 페이지 결과
+   */
+  public async getManuals(params: any): Promise<PageResponse<ManualDto>> {
+    return this.get<PageResponse<ManualDto>>('/manuals', params);
   }
 
-  /** 留ㅻ돱님상세 조회 */
-  async getManual(mnlId: string, config?: AxiosRequestConfig) {
-    return this.get<ManualDto>(`/manuals/${mnlId}`, config);
+  /**
+   * 온라인 매뉴얼 상세 조회
+   * @param mnlId 매뉴얼 ID
+   * @returns 온라인 매뉴얼 상세 정보
+   */
+  public async getManual(mnlId: string): Promise<ManualDto> {
+    return this.get<ManualDto>(`/manuals/${mnlId}`);
   }
 
-  /** 留ㅻ돱님등록 */
-  async createManual(dto: ManualDto, config?: AxiosRequestConfig) {
-    return this.post<string>('/manuals', dto, config);
+  /**
+   * 온라인 매뉴얼 등록
+   * @param manual 매뉴얼 정보
+   * @returns 생성된 매뉴얼 ID
+   */
+  public async insertManual(manual: ManualDto): Promise<string> {
+    return this.post<string>('/manuals', manual);
   }
 
-  /** 留ㅻ돱님?섏젙 */
-  async updateManual(mnlId: string, dto: ManualDto, config?: AxiosRequestConfig) {
-    return this.put<void>(`/manuals/${mnlId}`, dto, config);
+  /**
+   * 온라인 매뉴얼 수정
+   * @param mnlId 매뉴얼 ID
+   * @param manual 수정할 매뉴얼 정보
+   */
+  public async updateManual(mnlId: string, manual: ManualDto): Promise<void> {
+    return this.put<void>(`/manuals/${mnlId}`, manual);
   }
 
-  /** 留ㅻ돱님님젣 */
-  async deleteManual(mnlId: string, config?: AxiosRequestConfig) {
-    return this.delete<void>(`/manuals/${mnlId}`, config);
+  /**
+   * 온라인 매뉴얼 삭제
+   * @param mnlId 매뉴얼 ID
+   */
+  public async deleteManual(mnlId: string): Promise<void> {
+    return this.delete<void>(`/manuals/${mnlId}`);
   }
 }
 
