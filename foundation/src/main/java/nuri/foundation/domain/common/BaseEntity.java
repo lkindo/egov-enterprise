@@ -12,6 +12,7 @@ import org.springframework.data.annotation.LastModifiedBy;
 
 /**
  * 기본 생성/수정자 메타데이터 엔티티
+ * [Standardization] CreatedBy -> frstRegisterId, LastModifiedBy -> lastUpdusrId 별칭 제공
  */
 @Getter
 @Setter
@@ -28,7 +29,8 @@ public abstract class BaseEntity extends BaseTimeEntity {
     @Column(name = "LAST_UPDUSR_ID", length = 20)
     protected String lastModifiedBy;
 
-    // 별칭 메서드 (전자정부 관례 대응)
+    // ----- [Legacy Aliases] -----
+
     public String getFrstRegisterId() {
         return createdBy;
     }
@@ -37,21 +39,11 @@ public abstract class BaseEntity extends BaseTimeEntity {
         return lastModifiedBy;
     }
 
-    // 하위 호환성을 위한 Setter Alias
     public void setFrstRegisterId(String id) {
         this.createdBy = id;
     }
 
     public void setLastUpdusrId(String id) {
-        this.lastModifiedBy = id;
-    }
-
-    // LeaderScheduleService 등에서의 직접 호출 대응
-    public void setCreatedBy(String id) {
-        this.createdBy = id;
-    }
-
-    public void setLastModifiedBy(String id) {
         this.lastModifiedBy = id;
     }
 }

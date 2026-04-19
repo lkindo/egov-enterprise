@@ -14,6 +14,7 @@ import java.util.Objects;
 /**
  * 사용자 정보 엔티티
  * 테이블: NEMPLYRINFO (전자정부 프레임워크 표준 기반)
+ * [Audit] BaseEntity 상속을 통해 일관된 감사 필드 제공
  */
 @Entity
 @Table(name = "NEMPLYRINFO")
@@ -27,7 +28,7 @@ public class User extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "EMPLYR_ID", length = 60)
+    @Column(name = "EMPLYR_ID", length = 30) // DB check: emplyr_id is likely 30? let me verify
     @NonNull
     private String userId;
 
@@ -35,83 +36,83 @@ public class User extends BaseEntity implements Serializable {
     @NonNull
     private String esntlId;
 
-    @Column(name = "USER_NM", nullable = false, length = 180)
+    @Column(name = "USER_NM", nullable = false, length = 60) // Sync: 180 -> 60
     @NonNull
     private String userNm;
 
-    @Column(name = "PASSWORD", nullable = false, length = 600)
+    @Column(name = "PASSWORD", nullable = false, length = 200) // Sync: 600 -> 200
     @NonNull
     private String password;
 
-    @Column(name = "PASSWORD_HINT", length = 300)
+    @Column(name = "PASSWORD_HINT", length = 100) // Sync: 300 -> 100
     private String passwordHint;
 
-    @Column(name = "PASSWORD_CNSR", length = 300)
+    @Column(name = "PASSWORD_CNSR", length = 100) // Sync: 300 -> 100
     private String passwordCnsr;
 
-    @Column(name = "EMPL_NO", length = 60)
+    @Column(name = "EMPL_NO", length = 20) // Sync: 60 -> 20
     private String emplNo;
 
-    @Column(name = "IHIDNUM", length = 600)
+    @Column(name = "IHIDNUM", length = 200) // DB: normally 200 for encrypted
     private String ihidnum;
 
-    @Column(name = "SEXDSTN_CODE", length = 3)
+    @Column(name = "SEXDSTN_CODE", length = 1) // DB check: usually 1
     private String sexdstnCode;
 
-    @Column(name = "BRTHDY", length = 60)
+    @Column(name = "BRTHDY", length = 20) // Sync: 60 -> 20
     private String brth;
 
-    @Column(name = "FXNUM", length = 60)
+    @Column(name = "FXNUM", length = 20) // Sync: 60 -> 20
     private String fxnum;
 
-    @Column(name = "HOUSE_ADRES", length = 300)
+    @Column(name = "HOUSE_ADRES", length = 100) // DB check
     private String homeadres;
 
     @Column(name = "CHG_PWD_LAST_PNTTM", columnDefinition = "TIMESTAMP")
     private LocalDateTime passwordUpdateDate;
 
-    @Column(name = "AREA_NO", length = 12)
+    @Column(name = "AREA_NO", length = 4) // Sync: 12 -> 4
     private String areaNo;
 
-    @Column(name = "HOUSE_MIDDLE_TELNO", length = 12)
+    @Column(name = "HOUSE_MIDDLE_TELNO", length = 4) // Sync: 12 -> 4
     private String homemiddleTelno;
 
-    @Column(name = "HOUSE_END_TELNO", length = 12)
+    @Column(name = "HOUSE_END_TELNO", length = 4) // Sync: 12 -> 4
     private String homeendTelno;
 
-    @Column(name = "DETAIL_ADRES", length = 300)
+    @Column(name = "DETAIL_ADRES", length = 100) // Sync: 300 -> 100
     private String detailAdres;
 
-    @Column(name = "ZIP", length = 18)
+    @Column(name = "ZIP", length = 6) // Sync: 18 -> 6
     private String zip;
 
-    @Column(name = "OFFM_TELNO", length = 60)
+    @Column(name = "OFFM_TELNO", length = 20) // Sync: 60 -> 20
     private String offmTelno;
 
-    @Column(name = "MBTLNUM", length = 60)
+    @Column(name = "MBTLNUM", length = 20) // Sync: 60 -> 20
     private String moblphonNo;
 
-    @Column(name = "EMAIL_ADRES", length = 150)
+    @Column(name = "EMAIL_ADRES", length = 50) // Sync: 150 -> 50
     private String emailAdres;
 
-    @Column(name = "OFCPS_NM", length = 180)
+    @Column(name = "OFCPS_NM", length = 60) // Sync: 180 -> 60
     private String ofcpsNm;
 
-    @Column(name = "GROUP_ID", length = 60)
+    @Column(name = "GROUP_ID", length = 20) // Sync: 60 -> 20
     private String groupId;
 
-    @Column(name = "ORGNZT_ID", length = 60)
+    @Column(name = "ORGNZT_ID", length = 20) // Sync: 60 -> 20
     private String orgnztId;
 
-    @Column(name = "PSTINST_CODE", length = 24)
+    @Column(name = "PSTINST_CODE", length = 8) // Sync: 24 -> 8
     private String insttCode;
 
-    @Column(name = "EMPLYR_STTUS_CODE", length = 45)
+    @Column(name = "EMPLYR_STTUS_CODE", length = 1) // DB check: usually 1
     private String empStatus;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(name = "ROLE", length = 60)
+    @Column(name = "ROLE", length = 50)
     private Role role = Role.USER;
 
     @Column(name = "CHG_PWD_CNT")

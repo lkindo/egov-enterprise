@@ -1,4 +1,4 @@
-import { PaginationInfo } from './system';
+﻿import { PaginationInfo } from './system';
 
 export interface Program {
   progrmFileNm: string;
@@ -6,9 +6,14 @@ export interface Program {
   progrmKoreanNm: string;
   url: string;
   progrmDc?: string;
+  // Audit Fields (Newly synchronized via Full-Stack Survey)
+  frstRegisterId?: string;
+  frstRegisterPnttm?: string;
+  lastUpdusrId?: string;
+  lastUpdtPnttm?: string;
 }
 
-/** 님client님ApiResponse.data瑜吏곸젒 諛섑솚?섎濡님섏씠吏ㅼ씠님援ъ“ */
+/** client의 ApiResponse.data를 직접 반환하도록 페이지네이션 구조 정의 */
 export interface ProgramResponse {
   list: Program[];
   total: number;

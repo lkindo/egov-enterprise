@@ -1,5 +1,6 @@
 package nuri.foundation.service.operation.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import nuri.foundation.domain.operation.EventInfo;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,12 +10,23 @@ import java.time.LocalDateTime;
 @Builder
 public class EventInfoDto {
     private String eventId;
+    
+    @JsonProperty("eventNm")
+    private String bsnsCode; // Mapping bsnsCode to eventNm as a temporary measure if name is missing, 
+                             // OR better, we will assume eventNm is part of the contract now.
+                             
     private String bsnsYear;
-    private String bsnsCode;
     private String eventCn;
+    
+    @JsonProperty("eventBeginDe")
     private String eventSvcBgnde;
+    
+    @JsonProperty("eventEndDe")
     private String eventSvcEndde;
+    
+    @JsonProperty("psncpa")
     private Long svcUseNmprCo;
+    
     private String chargerNm;
     private String prparetgCn;
     private String eventTyCode;
@@ -24,6 +36,16 @@ public class EventInfoDto {
     private LocalDateTime frstRegisterPnttm;
     private String lastUpdusrId;
     private LocalDateTime lastUpdtPnttm;
+
+    // Aliases for Frontend Compatibility
+    @JsonProperty("eventNm")
+    public String getEventNm() { return this.eventCn != null && this.eventCn.length() > 20 ? this.eventCn.substring(0, 20) : this.eventCn; }
+
+    @JsonProperty("rceptBeginDe")
+    public String getRceptBeginDe() { return this.eventSvcBgnde; }
+
+    @JsonProperty("rceptEndDe")
+    public String getRceptEndDe() { return this.eventSvcEndde; }
 
     public static EventInfoDto from(EventInfo entity) {
         return EventInfoDto.builder()

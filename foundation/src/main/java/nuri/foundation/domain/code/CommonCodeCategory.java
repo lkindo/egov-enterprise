@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * ⑤벏???브쑬履꾨뗀諭酉(CCMMNCLCODE ???뵠筌띲끋釉
+ * 공통분류코드 엔티티 (CCMMNCLCODE 테이블 매핑)
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

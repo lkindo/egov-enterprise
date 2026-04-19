@@ -1,5 +1,6 @@
 package nuri.business.service.board.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import nuri.business.domain.board.Board;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -7,119 +8,124 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * 게시판 정보 전송 객체 (DTO)
+ * [Security] 비밀번호 필드 외부 노출 차단 (@JsonIgnore)
+ */
 @Getter
 @Builder
-@Schema(description = "Description")
+@Schema(description = "게시물 정보 DTO")
 public class BoardDto {
-    @Schema(description = "Description")
+    @Schema(description = "게시물 ID", example = "1001")
     private final Long id;
 
-    @Schema(description = "Description")
+    @Schema(description = "게시판 ID", example = "BBS_000000000001")
     private final String bbsId;
 
-    @Schema(description = "Description")
+    @Schema(description = "게시물 제목")
     private final String nttSj;
 
-    @Schema(description = "Description")
+    @Schema(description = "게시물 내용")
     private final String nttCn;
 
-    @Schema(description = "Description")
+    @Schema(description = "작성자 이름")
     private final String ntcrNm;
 
-    @Schema(description = "Description")
+    @Schema(description = "조회수")
     private final Integer inqireCo;
 
-    @Schema(description = "Description")
+    @Schema(description = "최초 등록 일시")
     private final LocalDateTime frstRegisterPnttm;
 
-    @Schema(description = "Description")
+    @Schema(description = "첨부파일 ID")
     private final String atchFileId;
 
-    @Schema(description = "Description")
+    @Schema(description = "게시물 번호")
     private final Long nttNo;
 
-    @Schema(description = "Description")
+    @Schema(description = "정렬 순서")
     private final Long sortOrdr;
 
-    @Schema(description = "Description")
+    @Schema(description = "부모 게시물 번호 (답글용)")
     private final String parnts;
 
-    @Schema(description = "Description")
+    @Schema(description = "답글 여부", example = "N")
     private final String replyAt;
 
-    @Schema(description = "Description")
+    @Schema(description = "답글 레벨")
     private final Integer replyLc;
 
-    @Schema(description = "Description")
+    @Schema(description = "게시 시작일")
     private final String ntceBgnde;
 
-    @Schema(description = "Description")
+    @Schema(description = "게시 종료일")
     private final String ntceEndde;
 
-    @Schema(description = "Description")
+    @Schema(description = "사용 여부", example = "Y")
     private final String useAt;
 
-    @Schema(description = "Description")
+    @Schema(description = "만료 여부", example = "N")
     private final String isExpired;
 
-    @Schema(description = "Description")
+    @Schema(description = "최초 등록일 (문자열)")
     private final String frstRegisterPnttmStr;
 
-    @Schema(description = "Description")
+    @Schema(description = "작성자 ID")
     private final String ntcrId;
 
-    @Schema(description = "Description")
+    @Schema(description = "최초 등록자 ID")
     private final String frstRegisterId;
 
-    @Schema(description = "Description")
+    @Schema(description = "최종 수정자 ID")
     private final String lastUpdusrId;
 
-    @Schema(description = "Description")
+    @Schema(description = "최종 수정 일시")
     private final LocalDateTime lastUpdtPnttm;
 
-    @Schema(description = "Description")
+    @JsonIgnore // Security Fix
+    @Schema(description = "게시물 비밀번호 (노출 방지)", accessMode = Schema.AccessMode.READ_ONLY)
     private final String password;
 
-    @Schema(description = "Description")
+    @Schema(description = "비밀 게시글 여부")
     private final String secretAt;
 
-    @Schema(description = "Description")
+    @Schema(description = "블로그 게시글 여부")
     private final String blogAt;
 
-    @Schema(description = "Description")
+    @Schema(description = "댓글 수")
     private final Integer commentCo;
 
-    @Schema(description = "Description")
+    @Schema(description = "게시판 명")
     private final String bbsNm;
 
-    @Schema(description = "Description")
+    @Schema(description = "행사 일시")
     private final LocalDateTime eventDate;
 
-    @Schema(description = "Description")
+    @Schema(description = "QNA 상태", example = "OPEN")
     private final String qnaStatus;
 
-    @Schema(description = "Description")
+    @Schema(description = "QNA 카테고리")
     private final String qnaCategory;
 
-    @Schema(description = "Description")
+    @Schema(description = "공지사항 여부")
     private final String noticeAt;
 
-    @Schema(description = "Aliased Knowledge ID")
+    @Schema(description = "별칭 ID (레거시 호환)")
     private final String knoId;
 
-    @Schema(description = "Aliased Knowledge Name")
+    @Schema(description = "별칭 제목 (레거시 호환)")
     private final String knoNm;
 
-    @Schema(description = "Aliased Knowledge Content")
+    @Schema(description = "별칭 내용 (레거시 호환)")
     private final String knoCn;
 
-    @Schema(description = "Aliased Status Code")
+    @Schema(description = "별칭 상태코드 (레거시 호환)")
     private final String statusCd;
 
-    @Schema(description = "Aliased Category Code")
+    @Schema(description = "별칭 카테고리코드 (레거시 호환)")
     private final String categoryCd;
 
-    @Schema(description = "Formatted Event Date String")
+    @Schema(description = "행사 일시 (문자열)")
     private final String eventDateStr;
 
     public static BoardDto from(Board entity) {

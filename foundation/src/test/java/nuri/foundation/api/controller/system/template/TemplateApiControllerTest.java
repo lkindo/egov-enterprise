@@ -1,7 +1,7 @@
 package nuri.foundation.api.controller.system.template;
 
 import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.foundation.domain.template.TmplatInfo;
+import nuri.foundation.domain.template.Template;
 import nuri.foundation.service.template.TmplatInfoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +56,7 @@ class TemplateApiControllerTest {
     @Test
     @DisplayName("템플릿 상세 조회 성공")
     void testSelectTmplatInfoDetail() throws Exception {
-        TmplatInfo tmplat = TmplatInfo.builder()
+        Template tmplat = Template.builder()
                 .tmplatId("TMPLT_001")
                 .build();
         when(tmplatInfoService.selectTmplatInfoDetail("TMPLT_001")).thenReturn(tmplat);
@@ -69,7 +69,7 @@ class TemplateApiControllerTest {
     @Test
     @DisplayName("템플릿 등록 성공")
     void testInsertTmplatInfo() throws Exception {
-        TmplatInfo tmplat = TmplatInfo.builder()
+        Template tmplat = Template.builder()
                 .tmplatNm("New Template")
                 .build();
 

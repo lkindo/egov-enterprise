@@ -9,11 +9,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import lombok.Builder;
 
 /**
- * Q&A 엔티티
- * 매핑 테이블: NQAINFO
+ * Q&A 엔티티 (NQAINFO 테이블 매핑)
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
@@ -32,35 +30,35 @@ public class Qna extends BaseEntity {
     @Column(name = "QESTN_SJ", length = 255, nullable = false)
     private String qestnSj;
 
-    @Column(name = "QESTN_CN", columnDefinition = "TEXT")
+    @Column(name = "QESTN_CN", length = 2500)
     private String qestnCn;
 
-    @Column(name = "WRITNG_PASSWORD", length = 100)
+    @Column(name = "WRITNG_PASSWORD", length = 20)
     private String writngPassword;
 
-    @Column(name = "WRTER_NM", length = 50)
+    @Column(name = "WRTER_NM", length = 20)
     private String wrterNm;
 
-    @Column(name = "EMAIL_ADRES", length = 100)
+    @Column(name = "EMAIL_ADRES", length = 50)
     private String emailAdres;
 
     @Column(name = "EMAIL_ANSWER_AT", length = 1)
     private String emailAnswerAt;
 
-    @Column(name = "AREA_NO", length = 10)
+    @Column(name = "AREA_NO", length = 4)
     private String areaNo;
 
-    @Column(name = "MIDDLE_TELNO", length = 10)
+    @Column(name = "MIDDLE_TELNO", length = 4)
     private String middleTelno;
 
-    @Column(name = "END_TELNO", length = 10)
+    @Column(name = "END_TELNO", length = 4)
     private String endTelno;
 
-    @Column(name = "QNA_PROCESS_STTUS_CODE", length = 20)
+    @Column(name = "QNA_PROCESS_STTUS_CODE", length = 1)
     @Builder.Default
     private String qnaProcessSttusCode = "Q";
 
-    @Column(name = "ANSWER_CN", columnDefinition = "TEXT")
+    @Column(name = "ANSWER_CN", length = 2500)
     private String answerCn;
 
     @Column(name = "ANSWER_DE", length = 20)

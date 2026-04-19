@@ -75,10 +75,28 @@ class MenuServiceIntegrationTest {
                 .build();
         programRepository.save(program);
 
-        Menu root = new Menu(1L, "ROOT", null, null, 1, "DESC", null, null, "/root", "admin", null, "admin", null);
+        Menu root = Menu.builder()
+                .id(1L)
+                .menuNm("ROOT")
+                .menuOrdr(1)
+                .menuDc("DESC")
+                .modernRoute("/root")
+                .createdBy("admin")
+                .lastModifiedBy("admin")
+                .build();
         menuRepository.save(root);
 
-        Menu child = new Menu(2L, "CHILD", "PROG_01", 1L, 1, "DESC", null, null, "/child", "admin", null, "admin", null);
+        Menu child = Menu.builder()
+                .id(2L)
+                .menuNm("CHILD")
+                .progrmFileNm("PROG_01")
+                .upperMenuNo(1L)
+                .menuOrdr(1)
+                .menuDc("DESC")
+                .modernRoute("/child")
+                .createdBy("admin")
+                .lastModifiedBy("admin")
+                .build();
         menuRepository.save(child);
 
         MenuAuthority auth = MenuAuthority.builder()

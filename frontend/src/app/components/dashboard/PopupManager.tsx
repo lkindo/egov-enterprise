@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { popupService } from '@/services/business/user/PopupService';
@@ -13,7 +13,7 @@ export function PopupManager() {
         async function fetchPopups() {
             try {
                 const popups = await popupService.getActivePopups();
-                // ?꾪꽣留 "ㅻ뒛 ?섎（ 蹂댁? ?딄린" 泥댄겕님?앹뾽 ?쒖쇅
+                // 필터링 "오늘 하루 보지 않기" 체크된 팝업 제외
                 const filteredPopups = (popups || []).filter(popup => {
                     const expireDate = localStorage.getItem(`popup_hide_${popup.popupId}`);
                     if (expireDate) {
@@ -93,13 +93,13 @@ export function PopupManager() {
                                 onClick={() => closePopupForDay(popup.popupId)}
                                 className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 font-medium"
                             >
-                                ㅻ뒛 ?섎（ 蹂댁? ?딄린
+                                오늘 하루 보지 않기
                             </button>
                             <button
                                 onClick={() => closePopup(popup.popupId)}
                                 className="text-[11px] font-bold text-slate-700 hover:text-black"
                             >
-                                リ린
+                                닫기
                             </button>
                         </div>
                     </div>

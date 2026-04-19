@@ -1,22 +1,23 @@
 package nuri.business.domain.notification;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import nuri.foundation.domain.common.BaseEntity;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
+/**
+ * 사용자 알림 엔티티
+ * [Standardization] BaseEntity 상속을 통한 감사 필드 통합
+ */
+@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "N_USER_NOTIFICATION")
 @Getter
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Notification {
+@AllArgsConstructor
+@SuperBuilder
+public class Notification extends BaseEntity {
 
     @Id
     @Column(name = "NTCN_NO", length = 20)
@@ -37,39 +38,20 @@ public class Notification {
     @Column(name = "LINK_URL")
     private String linkUrl;
 
-    @Column(name = "FRST_REGISTER_ID")
-    private String createdBy;
+    @Column(name = "NTCN_TM", length = 20)
+    private String ntfcTime;
 
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime createdDate;
-
-    @Column(name = "LAST_UPDUSR_ID")
-    private String lastModifiedBy;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastModifiedDate;
-
-    @Builder
-    public Notification(String ntfcNo, String ntfcSj, String ntfcCn, String receiverId, String isRead, String linkUrl,
-            LocalDateTime createdDate) {
-        this.ntfcNo = ntfcNo;
-        this.ntfcSj = ntfcSj;
-        this.ntfcCn = ntfcCn;
-        this.receiverId = receiverId;
-        this.isRead = isRead != null ? isRead : "N";
-        this.linkUrl = linkUrl;
-        this.createdDate = createdDate != null ? createdDate : LocalDateTime.now();
-        this.lastModifiedDate = LocalDateTime.now();
-    }
+    @Column(name = "BH_NTCN_INTRVL", length = 20)
+    private String bhNtfcIntrvl;
 
     public void markAsRead() {
         this.isRead = "Y";
-        this.lastModifiedDate = LocalDateTime.now();
     }
 
     public void update(String ntfcSj, String ntfcCn, String ntfcTime, String bhNtfcIntrvl) {
         this.ntfcSj = ntfcSj;
         this.ntfcCn = ntfcCn;
-        this.lastModifiedDate = LocalDateTime.now();
+        this.ntfcTime = ntfcTime;
+        this.bhNtfcIntrvl = bhNtfcIntrvl;
     }
 }

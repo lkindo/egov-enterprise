@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 
 /**
  * 기본 시간 메타데이터 엔티티
+ * [Standardization] CreatedDate -> frstRegistPnttm, LastModifiedDate -> lastUpdtPnttm 별칭 제공
  */
 @Getter
 @Setter
@@ -33,12 +34,30 @@ public abstract class BaseTimeEntity {
     @Column(name = "LAST_UPDT_PNTTM")
     protected LocalDateTime lastModifiedDate;
 
-    // 별칭 메서드 (전자정부 관례 대응)
+    // ----- [Legacy Aliases] -----
+    
+    public LocalDateTime getFrstRegistPnttm() {
+        return createdDate;
+    }
+
+    public LocalDateTime getLastUpdtPnttm() {
+        return lastModifiedDate;
+    }
+
+    // Variations for different DTOs/Services
     public LocalDateTime getFrstRegisterPnttm() {
         return createdDate;
     }
 
     public LocalDateTime getLastUpdusrPnttm() {
         return lastModifiedDate;
+    }
+
+    public void setFrstRegistPnttm(LocalDateTime dateTime) {
+        this.createdDate = dateTime;
+    }
+
+    public void setLastUpdtPnttm(LocalDateTime dateTime) {
+        this.lastModifiedDate = dateTime;
     }
 }

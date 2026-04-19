@@ -61,6 +61,17 @@ public class BoardApiController {
         return ResponseEntity.ok(ApiResponse.success(boardService.createPost(userDetails.getUsername(), request)));
     }
 
+    @Operation(summary = "게시글 수정", description = "기존 게시글 정보를 수정합니다.")
+    @PutMapping("/{bbsId}/posts/{id}")
+    public ResponseEntity<ApiResponse<Void>> updatePost(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable String bbsId,
+            @PathVariable Long id,
+            @Valid @RequestBody BoardSaveRequest request) {
+        boardService.updatePost(bbsId, id, request);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
     @Operation(summary = "게시글 삭제", description = "게시글을 삭제합니다.")
     @DeleteMapping("/{bbsId}/posts/{id}")
     public ResponseEntity<ApiResponse<Void>> deletePost(

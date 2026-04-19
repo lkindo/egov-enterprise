@@ -1,18 +1,17 @@
 package nuri.business.domain.mail;
+
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.experimental.SuperBuilder;
-
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 獄쏆뮇?싷쭖遺우뵬 JPA Entity
- * ??뉕탢?????뵠?? COMTNSNDNGMAIL
+ * 발송 메일 정보 엔티티 (HEMAILDSPTCHMANAGE 테이블 매핑)
+ * [Cleanup] 한글 인코딩 복구 및 감사 필드 표준화
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
@@ -55,7 +54,6 @@ public class SentMail extends BaseEntity {
         this.dsptchPerson = dsptchPerson;
         this.recptnPerson = recptnPerson;
         this.sndngResultCode = sndngResultCode;
-        // Legacy format: yyyy-MM-dd HH:mm:ss
         this.sndngDe = java.time.LocalDateTime.now()
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         this.atchFileId = atchFileId;

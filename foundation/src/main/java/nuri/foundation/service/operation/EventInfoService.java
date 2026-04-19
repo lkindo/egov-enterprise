@@ -51,8 +51,8 @@ public class EventInfoService {
                 .eventTyCode(dto.getEventTyCode())
                 .eventConfmAt(dto.getEventConfmAt())
                 .eventConfmDe(dto.getEventConfmDe())
-                .frstRegisterId(userId)
-                .lastUpdusrId(userId)
+                .createdBy(userId)
+                .lastModifiedBy(userId)
                 .build();
 
         EventInfo saved = eventInfoRepository.save(Objects.requireNonNull(eventInfo));
@@ -66,9 +66,6 @@ public class EventInfoService {
         EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(eventId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // Use reflection-like update or manual update depending on entity design.
-        // As NEVENTINFO is usually legacy style, manual rebuild is common.
-        // Here we recreate it for simplicity (or we can add update method to Entity).
         eventInfoRepository.save(EventInfo.builder()
                 .eventId(eventId)
                 .bsnsYear(dto.getBsnsYear())
@@ -82,8 +79,8 @@ public class EventInfoService {
                 .eventTyCode(dto.getEventTyCode())
                 .eventConfmAt(dto.getEventConfmAt())
                 .eventConfmDe(dto.getEventConfmDe())
-                .frstRegisterId(eventInfo.getFrstRegisterId())
-                .lastUpdusrId(userId)
+                .createdBy(eventInfo.getCreatedBy())
+                .lastModifiedBy(userId)
                 .build());
         log.info("Event updated successfully: {}", eventId);
     }

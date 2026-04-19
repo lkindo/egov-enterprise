@@ -6,6 +6,10 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import java.io.Serializable;
 
+/**
+ * 권한-롤 관계 엔티티 (NAUTHORROLERELATE)
+ * [Audit] BaseEntity 상속 및 생시시점 필드 매핑 최적화
+ */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

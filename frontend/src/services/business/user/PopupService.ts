@@ -3,27 +3,27 @@ import { Popup } from '@/types/foundation/banner';
 import { AxiosRequestConfig } from 'axios';
 
 /**
- * ?앹뾽 ?쒕퉬님(User)
+ * 팝업 서비스(User)
  */
 class PopupUserService extends UserService {
- constructor() {
- super('/popups');
- }
+  constructor() {
+    super('/popups');
+  }
 
- /**
- * 현재 활성 ?앹뾽 紐⑸줉 조회
- * 寃뚯떆 湲곌컙님현재 ы븿님怨듯넻 ?앹뾽ㅼ쓣 諛섑솚합니다
- */
- async getActivePopups(config?: AxiosRequestConfig): Promise<Popup[]> {
- return this.get<Popup[]>('/active', config);
- }
+  /**
+   * 현재 활성 팝업 목록 조회
+   * 게시 기간이 현재 포함된 공통 팝업들을 반환합니다
+   */
+  async getActivePopups(config?: AxiosRequestConfig): Promise<Popup[]> {
+    return this.get<Popup[]>('/active', config);
+  }
 
- /**
- * ?뱀젙 ?앹뾽 상세 조회
- */
- async getPopup(popupId: string, config?: AxiosRequestConfig): Promise<Popup> {
- return this.get<Popup>(`/${popupId}`, config);
- }
+  /**
+   * 특정 팝업 상세 조회
+   */
+  async getPopup(popupId: string, config?: AxiosRequestConfig): Promise<Popup> {
+    return this.get<Popup>(`/${popupId}`, config);
+  }
 }
 
 export const popupService = new PopupUserService();

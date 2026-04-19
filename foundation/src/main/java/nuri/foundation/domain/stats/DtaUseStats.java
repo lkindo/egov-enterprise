@@ -13,7 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 癒┷곸뒠袁れ넺 JPA Entity
+ * 데이터 사용 통계 JPA Entity
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

@@ -1,19 +1,25 @@
 package nuri.foundation.domain.workspace;
 
+import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
+/**
+ * 마이페이지 콘텐츠 엔티티 (NINDVDLPGECNTNTS)
+ * [Audit] BaseEntity 상속
+ */
 @Entity
 @Table(name = "NINDVDLPGECNTNTS")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class MyPageContent {
+@SuperBuilder
+public class MyPageContent extends BaseEntity {
 
     @Id
     @Column(name = "CNTNTS_ID", length = 20)
@@ -33,17 +39,6 @@ public class MyPageContent {
 
     @Column(name = "CNTNTS_DC", length = 255)
     private String cntntsDc;
-
-    @Builder
-    public MyPageContent(String cntntsId, String cntntsNm, String cntcUrl, String cntntsUseAt, 
-                          String cntntsLinkUrl, String cntntsDc) {
-        this.cntntsId = cntntsId;
-        this.cntntsNm = cntntsNm;
-        this.cntcUrl = cntcUrl;
-        this.cntntsUseAt = cntntsUseAt == null ? "Y" : cntntsUseAt;
-        this.cntntsLinkUrl = cntntsLinkUrl;
-        this.cntntsDc = cntntsDc;
-    }
 
     public void update(String cntntsNm, String cntcUrl, String cntntsUseAt, String cntntsLinkUrl, String cntntsDc) {
         this.cntntsNm = cntntsNm;

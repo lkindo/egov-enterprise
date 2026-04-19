@@ -9,20 +9,20 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 癰귣떯Repository
+ * 보고서 통계 Repository
  */
 @Repository
 public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> {
 
     /**
-     * 癰귣떯筌뤴뫖以鈺곌퀬??(??륁뵠筌
+     * 보고서 통계 목록 조회 (날짜 범위 조건)
      */
     @Query("""
             SELECT r FROM ReprtStats r
             WHERE (:reprtTy IS NULL OR :reprtTy = '' OR r.reprtTy = :reprtTy)
-            AND r.frstRegistPnttm BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
+            AND r.createdDate BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
                 AND CAST(:toDate AS java.time.LocalDateTime)
-            ORDER BY r.frstRegistPnttm DESC
+            ORDER BY r.createdDate DESC
             """)
     Page<ReprtStats> findByConditions(
             @Param("reprtTy") String reprtTy,
@@ -31,7 +31,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             Pageable pageable);
 
     /**
-     * 癰귣떯醫륁굨癰
+     * 보고서 유형별 통계
      */
     @Query(value = """
             SELECT r.reprt_ty as reprtTy, COUNT(*) as cnt
@@ -45,7 +45,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             @Param("toDate") String toDate);
 
     /**
-     * 癰귣떯怨밴묶癰
+     * 보고서 상태별 통계
      */
     @Query(value = """
             SELECT r.reprt_sttus as reprtSttus, COUNT(*) as cnt
@@ -59,7 +59,7 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             @Param("toDate") String toDate);
 
     /**
-     * 源낆쨯??고
+     * 날짜별 보고서 수 통계
      */
     @Query(value = """
             SELECT TO_CHAR(r.frst_regist_pnttm, 'YYYY-MM-DD') as statsDate, COUNT(*) as cnt
@@ -73,12 +73,12 @@ public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> 
             @Param("toDate") String toDate);
 
     /**
-     * 袁⑷퍥 椰꾨똻??
+     * 보고서 통계 건수 조회
      */
     @Query("""
             SELECT COUNT(r) FROM ReprtStats r
             WHERE (:reprtTy IS NULL OR :reprtTy = '' OR r.reprtTy = :reprtTy)
-            AND r.frstRegistPnttm BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
+            AND r.createdDate BETWEEN CAST(:fromDate AS java.time.LocalDateTime)
                 AND CAST(:toDate AS java.time.LocalDateTime)
             """)
     long countByConditions(

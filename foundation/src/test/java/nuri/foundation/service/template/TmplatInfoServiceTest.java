@@ -1,7 +1,7 @@
 package nuri.foundation.service.template;
 
-import nuri.foundation.domain.template.TmplatInfo;
-import nuri.foundation.domain.template.TmplatInfoRepository;
+import nuri.foundation.domain.template.Template;
+import nuri.foundation.domain.template.TemplateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 class TmplatInfoServiceTest {
 
     @Mock
-    private TmplatInfoRepository tmplatInfoRepository;
+    private TemplateRepository templateRepository;
 
     @InjectMocks
     private TmplatInfoService tmplatInfoService;
@@ -37,25 +37,25 @@ class TmplatInfoServiceTest {
     @DisplayName("템플릿 목록 조회")
     void selectTmplatInfoList() {
         // given
-        when(tmplatInfoRepository.findAll()).thenReturn(Collections.emptyList());
+        when(templateRepository.findAll()).thenReturn(Collections.emptyList());
 
         // when
-        List<TmplatInfo> result = tmplatInfoService.selectTmplatInfoList();
+        List<Template> result = tmplatInfoService.selectTmplatInfoList();
 
         // then
         assertThat(result).isEmpty();
-        verify(tmplatInfoRepository, times(1)).findAll();
+        verify(templateRepository, times(1)).findAll();
     }
 
     @Test
     @DisplayName("템플릿 상세 조회")
     void selectTmplatInfoDetail() {
         // given
-        TmplatInfo tmplat = TmplatInfo.builder().tmplatId("TMPLT_001").build();
-        when(tmplatInfoRepository.findById("TMPLT_001")).thenReturn(Optional.of(tmplat));
+        Template tmplat = Template.builder().tmplatId("TMPLT_001").build();
+        when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(tmplat));
 
         // when
-        TmplatInfo result = tmplatInfoService.selectTmplatInfoDetail("TMPLT_001");
+        Template result = tmplatInfoService.selectTmplatInfoDetail("TMPLT_001");
 
         // then
         assertThat(result).isNotNull();
@@ -66,33 +66,34 @@ class TmplatInfoServiceTest {
     @DisplayName("템플릿 등록")
     void insertTmplatInfo() {
         // given
-        TmplatInfo tmplat = TmplatInfo.builder().tmplatNm("New Template").build();
+        Template tmplat = Template.builder().tmplatNm("New Template").build();
 
         // when
         tmplatInfoService.insertTmplatInfo(tmplat);
 
         // then
-        verify(tmplatInfoRepository, times(1)).save(tmplat);
+        verify(templateRepository, times(1)).save(tmplat);
     }
+
     @Test
     @DisplayName("템플릿 타입별 목록 조회")
     void selectTmplatInfoListByType() {
         // given
-        when(tmplatInfoRepository.findByTmplatSeCode("TYPE01")).thenReturn(Collections.emptyList());
+        when(templateRepository.findByTmplatSeCode("TYPE01")).thenReturn(Collections.emptyList());
 
         // when
-        List<TmplatInfo> result = tmplatInfoService.selectTmplatInfoListByType("TYPE01");
+        List<Template> result = tmplatInfoService.selectTmplatInfoListByType("TYPE01");
 
         // then
         assertThat(result).isEmpty();
-        verify(tmplatInfoRepository, times(1)).findByTmplatSeCode("TYPE01");
+        verify(templateRepository, times(1)).findByTmplatSeCode("TYPE01");
     }
 
     @Test
     @DisplayName("템플릿 상세 조회 실패 - 존재하지 않음")
     void selectTmplatInfoDetailFail() {
         // given
-        when(tmplatInfoRepository.findById("NOT_FOUND")).thenReturn(Optional.empty());
+        when(templateRepository.findById("NOT_FOUND")).thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> tmplatInfoService.selectTmplatInfoDetail("NOT_FOUND"))
@@ -107,6 +108,6 @@ class TmplatInfoServiceTest {
         tmplatInfoService.deleteTmplatInfo("TMPLT_001");
 
         // then
-        verify(tmplatInfoRepository, times(1)).deleteById("TMPLT_001");
+        verify(templateRepository, times(1)).deleteById("TMPLT_001");
     }
 }

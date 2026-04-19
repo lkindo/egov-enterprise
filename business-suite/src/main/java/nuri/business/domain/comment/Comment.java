@@ -1,7 +1,7 @@
 package nuri.business.domain.comment;
+
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import java.io.Serializable;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -9,6 +9,10 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
 
+/**
+ * 게시물 댓글 엔티티
+ * [Consistency Fix] 댓글 내용(answer) 용량 확장 (TEXT)
+ */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -40,8 +44,8 @@ public class Comment extends BaseEntity implements Serializable {
     @Column(name = "PASSWORD", length = 200)
     private String password;
 
-    @Column(name = "ANSWER", length = 200)
-    private String commentCn; // ANSWER in DB
+    @Column(name = "ANSWER", columnDefinition = "TEXT")
+    private String commentCn;
 
     @Column(name = "USE_AT", length = 1)
     private String useAt;

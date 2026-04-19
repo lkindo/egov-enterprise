@@ -1,22 +1,25 @@
 package nuri.foundation.domain.stats;
 
+import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
+import lombok.experimental.SuperBuilder;
 
 /**
- * 癰귣떯JPA Entity
+ * 보고서 통계 JPA Entity
+ * [Audit] BaseEntity 상속을 통해 표준 감사 필드 사용
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@jakarta.persistence.Entity
-@jakarta.persistence.Table(name = "NREPRTSTATS")
-@lombok.AllArgsConstructor
-@lombok.Builder
-public class ReprtStats {
+@Entity
+@Table(name = "NREPRTSTATS")
+@SuperBuilder
+public class ReprtStats extends BaseEntity {
 
     @Id
     @Column(name = "REPRT_ID", length = 20)
@@ -30,16 +33,4 @@ public class ReprtStats {
 
     @Column(name = "REPRT_TY", length = 1)
     private String reprtTy;
-
-    @Column(name = "FRST_REGISTER_ID", length = 20)
-    private String frstRegisterId;
-
-    @Column(name = "FRST_REGIST_PNTTM")
-    private LocalDateTime frstRegistPnttm;
-
-    @Column(name = "LAST_UPDUSR_ID", length = 20)
-    private String lastUpdusrId;
-
-    @Column(name = "LAST_UPDT_PNTTM")
-    private LocalDateTime lastUpdtPnttm;
 }

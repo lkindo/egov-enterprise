@@ -73,17 +73,9 @@ public class MenuService {
         }
     }
 
-    /**
-     * 공통 메뉴 트리 빌더 (N+1 쿼리 개선 버전)
-     * 
-     * @param rootMenuNo 최상단 부모 번호 (null 인 경우 전체 루트 조회)
-     * @param roles      사용자 권한 목록
-     */
     private List<MenuDto> buildMenuTree(Long rootMenuNo, List<String> roles) {
-        // [성능 개선] 단일 쿼리로 메뉴와 권한 정보를 함께 조회 (N+1 방지)
         List<Object[]> menuWithAuthResults = menuRepository.findAllWithAuthorities();
 
-        // 메뉴와 권한 매핑
         Map<Long, Menu> menuMap = new LinkedHashMap<>();
         Map<Long, List<MenuAuthority>> authorityMap = new HashMap<>();
 
@@ -99,7 +91,6 @@ public class MenuService {
             }
         }
 
-        // 권한 기반 메뉴 필터링
         List<Menu> filteredMenus = menuMap.values().stream()
                 .filter(m -> {
                     boolean isAuthorized = authorityMap.getOrDefault(m.getId(), new ArrayList<>()).stream()
@@ -109,13 +100,11 @@ public class MenuService {
                 })
                 .collect(Collectors.toList());
 
-        // [성능 개선] 단일 쿼리로 프로그램 정보 조회
         List<Program> programs = programRepository.findAll();
         Map<String, Program> programMap = programs.stream()
                 .filter(p -> p.getProgrmFileNm() != null)
                 .collect(Collectors.toMap(Program::getProgrmFileNm, Function.identity(), (a, b) -> a));
 
-        // 메뉴 트리 구성
         Map<Long, MenuDto> dtoMap = new LinkedHashMap<>();
         List<MenuDto> rootNodes = new ArrayList<>();
 
@@ -140,14 +129,12 @@ public class MenuService {
 
             Long upperNo = dto.getUpperMenuNo();
             if (rootMenuNo == null) {
-                // 전체 루트 조회인 경우
                 if (upperNo == null || upperNo == 0) {
                     rootNodes.add(dto);
                 } else if (dtoMap.containsKey(upperNo)) {
                     dtoMap.get(upperNo).addChild(dto);
                 }
             } else {
-                // 특정 서브트리 조회인 경우
                 if (upperNo != null && upperNo.equals(rootMenuNo)) {
                     rootNodes.add(dto);
                 } else if (dtoMap.containsKey(upperNo)) {
@@ -175,16 +162,13 @@ public class MenuService {
 
     @Cacheable(value = "allMenuDtos")
     public List<MenuDto> getAllMenus() {
-        // [성능 개선] 단일 쿼리로 메뉴와 프로그램 정보를 함께 조회 (N+1 방지)
         List<Object[]> menuWithProgramResults = menuRepository.findAllWithPrograms();
-
         List<MenuDto> result = new ArrayList<>();
 
         for (Object[] menuResult : menuWithProgramResults) {
             Menu menu = (Menu) menuResult[0];
             Program program = (Program) menuResult[1];
 
-            // 프로그램 맵 대신 직접 사용 (단일 쿼리에서 이미 조인됨)
             String url = calculateUrl(menu,
                     program != null ? java.util.Collections.singletonMap(program.getProgrmFileNm(), program) : null);
 
@@ -239,7 +223,7 @@ public class MenuService {
                 .map(proj -> MenuCreateDto.builder()
                         .menuNo(proj.getMenuNo().intValue())
                         .authorCode(proj.getAuthorCode())
-                        .authorNm(proj.getMenuNm()) // Use menu name for display if needed
+                        .authorNm(proj.getMenuNm())
                         .chkYeoBu("Y".equals(proj.getRegYn()) ? 1 : 0)
                         .build())
                 .collect(Collectors.toList());
@@ -275,7 +259,6 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos" }, allEntries = true)
     public void insertMenuManage(@NonNull MenuDto vo) {
-        // FK 제약 방지를 위해 프로그램이 없으면 자동 등록
         if (vo.getProgrmFileNm() != null && !programRepository.existsById(vo.getProgrmFileNm())) {
             nuri.foundation.domain.program.Program p = nuri.foundation.domain.program.Program
                     .builder()
@@ -287,20 +270,21 @@ public class MenuService {
             programRepository.save(p);
         }
 
-        Menu menu = new Menu(
-                vo.getMenuNo(),
-                vo.getMenuNm(),
-                vo.getProgrmFileNm(),
-                vo.getUpperMenuNo(),
-                vo.getMenuOrdr(),
-                vo.getMenuDc(),
-                vo.getRelateImagePath(),
-                vo.getRelateImageNm(),
-                vo.getModernRoute(),
-                "webmaster",
-                java.time.LocalDateTime.now(),
-                "webmaster",
-                java.time.LocalDateTime.now());
+        Menu menu = Menu.builder()
+                .id(vo.getMenuNo())
+                .menuNm(vo.getMenuNm())
+                .progrmFileNm(vo.getProgrmFileNm())
+                .upperMenuNo(vo.getUpperMenuNo())
+                .menuOrdr(vo.getMenuOrdr())
+                .menuDc(vo.getMenuDc())
+                .relateImagePath(vo.getRelateImagePath())
+                .relateImageNm(vo.getRelateImageNm())
+                .modernRoute(vo.getModernRoute())
+                .createdBy("webmaster")
+                .createdDate(java.time.LocalDateTime.now())
+                .lastModifiedBy("webmaster")
+                .lastModifiedDate(java.time.LocalDateTime.now())
+                .build();
         menuRepository.save(Objects.requireNonNull(menu));
     }
 
@@ -378,9 +362,6 @@ public class MenuService {
         return currentId;
     }
 
-    /**
-     * 하위 메뉴 목록 조회
-     */
     public List<MenuDto> getSubMenus(Long menuNo) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         List<String> roles = new ArrayList<>();
@@ -394,11 +375,7 @@ public class MenuService {
         return buildMenuTree(menuNo, roles);
     }
 
-    /**
-     * 메뉴 관리 목록 조회 (N+1 쿼리 개선 버전)
-     */
     public List<MenuDto> selectMenuManageList(@NonNull BaseSearchDto searchVO) {
-        // [성능 개선] 단일 쿼리로 메뉴와 프로그램 정보를 함께 조회
         List<Object[]> menuWithProgramResults = menuRepository.findAllWithPrograms();
 
         return menuWithProgramResults.stream().map(menuResult -> {
@@ -424,21 +401,15 @@ public class MenuService {
         }).collect(Collectors.toList());
     }
 
-    /**
-     * 메뉴 관리 목록 총 개수
-     */
     public int selectMenuManageListTotCnt(@NonNull BaseSearchDto searchVO) {
         return (int) menuRepository.count();
     }
 
-    /**
-     * 메뉴 상세 조회
-     */
     public MenuDto selectMenuManage(Long menuNo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(menuNo))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
 
-        String url = calculateUrl(menu, null); // 상세 조회는 단건이므로 null 허용
+        String url = calculateUrl(menu, null);
 
         return MenuDto.builder()
                 .id(menu.getId())
@@ -455,12 +426,6 @@ public class MenuService {
                 .build();
     }
 
-    /**
-     * 메뉴에 대한 최적의 URL을 계산합니다.
-     * 1. modernRoute가 존재하면 우선 사용
-     * 2. 없으면 프로그램명을 기반으로 현대적 라우트 추론
-     * 3. 추론 실패 시 레거시 프로그램 URL 사용 (없는 경우 #)
-     */
     private String calculateUrl(Menu menu, Map<String, Program> programMap) {
         if (menu.getModernRoute() != null && !menu.getModernRoute().isEmpty()) {
             return menu.getModernRoute();
@@ -471,12 +436,10 @@ public class MenuService {
             return "#";
         }
 
-        // 1. 프로그램명 기반 정교한 추론
         String inferred = inferModernRoute(progrmFileNm);
         if (inferred != null)
             return inferred;
 
-        // 2. 레거시 프로그램 URL 폴백
         Program program = null;
         if (programMap != null) {
             program = programMap.get(progrmFileNm);
@@ -487,7 +450,6 @@ public class MenuService {
         if (program != null && program.getUrl() != null) {
             String legacyUrl = program.getUrl();
             if (legacyUrl.contains(".do")) {
-                // 레거시 URL인 경우 한 번 더 추론 시도
                 String inferredFromLegacy = inferFromLegacyUrl(legacyUrl);
                 return inferredFromLegacy != null ? inferredFromLegacy : "#";
             }
@@ -541,7 +503,6 @@ public class MenuService {
         if (legacyUrl == null)
             return null;
 
-        // 레거시 경로 패턴을 현대적 패턴으로 변환
         if (legacyUrl.contains("/uss/olh/qna/"))
             return "/admin/help/qna";
         if (legacyUrl.contains("/uss/olh/faq/"))

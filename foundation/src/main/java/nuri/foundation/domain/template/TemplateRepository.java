@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * ??쀫탣??Repository
+ * 템플릿 정보 리포지토리
  */
 @Repository("commonTemplateRepository")
 public interface TemplateRepository extends JpaRepository<Template, String> {
@@ -15,6 +15,8 @@ public interface TemplateRepository extends JpaRepository<Template, String> {
     Page<Template> findByTmplatNmContaining(String tmplatNm, Pageable pageable);
 
     Page<Template> findByTmplatSeCode(String tmplatSeCode, Pageable pageable);
+
+    List<Template> findByTmplatSeCode(String tmplatSeCode);
 
     List<Template> findByUseAt(String useAt);
 

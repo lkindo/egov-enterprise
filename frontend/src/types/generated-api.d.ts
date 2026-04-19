@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v1/users/{id}": {
+    "/api/v1/work-reports/{reportId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -12,21 +12,21 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 사용자상세 조회
-         * @description ?뱀젙 ъ슜?먯쓽 상세 ?뺣낫瑜조회합니다
+         * 업무보고 상세 조회
+         * @description 업무보고 상세 정보를 조회합니다.
          */
-        get: operations["getUserById"];
+        get: operations["getWorkReport"];
         /**
-         * 사용자?뺣낫 ?섏젙
-         * @description 관리자 沅뚰븳?쇰줈 사용자?뺣낫瑜님섏젙합니다
+         * 업무보고 수정
+         * @description 업무보고 정보를 수정합니다.
          */
-        put: operations["updateUser"];
+        put: operations["updateWorkReport"];
         post?: never;
         /**
-         * 사용자님젣
-         * @description 사용자怨꾩젙님님젣합니다
+         * 업무보고 삭제
+         * @description 업무보고 정보를 삭제합니다.
          */
-        delete: operations["deleteUser"];
+        delete: operations["deleteWorkReport"];
         options?: never;
         head?: never;
         patch?: never;
@@ -40,13 +40,13 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 님?꾨줈님조회
-         * @description 현재 로그?명븳 ъ슜?먯쓽 ?꾨줈님?뺣낫瑜조회합니다
+         * 내 프로필 조회
+         * @description 현재 로그인한 사용자의 프로필 정보를 조회합니다.
          */
         get: operations["getMe"];
         /**
-         * 님?꾨줈님?섏젙
-         * @description 현재 로그?명븳 ъ슜?먯쓽 ?꾨줈님?뺣낫瑜님섏젙합니다
+         * 내 프로필 수정
+         * @description 현재 로그인한 사용자의 프로필 정보를 수정합니다.
          */
         put: operations["updateMe"];
         post?: never;
@@ -65,7 +65,8 @@ export interface paths {
         };
         get?: never;
         /**
-         * 鍮꾨踰덊샇 蹂寃         * @description 현재 로그?명븳 ъ슜?먯쓽 鍮꾨踰덊샇瑜蹂寃쏀빀?덈떎.
+         * 비밀번호 변경
+         * @description 현재 로그인한 사용자의 비밀번호를 변경합니다.
          */
         put: operations["changePassword"];
         post?: never;
@@ -83,19 +84,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?쇱젙 상세 조회
-         * @description ?뱀젙 ?쇱젙님상세 ?뺣낫瑜조회합니다
+         * 일정 상세 조회
+         * @description 특정 일정의 상세 정보를 조회합니다.
          */
         get: operations["getSchedule"];
         /**
-         * ?쇱젙 ?섏젙
-         * @description 湲곗〈 ?쇱젙님?섏젙합니다
+         * 일정 수정
+         * @description 기존 일정을 수정합니다.
          */
         put: operations["updateSchedule"];
         post?: never;
         /**
-         * ?쇱젙 님젣
-         * @description ?쇱젙님님젣합니다
+         * 일정 삭제
+         * @description 일정을 삭제합니다.
          */
         delete: operations["deleteSchedule"];
         options?: never;
@@ -111,21 +112,49 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?쎈룄 상세 조회
-         * @description ?뱀젙 ?쎈룄님상세 ?뺣낫瑜조회합니다
+         * 약도 상세 조회
+         * @description 특정 약도의 상세 정보를 조회합니다.
          */
         get: operations["getRoughMap"];
         /**
-         * ?쎈룄 ?뺣낫 ?섏젙
-         * @description 湲곗〈 ?쎈룄 ?뺣낫瑜님섏젙합니다
+         * 약도 정보 수정
+         * @description 기존 약도 정보를 수정합니다.
          */
         put: operations["updateRoughMap"];
         post?: never;
         /**
-         * ?쎈룄 님젣
-         * @description ?쎈룄 ?뺣낫瑜님?젣합니다
+         * 약도 삭제
+         * @description 약도 정보를 삭제합니다.
          */
         delete: operations["deleteRoughMap"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/polls/{pollId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 설문 상세 조회
+         * @description 설문 상세 정보 및 항목 목록을 조회합니다.
+         */
+        get: operations["getPoll"];
+        /**
+         * 설문 수정
+         * @description 기존 설문 정보를 수정합니다.
+         */
+        put: operations["updatePoll"];
+        post?: never;
+        /**
+         * 설문 삭제
+         * @description 설문을 삭제합니다.
+         */
+        delete: operations["deletePoll"];
         options?: never;
         head?: never;
         patch?: never;
@@ -139,19 +168,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 硫붾え蹂닿퀬 상세 조회
-         * @description 硫붾え蹂닿퀬 상세 ?뺣낫瑜조회합니다
+         * 메모보고 상세 조회
+         * @description 메모보고 상세 정보를 조회합니다.
          */
         get: operations["getMemoReport"];
         /**
-         * 硫붾え蹂닿퀬 ?섏젙
-         * @description 湲곗〈 硫붾え蹂닿퀬瑜님섏젙합니다
+         * 메모보고 수정
+         * @description 기존 메모보고를 수정합니다.
          */
         put: operations["updateMemoReport"];
         post?: never;
         /**
-         * 硫붾え蹂닿퀬 님젣
-         * @description 硫붾え蹂닿퀬 ?뺣낫瑜님?젣합니다
+         * 메모보고 삭제
+         * @description 메모보고 정보를 삭제합니다.
          */
         delete: operations["deleteMemoReport"];
         options?: never;
@@ -167,19 +196,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 硫붿씤 ?대吏 상세 조회
-         * @description ?뱀젙 硫붿씤 ?대吏님상세 ?뺣낫瑜조회합니다
+         * 메인 이미지 상세 조회
+         * @description 특정 메인 이미지의 상세 정보를 조회합니다.
          */
         get: operations["getMainImage"];
         /**
-         * 硫붿씤 ?대吏 ?섏젙
-         * @description 硫붿씤 ?대吏 ?뺣낫瑜님섏젙합니다
+         * 메인 이미지 수정
+         * @description 메인 이미지 정보를 수정합니다.
          */
         put: operations["updateMainImage"];
         post?: never;
         /**
-         * 硫붿씤 ?대吏 님젣
-         * @description 硫붿씤 ?대吏 ?뺣낫瑜님?젣합니다
+         * 메인 이미지 삭제
+         * @description 메인 이미지 정보를 삭제합니다.
          */
         delete: operations["deleteMainImage"];
         options?: never;
@@ -195,21 +224,49 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 媛꾨? ?쇱젙 상세 조회
-         * @description ?뱀젙 媛꾨? ?쇱젙님상세 ?뺣낫瑜조회합니다
+         * 간부 일정 상세 조회
+         * @description 특정 간부 일정의 상세 정보를 조회합니다.
          */
         get: operations["getLeaderSchedule"];
         /**
-         * 媛꾨? ?쇱젙 ?섏젙
-         * @description 媛꾨? ?쇱젙 ?뺣낫瑜님섏젙합니다
+         * 간부 일정 수정
+         * @description 간부 일정 정보를 수정합니다.
          */
         put: operations["updateLeaderSchedule"];
         post?: never;
         /**
-         * 媛꾨? ?쇱젙 님젣
-         * @description 媛꾨? ?쇱젙 ?뺣낫瑜님?젣합니다
+         * 간부 일정 삭제
+         * @description 간부 일정 정보를 삭제합니다.
          */
         delete: operations["deleteLeaderSchedule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/ism/{informalSanctionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 비정형 결재 상세 조회
+         * @description 비정형 결재 상세 정보를 조회합니다.
+         */
+        get: operations["getInformalSanction"];
+        /**
+         * 비정형 결재 수정
+         * @description 비정형 결재 정보를 수정합니다.
+         */
+        put: operations["updateInformalSanction"];
+        post?: never;
+        /**
+         * 비정형 결재 삭제
+         * @description 비정형 결재 정보를 삭제합니다.
+         */
+        delete: operations["deleteInformalSanction"];
         options?: never;
         head?: never;
         patch?: never;
@@ -223,21 +280,21 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 鍮꾩젙님결재 상세 조회
-         * @description 鍮꾩젙님결재 상세 ?뺣낫瑜조회합니다
+         * 비정형 결재 상세 조회
+         * @description 비정형 결재 상세 정보를 조회합니다.
          */
-        get: operations["getInformalSanction"];
+        get: operations["getInformalSanction_1"];
         /**
-         * 鍮꾩젙님결재 ?섏젙
-         * @description 鍮꾩젙님결재 ?뺣낫瑜님섏젙합니다
+         * 비정형 결재 수정
+         * @description 비정형 결재 정보를 수정합니다.
          */
-        put: operations["updateInformalSanction"];
+        put: operations["updateInformalSanction_1"];
         post?: never;
         /**
-         * 鍮꾩젙님결재 님젣
-         * @description 鍮꾩젙님결재 ?뺣낫瑜님?젣합니다
+         * 비정형 결재 삭제
+         * @description 비정형 결재 정보를 삭제합니다.
          */
-        delete: operations["deleteInformalSanction"];
+        delete: operations["deleteInformalSanction_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -251,19 +308,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ⑤씪님留ㅻ돱님상세 조회
-         * @description ?뱀젙 ⑤씪님留ㅻ돱?쇱쓽 상세 ?뺣낫瑜조회합니다
+         * 온라인 매뉴얼 상세 조회
+         * @description 특정 온라인 매뉴얼의 상세 정보를 조회합니다.
          */
         get: operations["getManual"];
         /**
-         * ⑤씪님留ㅻ돱님?섏젙
-         * @description ⑤씪님留ㅻ돱님?뺣낫瑜님섏젙합니다
+         * 온라인 매뉴얼 수정
+         * @description 온라인 매뉴얼 정보를 수정합니다.
          */
         put: operations["updateManual"];
         post?: never;
         /**
-         * ⑤씪님留ㅻ돱님님젣
-         * @description ⑤씪님留ㅻ돱님?뺣낫瑜님?젣합니다
+         * 온라인 매뉴얼 삭제
+         * @description 온라인 매뉴얼 정보를 삭제합니다.
          */
         delete: operations["deleteManual"];
         options?: never;
@@ -279,19 +336,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?꾩留님곸꽭 조회
-         * @description ?꾩留님곸꽭 ?뺣낫瑜조회합니다
+         * 도움말 상세 조회
+         * @description 도움말 상세 정보를 조회합니다.
          */
         get: operations["getHpcm"];
         /**
-         * ?꾩留님섏젙
-         * @description ?꾩留님뺣낫瑜님섏젙합니다
+         * 도움말 수정
+         * @description 도움말 정보를 수정합니다.
          */
         put: operations["updateHpcm"];
         post?: never;
         /**
-         * ?꾩留님?젣
-         * @description ?꾩留님뺣낫瑜님?젣합니다
+         * 도움말 삭제
+         * @description 도움말 정보를 삭제합니다.
          */
         delete: operations["deleteHpcm"];
         options?: never;
@@ -308,18 +365,18 @@ export interface paths {
         };
         /**
          * FAQ 상세 조회
-         * @description ?뱀젙 FAQ님상세 ?뺣낫瑜조회합니다
+         * @description 특정 FAQ의 상세 정보를 조회합니다.
          */
         get: operations["getFaq"];
         /**
-         * FAQ ?뺣낫 ?섏젙
-         * @description 湲곗〈 FAQ ?뺣낫瑜님섏젙합니다
+         * FAQ 정보 수정
+         * @description 기존 FAQ 정보를 수정합니다.
          */
         put: operations["updateFaq"];
         post?: never;
         /**
-         * FAQ 님젣
-         * @description FAQ ?뺣낫瑜님?젣합니다
+         * FAQ 삭제
+         * @description FAQ 정보를 삭제합니다.
          */
         delete: operations["deleteFaq"];
         options?: never;
@@ -335,19 +392,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 遺님업무님상세 조회
-         * @description ?뱀젙 遺님업무⑥쓽 상세 ?뺣낫瑜조회합니다
+         * 부서 업무함 상세 조회
+         * @description 특정 부서 업무함의 상세 정보를 조회합니다.
          */
         get: operations["getDeptJobBox"];
         /**
-         * 遺님업무님?섏젙
-         * @description 湲곗〈 遺님업무님?뺣낫瑜님섏젙합니다
+         * 부서 업무함 수정
+         * @description 기존 부서 업무함 정보를 수정합니다.
          */
         put: operations["updateDeptJobBox"];
         post?: never;
         /**
-         * 遺님업무님님젣
-         * @description 遺님업무⑥쓣 님젣합니다
+         * 부서 업무함 삭제
+         * @description 부서 업무함을 삭제합니다.
          */
         delete: operations["deleteDeptJobBox"];
         options?: never;
@@ -364,16 +421,44 @@ export interface paths {
         };
         get?: never;
         /**
-         * ?볤? ?섏젙
-         * @description 湲곕낯 ?볤? 이용님?섏젙합니다
+         * 댓글 수정
+         * @description 기본 댓글 내용을 수정합니다.
          */
         put: operations["updateComment"];
         post?: never;
         /**
-         * ?볤? 님젣
-         * @description ?볤님님?젣 泥섎━합니다
+         * 댓글 삭제
+         * @description 댓글을 삭제 처리합니다.
          */
         delete: operations["deleteComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/{bbsId}/posts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 게시글 상세 조회
+         * @description 특정 게시판의 게시글 상세 정보를 조회합니다.
+         */
+        get: operations["getPost"];
+        /**
+         * 게시글 수정
+         * @description 기존 게시글 정보를 수정합니다.
+         */
+        put: operations["updatePost"];
+        post?: never;
+        /**
+         * 게시글 삭제
+         * @description 게시글을 삭제합니다.
+         */
+        delete: operations["deletePost"];
         options?: never;
         head?: never;
         patch?: never;
@@ -387,19 +472,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 게시물곸꽭 조회
-         * @description ?뱀젙 寃뚯떆臾쇱쓽 상세 ?뺣낫瑜조회합니다
+         * 게시물 상세 조회
+         * @description 특정 게시물의 상세 정보를 조회합니다.
          */
         get: operations["getBoardDetail"];
         /**
-         * 게시물섏젙
-         * @description 湲곗〈 寃뚯떆臾쇱쓣 ?섏젙합니다
+         * 게시물 수정
+         * @description 기존 게시물을 수정합니다.
          */
         put: operations["updateBoard"];
         post?: never;
         /**
-         * 게시물?젣
-         * @description 寃뚯떆臾쇱쓣 님젣합니다
+         * 게시물 삭제
+         * @description 게시물을 삭제합니다.
          */
         delete: operations["deleteBoard"];
         options?: never;
@@ -415,7 +500,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 결재 승인/반려 (Approve/Reject) */
+        /** Confirm Approval (Approve/Reject) */
         put: operations["confirm"];
         post?: never;
         delete?: never;
@@ -432,7 +517,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 콘텐츠 업데이트 처리 */
+        /** 마이페이지 콘텐츠 수정 */
         put: operations["updateContent"];
         post?: never;
         /** 마이페이지 콘텐츠 삭제 */
@@ -450,21 +535,21 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 사용자상세 조회
-         * @description ?뱀젙 사용자ID님?대떦?섎뒗 상세 ?뺣낫瑜조회합니다
+         * 사용자 상세 조회
+         * @description 특정 사용자 ID에 해당하는 상세 정보를 조회합니다.
          */
         get: operations["getUser"];
         /**
-         * 사용자?뺣낫 ?섏젙
-         * @description 湲곗〈 시스템ъ슜?먯쓽 ?뺣낫瑜님섏젙합니다
+         * 사용자 정보 수정
+         * @description 기존 시스템 사용자의 정보를 수정합니다. (관리자 권한)
          */
-        put: operations["updateUser_1"];
+        put: operations["updateUser"];
         post?: never;
         /**
-         * 사용자님젣
-         * @description ?쒖뒪?쒖뿉님ъ슜?먮? 님젣합니다
+         * 사용자 삭제
+         * @description 시스템에서 사용자를 삭제합니다. (관리자 권한)
          */
-        delete: operations["deleteUser_1"];
+        delete: operations["deleteUser"];
         options?: never;
         head?: never;
         patch?: never;
@@ -477,12 +562,160 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 게시??세 조회 */
+        /** 사용자 부재 상태 상세 조회 */
         get: operations["getAbsence"];
-        /** 사용자遺님?곹깭 ?낅뜲?댄듃 */
+        /** 사용자 부재 상태 업데이트 */
         put: operations["updateAbsence"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/surveys/{qestnrId}/questions/{qesitmId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 설문 문항 수정 */
+        put: operations["updateQuestion"];
+        post?: never;
+        /** 설문 문항 삭제 */
+        delete: operations["deleteQuestion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/{qestnrId}/questions/{qesitmId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 설문 문항 수정 */
+        put: operations["updateQuestion_1"];
+        post?: never;
+        /** 설문 문항 삭제 */
+        delete: operations["deleteQuestion_1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/{qestnrId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 설문 정보 상세 조회 */
+        get: operations["getSurvey"];
+        /** 설문 정보 수정 */
+        put: operations["updateSurvey"];
+        post?: never;
+        /** 설문 정보 삭제 */
+        delete: operations["deleteSurvey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/surveys/{qestnrId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 설문 정보 상세 조회 */
+        get: operations["getSurvey_1"];
+        /** 설문 정보 수정 */
+        put: operations["updateSurvey_1"];
+        post?: never;
+        /** 설문 정보 삭제 */
+        delete: operations["deleteSurvey_1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/templates/{tmplatId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 설문 템플릿 상세 조회 */
+        get: operations["getTemplate"];
+        /** 설문 템플릿 수정 */
+        put: operations["updateTemplate"];
+        post?: never;
+        /** 설문 템플릿 삭제 */
+        delete: operations["deleteTemplate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/surveys/templates/{tmplatId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 설문 템플릿 상세 조회 */
+        get: operations["getTemplate_1"];
+        /** 설문 템플릿 수정 */
+        put: operations["updateTemplate_1"];
+        post?: never;
+        /** 설문 템플릿 삭제 */
+        delete: operations["deleteTemplate_1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/surveys/questions/items/{iemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 설문 항목 수정 */
+        put: operations["updateItem"];
+        post?: never;
+        /** 설문 항목 삭제 */
+        delete: operations["deleteItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/questions/items/{iemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 설문 항목 수정 */
+        put: operations["updateItem_1"];
+        post?: never;
+        /** 설문 항목 삭제 */
+        delete: operations["deleteItem_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -496,19 +729,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 濡님곸꽭 조회
-         * @description ?뱀젙 沅뚰븳(Role)님상세 ?뺣낫瑜조회합니다
+         * 롤 상세 조회
+         * @description 특정 권한(Role)의 상세 정보를 조회합니다.
          */
         get: operations["getRole"];
         /**
-         * 濡님섏젙
-         * @description 湲곗〈 시스템沅뚰븳(Role) ?뺣낫瑜님섏젙합니다
+         * 롤 수정
+         * @description 기존 시스템 권한(Role) 정보를 수정합니다.
          */
         put: operations["updateRole"];
         post?: never;
         /**
-         * 濡님?젣
-         * @description 시스템沅뚰븳(Role) ?뺣낫瑜님?젣합니다
+         * 롤 삭제
+         * @description 시스템 권한(Role) 정보를 삭제합니다.
          */
         delete: operations["deleteRole"];
         options?: never;
@@ -525,18 +758,18 @@ export interface paths {
         };
         /**
          * Q&A 상세 조회
-         * @description Q&A 상세 ?뺣낫瑜조회합니다
+         * @description Q&A 상세 정보를 조회합니다.
          */
         get: operations["getQna"];
         /**
-         * Q&A 吏덈Ц ?섏젙
-         * @description 湲곗〈 Q&A 吏덈Ц님?섏젙합니다
+         * Q&A 질문 수정
+         * @description 기존 Q&A 질문을 수정합니다.
          */
         put: operations["updateQna"];
         post?: never;
         /**
-         * Q&A 님젣
-         * @description Q&A ?뺣낫瑜님?젣합니다
+         * Q&A 삭제
+         * @description Q&A 정보를 삭제합니다.
          */
         delete: operations["deleteQna"];
         options?: never;
@@ -551,12 +784,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 로그인 정책 상세 조회 */
+        /** 프로그램 상세 조회 */
         get: operations["getProgram"];
-        /** ?꾨줈洹몃옩 ?뺣낫 ?섏젙 */
+        /** 프로그램 정보 수정 */
         put: operations["updateProgram"];
         post?: never;
-        /** ?꾨줈洹몃옩 님젣 */
+        /** 프로그램 삭제 */
         delete: operations["deleteProgram"];
         options?: never;
         head?: never;
@@ -571,19 +804,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?앹뾽 상세 조회
-         * @description ?뱀젙 ?앹뾽님상세 ?뺣낫瑜조회합니다
+         * 팝업 상세 조회
+         * @description 특정 팝업의 상세 정보를 조회합니다.
          */
         get: operations["getPopup"];
         /**
-         * ?앹뾽 ?뺣낫 ?섏젙
-         * @description 湲곗〈 ?앹뾽님?뺣낫瑜님섏젙합니다
+         * 팝업 정보 수정
+         * @description 기존 팝업의 정보를 수정합니다.
          */
         put: operations["updatePopup"];
         post?: never;
         /**
-         * ?앹뾽 님젣
-         * @description 등록님?앹뾽님님젣합니다
+         * 팝업 삭제
+         * @description 등록된 팝업을 삭제합니다.
          */
         delete: operations["deletePopup"];
         options?: never;
@@ -599,11 +832,11 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?뺤콉 이용 조회
-         * @description 묎텒(copyright) 또는 媛쒖씤?뺣낫보호?뺤콉(privacy) 이용님조회합니다
+         * 정책 내용 조회
+         * @description 저작권(copyright) 또는 개인정보보호정책(privacy) 내용을 조회합니다.
          */
         get: operations["getPolicy"];
-        /** ?뺤콉 이용 ?섏젙 */
+        /** 정책 내용 수정 */
         put: operations["updatePolicy"];
         post?: never;
         delete?: never;
@@ -620,19 +853,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 硫붾돱 상세 조회
-         * @description ?뱀젙 硫붾돱님상세 ?뺣낫瑜조회합니다
+         * 메뉴 상세 조회
+         * @description 특정 메뉴의 상세 정보를 조회합니다.
          */
         get: operations["getMenu"];
         /**
-         * 硫붾돱 ?뺣낫 ?섏젙
-         * @description 湲곗〈 시스템硫붾돱 ?뺣낫瑜님섏젙합니다
+         * 메뉴 정보 수정
+         * @description 기존 시스템 메뉴 정보를 수정합니다.
          */
         put: operations["updateMenu"];
         post?: never;
         /**
-         * 硫붾돱 님젣
-         * @description 시스템硫붾돱瑜님?젣합니다
+         * 메뉴 삭제
+         * @description 시스템 메뉴를 삭제합니다.
          */
         delete: operations["deleteMenu"];
         options?: never;
@@ -649,7 +882,8 @@ export interface paths {
         };
         get?: never;
         /**
-         * 硫붾돱 ?쒖꽌 ?쇨큵 蹂寃         * @description щ윭 硫붾돱님?쒖꽌瑜님쇨큵?곸쑝濡님낅뜲?댄듃합니다
+         * 메뉴 순서 일괄 변경
+         * @description 여러 메뉴의 순서를 일괄적으로 업데이트합니다.
          */
         put: operations["updateMenuOrder"];
         post?: never;
@@ -666,14 +900,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 상세코드 상세 조회 */
+        /** 로그인 정책 상세 조회 */
         get: operations["getLoginPolicy"];
         /**
-         * 로그인?뺤콉 님         * @description 신규 등록 또는 湲곗〈 ?뺣낫瑜님섏젙합니다
+         * 로그인 정책 저장
+         * @description 신규 등록 또는 기존 정보를 수정합니다.
          */
         put: operations["saveLoginPolicy"];
         post?: never;
-        /** 로그인?뺤콉 님젣 */
+        /** 로그인 정책 삭제 */
         delete: operations["deleteLoginPolicy"];
         options?: never;
         head?: never;
@@ -687,12 +922,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 공통코드 상세 조회 */
+        /** 서비스 안내 상세 조회 */
         get: operations["getIsg"];
-        /** ?쒕퉬님?덈궡 ?섏젙 */
+        /** 서비스 안내 수정 */
         put: operations["updateIsg"];
         post?: never;
-        /** ?쒕퉬님?덈궡 님젣 */
+        /** 서비스 안내 삭제 */
         delete: operations["deleteIsg"];
         options?: never;
         head?: never;
@@ -707,19 +942,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 洹몃９ 상세 조회
-         * @description ?뱀젙 사용자洹몃９님상세 ?뺣낫瑜조회합니다
+         * 그룹 상세 조회
+         * @description 특정 사용자 그룹의 상세 정보를 조회합니다.
          */
         get: operations["getGroup"];
         /**
-         * 洹몃９ ?섏젙
-         * @description 湲곗〈 시스템사용자洹몃９ ?뺣낫瑜님섏젙합니다
+         * 그룹 수정
+         * @description 기존 시스템 사용자 그룹 정보를 수정합니다.
          */
         put: operations["updateGroup"];
         post?: never;
         /**
-         * 洹몃９ 님젣
-         * @description 시스템사용자洹몃９ ?뺣낫瑜님?젣합니다
+         * 그룹 삭제
+         * @description 시스템 사용자 그룹 정보를 삭제합니다.
          */
         delete: operations["deleteGroup"];
         options?: never;
@@ -727,7 +962,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/depts/{deptId}": {
+    "/api/v1/admin/system/departments/{deptId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -735,49 +970,21 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 遺님상세 조회
-         * @description ?뱀젙 遺님ID님?대떦?섎뒗 상세 ?뺣낫瑜조회합니다
+         * 부서 상세 조회
+         * @description 특정 부서 ID에 해당하는 상세 정보를 조회합니다.
          */
         get: operations["getDept"];
         /**
-         * 遺님?뺣낫 ?섏젙
-         * @description 湲곗〈 시스템遺쒖쓽 ?뺣낫瑜님섏젙합니다
+         * 부서 정보 수정
+         * @description 기존 시스템 부서의 정보를 수정합니다.
          */
         put: operations["updateDept"];
         post?: never;
         /**
-         * 遺님님젣
-         * @description ?쒖뒪?쒖뿉님遺쒕? 님젣합니다
+         * 부서 삭제
+         * @description 시스템에서 부서를 삭제합니다.
          */
         delete: operations["deleteDept"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/communities/{cmmntyId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 而ㅻ님덊떚 상세 조회
-         * @description ?뱀젙 而ㅻ님덊떚님상세 湲곕낯 ?뺣낫瑜조회합니다
-         */
-        get: operations["getCommunity"];
-        /**
-         * 而ㅻ님덊떚 ?뺣낫 ?섏젙
-         * @description 而ㅻ님덊떚 紐낆묶, ?뚭컻 님湲곕낯 ?뺣낫瑜님섏젙합니다
-         */
-        put: operations["updateCommunity"];
-        post?: never;
-        /**
-         * 而ㅻ님덊떚 ?먯뇙/님젣
-         * @description 而ㅻ님덊떚瑜님먯뇙 泥섎━섍굅님님젣합니다
-         */
-        delete: operations["deleteCommunity"];
         options?: never;
         head?: never;
         patch?: never;
@@ -790,7 +997,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 분류코드 상세 조회 */
+        /** 상세코드 상세 조회 */
         get: operations["getDetailCode"];
         /** 상세코드 수정 */
         put: operations["updateDetailCode"];
@@ -809,7 +1016,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 행정코드 상세 조회 */
+        /** 공통코드 상세 조회 */
         get: operations["getCmmnCode"];
         /** 공통코드 수정 */
         put: operations["updateCmmnCode"];
@@ -828,7 +1035,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 마이페이지 콘텐츠 목록 조회 */
+        /** 분류코드 상세 조회 */
         get: operations["getClCode"];
         /** 분류코드 수정 */
         put: operations["updateClCode"];
@@ -847,7 +1054,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 설문 정보 목록 페이징 조회 */
+        /** 행정코드 상세 조회 */
         get: operations["getAdministCodeDetail"];
         /** 행정코드 수정 */
         put: operations["updateAdministCode"];
@@ -867,19 +1074,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 寃뚯떆님상세 조회
-         * @description ?뱀젙 寃뚯떆?먯쓽 상세 ㅼ젙님조회합니다
+         * 게시판 상세 조회
+         * @description 특정 게시판의 상세 설정을 조회합니다.
          */
         get: operations["getBoardMaster"];
         /**
-         * 寃뚯떆님ㅼ젙 ?섏젙
-         * @description 湲곗〈 寃뚯떆님留덉뒪님ㅼ젙님?섏젙합니다
+         * 게시판 설정 수정
+         * @description 기존 게시판 마스터 설정을 수정합니다.
          */
         put: operations["updateBoardMaster"];
         post?: never;
         /**
-         * 寃뚯떆님님젣
-         * @description 寃뚯떆님留덉뒪?곕? 님젣 泥섎━합니다
+         * 게시판 삭제
+         * @description 게시판 마스터를 삭제 처리합니다.
          */
         delete: operations["deleteBoardMaster"];
         options?: never;
@@ -895,19 +1102,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 諛곕꼫 상세 조회
-         * @description ?뱀젙 諛곕꼫님상세 ?뺣낫瑜조회합니다
+         * 배너 상세 조회
+         * @description 특정 배너의 상세 정보를 조회합니다.
          */
         get: operations["getBanner"];
         /**
-         * 諛곕꼫 ?뺣낫 ?섏젙
-         * @description 湲곗〈 諛곕꼫 ?뺣낫瑜님섏젙합니다
+         * 배너 정보 수정
+         * @description 기존 배너 정보를 수정합니다.
          */
         put: operations["updateBanner"];
         post?: never;
         /**
-         * 諛곕꼫 님젣
-         * @description 등록님諛곕꼫 ?뺣낫瑜님?젣합니다
+         * 배너 삭제
+         * @description 등록된 배너 정보를 삭제합니다.
          */
         delete: operations["deleteBanner"];
         options?: never;
@@ -923,19 +1130,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 沅뚰븳 洹몃９ 상세 조회
-         * @description ?뱀젙 沅뚰븳 洹몃９님상세 ?뺣낫瑜조회합니다
+         * 권한 그룹 상세 조회
+         * @description 특정 권한 그룹의 상세 정보를 조회합니다.
          */
         get: operations["getAuthor"];
         /**
-         * 沅뚰븳 洹몃９ ?섏젙
-         * @description 湲곗〈 시스템沅뚰븳 洹몃９ ?뺣낫瑜님섏젙합니다
+         * 권한 그룹 수정
+         * @description 기존 시스템 권한 그룹 정보를 수정합니다.
          */
         put: operations["updateAuthor"];
         post?: never;
         /**
-         * 沅뚰븳 洹몃９ 님젣
-         * @description 시스템沅뚰븳 洹몃９ ?뺣낫瑜님?젣합니다
+         * 권한 그룹 삭제
+         * @description 시스템 권한 그룹 정보를 삭제합니다.
          */
         delete: operations["deleteAuthor"];
         options?: never;
@@ -951,19 +1158,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?됱궗 상세 조회
-         * @description ?됱궗 상세 ?뺣낫瑜조회합니다
+         * 행사 상세 조회
+         * @description 행사 상세 정보를 조회합니다.
          */
         get: operations["getEvent"];
         /**
-         * ?됱궗 ?뺣낫 ?섏젙
-         * @description ?됱궗 ?뺣낫瑜님섏젙합니다
+         * 행사 정보 수정
+         * @description 행사 정보를 수정합니다.
          */
         put: operations["updateEvent"];
         post?: never;
         /**
-         * ?됱궗 ?뺣낫 님젣
-         * @description ?됱궗 ?뺣낫瑜님?젣합니다
+         * 행사 정보 삭제
+         * @description 행사 정보를 삭제합니다.
          */
         delete: operations["deleteEvent"];
         options?: never;
@@ -971,7 +1178,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/digital-assets/{knoId}": {
+    "/api/v1/admin/content/community/{cmmntyId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -979,21 +1186,21 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 吏앹젙蹂님곸꽭 조회
-         * @description 吏앹젙蹂님곸꽭 ?뺣낫瑜조회합니다
+         * 커뮤니티 상세 조회
+         * @description 특정 커뮤니티의 상세 기본 정보를 조회합니다.
          */
-        get: operations["getKnowledge"];
+        get: operations["getCommunity"];
         /**
-         * 吏앹젙蹂님섏젙
-         * @description 吏앹젙蹂대? ?섏젙합니다
+         * 커뮤니티 정보 수정
+         * @description 커뮤니티 명칭, 소개 등 기본 정보를 수정합니다.
          */
-        put: operations["updateKnowledge"];
+        put: operations["updateCommunity"];
         post?: never;
         /**
-         * 吏앹젙蹂님?젣
-         * @description 吏앹젙蹂대? 님젣합니다
+         * 커뮤니티 폐쇄/삭제
+         * @description 커뮤니티를 폐쇄 처리하거나 삭제합니다.
          */
-        delete: operations["deleteKnowledge"];
+        delete: operations["deleteCommunity"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1007,21 +1214,45 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 주소濡님곸꽭 조회
-         * @description 주소濡앹쓽 상세 ?뺣낫 ы븿님사용자紐⑸줉님조회합니다
+         * 주소록 상세 조회
+         * @description 주소록의 상세 정보와 포함된 사용자 목록을 조회합니다.
          */
         get: operations["getAddressBook"];
         /**
-         * 주소濡님뺣낫 ?섏젙
-         * @description 주소濡紐낆묶, 怨듦컻 踰붿쐞 님?뺣낫瑜님섏젙합니다
+         * 주소록 정보 수정
+         * @description 주소록 명칭, 공개 범위 등 정보를 수정합니다.
          */
         put: operations["updateAddressBook"];
         post?: never;
         /**
-         * 주소濡님?젣 (ъ슜以묒?)
-         * @description 주소濡앹쓣 님젣(ъ슜以묒?) ?곹깭濡蹂寃泥섎━합니다
+         * 주소록 삭제 (사용중지)
+         * @description 주소록을 삭제(사용중지) 상태로 변경 처리합니다.
          */
         delete: operations["deleteAddressBook"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/work-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 업무보고 목록 조회
+         * @description 업무보고 목록을 페이징하여 조회합니다.
+         */
+        get: operations["getWorkReportList"];
+        put?: never;
+        /**
+         * 업무보고 등록
+         * @description 새로운 업무보고를 등록합니다.
+         */
+        post: operations["registerWorkReport"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1037,7 +1268,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * ?뚯썝媛님         * @description 새로운사용자怨꾩젙님?앹꽦합니다
+         * 회원가입
+         * @description 새로운 사용자 계정을 생성합니다.
          */
         post: operations["signup"];
         delete?: never;
@@ -1054,14 +1286,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?섏쓽 스크랩紐⑸줉 조회
-         * @description ъ슜?먯쓽 스크랩紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 나의 스크랩 목록 조회
+         * @description 사용자의 스크랩 목록을 페이징하여 조회합니다.
          */
         get: operations["getMyScrapList"];
         put?: never;
         /**
-         * 스크랩등록
-         * @description 새로운ㅽ겕⑹쓣 등록합니다
+         * 스크랩 등록
+         * @description 새로운 스크랩을 등록합니다.
          */
         post: operations["createScrap"];
         delete?: never;
@@ -1078,14 +1310,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?쇱젙 紐⑸줉 조회
-         * @description ъ슜?먯쓽 ?쇱젙 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 일정 목록 조회
+         * @description 사용자의 일정 목록을 페이징하여 조회합니다.
          */
         get: operations["getScheduleList"];
         put?: never;
         /**
-         * ?쇱젙 등록
-         * @description 새로운?쇱젙님등록합니다
+         * 일정 등록
+         * @description 새로운 일정을 등록합니다.
          */
         post: operations["createSchedule"];
         delete?: never;
@@ -1102,16 +1334,60 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?쎈룄 紐⑸줉 조회
-         * @description ?쎈룄 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 약도 목록 조회
+         * @description 약도 목록을 페이징하여 조회합니다.
          */
         get: operations["getRoughMaps"];
         put?: never;
         /**
-         * ?쎈룄 등록
-         * @description 새로운?쎈룄 ?뺣낫瑜등록합니다
+         * 약도 등록
+         * @description 새로운 약도 정보를 등록합니다.
          */
         post: operations["insertRoughMap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/polls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 설문 목록 조회
+         * @description 온라인 설문 목록을 페이징하여 조회합니다.
+         */
+        get: operations["getPolls"];
+        put?: never;
+        /**
+         * 설문 등록
+         * @description 새로운 설문을 등록합니다.
+         */
+        post: operations["createPoll"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/polls/{pollId}/vote/{pollIemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 설문 참여(투표)
+         * @description 특정 설문 항목에 투표합니다.
+         */
+        post: operations["vote"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1126,14 +1402,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?뚮┝ 紐⑸줉 조회
-         * @description 로그?명븳 ъ슜?먯쓽 ?뚮┝ 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 알림 목록 조회
+         * @description 로그인한 사용자의 알림 목록을 페이징하여 조회합니다.
          */
         get: operations["getNotifications"];
         put?: never;
         /**
-         * ?뚮┝ 등록 (관리자님
-         * @description 시스템怨듭? ?뚮┝님吏곸젒 등록합니다
+         * 알림 등록 (관리자용)
+         * @description 시스템 공지 알림을 직접 등록합니다.
          */
         post: operations["createNotification"];
         delete?: never;
@@ -1152,8 +1428,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * ?뚮┝ ?쎌쓬 泥섎━
-         * @description ?뱀젙 ?뚮┝님?쎌쓬 ?곹깭濡蹂寃쏀빀?덈떎.
+         * 알림 읽음 처리
+         * @description 특정 알림을 읽음 상태로 변경합니다.
          */
         post: operations["markAsRead"];
         delete?: never;
@@ -1172,8 +1448,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 履쎌? 諛쒖넚
-         * @description 새로운履쎌瑜님묒꽦?섏뿬 諛쒖넚합니다
+         * 쪽지 발송
+         * @description 새로운 쪽지를 작성하여 발송합니다.
          */
         post: operations["sendNote"];
         delete?: never;
@@ -1190,14 +1466,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 硫붾え蹂닿퀬 紐⑸줉 조회
-         * @description ?꾩껜 硫붾え蹂닿퀬 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 메모보고 목록 조회
+         * @description 전체 메모보고 목록을 페이징하여 조회합니다.
          */
         get: operations["getMemoReports"];
         put?: never;
         /**
-         * 硫붾え蹂닿퀬 등록
-         * @description 새로운硫붾え蹂닿퀬瑜등록합니다
+         * 메모보고 등록
+         * @description 새로운 메모보고를 등록합니다.
          */
         post: operations["createMemoReport"];
         delete?: never;
@@ -1214,14 +1490,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 硫붿씤 ?대吏 紐⑸줉 조회
-         * @description 硫붿씤 ?대吏 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 메인 이미지 목록 조회
+         * @description 메인 이미지 목록을 페이징하여 조회합니다.
          */
         get: operations["getMainImageList"];
         put?: never;
         /**
-         * 硫붿씤 ?대吏 등록
-         * @description 새로운硫붿씤 ?대吏瑜등록합니다
+         * 메인 이미지 등록
+         * @description 새로운 메인 이미지를 등록합니다.
          */
         post: operations["insertMainImage"];
         delete?: never;
@@ -1238,14 +1514,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 諛쒖떊 硫붿씪 紐⑸줉 조회
-         * @description 諛쒖넚님硫붿씪 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 발신 메일 목록 조회
+         * @description 발송된 메일 목록을 페이징하여 조회합니다.
          */
         get: operations["getSentMails"];
         put?: never;
         /**
-         * 硫붿씪 諛쒖넚
-         * @description 새로운硫붿씪님?묒꽦?섏뿬 諛쒖넚합니다
+         * 메일 발송
+         * @description 새로운 메일을 작성하여 발송합니다.
          */
         post: operations["sendMail"];
         delete?: never;
@@ -1262,14 +1538,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 媛꾨? ?쇱젙 紐⑸줉 조회
-         * @description 媛꾨? ?쇱젙 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 간부 일정 목록 조회
+         * @description 간부 일정 목록을 페이징하여 조회합니다.
          */
         get: operations["getLeaderSchedules"];
         put?: never;
         /**
-         * 媛꾨? ?쇱젙 등록
-         * @description 새로운媛꾨? ?쇱젙님등록합니다
+         * 간부 일정 등록
+         * @description 새로운 간부 일정을 등록합니다.
          */
         post: operations["insertLeaderSchedule"];
         delete?: never;
@@ -1286,16 +1562,40 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 鍮꾩젙님결재 紐⑸줉 조회
-         * @description ?좎껌님또는 결재님湲곗님?결재 紐⑸줉님조회합니다
+         * 비정형 결재 목록 조회
+         * @description 신청자 또는 결재자 기준의 결재 목록을 조회합니다.
          */
         get: operations["getInformalSanctionList"];
         put?: never;
         /**
-         * 鍮꾩젙님결재 등록
-         * @description 새로운鍮꾩젙님결재瑜님붿껌합니다
+         * 비정형 결재 등록
+         * @description 새로운 비정형 결재를 요청합니다.
          */
         post: operations["registerInformalSanction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/ism": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 비정형 결재 목록 조회
+         * @description 신청자 또는 결재자 기준의 결재 목록을 조회합니다.
+         */
+        get: operations["getInformalSanctionList_1"];
+        put?: never;
+        /**
+         * 비정형 결재 등록
+         * @description 새로운 비정형 결재를 요청합니다.
+         */
+        post: operations["registerInformalSanction_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1310,14 +1610,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ⑤씪님留ㅻ돱님紐⑸줉 조회
-         * @description ⑤씪님留ㅻ돱님紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 온라인 매뉴얼 목록 조회
+         * @description 온라인 매뉴얼 목록을 페이징하여 조회합니다.
          */
         get: operations["getManuals"];
         put?: never;
         /**
-         * ⑤씪님留ㅻ돱님등록
-         * @description 새로운⑤씪님留ㅻ돱?쇱쓣 등록합니다
+         * 온라인 매뉴얼 등록
+         * @description 새로운 온라인 매뉴얼을 등록합니다.
          */
         post: operations["insertManual"];
         delete?: never;
@@ -1334,14 +1634,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?꾩留紐⑸줉 조회
-         * @description ?꾩留紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 도움말 목록 조회
+         * @description 도움말 목록을 페이징하여 조회합니다.
          */
         get: operations["getHpcmList"];
         put?: never;
         /**
-         * ?꾩留등록
-         * @description 새로운?꾩留먯쓣 등록합니다
+         * 도움말 등록
+         * @description 새로운 도움말을 등록합니다.
          */
         post: operations["insertHpcm"];
         delete?: never;
@@ -1360,7 +1660,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * ?뚯씪 ?낅줈님         * @description щ윭 ?뚯씪님?낅줈?쒗븯怨님듯빀 ?뚯씪 ID瑜諛섑솚합니다
+         * 파일 업로드
+         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
          */
         post: operations["uploadFiles"];
         delete?: never;
@@ -1377,14 +1678,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * FAQ 紐⑸줉 조회
-         * @description FAQ 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * FAQ 목록 조회
+         * @description FAQ 목록을 페이징하여 조회합니다.
          */
         get: operations["getFaqs"];
         put?: never;
         /**
          * FAQ 등록
-         * @description 새로운FAQ瑜등록합니다
+         * @description 새로운 FAQ를 등록합니다.
          */
         post: operations["insertFaq"];
         delete?: never;
@@ -1401,16 +1702,36 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 遺님업무님紐⑸줉 조회
-         * @description 遺님업무님紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 부서 업무함 목록 조회
+         * @description 부서 업무함 목록을 페이징하여 조회합니다.
          */
         get: operations["getDeptJobBoxList"];
         put?: never;
         /**
-         * 遺님업무님등록
-         * @description 새로운遺님업무⑥쓣 등록합니다
+         * 부서 업무함 등록
+         * @description 새로운 부서 업무함을 등록합니다.
          */
         post: operations["createDeptJobBox"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/communities/{cmmntyId}/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 커뮤니티 가입 신청
+         * @description 사용자가 특정 커뮤니티에 가입을 신청합니다.
+         */
+        post: operations["joinCommunity"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1425,14 +1746,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?볤? 紐⑸줉 조회
-         * @description ?뱀젙 寃뚯떆臾쇱쓽 ?볤? 紐⑸줉님조회합니다
+         * 댓글 목록 조회
+         * @description 특정 게시물의 댓글 목록을 조회합니다.
          */
         get: operations["getComments"];
         put?: never;
         /**
-         * ?볤? 등록
-         * @description 새로운?볤님?등록합니다
+         * 댓글 등록
+         * @description 새로운 댓글을 등록합니다.
          */
         post: operations["createComment"];
         delete?: never;
@@ -1452,7 +1773,7 @@ export interface paths {
         put?: never;
         /**
          * 게시글 등록
-         * @description 새로운게시글이등록합니다
+         * @description 새로운 게시글을 등록합니다.
          */
         post: operations["createPost"];
         delete?: never;
@@ -1469,14 +1790,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 게시물紐⑸줉 조회
-         * @description 寃뚯떆?먯쓽 게시물紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 게시물 목록 조회
+         * @description 게시판의 게시물 목록을 페이징하여 조회합니다.
          */
         get: operations["getBoardList"];
         put?: never;
         /**
-         * 게시물등록
-         * @description 새로운寃뚯떆臾쇱쓣 등록합니다
+         * 게시물 등록
+         * @description 새로운 게시물을 등록합니다.
          */
         post: operations["createBoard"];
         delete?: never;
@@ -1540,7 +1861,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 설문 문항 목록 조회 */
+        /** 마이페이지 콘텐츠 목록 조회 */
         get: operations["getContents"];
         put?: never;
         /** 마이페이지 콘텐츠 등록 */
@@ -1559,19 +1880,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 사용자紐⑸줉 조회
-         * @description 시스템사용자紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 사용자 목록 조회
+         * @description 전체 사용자 목록을 페이징하여 조회합니다.
          */
         get: operations["getUsers"];
         put?: never;
         /**
-         * 사용자등록
-         * @description 새로운시스템ъ슜?먮? 등록합니다
+         * 사용자 등록
+         * @description 새로운 시스템 사용자를 등록합니다. (관리자 권한)
          */
         post: operations["insertUser"];
         /**
-         * 사용자ㅼ쨷 님젣
-         * @description ?쒖뒪?쒖뿉님щ윭 紐낆쓽 ъ슜?먮? ?쒓볼踰덉뿉 님젣합니다
+         * 사용자 다중 삭제
+         * @description 시스템에서 여러 명의 사용자를 한꺼번에 삭제합니다. (관리자 권한)
          */
         delete: operations["deleteUsers"];
         options?: never;
@@ -1587,18 +1908,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ъ슜?먮퀎 沅뚰븳 紐⑸줉 조회
-         * @description 시스템사용자紐⑸줉怨媛님ъ슜?먯쓽 沅뚰븳 ?좊떦 ?곹깭瑜조회합니다
+         * 사용자별 권한 목록 조회
+         * @description 시스템 사용자 목록과 각 사용자의 권한 할당 상태를 조회합니다.
          */
         get: operations["getUserAuthorities"];
         put?: never;
         /**
-         * 사용자沅뚰븳 ?좊떦 님         * @description щ윭 ъ슜?먯뿉 님沅뚰븳님?쇨큵 ?좊떦?섍굅님?낅뜲?댄듃합니다
+         * 사용자 권한 할당 저장
+         * @description 여러 사용자에 대해 권한을 일괄 할당하거나 업데이트합니다.
          */
         post: operations["saveUserAuthorities"];
         /**
-         * 사용자沅뚰븳 ?좊떦 님젣
-         * @description ?대떦 ъ슜?먮뱾님沅뚰븳 ?좊떦 ?뺣낫瑜님?젣합니다
+         * 사용자 권한 할당 삭제
+         * @description 해당 사용자들의 권한 할당 정보를 삭제합니다.
          */
         delete: operations["deleteUserAuthorities"];
         options?: never;
@@ -1614,14 +1936,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?쒗뵆由紐⑸줉 조회
-         * @description ?쒖뒪?쒖뿉 등록님紐⑤뱺 寃뚯떆님?쒗뵆由紐⑸줉님조회합니다
+         * 템플릿 목록 조회
+         * @description 시스템에 등록된 모든 게시판 템플릿 목록을 조회합니다.
          */
         get: operations["selectTmplatInfoList"];
         put?: never;
         /**
-         * ?쒗뵆由등록
-         * @description 새로운寃뚯떆님?쒗뵆由님뺣낫瑜등록합니다
+         * 템플릿 등록
+         * @description 새로운 게시판 템플릿 정보를 등록합니다.
          */
         post: operations["insertTmplatInfo"];
         delete?: never;
@@ -1630,18 +1952,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys": {
+    "/api/v1/surveys/{qestnrId}/questions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** 설문 템플릿 목록 페이징 조회 */
-        get: operations["getSurveys"];
+        /** 설문 문항 목록 조회 */
+        get: operations["getQuestions"];
         put?: never;
-        /** 설문 정보 등록 */
-        post: operations["insertSurvey"];
+        /** 설문 문항 등록 */
+        post: operations["insertQuestion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1655,11 +1977,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 게시?목록 조회 */
-        get: operations["getQuestions"];
+        /** 설문 문항 목록 조회 */
+        get: operations["getQuestions_1"];
         put?: never;
         /** 설문 문항 등록 */
-        post: operations["insertQuestion"];
+        post: operations["insertQuestion_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1673,11 +1995,29 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 상세코드 목록 조회 */
+        /** 설문 템플릿 목록 페이징 조회 */
         get: operations["getTemplates"];
         put?: never;
         /** 설문 템플릿 등록 */
         post: operations["insertTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 설문 템플릿 목록 페이징 조회 */
+        get: operations["getTemplates_1"];
+        put?: never;
+        /** 설문 템플릿 등록 */
+        post: operations["insertTemplate_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1701,6 +2041,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/surveys/questions/{qesitmId}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 설문 항목 등록 */
+        post: operations["insertItem_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 설문 정보 목록 페이징 조회 */
+        get: operations["getSurveys"];
+        put?: never;
+        /** 설문 정보 등록 */
+        post: operations["insertSurvey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/surveys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 설문 정보 목록 페이징 조회 */
+        get: operations["getSurveys_1"];
+        put?: never;
+        /** 설문 정보 등록 */
+        post: operations["insertSurvey_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/roles": {
         parameters: {
             query?: never;
@@ -1709,19 +2102,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 濡紐⑸줉 조회
-         * @description ?쒖뒪?쒖뿉 ?뺤쓽님?꾩껜 沅뚰븳(Role) 紐⑸줉님조회합니다
+         * 롤 목록 조회
+         * @description 시스템에 정의된 전체 권한(Role) 목록을 조회합니다.
          */
         get: operations["getRoles"];
         put?: never;
         /**
-         * 濡등록
-         * @description 새로운시스템沅뚰븳(Role)님등록합니다
+         * 롤 등록
+         * @description 새로운 시스템 권한(Role)을 등록합니다.
          */
         post: operations["createRole"];
         /**
-         * 濡님ㅼ쨷 님젣
-         * @description щ윭 沅뚰븳(Role) ?뺣낫瑜님쒓볼踰덉뿉 님젣합니다
+         * 롤 다중 삭제
+         * @description 여러 권한(Role) 정보를 한꺼번에 삭제합니다.
          */
         delete: operations["deleteRoles"];
         options?: never;
@@ -1737,14 +2130,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Q&A 紐⑸줉 조회
-         * @description Q&A 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * Q&A 목록 조회
+         * @description Q&A 목록을 페이징하여 조회합니다.
          */
         get: operations["getQnas"];
         put?: never;
         /**
-         * Q&A 吏덈Ц 등록
-         * @description 새로운Q&A 吏덈Ц님등록합니다
+         * Q&A 질문 등록
+         * @description 새로운 Q&A 질문을 등록합니다.
          */
         post: operations["insertQna"];
         delete?: never;
@@ -1760,10 +2153,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 공통코드 목록 조회 */
+        /** 프로그램 목록 조회 */
         get: operations["getProgramList"];
         put?: never;
-        /** ?꾨줈洹몃옩 등록 */
+        /** 프로그램 등록 */
         post: operations["createProgram"];
         delete?: never;
         options?: never;
@@ -1779,14 +2172,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?앹뾽 紐⑸줉 조회
-         * @description 관리자媛 ?앹뾽 紐⑸줉님?섏씠吏ㅼ씠?섑븯님조회합니다
+         * 팝업 목록 조회
+         * @description 관리자가 팝업 목록을 페이지네이션하여 조회합니다.
          */
         get: operations["getPopups"];
         put?: never;
         /**
-         * ?앹뾽 등록
-         * @description 새로운?앹뾽님등록합니다
+         * 팝업 등록
+         * @description 새로운 팝업을 등록합니다.
          */
         post: operations["createPopup"];
         delete?: never;
@@ -1802,10 +2195,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 분류코드 목록 조회 */
-        get: operations["getPolls"];
+        /** 온라인 설문 목록 페이징 조회 */
+        get: operations["getPolls_1"];
         put?: never;
-        /** ⑤씪님설문 등록 */
+        /** 온라인 설문 등록 */
         post: operations["insertPoll"];
         delete?: never;
         options?: never;
@@ -1822,8 +2215,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** ⑤씪님설문 ы몴 泥섎━ */
-        post: operations["vote"];
+        /** 온라인 설문 투표 처리 */
+        post: operations["vote_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1838,14 +2231,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 硫붾돱 紐⑸줉 조회
-         * @description 시스템?꾩껜 硫붾돱 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 메뉴 목록 조회
+         * @description 시스템 전체 메뉴 목록을 페이징하여 조회합니다.
          */
         get: operations["getMenuList"];
         put?: never;
         /**
-         * 硫붾돱 등록
-         * @description 새로운시스템硫붾돱瑜등록합니다
+         * 메뉴 등록
+         * @description 새로운 시스템 메뉴를 등록합니다.
          */
         post: operations["createMenu"];
         delete?: never;
@@ -1862,13 +2255,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 沅뚰븳蹂硫붾돱 紐⑸줉 조회
-         * @description ?뱀젙 沅뚰븳님?좊떦님硫붾돱 紐⑸줉 諛님곹깭瑜조회합니다
+         * 권한별 메뉴 목록 조회
+         * @description 특정 권한에 할당된 메뉴 목록 및 상태를 조회합니다.
          */
         get: operations["getMenuCreationList"];
         put?: never;
         /**
-         * 沅뚰븳蹂硫붾돱 ?좊떦 님         * @description ?뱀젙 沅뚰븳님硫붾돱ㅼ쓣 ?좊떦?섍굅님?댁젣합니다
+         * 권한별 메뉴 할당 저장
+         * @description 특정 권한에 메뉴들을 할당하거나 해제합니다.
          */
         post: operations["createMenuCreation"];
         delete?: never;
@@ -1884,10 +2278,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 행정코드 목록 조회 */
+        /** 서비스 안내 목록 조회 */
         get: operations["getIsgList"];
         put?: never;
-        /** ?쒕퉬님?덈궡 등록 */
+        /** 서비스 안내 등록 */
         post: operations["registerIsg"];
         delete?: never;
         options?: never;
@@ -1903,19 +2297,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 洹몃９ 紐⑸줉 조회
-         * @description ?쒖뒪?쒖뿉 ?뺤쓽님?꾩껜 사용자洹몃９ 紐⑸줉님조회합니다
+         * 그룹 목록 조회
+         * @description 시스템에 정의된 전체 사용자 그룹 목록을 조회합니다.
          */
         get: operations["getGroups"];
         put?: never;
         /**
-         * 洹몃９ 등록
-         * @description 새로운시스템사용자洹몃９님등록합니다
+         * 그룹 등록
+         * @description 새로운 시스템 사용자 그룹을 등록합니다.
          */
         post: operations["createGroup"];
         /**
-         * 洹몃９ ㅼ쨷 님젣
-         * @description щ윭 사용자洹몃９ ?뺣낫瑜님쒓볼踰덉뿉 님젣합니다
+         * 그룹 다중 삭제
+         * @description 여러 사용자 그룹 정보를 한꺼번에 삭제합니다.
          */
         delete: operations["deleteGroups"];
         options?: never;
@@ -1923,45 +2317,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/depts": {
+    "/api/v1/admin/system/dept-authorities/batch": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 遺님紐⑸줉 조회
-         * @description 시스템遺님紐⑸줉님?섏씠吏뺥븯님조회합니다
-         */
-        get: operations["getDepts"];
+        get?: never;
         put?: never;
         /**
-         * 遺님등록
-         * @description 새로운시스템遺쒕? 등록합니다
-         */
-        post: operations["insertDept"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/depts/{deptCode}/authorities": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 遺쒕퀎 沅뚰븳 紐⑸줉 조회
-         * @description ?뱀젙 遺님님ъ슜?먮뱾님沅뚰븳 ?좊떦 ?곹깭瑜조회합니다
-         */
-        get: operations["getDeptAuthorities"];
-        put?: never;
-        /**
-         * 遺님사용자沅뚰븳 ?쇨큵 님         * @description ?대떦 遺님ъ슜?먮뱾님님沅뚰븳님?쇨큵 ?좊떦?섍굅님?낅뜲?댄듃합니다
+         * 부서 사용자 권한 일괄 저장
+         * @description 해당 부서 사용자들에 대해 권한을 일괄 할당하거나 업데이트합니다.
          */
         post: operations["saveDeptUserAuthorities"];
         delete?: never;
@@ -1970,7 +2337,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/communities": {
+    "/api/v1/admin/system/departments": {
         parameters: {
             query?: never;
             header?: never;
@@ -1978,16 +2345,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 而ㅻ님덊떚 紐⑸줉 조회
-         * @description ?쒖뒪?쒖뿉 등록님?꾩껜 而ㅻ님덊떚 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 부서 목록 조회
+         * @description 시스템 부서 목록을 페이징하여 조회합니다.
          */
-        get: operations["getCommunities"];
+        get: operations["getDepts"];
         put?: never;
         /**
-         * 而ㅻ님덊떚 媛쒖꽕 ?좎껌/등록
-         * @description 새로운而ㅻ님덊떚 媛쒖꽕님?좎껌?섍굅님등록합니다
+         * 부서 등록
+         * @description 새로운 시스템 부서를 등록합니다.
          */
-        post: operations["createCommunity"];
+        post: operations["insertDept"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2003,7 +2370,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 湲곌肄붾뱶 ?섏떊 泥섎━ */
+        /** 기관코드 수신 처리 */
         post: operations["processInstitutionCodeRecptn"];
         delete?: never;
         options?: never;
@@ -2018,7 +2385,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 설문 정보 상세 조회 */
+        /** 상세코드 목록 조회 */
         get: operations["getDetailCodeList"];
         put?: never;
         /** 상세코드 등록 */
@@ -2036,7 +2403,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 설문 템플릿 상세 조회 */
+        /** 공통코드 목록 조회 */
         get: operations["getCmmnCodeList"];
         put?: never;
         /** 공통코드 등록 */
@@ -2054,7 +2421,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ???림 목록 조회 */
+        /** 분류코드 목록 조회 */
         get: operations["getClCodeList"];
         put?: never;
         /** 분류코드 등록 */
@@ -2072,7 +2439,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?? ?? ?림 개수 조회 */
+        /** 행정코드 목록 조회 */
         get: operations["getAdministCodeList"];
         put?: never;
         /** 행정코드 등록 */
@@ -2090,10 +2457,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 메뉴 목록 ?스??- Menu ?티??직접 반환 */
+        /** 상담 목록 페이징 조회 */
         get: operations["getConsultations"];
         put?: never;
-        /** ?곷떞 등록 */
+        /** 상담 등록 */
         post: operations["insertConsultation"];
         delete?: never;
         options?: never;
@@ -2109,14 +2476,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 寃뚯떆님紐⑸줉 조회
-         * @description ?쒖뒪?쒖뿉 등록님?꾩껜 寃뚯떆님留덉뒪님紐⑸줉님조회합니다
+         * 게시판 목록 조회
+         * @description 시스템에 등록된 전체 게시판 마스터 목록을 조회합니다.
          */
         get: operations["getBoardMasters"];
         put?: never;
         /**
-         * 寃뚯떆님?앹꽦
-         * @description 새로운寃뚯떆님留덉뒪?곕? ?앹꽦합니다
+         * 게시판 생성
+         * @description 새로운 게시판 마스터를 생성합니다.
          */
         post: operations["createBoardMaster"];
         delete?: never;
@@ -2133,14 +2500,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 諛곕꼫 紐⑸줉 조회
-         * @description ?쒖뒪?쒖뿉 등록님諛곕꼫ㅼ쓣 寃님議곌굔님?곕씪 ?섏씠吏조회합니다
+         * 배너 목록 조회
+         * @description 시스템에 등록된 배너들을 검색 조건에 따라 페이징 조회합니다.
          */
         get: operations["getBanners"];
         put?: never;
         /**
-         * 諛곕꼫 등록
-         * @description 새로운諛곕꼫 ?뺣낫瑜등록합니다
+         * 배너 등록
+         * @description 새로운 배너 정보를 등록합니다.
          */
         post: operations["insertBanner"];
         delete?: never;
@@ -2157,19 +2524,19 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 沅뚰븳 洹몃９ 紐⑸줉 조회
-         * @description ?쒖뒪?쒖뿉 ?뺤쓽님沅뚰븳 洹몃９(Author) 紐⑸줉님조회합니다
+         * 권한 그룹 목록 조회
+         * @description 시스템에 정의된 권한 그룹(Author) 목록을 조회합니다.
          */
         get: operations["getAuthors"];
         put?: never;
         /**
-         * 沅뚰븳 洹몃９ 등록
-         * @description 새로운시스템沅뚰븳 洹몃９님등록합니다
+         * 권한 그룹 등록
+         * @description 새로운 시스템 권한 그룹을 등록합니다.
          */
         post: operations["createAuthor"];
         /**
-         * 沅뚰븳 洹몃９ ㅼ쨷 님젣
-         * @description щ윭 沅뚰븳 洹몃９ ?뺣낫瑜님쒓볼踰덉뿉 님젣합니다
+         * 권한 그룹 다중 삭제
+         * @description 여러 권한 그룹 정보를 한꺼번에 삭제합니다.
          */
         delete: operations["deleteAuthors"];
         options?: never;
@@ -2185,13 +2552,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 沅뚰븳蹂濡紐⑸줉 조회
-         * @description ?뱀젙 沅뚰븳님?좊떦님濡紐⑸줉 諛님꾩껜 濡님곹깭瑜조회합니다
+         * 권한별 롤 목록 조회
+         * @description 특정 권한에 할당된 롤 목록 및 전체 롤 상태를 조회합니다.
          */
         get: operations["getAuthorRoles"];
         put?: never;
         /**
-         * 沅뚰븳蹂濡님좊떦 님         * @description ?뱀젙 沅뚰븳님님?좏깮님濡ㅻ뱾님?좊떦합니다
+         * 권한별 롤 할당 저장
+         * @description 특정 권한에 대해 선택된 롤들을 할당합니다.
          */
         post: operations["saveAuthorRoles"];
         delete?: never;
@@ -2208,14 +2576,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * SMS 諛쒖넚 ?댁뿭 조회
-         * @description 諛쒖넚님SMS 紐⑸줉님?섏씠吏조회합니다
+         * SMS 발송 내역 조회
+         * @description 발송된 SMS 목록을 페이징 조회합니다.
          */
         get: operations["getSmsList"];
         put?: never;
         /**
-         * SMS 諛쒖넚
-         * @description 새로운SMS瑜諛쒖넚합니다
+         * SMS 발송
+         * @description 새로운 SMS를 발송합니다.
          */
         post: operations["sendSms"];
         delete?: never;
@@ -2264,14 +2632,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?됱궗 紐⑸줉 조회
-         * @description 湲곕뒫蹂님됱궗 ?뺣낫瑜님섏씠吏뺥븯님조회합니다
+         * 행사 목록 조회
+         * @description 기능별 행사 정보를 페이징하여 조회합니다.
          */
         get: operations["getEventList"];
         put?: never;
         /**
-         * ?됱궗 ?뺣낫 등록
-         * @description 새로운?됱궗 ?뺣낫瑜등록합니다
+         * 행사 정보 등록
+         * @description 새로운 행사 정보를 등록합니다.
          */
         post: operations["createEvent"];
         delete?: never;
@@ -2280,7 +2648,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/digital-assets": {
+    "/api/v1/admin/content/community": {
         parameters: {
             query?: never;
             header?: never;
@@ -2288,16 +2656,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 吏앹젙蹂紐⑸줉 조회
-         * @description 吏앹젙蹂님붿님님먯궛) 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 커뮤니티 목록 조회
+         * @description 시스템에 등록된 전체 커뮤니티 목록을 페이징하여 조회합니다.
          */
-        get: operations["getKnowledgeList"];
+        get: operations["getCommunities"];
         put?: never;
         /**
-         * 吏앹젙蹂등록
-         * @description 새로운吏앹젙蹂대? 등록합니다
+         * 커뮤니티 개설 신청/등록
+         * @description 새로운 커뮤니티 개설을 신청하거나 등록합니다.
          */
-        post: operations["createKnowledge"];
+        post: operations["createCommunity"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2312,14 +2680,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 주소濡紐⑸줉 조회
-         * @description ъ슜?먭? ?앹꽦님주소濡님먮뒗 怨듦컻님주소濡紐⑸줉님조회합니다
+         * 주소록 목록 조회
+         * @description 사용자가 생성한 주소록 또는 공개된 주소록 목록을 조회합니다.
          */
         get: operations["getAddressBooks"];
         put?: never;
         /**
-         * 주소濡등록
-         * @description 새로운주소濡앹쓣 ?앹꽦합니다
+         * 주소록 등록
+         * @description 새로운 주소록을 생성합니다.
          */
         post: operations["createAddressBook"];
         delete?: never;
@@ -2342,8 +2710,8 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * 吏쒖궗님?낅뜲?댄듃
-         * @description 硫붾え보고님吏쒖궗님쓣 ?낅뜲?댄듃합니다
+         * 지시사항 업데이트
+         * @description 메모보고에 대한 지시사항을 업데이트합니다.
          */
         patch: operations["updateDrctMatter"];
         trace?: never;
@@ -2362,10 +2730,30 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * 鍮꾩젙님결재 ?뱀씤/諛섎젮
-         * @description 결재?먭? 결재瑜님뱀씤 또는 諛섎젮 泥섎━합니다
+         * 비정형 결재 승인/반려
+         * @description 결재자가 결재를 승인 또는 반려 처리합니다.
          */
         patch: operations["confirmInformalSanction"];
+        trace?: never;
+    };
+    "/api/v1/admin/system/ism/{informalSanctionId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 비정형 결재 승인/반려
+         * @description 결재자가 결재를 승인 또는 반려 처리합니다.
+         */
+        patch: operations["confirmInformalSanction_1"];
         trace?: never;
     };
     "/api/v1/admin/system/users/{userId}/password": {
@@ -2382,9 +2770,10 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * 鍮꾨踰덊샇 蹂寃         * @description ?뱀젙 ъ슜?먯쓽 鍮꾨踰덊샇瑜관리자 沅뚰븳?쇰줈 蹂寃쏀빀?덈떎.
+         * 비밀번호 강제 변경
+         * @description 특정 사용자의 비밀번호를 관리자 권한으로 변경합니다.
          */
-        patch: operations["updatePassword"];
+        patch: operations["updatePasswordByAdmin"];
         trace?: never;
     };
     "/api/v1/admin/system/qnas/{qaId}/answer": {
@@ -2401,8 +2790,8 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Q&A ?듬? 등록/?섏젙
-         * @description Q&A 님님?듬님?등록?섍굅님?섏젙합니다
+         * Q&A 답변 등록/수정
+         * @description Q&A 에 대한 답변을 등록하거나 수정합니다.
          */
         patch: operations["answerQna"];
         trace?: never;
@@ -2420,11 +2809,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** ?곷떞 ?듬? 泥섎━ */
+        /** 상담 답변 처리 */
         patch: operations["answerConsultation"];
         trace?: never;
     };
-    "/api/v1/users": {
+    "/api/v1/users/check-id": {
         parameters: {
             query?: never;
             header?: never;
@@ -2432,30 +2821,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 사용자紐⑸줉 조회 (?꾩껜)
-         * @description ?섏씠吏님놁씠 紐⑤뱺 사용자紐⑸줉님조회합니다
+         * 아이디 중복 확인
+         * @description 사용자 아이디가 시스템에 이미 존재하는지 확인합니다.
          */
-        get: operations["getUserList"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/users/paged": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 사용자紐⑸줉 조회 (?섏씠吏
-         * @description 사용자紐⑸줉님?섏씠吏뺥븯님조회합니다
-         */
-        get: operations["getPagedUserList"];
+        get: operations["checkIdDplct"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2472,15 +2841,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 스크랩상세 조회
-         * @description ?뱀젙 ㅽ겕⑹쓽 상세 ?뺣낫瑜조회합니다
+         * 스크랩 상세 조회
+         * @description 특정 스크랩의 상세 정보를 조회합니다.
          */
         get: operations["getScrap"];
         put?: never;
         post?: never;
         /**
-         * 스크랩님젣
-         * @description ㅽ겕⑹쓣 님젣합니다
+         * 스크랩 삭제
+         * @description 스크랩을 삭제합니다.
          */
         delete: operations["deleteScrap"];
         options?: never;
@@ -2496,8 +2865,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 湲곌컙蹂님쇱젙 조회
-         * @description ъ슜?먯쓽 ?뱀젙 湲곌컙 님?쇱젙 紐⑸줉님조회합니다
+         * 기간별 일정 조회
+         * @description 사용자의 특정 기간 내 일정 목록을 조회합니다.
          */
         get: operations["getScheduleByDateRange"];
         put?: never;
@@ -2516,8 +2885,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?붾퀎 ?쇱젙 조회
-         * @description ъ슜?먯쓽 ?붾퀎 ?쇱젙 紐⑸줉님조회합니다
+         * 월별 일정 조회
+         * @description 사용자의 월별 일정 목록을 조회합니다.
          */
         get: operations["getMonthlySchedule"];
         put?: never;
@@ -2536,8 +2905,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?앹뾽 상세 조회
-         * @description ?뱀젙 ?앹뾽님상세 ?뺣낫瑜조회합니다
+         * 팝업 상세 조회
+         * @description 특정 팝업의 상세 정보를 조회합니다.
          */
         get: operations["getPopup_1"];
         put?: never;
@@ -2556,10 +2925,30 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 활성 ?앹뾽 紐⑸줉 조회
-         * @description 현재 寃뚯떆 湲곌컙 ?댁뿉 ?덈뒗 활성 ?앹뾽 紐⑸줉님조회합니다
+         * 활성 팝업 목록 조회
+         * @description 현재 게시 기간 내에 있는 활성 팝업 목록을 조회합니다.
          */
         get: operations["getActivePopups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/polls/{pollId}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 설문 항목 목록 조회
+         * @description 특정 설문의 항목 목록을 조회합니다.
+         */
+        get: operations["getPollItems"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2576,15 +2965,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?뚮┝ 상세 조회
-         * @description ?뱀젙 ?뚮┝님상세 이용님조회합니다
+         * 알림 상세 조회
+         * @description 특정 알림의 상세 내용을 조회합니다.
          */
         get: operations["getNotification"];
         put?: never;
         post?: never;
         /**
-         * ?뚮┝ 님젣
-         * @description ?뱀젙 ?뚮┝님님젣합니다
+         * 알림 삭제
+         * @description 특정 알림을 삭제합니다.
          */
         delete: operations["deleteNotification"];
         options?: never;
@@ -2600,8 +2989,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 誘몄뿴님?뚮┝ 님조회
-         * @description ?쎌? ?딆? ?뚮┝님珥媛쒖닔瑜조회합니다
+         * 미열람 알림 수 조회
+         * @description 읽지 않은 알림의 총 개수를 조회합니다.
          */
         get: operations["getUnreadCount"];
         put?: never;
@@ -2620,8 +3009,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 履쎌? 상세 조회
-         * @description 履쎌? 상세 ?뺣낫瑜조회합니다
+         * 쪽지 상세 조회
+         * @description 쪽지 상세 정보를 조회합니다.
          */
         get: operations["getNote"];
         put?: never;
@@ -2640,8 +3029,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 諛쒖떊 履쎌? 紐⑸줉 조회
-         * @description 로그?명븳 ъ슜?먯쓽 諛쒖떊 履쎌? 紐⑸줉님조회합니다
+         * 발신 쪽지 목록 조회
+         * @description 로그인한 사용자의 발신 쪽지 목록을 조회합니다.
          */
         get: operations["getSentNotes"];
         put?: never;
@@ -2660,8 +3049,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?섏떊 履쎌? 紐⑸줉 조회
-         * @description 로그?명븳 ъ슜?먯쓽 ?섏떊 履쎌? 紐⑸줉님조회합니다
+         * 수신 쪽지 목록 조회
+         * @description 로그인한 사용자의 수신 쪽지 목록을 조회합니다.
          */
         get: operations["getReceivedNotes"];
         put?: never;
@@ -2679,7 +3068,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 메뉴 목록 ?스??- Program 조회 */
+        /** 메뉴 목록 테스트 - Menu 엔티티 직접 반환 */
         get: operations["getRawMenus"];
         put?: never;
         post?: never;
@@ -2696,7 +3085,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?정 메뉴???위 메뉴 목록 조회 */
+        /** 메뉴 목록 테스트 - Program 조회 */
         get: operations["getPrograms"];
         put?: never;
         post?: never;
@@ -2713,7 +3102,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** GNB ?메뉴 목록 조회 */
+        /** 특정 메뉴의 하위 메뉴 목록 조회 */
         get: operations["getLeftMenu"];
         put?: never;
         post?: never;
@@ -2730,7 +3119,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 로그인 정책 목록 조회 */
+        /** GNB 메인 메뉴 목록 조회 */
         get: operations["getHeadMenu"];
         put?: never;
         post?: never;
@@ -2748,8 +3137,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?섏떊 硫붾え蹂닿퀬 紐⑸줉 조회
-         * @description ?섏뿉寃님섏떊님硫붾え蹂닿퀬 紐⑸줉님조회합니다
+         * 수신 메모보고 목록 조회
+         * @description 나에게 수신된 메모보고 목록을 조회합니다.
          */
         get: operations["getReceivedReports"];
         put?: never;
@@ -2768,8 +3157,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?섏쓽 硫붾え蹂닿퀬 紐⑸줉 조회
-         * @description ?닿? ?묒꽦님硫붾え蹂닿퀬 紐⑸줉님조회합니다
+         * 나의 메모보고 목록 조회
+         * @description 내가 작성한 메모보고 목록을 조회합니다.
          */
         get: operations["getMyReports"];
         put?: never;
@@ -2788,8 +3177,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 諛섏쁺님硫붿씤 ?대吏 紐⑸줉 조회
-         * @description 현재 諛섏쁺(寃뚯떆) 以묒씤 硫붿씤 ?대吏 紐⑸줉님조회합니다
+         * 반영된 메인 이미지 목록 조회
+         * @description 현재 반영(게시) 중인 메인 이미지 목록을 조회합니다.
          */
         get: operations["getReflectedMainImages"];
         put?: never;
@@ -2808,15 +3197,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 諛쒖떊 硫붿씪 상세 조회
-         * @description ?뱀젙 硫붿씪님諛쒖넚 상세 ?뺣낫瑜조회합니다
+         * 발신 메일 상세 조회
+         * @description 특정 메일의 발송 상세 정보를 조회합니다.
          */
         get: operations["getSentMail"];
         put?: never;
         post?: never;
         /**
-         * 硫붿씪 님젣
-         * @description 諛쒖넚 硫붿씪 ?댁뿭님님젣합니다
+         * 메일 삭제
+         * @description 발송 메일 내역을 삭제합니다.
          */
         delete: operations["deleteMail"];
         options?: never;
@@ -2832,8 +3221,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 媛꾨? ?곹깭 紐⑸줉 조회
-         * @description 媛꾨? ?곹깭 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 간부 상태 목록 조회
+         * @description 간부 상태 목록을 페이징하여 조회합니다.
          */
         get: operations["getLeaderStatuses"];
         put?: never;
@@ -2853,7 +3242,7 @@ export interface paths {
         };
         /**
          * Check API Health Status
-         * @description API ?쒕쾭님?숈옉 ?곹깭瑜님뺤씤합니다
+         * @description API 서버의 동작 상태를 확인합니다.
          */
         get: operations["checkHealth"];
         put?: never;
@@ -2872,8 +3261,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?뚯씪 紐⑸줉 조회
-         * @description ?듯빀 ?뚯씪 ID님?랁븳 ?뚯씪 紐⑸줉님조회합니다
+         * 파일 목록 조회
+         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
          */
         get: operations["getFileList"];
         put?: never;
@@ -2892,8 +3281,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?뚯씪 ㅼ슫濡쒕뱶
-         * @description ?뱀젙 ?뚯씪님ㅼ슫濡쒕뱶합니다
+         * 파일 다운로드
+         * @description 특정 파일을 다운로드합니다.
          */
         get: operations["downloadFile"];
         put?: never;
@@ -2912,10 +3301,50 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 硫붿씤 쒕낫님?붿빟 데이터조회
-         * @description 공지사항, 님님 결재 湲건수 ?깆쓣 ?듯빀 조회합니다
+         * 메인 대시보드 요약 데이터 조회
+         * @description 공지사항, 할 일, 결재 대기 건수 등을 통합 조회합니다.
          */
         get: operations["getDashboardData"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/communities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 커뮤니티 목록 조회
+         * @description 시스템에 등록된 전체 커뮤니티 목록을 페이징하여 조회합니다.
+         */
+        get: operations["getCommunities_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/communities/{cmmntyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 커뮤니티 상세 조회
+         * @description 특정 커뮤니티의 상세 정보를 조회합니다.
+         */
+        get: operations["getCommunity_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2932,8 +3361,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 게시글 紐⑸줉 조회
-         * @description ?뱀젙 寃뚯떆?먯쓽 게시글 紐⑸줉님?섏씠吏뺥븯님조회합니다
+         * 게시글 목록 조회
+         * @description 특정 게시판의 게시글 목록을 페이징하여 조회합니다.
          */
         get: operations["getPosts"];
         put?: never;
@@ -2944,7 +3373,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{id}": {
+    "/api/v1/boards/{bbsId}/stats": {
         parameters: {
             query?: never;
             header?: never;
@@ -2952,17 +3381,13 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 게시글 상세 조회
-         * @description ?뱀젙 寃뚯떆?먯쓽 게시글 상세 ?뺣낫瑜조회합니다
+         * 게시판 통계 조회
+         * @description 특정 게시판의 전체 게시글 수, 조회수 총합 등의 통계 정보를 조회합니다.
          */
-        get: operations["getPost"];
+        get: operations["getStats"];
         put?: never;
         post?: never;
-        /**
-         * 게시글 님젣
-         * @description 게시글이님젣합니다
-         */
-        delete: operations["deletePost"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2991,7 +3416,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?용???계 조회 */
+        /** Get Pending Approvals (Inbox) */
         get: operations["getPending"];
         put?: never;
         post?: never;
@@ -3008,28 +3433,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?면(?청) ?계 조회 */
+        /** Get My Approval History */
         get: operations["getMyHistory"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/users/check-id": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * ?꾩씠님以묐났 확인
-         * @description 사용자?꾩씠?붽? ?쒖뒪?쒖뿉 ?대? 議댁옱?섎뒗吏 확인합니다
-         */
-        get: operations["checkIdDplct"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3045,7 +3450,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?속 ?계 조회 */
+        /** 사용자 부재 정보 목록 조회 */
         get: operations["getAbsences"];
         put?: never;
         post?: never;
@@ -3063,44 +3468,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?쒗뵆由님곸꽭 조회
-         * @description ?뱀젙 ?쒗뵆由우쓽 상세 ?뺣낫瑜조회합니다
+         * 템플릿 상세 조회
+         * @description 특정 템플릿의 상세 정보를 조회합니다.
          */
         get: operations["selectTmplatInfoDetail"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/surveys/{qestnrId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 게시??계 조회 */
-        get: operations["getSurvey"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/surveys/templates/{tmplatId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 기관코드 목록 조회 */
-        get: operations["getTemplate"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3116,8 +3487,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 기관코드 상세 조회 */
+        /** 사용자 통계 조회 */
         get: operations["getUserStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/statistics/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 요약 통계 조회(대시보드) */
+        get: operations["getSummary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3133,7 +3521,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 요청(?붾㈃) 통계 조회 */
+        /** 요청(화면) 통계 조회 */
         get: operations["getScreenStats"];
         put?: never;
         post?: never;
@@ -3150,8 +3538,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 보고통계 조회 */
+        /** 보고서 통계 조회 */
         get: operations["getReportStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/statistics/menu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 메뉴별 이용 통계 */
+        get: operations["getMenuStats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3167,7 +3572,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?먮즺이용현황 통계 조회 */
+        /** 자료이용현황 통계 조회 */
         get: operations["getDataUsageStats"];
         put?: never;
         post?: never;
@@ -3201,7 +3606,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 寃뚯떆님통계 조회 */
+        /** 게시판 통계 조회 */
         get: operations["getBbsStats"];
         put?: never;
         post?: never;
@@ -3218,8 +3623,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ⑤씪님설문 상세 조회 */
-        get: operations["getPoll"];
+        /** 온라인 설문 상세 조회 */
+        get: operations["getPoll_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3236,8 +3641,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?뺤콉 紐⑸줉 조회
-         * @description ?쒖뒪?쒖쓽 紐⑤뱺 ?뺤콉 紐⑸줉님조회합니다
+         * 정책 목록 조회
+         * @description 시스템의 모든 정책 목록을 조회합니다.
          */
         get: operations["getPolicies"];
         put?: never;
@@ -3256,8 +3661,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 硫붾돱 ?앹꽦 관리紐⑸줉 조회
-         * @description 沅뚰븳蹂硫붾돱 ?앹꽦 관리紐⑸줉님조회합니다
+         * 메뉴 생성 관리 목록 조회
+         * @description 권한별 메뉴 생성 관리 목록을 조회합니다.
          */
         get: operations["getMenuCreationManageList"];
         put?: never;
@@ -3276,8 +3681,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 硫붾돱 ?꾩껜 ?몃━ 조회
-         * @description 시스템硫붾돱瑜님몃━ 援ъ“ 援ъ꽦님?꾪븳 ?꾩껜 紐⑸줉?쇰줈 조회합니다
+         * 메뉴 전체 트리 조회
+         * @description 시스템 메뉴를 트리 구조 구성을 위한 전체 목록으로 조회합니다.
          */
         get: operations["getAllMenus"];
         put?: never;
@@ -3295,7 +3700,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 시스템로그 紐⑸줉 조회 */
+        /** 시스템 로그 목록 조회 */
         get: operations["getSysLogList"];
         put?: never;
         post?: never;
@@ -3312,7 +3717,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 시스템로그 상세 조회 */
+        /** 시스템 로그 상세 조회 */
         get: operations["getSysLog"];
         put?: never;
         post?: never;
@@ -3329,7 +3734,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 로그인로그 紐⑸줉 조회 */
+        /** 로그인 로그 목록 조회 */
         get: operations["getLoginLogList"];
         put?: never;
         post?: never;
@@ -3346,7 +3751,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 로그인로그 상세 조회 */
+        /** 로그인 로그 상세 조회 */
         get: operations["getLoginLog"];
         put?: never;
         post?: never;
@@ -3364,8 +3769,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 로그인?뺤콉 紐⑸줉 조회
-         * @description 시스템ъ슜?먯쓽 로그인?뺤콉 紐⑸줉님?섏씠吏조회합니다
+         * 로그인 정책 목록 조회
+         * @description 시스템 사용자의 로그인 정책 목록을 페이징 조회합니다.
          */
         get: operations["getLoginPolicyList"];
         put?: never;
@@ -3376,7 +3781,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/communities/portlet": {
+    "/api/v1/admin/system/dept-authorities/{deptId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3384,10 +3789,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ы由우슜 而ㅻ님덊떚 紐⑸줉
-         * @description 硫붿씤 ?붾㈃ ы由님쒖떆님理쒖쟻?붾맂 而ㅻ님덊떚 紐⑸줉님조회합니다
+         * 부서별 권한 목록 조회
+         * @description 특정 부서 내 사용자들의 권한 할당 상태를 조회합니다.
          */
-        get: operations["getCommunityPortlet"];
+        get: operations["getDeptAuthorities"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3404,7 +3809,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 袁⑷퍥 蹂 筌뤴뫖以鈺곌퀬님         * @description 님뽯뮞님님곸벥 筌뤴뫀諭님蹂 筌뤴뫖以님鈺곌퀬님?몃빍님
+         * ?꾩껜 ?볤? 紐⑸줉 議고쉶
+         * @description ?쒖뒪???댁쓽 紐⑤뱺 ?볤? 紐⑸줉議고쉶⑸땲??
          */
         get: operations["getComments_1"];
         put?: never;
@@ -3422,7 +3828,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 湲곌肄붾뱶 紐⑸줉 조회 */
+        /** 기관코드 목록 조회 */
         get: operations["getInstitutionCodeList"];
         put?: never;
         post?: never;
@@ -3439,7 +3845,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 湲곌肄붾뱶 상세 조회 */
+        /** 기관코드 상세 조회 */
         get: operations["getInstitutionCodeDetail"];
         put?: never;
         post?: never;
@@ -3456,7 +3862,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 湲곌肄붾뱶 ?섏떊 ?댁뿭 조회 */
+        /** 기관코드 수신 내역 조회 */
         get: operations["getInstitutionCodeRecptnList"];
         put?: never;
         post?: never;
@@ -3473,7 +3879,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ?곷떞 상세 조회 */
+        /** 상담 상세 조회 */
         get: operations["getConsultation"];
         put?: never;
         post?: never;
@@ -3491,8 +3897,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 硫붿씤?붾㈃ ?몄텧님諛곕꼫 조회
-         * @description 硫붿씤 ?붾㈃님?몄텧?섎룄濡님ㅼ젙님諛곕꼫 紐⑸줉님조회합니다
+         * 메인화면 호출용 배너 조회
+         * @description 메인 화면에 노출하도록 설정된 배너 목록을 조회합니다.
          */
         get: operations["getReflectedBanners"];
         put?: never;
@@ -3511,8 +3917,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 沅뚰븳蹂硫붾돱 紐⑸줉 조회
-         * @description ?뱀젙 沅뚰븳 洹몃９님?묎렐 媛ν븳 硫붾돱 紐⑸줉님조회합니다
+         * 권한별 메뉴 목록 조회
+         * @description 특정 권한 그룹의 접근 가능한 메뉴 목록을 조회합니다.
          */
         get: operations["getAuthorMenus"];
         put?: never;
@@ -3532,7 +3938,7 @@ export interface paths {
         };
         /**
          * SMS 상세 조회
-         * @description ?뱀젙 SMS님諛쒖넚 상세 ?뺣낫瑜조회합니다
+         * @description 특정 SMS의 발송 상세 정보를 조회합니다.
          */
         get: operations["getSms"];
         put?: never;
@@ -3551,10 +3957,30 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * SMS ?섏떊님紐⑸줉 조회
-         * @description ?뱀젙 SMS님?섏떊님紐⑸줉님조회합니다
+         * SMS 수신자 목록 조회
+         * @description 특정 SMS의 수신자 목록을 조회합니다.
          */
         get: operations["getSmsRecipients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/community/portlet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 포틀릿용 커뮤니티 목록
+         * @description 메인 화면 포틀릿 표시에 최적화된 커뮤니티 목록을 조회합니다.
+         */
+        get: operations["getCommunityPortlet"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3571,7 +3997,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 주소濡님ъ슜님寃님         * @description 주소濡앹뿉 異붽님님ъ슜?먮? 시스템?꾩껜?먯꽌 寃됲빀?덈떎.
+         * 주소록 사용자 검색
+         * @description 주소록에 추가할 사용자를 시스템 전체에서 검색합니다.
          */
         get: operations["searchUsers"];
         put?: never;
@@ -3593,8 +4020,8 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * 履쎌? 님젣
-         * @description ?섏떊 또는 諛쒖떊 紐⑸줉?먯꽌 履쎌瑜님?젣합니다
+         * 쪽지 삭제
+         * @description 수신 또는 발신 목록에서 쪽지를 삭제합니다.
          */
         delete: operations["deleteNote"];
         options?: never;
@@ -3613,7 +4040,8 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * 蹂 님님         * @description 諭님蹂님님님님?쑵님源딆넅) 筌ｌ꼶님?몃빍님
+         * ?볤? ??젣
+         * @description ?뱀젙 ?볤?????젣(鍮꾪솢?깊솕) 泥섎━⑸땲??
          */
         delete: operations["deleteComment_1"];
         options?: never;
@@ -3625,15 +4053,19 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        UserDto: {
-            userId: string;
-            userNm: string;
-            esntlId: string;
-            role?: string;
-            emplNo?: string;
-            ofcpsNm?: string;
-            /** Format: date-time */
-            createdDate?: string;
+        WorkReportDto: {
+            reportId?: string;
+            reportSubject?: string;
+            reportContent?: string;
+            reportType?: string;
+            reportDate?: string;
+            writerId?: string;
+            reportStatus?: string;
+            reportCn?: string;
+            reportNm?: string;
+            writngEndde?: string;
+            sanctnSttus?: string;
+            writngBgnde?: string;
         };
         ApiResponseVoid: {
             success?: boolean;
@@ -3656,12 +4088,43 @@ export interface components {
             enabled?: boolean;
             username?: string;
             authorities?: components["schemas"]["GrantedAuthority"][];
-            accountNonExpired?: boolean;
             credentialsNonExpired?: boolean;
+            accountNonExpired?: boolean;
             accountNonLocked?: boolean;
         };
         GrantedAuthority: {
             authority?: string;
+        };
+        UserDto: {
+            userId: string;
+            userNm: string;
+            esntlId?: string;
+            password: string;
+            passwordHint?: string;
+            passwordCnsr?: string;
+            role?: string;
+            emplNo?: string;
+            sexdstnCode?: string;
+            brth?: string;
+            areaNo?: string;
+            homemiddleTelno?: string;
+            homeendTelno?: string;
+            mberTyCode?: string;
+            fxnum?: string;
+            insttCode?: string;
+            orgnztId?: string;
+            groupId?: string;
+            homeadres?: string;
+            detailAdres?: string;
+            zip?: string;
+            offmTelno?: string;
+            moblphonNo?: string;
+            emailAdres?: string;
+            ofcpsNm?: string;
+            subDn?: string;
+            userSe?: string;
+            /** Format: date-time */
+            createdDate?: string;
         };
         ScheduleDto: {
             schdulId?: string;
@@ -3711,8 +4174,62 @@ export interface components {
              * @description Description
              */
             createdDate?: string;
+            /** Format: date-time */
+            frstRegistPnttm?: string;
+            /** Format: double */
+            lng?: number;
+            /** Format: double */
+            lat?: number;
+            roughMapCn?: string;
         };
-        /** @description 행정 용어 DTO */
+        /** @description 온라인 설문 항목 DTO */
+        OnlinePollItemDto: {
+            /** @description 설문 항목 ID */
+            pollIemId?: string;
+            /** @description 설문 ID */
+            pollId?: string;
+            /** @description 설문 항목 명 */
+            pollIemNm?: string;
+            /**
+             * Format: int64
+             * @description 투표 수
+             */
+            pollIemCo?: number;
+            /** @description 생성자 ID */
+            createdBy?: string;
+            /**
+             * Format: date-time
+             * @description 생성 일시
+             */
+            createdDate?: string;
+        };
+        /** @description 온라인 설문 관리 DTO */
+        OnlinePollManageDto: {
+            /** @description 설문 ID */
+            pollId?: string;
+            /** @description 설명 명 */
+            pollNm?: string;
+            /** @description 설문 시작일 */
+            pollBeginDe?: string;
+            /** @description 설문 종료일 */
+            pollEndDe?: string;
+            /** @description 설문 종류 코드 */
+            pollKindCode?: string;
+            /** @description 설문 폐기 여부 */
+            pollDsuseYn?: string;
+            /** @description 설문 자동 폐기 여부 */
+            pollAutoDsuseYn?: string;
+            /** @description 생성자 ID */
+            createdBy?: string;
+            /**
+             * Format: date-time
+             * @description 생성 일시
+             */
+            createdDate?: string;
+            /** @description 설문 항목 목록 */
+            pollItems?: components["schemas"]["OnlinePollItemDto"][];
+        };
+        /** @description Description */
         MemoReportDto: {
             /** @description Description */
             reprtId?: string;
@@ -3746,6 +4263,11 @@ export interface components {
             frstRegisterId?: string;
             /** Format: date-time */
             frstRegistPnttm?: string;
+            reprtDe?: string;
+            readAt?: string;
+            reprtCn?: string;
+            recptnId?: string;
+            recptnNm?: string;
         };
         /** @description Description */
         MainImageDto: {
@@ -3769,7 +4291,7 @@ export interface components {
              */
             createdDate?: string;
         };
-        /** @description 메뉴 ?보 DTO */
+        /** @description Description */
         LeaderScheduleDto: {
             /** @description Description */
             scheduleId?: string;
@@ -3805,8 +4327,8 @@ export interface components {
              */
             createdDate?: string;
             repeatYn?: string;
-            importanceCode?: string;
             scheduleType?: string;
+            importanceCode?: string;
         };
         /** @description 비정형 결재 DTO */
         InformalSanctionDto: {
@@ -3832,7 +4354,7 @@ export interface components {
             confmAt?: string;
             /**
              * Format: date-time
-             * @description 결재 ?쇱떆
+             * @description 결재 일시
              */
             sanctionDt?: string;
             /** @description 반려 사유 */
@@ -3841,9 +4363,13 @@ export interface components {
             createdBy?: string;
             /**
              * Format: date-time
-             * @description 등록 ?쇱떆
+             * @description 등록 일시
              */
             createdDate?: string;
+            reqstDe?: string;
+            sancltNm?: string;
+            infrmlSanctnId?: string;
+            applcntId?: string;
         };
         /** @description Description */
         OnlineManualDto: {
@@ -3864,6 +4390,9 @@ export interface components {
              * @description Description
              */
             createdDate?: string;
+            mnlId?: string;
+            mnlNm?: string;
+            mnlDc?: string;
         };
         /** @description Description */
         HpcmDto: {
@@ -3914,6 +4443,10 @@ export interface components {
              * @description Description
              */
             lastUpdusrPnttm?: string;
+            /** Format: date-time */
+            lastUpdtPnttm?: string;
+            /** Format: date-time */
+            frstRegistPnttm?: string;
         };
         DeptJobBoxDto: {
             deptJobbxId?: string;
@@ -3924,7 +4457,7 @@ export interface components {
             indictOrdr?: number;
             frstRegisterId?: string;
             /** Format: date-time */
-            frstRegistPnttm?: string;
+            frstRegisterPnttm?: string;
             lastUpdusrId?: string;
             /** Format: date-time */
             lastUpdtPnttm?: string;
@@ -3950,6 +4483,24 @@ export interface components {
             ntceEndde?: string;
             /** @description Attached File ID */
             atchFileId?: string;
+            /** @description Notice Flag (Y/N) */
+            noticeAt?: string;
+            /** @description Event Date (ISO-8601) */
+            eventDate?: string;
+            /** @description Q&A Status (OPEN/SOLVED) */
+            qnaStatus?: string;
+            /** @description Q&A Category */
+            qnaCategory?: string;
+            /** @description Secret Flag (Y/N) */
+            secretAt?: string;
+            /** @description Use Flag (Y/N) */
+            useAt?: string;
+            /** @description Author ID */
+            ntcrId?: string;
+            /** @description Author Name */
+            ntcrNm?: string;
+            /** @description Post Password */
+            password?: string;
         };
         MyPageContentDto: {
             cntntsId?: string;
@@ -3959,146 +4510,112 @@ export interface components {
             cntntsLinkUrl?: string;
             cntntsDc?: string;
         };
-        /** @description 사용자관리님뺣낫 DTO */
-        UserManageDto: {
-            /**
-             * @description 사용자ID
-             * @example user01
-             */
-            userId?: string;
-            /**
-             * @description 怨좎쑀 ?앸퀎 ID (esntlId)
-             * @example USRCNFRM_00000000001
-             */
-            esntlId?: string;
-            /**
-             * @description 사용자紐             * @example ?띻만님             */
-            userNm?: string;
-            /**
-             * @description 鍮꾨踰덊샇
-             * @example password123!
-             */
-            password?: string;
-            /**
-             * @description 鍮꾨踰덊샇 ?뚰듃
-             * @example 媛님醫뗭븘?섎뒗 ?꾩떆님
-             */
-            passwordHint?: string;
-            /**
-             * @description 鍮꾨踰덊샇 ?뺣떟
-             * @example ?쒖슱
-             */
-            passwordCnsr?: string;
-            /**
-             * @description щ쾲
-             * @example 20240101
-             */
-            emplNo?: string;
-            /**
-             * @description ?깅퀎 肄붾뱶
-             * @example M
-             */
-            sexdstnCode?: string;
-            /**
-             * @description ?앸뀈?붿씪
-             * @example 1990-01-01
-             */
-            brthdy?: string;
-            /**
-             * @description 吏님踰덊샇
-             * @example 02
-             */
-            areaNo?: string;
-            /**
-             * @description ?꾪솕踰덊샇(以묎컙)
-             * @example 1234
-             */
-            homemiddleTelno?: string;
-            /**
-             * @description ?꾪솕踰덊샇(님
-             * @example 5678
-             */
-            homeendTelno?: string;
-            /**
-             * @description ?이동踰덊샇
-             * @example 010-1234-5678
-             */
-            moblphonNo?: string;
-            /**
-             * @description ?대찓님주소
-             * @example hong@example.com
-             */
-            emailAdres?: string;
-            /**
-             * @description ?고렪踰덊샇
-             * @example 12345
-             */
-            zip?: string;
-            /**
-             * @description 주소
-             * @example ?쒖슱?밸퀎님媛뺣궓援...
-             */
-            homeadres?: string;
-            /**
-             * @description 상세 주소
-             * @example 101님101님             */
-            detailAdres?: string;
-            /**
-             * @description 吏곸쐞 紐             * @example ?좎엫?곌뎄님             */
-            ofcpsNm?: string;
-            /**
-             * @description 洹몃９ ID
-             * @example GROUP_01
-             */
-            groupId?: string;
-            /**
-             * @description 議곗쭅 ID
-             * @example ORGNZT_01
-             */
-            orgnztId?: string;
-            /**
-             * @description 湲곌? 肄붾뱶
-             * @example INST_01
-             */
-            insttCode?: string;
-            /**
-             * @description 사용자?곹깭 肄붾뱶
-             * @example P
-             */
-            emplyrSttusCode?: string;
-            /**
-             * @description 媛님?쇱옄
-             * @example 2024-03-17
-             */
-            sbscrbDe?: string;
-            /**
-             * @description щТ님?꾪솕踰덊샇
-             * @example 02-123-4567
-             */
-            offmTelno?: string;
-            /**
-             * @description ⑹뒪 踰덊샇
-             * @example 02-123-4568
-             */
-            fxnum?: string;
-            /**
-             * @description 怨꾩젙 ?좉툑 여부
-             * @example N
-             */
-            lockAt?: string;
-            /**
-             * @description ?쒕툕 DN
-             * @example cn=hong,ou=users,dc=company,dc=com
-             */
-            subDn?: string;
-            brth?: string;
-            emplyrId?: string;
-            uniqId?: string;
-            emplyrNm?: string;
-        };
         UserAbsenceDto: {
             emplyrId?: string;
             userAbsnceAt?: string;
+        };
+        /** @description Description */
+        QustnrIemDto: {
+            /** @description Description */
+            qustnrIemId?: string;
+            /** @description Description */
+            qestnrQesitmId?: string;
+            /** @description Description */
+            qestnrId?: string;
+            /**
+             * Format: int64
+             * @description Description
+             */
+            iemSn?: number;
+            /** @description Description */
+            iemCn?: string;
+            /** @description Description */
+            etcAnswerAt?: string;
+            /** @description Description */
+            qestnrTmplatId?: string;
+            /** @description Description */
+            createdBy?: string;
+            /**
+             * Format: date-time
+             * @description Description
+             */
+            createdDate?: string;
+        };
+        /** @description Description */
+        QustnrQesitmDto: {
+            /** @description Description */
+            qestnrQesitmId?: string;
+            /** @description Description */
+            qestnrId?: string;
+            /**
+             * Format: int64
+             * @description Description
+             */
+            qestnSn?: number;
+            /** @description Description */
+            qestnTyCode?: string;
+            /** @description Description */
+            qestnCn?: string;
+            /**
+             * Format: int32
+             * @description Description
+             */
+            mxmmChoiseCo?: number;
+            /** @description Description */
+            qestnrTmplatId?: string;
+            /** @description Description */
+            createdBy?: string;
+            /**
+             * Format: date-time
+             * @description Description
+             */
+            createdDate?: string;
+            /** @description Description */
+            items?: components["schemas"]["QustnrIemDto"][];
+        };
+        /** @description Description */
+        QestnrInfoDto: {
+            /** @description Description */
+            qestnrId?: string;
+            /** @description Description */
+            qestnrSj?: string;
+            /** @description Description */
+            qestnrPurps?: string;
+            /** @description Description */
+            qestnrWritngGuidanceCn?: string;
+            /** @description Description */
+            qestnrBeginDe?: string;
+            /** @description Description */
+            qestnrEndDe?: string;
+            /** @description Description */
+            qestnrTrget?: string;
+            /** @description Description */
+            qestnrTmplatId?: string;
+            /** @description Description */
+            createdBy?: string;
+            /**
+             * Format: date-time
+             * @description Description
+             */
+            createdDate?: string;
+        };
+        /** @description Description */
+        QestnrTmplatDto: {
+            /** @description Description */
+            qestnrTmplatId?: string;
+            /** @description Description */
+            qestnrTmplatTy?: string;
+            /** @description Description */
+            qestnrTmplatImagepathnm?: string;
+            /** @description Description */
+            qestnrTmplatCn?: string;
+            /** @description Description */
+            createdBy?: string;
+            /**
+             * Format: date-time
+             * @description Description
+             */
+            createdDate?: string;
         };
         RoleManageDto: {
             roleCode?: string;
@@ -4108,9 +4625,6 @@ export interface components {
             roleTy?: string;
             roleSort?: string;
             creatDt?: string;
-            rolePtn?: string;
-            roleTyp?: string;
-            roleCreatDe?: string;
         };
         /** @description Description */
         QnaDto: {
@@ -4161,6 +4675,8 @@ export interface components {
              * @description Description
              */
             lastUpdusrPnttm?: string;
+            /** Format: date-time */
+            createdDate?: string;
         };
         ProgramDto: {
             progrmFileNm?: string;
@@ -4197,82 +4713,95 @@ export interface components {
             createdBy?: string;
             /**
              * Format: date-time
-             * @description ?앹꽦 ?쇱떆
+             * @description 생성 일시
              */
             createdDate?: string;
+            frstRegisterId?: string;
+            /** Format: date-time */
+            frstRegistPnttm?: string;
+            ntceEndde?: string;
+            ntceBgnde?: string;
+            ntceAt?: string;
+            popupHlc?: string;
+            popupWlc?: string;
+            stopVewAt?: string;
+            popupWSize?: string;
+            popupTitleNm?: string;
+            popupHSize?: string;
         };
-        /** @description 硫붾돱 ?뺣낫 DTO */
+        /** @description 메뉴 정보 DTO */
         MenuDto: {
             /**
              * Format: int64
-             * @description 시스템怨좎쑀 ID
+             * @description 시스템 고유 ID
              * @example 1
              */
             id?: number;
             /**
              * Format: int64
-             * @description 硫붾돱 踰덊샇
+             * @description 메뉴 번호
              * @example 1000000
              */
             menuNo?: number;
             /**
-             * @description 硫붾돱 紐낆묶
-             * @example ?쒖뒪?쒓由             */
+             * @description 메뉴 명칭
+             * @example 시스템관리
+             */
             menuNm?: string;
             /**
-             * @description ?꾨줈洹몃옩 ?뚯씪 紐낆묶
+             * @description 프로그램 파일 명칭
              * @example EgovMain
              */
             progrmFileNm?: string;
             /**
              * Format: int64
-             * @description ?곸쐞 硫붾돱 踰덊샇
+             * @description 상위 메뉴 번호
              * @example 0
              */
             upperMenuNo?: number;
             /**
              * Format: int64
-             * @description ?곸쐞 硫붾돱 ID
+             * @description 상위 메뉴 ID
              * @example 0
              */
             upperMenuId?: number;
             /**
              * Format: int32
-             * @description 硫붾돱 ?쒖꽌
+             * @description 메뉴 순서
              * @example 1
              */
             menuOrdr?: number;
             /**
-             * @description URL ⑦꽩
+             * @description URL 패턴
              * @example /admin/**
              */
             chkURL?: string;
             /**
-             * @description 硫붾돱 설명
-             * @example 시스템?꾨컲님관리ы븯님理쒖긽님硫붾돱
+             * @description 메뉴 설명
+             * @example 시스템 전반을 관리하는 최상위 메뉴
              */
             menuDc?: string;
             /**
-             * @description 愿님?대吏 경로
+             * @description 관련 이미지 경로
              * @example /images/menu/
              */
             relateImagePath?: string;
             /**
-             * @description 愿님?대吏 紐낆묶
+             * @description 관련 이미지 명칭
              * @example icon_system.png
              */
             relateImageNm?: string;
             /**
-             * @description ?꾨님붾맂 ?쇱슦경로 (Next.js)
+             * @description 현대화된 라우트 경로 (Next.js)
              * @example /admin/system
              */
             modernRoute?: string;
             /**
-             * @description ?앹꽦님ID
+             * @description 생성자 ID
              * @example admin
              */
             creatPersonId?: string;
-            /** @description ?식 메뉴 목록 */
+            /** @description 하위 메뉴 목록 */
             children?: components["schemas"]["MenuDto"][];
         };
         LoginPolicyDto: {
@@ -4318,19 +4847,6 @@ export interface components {
              * @description Description
              */
             createdDate?: string;
-        };
-        CommunityDto: {
-            cmmntyId?: string;
-            cmmntyNm?: string;
-            cmmntyIntrcn?: string;
-            registSeCode?: string;
-            registSeCodeNm?: string;
-            tmplatId?: string;
-            tmplatNm?: string;
-            useAt?: string;
-            frstRegisterId?: string;
-            frstRegisterNm?: string;
-            frstRegisterPnttm?: string;
         };
         /** @description Common Detail Code Info */
         CmmnDetailCodeDto: {
@@ -4462,33 +4978,16 @@ export interface components {
             authorNm: string;
             authorDc?: string;
             authorCreatDe?: string;
-            searchCondition?: string;
-            searchKeyword?: string;
-            searchUseYn?: string;
-            /** Format: int32 */
-            pageIndex?: number;
-            /** Format: int32 */
-            pageUnit?: number;
-            /** Format: int32 */
-            pageSize?: number;
-            /** Format: int32 */
-            firstIndex?: number;
-            /** Format: int32 */
-            lastIndex?: number;
-            /** Format: int32 */
-            recordCountPerPage?: number;
-            searchKeywordFrom?: string;
-            searchKeywordTo?: string;
         };
         EventInfoDto: {
             eventId?: string;
+            eventNm?: string;
             bsnsYear?: string;
-            bsnsCode?: string;
             eventCn?: string;
-            eventSvcBgnde?: string;
-            eventSvcEndde?: string;
+            eventBeginDe?: string;
+            eventEndDe?: string;
             /** Format: int64 */
-            svcUseNmprCo?: number;
+            psncpa?: number;
             chargerNm?: string;
             prparetgCn?: string;
             eventTyCode?: string;
@@ -4496,27 +4995,25 @@ export interface components {
             eventConfmDe?: string;
             frstRegisterId?: string;
             /** Format: date-time */
-            frstRegistPnttm?: string;
-            lastUpdusrId?: string;
-            /** Format: date-time */
-            lastUpdtPnttm?: string;
-        };
-        KnowledgeDto: {
-            knoId?: string;
-            orgnztId?: string;
-            emplyrId?: string;
-            knoTypeCd?: string;
-            knoNm?: string;
-            knoCn?: string;
-            othbcAt?: string;
-            colYmd?: string;
-            atchFileId?: string;
-            frstRegisterId?: string;
-            /** Format: date-time */
             frstRegisterPnttm?: string;
             lastUpdusrId?: string;
             /** Format: date-time */
-            lastUpdusrPnttm?: string;
+            lastUpdtPnttm?: string;
+            rceptEndDe?: string;
+            rceptBeginDe?: string;
+        };
+        CommunityDto: {
+            cmmntyId?: string;
+            cmmntyNm?: string;
+            cmmntyIntrcn?: string;
+            registSeCode?: string;
+            registSeCodeNm?: string;
+            tmplatId?: string;
+            tmplatNm?: string;
+            useAt?: string;
+            frstRegisterId?: string;
+            frstRegisterNm?: string;
+            frstRegisterPnttm?: string;
         };
         AddressBookDto: {
             adbkId?: string;
@@ -4532,6 +5029,9 @@ export interface components {
             lastUpdusrId?: string;
             /** Format: date-time */
             lastUpdtPnttm?: string;
+            /** Format: date-time */
+            createdDate?: string;
+            nameCards?: components["schemas"]["AddressBookUserDto"][];
         };
         AddressBookUserDto: {
             adbkUserId?: string;
@@ -4544,14 +5044,29 @@ export interface components {
             offmTelno?: string;
             fxnum?: string;
         };
+        /** @description 회원가입 요청 DTO */
         UserSignupRequest: {
+            /**
+             * @description 사용자 아이디
+             * @example newuser
+             */
             userId: string;
+            /**
+             * @description 비밀번호
+             * @example password123!
+             */
             password: string;
+            /**
+             * @description 사용자 이름
+             * @example 홍길동
+             */
             userNm: string;
-            /** @enum {string} */
-            role?: "USER" | "ADMIN";
+            /** @description 비밀번호 힌트 */
             passwordHint?: string;
+            /** @description 비밀번호 정답 */
             passwordCnsr?: string;
+            /** @description 사용자 역할 */
+            role?: string;
         };
         ApiResponseUserResponse: {
             success?: boolean;
@@ -4563,10 +5078,16 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        /** @description 사용자 응답 DTO */
         UserResponse: {
+            /** @description 사용자 아이디 */
             userId?: string;
+            /** @description 사용자 이름 */
             userNm?: string;
-            /** @enum {string} */
+            /**
+             * @description 사용자 역할
+             * @enum {string}
+             */
             role?: "USER" | "ADMIN";
         };
         ScrapDto: {
@@ -4580,6 +5101,8 @@ export interface components {
             frstRegisterId?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
+            /** Format: date-time */
+            createdDate?: string;
         };
         ApiResponseString: {
             success?: boolean;
@@ -4600,18 +5123,21 @@ export interface components {
             receiverId?: string;
             isRead?: string;
             uniqId?: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description 등록 일시
+             */
             createdDate?: string;
         };
-        /** @description 履쎌? ?뺣낫 */
+        /** @description 쪽지 정보 */
         NoteDto: {
-            /** @description 履쎌? ID */
+            /** @description 쪽지 ID */
             noteId?: string;
             /** @description 제목 */
             noteSj?: string;
-            /** @description 이용 */
+            /** @description 내용 */
             noteCn?: string;
-            /** @description 泥⑤ ?뚯씪 ID */
+            /** @description 첨부 파일 ID */
             atchFileId?: string;
             /** @description 쪽지 발신 ID */
             noteTrnsmitId?: string;
@@ -4631,11 +5157,15 @@ export interface components {
             recptnSe?: string;
             /**
              * Format: date-time
-             * @description 등록 ?쇱떆
+             * @description 등록 일시
              */
             regDate?: string;
             /** @description 수신자 목록 */
             recipients?: components["schemas"]["NoteRecipientDto"][];
+            /** Format: date-time */
+            sendDt?: string;
+            trnsmitterId?: string;
+            trnsmitterNm?: string;
         };
         /** @description 쪽지 수신자 정보 */
         NoteRecipientDto: {
@@ -4688,6 +5218,7 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        /** @description 토큰 응답 DTO */
         TokenResponse: {
             /**
              * @description Access Token
@@ -4705,10 +5236,17 @@ export interface components {
              */
             role?: string;
         };
+        /** @description 로그인 요청 DTO */
         LoginRequest: {
-            /** @description Description */
+            /**
+             * @description 사용자 아이디
+             * @example admin
+             */
             userId?: string;
-            /** @description Description */
+            /**
+             * @description 비밀번호
+             * @example admin123
+             */
             password?: string;
         };
         UserAuthorityDto: {
@@ -4717,7 +5255,7 @@ export interface components {
             mberTyCode?: string;
             userNm?: string;
         };
-        TmplatInfo: {
+        Template: {
             tmplatId?: string;
             tmplatNm?: string;
             tmplatSeCode?: string;
@@ -4732,168 +5270,33 @@ export interface components {
             frstRegisterId?: string;
             lastUpdusrId?: string;
             /** Format: date-time */
-            lastUpdusrPnttm?: string;
+            lastUpdtPnttm?: string;
+            /** Format: date-time */
+            frstRegistPnttm?: string;
             /** Format: date-time */
             frstRegisterPnttm?: string;
-        };
-        /** @description Description */
-        QestnrInfoDto: {
-            /** @description Description */
-            qestnrId?: string;
-            /** @description Description */
-            qestnrSj?: string;
-            /** @description Description */
-            qestnrPurps?: string;
-            /** @description Description */
-            qestnrWritngGuidanceCn?: string;
-            /** @description Description */
-            qestnrBeginDe?: string;
-            /** @description Description */
-            qestnrEndDe?: string;
-            /** @description Description */
-            qestnrTrget?: string;
-            /** @description Description */
-            qestnrTmplatId?: string;
-            /** @description Description */
-            createdBy?: string;
-            /**
-             * Format: date-time
-             * @description Description
-             */
-            createdDate?: string;
-        };
-        /** @description Description */
-        QustnrIemDto: {
-            /** @description Description */
-            qustnrIemId?: string;
-            /** @description Description */
-            qestnrQesitmId?: string;
-            /** @description Description */
-            qestnrId?: string;
-            /**
-             * Format: int64
-             * @description Description
-             */
-            iemSn?: number;
-            /** @description Description */
-            iemCn?: string;
-            /** @description Description */
-            etcAnswerAt?: string;
-            /** @description Description */
-            qestnrTmplatId?: string;
-            /** @description Description */
-            createdBy?: string;
-            /**
-             * Format: date-time
-             * @description Description
-             */
-            createdDate?: string;
-        };
-        /** @description Description */
-        QustnrQesitmDto: {
-            /** @description Description */
-            qestnrQesitmId?: string;
-            /** @description Description */
-            qestnrId?: string;
-            /**
-             * Format: int64
-             * @description Description
-             */
-            qestnSn?: number;
-            /** @description Description */
-            qestnTyCode?: string;
-            /** @description Description */
-            qestnCn?: string;
-            /**
-             * Format: int32
-             * @description Description
-             */
-            mxmmChoiseCo?: number;
-            /** @description Description */
-            qestnrTmplatId?: string;
-            /** @description Description */
-            createdBy?: string;
-            /**
-             * Format: date-time
-             * @description Description
-             */
-            createdDate?: string;
-            /** @description Description */
-            items?: components["schemas"]["QustnrIemDto"][];
-        };
-        /** @description Description */
-        QestnrTmplatDto: {
-            /** @description Description */
-            qestnrTmplatId?: string;
-            /** @description Description */
-            qestnrTmplatTy?: string;
-            /** @description Description */
-            qestnrTmplatImagepathnm?: string;
-            /** @description Description */
-            qestnrTmplatCn?: string;
-            /** @description Description */
-            createdBy?: string;
-            /**
-             * Format: date-time
-             * @description Description
-             */
-            createdDate?: string;
-        };
-        /** @description ⑤씪님설문 님ぉ DTO */
-        OnlinePollItemDto: {
-            /** @description 설문 님ぉ ID */
-            pollIemId?: string;
-            /** @description 설문 ID */
-            pollId?: string;
-            /** @description 설문 님ぉ 紐*/
-            pollIemNm?: string;
-            /**
-             * Format: int64
-             * @description ы몴 님             */
-            pollIemCo?: number;
-            /** @description ?앹꽦님ID */
-            createdBy?: string;
-            /**
-             * Format: date-time
-             * @description ?앹꽦 ?쇱떆
-             */
-            createdDate?: string;
-        };
-        /** @description ⑤씪님설문 관리DTO */
-        OnlinePollManageDto: {
-            /** @description 설문 ID */
-            pollId?: string;
-            /** @description 설명 紐*/
-            pollNm?: string;
-            /** @description 설문 시작님*/
-            pollBeginDe?: string;
-            /** @description 설문 종료님*/
-            pollEndDe?: string;
-            /** @description 설문 醫낅쪟 肄붾뱶 */
-            pollKindCode?: string;
-            /** @description 설문 ?먭린 여부 */
-            pollDsuseYn?: string;
-            /** @description 설문 ?먮룞 ?먭린 여부 */
-            pollAutoDsuseYn?: string;
-            /** @description ?앹꽦님ID */
-            createdBy?: string;
-            /**
-             * Format: date-time
-             * @description ?앹꽦 ?쇱떆
-             */
-            createdDate?: string;
-            /** @description 설문 님ぉ 紐⑸줉 */
-            pollItems?: components["schemas"]["OnlinePollItemDto"][];
-        };
-        ApiResponseCommunityDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["CommunityDto"];
             /** Format: date-time */
-            timestamp?: string;
+            lastUpdusrPnttm?: string;
+        };
+        /** @description 부서별 권한 일괄 할당 요청 */
+        DeptAuthorBatchRequest: {
+            /**
+             * @description 부서 아이디 (부서 코드)
+             * @example ORGNZT_0000000000001
+             */
+            deptId?: string;
+            /**
+             * @description 부서에 부여할 권한 코드
+             * @example ROLE_USER
+             */
+            authorCode?: string;
+            /**
+             * @description 부서 내 모든 사용자에게 적용 여부
+             * @example true
+             */
+            allMembers?: boolean;
+            /** @description allMembers가 false인 경우 적용할 사용자 ID 목록 */
+            userIds?: string[];
         };
         /** @description Consultation Management DTO */
         CnsltManageDto: {
@@ -4958,7 +5361,11 @@ export interface components {
             searchWrd?: string;
             frstRegisterId?: string;
             /** Format: date-time */
+            frstRegistPnttm?: string;
+            /** Format: date-time */
             frstRegisterPnttm?: string;
+            /** Format: date-time */
+            trnsmitPnttm?: string;
         };
         /** @description Description */
         SmsRecptnDto: {
@@ -5011,13 +5418,51 @@ export interface components {
             lastUpdtPnttm?: string;
             lastUpdusrId?: string;
         };
-        ApiResponseListUserDto: {
+        ApiResponseCommunityDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["UserDto"][];
+            data?: components["schemas"]["CommunityDto"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        Pageable: {
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            sort?: string[];
+        };
+        ApiResponsePageResponseWorkReportDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseWorkReportDto"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        PageResponseWorkReportDto: {
+            list?: components["schemas"]["WorkReportDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
+        };
+        ApiResponseWorkReportDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["WorkReportDto"];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -5031,26 +5476,15 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponsePageResponseUserDto: {
+        ApiResponseBoolean: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["PageResponseUserDto"];
+            data?: boolean;
             /** Format: date-time */
             timestamp?: string;
-        };
-        PageResponseUserDto: {
-            list?: components["schemas"]["UserDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
         };
         ApiResponsePageResponseScrapDto: {
             success?: boolean;
@@ -5124,13 +5558,6 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        Pageable: {
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            sort?: string[];
-        };
         ApiResponsePageResponseRoughMapDto: {
             success?: boolean;
             /** Format: int32 */
@@ -5179,6 +5606,47 @@ export interface components {
             code?: string;
             message?: string;
             data?: components["schemas"]["PopupDto"][];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponsePageResponseOnlinePollManageDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseOnlinePollManageDto"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        PageResponseOnlinePollManageDto: {
+            list?: components["schemas"]["OnlinePollManageDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
+        };
+        ApiResponseOnlinePollManageDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["OnlinePollManageDto"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponseListOnlinePollItemDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["OnlinePollItemDto"][];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -5429,6 +5897,16 @@ export interface components {
             /** Format: int32 */
             totalPage?: number;
         };
+        ApiResponseInformalSanctionDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["InformalSanctionDto"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
         ApiResponsePageResponseInformalSanctionDto: {
             success?: boolean;
             /** Format: int32 */
@@ -5449,16 +5927,6 @@ export interface components {
             size?: number;
             /** Format: int32 */
             totalPage?: number;
-        };
-        ApiResponseInformalSanctionDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["InformalSanctionDto"];
-            /** Format: date-time */
-            timestamp?: string;
         };
         ApiResponsePageResponseOnlineManualDto: {
             success?: boolean;
@@ -5607,6 +6075,27 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        ApiResponsePageResponseCommunityDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseCommunityDto"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        PageResponseCommunityDto: {
+            list?: components["schemas"]["CommunityDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
+        };
         ApiResponsePageResponseCommentDto: {
             success?: boolean;
             /** Format: int32 */
@@ -5631,6 +6120,8 @@ export interface components {
             createdDate?: string;
             /** Format: date-time */
             modifiedDate?: string;
+            /** Format: int64 */
+            commentNo?: number;
         };
         PageResponseCommentDto: {
             list?: components["schemas"]["CommentDto"][];
@@ -5653,86 +6144,125 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        /** @description Description */
+        /** @description 게시물 정보 DTO */
         BoardDto: {
             /**
              * Format: int64
-             * @description Description
+             * @description 게시물 ID
+             * @example 1001
              */
             id?: number;
-            /** @description Description */
+            /**
+             * @description 게시판 ID
+             * @example BBS_000000000001
+             */
             bbsId?: string;
-            /** @description Description */
+            /** @description 게시물 제목 */
             nttSj?: string;
-            /** @description Description */
+            /** @description 게시물 내용 */
             nttCn?: string;
-            /** @description Description */
+            /** @description 작성자 이름 */
             ntcrNm?: string;
             /**
              * Format: int32
-             * @description Description
+             * @description 조회수
              */
             inqireCo?: number;
             /**
              * Format: date-time
-             * @description Description
+             * @description 최초 등록 일시
              */
             frstRegisterPnttm?: string;
-            /** @description Description */
+            /** @description 첨부파일 ID */
             atchFileId?: string;
             /**
              * Format: int64
-             * @description Description
+             * @description 게시물 번호
              */
             nttNo?: number;
             /**
              * Format: int64
-             * @description Description
+             * @description 정렬 순서
              */
             sortOrdr?: number;
-            /** @description Description */
+            /** @description 부모 게시물 번호 (답글용) */
             parnts?: string;
-            /** @description Description */
+            /**
+             * @description 답글 여부
+             * @example N
+             */
             replyAt?: string;
             /**
              * Format: int32
-             * @description Description
+             * @description 답글 레벨
              */
             replyLc?: number;
-            /** @description Description */
+            /** @description 게시 시작일 */
             ntceBgnde?: string;
-            /** @description Description */
+            /** @description 게시 종료일 */
             ntceEndde?: string;
-            /** @description Description */
+            /**
+             * @description 사용 여부
+             * @example Y
+             */
             useAt?: string;
-            /** @description Description */
+            /**
+             * @description 만료 여부
+             * @example N
+             */
             isExpired?: string;
-            /** @description Description */
+            /** @description 최초 등록일 (문자열) */
             frstRegisterPnttmStr?: string;
-            /** @description Description */
+            /** @description 작성자 ID */
             ntcrId?: string;
-            /** @description Description */
+            /** @description 최초 등록자 ID */
             frstRegisterId?: string;
-            /** @description Description */
+            /** @description 최종 수정자 ID */
             lastUpdusrId?: string;
             /**
              * Format: date-time
-             * @description Description
+             * @description 최종 수정 일시
              */
             lastUpdtPnttm?: string;
-            /** @description Description */
-            password?: string;
-            /** @description Description */
+            /** @description 비밀 게시글 여부 */
             secretAt?: string;
-            /** @description Description */
+            /** @description 블로그 게시글 여부 */
             blogAt?: string;
             /**
              * Format: int32
-             * @description Description
+             * @description 댓글 수
              */
             commentCo?: number;
-            /** @description Description */
+            /** @description 게시판 명 */
             bbsNm?: string;
+            /**
+             * Format: date-time
+             * @description 행사 일시
+             */
+            eventDate?: string;
+            /**
+             * @description QNA 상태
+             * @example OPEN
+             */
+            qnaStatus?: string;
+            /** @description QNA 카테고리 */
+            qnaCategory?: string;
+            /** @description 공지사항 여부 */
+            noticeAt?: string;
+            /** @description 별칭 ID (레거시 호환) */
+            knoId?: string;
+            /** @description 별칭 제목 (레거시 호환) */
+            knoNm?: string;
+            /** @description 별칭 내용 (레거시 호환) */
+            knoCn?: string;
+            /** @description 별칭 상태코드 (레거시 호환) */
+            statusCd?: string;
+            /** @description 별칭 카테고리코드 (레거시 호환) */
+            categoryCd?: string;
+            /** @description 행사 일시 (문자열) */
+            eventDateStr?: string;
+            /** Format: date-time */
+            createdDate?: string;
             /** Format: int64 */
             nttId?: number;
             frstRegisterNm?: string;
@@ -5748,6 +6278,36 @@ export interface components {
             size?: number;
             /** Format: int32 */
             totalPage?: number;
+        };
+        ApiResponseBoardStatsResponse: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["BoardStatsResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        /** @description 게시판 통계 응답 DTO */
+        BoardStatsResponse: {
+            /**
+             * Format: int64
+             * @description 전체 게시글 수
+             */
+            totalArticles?: number;
+            /**
+             * Format: int64
+             * @description 전체 조회수
+             */
+            totalViews?: number;
+            /** @description 주요 기여자 (최다 작성자) */
+            topContributor?: string;
+            /**
+             * Format: int32
+             * @description 지식화 점수 (0-100)
+             */
+            intelligenceScore?: number;
         };
         ApiResponseBoardDto: {
             success?: boolean;
@@ -5769,18 +6329,18 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponsePageResponseUserManageDto: {
+        ApiResponsePageResponseUserDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["PageResponseUserManageDto"];
+            data?: components["schemas"]["PageResponseUserDto"];
             /** Format: date-time */
             timestamp?: string;
         };
-        PageResponseUserManageDto: {
-            list?: components["schemas"]["UserManageDto"][];
+        PageResponseUserDto: {
+            list?: components["schemas"]["UserDto"][];
             /** Format: int64 */
             total?: number;
             /** Format: int32 */
@@ -5790,27 +6350,7 @@ export interface components {
             /** Format: int32 */
             totalPage?: number;
         };
-        ApiResponseUserManageDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["UserManageDto"];
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        ApiResponseBoolean: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: boolean;
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        ComDefaultVO: {
+        BaseSearchDto: {
             searchCondition?: string;
             searchKeyword?: string;
             searchUseYn?: string;
@@ -5880,46 +6420,35 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponseListTmplatInfo: {
+        ApiResponseListTemplate: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["TmplatInfo"][];
+            data?: components["schemas"]["Template"][];
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponseTmplatInfo: {
+        ApiResponseTemplate: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["TmplatInfo"];
+            data?: components["schemas"]["Template"];
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponsePageResponseQestnrInfoDto: {
+        ApiResponseListQustnrQesitmDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["PageResponseQestnrInfoDto"];
+            data?: components["schemas"]["QustnrQesitmDto"][];
             /** Format: date-time */
             timestamp?: string;
-        };
-        PageResponseQestnrInfoDto: {
-            list?: components["schemas"]["QestnrInfoDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
         };
         ApiResponseQestnrInfoDto: {
             success?: boolean;
@@ -5931,13 +6460,13 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponseListQustnrQesitmDto: {
+        ApiResponseQestnrTmplatDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["QustnrQesitmDto"][];
+            data?: components["schemas"]["QestnrTmplatDto"];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -5962,15 +6491,26 @@ export interface components {
             /** Format: int32 */
             totalPage?: number;
         };
-        ApiResponseQestnrTmplatDto: {
+        ApiResponsePageResponseQestnrInfoDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["QestnrTmplatDto"];
+            data?: components["schemas"]["PageResponseQestnrInfoDto"];
             /** Format: date-time */
             timestamp?: string;
+        };
+        PageResponseQestnrInfoDto: {
+            list?: components["schemas"]["QestnrInfoDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
         };
         ApiResponseListStatsDto: {
             success?: boolean;
@@ -6018,6 +6558,18 @@ export interface components {
             topNtcepersonCo?: number;
             /** Format: float */
             maxUnit?: number;
+        };
+        ApiResponseListMapStringObject: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: {
+                [key: string]: Record<string, never>;
+            }[];
+            /** Format: date-time */
+            timestamp?: string;
         };
         ApiResponsePageResponseRoleManageDto: {
             success?: boolean;
@@ -6132,37 +6684,6 @@ export interface components {
             size?: number;
             /** Format: int32 */
             totalPage?: number;
-        };
-        ApiResponsePageResponseOnlinePollManageDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["PageResponseOnlinePollManageDto"];
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        PageResponseOnlinePollManageDto: {
-            list?: components["schemas"]["OnlinePollManageDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
-        };
-        ApiResponseOnlinePollManageDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["OnlinePollManageDto"];
-            /** Format: date-time */
-            timestamp?: string;
         };
         ApiResponseListPolicy: {
             success?: boolean;
@@ -6305,6 +6826,7 @@ export interface components {
             rqesterId?: string;
             rqesterIp?: string;
             occrrncDe?: string;
+            occcrrncDe?: string;
         };
         ApiResponseSysLogDto: {
             success?: boolean;
@@ -6334,6 +6856,8 @@ export interface components {
             errOccrrAt?: string;
             errorCode?: string;
             creatDt?: string;
+            loginDt?: string;
+            errorOccrrAt?: string;
         };
         PageResponseLoginLogDto: {
             list?: components["schemas"]["LoginLogDto"][];
@@ -6355,25 +6879,6 @@ export interface components {
             data?: components["schemas"]["LoginLogDto"];
             /** Format: date-time */
             timestamp?: string;
-        };
-        LoginPolicyVO: {
-            searchCondition?: string;
-            searchKeyword?: string;
-            searchUseYn?: string;
-            /** Format: int32 */
-            pageIndex?: number;
-            /** Format: int32 */
-            pageUnit?: number;
-            /** Format: int32 */
-            pageSize?: number;
-            /** Format: int32 */
-            firstIndex?: number;
-            /** Format: int32 */
-            lastIndex?: number;
-            /** Format: int32 */
-            recordCountPerPage?: number;
-            searchKeywordFrom?: string;
-            searchKeywordTo?: string;
         };
         ApiResponsePageResponseLoginPolicyDto: {
             success?: boolean;
@@ -6468,37 +6973,6 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponsePageResponseDeptManageDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["PageResponseDeptManageDto"];
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        PageResponseDeptManageDto: {
-            list?: components["schemas"]["DeptManageDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
-        };
-        ApiResponseDeptManageDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["DeptManageDto"];
-            /** Format: date-time */
-            timestamp?: string;
-        };
         ApiResponsePageResponseDeptAuthorProjection: {
             success?: boolean;
             /** Format: int32 */
@@ -6529,18 +7003,18 @@ export interface components {
             /** Format: int32 */
             totalPage?: number;
         };
-        ApiResponsePageResponseCommunityDto: {
+        ApiResponsePageResponseDeptManageDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["PageResponseCommunityDto"];
+            data?: components["schemas"]["PageResponseDeptManageDto"];
             /** Format: date-time */
             timestamp?: string;
         };
-        PageResponseCommunityDto: {
-            list?: components["schemas"]["CommunityDto"][];
+        PageResponseDeptManageDto: {
+            list?: components["schemas"]["DeptManageDto"][];
             /** Format: int64 */
             total?: number;
             /** Format: int32 */
@@ -6550,13 +7024,13 @@ export interface components {
             /** Format: int32 */
             totalPage?: number;
         };
-        ApiResponseListCommunityDto: {
+        ApiResponseDeptManageDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["CommunityDto"][];
+            data?: components["schemas"]["DeptManageDto"];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -6637,7 +7111,7 @@ export interface components {
             ablDe?: string;
             ablEnnc?: string;
             /** Format: date-time */
-            frstRegistPnttm?: string;
+            frstRegisterPnttm?: string;
             frstRegisterId?: string;
         };
         PageResponseInstitutionCodeRecptnDto: {
@@ -7014,34 +7488,13 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponsePageResponseKnowledgeDto: {
+        ApiResponseListCommunityDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["PageResponseKnowledgeDto"];
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        PageResponseKnowledgeDto: {
-            list?: components["schemas"]["KnowledgeDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
-        };
-        ApiResponseKnowledgeDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["KnowledgeDto"];
+            data?: components["schemas"]["CommunityDto"][];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -7106,12 +7559,13 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    getUserById: {
+    getWorkReport: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                /** @description 보고 ID */
+                reportId: string;
             };
             cookie?: never;
         };
@@ -7123,23 +7577,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseUserDto"];
+                    "*/*": components["schemas"]["ApiResponseWorkReportDto"];
                 };
             };
         };
     };
-    updateUser: {
+    updateWorkReport: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                reportId: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UserDto"];
+                "application/json": components["schemas"]["WorkReportDto"];
             };
         };
         responses: {
@@ -7154,12 +7608,12 @@ export interface operations {
             };
         };
     };
-    deleteUser: {
+    deleteWorkReport: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                reportId: string;
             };
             cookie?: never;
         };
@@ -7327,7 +7781,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
+                /** @description 약도 ID */
                 roughMapId: string;
             };
             cookie?: never;
@@ -7393,12 +7847,83 @@ export interface operations {
             };
         };
     };
+    getPoll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 설문 ID */
+                pollId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseOnlinePollManageDto"];
+                };
+            };
+        };
+    };
+    updatePoll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pollId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlinePollManageDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deletePoll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pollId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getMemoReport: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
+                /** @description 보고 ID */
                 reprtId: string;
             };
             cookie?: never;
@@ -7469,7 +7994,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
+                /** @description 이미지 ID */
                 imageId: string;
             };
             cookie?: never;
@@ -7540,7 +8065,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?호??ID */
+                /** @description 일정 ID */
                 scheduleId: string;
             };
             cookie?: never;
@@ -7611,7 +8136,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?호??ID */
+                /** @description 결재 ID */
                 informalSanctionId: string;
             };
             cookie?: never;
@@ -7634,7 +8159,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?호??ID */
+                /** @description 결재 ID */
                 informalSanctionId: string;
             };
             cookie?: never;
@@ -7661,7 +8186,80 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 배너 ID */
+                /** @description 결재 ID */
+                informalSanctionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getInformalSanction_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 결재 ID */
+                informalSanctionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseInformalSanctionDto"];
+                };
+            };
+        };
+    };
+    updateInformalSanction_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 결재 ID */
+                informalSanctionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InformalSanctionDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteInformalSanction_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 결재 ID */
                 informalSanctionId: string;
             };
             cookie?: never;
@@ -7684,7 +8282,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 사용자 ID */
+                /** @description 매뉴얼 ID */
                 mnlId: string;
             };
             cookie?: never;
@@ -7755,7 +8353,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 사용자 ID */
+                /** @description 도움말 ID */
                 hpcmId: string;
             };
             cookie?: never;
@@ -7826,7 +8424,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 통합 링크 ID */
+                /** @description FAQ ID */
                 faqId: string;
             };
             cookie?: never;
@@ -7971,7 +8569,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 통합 링크 ID */
+                /** @description 댓글 ID */
                 id: number;
             };
             cookie?: never;
@@ -7998,7 +8596,96 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 통합 링크 ID */
+                /** @description 댓글 ID */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description 게시판 ID
+                 * @example BBS_000000000001
+                 */
+                bbsId: string;
+                /**
+                 * @description 게시글 ID
+                 * @example 1
+                 */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseBoardDto"];
+                };
+            };
+        };
+    };
+    updatePost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deletePost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description 게시판 ID
+                 * @example BBS_000000000001
+                 */
+                bbsId: string;
+                /**
+                 * @description 게시글 ID
+                 * @example 1
+                 */
                 id: number;
             };
             cookie?: never;
@@ -8173,7 +8860,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
+                /** @description 사용자 ID */
                 userId: string;
             };
             cookie?: never;
@@ -8186,12 +8873,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseUserManageDto"];
+                    "*/*": components["schemas"]["ApiResponseUserDto"];
                 };
             };
         };
     };
-    updateUser_1: {
+    updateUser: {
         parameters: {
             query?: never;
             header?: never;
@@ -8202,7 +8889,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UserManageDto"];
+                "application/json": components["schemas"]["UserDto"];
             };
         };
         responses: {
@@ -8217,12 +8904,12 @@ export interface operations {
             };
         };
     };
-    deleteUser_1: {
+    deleteUser: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
+                /** @description 사용자 ID */
                 userId: string;
             };
             cookie?: never;
@@ -8276,6 +8963,480 @@ export interface operations {
                 "application/json": components["schemas"]["UserAbsenceDto"];
             };
         };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    updateQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qestnrId: string;
+                qesitmId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QustnrQesitmDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qesitmId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    updateQuestion_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qestnrId: string;
+                qesitmId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QustnrQesitmDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteQuestion_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qesitmId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getSurvey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qestnrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseQestnrInfoDto"];
+                };
+            };
+        };
+    };
+    updateSurvey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qestnrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QestnrInfoDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteSurvey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qestnrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getSurvey_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qestnrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseQestnrInfoDto"];
+                };
+            };
+        };
+    };
+    updateSurvey_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qestnrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QestnrInfoDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteSurvey_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qestnrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tmplatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseQestnrTmplatDto"];
+                };
+            };
+        };
+    };
+    updateTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tmplatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QestnrTmplatDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tmplatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getTemplate_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tmplatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseQestnrTmplatDto"];
+                };
+            };
+        };
+    };
+    updateTemplate_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tmplatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QestnrTmplatDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteTemplate_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tmplatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    updateItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                iemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QustnrIemDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                iemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    updateItem_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                iemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QustnrIemDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteItem_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                iemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -8363,7 +9524,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
+                /** @description Q&A ID */
                 qaId: string;
             };
             cookie?: never;
@@ -8504,7 +9665,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소록 ID */
+                /** @description 팝업 ID */
                 popupId: string;
             };
             cookie?: never;
@@ -8527,7 +9688,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소록 ID */
+                /** @description 팝업 ID */
                 popupId: string;
             };
             cookie?: never;
@@ -8554,7 +9715,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소록 ID */
+                /** @description 팝업 ID */
                 popupId: string;
             };
             cookie?: never;
@@ -8931,7 +10092,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
+                /** @description 부서 ID (OrgnztId) */
                 deptId: string;
             };
             cookie?: never;
@@ -8980,81 +10141,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
+                /** @description 부서 ID (OrgnztId) */
                 deptId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    getCommunity: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 쪽지 ID */
-                cmmntyId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseCommunityDto"];
-                };
-            };
-        };
-    };
-    updateCommunity: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 관계 ID */
-                cmmntyId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CommunityDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    deleteCommunity: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 而ㅻ님덊떚 ID */
-                cmmntyId: string;
             };
             cookie?: never;
         };
@@ -9431,7 +10519,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 諛곕꼫 ID */
+                /** @description 배너 ID */
                 bannerId: string;
             };
             cookie?: never;
@@ -9573,7 +10661,7 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description ?됱궗 ID
+                 * @description 행사 ID
                  * @example EVT_12345678
                  */
                 eventId: string;
@@ -9641,16 +10729,13 @@ export interface operations {
             };
         };
     };
-    getKnowledge: {
+    getCommunity: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /**
-                 * @description 吏님ID
-                 * @example KNO_12345678
-                 */
-                knoId: string;
+                /** @description 커뮤니티 ID */
+                cmmntyId: string;
             };
             cookie?: never;
         };
@@ -9662,23 +10747,24 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseKnowledgeDto"];
+                    "*/*": components["schemas"]["ApiResponseCommunityDto"];
                 };
             };
         };
     };
-    updateKnowledge: {
+    updateCommunity: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                knoId: string;
+                /** @description 커뮤니티 ID */
+                cmmntyId: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["KnowledgeDto"];
+                "application/json": components["schemas"]["CommunityDto"];
             };
         };
         responses: {
@@ -9693,12 +10779,13 @@ export interface operations {
             };
         };
     };
-    deleteKnowledge: {
+    deleteCommunity: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                knoId: string;
+                /** @description 커뮤니티 ID */
+                cmmntyId: string;
             };
             cookie?: never;
         };
@@ -9720,7 +10807,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소濡ID */
+                /** @description 주소록 ID */
                 adbkId: string;
             };
             cookie?: never;
@@ -9743,7 +10830,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소濡ID */
+                /** @description 주소록 ID */
                 adbkId: string;
             };
             cookie?: never;
@@ -9770,12 +10857,58 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소濡ID */
+                /** @description 주소록 ID */
                 adbkId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getWorkReportList: {
+        parameters: {
+            query: {
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseWorkReportDto"];
+                };
+            };
+        };
+    };
+    registerWorkReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkReportDto"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -9953,10 +11086,80 @@ export interface operations {
             };
         };
     };
+    getPolls: {
+        parameters: {
+            query: {
+                searchWrd?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseOnlinePollManageDto"];
+                };
+            };
+        };
+    };
+    createPoll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnlinePollManageDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    vote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pollId: string;
+                pollIemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getNotifications: {
         parameters: {
             query: {
-                /** @description 쪽지 구분 (recv: 수신, sent: 발신) */
+                /** @description 검색어 */
                 searchWrd?: string;
                 pageable: components["schemas"]["Pageable"];
             };
@@ -10286,6 +11489,56 @@ export interface operations {
             };
         };
     };
+    getInformalSanctionList_1: {
+        parameters: {
+            query: {
+                userDetails: components["schemas"]["CustomUserDetails"];
+                type?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseInformalSanctionDto"];
+                };
+            };
+        };
+    };
+    registerInformalSanction_1: {
+        parameters: {
+            query: {
+                userDetails: components["schemas"]["CustomUserDetails"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InformalSanctionDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
     getManuals: {
         parameters: {
             query: {
@@ -10500,6 +11753,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    joinCommunity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cmmntyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10747,6 +12022,7 @@ export interface operations {
     getUsers: {
         parameters: {
             query: {
+                searchKeyword?: string;
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;
@@ -10761,7 +12037,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseUserManageDto"];
+                    "*/*": components["schemas"]["ApiResponsePageResponseUserDto"];
                 };
             };
         };
@@ -10775,7 +12051,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UserManageDto"];
+                "application/json": components["schemas"]["UserDto"];
             };
         };
         responses: {
@@ -10785,7 +12061,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "*/*": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -10817,7 +12093,7 @@ export interface operations {
     getUserAuthorities: {
         parameters: {
             query: {
-                searchVO: components["schemas"]["ComDefaultVO"];
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -10899,7 +12175,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListTmplatInfo"];
+                    "*/*": components["schemas"]["ApiResponseListTemplate"];
                 };
             };
         };
@@ -10913,54 +12189,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TmplatInfo"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    getSurveys: {
-        parameters: {
-            query: {
-                keyword?: string;
-                pageable: components["schemas"]["Pageable"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseQestnrInfoDto"];
-                };
-            };
-        };
-    };
-    insertSurvey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["QestnrInfoDto"];
+                "application/json": components["schemas"]["Template"];
             };
         };
         responses: {
@@ -10998,6 +12227,54 @@ export interface operations {
         };
     };
     insertQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qestnrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QustnrQesitmDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getQuestions_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qestnrId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListQustnrQesitmDto"];
+                };
+            };
+        };
+    };
+    insertQuestion_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -11070,6 +12347,53 @@ export interface operations {
             };
         };
     };
+    getTemplates_1: {
+        parameters: {
+            query: {
+                keyword?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseQestnrTmplatDto"];
+                };
+            };
+        };
+    };
+    insertTemplate_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QestnrTmplatDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     insertItem: {
         parameters: {
             query?: never;
@@ -11096,11 +12420,130 @@ export interface operations {
             };
         };
     };
+    insertItem_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qesitmId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QustnrIemDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getSurveys: {
+        parameters: {
+            query: {
+                keyword?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseQestnrInfoDto"];
+                };
+            };
+        };
+    };
+    insertSurvey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QestnrInfoDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getSurveys_1: {
+        parameters: {
+            query: {
+                keyword?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseQestnrInfoDto"];
+                };
+            };
+        };
+    };
+    insertSurvey_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QestnrInfoDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getRoles: {
         parameters: {
-            query?: {
-                pageIndex?: number;
-                searchKeyword?: string;
+            query: {
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -11217,8 +12660,7 @@ export interface operations {
     getProgramList: {
         parameters: {
             query: {
-                searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -11308,7 +12750,7 @@ export interface operations {
             };
         };
     };
-    getPolls: {
+    getPolls_1: {
         parameters: {
             query: {
                 keyword?: string;
@@ -11355,7 +12797,7 @@ export interface operations {
             };
         };
     };
-    vote: {
+    vote_1: {
         parameters: {
             query: {
                 pollIemId: string;
@@ -11382,8 +12824,7 @@ export interface operations {
     getMenuList: {
         parameters: {
             query: {
-                searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -11592,6 +13033,30 @@ export interface operations {
             };
         };
     };
+    saveDeptUserAuthorities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeptAuthorBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getDepts: {
         parameters: {
             query: {
@@ -11639,102 +13104,6 @@ export interface operations {
             };
         };
     };
-    getDeptAuthorities: {
-        parameters: {
-            query?: {
-                pageIndex?: number;
-            };
-            header?: never;
-            path: {
-                deptCode: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseDeptAuthorProjection"];
-                };
-            };
-        };
-    };
-    saveDeptUserAuthorities: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserAuthorityDto"][];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    getCommunities: {
-        parameters: {
-            query: {
-                searchCnd?: string;
-                searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseCommunityDto"];
-                };
-            };
-        };
-    };
-    createCommunity: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CommunityDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseCommunityDto"];
-                };
-            };
-        };
-    };
     processInstitutionCodeRecptn: {
         parameters: {
             query: {
@@ -11762,7 +13131,7 @@ export interface operations {
     getDetailCodeList: {
         parameters: {
             query: {
-                searchVO: components["schemas"]["ComDefaultVO"];
+                searchVO: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -11808,7 +13177,7 @@ export interface operations {
     getCmmnCodeList: {
         parameters: {
             query: {
-                searchVO: components["schemas"]["ComDefaultVO"];
+                searchVO: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -11854,7 +13223,7 @@ export interface operations {
     getClCodeList: {
         parameters: {
             query: {
-                searchVO: components["schemas"]["ComDefaultVO"];
+                searchVO: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -11899,10 +13268,8 @@ export interface operations {
     };
     getAdministCodeList: {
         parameters: {
-            query?: {
-                searchWrd?: string;
-                pageIndex?: number;
-                pageUnit?: number;
+            query: {
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -12089,9 +13456,8 @@ export interface operations {
     };
     getAuthors: {
         parameters: {
-            query?: {
-                pageIndex?: number;
-                searchKeyword?: string;
+            query: {
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -12160,8 +13526,8 @@ export interface operations {
     };
     getAuthorRoles: {
         parameters: {
-            query?: {
-                pageIndex?: number;
+            query: {
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path: {
@@ -12396,10 +13762,10 @@ export interface operations {
             };
         };
     };
-    getKnowledgeList: {
+    getCommunities: {
         parameters: {
             query: {
-                /** @description 쪽지 구분 (recv: 수신, sent: 발신) */
+                searchCnd?: string;
                 searchWrd?: string;
                 pageable: components["schemas"]["Pageable"];
             };
@@ -12415,12 +13781,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseKnowledgeDto"];
+                    "*/*": components["schemas"]["ApiResponsePageResponseCommunityDto"];
                 };
             };
         };
     };
-    createKnowledge: {
+    createCommunity: {
         parameters: {
             query?: never;
             header?: never;
@@ -12429,7 +13795,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["KnowledgeDto"];
+                "application/json": components["schemas"]["CommunityDto"];
             };
         };
         responses: {
@@ -12439,7 +13805,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "*/*": components["schemas"]["ApiResponseCommunityDto"];
                 };
             };
         };
@@ -12545,7 +13911,33 @@ export interface operations {
             };
         };
     };
-    updatePassword: {
+    confirmInformalSanction_1: {
+        parameters: {
+            query: {
+                confmAt: string;
+                returnResn?: string;
+            };
+            header?: never;
+            path: {
+                /** @description 결재 ID */
+                informalSanctionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    updatePasswordByAdmin: {
         parameters: {
             query?: never;
             header?: never;
@@ -12556,7 +13948,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": string;
+                "application/json": {
+                    [key: string]: string;
+                };
             };
         };
         responses: {
@@ -12623,33 +14017,10 @@ export interface operations {
             };
         };
     };
-    getUserList: {
+    checkIdDplct: {
         parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseListUserDto"];
-                };
-            };
-        };
-    };
-    getPagedUserList: {
-        parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-                sortBy?: string;
-                sortDir?: string;
+            query: {
+                userId: string;
             };
             header?: never;
             path?: never;
@@ -12663,7 +14034,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseUserDto"];
+                    "*/*": components["schemas"]["ApiResponseBoolean"];
                 };
             };
         };
@@ -12762,7 +14133,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description ?앹뾽 ID */
+                /** @description 팝업 ID */
                 popupId: string;
             };
             cookie?: never;
@@ -12796,6 +14167,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseListPopupDto"];
+                };
+            };
+        };
+    };
+    getPollItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pollId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListOnlinePollItemDto"];
                 };
             };
         };
@@ -12867,14 +14260,14 @@ export interface operations {
     getNote: {
         parameters: {
             query: {
-                /** @description 履쎌? 援щ텇 (recv: ?섏떊, sent: 諛쒖떊) */
+                /** @description 쪽지 구분 (recv: 수신, sent: 발신) */
                 type: string;
                 /** @description 관계 ID (수신ID 또는 발신ID) */
                 relationId: string;
             };
             header?: never;
             path: {
-                /** @description 履쎌? ID */
+                /** @description 쪽지 ID */
                 noteId: string;
             };
             cookie?: never;
@@ -13093,7 +14486,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 硫붿떆吏 ID */
+                /** @description 메시지 ID */
                 mssageId: string;
             };
             cookie?: never;
@@ -13241,15 +14634,64 @@ export interface operations {
             };
         };
     };
+    getCommunities_1: {
+        parameters: {
+            query: {
+                searchCnd?: string;
+                searchWrd?: string;
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseCommunityDto"];
+                };
+            };
+        };
+    };
+    getCommunity_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 커뮤니티 ID */
+                cmmntyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCommunityDto"];
+                };
+            };
+        };
+    };
     getPosts: {
         parameters: {
             query: {
+                searchCnd?: string;
+                searchWrd?: string;
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;
             path: {
                 /**
-                 * @description 寃뚯떆님ID
+                 * @description 게시판 ID
                  * @example BBS_000000000001
                  */
                 bbsId: string;
@@ -13269,21 +14711,16 @@ export interface operations {
             };
         };
     };
-    getPost: {
+    getStats: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /**
-                 * @description 寃뚯떆님ID
-                 * @example BBS_000000000001
+                 * @description 게시판 ID
+                 * @example BBSMSTR_AAAAAAAAAAAA
                  */
                 bbsId: string;
-                /**
-                 * @description 게시글 ID
-                 * @example 1
-                 */
-                id: number;
             };
             cookie?: never;
         };
@@ -13295,38 +14732,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseBoardDto"];
-                };
-            };
-        };
-    };
-    deletePost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description 寃뚯떆님ID
-                 * @example BBS_000000000001
-                 */
-                bbsId: string;
-                /**
-                 * @description 게시글 ID
-                 * @example 1
-                 */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "*/*": components["schemas"]["ApiResponseBoardStatsResponse"];
                 };
             };
         };
@@ -13397,28 +14803,6 @@ export interface operations {
             };
         };
     };
-    checkIdDplct: {
-        parameters: {
-            query: {
-                userId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseBoolean"];
-                };
-            };
-        };
-    };
     getAbsences: {
         parameters: {
             query?: never;
@@ -13456,51 +14840,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseTmplatInfo"];
-                };
-            };
-        };
-    };
-    getSurvey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                qestnrId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseQestnrInfoDto"];
-                };
-            };
-        };
-    };
-    getTemplate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tmplatId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseQestnrTmplatDto"];
+                    "*/*": components["schemas"]["ApiResponseTemplate"];
                 };
             };
         };
@@ -13525,6 +14865,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseListStatsDto"];
+                };
+            };
+        };
+    };
+    getSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseMapStringObject"];
                 };
             };
         };
@@ -13572,6 +14932,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseListStatsDto"];
+                };
+            };
+        };
+    };
+    getMenuStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListMapStringObject"];
                 };
             };
         };
@@ -13647,7 +15027,7 @@ export interface operations {
             };
         };
     };
-    getPoll: {
+    getPoll_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -13692,8 +15072,7 @@ export interface operations {
     getMenuCreationManageList: {
         parameters: {
             query: {
-                searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -13735,7 +15114,7 @@ export interface operations {
     getSysLogList: {
         parameters: {
             query: {
-                searchVO: components["schemas"]["ComDefaultVO"];
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -13779,7 +15158,7 @@ export interface operations {
     getLoginLogList: {
         parameters: {
             query: {
-                searchVO: components["schemas"]["ComDefaultVO"];
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -13823,7 +15202,7 @@ export interface operations {
     getLoginPolicyList: {
         parameters: {
             query: {
-                searchVO: components["schemas"]["LoginPolicyVO"];
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -13842,11 +15221,15 @@ export interface operations {
             };
         };
     };
-    getCommunityPortlet: {
+    getDeptAuthorities: {
         parameters: {
-            query?: never;
+            query: {
+                searchDto: components["schemas"]["BaseSearchDto"];
+            };
             header?: never;
-            path?: never;
+            path: {
+                deptId: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -13857,7 +15240,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListCommunityDto"];
+                    "*/*": components["schemas"]["ApiResponsePageResponseDeptAuthorProjection"];
                 };
             };
         };
@@ -13887,10 +15270,8 @@ export interface operations {
     };
     getInstitutionCodeList: {
         parameters: {
-            query?: {
-                searchWrd?: string;
-                pageIndex?: number;
-                pageUnit?: number;
+            query: {
+                searchDto: components["schemas"]["BaseSearchDto"];
             };
             header?: never;
             path?: never;
@@ -13933,11 +15314,9 @@ export interface operations {
     };
     getInstitutionCodeRecptnList: {
         parameters: {
-            query?: {
-                searchWrd?: string;
+            query: {
+                searchDto: components["schemas"]["BaseSearchDto"];
                 processSe?: string;
-                pageIndex?: number;
-                pageUnit?: number;
             };
             header?: never;
             path?: never;
@@ -14066,6 +15445,26 @@ export interface operations {
             };
         };
     };
+    getCommunityPortlet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListCommunityDto"];
+                };
+            };
+        };
+    };
     searchUsers: {
         parameters: {
             query: {
@@ -14092,12 +15491,12 @@ export interface operations {
     deleteNote: {
         parameters: {
             query: {
-                /** @description 履쎌? 援щ텇 (recv: ?섏떊, sent: 諛쒖떊) */
+                /** @description 쪽지 구분 (recv: 수신, sent: 발신) */
                 type: string;
             };
             header?: never;
             path: {
-                /** @description 愿怨ID */
+                /** @description 관계 ID */
                 relationId: string;
             };
             cookie?: never;

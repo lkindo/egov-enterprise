@@ -91,7 +91,7 @@ class ReportStatsServiceTest {
         ReflectionTestUtils.setField(reportStatsService, "reprtStatsIdGnrService", reprtStatsIdGnrService);
         given(reprtStatsIdGnrService.getNextStringId()).willReturn("REPRT_001");
         
-        ReprtStats stats = ReprtStats.builder().reprtNm("Test").reprtTy("A").frstRegisterId("user1").build();
+        ReprtStats stats = ReprtStats.builder().reprtNm("Test").reprtTy("A").createdBy("user1").build();
         reportStatsService.insertReprtStats(stats);
 
         verify(reprtStatsRepository).save(any(ReprtStats.class));

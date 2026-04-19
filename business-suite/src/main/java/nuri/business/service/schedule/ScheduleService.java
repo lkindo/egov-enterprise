@@ -109,8 +109,8 @@ public class ScheduleService implements EgovScheduleService {
     @Override
     @Transactional
     public String createSchedule(String userId, ScheduleDto dto) {
-        // ID: SCHDUL_ + timestamp
-        String id = "SCHDUL_" + System.currentTimeMillis();
+        // ID: SCHDUL_ + UUID
+        String id = "SCHDUL_" + java.util.UUID.randomUUID().toString().substring(0, 13);
 
         Schedule schedule = Schedule.builder()
                 .schdulId(id)
