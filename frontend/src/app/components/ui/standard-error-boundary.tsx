@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
@@ -21,6 +21,28 @@ export class StandardErrorBoundary extends Component<Props, State> {
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
+
+  public componentDidMount() {
+    // [Item 2] 전역 런타임 에러 감지 (React 하위 트리 외부)
+    window.addEventListener('error', this.handleGlobalError);
+    window.addEventListener('unhandledrejection', this.handlePromiseRejection);
+  }
+
+  public componentWillUnmount() {
+    window.removeEventListener('error', this.handleGlobalError);
+    window.removeEventListener('unhandledrejection', this.handlePromiseRejection);
+  }
+
+  private handleGlobalError = (event: ErrorEvent) => {
+    // 하이드레이션 오류의 경우 특화된 로그로 변환
+    if (event.message?.includes('hydration') || event.message?.includes('Server-side rendered')) {
+      console.error('🌊 [HYDRATION MISMATCH DETECTED]:', event.message);
+    }
+  };
+
+  private handlePromiseRejection = (event: PromiseRejectionEvent) => {
+    console.error('🔥 [UNHANDLED PROMISE REJECTION]:', event.reason);
+  };
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);

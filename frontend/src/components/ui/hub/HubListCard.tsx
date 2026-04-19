@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, AlertCircle, LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -84,7 +84,10 @@ export function HubListCard({
           </Link>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar">
+      <div 
+        className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar"
+        style={{ contentVisibility: 'auto', containIntrinsicSize: '0 400px' } as React.CSSProperties}
+      >
         {items && items.length > 0 ? (
           items.slice(0, 6).map((item, idx) => (
             <motion.div

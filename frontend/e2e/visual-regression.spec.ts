@@ -22,7 +22,7 @@ test.describe('Visual Regression - Admin Pages', () => {
         // 전체 페이지 스냅샷
         await expect(page).toHaveScreenshot('admin-dashboard-full.png', {
             fullPage: true,
-            maxDiffPixels: 100,
+            maxDiffPixelRatio: 0.002, // 0.2% change allowed (Item 4)
         });
     });
 
@@ -34,7 +34,7 @@ test.describe('Visual Regression - Admin Pages', () => {
 
         await expect(page).toHaveScreenshot('login-page.png', {
             fullPage: true,
-            maxDiffPixels: 100,
+            maxDiffPixelRatio: 0.002,
         });
     });
 
@@ -45,7 +45,7 @@ test.describe('Visual Regression - Admin Pages', () => {
 
         await expect(page).toHaveScreenshot('admin-common-codes.png', {
             fullPage: true,
-            maxDiffPixels: 100,
+            maxDiffPixelRatio: 0.002,
         });
     });
 
@@ -56,7 +56,7 @@ test.describe('Visual Regression - Admin Pages', () => {
 
         await expect(page).toHaveScreenshot('admin-menus.png', {
             fullPage: true,
-            maxDiffPixels: 100,
+            maxDiffPixelRatio: 0.002,
         });
     });
 
@@ -67,7 +67,7 @@ test.describe('Visual Regression - Admin Pages', () => {
 
         await expect(page).toHaveScreenshot('admin-users.png', {
             fullPage: true,
-            maxDiffPixels: 100,
+            maxDiffPixelRatio: 0.002,
         });
     });
 
@@ -78,7 +78,7 @@ test.describe('Visual Regression - Admin Pages', () => {
 
         await expect(page).toHaveScreenshot('admin-boards.png', {
             fullPage: true,
-            maxDiffPixels: 100,
+            maxDiffPixelRatio: 0.002,
         });
     });
 
@@ -89,7 +89,7 @@ test.describe('Visual Regression - Admin Pages', () => {
 
         await expect(page).toHaveScreenshot('admin-statistics.png', {
             fullPage: true,
-            maxDiffPixels: 150, // Charts may have minor rendering differences
+            maxDiffPixelRatio: 0.005, // Extra tolerance for dynamic charts
         });
     });
 });
@@ -153,7 +153,7 @@ test.describe('Visual Regression - Dark Mode', () => {
 
         await expect(page).toHaveScreenshot('admin-dashboard-dark-mode.png', {
             fullPage: true,
-            maxDiffPixels: 100,
+            maxDiffPixelRatio: 0.002,
         });
     });
 });

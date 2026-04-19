@@ -3,7 +3,7 @@ import { Survey, QustnrRespondInfo } from '@/types/business/survey';
 
 export const getQustnrRespondInfoList = async (params: { keyword?: string; page?: number; size?: number } = {}) => {
   return client.get<{ list: Survey[]; total: number }>(
-    '/api/v1/surveys',
+    '/surveys',
     { params, headers: { Accept: 'application/json' } }
   );
 };
