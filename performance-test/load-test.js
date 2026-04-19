@@ -16,11 +16,18 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080/api/v1';
 
 export default function () {
-  // 1. Get Menus (Public)
-  const menuRes = http.get(`${BASE_URL}/menus`);
+  // 1. Health Check (Public, Lightweight)
+  const healthRes = http.get(`${BASE_URL}/health`);
+  check(healthRes, {
+    'health status is 200': (r) => r.status === 200,
+    'health UP': (r) => r.json().data.status === 'UP',
+  });
+
+  // 2. Head Menu (User-side, Mediumweight)
+  const menuRes = http.get(`${BASE_URL}/menus/head`);
   check(menuRes, {
-    'status is 200': (r) => r.status === 200,
-    'has menu data': (r) => r.json().data !== undefined,
+    'menu status is 200': (r) => r.status === 200,
+    'has menu list': (r) => r.json().data.list !== undefined,
   });
 
   sleep(1);

@@ -167,7 +167,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           </div>
           <div>
             <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none">
-              협합 통합 허브
+              협업 통합 허브
             </h2>
             <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 italic">
               통합 기업용 소셜 및 메시징 센터
