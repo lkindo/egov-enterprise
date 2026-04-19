@@ -11,7 +11,6 @@ import { DashboardNoti, DashboardTask } from '@/types/foundation/dashboard';
  * Reduces initial bundle size by lazy loading the heavy dashboard component.
  */
 const UnifiedDashboardClient = dynamic(() => import('./UnifiedDashboardClient'), {
-  ssr: false,
   loading: () => <DashboardSkeleton />
 });
 

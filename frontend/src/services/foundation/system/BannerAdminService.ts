@@ -8,7 +8,7 @@ import { AxiosRequestConfig } from 'axios';
  */
 class BannerAdminService extends AdminService {
  constructor() {
- super('/banners', 'content');
+ super('/banners', 'system');
  }
 
  /** 諛곕꼫 紐⑸줉 조회 */

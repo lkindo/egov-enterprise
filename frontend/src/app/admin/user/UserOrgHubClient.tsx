@@ -44,6 +44,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  TooltipProvider,
 } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
@@ -230,7 +231,8 @@ export default function UserOrgHubClient({
   ];
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+    <TooltipProvider delayDuration={0}>
+      <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
         title="조직 아키텍처 거버넌스"
         breadcrumbs={[{ label: '사용자 관리' }, { label: '조직 통합 허브' }]}
@@ -640,6 +642,7 @@ export default function UserOrgHubClient({
         </form>
       </StandardModal>
     </div>
+    </TooltipProvider>
   );
 }
 

@@ -8,7 +8,7 @@ import { Popup } from '@/types/foundation/banner';
  */
 class PopupAdminService extends AdminService {
   constructor() {
-    super('/popup', 'content');
+    super('/popups', 'system');
   }
 
   /** ?앹뾽李紐⑸줉 조회 */
