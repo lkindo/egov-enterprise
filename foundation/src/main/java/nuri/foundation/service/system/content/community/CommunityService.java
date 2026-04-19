@@ -19,4 +19,6 @@ public interface CommunityService {
     void deleteCommunity(String cmmntyId, String userId);
 
     List<CommunityDto> getCommunityListPortlet();
+    
+    void joinCommunity(String cmmntyId, String userId);
 }

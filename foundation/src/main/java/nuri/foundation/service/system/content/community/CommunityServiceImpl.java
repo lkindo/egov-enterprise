@@ -4,6 +4,9 @@ import nuri.foundation.domain.system.content.community.Community;
 import nuri.foundation.domain.system.content.community.CommunityRepository;
 import nuri.foundation.domain.system.content.community.QCommunity;
 import nuri.foundation.service.system.content.community.dto.CommunityDto;
+import nuri.foundation.domain.system.content.community.CommunityUser;
+import nuri.foundation.domain.system.content.community.CommunityUserRepository;
+import nuri.foundation.domain.system.content.community.CommunityUserId;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +16,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -23,6 +27,7 @@ import java.util.stream.Collectors;
 public class CommunityServiceImpl implements CommunityService {
 
     private final CommunityRepository communityRepository;
+    private final CommunityUserRepository communityUserRepository;
     private final JPAQueryFactory queryFactory;
     private final EgovIdGnrService egovCmmntyIdGnrService;
 
@@ -117,5 +122,31 @@ public class CommunityServiceImpl implements CommunityService {
                 .stream()
                 .map(CommunityDto::from)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void joinCommunity(String cmmntyId, String userId) {
+        Community community = communityRepository.findById(Objects.requireNonNull(cmmntyId))
+                .orElseThrow(() -> new IllegalArgumentException("Community not found: " + cmmntyId));
+
+        if (!"Y".equals(community.getUseAt())) {
+            throw new IllegalStateException("This community is not active.");
+        }
+
+        CommunityUserId id = new CommunityUserId(cmmntyId, userId);
+        if (communityUserRepository.existsById(id)) {
+            throw new IllegalStateException("Already a member or join request pending.");
+        }
+
+        CommunityUser communityUser = CommunityUser.builder()
+                .id(id)
+                .mberSttus("A") // A: Requested
+                .mngrAt("N")
+                .sbscrbDe(LocalDateTime.now())
+                .useAt("Y")
+                .build();
+
+        communityUserRepository.save(communityUser);
     }
 }

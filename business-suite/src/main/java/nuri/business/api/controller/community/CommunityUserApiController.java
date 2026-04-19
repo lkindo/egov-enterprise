@@ -46,7 +46,7 @@ public class CommunityUserApiController {
     public ResponseEntity<ApiResponse<Void>> joinCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String cmmntyId) {
-        // TODO: 가입 신청 로직 구현 필요 (서비스 레이어 확인 필요)
+        communityService.joinCommunity(cmmntyId, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

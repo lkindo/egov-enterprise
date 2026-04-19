@@ -1,7 +1,6 @@
 package nuri.business.service.schedule;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.schedule.Schedule;
 import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.foundation.domain.user.entity.User;
