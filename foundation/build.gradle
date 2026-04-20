@@ -57,6 +57,15 @@ dependencies {
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
     }
 
+    // Spring AI platform (v5.0 정식 가이드)
+    api platform(libs.spring.ai.bom)
+    api libs.spring.ai.openai
+    api libs.spring.ai.ollama
+
+    // Observability (OTEL)
+    api libs.micrometer.tracing.bridge.otel
+    api libs.opentelemetry.exporter.otlp
+
     // Utils
     api libs.icu4j
     api 'jakarta.servlet:jakarta.servlet-api'

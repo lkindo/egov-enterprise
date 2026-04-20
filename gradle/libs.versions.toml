@@ -2,6 +2,8 @@
 egovframe = "5.0.0"
 spring-boot = "3.4.3"
 spring-doc = "2.8.5"
+spring-ai = "1.0.0-M5"
+micrometer-tracing = "1.4.3"
 postgresql = "42.7.5"
 commons-io = "2.18.0"
 commons-lang3 = "3.17.0"
@@ -31,6 +33,16 @@ egovframe-rte-fdl-idgnr = { group = "org.egovframe.rte", name = "egovframe-rte-f
 egovframe-rte-fdl-cmmn = { group = "org.egovframe.rte", name = "egovframe-rte-fdl-cmmn", version.ref = "egovframe" }
 egovframe-rte-fdl-excel = { group = "org.egovframe.rte", name = "egovframe-rte-fdl-excel", version.ref = "egovframe" }
 egovframe-rte-fdl-security = { group = "org.egovframe.rte", name = "egovframe-rte-fdl-security", version.ref = "egovframe" }
+
+# Spring AI
+spring-ai-bom = { group = "org.springframework.ai", name = "spring-ai-bom", version.ref = "spring-ai" }
+spring-ai-openai = { group = "org.springframework.ai", name = "spring-ai-openai-spring-boot-starter" }
+spring-ai-ollama = { group = "org.springframework.ai", name = "spring-ai-ollama-spring-boot-starter" }
+spring-ai-pgvector = { group = "org.springframework.ai", name = "spring-ai-pgvector-store-spring-boot-starter" }
+
+# Observability
+micrometer-tracing-bridge-otel = { group = "io.micrometer", name = "micrometer-tracing-bridge-otel", version.ref = "micrometer-tracing" }
+opentelemetry-exporter-otlp = { group = "io.opentelemetry", name = "opentelemetry-exporter-otlp" }
 
 springdoc-openapi = { group = "org.springdoc", name = "springdoc-openapi-starter-webmvc-ui", version.ref = "spring-doc" }
 postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
