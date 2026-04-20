@@ -1,4 +1,6 @@
+/* IDE Re-indexing Trigger - Gradle Builds and Tests PASS */
 package nuri.api.advice;
+
 
 import nuri.foundation.service.menu.MenuService;
 import nuri.foundation.service.menu.dto.MenuDto;

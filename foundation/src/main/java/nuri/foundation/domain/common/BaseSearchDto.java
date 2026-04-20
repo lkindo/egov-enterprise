@@ -1,4 +1,6 @@
+/* IDE Re-indexing Trigger */
 package nuri.foundation.domain.common;
+
 
 import lombok.Getter;
 import lombok.Setter;
