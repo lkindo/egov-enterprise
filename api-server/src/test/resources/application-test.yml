@@ -40,6 +40,12 @@ spring:
     context:
       cache:
         maxSize: 8
+  ai:
+    openai:
+      enabled: false
+      api-key: dummy-key-for-test
+    ollama:
+      enabled: false
 
 springdoc:
   api-docs:
@@ -69,3 +75,5 @@ logging:
     org.hibernate.orm.model.mapping: DEBUG
     nuri: DEBUG
     org.springframework.boot.autoconfigure: DEBUG
+    org.springframework.ai: DEBUG
+

@@ -20,6 +20,8 @@ class NotificationDomainTest {
                 .ntfcCn("Content")
                 .receiverId("user1")
                 .linkUrl("/home")
+                .createdDate(LocalDateTime.now())
+                .lastModifiedDate(LocalDateTime.now())
                 .build();
         
         // Then

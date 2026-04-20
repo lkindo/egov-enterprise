@@ -32,8 +32,10 @@ public class Notification extends BaseEntity {
     @Column(name = "RECEIVER_ID", length = 20)
     private String receiverId;
 
+    @Builder.Default
     @Column(name = "IS_READ", length = 1)
-    private String isRead;
+    private String isRead = "N";
+
 
     @Column(name = "LINK_URL")
     private String linkUrl;

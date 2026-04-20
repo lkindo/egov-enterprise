@@ -103,6 +103,11 @@ dependencies {
     testFixturesApi 'com.h2database:h2'
     testFixturesApi 'org.testcontainers:postgresql:1.20.4'
     testFixturesApi 'org.testcontainers:jdbc:1.20.4'
+    
+    // AI Mock 설정을 위해 testFixtures에서도 AI 라이브러리 참조 허용
+    testFixturesApi platform(libs.spring.ai.bom)
+    testFixturesApi libs.spring.ai.openai
+    testFixturesApi libs.spring.ai.ollama
 }
 
 test {

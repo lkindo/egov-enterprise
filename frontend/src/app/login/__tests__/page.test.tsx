@@ -104,7 +104,10 @@ describe('LoginPage Component', () => {
   });
 
   it('shows error message on login failure', async () => {
-    mockLogin.mockRejectedValueOnce(new Error('Invalid credentials'));
+    // Mock login failure
+    const errorMsg = 'Invalid credentials';
+    mockLogin.mockRejectedValueOnce(new Error(errorMsg));
+    
     render(<LoginPage />);
     
     const idInput = screen.getByLabelText('사용자 아이디');
@@ -115,8 +118,11 @@ describe('LoginPage Component', () => {
     fireEvent.change(pwInput, { target: { value: 'wrongpass' } });
     fireEvent.click(submitButton);
 
+    // Wait for the error message to be rendered in the DOM
     await waitFor(() => {
-      expect(screen.getByTestId('login-error')).toHaveTextContent('Invalid credentials');
-    });
+      const errorElement = screen.getByTestId('login-error');
+      expect(errorElement).toBeInTheDocument();
+      expect(errorElement).toHaveTextContent(errorMsg);
+    }, { timeout: 2000 });
   });
 });

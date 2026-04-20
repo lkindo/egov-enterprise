@@ -13,6 +13,18 @@ spring:
   pageUnit: 10
   pageSize: 10
 
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
+      - org.springframework.ai.autoconfigure.ollama.OllamaAutoConfiguration
+
+  ai:
+    openai:
+      enabled: false
+      api-key: dummy-api-key-for-e2e
+    ollama:
+      enabled: false
+
   datasource:
     url: jdbc:postgresql://localhost:5434/egovdb?currentSchema=public&prepareThreshold=0
     jdbc-url: jdbc:postgresql://localhost:5434/egovdb?currentSchema=public&prepareThreshold=0

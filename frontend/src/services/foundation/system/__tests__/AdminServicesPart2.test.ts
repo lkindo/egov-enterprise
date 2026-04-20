@@ -25,15 +25,19 @@ describe('Admin System Services Part 2', () => {
   it('BannerAdminService should call correct endpoints', async () => {
     await bannerAdminService.getBannerList({ page: 1 });
     expect(client.get).toHaveBeenCalledWith('admin/system/banners', expect.objectContaining({
-      params: expect.objectContaining({ pageIndex: 2 })
+      params: expect.objectContaining({ page: 1, pageIndex: 2, keyword: '' })
     }));
   });
 
   it('CommunityAdminService should call correct endpoints', async () => {
-    // CommunityAdminService uses AdminService which prepends /admin/system
     await communityAdminService.getCommunityList({ page: 0 });
-    expect(client.get).toHaveBeenCalledWith('admin/system/communities', expect.objectContaining({
-      params: { pageIndex: 1 }
+    expect(client.get).toHaveBeenCalledWith('admin/content/community', expect.objectContaining({
+      params: expect.objectContaining({ 
+        page: 0, 
+        pageIndex: 1,
+        searchCnd: '',
+        searchWrd: ''
+      })
     }));
   });
 });

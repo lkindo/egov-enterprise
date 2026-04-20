@@ -24,3 +24,9 @@ spring:
       schema-locations: classpath:schema-h2.sql
   main:
     allow-bean-definition-overriding: true
+  ai:
+    openai:
+      enabled: false
+      api-key: dummy-key-for-business-suite-test
+    ollama:
+      enabled: false

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DashboardPage from './page';
 import client from '@/lib/api/client';
@@ -26,14 +26,25 @@ vi.mock('@/lib/api/client', () => ({
 
 // Mock UnifiedDashboardClient
 vi.mock('./UnifiedDashboardClient', () => ({
-  default: ({ initialNotiList, initialTaskList, pendingApprovalCount }: any) => (
-    <div data-testid="dashboard-client">
-      <div data-testid="noti-count">공지사항: {initialNotiList.length}개</div>
-      <div data-testid="task-count">할일: {initialTaskList.length}개</div>
-      <div>결재대기: {pendingApprovalCount}건</div>
-      {initialTaskList.length > 0 && <div>할일 테스트</div>}
-    </div>
-  )
+  default: ({ dataPromise }: any) => {
+    // In Vitest tests, we need to handle the promise resolution for the mock
+    const [data, setData] = React.useState<any>(null);
+    
+    React.useEffect(() => {
+      dataPromise.then(setData);
+    }, [dataPromise]);
+
+    if (!data) return <div data-testid="loading">로딩 중...</div>;
+
+    return (
+      <div data-testid="dashboard-client">
+        <div data-testid="noti-count">공지사항: {data.initialNotiList.length}개</div>
+        <div data-testid="task-count">할일: {data.initialTaskList.length}개</div>
+        <div>결재대기: {data.pendingApprovalCount}건</div>
+        {data.initialTaskList.length > 0 && <div>할일 테스트</div>}
+      </div>
+    );
+  }
 }));
 
 describe('DashboardPage Server Component', () => {
@@ -69,9 +80,11 @@ describe('DashboardPage Server Component', () => {
     const result = await DashboardPage();
     render(result);
 
-    expect(screen.getByTestId('dashboard-client')).toBeInTheDocument();
-    expect(screen.getByText(/할일 테스트/)).toBeInTheDocument();
-    expect(screen.getByText(/공지사항: 1개/)).toBeInTheDocument();
-    expect(screen.getByText(/결재대기: 10건/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('dashboard-client')).toBeInTheDocument();
+      expect(screen.getByText(/할일 테스트/)).toBeInTheDocument();
+      expect(screen.getByText(/공지사항: 1개/)).toBeInTheDocument();
+      expect(screen.getByText(/결재대기: 10건/)).toBeInTheDocument();
+    });
   });
 });

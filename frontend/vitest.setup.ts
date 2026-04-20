@@ -154,7 +154,7 @@ vi.mock('lucide-react', () => {
         'UserCheck', 'UserX', 'Fingerprint', 'LayoutGrid', 'SearchCode', 
         'ShieldAlert', 'Settings2', 'Filter', 'Pencil', 'MoreHorizontal', 'XCircle',
         'CheckCircle2', 'Info', 'AlertTriangle', 'ArrowUpDown', 'Eye', 'EyeOff',
-        'Copy', 'RefreshCw', 'CheckCircle'
+        'Copy', 'RefreshCw', 'CheckCircle', 'RefreshCcw', 'BarChart3'
     ];
 
     const exports: any = {

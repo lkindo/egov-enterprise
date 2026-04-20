@@ -1,9 +1,10 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import axios from '@/lib/api/client';
+import { Activity, Shield } from 'lucide-react';
 
 import { useLayout } from '@/contexts/LayoutContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -87,6 +88,28 @@ const Sidebar = () => {
               </ul>
             </div>
           ))}
+
+          {/* Premium Modern Insights Group */}
+          <div className="menu_group pt-6 mt-6 border-t border-slate-100">
+            <h3 className="text-[10px] font-black text-primary/60 mb-3 px-2 uppercase tracking-[0.2em] flex items-center gap-2">
+              <Shield size={12} />
+              Modern Insights
+            </h3>
+            <ul className="space-y-1">
+              <li>
+                <Link
+                  href="/admin/observability"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all group ${isActive('/admin/observability')
+                    ? 'bg-slate-900 text-white font-bold shadow-xl shadow-slate-900/20'
+                    : 'text-slate-600 hover:bg-slate-50'
+                    }`}
+                >
+                  <Activity size={16} className={isActive('/admin/observability') ? 'text-emerald-400' : 'text-slate-400 group-hover:text-primary transition-colors'} />
+                  시스템 통합 관제
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </nav>

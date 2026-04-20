@@ -27,21 +27,21 @@ describe('Admin System Services Part 3 (Specialized)', () => {
   it('AuditAdminService calls correct endpoints', async () => {
     await auditAdminService.getAuditLogs({ page: 0 });
     expect(client.get).toHaveBeenCalledWith('admin/system/logs/system', expect.objectContaining({ 
-      params: expect.objectContaining({ pageIndex: 1 }) 
+      params: expect.objectContaining({ page: 0, pageIndex: 1 }) 
     }));
   });
 
   it('FileAdminService calls correct endpoints', async () => {
     await fileAdminService.getFiles({ page: 0 });
     expect(client.get).toHaveBeenCalledWith('admin/system/files', expect.objectContaining({ 
-      params: expect.objectContaining({ pageIndex: 1 }) 
+      params: expect.objectContaining({ page: 0, pageIndex: 1 }) 
     }));
   });
 
   it('IsmAdminService calls correct endpoints', async () => {
     await ismAdminService.getPendingList({ page: 0 });
     expect(client.get).toHaveBeenCalledWith('admin/system/approvals/pending', expect.objectContaining({ 
-      params: expect.objectContaining({ pageIndex: 1 }) 
+      params: expect.objectContaining({ page: 0, pageIndex: 1 }) 
     }));
   });
 });

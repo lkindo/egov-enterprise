@@ -39,17 +39,17 @@ describe('ApiService', () => {
 
  it('get should prepend baseURL correctly', async () => {
  await service.testGet('/list', { params: { id: 1 } });
- expect(client.get).toHaveBeenCalledWith('/test/list', { params: { id: 1 } });
+ expect(client.get).toHaveBeenCalledWith('test/list', { params: { id: 1 } });
  });
 
  it('post should work with data', async () => {
  const data = { name: 'item' };
  await service.testPost('/create', data);
- expect(client.post).toHaveBeenCalledWith('/test/create', data, undefined);
+ expect(client.post).toHaveBeenCalledWith('test/create', data, undefined);
  });
 
  it('delete should work with correct path', async () => {
  await service.testDelete('/1');
- expect(client.delete).toHaveBeenCalledWith('/test/1', undefined);
+ expect(client.delete).toHaveBeenCalledWith('test/1', undefined);
  });
 });

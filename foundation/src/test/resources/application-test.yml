@@ -40,6 +40,12 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  ai:
+    openai:
+      enabled: false
+      api-key: dummy-key-for-foundation-test
+    ollama:
+      enabled: false
 
 # Logging
 logging:
@@ -58,4 +64,3 @@ management:
 # JWT (test secret)
 jwt:
   secret: test-secret-key-for-integration-testing-minimum-32-chars
-  expiration: 3600000
