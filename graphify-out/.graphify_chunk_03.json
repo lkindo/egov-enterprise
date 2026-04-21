@@ -1,0 +1,73 @@
+{
+  "nodes": [
+    {
+      "id": "api_specification_compliance_test",
+      "type": "test_class",
+      "properties": {
+        "description": "Enforces standard ApiResponse JSON structure"
+      }
+    },
+    {
+      "id": "bottleneck_identification_test",
+      "type": "test_class",
+      "properties": {
+        "description": "Measures TPS, Latency, and resource usage bottlenecks"
+      }
+    },
+    {
+      "id": "authentication_bypass_test",
+      "type": "test_class",
+      "properties": {
+        "description": "Defensive security tests against JWT bypass attempts"
+      }
+    },
+    {
+      "id": "global_exception_handler",
+      "type": "handler",
+      "properties": {
+        "description": "Standardizes error responses across all controllers"
+      }
+    },
+    {
+      "id": "performance_metrics_suite",
+      "type": "suite",
+      "properties": {
+        "description": "Collection of tests for load and stress analysis"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "api_specification_compliance_test",
+      "target": "global_exception_handler",
+      "relation": "references"
+    },
+    {
+      "source": "authentication_bypass_test",
+      "target": "api_security_config",
+      "relation": "tests"
+    },
+    {
+      "source": "bottleneck_identification_test",
+      "target": "user_service",
+      "relation": "mocks"
+    },
+    {
+      "source": "performance_metrics_suite",
+      "target": "bottleneck_identification_test",
+      "relation": "contains"
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "quality_assurance_layer",
+      "members": [
+        "api_specification_compliance_test",
+        "bottleneck_identification_test",
+        "authentication_bypass_test"
+      ]
+    }
+  ],
+  "input_tokens": 4000,
+  "output_tokens": 800
+}

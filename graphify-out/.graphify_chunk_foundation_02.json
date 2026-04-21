@@ -1,0 +1,70 @@
+{
+  "nodes": [
+    {
+      "id": "user_entity",
+      "type": "entity",
+      "properties": {
+        "table": "NEMPLYRINFO",
+        "description": "Core user profile and security state"
+      }
+    },
+    {
+      "id": "menu_authority_entity",
+      "type": "entity",
+      "properties": {
+        "table": "NMENUCREATDTLS",
+        "description": "Maps roles to menus via author_code"
+      }
+    },
+    {
+      "id": "base_entity_foundation",
+      "type": "cross_cutting",
+      "properties": {
+        "description": "Base class for JPA auditing fields"
+      }
+    },
+    {
+      "id": "role_enum",
+      "type": "enum",
+      "properties": {
+        "values": [
+          "USER",
+          "ADMIN",
+          "SYSTEM"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "user_entity",
+      "target": "base_entity_foundation",
+      "relation": "inherits"
+    },
+    {
+      "source": "menu_authority_entity",
+      "target": "base_entity_foundation",
+      "relation": "inherits"
+    },
+    {
+      "source": "user_entity",
+      "target": "role_enum",
+      "relation": "has_type"
+    },
+    {
+      "source": "menu_authority_entity",
+      "target": "role_enum",
+      "relation": "linked_via_author_code"
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "persistence_layer",
+      "members": [
+        "user_entity",
+        "menu_authority_entity",
+        "base_entity_foundation"
+      ]
+    }
+  ]
+}

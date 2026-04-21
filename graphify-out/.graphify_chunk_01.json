@@ -1,0 +1,116 @@
+{
+  "nodes": [
+    {
+      "id": "api_server_application",
+      "type": "application",
+      "properties": {
+        "description": "Spring Boot Entry Point with eGovFrame filters"
+      }
+    },
+    {
+      "id": "api_security_config",
+      "type": "config",
+      "properties": {
+        "description": "Security configuration for modern JWT and legacy session"
+      }
+    },
+    {
+      "id": "global_menu_advice",
+      "type": "advice",
+      "properties": {
+        "description": "Populates menu hierarchy for view context"
+      }
+    },
+    {
+      "id": "legacy_config",
+      "type": "config",
+      "properties": {
+        "description": "Bridge for eGovFrame legacy ID generation and DB props"
+      }
+    },
+    {
+      "id": "web_mvc_config",
+      "type": "config",
+      "properties": {
+        "description": "MVC extensions like Audit Interceptor and Argument Resolvers"
+      }
+    },
+    {
+      "id": "user_api_controller",
+      "type": "controller",
+      "properties": {
+        "description": "Handles user profile, signup and admin user management"
+      }
+    },
+    {
+      "id": "dept_api_controller",
+      "type": "controller",
+      "properties": {
+        "description": "Admin API for department management"
+      }
+    },
+    {
+      "id": "jwt_authentication_filter",
+      "type": "filter",
+      "properties": {
+        "description": "Custom filter for JWT verification"
+      }
+    },
+    {
+      "id": "operational_audit_interceptor",
+      "type": "interceptor",
+      "properties": {
+        "description": "Audit logger for API calls"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "api_server_application",
+      "target": "full_bean_name_generator",
+      "relation": "references"
+    },
+    {
+      "source": "api_security_config",
+      "target": "jwt_authentication_filter",
+      "relation": "configures"
+    },
+    {
+      "source": "api_security_config",
+      "target": "egov_authentication_provider",
+      "relation": "references"
+    },
+    {
+      "source": "global_menu_advice",
+      "target": "menu_service",
+      "relation": "calls"
+    },
+    {
+      "source": "web_mvc_config",
+      "target": "operational_audit_interceptor",
+      "relation": "configures"
+    },
+    {
+      "source": "user_api_controller",
+      "target": "user_service",
+      "relation": "calls"
+    },
+    {
+      "source": "dept_api_controller",
+      "target": "egov_dept_manage_service",
+      "relation": "calls"
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "security_infrastructure",
+      "members": [
+        "api_security_config",
+        "jwt_authentication_filter",
+        "egov_authentication_provider"
+      ]
+    }
+  ],
+  "input_tokens": 5000,
+  "output_tokens": 1000
+}

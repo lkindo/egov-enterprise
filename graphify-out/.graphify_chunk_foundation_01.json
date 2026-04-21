@@ -1,0 +1,64 @@
+{
+  "nodes": [
+    {
+      "id": "jwt_token_provider_foundation",
+      "type": "security_engine",
+      "properties": {
+        "description": "Core JWT management for foundation module"
+      }
+    },
+    {
+      "id": "auth_service_impl",
+      "type": "service_impl",
+      "properties": {
+        "description": "Implementation of authentication business logic"
+      }
+    },
+    {
+      "id": "user_authority_repository",
+      "type": "repository",
+      "properties": {
+        "description": "Persistence for user-role relationships"
+      }
+    },
+    {
+      "id": "token_response_dto",
+      "type": "dto",
+      "properties": {
+        "description": "Standard response structure for authentication tokens"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "auth_service_impl",
+      "target": "jwt_token_provider_foundation",
+      "relation": "delegates_token_creation"
+    },
+    {
+      "source": "auth_service_impl",
+      "target": "user_repository",
+      "relation": "queries_user_data"
+    },
+    {
+      "source": "auth_service_impl",
+      "target": "user_authority_repository",
+      "relation": "queries_authorities"
+    },
+    {
+      "source": "jwt_token_provider_foundation",
+      "target": "user_details_service",
+      "relation": "uses_for_auth_reconstruction"
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "auth_pipeline",
+      "members": [
+        "auth_service_impl",
+        "jwt_token_provider_foundation",
+        "user_authority_repository"
+      ]
+    }
+  ]
+}
