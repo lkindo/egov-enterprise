@@ -146,6 +146,7 @@
 **/.jules/
 **/.sisyphus/
 **/.agent/
+**/.gemini/*
 !**/.gemini/tasks/
 
 # ----- Upload/Storage -----
