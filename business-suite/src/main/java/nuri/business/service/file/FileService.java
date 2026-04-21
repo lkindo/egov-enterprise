@@ -10,12 +10,14 @@ import nuri.business.domain.file.FileDetailRepository;
 import nuri.business.domain.file.FileMaster;
 import nuri.business.domain.file.FileMasterRepository;
 import nuri.business.service.file.dto.FileDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
  * 파일 저장 서비스 구현체
  * - 전자정부 표준프레임워크 5.0 호환성 인증 요건 충족을 위한 서비스 구현
  */
+@Slf4j
 @Service("egovFileService")
 @Transactional(readOnly = true)
 public class FileService extends BaseAbstractService implements EgovFileService {
@@ -31,6 +34,13 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     private final FileMasterRepository fileMasterRepository;
     private final FileDetailRepository fileDetailRepository;
     private final FileStorageService storageService;
+
+    // [Security] 허용된 파일 확장자 화이트리스트
+    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
+            "jpg", "jpeg", "png", "gif", "bmp", // 이미지
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "hwp", "txt", // 문서
+            "zip", "7z", "rar" // 압축
+    );
 
     public FileService(FileMasterRepository fileMasterRepository,
             FileDetailRepository fileDetailRepository,
@@ -55,6 +65,10 @@ public class FileService extends BaseAbstractService implements EgovFileService 
         for (MultipartFile file : files) {
             if (file.isEmpty())
                 continue;
+
+            // [Security] 파일 확장자 검증
+            String originalFilename = file.getOriginalFilename();
+            validateFileExtension(originalFilename);
 
             String targetPath = "general/" + atchFileId;
             String savedFilename = storageService.store(file, targetPath);
@@ -168,6 +182,10 @@ public class FileService extends BaseAbstractService implements EgovFileService 
             if (file.isEmpty())
                 continue;
 
+            // [Security] 파일 확장자 검증
+            String originalFilename = file.getOriginalFilename();
+            validateFileExtension(originalFilename);
+
             String targetPath = "general/" + atchFileId;
             String savedFilename = storageService.store(file, targetPath);
 
@@ -211,5 +229,19 @@ public class FileService extends BaseAbstractService implements EgovFileService 
                 .fileMg(d.getFileMg())
                 .fileCn(d.getFileCn())
                 .build();
+    }
+
+    /**
+     * [Security] 파일 확장자 화이트리스트 검징
+     */
+    private void validateFileExtension(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            throw new BusinessException(ErrorCode.UNSUPPORTED_MEDIA_TYPE);
+        }
+        String extension = StringUtils.getFilenameExtension(filename).toLowerCase();
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            log.warn("Blocked file upload attempt with forbidden extension: {}", extension);
+            throw new BusinessException(ErrorCode.UNSUPPORTED_MEDIA_TYPE);
+        }
     }
 }

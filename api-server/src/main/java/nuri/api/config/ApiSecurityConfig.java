@@ -37,6 +37,7 @@ import java.util.Map;
 @Configuration
 @Profile({"default", "local", "dev", "prod", "security-test", "e2e"})
 @EnableWebSecurity
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
 @Slf4j
 public class ApiSecurityConfig {
         private final EgovAuthenticationProvider egovAuthenticationProvider;

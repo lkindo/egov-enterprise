@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -79,6 +80,7 @@ public class UserApiController {
     // --- [관리자 전용 기능] /api/v1/admin/system/users ---
 
     @Operation(summary = "사용자 목록 조회", description = "전체 사용자 목록을 페이징하여 조회합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/system/users")
     public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getUsers(
             @RequestParam(required = false) String searchKeyword,
@@ -88,6 +90,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "사용자 상세 조회", description = "특정 사용자 ID에 해당하는 상세 정보를 조회합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/system/users/{userId}")
     public ResponseEntity<ApiResponse<UserDto>> getUser(
             @Parameter(description = "사용자 ID") @PathVariable String userId) {
@@ -95,6 +98,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "사용자 등록", description = "새로운 시스템 사용자를 등록합니다. (관리자 권한)")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/system/users")
     public ResponseEntity<ApiResponse<String>> insertUser(@RequestBody UserDto dto) {
         String resultId = userService.registerUser(
@@ -109,6 +113,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "사용자 정보 수정", description = "기존 시스템 사용자의 정보를 수정합니다. (관리자 권한)")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/admin/system/users/{userId}")
     public ResponseEntity<ApiResponse<Void>> updateUser(
             @PathVariable String userId,
@@ -118,6 +123,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "사용자 삭제", description = "시스템에서 사용자를 삭제합니다. (관리자 권한)")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/admin/system/users/{userId}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(
             @Parameter(description = "사용자 ID") @PathVariable String userId) {
@@ -126,6 +132,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "사용자 다중 삭제", description = "시스템에서 여러 명의 사용자를 한꺼번에 삭제합니다. (관리자 권한)")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/admin/system/users")
     public ResponseEntity<ApiResponse<Void>> deleteUsers(@RequestBody List<String> userIds) {
         userService.deleteUserList(userIds);
@@ -133,6 +140,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "비밀번호 강제 변경", description = "특정 사용자의 비밀번호를 관리자 권한으로 변경합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/admin/system/users/{userId}/password")
     public ResponseEntity<ApiResponse<Void>> updatePasswordByAdmin(
             @PathVariable String userId,

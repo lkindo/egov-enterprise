@@ -24,6 +24,9 @@ public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String secretKey;
 
+    @Value("${jwt.cookie.secure:false}")
+    private boolean cookieSecure;
+
     private final long accessTokenValidityInMilliseconds = 1000L * 60 * 60; // 1 hour
     private final long refreshTokenValidityInMilliseconds = 1000L * 60 * 60 * 24 * 7; // 7 days
     private SecretKey key;
@@ -104,7 +107,7 @@ public class JwtTokenProvider {
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         Cookie cookie = new Cookie("refreshToken", refreshToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false); // Changed to false for non-HTTPS dev env
+        cookie.setSecure(cookieSecure); 
         cookie.setPath("/");
         cookie.setMaxAge((int) (refreshTokenValidityInMilliseconds / 1000));
         response.addCookie(cookie);
@@ -122,7 +125,7 @@ public class JwtTokenProvider {
     public void removeRefreshTokenCookie(HttpServletResponse response) {
         Cookie cookie = new Cookie("refreshToken", null);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false);
+        cookie.setSecure(cookieSecure);
         cookie.setPath("/");
         cookie.setMaxAge(0);
         response.addCookie(cookie);
