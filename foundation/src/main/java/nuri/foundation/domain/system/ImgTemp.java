@@ -19,8 +19,7 @@ public class ImgTemp extends BaseEntity {
     @EmbeddedId
     private ImgTempId id;
 
-    @Lob
-    @Column(name = "IMAGE_INFO")
+    @Column(name = "IMAGE_INFO", columnDefinition = "bytea")
     private byte[] imageInfo;
 
     @Column(name = "IMAGE_TY", length = 20)

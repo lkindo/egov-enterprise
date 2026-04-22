@@ -36,8 +36,8 @@ public class BlogUser extends BaseEntity {
     @Column(name = "SBSCRB_DE")
     private LocalDateTime sbscrbDe;
 
-    @Column(name = "SECSN_DE")
-    private LocalDateTime secsnDe;
+    @Column(name = "SECSN_DE", length = 20)
+    private String secsnDe;
 
     @Column(name = "MBER_STTUS", length = 1)
     private String mberSttus;

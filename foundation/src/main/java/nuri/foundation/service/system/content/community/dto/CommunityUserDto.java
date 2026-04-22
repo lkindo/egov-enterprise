@@ -34,9 +34,7 @@ public class CommunityUserDto {
                 .sbscrbDe(entity.getSbscrbDe() != null
                         ? entity.getSbscrbDe().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                         : null)
-                .secsnDe(entity.getSecsnDe() != null
-                        ? entity.getSecsnDe().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        : null)
+                .secsnDe(entity.getSecsnDe())
                 .mberSttus(entity.getMberSttus())
                 .useAt(entity.getUseAt())
                 .frstRegisterId(entity.getFrstRegisterId())

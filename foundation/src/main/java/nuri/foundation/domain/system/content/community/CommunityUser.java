@@ -28,8 +28,8 @@ public class CommunityUser extends BaseEntity implements Serializable {
     @Column(name = "SBSCRB_DE")
     private LocalDateTime sbscrbDe;
 
-    @Column(name = "SECSN_DE")
-    private LocalDateTime secsnDe;
+    @Column(name = "SECSN_DE", length = 20)
+    private String secsnDe;
 
     @Column(name = "MBER_STTUS", length = 15)
     private String mberSttus;
@@ -43,7 +43,7 @@ public class CommunityUser extends BaseEntity implements Serializable {
 
     public void withdraw() {
         this.useAt = "N";
-        this.secsnDe = LocalDateTime.now();
+        this.secsnDe = java.time.LocalDateTime.now().toString();
         this.mngrAt = "N";
     }
 

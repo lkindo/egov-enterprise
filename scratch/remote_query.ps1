@@ -1,0 +1,1 @@
+ssh -o StrictHostKeyChecking=no -i ssh-key-2026-01-18.key opc@129.154.54.178 "docker exec egov-postgres psql -U egov -d egovdb -c \"SELECT relname, n_live_tup FROM pg_stat_user_tables WHERE schemaname = 'public' ORDER BY relname;\""

@@ -32,16 +32,14 @@ spring:
     # jdbc-url: jdbc:postgresql://localhost:5434/egovdb?currentSchema=public&prepareThreshold=0
     
     # Oracle Cloud connection
-    url: jdbc:postgresql://localhost:5433/egovdb
-#    url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
-    jdbc-url: jdbc:postgresql://localhost:5433/egovdb
-#    jdbc-url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
+    url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
+    jdbc-url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
     username: egov
     password: egov123
     driver-class-name: org.postgresql.Driver
     hikari:
       # jdbc-url: jdbc:postgresql://localhost:5434/egovdb?currentSchema=public&prepareThreshold=0
-      jdbc-url: jdbc:postgresql://localhost:5433/egovdb
+      jdbc-url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
       maximum-pool-size: 10
 
   jpa:
