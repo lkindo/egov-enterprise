@@ -15,13 +15,20 @@
 - Deleted temporary root log: `server_log.txt`.
 - Identified large log files in `api-server/logs` for future rotation.
 
-### 2.3 Knowledge Acquisition
-- Reviewed `graphify-out/GRAPH_REPORT.md` to understand core architecture (Security nexus, User controller, Legacy bridge).
+### 2.3 Refactoring & Optimization
+- Refactored `GlobalMenuAdvice` to separate UI mapping logic into `MenuIntegrationService`.
+- Introduced `MenuUIContext` DTO for structured menu state management.
+- Updated `logback-spring.xml` with `SizeAndTimeBasedRollingPolicy` to prevent huge log files.
+
+### 2.4 Verification
+- Added `legacy-js.spec.ts` for Playwright E2E verification of legacy JS assets.
+- Verified backend build success via `./gradlew classes`.
 
 ## 3. Results
 - Project hygiene improved.
 - AI state externalization (tasks) is now reliably tracked by Git.
 
 ## 4. Next Steps
-- Monitor `api-server/logs` size.
-- Proceed with pending features/refactoring identified in `GRAPH_REPORT.md`.
+- Refactoring completed for menu advice.
+- E2E coverage extended for legacy assets.
+- Log rotation policy hardened.
