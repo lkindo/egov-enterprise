@@ -63,13 +63,22 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
         @Override
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable) {
-                return getBoardPosts(bbsId, "", "", pageable);
+                return getBoardPosts(bbsId, "0", "", null, null, null, null, null, pageable);
         }
 
         @Override
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
                         @NonNull Pageable pageable) {
+                return getBoardPosts(bbsId, searchCnd, searchWrd, null, null, null, null, null, pageable);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
+                        String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
+                        @NonNull Pageable pageable) {
+                log.info("Fetching board posts - bbsId: {}, searchWrd: '{}', orderBy: {}", bbsId, searchWrd, orderBy);
                 boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
@@ -78,6 +87,25 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 condition.setUseAt("Y");
                 condition.setSearchCnd(searchCnd);
                 condition.setSearchWrd(searchWrd);
+                condition.setOrderBy(orderBy);
+                condition.setQnaStatus(qnaStatus);
+                condition.setQnaCategory(qnaCategory);
+
+                if (StringUtils.hasText(startDate)) {
+                        try {
+                                condition.setStartDate(java.time.LocalDate.parse(startDate).atStartOfDay());
+                        } catch (Exception e) {
+                                log.warn("Failed to parse startDate: {}", startDate);
+                        }
+                }
+
+                if (StringUtils.hasText(endDate)) {
+                        try {
+                                condition.setEndDate(java.time.LocalDate.parse(endDate).atTime(java.time.LocalTime.MAX));
+                        } catch (Exception e) {
+                                log.warn("Failed to parse endDate: {}", endDate);
+                        }
+                }
 
                 return boardRepository.searchArticles(condition, required(pageable, "pageable 는 null 일 수 없습니다"))
                                 .map(BoardDto::from);

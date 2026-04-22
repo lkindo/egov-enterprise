@@ -231,47 +231,49 @@ export function Header({
           </Button>
 
           <div className="flex items-center gap-2 pl-2 md:pl-3 border-l ml-1 md:ml-2">
-            {user ? (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-9 hover:bg-accent rounded-full" aria-label="사용자 계정 메뉴">
-                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
-                      <User size={16} />
-                    </div>
-                    <div className="flex flex-col items-start mr-1 hidden sm:flex">
-                      <span className="text-sm font-bold leading-none">{user.name}</span>
-                      <span className="text-[10px] text-slate-600 font-semibold mt-0.5">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
-                    </div>
-                    <ChevronDown size={14} className="text-slate-600 hidden sm:block" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-56 p-2 mt-1" align="end">
-                  <div className="px-3 py-2 border-b mb-1">
-                    <p className="text-sm font-bold">{user.name}</p>
-                    <p className="text-sm text-muted-foreground truncate">{user.id}</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <Link href="/admin/workspace/mypage" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
-                      <span className="flex items-center gap-2"><User size={14} /> 개인정보수정</span>
-                    </Link>
-                    <Link href="/admin/system/settings" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
-                      <span className="flex items-center gap-2"><Settings size={14} /> 환경설정</span>
-                    </Link>
-                    <div className="h-px bg-muted my-1" />
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start text-sm h-9 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 font-medium"
-                      onClick={() => logout()}
-                    >
-                      <LogOut size={14} /> 로그아웃
+            {mounted && (
+              user ? (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-9 hover:bg-accent rounded-full" aria-label="사용자 계정 메뉴">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
+                        <User size={16} />
+                      </div>
+                      <div className="flex flex-col items-start mr-1 hidden sm:flex">
+                        <span className="text-sm font-bold leading-none">{user.name}</span>
+                        <span className="text-[10px] text-slate-600 font-semibold mt-0.5">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
+                      </div>
+                      <ChevronDown size={14} className="text-slate-600 hidden sm:block" />
                     </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            ) : (
-              <Link href="/login" className={cn(buttonVariants({ size: "sm" }), "rounded-lg h-9 px-4 font-bold")}>
-                로그인
-              </Link>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 p-2 mt-1" align="end">
+                    <div className="px-3 py-2 border-b mb-1">
+                      <p className="text-sm font-bold">{user.name}</p>
+                      <p className="text-sm text-muted-foreground truncate">{user.id}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <Link href="/admin/workspace/mypage" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
+                        <span className="flex items-center gap-2"><User size={14} /> 개인정보수정</span>
+                      </Link>
+                      <Link href="/admin/system/settings" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
+                        <span className="flex items-center gap-2"><Settings size={14} /> 환경설정</span>
+                      </Link>
+                      <div className="h-px bg-muted my-1" />
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-sm h-9 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 font-medium"
+                        onClick={() => logout()}
+                      >
+                        <LogOut size={14} /> 로그아웃
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Link href="/login" className={cn(buttonVariants({ size: "sm" }), "rounded-lg h-9 px-4 font-bold")}>
+                  로그인
+                </Link>
+              )
             )}
           </div>
         </div>

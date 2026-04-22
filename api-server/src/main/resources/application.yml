@@ -21,8 +21,10 @@ spring:
     # password: s5isI0KE48Bd9kD1
     
     # Oracle Cloud connection
-    url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
-    jdbc-url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
+    url: jdbc:postgresql://localhost:5433/egovdb
+#    url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
+    jdbc-url: jdbc:postgresql://localhost:5433/egovdb
+#    jdbc-url: jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0
     username: egov
     password: egov123
     driver-class-name: org.postgresql.Driver
@@ -43,7 +45,7 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
       order-inserts: true
       order-updates: true
       batch-size: 25
@@ -90,6 +92,11 @@ file:
     path: ./storage/uploads
 
 server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
   error:
     include-message: always
     include-exception: false

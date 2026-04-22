@@ -20,6 +20,10 @@ public interface EgovBoardService {
         Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
                         @NonNull Pageable pageable);
 
+        Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
+                        String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
+                        @NonNull Pageable pageable);
+
         BoardStatsResponse getBoardStats(@NonNull String bbsId);
 
         Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request);

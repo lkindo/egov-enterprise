@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "npx -y concurrently -n \"API,WEB\" -c \"blue,green\" \"gradlew.bat :api-server:bootRun\" \"pnpm -C frontend dev\"",
+    "dev": "npx -y concurrently -n \"API,WEB\" -c \"blue,green\" \"gradlew.bat :api-server:bootRun -Dfile.encoding=UTF-8\" \"pnpm -C frontend dev\"",
     "backend": "gradlew :api-server:bootRun",
     "frontend": "pnpm -C frontend dev",
     "all": "npm run dev",

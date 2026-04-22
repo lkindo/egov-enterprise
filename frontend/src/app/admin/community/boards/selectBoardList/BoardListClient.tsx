@@ -117,16 +117,17 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
 
   const router = useRouter(); // router 추가
-  const [searchWrd, setSearchWrd] = useState(searchParams.get('searchWrd') || '');
-  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
-  const [searchCnd, setSearchCnd] = useState(searchParams.get('searchCnd') || '0');
-  const [orderBy, setOrderBy] = useState(searchParams.get('orderBy') || 'date');
-  const [startDate, setStartDate] = useState<Date | undefined>(
-    searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined
-  );
-  const [endDate, setEndDate] = useState<Date | undefined>(
-    searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined
-  );
+  const [page, setPage] = useState(initialParams.page || 1);
+  const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd || "");
+  const [searchCnd, setSearchCnd] = useState(initialParams.searchCnd || "0");
+  const [orderBy, setOrderBy] = useState(initialParams.orderBy || "date");
+  const [startDate, setStartDate] = useState<Date | undefined>(initialParams.startDate ? new Date(initialParams.startDate) : undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(initialParams.endDate ? new Date(initialParams.endDate) : undefined);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // URL 파라미터가 변경될 때마다 로컬 상태 동기화 (새로고침/뒤로가기 대응)
   useEffect(() => {
@@ -238,73 +239,98 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
             <p className="text-slate-500 font-bold text-sm">총 <span className="text-primary">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
           </div>
           <CardAction className="flex items-center gap-3">
-            {isAdmin && (
-              <Link href="/admin/community/boards/master">
-                <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-slate-200 dark:border-white/20 bg-white text-slate-900 dark:text-white hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 font-black shadow-xl transition-all rounded-[0.1rem]">
-                  <Settings2 className="w-6 h-6" /> 게시판 관리
-                </Button>
-              </Link>
+            {mounted && (
+              <>
+                {isAdmin && (
+                  <Link href="/admin/community/boards/master">
+                    <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-slate-200 dark:border-white/20 bg-white text-slate-900 dark:text-white hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 font-black shadow-xl transition-all rounded-[0.1rem]">
+                      <Settings2 className="w-6 h-6" /> 게시판 관리
+                    </Button>
+                  </Link>
+                )}
+                <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
+                  <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-[0.1rem]">
+                    <div className="flex items-center gap-2">
+                      <Plus className="w-6 h-6" /> 글쓰기
+                    </div>
+                  </Button>
+                </Link>
+              </>
             )}
-            <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
-              <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-[0.1rem]">
-                <div className="flex items-center gap-2">
-                  <Plus className="w-6 h-6" /> 글쓰기
-                </div>
-              </Button>
-            </Link>
           </CardAction>
         </CardHeader>
         <CardContent className="pt-10 px-10">
           <div className="flex flex-row items-center gap-3 mb-4 bg-slate-50/50 p-6 rounded-[0.1rem] border border-slate-200 shadow-inner">
             <form onSubmit={handleSearch} className="flex flex-col gap-3 w-full">
               <div className="flex flex-col md:flex-row items-center gap-3 w-full">
-                <Select value={searchCnd} onValueChange={setSearchCnd}>
-                  <SelectTrigger className="w-full md:w-[220px] !h-12 rounded-[0.1rem] border border-slate-200 bg-white font-bold shadow-sm flex items-center leading-none">
-                    <SelectValue placeholder="검색 조건" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">제목</SelectItem>
-                    <SelectItem value="1">내용</SelectItem>
-                    <SelectItem value="2">작성자</SelectItem>
-                  </SelectContent>
-                </Select>
+                {mounted ? (
+                  <Select value={searchCnd} onValueChange={setSearchCnd}>
+                    <SelectTrigger className="w-full md:w-[220px] !h-12 rounded-[0.1rem] border border-slate-200 bg-white font-bold shadow-sm flex items-center leading-none">
+                      <SelectValue placeholder="검색 조건" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">제목</SelectItem>
+                      <SelectItem value="1">내용</SelectItem>
+                      <SelectItem value="2">작성자</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="w-full md:w-[220px] h-12 rounded-[0.1rem] border border-slate-200 bg-slate-100 animate-pulse" />
+                )}
                 <div className="relative flex-1 group !h-12">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10 group-focus-within:text-primary transition-colors" />
                   <Input
                     type="text"
-                    className="pl-12 !h-12 text-sm border border-slate-200 bg-white shadow-sm rounded-[0.1rem] focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
+                    className="pl-12 pr-10 !h-12 text-sm border border-slate-200 bg-white shadow-sm rounded-[0.1rem] focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
                     placeholder="어떤 정보를 찾으시나요?"
                     value={searchWrd}
                     onChange={(e) => setSearchWrd(e.target.value)}
                   />
+                  {searchWrd && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchWrd("");
+                        // 즉시 전체 조회 실행
+                        const params = new URLSearchParams(searchParams.toString());
+                        params.delete('searchWrd');
+                        params.set('page', '1');
+                        router.push(`${pathname}?${params.toString()}`);
+                      }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
 
               <div className="flex flex-col md:flex-row items-center gap-3 w-full">
                 <div className="flex items-center gap-2 flex-1 w-full overflow-x-auto">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "!h-12 px-5 justify-start text-left font-bold rounded-[0.1rem] border border-slate-200 bg-white shadow-sm w-full md:w-[220px] flex items-center leading-none",
-                          !startDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-3 h-4 w-4 text-primary opacity-50 shrink-0" />
-                        <span className="text-sm truncate">
-                          {startDate ? (
-                            endDate ? (
-                              `${format(startDate, "yyyy.MM.dd")} - ${format(endDate, "yyyy.MM.dd")}`
-                            ) : (
-                              format(startDate, "yyyy.MM.dd")
-                            )
-                          ) : (
-                            "기간 선택"
+                  {mounted ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "!h-12 px-5 justify-start text-left font-bold rounded-[0.1rem] border border-slate-200 bg-white shadow-sm w-full md:w-[220px] flex items-center leading-none",
+                            !startDate && "text-muted-foreground"
                           )}
-                        </span>
-                      </Button>
-                    </PopoverTrigger>
+                        >
+                          <CalendarIcon className="mr-3 h-4 w-4 text-primary opacity-50 shrink-0" />
+                          <span className="text-sm truncate">
+                            {startDate ? (
+                              endDate ? (
+                                `${format(startDate, "yyyy.MM.dd")} - ${format(endDate, "yyyy.MM.dd")}`
+                              ) : (
+                                format(startDate, "yyyy.MM.dd")
+                              )
+                            ) : (
+                              "기간 선택"
+                            )}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 rounded-[0.1rem] overflow-hidden border-none shadow-2xl" align="start">
                       <div className="p-3 bg-white border-b flex items-center justify-between">
                         <span className="font-black text-slate-800 text-sm">기간 설정</span>
@@ -337,18 +363,32 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                       </div>
                     </PopoverContent>
                   </Popover>
+                ) : (
+                  <div className="w-full md:w-[220px] h-12 rounded-[0.1rem] border border-slate-200 bg-slate-100 animate-pulse" />
+                )}
 
-                  <Select value={orderBy} onValueChange={setOrderBy}>
-                    <SelectTrigger className="w-full md:w-[140px] !h-12 rounded-[0.1rem] border border-slate-200 bg-white font-bold shadow-sm text-sm flex items-center leading-none">
-                      <ArrowUpDown className="mr-2 h-3.5 w-3.5 text-primary opacity-50 shrink-0" />
-                      <SelectValue placeholder="정렬 방식" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="date">최신순</SelectItem>
-                      <SelectItem value="views">조회수순</SelectItem>
-                      <SelectItem value="comments">댓글순</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {mounted ? (
+                    <Select value={orderBy} onValueChange={(value) => {
+                      setOrderBy(value);
+                      // 정렬 변경 시 즉시 조회 실행
+                      const params = new URLSearchParams(searchParams.toString());
+                      params.set('orderBy', value);
+                      params.set('page', '1');
+                      router.push(`${pathname}?${params.toString()}`);
+                    }}>
+                      <SelectTrigger className="w-full md:w-[140px] !h-12 rounded-[0.1rem] border border-slate-200 bg-white font-bold shadow-sm text-sm flex items-center leading-none">
+                        <ArrowUpDown className="mr-2 h-3.5 w-3.5 text-primary opacity-50 shrink-0" />
+                        <SelectValue placeholder="정렬 방식" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date">최신순</SelectItem>
+                        <SelectItem value="views">조회수순</SelectItem>
+                        <SelectItem value="comments">댓글순</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="w-full md:w-[140px] h-12 rounded-[0.1rem] border border-slate-200 bg-slate-100 animate-pulse" />
+                  )}
                 </div>
 
                 <Button type="submit" size="lg" className="!h-12 px-10 gap-2 bg-slate-900 border border-slate-900 shadow-xl hover:scale-105 transition-all active:scale-95 font-black text-white rounded-[0.1rem] flex items-center leading-none">
