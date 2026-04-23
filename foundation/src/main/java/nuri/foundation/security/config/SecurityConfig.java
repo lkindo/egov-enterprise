@@ -21,8 +21,8 @@ import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
-@org.springframework.context.annotation.Profile("none")
 @org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
+@org.springframework.context.annotation.Profile("!mock-security & !mock-security-test")
 public class SecurityConfig {
         private final JwtTokenProvider jwtTokenProvider;
 
@@ -47,6 +47,11 @@ public class SecurityConfig {
         }
 
         @Bean
+        public org.springframework.security.authentication.AuthenticationManager authenticationManager(org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration authenticationConfiguration) throws Exception {
+                return authenticationConfiguration.getAuthenticationManager();
+        }
+
+        @Bean
         @org.springframework.core.annotation.Order(2)
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http
@@ -63,6 +68,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/WEB-INF/**", "/upload/**").permitAll()
                                                 .requestMatchers("/api/v1/public/**").permitAll()
                                                 .requestMatchers("/api/v1/menus/**").permitAll()
+                                                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),  
                                                 UsernamePasswordAuthenticationFilter.class);     

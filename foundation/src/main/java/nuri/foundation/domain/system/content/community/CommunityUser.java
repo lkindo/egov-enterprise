@@ -43,7 +43,7 @@ public class CommunityUser extends BaseEntity implements Serializable {
 
     public void withdraw() {
         this.useAt = "N";
-        this.secsnDe = java.time.LocalDateTime.now().toString();
+        this.secsnDe = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         this.mngrAt = "N";
     }
 

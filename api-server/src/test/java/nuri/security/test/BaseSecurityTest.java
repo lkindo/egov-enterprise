@@ -32,4 +32,7 @@ public abstract class BaseSecurityTest {
 
     @MockitoBean
     protected JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    protected org.springframework.security.authentication.AuthenticationManager authenticationManager;
 }

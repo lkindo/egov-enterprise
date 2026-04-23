@@ -18,6 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @TestConfiguration
 @EnableWebSecurity
+@org.springframework.context.annotation.Profile("mock-security")
 public class TestSecurityConfig {
 
     @Bean

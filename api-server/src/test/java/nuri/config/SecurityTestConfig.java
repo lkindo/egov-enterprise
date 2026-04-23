@@ -47,4 +47,12 @@ public class SecurityTestConfig {
                 return http.build();
         }
 
+        @Bean
+        public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
+                return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+        }
+        @Bean
+        public nuri.foundation.security.service.EgovPasswordEncoder egovPasswordEncoder() {
+                return new nuri.foundation.security.service.EgovPasswordEncoder();
+        }
 }

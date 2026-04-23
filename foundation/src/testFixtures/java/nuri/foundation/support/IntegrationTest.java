@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
 })
 @AutoConfigureMockMvc
 @Import({ TestSecurityConfig.class, TestMessagingConfig.class, QuerydslConfig.class, TestCacheConfig.class })
-@ActiveProfiles(value = { "test" }) 
+@ActiveProfiles(value = { "test", "mock-security" }) 
 @Transactional
 public @interface IntegrationTest {
 }

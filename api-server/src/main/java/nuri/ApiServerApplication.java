@@ -22,6 +22,9 @@ import nuri.foundation.core.config.FullBeanNameGenerator;
                                                 org.egovframe.rte.fdl.access.config.EgovAccessConfiguration.class
                                 }),
 
+                                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
+                                                nuri.foundation.security.config.SecurityConfig.class
+                                }),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test$"),
                                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*"),
                                 @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = { SpringBootApplication.class }),

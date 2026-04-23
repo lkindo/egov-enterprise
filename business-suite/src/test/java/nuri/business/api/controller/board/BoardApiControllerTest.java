@@ -40,7 +40,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
     void getPosts_Success() throws Exception {
         // Given
         Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().id(1L).nttSj("Subject").build()));
-        given(boardService.getBoardPosts(anyString(), any(), any(), any(Pageable.class))).willReturn(page);
+        given(boardService.getBoardPosts(anyString(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/v1/boards/BBS_001")

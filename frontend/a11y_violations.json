@@ -1,5 +1,56 @@
 [
   {
+    "id": "heading-order",
+    "impact": "moderate",
+    "tags": [
+      "cat.semantics",
+      "best-practice"
+    ],
+    "description": "Ensure the order of headings is semantically correct",
+    "help": "Heading levels should only increase by one",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/heading-order?application=playwright",
+    "nodes": [
+      {
+        "any": [
+          {
+            "id": "heading-order",
+            "data": null,
+            "relatedNodes": [],
+            "impact": "moderate",
+            "message": "Heading order invalid"
+          }
+        ],
+        "all": [],
+        "none": [],
+        "impact": "moderate",
+        "html": "<h4 class=\"text-[10px] font-black tracking-[0.4em] uppercase opacity-60 mb-4\">Strategic Bulletin</h4>",
+        "target": [
+          ".bg-indigo-900 > h4"
+        ],
+        "failureSummary": "Fix any of the following:\n  Heading order invalid"
+      },
+      {
+        "any": [
+          {
+            "id": "heading-order",
+            "data": null,
+            "relatedNodes": [],
+            "impact": "moderate",
+            "message": "Heading order invalid"
+          }
+        ],
+        "all": [],
+        "none": [],
+        "impact": "moderate",
+        "html": "<h4 class=\"text-[10px] font-black tracking-[0.4em] uppercase opacity-60 mb-4\">Resource Allocation</h4>",
+        "target": [
+          ".border-l-4 > h4"
+        ],
+        "failureSummary": "Fix any of the following:\n  Heading order invalid"
+      }
+    ]
+  },
+  {
     "id": "page-has-heading-one",
     "impact": "moderate",
     "tags": [
