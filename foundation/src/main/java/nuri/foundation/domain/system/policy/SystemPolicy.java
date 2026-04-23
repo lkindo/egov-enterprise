@@ -33,7 +33,7 @@ public class SystemPolicy extends BaseEntity {
     @Column(name = "TITLE", length = 255, nullable = false)
     private String title;
 
-    @Column(name = "CONTENT", columnDefinition = "CLOB", nullable = false)
+    @Column(name = "CONTENT", columnDefinition = "text", nullable = false)
     private String content;
 
     public void update(String title, String content) {

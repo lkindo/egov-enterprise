@@ -11,7 +11,9 @@ import nuri.foundation.core.config.FullBeanNameGenerator;
 /**
  * 프로젝트 메인 애플리케이션 클래스
  */
-@SpringBootApplication(nameGenerator = FullBeanNameGenerator.class)
+@SpringBootApplication(nameGenerator = FullBeanNameGenerator.class, exclude = {
+                org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration.class
+})
 @ComponentScan(basePackages = { "nuri", "egovframework",
                 "org.egovframe" }, nameGenerator = FullBeanNameGenerator.class, excludeFilters = {
                                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
