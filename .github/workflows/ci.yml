@@ -123,6 +123,11 @@ jobs:
         run: npm ci
         working-directory: frontend
 
+      - name: Security Audit
+        run: npm audit --audit-level=high
+        working-directory: frontend
+        continue-on-error: true
+
       - name: Build and Test
         run: |
           npm run build
