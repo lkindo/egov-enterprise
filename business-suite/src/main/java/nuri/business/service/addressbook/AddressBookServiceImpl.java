@@ -167,7 +167,9 @@ public class AddressBookServiceImpl implements AddressBookService {
 
     @Override
     public AddressBookUserDto getAdbkUser(String id) {
-        return null;
+        return addressBookUserRepository.findById(Objects.requireNonNull(id))
+                .map(this::convertToUserDto)
+                .orElseThrow(() -> new BusinessException("주소록 사용자를 찾을 수 없습니다: " + id, ErrorCode.RESOURCE_NOT_FOUND));
     }
 
     private AddressBookDto convertToDto(AddressBook entity) {

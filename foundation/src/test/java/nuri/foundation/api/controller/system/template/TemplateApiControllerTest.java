@@ -1,81 +1,67 @@
 package nuri.foundation.api.controller.system.template;
 
-import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.domain.template.Template;
 import nuri.foundation.service.template.TmplatInfoService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import nuri.foundation.security.jwt.JwtTokenProvider;
+import nuri.foundation.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Collections;
+import java.util.List;
 
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(TemplateApiController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("TemplateApiController 테스트")
-class TemplateApiControllerTest {
+class TemplateApiControllerTest extends ControllerTestSupport {
 
-    private MockMvc mockMvc;
-
-    @Mock
+    @MockitoBean
     private TmplatInfoService tmplatInfoService;
 
-    @InjectMocks
-    private TemplateApiController templateApiController;
-
-    private ObjectMapper objectMapper = new ObjectMapper();
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(templateApiController)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
-    }
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
 
     @Test
     @DisplayName("템플릿 목록 조회 성공")
-    void testSelectTmplatInfoList() throws Exception {
-        when(tmplatInfoService.selectTmplatInfoList()).thenReturn(Collections.emptyList());
+    void selectTmplatInfoList_Success() throws Exception {
+        given(tmplatInfoService.selectTmplatInfoList()).willReturn(List.of(Template.builder().tmplatId("TMP_01").build()));
 
-        mockMvc.perform(get("/api/v1/admin/system/templates"))
+        mockMvc.perform(get("/api/v1/admin/system/templates")
+                .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].tmplatId").value("TMP_01"));
     }
 
     @Test
     @DisplayName("템플릿 상세 조회 성공")
-    void testSelectTmplatInfoDetail() throws Exception {
-        Template tmplat = Template.builder()
-                .tmplatId("TMPLT_001")
-                .build();
-        when(tmplatInfoService.selectTmplatInfoDetail("TMPLT_001")).thenReturn(tmplat);
+    void selectTmplatInfoDetail_Success() throws Exception {
+        given(tmplatInfoService.selectTmplatInfoDetail(anyString())).willReturn(Template.builder().tmplatId("TMP_01").build());
 
-        mockMvc.perform(get("/api/v1/admin/system/templates/TMPLT_001"))
+        mockMvc.perform(get("/api/v1/admin/system/templates/TMP_01")
+                .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.tmplatId").value("TMPLT_001"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.tmplatId").value("TMP_01"));
     }
 
     @Test
     @DisplayName("템플릿 등록 성공")
-    void testInsertTmplatInfo() throws Exception {
-        Template tmplat = Template.builder()
-                .tmplatNm("New Template")
-                .build();
-
+    void insertTmplatInfo_Success() throws Exception {
         mockMvc.perform(post("/api/v1/admin/system/templates")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(tmplat)))
-                .andExpect(status().isOk());
+                .content("{\"tmplatId\":\"TMP_NEW\", \"tmplatNm\":\"New Temp\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 }

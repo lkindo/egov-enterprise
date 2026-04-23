@@ -11,10 +11,16 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/app/components/ui/toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { saveBoardArticle } from '@/app/actions/boardActions';
-import RichTextEditor from '@/components/ui/RichTextEditor';
+import dynamic from 'next/dynamic';
 import { BoardPost } from '@/types/business/board';
 import { useAutoSaveDraft } from '@/hooks/use-auto-save-draft';
 import { useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[400px] w-full" />
+});
 
 export default function InsertBoardArticlePage() {
   const router = useRouter();

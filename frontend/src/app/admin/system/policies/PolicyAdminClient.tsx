@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -8,8 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import RichTextEditor from '@/components/ui/RichTextEditor';
+import dynamic from 'next/dynamic';
 import { Settings, Edit2, FileText, CheckCircle2 } from 'lucide-react';
+import { Skeleton } from '@/app/components/ui/skeleton';
+
+const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[400px] w-full" />
+});
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
 import { toast } from 'sonner';

@@ -170,4 +170,27 @@ class CommunityServiceImplTest {
         assertThat(list).hasSize(1);
         assertThat(list.get(0).getCmmntyId()).isEqualTo("CMMNTY_01");
     }
+
+    @Mock
+    private nuri.foundation.domain.system.content.community.CommunityUserRepository communityUserRepository;
+
+    @Test
+    @DisplayName("커뮤니티 가입 신청 - 성공")
+    void joinCommunity() {
+        // given
+        String cmmntyId = "CMMNTY_01";
+        String userId = "user1";
+        Community community = Community.builder()
+                .cmmntyId(cmmntyId)
+                .useAt("Y")
+                .build();
+        given(communityRepository.findById(cmmntyId)).willReturn(Optional.of(community));
+        given(communityUserRepository.existsById(any())).willReturn(false);
+
+        // when
+        communityService.joinCommunity(cmmntyId, userId);
+
+        // then
+        verify(communityUserRepository, times(1)).save(any());
+    }
 }

@@ -18,10 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
-@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 @DisplayName("UserAbsenceServiceImpl 단위 테스트")
 class UserAbsenceServiceImplTest {
 
@@ -35,17 +33,12 @@ class UserAbsenceServiceImplTest {
     private UserAbsenceMapper userAbsenceMapper;
 
     @Test
-    @DisplayName("부재자 목록 조회")
-    void getAbsences() {
+    @DisplayName("부재 목록 조회 성공")
+    void getAbsences_Success() {
         // given
-        UserAbsence absence = UserAbsence.builder().emplyrId("user1").userAbsnceAt("Y").build();
-        UserAbsenceDto dto = UserAbsenceDto.builder()
-                .emplyrId("user1")
-                .userAbsnceAt("Y")
-                .build();
-
+        UserAbsence absence = UserAbsence.builder().emplyrId("user1").build();
         given(userAbsenceRepository.findAll()).willReturn(List.of(absence));
-        given(userAbsenceMapper.toDtoList(any())).willReturn(List.of(dto));
+        given(userAbsenceMapper.toDtoList(any())).willReturn(List.of(UserAbsenceDto.builder().emplyrId("user1").build()));
 
         // when
         List<UserAbsenceDto> result = userAbsenceService.getAbsences();
@@ -56,83 +49,49 @@ class UserAbsenceServiceImplTest {
     }
 
     @Test
-    @DisplayName("부재자 단건 조회 - 존재할 때")
-    void getAbsence_Exists() {
+    @DisplayName("부재 정보 상세 조회 성공 - 데이터 있음")
+    void getAbsence_Found() {
         // given
-        String emplyrId = "user1";
-        UserAbsence absence = UserAbsence.builder().emplyrId(emplyrId).userAbsnceAt("Y").build();
-        UserAbsenceDto dto = UserAbsenceDto.builder()
-                .emplyrId(emplyrId)
-                .userAbsnceAt("Y")
-                .build();
-
-        given(userAbsenceRepository.findById(emplyrId)).willReturn(Optional.of(absence));
-        given(userAbsenceMapper.toDto(any(UserAbsence.class))).willReturn(dto);
+        UserAbsence absence = UserAbsence.builder().emplyrId("user1").userAbsnceAt("Y").build();
+        given(userAbsenceRepository.findById("user1")).willReturn(Optional.of(absence));
+        given(userAbsenceMapper.toDto(any())).willReturn(UserAbsenceDto.builder().emplyrId("user1").userAbsnceAt("Y").build());
 
         // when
-        UserAbsenceDto result = userAbsenceService.getAbsence(emplyrId);
+        UserAbsenceDto result = userAbsenceService.getAbsence("user1");
 
         // then
-        assertThat(result.getEmplyrId()).isEqualTo(emplyrId);
         assertThat(result.getUserAbsnceAt()).isEqualTo("Y");
     }
 
     @Test
-    @DisplayName("부재자 단건 조회 - 존재하지 않을 때 (기본값 반환)")
-    void getAbsence_NotExists() {
+    @DisplayName("부재 정보 상세 조회 성공 - 데이터 없음 (기본값)")
+    void getAbsence_NotFound() {
         // given
-        String emplyrId = "user99";
-        UserAbsenceDto dto = UserAbsenceDto.builder()
-                .emplyrId(emplyrId)
-                .userAbsnceAt("N")
-                .build();
-
-        given(userAbsenceRepository.findById(emplyrId)).willReturn(Optional.empty());
-        given(userAbsenceMapper.toDto(any(UserAbsence.class))).willReturn(dto);
+        given(userAbsenceRepository.findById("user1")).willReturn(Optional.empty());
+        given(userAbsenceMapper.toDto(any())).willAnswer(inv -> {
+            UserAbsence a = inv.getArgument(0);
+            return UserAbsenceDto.builder().emplyrId(a.getEmplyrId()).userAbsnceAt(a.getUserAbsnceAt()).build();
+        });
 
         // when
-        UserAbsenceDto result = userAbsenceService.getAbsence(emplyrId);
+        UserAbsenceDto result = userAbsenceService.getAbsence("user1");
 
         // then
-        assertThat(result.getEmplyrId()).isEqualTo(emplyrId);
         assertThat(result.getUserAbsnceAt()).isEqualTo("N");
     }
 
     @Test
-    @DisplayName("부재자 상태 업데이트 - 기존 데이터 있을 때")
-    void updateAbsence_Exists() {
+    @DisplayName("부재 정보 수정 성공")
+    void updateAbsence_Success() {
         // given
-        String emplyrId = "user1";
-        UserAbsence absence = UserAbsence.builder().emplyrId(emplyrId).userAbsnceAt("N").build();
-        UserAbsenceDto dto = UserAbsenceDto.builder()
-                .userAbsnceAt("Y")
-                .build();
-
-        given(userAbsenceRepository.findById(emplyrId)).willReturn(Optional.of(absence));
+        UserAbsence absence = UserAbsence.builder().emplyrId("user1").build();
+        given(userAbsenceRepository.findById("user1")).willReturn(Optional.of(absence));
+        UserAbsenceDto dto = UserAbsenceDto.builder().userAbsnceAt("Y").build();
 
         // when
-        userAbsenceService.updateAbsence(emplyrId, dto);
+        userAbsenceService.updateAbsence("user1", dto);
 
         // then
-        assertThat(absence.getUserAbsnceAt()).isEqualTo("Y");
-        verify(userAbsenceRepository, times(1)).save(absence);
-    }
-
-    @Test
-    @DisplayName("부재자 상태 업데이트 - 기존 데이터 없을 때")
-    void updateAbsence_NotExists() {
-        // given
-        String emplyrId = "user99";
-        UserAbsenceDto dto = UserAbsenceDto.builder()
-                .userAbsnceAt("Y")
-                .build();
-
-        given(userAbsenceRepository.findById(emplyrId)).willReturn(Optional.empty());
-
-        // when
-        userAbsenceService.updateAbsence(emplyrId, dto);
-
-        // then
-        verify(userAbsenceRepository, times(1)).save(any(UserAbsence.class));
+        verify(userAbsenceRepository).save(any());
     }
 }

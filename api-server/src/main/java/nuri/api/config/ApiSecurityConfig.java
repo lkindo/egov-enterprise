@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
-@Profile({"default", "local", "dev", "prod", "security-test", "e2e"})
+@Profile("!mock-security-test & (default | local | dev | prod | security-test | e2e | test)")
 @EnableWebSecurity
 @org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(prePostEnabled = true)
 @Slf4j

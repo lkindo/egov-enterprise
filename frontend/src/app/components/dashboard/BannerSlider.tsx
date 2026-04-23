@@ -1,10 +1,11 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { bannerAdminService } from '@/services/foundation/system/BannerAdminService';
 import { Banner } from '@/types/foundation/banner';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 export function BannerSlider() {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -56,9 +57,13 @@ export function BannerSlider() {
 
   return (
     <div className="relative group w-full h-48 md:h-64 overflow-hidden rounded-[0.1rem] bg-slate-900 shadow-lg">
-      <div
-        className="w-full h-full bg-cover bg-center transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
-        style={{ backgroundImage: `url(${imageUrl})`, opacity: 0.8 }}
+      <Image
+        src={imageUrl}
+        alt={currentBanner.bannerNm}
+        fill
+        className="object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
+        style={{ opacity: 0.8 }}
+        priority
       />
 
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center px-8 md:px-16 text-white">

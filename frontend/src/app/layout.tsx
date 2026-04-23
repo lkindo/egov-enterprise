@@ -6,7 +6,20 @@ import Providers from './providers';
 import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
+import { Inter, Outfit } from 'next/font/google';
 import dynamic from 'next/dynamic';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-outfit',
+});
 
 
 import { GlobalUIComponents } from './components/layout/GlobalUIComponents';
@@ -40,7 +53,7 @@ export default async function RootLayout({
 
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className="antialiased font-sans" suppressHydrationWarning>
+      <body className={`${inter.variable} ${outfit.variable} antialiased font-sans`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
