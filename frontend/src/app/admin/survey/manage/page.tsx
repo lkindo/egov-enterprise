@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -43,8 +43,8 @@ export default function PollManagePage() {
   const getStatusBadge = (endDate: string) => {
     const today = new Date();
     const end = new Date(endDate);
-    if (end < today) return <Badge variant="secondary" className="rounded-md font-bold px-3">종료</Badge>;
-    return <Badge variant="default" className="rounded-md font-bold px-3 bg-emerald-500 hover:bg-emerald-600">진행중</Badge>;
+    if (end < today) return <Badge variant="secondary" className="rounded-md font-bold px-3">醫낅즺</Badge>;
+    return <Badge variant="default" className="rounded-md font-bold px-3 bg-emerald-500 hover:bg-emerald-600">吏꾪뻾以?/Badge>;
   };
 
   return (
@@ -57,11 +57,11 @@ export default function PollManagePage() {
             </div>
             <span className="text-sm font-black text-primary tracking-tight uppercase">Survey Governance</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tighter text-foreground ">온라인 설문 <span className="text-primary">관리</span></h1>
-          <p className="text-muted-foreground font-bold text-sm max-w-lg">조직 내 의견 수렴 및 투표 프로세스를 통합 관리하고 분석합니다.</p>
+          <h1 className="text-4xl font-black tracking-tighter text-foreground ">?⑤씪???ㅻЦ <span className="text-primary">愿由?/span></h1>
+          <p className="text-muted-foreground font-bold text-sm max-w-lg">議곗쭅 ???섍껄 ?섎졃 諛??ы몴 ?꾨줈?몄뒪瑜??듯빀 愿由ы븯怨?遺꾩꽍?⑸땲??</p>
         </div>
-        <Button onClick={() => router.push('/admin/survey/manage/create')} className="h-14 px-8 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-sm tracking-tight shadow-xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
-          <Plus className="w-5 h-5" /> 설문 신규 등록
+        <Button onClick={() => router.push('/admin/survey/manage/create')} className="h-14 px-8 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-sm tracking-tight shadow-xl hover:bg-slate-800 transition active:scale-95 gap-3">
+          <Plus className="w-5 h-5" /> ?ㅻЦ ?좉퇋 ?깅줉
         </Button>
       </div>
 
@@ -71,13 +71,13 @@ export default function PollManagePage() {
             <div className="relative flex-1 w-full group">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
               <Input
-                placeholder="설문명을 입력하여 검색하세요"
-                className="h-14 pl-14 rounded-[0.1rem] border-2 border-transparent bg-white shadow-sm focus:border-primary focus:ring-0 transition-all font-bold"
+                placeholder="?ㅻЦ紐낆쓣 ?낅젰?섏뿬 寃?됲븯?몄슂"
+                className="h-14 pl-14 rounded-[0.1rem] border-2 border-transparent bg-white shadow-sm focus:border-primary focus:ring-0 transition font-bold"
                 value={params.searchKeyword || ''}
                 onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
               />
             </div>
-            <Button type="submit" className="h-14 px-10 rounded-[0.1rem] bg-white border-2 border-slate-200 text-slate-900 font-black text-sm hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all active:scale-95">조회하기</Button>
+            <Button type="submit" className="h-14 px-10 rounded-[0.1rem] bg-white border-2 border-slate-200 text-slate-900 font-black text-sm hover:bg-slate-50 hover:border-slate-300 shadow-sm transition active:scale-95">議고쉶?섍린</Button>
           </form>
         </CardHeader>
         <CardContent className="p-0">
@@ -85,11 +85,11 @@ export default function PollManagePage() {
             <TableHeader className="bg-slate-50/50">
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[100px] text-center font-black text-slate-400 text-xs py-6">ID</TableHead>
-                <TableHead className="font-black text-slate-900 text-xs py-6 px-4">설문 정보 (Survey Name)</TableHead>
-                <TableHead className="w-[250px] font-black text-slate-400 text-xs py-6 text-center">기간 (Period)</TableHead>
-                <TableHead className="w-[120px] font-black text-slate-400 text-xs py-6 text-center">상태</TableHead>
-                <TableHead className="w-[150px] font-black text-slate-400 text-xs py-6 text-center">등록자</TableHead>
-                <TableHead className="w-[150px] font-black text-slate-400 text-xs py-6 text-center">등록일</TableHead>
+                <TableHead className="font-black text-slate-900 text-xs py-6 px-4">?ㅻЦ ?뺣낫 (Survey Name)</TableHead>
+                <TableHead className="w-[250px] font-black text-slate-400 text-xs py-6 text-center">湲곌컙 (Period)</TableHead>
+                <TableHead className="w-[120px] font-black text-slate-400 text-xs py-6 text-center">?곹깭</TableHead>
+                <TableHead className="w-[150px] font-black text-slate-400 text-xs py-6 text-center">?깅줉??/TableHead>
+                <TableHead className="w-[150px] font-black text-slate-400 text-xs py-6 text-center">?깅줉??/TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -98,14 +98,14 @@ export default function PollManagePage() {
               ) : polls.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-48 text-center text-slate-400 font-bold tracking-tight opacity-40">
-                    검색 결과가 존재하지 않습니다.
+                    寃??寃곌낵媛 議댁옱?섏? ?딆뒿?덈떎.
                   </TableCell>
                 </TableRow>
               ) : (
                 polls.map((poll, index) => (
                   <TableRow
                     key={poll.pollId}
-                    className="cursor-pointer hover:bg-slate-50/50 transition-all border-b last:border-0 group"
+                    className="cursor-pointer hover:bg-slate-50/50 transition border-b last:border-0 group"
                     onClick={() => router.push(`/admin/survey/manage/${poll.pollId}`)}
                   >
                     <TableCell className="text-center font-mono text-sm text-slate-400 py-6">

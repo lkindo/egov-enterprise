@@ -31,7 +31,7 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
  <div key={`step-${idx}`} className="relative flex flex-col items-center group z-10 px-4 bg-transparent">
  {/* Icon Circle */}
  <div className={cn(
- "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition-all duration-500 shadow-lg border-4 border-card",
+ "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition duration-500 shadow-lg border-4 border-card",
  isCompleted ? "bg-emerald-500 text-white" :
  isRejected ? "bg-red-500 text-white" :
  isCurrent ? "bg-primary text-white scale-110 ring-4 ring-primary/20" :

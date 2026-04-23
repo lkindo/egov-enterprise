@@ -1,4 +1,4 @@
-
+﻿
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
@@ -55,8 +55,8 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                     articles: (bbsRes?.data?.resultList || []).slice(0, 10),
                     users: (userRes?.data?.resultList || []).slice(0, 10),
                     menus: [
-                        { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },
-                        { name: '자유 게시판', path: '/admin/community/boards', category: '커뮤니티' }
+                        { name: '怨듭??ы빆 愿由?, path: '/admin/system/menus', category: '?쒖뒪?? },
+                        { name: '?먯쑀 寃뚯떆??, path: '/admin/community/boards', category: '而ㅻ??덊떚' }
                     ].filter(m => m.name.includes(String(query || '')))
                 });
             } catch (error) {
@@ -70,10 +70,10 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
     }, [query, initialQuery, initialResults]);
 
     const tabs = [
-        { id: 'all', label: '전체 결과', icon: <Layout size={16} /> },
-        { id: 'articles', label: '게시글', count: results.articles.length, icon: <MessageSquare size={16} /> },
-        { id: 'users', label: '임직원', count: results.users.length, icon: <UserIcon size={16} /> },
-        { id: 'menus', label: '메뉴 바로가기', count: results.menus.length, icon: <FileText size={16} /> }
+        { id: 'all', label: '?꾩껜 寃곌낵', icon: <Layout size={16} /> },
+        { id: 'articles', label: '寃뚯떆湲', count: results.articles.length, icon: <MessageSquare size={16} /> },
+        { id: 'users', label: '?꾩쭅??, count: results.users.length, icon: <UserIcon size={16} /> },
+        { id: 'menus', label: '硫붾돱 諛붾줈媛湲?, count: results.menus.length, icon: <FileText size={16} /> }
     ];
 
     return (
@@ -86,13 +86,13 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="space-y-2">
                             <h1 className="text-3xl md:text-3xl font-black text-white tracking-tighter ">
-                                Global <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">인텔리전스</span>
+                                Global <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">?명뀛由ъ쟾??/span>
                             </h1>
-                            <p className="text-slate-400 font-medium text-lg">시스템 전체에서 필요한 정보를 정확하게 찾아드립니다.</p>
+                            <p className="text-slate-400 font-medium text-lg">?쒖뒪???꾩껜?먯꽌 ?꾩슂???뺣낫瑜??뺥솗?섍쾶 李얠븘?쒕┰?덈떎.</p>
                         </div>
                         <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-[0.1rem] border border-white/10 backdrop-blur-xl">
                             <Clock className="text-primary" size={18} />
-                            <span className="text-sm font-black text-white tracking-tight">실시간 인덱싱 활성화</span>
+                            <span className="text-sm font-black text-white tracking-tight">?ㅼ떆媛??몃뜳???쒖꽦??/span>
                         </div>
                     </div>
 
@@ -102,14 +102,14 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                             <Input
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
-                                placeholder="검색어를 입력하고 지식을 발견하세요..."
-                                className="h-20 pl-16 pr-40 rounded-[0.1rem] border-0 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/20 transition-all font-black text-xl placeholder:text-slate-300 placeholder:font-bold"
+                                placeholder="寃?됱뼱瑜??낅젰?섍퀬 吏?앹쓣 諛쒓껄?섏꽭??.."
+                                className="h-20 pl-16 pr-40 rounded-[0.1rem] border-0 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/20 transition font-black text-xl placeholder:text-slate-300 placeholder:font-bold"
                             />
                             <Button
                                 type="submit"
                                 className="absolute right-3 top-1/2 -translate-y-1/2 h-14 px-8 rounded-[0.1rem] font-black text-lg shadow-xl"
                             >
-                                검색 실행
+                                寃???ㅽ뻾
                             </Button>
                         </div>
                     </form>
@@ -121,21 +121,21 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                 <div className="w-full md:w-64 space-y-8 shrink-0">
                     <div className="p-8 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-xl">
                         <h3 className="text-sm font-black tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
-                            <Filter size={14} className="text-primary" /> 필터 옵션
+                            <Filter size={14} className="text-primary" /> ?꾪꽣 ?듭뀡
                         </h3>
                         <div className="space-y-4">
-                            <FilterToggle label="정확도순" active />
-                            <FilterToggle label="최신순" />
-                            <FilterToggle label="조회수순" />
+                            <FilterToggle label="?뺥솗?꾩닚" active />
+                            <FilterToggle label="理쒖떊?? />
+                            <FilterToggle label="議고쉶?섏닚" />
                         </div>
                     </div>
 
                     <div className="p-8 bg-slate-900 rounded-[0.1rem] text-white shadow-2xl relative overflow-hidden group">
                         <div className="absolute right-[-20px] top-[-20px] bg-primary/20 w-32 h-32 rounded-full blur-[60px]" />
                         <div className="relative z-10 space-y-4">
-                            <h4 className="text-sm font-black tracking-tight text-primary">프로 팁</h4>
+                            <h4 className="text-sm font-black tracking-tight text-primary">?꾨줈 ??/h4>
                             <p className="text-sm text-slate-400 font-bold leading-relaxed">
-                                단축키 <kbd className="px-1.5 py-0.5 bg-white/10 rounded border border-white/10 mx-1">Ctrl + K</kbd>를 누르면 어디서든 커맨드 센터를 열 수 있습니다.
+                                ?⑥텞??<kbd className="px-1.5 py-0.5 bg-white/10 rounded border border-white/10 mx-1">Ctrl + K</kbd>瑜??꾨Ⅴ硫??대뵒?쒕뱺 而ㅻ㎤???쇳꽣瑜??????덉뒿?덈떎.
                             </p>
                         </div>
                     </div>
@@ -163,15 +163,15 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                     <Search size={48} className="text-muted-foreground/30" />
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="text-2xl font-black text-foreground/60">일치하는 결과가 없습니다.</h3>
-                                    <p className="text-sm text-muted-foreground font-medium">검색어를 다시 확인하거나 다른 키워드로 시도해보세요.</p>
+                                    <h3 className="text-2xl font-black text-foreground/60">?쇱튂?섎뒗 寃곌낵媛 ?놁뒿?덈떎.</h3>
+                                    <p className="text-sm text-muted-foreground font-medium">寃?됱뼱瑜??ㅼ떆 ?뺤씤?섍굅???ㅻⅨ ?ㅼ썙?쒕줈 ?쒕룄?대낫?몄슂.</p>
                                 </div>
                             </div>
                         ) : (
                             <div className="space-y-10">
                                 {/* Articles Section */}
                                 {(activeTab === 'all' || activeTab === 'articles') && results.articles.length > 0 ? (
-                                    <ResultSection title="게시글" count={results.articles.length}>
+                                    <ResultSection title="寃뚯떆湲" count={results.articles.length}>
                                         {results.articles.map((item: any, idx: number) => (
                                             <ArticleResultItem key={`search-article-${idx}`} item={item} query={query} />
                                         ))}
@@ -180,7 +180,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
 
                                 {/* Users Section */}
                                 {(activeTab === 'all' || activeTab === 'users') && results.users.length > 0 ? (
-                                    <ResultSection title="임직원" count={results.users.length}>
+                                    <ResultSection title="?꾩쭅?? count={results.users.length}>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {results.users.map((item: any, idx: number) => (
                                                 <UserResultItem key={`search-user-${idx}`} item={item} />
@@ -191,7 +191,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
 
                                 {/* Menus Section */}
                                 {(activeTab === 'all' || activeTab === 'menus') && results.menus.length > 0 ? (
-                                    <ResultSection title="바로가기" count={results.menus.length}>
+                                    <ResultSection title="諛붾줈媛湲? count={results.menus.length}>
                                         {results.menus.map((item: any, idx: number) => (
                                             <MenuResultItem key={`search-menu-${idx}`} item={item} />
                                         ))}
@@ -211,7 +211,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
 function FilterToggle({ label, active = false }: { label: string, active?: boolean }) {
     return (
         <button className={cn(
-            "w-full flex items-center justify-between p-3 rounded-[0.1rem] transition-all font-bold text-sm",
+            "w-full flex items-center justify-between p-3 rounded-[0.1rem] transition font-bold text-sm",
             active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-muted"
         )}>
             {label}
@@ -238,7 +238,7 @@ function ResultSection({ title, count, children }: any) {
 function ArticleResultItem({ item, query }: any) {
     return (
         <Link href={`/admin/community/boards/${item.nttId}?bbsId=${item.bbsId}`} className="block group">
-            <div className="p-8 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-lg group-hover:shadow-xl group-hover:border-primary/20 transition-all group-hover:-translate-y-1">
+            <div className="p-8 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-lg group-hover:shadow-xl group-hover:border-primary/20 transition group-hover:-translate-y-1">
                 <div className="flex justify-between items-start gap-4 mb-4">
                     <h4 className="text-xl font-black group-hover:text-primary transition-colors line-clamp-1">
                         {item.nttSj}
@@ -248,7 +248,7 @@ function ArticleResultItem({ item, query }: any) {
                     </span>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-6">
-                    {item.nttCn?.replace(/<[^>]*>?/gm, '') || '본문 내용이 없습니다.'}
+                    {item.nttCn?.replace(/<[^>]*>?/gm, '') || '蹂몃Ц ?댁슜???놁뒿?덈떎.'}
                 </p>
                 <div className="flex items-center justify-between pt-6 border-t border-primary/5">
                     <div className="flex items-center gap-3">
@@ -257,7 +257,7 @@ function ArticleResultItem({ item, query }: any) {
                         </div>
                         <span className="text-sm font-bold text-foreground/70">{item.frstRegisterNm}</span>
                     </div>
-                    <ArrowRight size={18} className="text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
+                    <ArrowRight size={18} className="text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition" />
                 </div>
             </div>
         </Link>
@@ -266,7 +266,7 @@ function ArticleResultItem({ item, query }: any) {
 
 function UserResultItem({ item }: any) {
     return (
-        <div className="p-6 bg-card border-2 border-primary/5 rounded-[0.1rem] flex items-center gap-5 hover:border-primary/20 transition-all shadow-sm">
+        <div className="p-6 bg-card border-2 border-primary/5 rounded-[0.1rem] flex items-center gap-5 hover:border-primary/20 transition shadow-sm">
             <div className="w-14 h-14 rounded-[0.1rem] bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                 <UserIcon size={24} />
             </div>
@@ -274,24 +274,24 @@ function UserResultItem({ item }: any) {
                 <h4 className="font-black text-lg tracking-tight truncate">{item.userNm}</h4>
                 <p className="text-sm text-muted-foreground font-bold">{item.userId}</p>
             </div>
-            <Badge variant="secondary" className="rounded-lg font-black text-[10px] ">직원</Badge>
+            <Badge variant="secondary" className="rounded-lg font-black text-[10px] ">吏곸썝</Badge>
         </div>
     );
 }
 
 function MenuResultItem({ item }: any) {
     return (
-        <Link href={item.path} className="flex items-center justify-between p-6 bg-muted/20 border-2 border-transparent hover:border-primary/20 hover:bg-card rounded-[0.1rem] transition-all group">
+        <Link href={item.path} className="flex items-center justify-between p-6 bg-muted/20 border-2 border-transparent hover:border-primary/20 hover:bg-card rounded-[0.1rem] transition group">
             <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-[0.1rem] bg-background flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
                     <Layout size={18} />
                 </div>
                 <div>
                     <h4 className="font-black text-base">{item.name}</h4>
-                    <span className="text-[10px] font-bold text-muted-foreground tracking-tight">{item.category} 모듈</span>
+                    <span className="text-[10px] font-bold text-muted-foreground tracking-tight">{item.category} 紐⑤뱢</span>
                 </div>
             </div>
-            <ChevronRight size={20} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            <ChevronRight size={20} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition" />
         </Link>
     );
 }

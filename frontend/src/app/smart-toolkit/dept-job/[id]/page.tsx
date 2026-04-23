@@ -92,7 +92,7 @@ const DeptJobListPage = () => {
                     </div>
                     <CardAction>
                         <Link href="/smart-toolkit/dept-job/insertDeptJob">
-                            <Button size="lg" className="gap-2 shadow-lg font-black bg-primary hover:bg-primary/90 transition-all active:scale-95">
+                            <Button size="lg" className="gap-2 shadow-lg font-black bg-primary hover:bg-primary/90 transition active:scale-95">
                                 <Plus className="w-5 h-5" /> 업무 등록
                             </Button>
                         </Link>
@@ -139,7 +139,7 @@ const DeptJobListPage = () => {
                                     </TableRow>
                                 ) : (
                                     list.map((item, idx) => (
-                                        <TableRow key={item.deptJobId} className="hover:bg-slate-50/50 transition-all border-b last:border-0 group">
+                                        <TableRow key={item.deptJobId} className="hover:bg-slate-50/50 transition border-b last:border-0 group">
                                             <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
                                                 {totalCount - ((pageNo - 1) * 10) - idx}
                                             </TableCell>
@@ -169,7 +169,7 @@ const DeptJobListPage = () => {
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => handleDelete(item.deptJobId)}
-                                                    className="h-10 w-10 text-slate-300 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100 rounded-[0.1rem]"
+                                                    className="h-10 w-10 text-slate-300 hover:text-destructive hover:bg-destructive/10 transition opacity-0 group-hover:opacity-100 rounded-[0.1rem]"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
@@ -188,7 +188,7 @@ const DeptJobListPage = () => {
                                 size="lg"
                                 onClick={() => setPageNo(p => Math.max(1, p - 1))}
                                 disabled={pageNo === 1}
-                                className="px-12 h-14 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
+                                className="px-12 h-14 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition tracking-tight text-[10px]"
                             >
                                 이전
                             </Button>
@@ -202,7 +202,7 @@ const DeptJobListPage = () => {
                                 size="lg"
                                 onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
                                 disabled={pageNo === totalPages}
-                                className="px-12 h-14 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
+                                className="px-12 h-14 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition tracking-tight text-[10px]"
                             >
                                 다음
                             </Button>

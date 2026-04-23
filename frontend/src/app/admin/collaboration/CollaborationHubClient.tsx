@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -73,7 +73,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           key={note.noteId}
           onClick={() => setSelectedItemId(note.noteId)}
           className={cn(
-            "group p-6 rounded-[0.1rem] border-2 transition-all cursor-pointer flex items-center justify-between",
+            "group p-6 rounded-[0.1rem] border-2 transition cursor-pointer flex items-center justify-between",
             selectedItemId === note.noteId
               ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]"
               : "bg-white border-transparent hover:border-slate-50 text-slate-600 shadow-sm"
@@ -88,7 +88,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
             </div>
             <div className="space-y-1">
               <h4 className={cn("text-sm font-black italic", selectedItemId === note.noteId ? "text-white" : "text-slate-900 tracking-tight")}>{note.noteSj}</h4>
-              <p className="text-[8px] font-black tracking-tight opacity-40">보낸 사람: {note.trnsmitterNm || note.trnsmitterId}</p>
+              <p className="text-[8px] font-black tracking-tight opacity-40">蹂대궦 ?щ엺: {note.trnsmitterNm || note.trnsmitterId}</p>
             </div>
           </div>
           {note.openYn === 'N' && <div className="w-2 h-2 rounded-full bg-primary" />}
@@ -104,7 +104,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           key={address.adbkId}
           onClick={() => setSelectedItemId(address.adbkId)}
           className={cn(
-            "rounded-[0.1rem] border-2 transition-all cursor-pointer p-6 flex items-center gap-6",
+            "rounded-[0.1rem] border-2 transition cursor-pointer p-6 flex items-center gap-6",
             selectedItemId === address.adbkId
               ? "bg-slate-900 border-slate-900 text-white shadow-xl"
               : "bg-white border-transparent hover:border-slate-50"
@@ -115,7 +115,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           </div>
           <div className="space-y-1">
             <h4 className="text-sm font-black italic tracking-tight">{address.adbkNm}</h4>
-            <p className="text-[10px] opacity-40">{address.email || '이메일 없음'}</p>
+            <p className="text-[10px] opacity-40">{address.email || '?대찓???놁쓬'}</p>
           </div>
         </Card>
       ))}
@@ -126,7 +126,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
     <div className="space-y-3">
       {scraps.length === 0 ? (
         <div className="p-10 text-center opacity-30 italic font-black tracking-[0.3em]">
-          스크랩이 존재하지 않습니다
+          ?ㅽ겕?⑹씠 議댁옱?섏? ?딆뒿?덈떎
         </div>
       ) : (
         scraps.map((scrap: any) => (
@@ -134,7 +134,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
             key={scrap.scrapId}
             onClick={() => setSelectedItemId(scrap.scrapId)}
             className={cn(
-              "group p-6 rounded-[0.1rem] border-2 transition-all cursor-pointer flex items-center justify-between",
+              "group p-6 rounded-[0.1rem] border-2 transition cursor-pointer flex items-center justify-between",
               selectedItemId === scrap.scrapId
                 ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]"
                 : "bg-white border-transparent hover:border-slate-50 text-slate-600 shadow-sm"
@@ -149,7 +149,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
               </div>
               <div className="space-y-1">
                 <h4 className={cn("text-sm font-black italic", selectedItemId === scrap.scrapId ? "text-white" : "text-slate-900 tracking-tight")}>{scrap.scrapNm}</h4>
-                <p className="text-[8px] font-black tracking-tight opacity-40">스크랩 일자: {scrap.createdDate?.substring(0, 10) || '정보 없음'}</p>
+                <p className="text-[8px] font-black tracking-tight opacity-40">?ㅽ겕???쇱옄: {scrap.createdDate?.substring(0, 10) || '?뺣낫 ?놁쓬'}</p>
               </div>
             </div>
           </div>
@@ -167,19 +167,19 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
           </div>
           <div>
             <h2 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none">
-              협업 통합 허브
+              ?묒뾽 ?듯빀 ?덈툕
             </h2>
             <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] mt-2 italic">
-              통합 기업용 소셜 및 메시징 센터
+              ?듯빀 湲곗뾽???뚯뀥 諛?硫붿떆吏??쇳꽣
             </p>
           </div>
         </div>
         <div className="flex gap-4">
           <Button variant="outline" className="h-14 px-6 rounded-[0.1rem] border-2 font-black tracking-tight gap-2">
-            <Mail size={18} /> 쪽지 쓰기
+            <Mail size={18} /> 履쎌? ?곌린
           </Button>
-          <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition-all gap-2">
-            <Plus size={20} /> 연락처 추가
+          <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition gap-2">
+            <Plus size={20} /> ?곕씫泥?異붽?
           </Button>
         </div>
       </div>
@@ -187,16 +187,16 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
       <div className="grid grid-cols-12 gap-8 px-2 min-h-[700px]">
         <div className="col-span-12 lg:col-span-3 space-y-6">
           <Card className="rounded-[0.1rem] border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100 overflow-hidden">
-            <NavButton icon={<Inbox size={20} />} label="메신저" active={activeTab === 'MESSAGES'} onClick={() => { setActiveTab('MESSAGES'); setSelectedItemId(null); }} />
-            <NavButton icon={<Users size={20} />} label="전체 연락처" active={activeTab === 'ADDRESS_BOOK'} onClick={() => { setActiveTab('ADDRESS_BOOK'); setSelectedItemId(null); }} />
-            <NavButton icon={<Bookmark size={20} />} label="스크랩 관리" active={activeTab === 'SCRAPS'} onClick={() => { setActiveTab('SCRAPS'); setSelectedItemId(null); }} />
+            <NavButton icon={<Inbox size={20} />} label="硫붿떊?" active={activeTab === 'MESSAGES'} onClick={() => { setActiveTab('MESSAGES'); setSelectedItemId(null); }} />
+            <NavButton icon={<Users size={20} />} label="?꾩껜 ?곕씫泥? active={activeTab === 'ADDRESS_BOOK'} onClick={() => { setActiveTab('ADDRESS_BOOK'); setSelectedItemId(null); }} />
+            <NavButton icon={<Bookmark size={20} />} label="?ㅽ겕??愿由? active={activeTab === 'SCRAPS'} onClick={() => { setActiveTab('SCRAPS'); setSelectedItemId(null); }} />
           </Card>
 
           <Card className="rounded-[0.1rem] border-0 bg-primary text-white p-10 space-y-6 shadow-2xl relative overflow-hidden group">
             <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
             <Zap size={48} className="text-white/20 absolute -right-4 -top-4 rotate-12" />
             <div className="space-y-2 relative z-10">
-              <h4 className="text-[10px] font-black tracking-tight opacity-60">응답률</h4>
+              <h4 className="text-[10px] font-black tracking-tight opacity-60">?묐떟瑜?/h4>
               <p className="text-4xl font-black italic tracking-tighter">98.2%</p>
             </div>
           </Card>
@@ -207,27 +207,26 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
             <CardHeader className="bg-slate-50/50 border-b p-10 space-y-8">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-[10px] font-black text-slate-400 tracking-[0.4em] italic leading-tight">
-                  {activeTab === 'MESSAGES' ? '보안 채널' : activeTab === 'ADDRESS_BOOK' ? '전체 주소록' : '스크랩 저장소'}
+                  {activeTab === 'MESSAGES' ? '蹂댁븞 梨꾨꼸' : activeTab === 'ADDRESS_BOOK' ? '?꾩껜 二쇱냼濡? : '?ㅽ겕????μ냼'}
                 </CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-8 text-[9px] font-black tracking-tight gap-2">
-                  <RefreshCcw size={12} /> 동기화
-                </Button>
+                  <RefreshCcw size={12} /> ?숆린??                </Button>
               </div>
               <div className="flex gap-4">
                 <div className="relative flex-1 group">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                   <Input
                     className="pl-12 h-14 bg-white border-slate-100 rounded-[0.1rem] text-sm font-bold shadow-sm"
-                    placeholder="목록 검색..."
+                    placeholder="紐⑸줉 寃??.."
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
                   />
                 </div>
                 <Button
                   onClick={() => queryClient.invalidateQueries()}
-                  className="h-14 px-10 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tighter shadow-xl hover:-translate-y-1 transition-all"
+                  className="h-14 px-10 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tighter shadow-xl hover:-translate-y-1 transition"
                 >
-                  검색 실행
+                  寃???ㅽ뻾
                 </Button>
               </div>
             </CardHeader>
@@ -261,7 +260,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                 <Card className="flex-1 rounded-[0.1rem] border-0 bg-white shadow-2xl flex flex-col ring-1 ring-slate-100 overflow-hidden">
                   <CardHeader className="bg-slate-50/50 p-10 border-b">
                     <h2 className="text-2xl font-black text-slate-900 tracking-tighter italic leading-tight">
-                      상세 정보
+                      ?곸꽭 ?뺣낫
                     </h2>
                   </CardHeader>
                   <CardContent className="flex-1 p-10 space-y-12">
@@ -273,7 +272,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                       </div>
                     </div>
                     <div className="flex gap-4">
-                      <Button className="flex-1 h-14 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tight text-[9px]">답장 / 열기</Button>
+                      <Button className="flex-1 h-14 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tight text-[9px]">?듭옣 / ?닿린</Button>
                       <Button variant="outline" className="h-14 w-14 rounded-[0.1rem] border-2"><Trash2 size={20} /></Button>
                     </div>
                   </CardContent>
@@ -283,9 +282,8 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
               <Card className="h-full rounded-[0.1rem] border-2 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center p-20 text-center grayscale opacity-30">
                 <Share2 size={64} className="mb-8" />
                 <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic leading-tight">
-                  항목을 선택하세요
-                </h3>
-                <p className="text-[10px] mt-4 font-black tracking-tight">항목을 선택하여 내용을 확인하세요.</p>
+                  ??ぉ???좏깮?섏꽭??                </h3>
+                <p className="text-[10px] mt-4 font-black tracking-tight">??ぉ???좏깮?섏뿬 ?댁슜???뺤씤?섏꽭??</p>
               </Card>
             )}
           </AnimatePresence>
@@ -300,14 +298,14 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
     <button
       onClick={onClick}
       className={cn(
-        "w-full group p-6 rounded-[0.1rem] border-2 transition-all flex items-center gap-5",
+        "w-full group p-6 rounded-[0.1rem] border-2 transition flex items-center gap-5",
         active
           ? "bg-slate-900 border-slate-900 text-white shadow-xl"
           : "bg-white border-transparent hover:border-slate-50 text-slate-500 hover:text-slate-900"
       )}
     >
       <div className={cn(
-        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all",
+        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition",
         active ? "bg-white/10 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"
       )}>
         {icon}

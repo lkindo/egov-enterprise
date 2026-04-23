@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -53,20 +53,20 @@ const DeptJobListPage = () => {
   }, [pageNo]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('삭제하시겠습니까?')) return;
+    if (!confirm('??젣?섏떆寃좎뒿?덇퉴?')) return;
     try {
       (await axios.delete(`/deptjob/${id}`)) as any;
       fetchList();
     } catch {
-      alert('삭제에 실패했습니다.');
+      alert('??젣???ㅽ뙣?덉뒿?덈떎.');
     }
   };
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case '1': return <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-black rounded-md border border-rose-200">높음</span>;
-      case '2': return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-md border border-amber-200">중간</span>;
-      default: return <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-md border border-slate-200">낮음</span>;
+      case '1': return <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-black rounded-md border border-rose-200">?믪쓬</span>;
+      case '2': return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-md border border-amber-200">以묎컙</span>;
+      default: return <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-md border border-slate-200">??쓬</span>;
     }
   };
 
@@ -78,14 +78,14 @@ const DeptJobListPage = () => {
         <CardHeader className="flex flex-row items-center justify-between pb-8 pt-8 px-8 border-b bg-muted/20">
           <div className="space-y-1">
             <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
-              <Briefcase className="w-8 h-8 text-primary" /> 부서 업무 목록
+              <Briefcase className="w-8 h-8 text-primary" /> 遺???낅Т 紐⑸줉
             </CardTitle>
-            <p className="text-sm text-muted-foreground font-medium tracking-tight opacity-70">부서의 모든 과업을 체계적으로 관리하고 공유하세요.</p>
+            <p className="text-sm text-muted-foreground font-medium tracking-tight opacity-70">遺?쒖쓽 紐⑤뱺 怨쇱뾽??泥닿퀎?곸쑝濡?愿由ы븯怨?怨듭쑀?섏꽭??</p>
           </div>
           <CardAction>
             <Link href="/smart-toolkit/dept-job/insertDeptJob">
-              <Button size="lg" className="gap-2 shadow-lg font-black bg-primary hover:bg-primary/90 transition-all active:scale-95">
-                <Plus className="w-5 h-5" /> 신규 등록
+              <Button size="lg" className="gap-2 shadow-lg font-black bg-primary hover:bg-primary/90 transition active:scale-95">
+                <Plus className="w-5 h-5" /> ?좉퇋 ?깅줉
               </Button>
             </Link>
           </CardAction>
@@ -94,8 +94,8 @@ const DeptJobListPage = () => {
           <div className="mb-8 flex items-center gap-4">
             <div className="bg-slate-900 text-white px-6 py-3 rounded-[0.1rem] shadow-xl flex items-center gap-3 ring-8 ring-slate-50">
               <CheckSquare className="w-5 h-5 text-primary" />
-              <span className="text-sm font-bold opacity-60 tracking-tight">전체 진행 건수</span>
-              <span className="text-xl font-black">{totalCount}건</span>
+              <span className="text-sm font-bold opacity-60 tracking-tight">?꾩껜 吏꾪뻾 嫄댁닔</span>
+              <span className="text-xl font-black">{totalCount}嫄?/span>
             </div>
           </div>
 
@@ -103,12 +103,12 @@ const DeptJobListPage = () => {
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableHead className="w-[80px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">번호</TableHead>
-                  <TableHead className="w-[120px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">중요도</TableHead>
-                  <TableHead className="font-black text-slate-900 text-[10px] py-6 tracking-[0.2em] px-4">업무 개요 (Task Name)</TableHead>
-                  <TableHead className="w-[150px] font-black text-slate-400 text-[10px] py-6 text-center tracking-[0.2em]">담당자</TableHead>
-                  <TableHead className="w-[150px] font-black text-slate-400 text-[10px] py-6 text-center tracking-[0.2em]">등록일</TableHead>
-                  <TableHead className="w-[100px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">관리</TableHead>
+                  <TableHead className="w-[80px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">踰덊샇</TableHead>
+                  <TableHead className="w-[120px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">以묒슂??/TableHead>
+                  <TableHead className="font-black text-slate-900 text-[10px] py-6 tracking-[0.2em] px-4">?낅Т 媛쒖슂 (Task Name)</TableHead>
+                  <TableHead className="w-[150px] font-black text-slate-400 text-[10px] py-6 text-center tracking-[0.2em]">?대떦??/TableHead>
+                  <TableHead className="w-[150px] font-black text-slate-400 text-[10px] py-6 text-center tracking-[0.2em]">?깅줉??/TableHead>
+                  <TableHead className="w-[100px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">愿由?/TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -126,12 +126,12 @@ const DeptJobListPage = () => {
                 ) : list.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-48 text-center text-slate-400 font-bold tracking-tight opacity-30">
-                      배정된 부서 업무가 없습니다.
+                      諛곗젙??遺???낅Т媛 ?놁뒿?덈떎.
                     </TableCell>
                   </TableRow>
                 ) : (
                   list.map((item, idx) => (
-                    <TableRow key={item.deptJobId} className="hover:bg-slate-50/50 transition-all border-b last:border-0 group">
+                    <TableRow key={item.deptJobId} className="hover:bg-slate-50/50 transition border-b last:border-0 group">
                       <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
                         {totalCount - ((pageNo - 1) * 10) - idx}
                       </TableCell>
@@ -161,7 +161,7 @@ const DeptJobListPage = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(item.deptJobId)}
-                          className="h-10 w-10 text-slate-300 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100 rounded-[0.1rem]"
+                          className="h-10 w-10 text-slate-300 hover:text-destructive hover:bg-destructive/10 transition opacity-0 group-hover:opacity-100 rounded-[0.1rem]"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -180,9 +180,9 @@ const DeptJobListPage = () => {
                 size="lg"
                 onClick={() => setPageNo(p => Math.max(1, p - 1))}
                 disabled={pageNo === 1}
-                className="px-12 h-14 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
+                className="px-12 h-14 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition tracking-tight text-[10px]"
               >
-                이전
+                ?댁쟾
               </Button>
               <div className="bg-slate-50 text-slate-900 border-2 border-white px-10 py-3 rounded-[0.1rem] shadow-xl flex items-center gap-4 ring-8 ring-slate-100/50">
                 <span className="text-xl font-black">{pageNo}</span>
@@ -194,9 +194,9 @@ const DeptJobListPage = () => {
                 size="lg"
                 onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
                 disabled={pageNo === totalPages}
-                className="px-12 h-14 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-tight text-[10px]"
+                className="px-12 h-14 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition tracking-tight text-[10px]"
               >
-                다음
+                ?ㅼ쓬
               </Button>
             </div>
           )}

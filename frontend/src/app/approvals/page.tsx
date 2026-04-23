@@ -132,7 +132,7 @@ export default function ApprovalInboxPage() {
         title="전자결재 관제 센터"
         breadcrumbs={[{ label: '업무지원' }, { label: '전자결재' }]}
         actions={
-          <Button className="rounded-[0.1rem] h-14 px-8 font-black shadow-2xl bg-slate-900 border-none text-white hover:bg-primary transition-all gap-2">
+          <Button className="rounded-[0.1rem] h-14 px-8 font-black shadow-2xl bg-slate-900 border-none text-white hover:bg-primary transition gap-2">
             <ClipboardCheck size={20} /> 새 결재 기안
           </Button>
         }
@@ -270,7 +270,7 @@ function TabButton({ active, onClick, icon, label, count }: any) {
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-10 py-5 text-[11px] font-black rounded-[0.1rem] transition-all duration-500 relative uppercase tracking-widest",
+        "flex items-center gap-3 px-10 py-5 text-[11px] font-black rounded-[0.1rem] transition duration-500 relative uppercase tracking-widest",
         active
           ? "bg-white text-slate-900 shadow-2xl shadow-slate-200 scale-[1.05] z-10"
           : "text-slate-400 hover:text-slate-600"

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion, Variants } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -56,7 +56,7 @@ export function HubSummaryCard({
       variants={cardVariants}
       whileHover={{ y: -8, transition: { duration: 0.2 } }}
       className={cn(
-        "p-10 rounded-[0.1rem] border transition-all flex flex-col justify-between h-[320px] relative overflow-hidden group",
+        "p-10 rounded-[0.1rem] border transition flex flex-col justify-between h-[320px] relative overflow-hidden group",
         colorMap[color],
         className
       )}
@@ -88,7 +88,7 @@ export function HubSummaryCard({
         )}
       </div>
 
-      <div className="absolute -bottom-6 -left-6 opacity-[0.03] group-hover:opacity-[0.08] group-hover:rotate-12 transition-all duration-700 pointer-events-none">
+      <div className="absolute -bottom-6 -left-6 opacity-[0.03] group-hover:opacity-[0.08] group-hover:rotate-12 transition duration-700 pointer-events-none">
         {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 140 }) : null}
       </div>
     </motion.div>

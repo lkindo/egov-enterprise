@@ -150,7 +150,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                     <div className="relative flex-1 md:w-64">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input
-                            className="w-full bg-muted/30 border-none rounded-[0.1rem] py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all font-sans"
+                            className="w-full bg-muted/30 border-none rounded-[0.1rem] py-3 pl-12 pr-4 text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ring-2 ring-transparent focus:ring-primary/20 transition font-sans"
                             placeholder="전역 검색.."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -174,7 +174,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                                         <th
                                             key={col.id}
                                             className={cn(
-                                                "px-6 py-5 border-b border-primary/5 font-black text-[10px] tracking-[0.2em] text-slate-700 transition-all duration-300",
+                                                "px-6 py-5 border-b border-primary/5 font-black text-[10px] tracking-[0.2em] text-slate-700 transition duration-300",
                                                 pinnedCols.has(col.id) ? "sticky z-20 bg-muted/95 backdrop-blur-md" : "relative",
                                                 isLastPinned && "shadow-[10px_0_15px_-10px_rgba(0,0,0,0.15)] border-r border-primary/10"
                                             )}
@@ -188,7 +188,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                                                     {col.header}
                                                     {col.sortable && (
                                                         <ArrowUpDown size={12} className={cn(
-                                                            "opacity-0 transition-all",
+                                                            "opacity-0 transition",
                                                             sortConfig.find(s => s.key === col.id) ? "opacity-100 text-primary rotate-180" : "group-hover/header:opacity-100"
                                                         )} />
                                                     )}
@@ -196,7 +196,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                                                 <button
                                                     onClick={() => togglePin(col.id)}
                                                     className={cn(
-                                                        "opacity-0 group-hover/header:opacity-100 transition-all hover:text-primary p-1 rounded-md hover:bg-primary/10",
+                                                        "opacity-0 group-hover/header:opacity-100 transition hover:text-primary p-1 rounded-md hover:bg-primary/10",
                                                         pinnedCols.has(col.id) && "opacity-100 text-primary"
                                                     )}
                                                 >
@@ -227,7 +227,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                                             <td
                                                 key={`cell-${col.id}`}
                                                 className={cn(
-                                                    "px-6 py-5 border-b border-primary/5 transition-all duration-300",
+                                                    "px-6 py-5 border-b border-primary/5 transition duration-300",
                                                     pinnedCols.has(col.id) ? "sticky z-10 bg-background/95 backdrop-blur-md group-hover:bg-primary/[0.03]/95" : "relative group-hover:bg-primary/[0.01]",
                                                     isLastPinned && "shadow-[10px_0_15px_-10px_rgba(0,0,0,0.15)] border-r border-primary/10",
                                                     col.className
@@ -238,7 +238,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                                                     <div className="flex items-center gap-2 animate-in fade-in zoom-in-95">
                                                         <input
                                                             autoFocus
-                                                            className="bg-card border-2 border-primary rounded-[0.1rem] px-3 py-1.5 text-sm font-bold w-full outline-none shadow-lg shadow-primary/10 ring-4 ring-primary/5"
+                                                            className="bg-card border-2 border-primary rounded-[0.1rem] px-3 py-1.5 text-sm font-bold w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 shadow-lg shadow-primary/10 ring-4 ring-primary/5"
                                                             value={editValue}
                                                             onChange={(e) => setEditValue(e.target.value)}
                                                             onKeyDown={(e) => {
@@ -252,7 +252,7 @@ export function UltimateDataGrid<T extends { [key: string]: any }>({
                                                 ) : (
                                                     <div
                                                         className={cn(
-                                                            "flex items-center justify-between group/cell transition-all",
+                                                            "flex items-center justify-between group/cell transition",
                                                             col.editable && "cursor-text hover:bg-primary/5 rounded-lg px-2 -mx-2 py-1"
                                                         )}
                                                         onClick={() => startEditing(item, col)}

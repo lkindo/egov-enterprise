@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, use } from 'react';
 import { useTheme } from 'next-themes';
@@ -33,10 +33,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { MenuInfo } from '@/types/foundation/menu';
 
 const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
-  1000000: LayoutGrid, // 워크스페이스
-  2000000: Users, // 커뮤니티
-  3000000: HeartHandshake, // 고객지원센터
-  9000000: ShieldCheck, // 통합 관리 센터
+  1000000: LayoutGrid, // ?뚰겕?ㅽ럹?댁뒪
+  2000000: Users, // 而ㅻ??덊떚
+  3000000: HeartHandshake, // 怨좉컼吏?먯꽱??  9000000: ShieldCheck, // ?듯빀 愿由??쇳꽣
 };
 
 const DOMAIN_ROUTE_MAP: Record<number, string> = {
@@ -142,7 +141,7 @@ export function Header({
       </React.Suspense>
       <div className="flex h-16 items-center px-4 md:px-6 gap-4">
         {/* Mobile Sidebar Toggle */}
-        <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground mr-1" onClick={toggleSidebar} aria-label="사이드바 메뉴 열기/닫기">
+        <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground mr-1" onClick={toggleSidebar} aria-label="?ъ씠?쒕컮 硫붾돱 ?닿린/?リ린">
           {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </Button>
 
@@ -151,13 +150,13 @@ export function Header({
             <span className="text-primary-foreground font-bold text-lg">eG</span>
           </div>
           <div className="hidden sm:flex flex-col">
-            <span className="text-sm font-bold leading-tight text-foreground">전자정부 5.0</span>
-            <span className="text-[10px] text-slate-600 font-semibold tracking-tight">전자정부 포털</span>
+            <span className="text-sm font-bold leading-tight text-foreground">?꾩옄?뺣? 5.0</span>
+            <span className="text-[10px] text-slate-600 font-semibold tracking-tight">?꾩옄?뺣? ?ы꽭</span>
           </div>
         </Link>
 
         <div className="flex-1 flex justify-center">
-          <nav className="hidden xl:flex items-center gap-1 bg-muted/50 p-1 rounded-[0.1rem] border border-border/50" aria-label="도메인 네비게이션">
+          <nav className="hidden xl:flex items-center gap-1 bg-muted/50 p-1 rounded-[0.1rem] border border-border/50" aria-label="?꾨찓???ㅻ퉬寃뚯씠??>
             {menus.map((menu, index) => {
               const Icon = DOMAIN_ICON_MAP[menu.menuNo] || CircleDot;
               const isActive = activeMenuNo === menu.menuNo;
@@ -176,7 +175,7 @@ export function Header({
                     // No need to prevent default or push manually; Link handles instant client-side transition.
                   }}
                   className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap px-4 h-9 font-semibold text-sm transition-all rounded-lg gap-2",
+                    "inline-flex items-center justify-center whitespace-nowrap px-4 h-9 font-semibold text-sm transition rounded-lg gap-2",
                     isActive
                       ? "bg-background text-primary shadow-sm border border-border/50"
                       : "text-slate-600 hover:text-foreground hover:bg-background/50"
@@ -193,8 +192,8 @@ export function Header({
         <div className="flex items-center gap-1 md:gap-2">
           <Link
             href="/help"
-            title="메뉴구성 설명"
-            aria-label="메뉴구성 설명"
+            title="硫붾돱援ъ꽦 ?ㅻ챸"
+            aria-label="硫붾돱援ъ꽦 ?ㅻ챸"
             className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "hidden md:flex text-muted-foreground")}
           >
             <Info size={20} />
@@ -205,8 +204,8 @@ export function Header({
             size="icon"
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
             className="text-muted-foreground"
-            title="테마 변경"
-            aria-label="테마 변경"
+            title="?뚮쭏 蹂寃?
+            aria-label="?뚮쭏 蹂寃?
           >
             {mounted ? (resolvedTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />) : <div className="w-5 h-5" />}
           </Button>
@@ -216,9 +215,9 @@ export function Header({
             variant="ghost"
             size="icon"
             onClick={() => setIsNotifOpen(true)}
-            aria-label="알림 관리"
+            aria-label="?뚮┝ 愿由?
             className={cn(
-              "relative text-muted-foreground transition-all group",
+              "relative text-muted-foreground transition group",
               unreadCount > 0 && "text-primary bg-primary/5 ring-4 ring-primary/5"
             )}
           >
@@ -235,13 +234,13 @@ export function Header({
               user ? (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-9 hover:bg-accent rounded-full" aria-label="사용자 계정 메뉴">
+                    <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-9 hover:bg-accent rounded-full" aria-label="?ъ슜??怨꾩젙 硫붾돱">
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
                         <User size={16} />
                       </div>
                       <div className="flex flex-col items-start mr-1 hidden sm:flex">
                         <span className="text-sm font-bold leading-none">{user.name}</span>
-                        <span className="text-[10px] text-slate-600 font-semibold mt-0.5">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
+                        <span className="text-[10px] text-slate-600 font-semibold mt-0.5">{user.userSe === 'USR' ? '?ъ슜?? : '愿由ъ옄'}</span>
                       </div>
                       <ChevronDown size={14} className="text-slate-600 hidden sm:block" />
                     </Button>
@@ -253,10 +252,10 @@ export function Header({
                     </div>
                     <div className="space-y-0.5">
                       <Link href="/admin/workspace/mypage" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
-                        <span className="flex items-center gap-2"><User size={14} /> 개인정보수정</span>
+                        <span className="flex items-center gap-2"><User size={14} /> 媛쒖씤?뺣낫?섏젙</span>
                       </Link>
                       <Link href="/admin/system/settings" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
-                        <span className="flex items-center gap-2"><Settings size={14} /> 환경설정</span>
+                        <span className="flex items-center gap-2"><Settings size={14} /> ?섍꼍?ㅼ젙</span>
                       </Link>
                       <div className="h-px bg-muted my-1" />
                       <Button
@@ -264,15 +263,14 @@ export function Header({
                         className="w-full justify-start text-sm h-9 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 font-medium"
                         onClick={() => logout()}
                       >
-                        <LogOut size={14} /> 로그아웃
+                        <LogOut size={14} /> 濡쒓렇?꾩썐
                       </Button>
                     </div>
                   </PopoverContent>
                 </Popover>
               ) : (
                 <Link href="/login" className={cn(buttonVariants({ size: "sm" }), "rounded-lg h-9 px-4 font-bold")}>
-                  로그인
-                </Link>
+                  濡쒓렇??                </Link>
               )
             )}
           </div>
@@ -288,7 +286,7 @@ export function Header({
           message: n.ntfcCn,
           time: n.ntfcPnttm,
           isRead: n.readYn === 'Y',
-          type: n.ntfcSj?.includes('보안') ? 'SECURITY' : n.ntfcSj?.includes('시스템') ? 'SYSTEM' : 'ACTIVITY'
+          type: n.ntfcSj?.includes('蹂댁븞') ? 'SECURITY' : n.ntfcSj?.includes('?쒖뒪??) ? 'SYSTEM' : 'ACTIVITY'
         }))}
       />
     </header>

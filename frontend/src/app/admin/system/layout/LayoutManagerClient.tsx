@@ -167,7 +167,7 @@ export default function LayoutManagerClient() {
                         setThemeConfig(newConfig);
                         applyDesignTokens(newConfig);
                       }}
-                      className={`h-14 rounded-[0.1rem] transition-all border-4 ${themeConfig.primaryColor === color ? 'border-primary ring-8 ring-primary/10 scale-105' : 'border-transparent'}`}
+                      className={`h-14 rounded-[0.1rem] transition border-4 ${themeConfig.primaryColor === color ? 'border-primary ring-8 ring-primary/10 scale-105' : 'border-transparent'}`}
                       style={{ backgroundColor: color }}
                     />
                   ))}
@@ -217,7 +217,7 @@ export default function LayoutManagerClient() {
                 key={`${themeConfig.borderRadius}-${themeConfig.primaryColor}`}
                 initial={{ scale: 0.9, opacity: 0, rotateY: -10 }}
                 animate={{ scale: 1, opacity: 1, rotateY: 0 }}
-                className="bg-white shadow-[0_60px_120px_rgba(0,0,0,0.12)] p-14 w-[580px] flex flex-col items-center text-center gap-12 transition-all"
+                className="bg-white shadow-[0_60px_120px_rgba(0,0,0,0.12)] p-14 w-[580px] flex flex-col items-center text-center gap-12 transition"
                 style={{ 
                   borderRadius: 'var(--radius-hub-section)',
                   borderColor: 'var(--primary)',
@@ -257,7 +257,7 @@ export default function LayoutManagerClient() {
                 </div>
 
                 <Button 
-                  className="w-full h-20 text-2xl font-black gap-4 shadow-2xl transition-all hover:scale-[1.02] active:scale-95 px-10"
+                  className="w-full h-20 text-2xl font-black gap-4 shadow-2xl transition hover:scale-[1.02] active:scale-95 px-10"
                   style={{ 
                     borderRadius: 'var(--radius-hub-item)', 
                     backgroundColor: themeConfig.primaryColor,

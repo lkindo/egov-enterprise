@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -65,9 +65,9 @@ const CommunityListPage = () => {
               <div className="w-16 h-16 rounded-[0.1rem] bg-white/10 flex items-center justify-center border border-white/10 shadow-inner">
                 <Users className="w-10 h-10 text-primary" />
               </div>
-              <span className="text-left font-black tracking-tighter">커뮤니티 공간</span>
+              <span className="text-left font-black tracking-tighter">而ㅻ??덊떚 怨듦컙</span>
             </CardTitle>
-            <p className="text-slate-400 font-bold text-lg tracking-tight text-left">워크스페이스 내의 다양한 소모임과 커뮤니티 공간을 만나보세요.</p>
+            <p className="text-slate-400 font-bold text-lg tracking-tight text-left">?뚰겕?ㅽ럹?댁뒪 ?댁쓽 ?ㅼ뼇???뚮え?꾧낵 而ㅻ??덊떚 怨듦컙??留뚮굹蹂댁꽭??</p>
           </div>
           <div className="absolute right-[-10%] top-[-10%] opacity-[0.03] rotate-12 pointer-events-none">
             <Users size={400} />
@@ -78,7 +78,7 @@ const CommunityListPage = () => {
           <div className="mb-10 flex items-center bg-slate-50 p-6 rounded-[0.1rem] border border-slate-100 w-fit text-left">
             <div className="text-sm font-black text-slate-600 flex items-center gap-4 text-left">
               <ShieldCheck className="w-6 h-6 text-primary" /> 
-              <span className="text-left">활성화된 전체 커뮤니티</span>
+              <span className="text-left">?쒖꽦?붾맂 ?꾩껜 而ㅻ??덊떚</span>
               <span className="text-3xl font-black ml-2 text-slate-900 tabular-nums">{totalCount}</span>
             </div>
           </div>
@@ -88,10 +88,10 @@ const CommunityListPage = () => {
               <TableHeader className="bg-slate-50/50">
                 <TableRow className="hover:bg-transparent border-b-2">
                   <TableHead className="w-[100px] text-center font-black text-slate-400 text-[11px] py-8 tracking-[0.2em] uppercase">NO.</TableHead>
-                  <TableHead className="w-[350px] font-black text-slate-900 text-sm py-8 tracking-tight">커뮤니티 명칭</TableHead>
-                  <TableHead className="font-black text-slate-400 text-sm py-8 tracking-tight">소개 및 비전</TableHead>
-                  <TableHead className="w-[180px] font-black text-slate-400 text-sm py-8 text-center tracking-tight">운영 관리자</TableHead>
-                  <TableHead className="w-[180px] font-black text-slate-400 text-sm py-8 text-center tracking-tight">최초 개설일</TableHead>
+                  <TableHead className="w-[350px] font-black text-slate-900 text-sm py-8 tracking-tight">而ㅻ??덊떚 紐낆묶</TableHead>
+                  <TableHead className="font-black text-slate-400 text-sm py-8 tracking-tight">?뚭컻 諛?鍮꾩쟾</TableHead>
+                  <TableHead className="w-[180px] font-black text-slate-400 text-sm py-8 text-center tracking-tight">?댁쁺 愿由ъ옄</TableHead>
+                  <TableHead className="w-[180px] font-black text-slate-400 text-sm py-8 text-center tracking-tight">理쒖큹 媛쒖꽕??/TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -108,18 +108,18 @@ const CommunityListPage = () => {
                 ) : list.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="h-64 text-center text-slate-300 font-black text-xl tracking-tighter opacity-50">
-                      개설된 커뮤니티 공간이 시스템에 존재하지 않습니다.
+                      媛쒖꽕??而ㅻ??덊떚 怨듦컙???쒖뒪?쒖뿉 議댁옱?섏? ?딆뒿?덈떎.
                     </TableCell>
                   </TableRow>
                 ) : (
                   list.map((item, idx) => (
-                    <TableRow key={item.cmmntyId} className="hover:bg-slate-50/80 transition-all border-b last:border-0 group cursor-pointer">
+                    <TableRow key={item.cmmntyId} className="hover:bg-slate-50/80 transition border-b last:border-0 group cursor-pointer">
                       <TableCell className="text-center font-mono text-sm text-slate-400 font-bold py-8">
                         {totalCount - ((page - 1) * 10) - idx}
                       </TableCell>
                       <TableCell className="py-8">
                         <Link href={`/admin/community/${item.cmmntyId}`} className="flex items-center gap-5 group/item">
-                          <div className="w-12 h-12 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white font-black text-xs shadow-lg group-hover/item:scale-110 transition-all duration-500">
+                          <div className="w-12 h-12 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white font-black text-xs shadow-lg group-hover/item:scale-110 transition duration-500">
                             CM
                           </div>
                           <span className="text-xl font-black text-slate-800 group-hover/item:text-primary transition-colors tracking-tighter">
@@ -129,7 +129,7 @@ const CommunityListPage = () => {
                       </TableCell>
                       <TableCell className="py-8">
                         <p className="text-base text-slate-500 font-bold line-clamp-1 leading-relaxed text-left">
-                          "{item.cmmntyIntrcn || '등록된 소개 정보가 정의되지 않았습니다.'}"
+                          "{item.cmmntyIntrcn || '?깅줉???뚭컻 ?뺣낫媛 ?뺤쓽?섏? ?딆븯?듬땲??'}"
                         </p>
                       </TableCell>
                       <TableCell className="text-center py-8">
@@ -157,9 +157,9 @@ const CommunityListPage = () => {
                 size="lg"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-10 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-slate-900 transition-all text-xs tracking-[0.2em] uppercase flex items-center gap-3"
+                className="px-10 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-slate-900 transition text-xs tracking-[0.2em] uppercase flex items-center gap-3"
               >
-                <ArrowLeft size={16} /> 이전
+                <ArrowLeft size={16} /> ?댁쟾
               </Button>
               <div className="bg-slate-900 text-white h-16 px-12 rounded-[0.1rem] shadow-2xl flex items-center gap-5 border-4 border-white ring-8 ring-slate-50">
                 <span className="text-3xl font-black tabular-nums">{page}</span>
@@ -171,9 +171,9 @@ const CommunityListPage = () => {
                 size="lg"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-10 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-slate-900 transition-all text-xs tracking-[0.2em] uppercase flex items-center gap-3"
+                className="px-10 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white hover:text-slate-900 transition text-xs tracking-[0.2em] uppercase flex items-center gap-3"
               >
-                다음 <ArrowRight size={16} />
+                ?ㅼ쓬 <ArrowRight size={16} />
               </Button>
             </div>
           )}

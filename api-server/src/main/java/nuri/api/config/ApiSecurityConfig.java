@@ -67,12 +67,13 @@ public class ApiSecurityConfig {
                 return new EgovPasswordEncoder();
         }
 
+        @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}")
+        private List<String> allowedOrigins;
+
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
-                configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000",
-                                "http://localhost:3001", "http://127.0.0.1:3001",
-                                "http://localhost:3002", "http://127.0.0.1:3002"));
+                configuration.setAllowedOrigins(allowedOrigins);
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(List.of("*"));
                 configuration.setAllowCredentials(true);
@@ -140,9 +141,10 @@ public class ApiSecurityConfig {
                                                                 AntPathRequestMatcher.antMatcher("/favicon.ico"),
                                                                 AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
                                                                 AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
-                                                                AntPathRequestMatcher.antMatcher("/actuator/**"),
+                                                                AntPathRequestMatcher.antMatcher("/actuator/health"),
                                                                 AntPathRequestMatcher.antMatcher("/error"))
                                                 .permitAll()
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**")).hasAnyRole("ADMIN", "SYSTEM")
                                                 .anyRequest().authenticated())
                                 .formLogin(form -> form.disable())
                                 .logout(logout -> logout.disable())

@@ -54,19 +54,19 @@ export default function MyPageManagement() {
           contents.map((item) => (
             <div
               key={item.cntntsId}
-              className={`p-10 bg-white border-2 rounded-[0.1rem] shadow-sm hover:shadow-2xl transition-all duration-500 group ${
+              className={`p-10 bg-white border-2 rounded-[0.1rem] shadow-sm hover:shadow-2xl transition duration-500 group ${
                 item.cntntsUseAt === 'Y' ? 'border-primary/20' : 'opacity-60 grayscale border-slate-100'
               }`}
             >
               <div className="flex justify-between items-start mb-8">
-                <div className={`w-16 h-16 rounded-[0.1rem] flex items-center justify-center transition-all duration-500 ${
+                <div className={`w-16 h-16 rounded-[0.1rem] flex items-center justify-center transition duration-500 ${
                   item.cntntsUseAt === 'Y' ? 'bg-primary/10 text-primary group-hover:scale-110' : 'bg-slate-100 text-slate-400'
                 }`}>
                   <LayoutGrid size={32} />
                 </div>
                 <button
                   onClick={() => toggleStatus(item)}
-                  className={`w-12 h-12 rounded-[0.1rem] transition-all duration-300 flex items-center justify-center ${
+                  className={`w-12 h-12 rounded-[0.1rem] transition duration-300 flex items-center justify-center ${
                     item.cntntsUseAt === 'Y' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white shadow-emerald-500/10' : 'text-slate-400 bg-slate-100 hover:bg-slate-200'
                   }`}
                 >

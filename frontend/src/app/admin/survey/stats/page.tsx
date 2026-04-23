@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -51,8 +51,8 @@ export default function SurveyStatsPage() {
                 </div>
                 <span className="text-sm font-black text-amber-600 tracking-tight uppercase">Data Analytics</span>
             </div>
-            <h1 className="text-4xl font-black tracking-tighter text-foreground ">설문 통계 <span className="text-amber-500">분석</span></h1>
-            <p className="text-muted-foreground font-bold text-sm max-w-lg">실시간 응답 현황을 다각도로 분석하여 데이터 인사이트를 도출합니다.</p>
+            <h1 className="text-4xl font-black tracking-tighter text-foreground ">?ㅻЦ ?듦퀎 <span className="text-amber-500">遺꾩꽍</span></h1>
+            <p className="text-muted-foreground font-bold text-sm max-w-lg">?ㅼ떆媛??묐떟 ?꾪솴???ㅺ컖?꾨줈 遺꾩꽍?섏뿬 ?곗씠???몄궗?댄듃瑜??꾩텧?⑸땲??</p>
         </div>
       </div>
 
@@ -92,25 +92,25 @@ export default function SurveyStatsPage() {
                 <div className="relative flex-1 w-full group">
                     <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-amber-500 transition-colors" />
                     <Input
-                        placeholder="분석할 설문명을 입력하세요"
-                        className="h-14 pl-14 rounded-[0.1rem] border-2 border-transparent bg-white shadow-sm focus:border-amber-500 focus:ring-0 transition-all font-bold text-left"
+                        placeholder="遺꾩꽍???ㅻЦ紐낆쓣 ?낅젰?섏꽭??
+                        className="h-14 pl-14 rounded-[0.1rem] border-2 border-transparent bg-white shadow-sm focus:border-amber-500 focus:ring-0 transition font-bold text-left"
                         value={params.searchKeyword || ''}
                         onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                     />
                 </div>
-                <Button type="submit" className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-sm shadow-sm transition-all active:scale-95">분석 조회</Button>
+                <Button type="submit" className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-sm shadow-sm transition active:scale-95">遺꾩꽍 議고쉶</Button>
             </form>
         </CardHeader>
         <CardContent className="p-0 text-left">
           <Table>
             <TableHeader className="bg-slate-50/50 text-left">
               <TableRow className="hover:bg-transparent border-none">
-                <TableHead className="w-[80px] text-center font-black text-slate-400 text-xs py-6">번호</TableHead>
-                <TableHead className="font-black text-slate-900 text-xs py-6 px-4 text-left">설문 주제 (Survey Subject)</TableHead>
-                <TableHead className="w-[120px] font-black text-slate-400 text-xs py-6 text-center">응답 수</TableHead>
-                <TableHead className="w-[250px] font-black text-slate-400 text-xs py-6 text-center">조사 기간</TableHead>
-                <TableHead className="w-[120px] font-black text-slate-400 text-xs py-6 text-center">진행 상태</TableHead>
-                <TableHead className="w-[150px] font-black text-slate-400 text-xs py-6 text-right px-8">통계 리포트</TableHead>
+                <TableHead className="w-[80px] text-center font-black text-slate-400 text-xs py-6">踰덊샇</TableHead>
+                <TableHead className="font-black text-slate-900 text-xs py-6 px-4 text-left">?ㅻЦ 二쇱젣 (Survey Subject)</TableHead>
+                <TableHead className="w-[120px] font-black text-slate-400 text-xs py-6 text-center">?묐떟 ??/TableHead>
+                <TableHead className="w-[250px] font-black text-slate-400 text-xs py-6 text-center">議곗궗 湲곌컙</TableHead>
+                <TableHead className="w-[120px] font-black text-slate-400 text-xs py-6 text-center">吏꾪뻾 ?곹깭</TableHead>
+                <TableHead className="w-[150px] font-black text-slate-400 text-xs py-6 text-right px-8">?듦퀎 由ы룷??/TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="text-left border-none">
@@ -119,12 +119,12 @@ export default function SurveyStatsPage() {
               ) : polls.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-48 text-center text-slate-400 font-bold tracking-tight opacity-40">
-                    통계 데이터가 존재하지 않습니다.
+                    ?듦퀎 ?곗씠?곌? 議댁옱?섏? ?딆뒿?덈떎.
                   </TableCell>
                 </TableRow>
               ) : (
                 polls.map((poll, index) => (
-                  <TableRow key={poll.pollId} className="hover:bg-amber-50/30 transition-all border-b last:border-0 group border-slate-50">
+                  <TableRow key={poll.pollId} className="hover:bg-amber-50/30 transition border-b last:border-0 group border-slate-50">
                     <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
                         {index + 1 + ((params.page || 1) - 1) * 10}
                     </TableCell>
@@ -140,12 +140,11 @@ export default function SurveyStatsPage() {
                         </div>
                     </TableCell>
                     <TableCell className="text-center py-6">
-                        <Badge variant="outline" className="rounded-md font-bold px-3 border-amber-200 text-amber-600 bg-amber-50 group-hover:bg-amber-100 transition-colors">집계중</Badge>
+                        <Badge variant="outline" className="rounded-md font-bold px-3 border-amber-200 text-amber-600 bg-amber-50 group-hover:bg-amber-100 transition-colors">吏묎퀎以?/Badge>
                     </TableCell>
                     <TableCell className="text-right px-8 py-6">
-                      <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/survey/stats/${poll.pollId}`)} className="rounded-[0.1rem] font-black text-xs gap-2 group-hover:bg-amber-500 group-hover:text-white transition-all">
-                        <BarChart3 className="h-4 w-4" /> 결과 리포트
-                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/survey/stats/${poll.pollId}`)} className="rounded-[0.1rem] font-black text-xs gap-2 group-hover:bg-amber-500 group-hover:text-white transition">
+                        <BarChart3 className="h-4 w-4" /> 寃곌낵 由ы룷??                      </Button>
                     </TableCell>
                   </TableRow>
                 ))

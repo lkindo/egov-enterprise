@@ -88,7 +88,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           <Button variant="outline" className="h-14 px-6 rounded-[0.1rem] border-2 font-black tracking-tight gap-2">
             <Download size={18} /> 데이터셋 내보내기
           </Button>
-          <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition-all gap-2">
+          <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition gap-2">
             <RefreshCcw size={20} /> 강제 새로고침
           </Button>
         </div>
@@ -160,7 +160,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                     <div className="space-y-6">
                       {isSurveyLoading && <div className="p-10 text-center opacity-40 italic">설문 저장소 동기화 중...</div>}
                       {surveys?.list?.map((s: any) => (
-                        <div key={s.qestnrId} className="p-8 rounded-[0.1rem] bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all">
+                        <div key={s.qestnrId} className="p-8 rounded-[0.1rem] bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl transition">
                           <div className="flex items-center gap-6">
                             <div className="w-14 h-14 bg-white rounded-[0.1rem] flex items-center justify-center shadow-sm">
                               <Vote className="text-primary" />
@@ -174,7 +174,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                               </p>
                             </div>
                           </div>
-                          <Button variant="ghost" className="rounded-[0.1rem] h-10 text-[9px] font-black tracking-tight gap-2 transition-all group-hover:translate-x-2">분석 상세 보기 <ChevronRight size={14} /></Button>
+                          <Button variant="ghost" className="rounded-[0.1rem] h-10 text-[9px] font-black tracking-tight gap-2 transition group-hover:translate-x-2">분석 상세 보기 <ChevronRight size={14} /></Button>
                         </div>
                       ))}
                     </div>
@@ -214,14 +214,14 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
     <button
       onClick={onClick}
       className={cn(
-        "w-full group p-6 rounded-[0.1rem] border-2 transition-all flex items-center gap-5 mb-2",
+        "w-full group p-6 rounded-[0.1rem] border-2 transition flex items-center gap-5 mb-2",
         active
           ? "bg-slate-900 border-slate-900 text-white shadow-xl"
           : "bg-white border-transparent hover:border-slate-50 text-slate-500 hover:text-slate-900"
       )}
     >
       <div className={cn(
-        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all",
+        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition",
         active ? "bg-white/10 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"
       )}>
         {icon}
@@ -233,7 +233,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
 
 function StatSummaryCard({ icon, label, value, trend, color = 'slate' }: { icon: React.ReactNode, label: string, value: string, trend: string, color?: string }) {
   return (
-    <Card className="rounded-[0.1rem] border-0 bg-white shadow-2xl p-10 ring-1 ring-slate-100 hover:scale-[1.05] transition-all">
+    <Card className="rounded-[0.1rem] border-0 bg-white shadow-2xl p-10 ring-1 ring-slate-100 hover:scale-[1.05] transition">
       <div className="space-y-6">
         <div className={cn(
           "w-14 h-14 rounded-[0.1rem] flex items-center justify-center shadow-lg transition-transform hover:rotate-12",

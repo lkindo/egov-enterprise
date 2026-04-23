@@ -71,7 +71,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
           const isCurrentPath = fromNode.status === 'completed' && toNode.status === 'current';
 
           return (
-            <g key={edge.id} className="transition-all duration-700">
+            <g key={edge.id} className="transition duration-700">
               <path
                 d={`M ${fromNode.position.x + 100} ${fromNode.position.y + 40}
                 C ${fromNode.position.x + 160} ${fromNode.position.y + 40},
@@ -81,7 +81,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
                 stroke="currentColor"
                 strokeWidth={isCurrentPath ? 3 : 2}
                 className={cn(
-                  "transition-all duration-1000",
+                  "transition duration-1000",
                   isCurrentPath ? "text-primary stroke-dasharray-[8] animate-dash" : "text-muted-foreground/20"
                 )}
                 style={{
@@ -110,10 +110,10 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
           <div
             key={node.id}
             className={cn(
-              "absolute w-56 p-5 rounded-[0.1rem] border-2 transition-all duration-500 cursor-pointer flex flex-col gap-3 group/node",
+              "absolute w-56 p-5 rounded-[0.1rem] border-2 transition duration-500 cursor-pointer flex flex-col gap-3 group/node",
               node.status === 'current' ? "bg-card border-primary shadow-[0_20px_40px_rgba(59,130,246,0.15)] scale-105" :
               node.status === 'completed' ? "bg-emerald-50 border-emerald-500/20 shadow-sm" :
-              "bg-card border-muted opacity-100 hover:scale-105 transition-all"
+              "bg-card border-muted opacity-100 hover:scale-105 transition"
             )}
             style={{ left: node.position.x, top: node.position.y }}
             onMouseEnter={() => setHoveredNode(node.id)}
@@ -145,7 +145,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
 
             {/* Hover Actions */}
             <div className={cn(
-              "absolute top-2 -right-12 flex flex-col gap-2 transition-all",
+              "absolute top-2 -right-12 flex flex-col gap-2 transition",
               hoveredNode === node.id ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"
             )}>
               <button className="p-2 bg-card border rounded-full shadow-lg text-muted-foreground hover:text-primary transition-colors">

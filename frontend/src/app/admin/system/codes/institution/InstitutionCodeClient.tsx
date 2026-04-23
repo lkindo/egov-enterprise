@@ -220,7 +220,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
         item.processSe !== '1' && (
           <Button 
             onClick={() => handleProcess(item)}
-            className="h-10 px-6 rounded-[0.1rem] bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition-all gap-2"
+            className="h-10 px-6 rounded-[0.1rem] bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition gap-2"
           >
             <MonitorCheck size={14} /> 반영 적용
           </Button>
@@ -242,7 +242,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             <button 
                 onClick={() => setActiveTab('list')}
                 className={cn(
-                    "px-8 h-12 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
+                    "px-8 h-12 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase transition flex items-center gap-2",
                     activeTab === 'list' ? "bg-white text-slate-900 shadow-xl ring-1 ring-slate-100" : "text-muted-foreground hover:bg-white/50"
                 )}>
                 <Server size={14} /> 노드 인벤토리
@@ -250,7 +250,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
             <button 
                 onClick={() => setActiveTab('reception')}
                 className={cn(
-                    "px-8 h-12 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
+                    "px-8 h-12 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase transition flex items-center gap-2",
                     activeTab === 'reception' ? "bg-white text-slate-900 shadow-xl ring-1 ring-slate-100" : "text-muted-foreground hover:bg-white/50"
                 )}>
                 <History size={14} /> 수신 파이프라인
@@ -283,11 +283,11 @@ export default function InstitutionCodeClient({ initialData }: { initialData: an
                         activeTab === 'list' ? loadListData(searchWrd, 1) : loadReceptionData(searchWrd, 1);
                     }
                   }}
-                  className="h-16 pl-16 pr-8 w-full bg-slate-50/50 border-none rounded-[0.1rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                  className="h-16 pl-16 pr-8 w-full bg-slate-50/50 border-none rounded-[0.1rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition"
                 />
             </div>
           </div>
-          <Button variant="outline" size="lg" className="h-16 px-10 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2 hover:bg-slate-50 transition-all group">
+          <Button variant="outline" size="lg" className="h-16 px-10 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2 hover:bg-slate-50 transition group">
             <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 데이터 내보내기
           </Button>
         </div>

@@ -82,10 +82,10 @@ export default function EventManagementClient() {
         icon={Calendar} 
         actions={
           <div className="flex gap-4">
-             <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-100 text-slate-400 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
+             <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-100 text-slate-400 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition gap-3 border shadow-sm">
                <History size={18} /> 아카이브 보기
              </Button>
-             <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
+             <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition shadow-2xl gap-3 shadow-slate-900/20">
                <Plus size={18} /> 행사 신규 생성
              </Button>
           </div>
@@ -194,7 +194,7 @@ function InsightCard({ label, value, desc, trend, type }: any) {
 
   return (
     <Card className={cn(
-      "rounded-[0.1rem] border-2 bg-white p-10 space-y-6 transition-all hover:ring-[25px] flex flex-col justify-between shadow-xl", 
+      "rounded-[0.1rem] border-2 bg-white p-10 space-y-6 transition hover:ring-[25px] flex flex-col justify-between shadow-xl", 
       colorMap[type]
     )}>
        <div className="space-y-1">

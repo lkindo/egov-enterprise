@@ -26,8 +26,8 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
         let rule: z.ZodTypeAny = z.string();
         if (field.type === 'number') rule = z.number();
         if (field.required) {
-            if (field.type === 'checkbox') rule = z.boolean().refine(v => v === true, { message: "필수 동의 항목입니다" });
-            else rule = (rule as z.ZodString).min(1, { message: `${field.label}은(는) 필수 입력 항목입니다` });
+            if (field.type === 'checkbox') rule = z.boolean().refine(v => v === true, { message: "?꾩닔 ?숈쓽 ??ぉ?낅땲?? });
+            else rule = (rule as z.ZodString).min(1, { message: `${field.label}?(?? ?꾩닔 ?낅젰 ??ぉ?낅땲?? });
         } else {
             rule = rule.optional();
         }
@@ -65,12 +65,12 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
                                                 placeholder={field.placeholder}
                                                 {...formField}
                                                 value={(formField.value as string) || ''}
-                                                className="rounded-[0.1rem] border-2 border-primary/5 focus:border-primary/20 transition-all min-h-[120px]"
+                                                className="rounded-[0.1rem] border-2 border-primary/5 focus:border-primary/20 transition min-h-[120px]"
                                             />
                                         ) : field.type === 'select' ? (
                                             <Select onValueChange={formField.onChange} defaultValue={formField.value as string}>
-                                                <SelectTrigger className="h-12 rounded-[0.1rem] border-2 border-primary/5 focus:ring-primary/20 transition-all font-bold">
-                                                    <SelectValue placeholder={field.placeholder || "선택하세요"} />
+                                                <SelectTrigger className="h-12 rounded-[0.1rem] border-2 border-primary/5 focus:ring-primary/20 transition font-bold">
+                                                    <SelectValue placeholder={field.placeholder || "?좏깮?섏꽭??} />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-[0.1rem] border-primary/10">
                                                     {field.options?.map(opt => (
@@ -79,15 +79,15 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
                                                 </SelectContent>
                                             </Select>
                                         ) : field.type === 'checkbox' ? (
-                                            <div className="flex items-center space-x-3 p-4 bg-muted/30 rounded-[0.1rem] border-2 border-transparent hover:border-primary/10 transition-all group">
+                                            <div className="flex items-center space-x-3 p-4 bg-muted/30 rounded-[0.1rem] border-2 border-transparent hover:border-primary/10 transition group">
                                                 <Checkbox
                                                     checked={formField.value as boolean}
                                                     onCheckedChange={formField.onChange}
                                                     className="rounded-lg w-5 h-5 border-2 border-primary/20 data-[state=checked]:bg-primary"
                                                 />
-                                                <span className="text-sm font-bold text-foreground/80 group-hover:text-primary transition-colors cursor-pointer" onClick={() => formField.onChange(!formField.value)}>
-                                                    {field.placeholder || "동의합니다"}
-                                                </span>
+                                                <button type="button" className="text-sm font-bold text-foreground/80 group-hover:text-primary transition-colors cursor-pointer" onClick={() => formField.onChange(!formField.value)}>
+                                                    {field.placeholder || "?숈쓽?⑸땲??}
+                                                </button>
                                             </div>
                                         ) : (
                                             <Input
@@ -95,7 +95,7 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
                                                 placeholder={field.placeholder}
                                                 {...formField}
                                                 value={(formField.value as string) || ''}
-                                                className="h-12 rounded-[0.1rem] border-2 border-primary/5 focus:border-primary/20 transition-all font-bold"
+                                                className="h-12 rounded-[0.1rem] border-2 border-primary/5 focus:border-primary/20 transition font-bold"
                                             />
                                         )}
                                     </FormControl>
@@ -107,10 +107,9 @@ export function SmartFormRenderer({ schema, onSubmit, className }: SmartFormRend
 
                     <div className="col-span-2 pt-6 border-t border-primary/5 mt-4 flex justify-end gap-3">
                         <Button type="button" variant="outline" className="rounded-[0.1rem] h-12 px-8 font-bold border-2" onClick={() => form.reset()}>
-                            초기화
-                        </Button>
-                        <Button type="submit" className="rounded-[0.1rem] h-12 px-10 font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">
-                            문서 제출하기
+                            珥덇린??                        </Button>
+                        <Button type="submit" className="rounded-[0.1rem] h-12 px-10 font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transition">
+                            臾몄꽌 ?쒖텧?섍린
                         </Button>
                     </div>
                 </form>

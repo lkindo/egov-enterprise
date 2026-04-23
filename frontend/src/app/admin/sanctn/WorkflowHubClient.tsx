@@ -66,7 +66,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
   </p>
   </div>
   </div>
-  <Button className="h-14 px-8 rounded-[0.1rem] bg-primary text-white font-black tracking-tight shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all gap-3">
+  <Button className="h-14 px-8 rounded-[0.1rem] bg-primary text-white font-black tracking-tight shadow-xl shadow-primary/20 hover:-translate-y-1 transition gap-3">
   <Zap size={20} /> 워크플로우 배포
   </Button>
   </div>
@@ -125,7 +125,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
   key={form.id}
   onClick={() => setSelectedFormId(form.id)}
   className={cn(
-  "group p-6 rounded-[0.1rem] border-2 transition-all cursor-pointer flex items-center justify-between",
+  "group p-6 rounded-[0.1rem] border-2 transition cursor-pointer flex items-center justify-between",
   selectedFormId === form.id 
   ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]" 
   : "bg-white border-transparent hover:border-slate-50 text-slate-600"
@@ -219,14 +219,14 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
  <button 
  onClick={onClick}
  className={cn(
- "w-full group p-5 rounded-[0.1rem] border-2 transition-all flex items-center gap-4",
+ "w-full group p-5 rounded-[0.1rem] border-2 transition flex items-center gap-4",
  active 
  ? "bg-slate-900 border-slate-900 text-white shadow-xl" 
  : "bg-white border-transparent hover:border-slate-50 text-slate-500 hover:text-slate-900"
  )}
  >
  <div className={cn(
- "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition-all",
+ "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition",
  active ? "bg-white/10 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"
  )}>
  {icon}
@@ -239,7 +239,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
 function WorkflowNode({ type, label, date, active = false }: any) {
  return (
  <div className={cn(
- "p-5 rounded-[0.1rem] border-2 flex items-center gap-5 mx-10 transition-all",
+ "p-5 rounded-[0.1rem] border-2 flex items-center gap-5 mx-10 transition",
  active ? "bg-white border-primary shadow-xl scale-105" : "bg-white border-transparent shadow-sm opacity-60"
  )}>
  <div className={cn(

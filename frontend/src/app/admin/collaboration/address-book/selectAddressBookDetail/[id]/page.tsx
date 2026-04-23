@@ -73,7 +73,7 @@ const InsertAddressBookPage = () => {
                                     <Input
                                         id="adbkNm"
                                         placeholder="성명을 입력하세요"
-                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition-all"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition"
                                         value={formData.adbkNm}
                                         onChange={(e) => setFormData({ ...formData, adbkNm: e.target.value })}
                                         required
@@ -86,7 +86,7 @@ const InsertAddressBookPage = () => {
                                     <Input
                                         id="telNo"
                                         placeholder="010-0000-0000"
-                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition-all font-mono tracking-tight"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition font-mono tracking-tight"
                                         value={formData.telNo}
                                         onChange={(e) => setFormData({ ...formData, telNo: e.target.value })}
                                     />
@@ -102,7 +102,7 @@ const InsertAddressBookPage = () => {
                                         id="email"
                                         type="email"
                                         placeholder="example@egov.go.kr"
-                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition-all"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     />
@@ -114,7 +114,7 @@ const InsertAddressBookPage = () => {
                                     <Input
                                         id="adres"
                                         placeholder="상세 주소를 입력하세요"
-                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition-all"
+                                        className="h-14 text-base border-2 border-slate-50 focus:border-primary/20 bg-slate-50/50 rounded-[0.1rem] transition"
                                         value={formData.adres}
                                         onChange={(e) => setFormData({ ...formData, adres: e.target.value })}
                                     />
@@ -136,11 +136,11 @@ const InsertAddressBookPage = () => {
                     </CardContent>
                     <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-12 border-t bg-slate-50/30 rounded-b-[2.5rem] mt-10">
                         <Link href="/admin/collaboration/address-book/selectAddressBookList">
-                            <Button type="button" variant="ghost" className="h-16 px-10 gap-2 font-black text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-xl transition-all rounded-[0.1rem] border border-transparent hover:border-rose-50">
+                            <Button type="button" variant="ghost" className="h-16 px-10 gap-2 font-black text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-xl transition rounded-[0.1rem] border border-transparent hover:border-rose-50">
                                 <ArrowLeft className="w-5 h-5" /> 등록 취소
                             </Button>
                         </Link>
-                        <Button type="submit" className="h-16 px-16 gap-3 font-black bg-slate-900 text-white shadow-2xl shadow-slate-900/20 hover:bg-black transition-all active:scale-95 rounded-[0.1rem]" disabled={loading}>
+                        <Button type="submit" className="h-16 px-16 gap-3 font-black bg-slate-900 text-white shadow-2xl shadow-slate-900/20 hover:bg-black transition active:scale-95 rounded-[0.1rem]" disabled={loading}>
                             {loading ? (
                                 <span className="flex items-center gap-2 animate-pulse">처리 중...</span>
                             ) : (

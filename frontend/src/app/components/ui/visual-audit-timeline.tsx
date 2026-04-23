@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import {
  History as HistoryIcon,
@@ -78,10 +78,10 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <h2 className="text-2xl font-black tracking-tighter text-foreground ">{title}</h2>
  <div className="flex items-center gap-3 mt-1">
  <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 tracking-tight">
-   <ShieldCheck size={12} /> 보안 거버넌스 엔진 활성
+   <ShieldCheck size={12} /> 蹂댁븞 嫄곕쾭?뚯뒪 ?붿쭊 ?쒖꽦
  </div>
  <div className="h-3 w-px bg-muted" />
-   <span className="text-[10px] font-bold text-slate-600 tracking-tight leading-none opacity-80">실시간 데이터 무결성 모니터링</span>
+   <span className="text-[10px] font-bold text-slate-600 tracking-tight leading-none opacity-80">?ㅼ떆媛??곗씠??臾닿껐??紐⑤땲?곕쭅</span>
  </div>
  </div>
  </div>
@@ -90,14 +90,14 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div className="relative flex-1 md:w-64">
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={16} />
  <input
- className="w-full bg-muted/40 border-none rounded-[0.1rem] py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all"
- placeholder="검색.."
- aria-label="감사 로그 검색"
+ className="w-full bg-muted/40 border-none rounded-[0.1rem] py-3 pl-12 pr-4 text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ring-2 ring-transparent focus:ring-primary/20 transition"
+ placeholder="寃??."
+ aria-label="媛먯궗 濡쒓렇 寃??
  value={filter}
  onChange={(e) => setFilter(e.target.value)}
  />
  </div>
- <Button variant="outline" size="icon" className="rounded-[0.1rem] border-2 h-11 w-11 hover:bg-primary/5" aria-label="필터 설정"><Filter size={18} /></Button>
+ <Button variant="outline" size="icon" className="rounded-[0.1rem] border-2 h-11 w-11 hover:bg-primary/5" aria-label="?꾪꽣 ?ㅼ젙"><Filter size={18} /></Button>
  </div>
  </div>
 
@@ -107,7 +107,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div
  key={log.id}
  className={cn(
- "relative transition-all duration-700 animate-in fade-in slide-in-from-left-4",
+ "relative transition duration-700 animate-in fade-in slide-in-from-left-4",
  expandedLog === log.id ? "scale-100" : "hover:scale-[1.02]"
  )}
  style={{ animationDelay: `${idx * 100}ms` }}
@@ -132,7 +132,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  tabIndex={0}
  aria-expanded={expandedLog === log.id}
  className={cn(
- "group cursor-pointer rounded-[0.1rem] border-2 transition-all overflow-hidden outline-none focus:ring-2 focus:ring-primary",
+ "group cursor-pointer rounded-[0.1rem] border-2 transition overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus:ring-2 focus:ring-primary",
  expandedLog === log.id
  ? "bg-card border-primary/20 shadow-xl"
  : "bg-white dark:bg-slate-800 border-transparent hover:bg-muted/40"
@@ -151,7 +151,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  </span>
  </div>
  <p className="text-sm font-bold text-slate-600 tracking-tight">
-   <span className="text-primary font-black">{log.action === 'CREATE' ? '생성' : log.action === 'UPDATE' ? '수정' : log.action === 'DELETE' ? '삭제' : '복구'}</span> {log.entityName}
+   <span className="text-primary font-black">{log.action === 'CREATE' ? '?앹꽦' : log.action === 'UPDATE' ? '?섏젙' : log.action === 'DELETE' ? '??젣' : '蹂듦뎄'}</span> {log.entityName}
  </p>
  </div>
  </div>
@@ -171,7 +171,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  {expandedLog === log.id && log.changes && (
  <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-slate-100 dark:bg-slate-900 space-y-6 animate-in slide-in-from-top-4 duration-500">
  <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-4 flex items-center gap-2">
-   <Cpu size={12} /> AI 기반 변경 감지 엔진
+   <Cpu size={12} /> AI 湲곕컲 蹂寃?媛먯? ?붿쭊
  </h4>
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {log.changes?.map((change, cIdx) => (
@@ -182,7 +182,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  {change.before}
  </div>
  <ArrowRight size={14} className="text-muted-foreground/30 animate-pulse" />
- <div className="flex-1 p-3 rounded-[0.1rem] bg-emerald-50 border border-emerald-100/50 text-sm font-bold text-emerald-800 transition-all group-hover/change:bg-emerald-100">
+ <div className="flex-1 p-3 rounded-[0.1rem] bg-emerald-50 border border-emerald-100/50 text-sm font-bold text-emerald-800 transition group-hover/change:bg-emerald-100">
  {change.after}
  </div>
  </div>
@@ -192,12 +192,12 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
 
  <div className="flex justify-end gap-3 pt-4 border-t border-primary/5">
  <Button variant="ghost" size="sm" className="rounded-[0.1rem] font-bold h-10 px-6 gap-2 text-slate-700 hover:bg-rose-50 hover:text-rose-700">
- 분석 리포트 생성
+ 遺꾩꽍 由ы룷???앹꽦
  </Button>
  <Button variant="outline" size="sm" className="rounded-[0.1rem] font-black h-10 px-6 gap-2 border-2 hover:bg-primary/5">
- <Monitor size={16} /> 시각화 검증 </Button>
+ <Monitor size={16} /> ?쒓컖??寃利?</Button>
  <Button size="sm" className="rounded-[0.1rem] font-black h-10 px-8 gap-2 bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200">
- <RotateCcw size={16} /> 스냅샷 롤백
+ <RotateCcw size={16} /> ?ㅻ깄??濡ㅻ갚
  </Button>
  </div>
  </div>
@@ -212,15 +212,15 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div className="flex items-center gap-6">
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-   <span className="text-[10px] font-black text-slate-700 tracking-tight">마스터 저장소 동기화됨</span>
+   <span className="text-[10px] font-black text-slate-700 tracking-tight">留덉뒪????μ냼 ?숆린?붾맖</span>
  </div>
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-   <span className="text-[10px] font-black text-slate-700 tracking-tight">암호화 알고리즘 AES-256 (NIST)</span>
+   <span className="text-[10px] font-black text-slate-700 tracking-tight">?뷀샇???뚭퀬由ъ쬁 AES-256 (NIST)</span>
  </div>
  </div>
  <p className="text-[10px] font-black text-slate-600 tracking-tight opacity-70 mt-4 md:mt-0">
- Total Audit Records: {logs?.length || 0} 데이터 무결성 검증 완료
+ Total Audit Records: {logs?.length || 0} ?곗씠??臾닿껐??寃利??꾨즺
  </p>
  </div>
  </div>

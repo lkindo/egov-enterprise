@@ -63,10 +63,10 @@ export default function BoardWritePage() {
                 breadcrumbs={[{ label: '게시판', href: '/admin/community/boards' }, { label: '글쓰기' }]}
                 actions={
                     <div className="flex gap-2">
-                        <button onClick={() => router.back()} className="px-4 py-2 border rounded-lg font-bold hover:bg-accent transition-all flex items-center gap-2">
+                        <button onClick={() => router.back()} className="px-4 py-2 border rounded-lg font-bold hover:bg-accent transition flex items-center gap-2">
                             <X size={18} /> 취소
                         </button>
-                        <button onClick={handleSave} className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all flex items-center gap-2">
+                        <button onClick={handleSave} className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition flex items-center gap-2">
                             <Send size={18} /> 등록
                         </button>
                     </div>
@@ -82,7 +82,7 @@ export default function BoardWritePage() {
                             value={formData.nttSj}
                             onChange={(e) => setFormData({ ...formData, nttSj: e.target.value })}
                             placeholder="제목을 입력해 주세요."
-                            className="w-full h-12 px-4 rounded-[0.1rem] border bg-card text-lg font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+                            className="w-full h-12 px-4 rounded-[0.1rem] border bg-card text-lg font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus:ring-2 focus:ring-primary/20 shadow-sm"
                         />
                     </FormField>
 
@@ -107,7 +107,7 @@ export default function BoardWritePage() {
                             <select
                                 value={formData.bbsId}
                                 onChange={(e) => setFormData({ ...formData, bbsId: e.target.value })}
-                                className="w-full h-12 px-4 rounded-[0.1rem] border bg-card text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+                                className="w-full h-12 px-4 rounded-[0.1rem] border bg-card text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus:ring-2 focus:ring-primary/20 shadow-sm"
                             >
                                 <option value="BBSMSTR_AAAAAAAAAAAA">공지사항</option>
                                 <option value="BBSMSTR_BBBBBBBBBBBB">자유게시판</option>

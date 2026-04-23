@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -28,11 +28,11 @@ import { Button } from '@/components/ui/button';
 import { PageResponse } from '@/types/foundation/system';
 
 const logCategories = [
-  { id: 'SYS', label: '시스템로그', icon: <Terminal size={20} />, description: '서비스 및 메소드 수행 이력', serviceMethod: 'getSystemLogs' },
-  { id: 'LGN', label: '로그인로그', icon: <Lock size={20} />, description: '사용자 접속 및 인증 기록', serviceMethod: 'getLoginLogs' },
-  { id: 'USR', label: '사용자 활동', icon: <UserCheck size={20} />, description: '데이터 변경 및 권한 추적', serviceMethod: 'getUserLogs' },
-  { id: 'WEB', label: '웹 로그', icon: <Globe size={20} />, description: 'HTTP 요청 및 처리 분석', serviceMethod: 'getWebLogs' },
-  { id: 'TRS', label: '전송 로그', icon: <Activity size={20} />, description: '외부 연동 및 배치 결과', serviceMethod: 'getTransferLogs' },
+  { id: 'SYS', label: '?쒖뒪?쒕줈洹?, icon: <Terminal size={20} />, description: '?쒕퉬??諛?硫붿냼???섑뻾 ?대젰', serviceMethod: 'getSystemLogs' },
+  { id: 'LGN', label: '濡쒓렇?몃줈洹?, icon: <Lock size={20} />, description: '?ъ슜???묒냽 諛??몄쬆 湲곕줉', serviceMethod: 'getLoginLogs' },
+  { id: 'USR', label: '?ъ슜???쒕룞', icon: <UserCheck size={20} />, description: '?곗씠??蹂寃?諛?沅뚰븳 異붿쟻', serviceMethod: 'getUserLogs' },
+  { id: 'WEB', label: '??濡쒓렇', icon: <Globe size={20} />, description: 'HTTP ?붿껌 諛?泥섎━ 遺꾩꽍', serviceMethod: 'getWebLogs' },
+  { id: 'TRS', label: '?꾩넚 濡쒓렇', icon: <Activity size={20} />, description: '?몃? ?곕룞 諛?諛곗튂 寃곌낵', serviceMethod: 'getTransferLogs' },
 ];
 
 export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPromise: Promise<any> }) {
@@ -68,7 +68,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
   const columns = useMemo(() => {
     const commonCols: Column<any>[] = [
       {
-        header: '발생 시각',
+        header: '諛쒖깮 ?쒓컖',
         accessor: (item: any) => (
           <div className="flex items-center gap-3 py-3">
             <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
@@ -87,7 +87,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
       return [
         ...commonCols,
         {
-          header: '요청자',
+          header: '?붿껌??,
           accessor: (item: any) => (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center bg-white shadow-sm font-black text-[10px] text-slate-400">
@@ -98,13 +98,13 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
           )
         },
         {
-          header: '접속 IP',
+          header: '?묒냽 IP',
           accessor: (item: any) => (
             <div className="font-mono text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1 rounded-lg border w-fit">{item.loginIp}</div>
           )
         },
         {
-          header: '구분',
+          header: '援щ텇',
           accessor: (item: any) => (
             <HubStatusBadge label={item.loginMthd} variant={item.loginMthd === 'LOGIN' ? 'success' : 'secondary'} />
           )
@@ -115,14 +115,14 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
     return [
       ...commonCols,
       {
-        header: '요청자',
+        header: '?붿껌??,
         className: 'w-32',
         accessor: (item: any) => (
           <span className="text-xs font-bold text-slate-700">{item.rqsterNm || item.rqesterId || 'SYSTEM'}</span>
         )
       },
       {
-        header: '수행 서비스 / 리소스',
+        header: '?섑뻾 ?쒕퉬??/ 由ъ냼??,
         accessor: (item: any) => (
           <div className="flex flex-col gap-0.5 max-w-md">
             <span className="text-[11px] font-black text-foreground truncate uppercase tracking-tighter italic">{item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
@@ -131,7 +131,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         )
       },
       {
-        header: '접속 정보',
+        header: '?묒냽 ?뺣낫',
         accessor: (item: any) => (
           <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-slate-400">
             <Globe size={11} className="opacity-40" />
@@ -145,29 +145,28 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="로그 통합 리포트"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }]}
+        title="濡쒓렇 ?듯빀 由ы룷??
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '濡쒓렇愿由? }]}
       />
 
       <HubHeader
-        title="시스템"
-        highlight="로그 통합 관리"
-        subtitle="시스템 전반에서 발생하는 보안, 접속, 행동, 웹 요청 로그를 통합적으로 모니터링합니다"
+        title="?쒖뒪??
+        highlight="濡쒓렇 ?듯빀 愿由?
+        subtitle="?쒖뒪???꾨컲?먯꽌 諛쒖깮?섎뒗 蹂댁븞, ?묒냽, ?됰룞, ???붿껌 濡쒓렇瑜??듯빀?곸쑝濡?紐⑤땲?곕쭅?⑸땲??
         icon={History}
         actions={
           <div className="flex gap-4">
             <Button variant="outline" size="lg" className="h-14 px-8 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest gap-3">
-              <SearchCode size={18} /> 상세 로그 검색
-            </Button>
+              <SearchCode size={18} /> ?곸꽭 濡쒓렇 寃??            </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="오늘 전체 로그" value="1,492" icon={Database} color="primary" />
-        <HubMetricCard title="보안 위협 로그" value="3" icon={Lock} color="rose" status="이상 징후" />
-        <HubMetricCard title="활성 세션" value="84" icon={Activity} color="emerald" status="안전" />
-        <HubMetricCard title="평균 처리 속도" value="38ms" icon={Zap} color="amber" />
+        <HubMetricCard title="?ㅻ뒛 ?꾩껜 濡쒓렇" value="1,492" icon={Database} color="primary" />
+        <HubMetricCard title="蹂댁븞 ?꾪삊 濡쒓렇" value="3" icon={Lock} color="rose" status="?댁긽 吏뺥썑" />
+        <HubMetricCard title="?쒖꽦 ?몄뀡" value="84" icon={Activity} color="emerald" status="?덉쟾" />
+        <HubMetricCard title="?됯퇏 泥섎━ ?띾룄" value="38ms" icon={Zap} color="amber" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
@@ -178,14 +177,14 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
                 key={cat.id}
                 onClick={() => setCategory(cat.id)}
                 className={cn(
-                  "w-full group p-6 rounded-[0.1rem] border-2 transition-all flex items-center gap-5 relative overflow-hidden",
+                  "w-full group p-6 rounded-[0.1rem] border-2 transition flex items-center gap-5 relative overflow-hidden",
                   activeCategory === cat.id
                     ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
                     : "bg-transparent border-transparent hover:bg-slate-100 text-slate-400 hover:text-slate-900"
                 )}
               >
                 <div className={cn(
-                  "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition-all shadow-lg",
+                  "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition shadow-lg",
                   activeCategory === cat.id ? "bg-white/10 text-white" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white"
                 )}>
                   {cat.icon}
@@ -201,8 +200,8 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
 
         <div className="col-span-12 lg:col-span-9">
           <HubSectionCard
-            title="실시간 로그 스트림"
-            description={`${logCategories.find(c => c.id === activeCategory)?.label}에서 실시간으로 유입되는 활동 스트림 데이터입니다.`}
+            title="?ㅼ떆媛?濡쒓렇 ?ㅽ듃由?
+            description={`${logCategories.find(c => c.id === activeCategory)?.label}?먯꽌 ?ㅼ떆媛꾩쑝濡??좎엯?섎뒗 ?쒕룞 ?ㅽ듃由??곗씠?곗엯?덈떎.`}
             icon={Activity}
           >
             <StandardDataTable
@@ -212,7 +211,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
               className="border-none bg-transparent"
               onRowClick={(item) => setSelectedLog(item)}
               search={{
-                placeholder: '요청자 IP, 메시지 등으로 정밀 분석...',
+                placeholder: '?붿껌??IP, 硫붿떆吏 ?깆쑝濡??뺣? 遺꾩꽍...',
                 onSearch: (keyword) => setParams({ ...params, searchKeyword: keyword, page: 1 })
               }}
             />
@@ -243,11 +242,11 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
                 <Terminal size={22} />
               </div>
               <div className="text-left">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">로그 리소스 식별자</p>
-                <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || '식별자 없음'}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">濡쒓렇 由ъ냼???앸퀎??/p>
+                <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || '?앸퀎???놁쓬'}</p>
               </div>
             </div>
-            <HubStatusBadge label="확인됨" variant="success" />
+            <HubStatusBadge label="?뺤씤?? variant="success" />
           </div>
 
           <div className="space-y-4">
@@ -264,7 +263,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
             <button 
                 type="button"
                 onClick={() => setSelectedLog(null)} 
-                className="flex-1 h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl"
+                className="flex-1 h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition active:scale-95 shadow-xl"
             >
               CLOSE_INSPECTOR
             </button>

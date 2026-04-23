@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -27,9 +27,9 @@ interface TimelineItemProps {
 
 export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspect, isSelected }) => {
   const content = String(log.histCn || (log as any).methodNm || '');
-  const isSecurity = content.includes('로그인') || content.includes('보안') || content.includes('login') || content.includes('security');
-  const isSystem = content.includes('시스템') || content.includes('배포') || content.includes('system') || content.includes('deploy');
-  const isError = content.includes('오류') || content.includes('실패') || content.includes('error') || content.includes('fail');
+  const isSecurity = content.includes('濡쒓렇??) || content.includes('蹂댁븞') || content.includes('login') || content.includes('security');
+  const isSystem = content.includes('?쒖뒪??) || content.includes('諛고룷') || content.includes('system') || content.includes('deploy');
+  const isError = content.includes('?ㅻ쪟') || content.includes('?ㅽ뙣') || content.includes('error') || content.includes('fail');
   
   const getIcon = () => {
     if (isError) return <AlertCircle size={20} />;
@@ -59,7 +59,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
       transition={{ delay: index * 0.05, duration: 0.5 }}
       onClick={() => onInspect(log)}
       className={cn(
-        "group relative flex gap-8 pb-10 cursor-pointer transition-all",
+        "group relative flex gap-8 pb-10 cursor-pointer transition",
         isSelected ? "opacity-100" : "opacity-80 hover:opacity-100"
       )}
     >
@@ -69,7 +69,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
       {/* Time & Icon Capsule */}
       <div className="relative flex-shrink-0">
         <div className={cn(
-          "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all duration-500 shadow-xl z-10 relative",
+          "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition duration-500 shadow-xl z-10 relative",
           getColor(),
           isSelected ? "scale-110 rotate-12" : "group-hover:rotate-6"
         )}>
@@ -82,7 +82,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
 
       {/* Content Fabric */}
       <div className={cn(
-        "flex-1 p-8 rounded-[0.1rem] border-2 bg-white transition-all duration-500 shadow-sm overflow-hidden relative",
+        "flex-1 p-8 rounded-[0.1rem] border-2 bg-white transition duration-500 shadow-sm overflow-hidden relative",
         getBorderColor(),
         isSelected ? "shadow-2xl translate-x-3 bg-slate-50/50" : "hover:shadow-lg"
       )}>

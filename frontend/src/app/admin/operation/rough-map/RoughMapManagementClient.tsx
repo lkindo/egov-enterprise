@@ -41,10 +41,10 @@ export default function RoughMapManagementClient() {
           <p className="text-xs font-bold text-slate-400 tracking-tight mt-2 max-w-lg">?먭퀬釉님뷀꽣?꾨씪?댁쫰님?쒖꽕 및 嫄곗젏 ?뺣낫瑜吏媛媛ν븳 ?쒕뱶留덊겕濡관리ы븯님怨듦컙 인텔리전스?쇳꽣?낅땲님</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
-           <Button className="h-14 px-8 rounded-[0.1rem] bg-white text-slate-900 font-black tracking-widest text-[10px] uppercase border-2 border-slate-900 hover:bg-slate-900 hover:text-white transition-all gap-3 shadow-xl shadow-slate-900/10">
+           <Button className="h-14 px-8 rounded-[0.1rem] bg-white text-slate-900 font-black tracking-widest text-[10px] uppercase border-2 border-slate-900 hover:bg-slate-900 hover:text-white transition gap-3 shadow-xl shadow-slate-900/10">
              <Globe size={18} /> 吏님?쒕퉬님?곕룞
            </Button>
-           <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
+           <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition shadow-2xl gap-3 shadow-slate-900/20">
              <Plus size={18} /> 嫄곗젏 신규 등록
            </Button>
         </div>
@@ -82,7 +82,7 @@ export default function RoughMapManagementClient() {
                     <motion.div 
                       layout
                       key={map.roughMapId} 
-                      className="p-6 bg-white border border-slate-50 rounded-[0.1rem] hover:ring-[15px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group flex items-center justify-between"
+                      className="p-6 bg-white border border-slate-50 rounded-[0.1rem] hover:ring-[15px] hover:ring-primary/5 hover:border-primary/20 transition cursor-pointer group flex items-center justify-between"
                     >
                        <div className="flex items-center gap-5">
                           <div className="w-12 h-12 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white group-hover:bg-primary transition-colors pr-2">
@@ -142,8 +142,8 @@ export default function RoughMapManagementClient() {
                       }}
                     >
                        <div className="relative group/pin cursor-pointer">
-                          <div className="absolute -inset-4 bg-primary/20 rounded-full blur-xl group-hover/pin:bg-primary/40 animate-pulse transition-all" />
-                          <div className="w-10 h-10 bg-slate-900 text-white rounded-[0.1rem] flex items-center justify-center shadow-2xl border-2 border-white group-hover/pin:bg-primary transition-all rotate-45 -translate-y-4 group-hover/pin:-translate-y-6">
+                          <div className="absolute -inset-4 bg-primary/20 rounded-full blur-xl group-hover/pin:bg-primary/40 animate-pulse transition" />
+                          <div className="w-10 h-10 bg-slate-900 text-white rounded-[0.1rem] flex items-center justify-center shadow-2xl border-2 border-white group-hover/pin:bg-primary transition rotate-45 -translate-y-4 group-hover/pin:-translate-y-6">
                              <MapPin size={18} className="-rotate-45" />
                           </div>
                           <div className="absolute top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900 text-white px-3 py-1.5 rounded-[0.1rem] text-[9px] font-black uppercase tracking-widest opacity-0 group-hover/pin:opacity-100 transition-opacity shadow-2xl">
@@ -156,8 +156,8 @@ export default function RoughMapManagementClient() {
 
               {/* Bottom Control */}
               <div className="absolute bottom-12 right-12 flex gap-4">
-                 <Button className="h-14 w-14 rounded-[0.1rem] bg-white/90 backdrop-blur-xl shadow-2xl border border-white text-slate-900 group-hover:scale-110 transition-all"><Layers size={20} /></Button>
-                 <Button className="h-14 px-10 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-[0.3em] text-[10px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:bg-primary transition-all uppercase italic">怨듦컙 ?쒕님덉씠님ㅽ뻾</Button>
+                 <Button className="h-14 w-14 rounded-[0.1rem] bg-white/90 backdrop-blur-xl shadow-2xl border border-white text-slate-900 group-hover:scale-110 transition"><Layers size={20} /></Button>
+                 <Button className="h-14 px-10 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-[0.3em] text-[10px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:bg-primary transition uppercase italic">怨듦컙 ?쒕님덉씠님ㅽ뻾</Button>
               </div>
            </Card>
         </div>

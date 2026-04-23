@@ -61,7 +61,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
     editorProps: {
       attributes: {
         class: cn(
-          'prose dark:prose-invert prose-slate max-w-none min-h-[400px] outline-none p-10 font-sans text-lg focus:ring-0',
+          'prose dark:prose-invert prose-slate max-w-none min-h-[400px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 p-10 font-sans text-lg focus:ring-0',
           'prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase',
           'prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:bg-primary/5 prose-blockquote:px-8 prose-blockquote:py-4 prose-blockquote:rounded-r-2xl'
         ),
@@ -72,7 +72,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
   if (!mounted || !editor) return null;
 
   return (
-    <div className={cn("relative group border-2 border-border/50 rounded-[0.1rem] bg-white dark:bg-muted/10 overflow-hidden transition-all focus-within:border-primary/20 focus-within:shadow-2xl focus-within:shadow-primary/5", className)}>
+    <div className={cn("relative group border-2 border-border/50 rounded-[0.1rem] bg-white dark:bg-muted/10 overflow-hidden transition focus-within:border-primary/20 focus-within:shadow-2xl focus-within:shadow-primary/5", className)}>
       
       {/* --- Top Persistent Toolbar --- */}
       <div className="flex items-center flex-wrap gap-2 p-4 bg-slate-50 dark:bg-muted/20 border-b border-border/50 relative z-20">
@@ -189,7 +189,7 @@ function ToolbarButton({ onClick, active, icon, className }: ToolbarButtonProps)
       variant="ghost"
       onClick={onClick}
       className={cn(
-        "w-10 h-10 p-0 rounded-[0.1rem] transition-all duration-300",
+        "w-10 h-10 p-0 rounded-[0.1rem] transition duration-300",
         active 
           ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" 
           : "hover:bg-primary/10 hover:text-primary text-muted-foreground",

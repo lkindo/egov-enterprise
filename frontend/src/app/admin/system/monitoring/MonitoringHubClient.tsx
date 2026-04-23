@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -124,7 +124,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const deleteCommentMutation = useMutation({
     mutationFn: (id: number) => commentAdminService.deleteComment(id),
     onSuccess: () => {
-      toast('댓글이 성공적으로 삭제되었습니다.', 'success');
+      toast('?볤????깃났?곸쑝濡???젣?섏뿀?듬땲??', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-comments'] });
       if (selectedItemId) setSelectedItemId(null);
     }
@@ -229,7 +229,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 variant="ghost" 
                 size="icon" 
                 onClick={(e) => { e.stopPropagation(); deleteCommentMutation.mutate(c.commentNo); }} 
-                className="text-white bg-rose-500/20 hover:bg-rose-500/40 rounded-[0.1rem] transition-all relative z-10 shrink-0 h-10 w-10"
+                className="text-white bg-rose-500/20 hover:bg-rose-500/40 rounded-[0.1rem] transition relative z-10 shrink-0 h-10 w-10"
             >
               <Trash2 size={16} />
             </Button>
@@ -262,12 +262,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       <SystemStatusRadar 
          title="HEURISTIC_SYSTEM_HEALTH"
          data={[
-            { subject: '가용성', A: 99 },
-            { subject: '보안성', A: 95 },
-            { subject: '응답속도', A: 88 },
-            { subject: '무결성', A: 100 },
-            { subject: '확장성', A: 75 },
-            { subject: '안정성', A: 92 },
+            { subject: '媛?⑹꽦', A: 99 },
+            { subject: '蹂댁븞??, A: 95 },
+            { subject: '?묐떟?띾룄', A: 88 },
+            { subject: '臾닿껐??, A: 100 },
+            { subject: '?뺤옣??, A: 75 },
+            { subject: '?덉젙??, A: 92 },
          ]}
       />
 
@@ -278,12 +278,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="relative z-10 space-y-12">
           <div className="flex items-center gap-6">
             <div className="w-5 h-5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_20px_rgba(16,185,129,0.8)]" />
-            <h3 className="text-3xl font-black tracking-tighter uppercase leading-none italic">코어 엔진: 최적 상태</h3>
+            <h3 className="text-3xl font-black tracking-tighter uppercase leading-none italic">肄붿뼱 ?붿쭊: 理쒖쟻 ?곹깭</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <StatusIndicator label="API Microservices" status="온라인" icon={Network} />
-            <StatusIndicator label="PostgreSQL Cluster" status="동기화됨" icon={Database} />
-            <StatusIndicator label="Redis Cache Fabric" status="안정" icon={CheckCircle2} />
+            <StatusIndicator label="API Microservices" status="?⑤씪?? icon={Network} />
+            <StatusIndicator label="PostgreSQL Cluster" status="?숆린?붾맖" icon={Database} />
+            <StatusIndicator label="Redis Cache Fabric" status="?덉젙" icon={CheckCircle2} />
           </div>
         </div>
       </div>
@@ -293,14 +293,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="시스템 인텔리전스 거버넌스"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '모니터링 허브' }]}
+        title="?쒖뒪???명뀛由ъ쟾??嫄곕쾭?뚯뒪"
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '紐⑤땲?곕쭅 ?덈툕' }]}
       />
 
       <HubHeader 
         title="Auditing" 
         highlight="Intelligence" 
-        subtitle="전사 인프라 로깅 프로토콜 및 실시간 데이터 무결성 관찰 시스템" 
+        subtitle="?꾩궗 ?명봽??濡쒓퉭 ?꾨줈?좎퐳 諛??ㅼ떆媛??곗씠??臾닿껐??愿李??쒖뒪?? 
         icon={Activity} 
         actions={
           <div className="flex gap-4 p-2">
@@ -308,12 +308,11 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 variant="outline" 
                 size="lg" 
                 onClick={() => setIsReportModalOpen(true)}
-                className="h-14 px-8 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-3 hover:bg-slate-50 transition-all shadow-sm group"
+                className="h-14 px-8 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-3 hover:bg-slate-50 transition shadow-sm group"
             >
-              <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 리포트 스냅샷
-            </Button>
-            <Button size="lg" className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
-              <Bell size={20} /> 알림 정책
+              <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 由ы룷???ㅻ깄??            </Button>
+            <Button size="lg" className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition hover:-translate-y-1 gap-3">
+              <Bell size={20} /> ?뚮┝ ?뺤콉
             </Button>
           </div>
         }
@@ -323,12 +322,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         {/* --- Navigation Side Panel --- */}
         <div className="col-span-12 lg:col-span-3 space-y-8 h-fit lg:sticky lg:top-8">
           <div className="rounded-[0.1rem] p-4 bg-white/40 backdrop-blur-xl border-2 border-slate-100 shadow-xl space-y-3">
-            <NavButton icon={<ShieldAlert size={22} />} label="보안 감사 매트릭스" active={activeTab === 'SECURITY'} onClick={() => { setActiveTab('SECURITY'); setSelectedItemId(null); }} />
-            <NavButton icon={<Terminal size={22} />} label="시스템 로그 엔진" active={activeTab === 'SYSTEM'} onClick={() => { setActiveTab('SYSTEM'); setSelectedItemId(null); }} />
-            <NavButton icon={<LogIn size={22} />} label="인증 접속 히스토리" active={activeTab === 'LOGIN'} onClick={() => { setActiveTab('LOGIN'); setSelectedItemId(null); }} />
-            <NavButton icon={<MonitorCheck size={22} />} label="인프라 가동성 정보" active={activeTab === 'OBSERVABILITY'} onClick={() => { setActiveTab('OBSERVABILITY'); setSelectedItemId(null); }} />
-            <NavButton icon={<Share2 size={22} />} label="인프라 토폴로지 맵" active={activeTab === 'TOPOLOGY'} onClick={() => { setActiveTab('TOPOLOGY'); setSelectedItemId(null); }} />
-            <NavButton icon={<MessageSquare size={22} />} label="서비스 피드백 관리" active={activeTab === 'COMMENTS'} onClick={() => { setActiveTab('COMMENTS'); setSelectedItemId(null); }} />
+            <NavButton icon={<ShieldAlert size={22} />} label="蹂댁븞 媛먯궗 留ㅽ듃由?뒪" active={activeTab === 'SECURITY'} onClick={() => { setActiveTab('SECURITY'); setSelectedItemId(null); }} />
+            <NavButton icon={<Terminal size={22} />} label="?쒖뒪??濡쒓렇 ?붿쭊" active={activeTab === 'SYSTEM'} onClick={() => { setActiveTab('SYSTEM'); setSelectedItemId(null); }} />
+            <NavButton icon={<LogIn size={22} />} label="?몄쬆 ?묒냽 ?덉뒪?좊━" active={activeTab === 'LOGIN'} onClick={() => { setActiveTab('LOGIN'); setSelectedItemId(null); }} />
+            <NavButton icon={<MonitorCheck size={22} />} label="?명봽??媛?숈꽦 ?뺣낫" active={activeTab === 'OBSERVABILITY'} onClick={() => { setActiveTab('OBSERVABILITY'); setSelectedItemId(null); }} />
+            <NavButton icon={<Share2 size={22} />} label="?명봽???좏뤃濡쒖? 留? active={activeTab === 'TOPOLOGY'} onClick={() => { setActiveTab('TOPOLOGY'); setSelectedItemId(null); }} />
+            <NavButton icon={<MessageSquare size={22} />} label="?쒕퉬???쇰뱶諛?愿由? active={activeTab === 'COMMENTS'} onClick={() => { setActiveTab('COMMENTS'); setSelectedItemId(null); }} />
           </div>
 
           <div className="bg-slate-900 text-white rounded-[0.1rem] p-10 space-y-6 text-center shadow-2xl relative overflow-hidden flex flex-col items-center">
@@ -336,8 +335,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               <ShieldCheck size={40} className="text-primary" />
             </div>
             <div className="space-y-2">
-                <h4 className="text-xl font-black tracking-tighter uppercase">감사 프로토콜</h4>
-                <p className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">보안 수준: 최상</p>
+                <h4 className="text-xl font-black tracking-tighter uppercase">媛먯궗 ?꾨줈?좎퐳</h4>
+                <p className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">蹂댁븞 ?섏?: 理쒖긽</p>
             </div>
             <div className="flex justify-center gap-2 opacity-20 mt-2">
               {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="w-1.5 h-6 bg-white rounded-full animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />)}
@@ -350,14 +349,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-2xl flex-1 flex flex-col p-12 space-y-10 relative overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-100 pb-8 relative z-10">
               <div className="space-y-1">
-                <h3 className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">데이터 스트림</h3>
-                <p className="text-2xl font-black tracking-tighter text-foreground uppercase">인베스티게이션</p>
+                <h3 className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">?곗씠???ㅽ듃由?/h3>
+                <p className="text-2xl font-black tracking-tighter text-foreground uppercase">?몃쿋?ㅽ떚寃뚯씠??/p>
               </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={() => queryClient.invalidateQueries()} 
-                className="h-14 w-14 rounded-[0.1rem] bg-slate-50 hover:bg-primary hover:text-white transition-all shadow-inner group"
+                className="h-14 w-14 rounded-[0.1rem] bg-slate-50 hover:bg-primary hover:text-white transition shadow-inner group"
               >
                 <RefreshCcw size={20} className="group-active:rotate-180 transition-transform duration-500" />
               </Button>
@@ -367,8 +366,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               <div className="relative group/search relative z-10">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                 <Input 
-                  className="pl-16 h-16 bg-slate-50 border-none rounded-[0.1rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/30" 
-                  placeholder="로그 객체 필터링.." 
+                  className="pl-16 h-16 bg-slate-50 border-none rounded-[0.1rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition placeholder:text-muted-foreground/30" 
+                  placeholder="濡쒓렇 媛앹껜 ?꾪꽣留?." 
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
                 />
@@ -424,10 +423,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   <div className="border-b border-slate-100 pb-12 relative z-10">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/40" />
-                        <h3 className="text-[10px] font-black text-muted-foreground/40 tracking-[0.5em] uppercase">인스턴스 메타데이터</h3>
+                        <h3 className="text-[10px] font-black text-muted-foreground/40 tracking-[0.5em] uppercase">?몄뒪?댁뒪 硫뷀??곗씠??/h3>
                     </div>
-                    <h2 className="text-4xl font-black text-foreground tracking-tighter leading-none mb-4 uppercase">객체 상세 분석</h2>
-                    <p className="text-xs font-mono font-black text-primary/60 tracking-widest uppercase">로그 고유 식별자 {selectedItemId}</p>
+                    <h2 className="text-4xl font-black text-foreground tracking-tighter leading-none mb-4 uppercase">媛앹껜 ?곸꽭 遺꾩꽍</h2>
+                    <p className="text-xs font-mono font-black text-primary/60 tracking-widest uppercase">濡쒓렇 怨좎쑀 ?앸퀎??{selectedItemId}</p>
                   </div>
                   
                   <div className="flex-1 space-y-8 overflow-y-auto pr-4 custom-scrollbar relative z-10">
@@ -440,12 +439,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
                   <div className="pt-12 mt-auto border-t border-slate-100 space-y-8 relative z-10">
                     <div className="flex items-center justify-between px-6">
-                       <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase">결정 매트릭스</span>
+                       <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase">寃곗젙 留ㅽ듃由?뒪</span>
                        <Activity size={20} className="text-primary animate-pulse" />
                     </div>
-                    <Button className="w-full h-18 bg-slate-900 text-white rounded-[0.1rem] font-black tracking-[0.4em] text-[11px] shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 uppercase group overflow-hidden">
+                    <Button className="w-full h-18 bg-slate-900 text-white rounded-[0.1rem] font-black tracking-[0.4em] text-[11px] shadow-2xl shadow-primary/30 hover:bg-primary transition hover:-translate-y-2 uppercase group overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                      유지보수 파이프라인 실행
+                      ?좎?蹂댁닔 ?뚯씠?꾨씪???ㅽ뻾
                     </Button>
                   </div>
                   
@@ -453,12 +452,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 </div>
               </motion.div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-40 select-none grayscale rounded-[0.1rem] border-4 border-dashed border-slate-100 bg-slate-50/50 group transition-all hover:bg-white hover:border-primary/20 duration-1000">
+              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-40 select-none grayscale rounded-[0.1rem] border-4 border-dashed border-slate-100 bg-slate-50/50 group transition hover:bg-white hover:border-primary/20 duration-1000">
                 <div className="w-24 h-24 rounded-[0.1rem] bg-white border-2 border-slate-100 flex items-center justify-center mb-10 shadow-xl group-hover:rotate-12 transition-transform duration-700">
-                    <Activity size={100} className="text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all" />
+                    <Activity size={100} className="text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:text-primary transition" />
                 </div>
-                <h3 className="text-4xl font-black text-foreground tracking-tighter uppercase mb-4">인텔리전스 대기 중</h3>
-                <p className="text-[10px] font-black text-muted-foreground/30 tracking-[0.6em] uppercase leading-relaxed max-w-xs">분석할 로그 객체를 스트림에서 캡처하십시오</p>
+                <h3 className="text-4xl font-black text-foreground tracking-tighter uppercase mb-4">?명뀛由ъ쟾???湲?以?/h3>
+                <p className="text-[10px] font-black text-muted-foreground/30 tracking-[0.6em] uppercase leading-relaxed max-w-xs">遺꾩꽍??濡쒓렇 媛앹껜瑜??ㅽ듃由쇱뿉??罹≪쿂?섏떗?쒖삤</p>
               </div>
             )}
           </AnimatePresence>
@@ -475,8 +474,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             <div className="space-y-4">
                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] px-2 italic">SELECT_REPORT_PROTOCOL</h4>
                <div className="grid grid-cols-1 gap-4">
-                  <ReportOption icon={<FileText size={20} />} title="Executive Overview" description="시스템 가동 및 보안 지표 통합 요약 (PDF)" />
-                  <ReportOption icon={<Activity size={20} />} title="Infrastructure Metrics" description="리소스 점유율 및 성능 추이 데이터 (XLSX)" />
+                  <ReportOption icon={<FileText size={20} />} title="Executive Overview" description="?쒖뒪??媛??諛?蹂댁븞 吏???듯빀 ?붿빟 (PDF)" />
+                  <ReportOption icon={<Activity size={20} />} title="Infrastructure Metrics" description="由ъ냼???먯쑀??諛??깅뒫 異붿씠 ?곗씠??(XLSX)" />
                </div>
             </div>
 
@@ -488,11 +487,11 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                   <div className="h-full bg-primary w-2/3 animate-pulse" />
                </div>
-               <p className="text-[10px] text-slate-400 font-medium">데이터 수집 및 통합성 검증이 백그라운드에서 실행됩니다</p>
+               <p className="text-[10px] text-slate-400 font-medium">?곗씠???섏쭛 諛??듯빀??寃利앹씠 諛깃렇?쇱슫?쒖뿉???ㅽ뻾?⑸땲??/p>
             </div>
 
             <div className="flex gap-4">
-               <Button onClick={() => setIsReportModalOpen(false)} className="flex-1 h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all">
+               <Button onClick={() => setIsReportModalOpen(false)} className="flex-1 h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition">
                   INITIALIZE_GENERATION
                </Button>
             </div>
@@ -504,7 +503,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
 function ReportOption({ icon, title, description }: any) {
   return (
-    <div className="flex items-center gap-5 p-6 rounded-[0.1rem] border-2 border-slate-100 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer group">
+    <div className="flex items-center gap-5 p-6 rounded-[0.1rem] border-2 border-slate-100 hover:border-primary/30 hover:bg-primary/5 transition cursor-pointer group">
        <div className="w-12 h-12 rounded-[0.1rem] bg-white shadow-md flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
           {icon}
        </div>
@@ -522,14 +521,14 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
     <button 
       onClick={onClick}
       className={cn(
-        "w-full group p-5 rounded-[0.1rem] border-2 transition-all flex items-center gap-6",
+        "w-full group p-5 rounded-[0.1rem] border-2 transition flex items-center gap-6",
         active 
           ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10 shadow-slate-200" 
           : "bg-transparent border-transparent hover:bg-white hover:border-slate-100 text-slate-400 hover:text-slate-900"
       )}
     >
       <div className={cn(
-        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all shadow-lg",
+        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition shadow-lg",
         active ? "bg-white/10 text-white" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white"
       )}>
         {icon}

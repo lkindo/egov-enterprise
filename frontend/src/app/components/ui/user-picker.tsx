@@ -80,7 +80,7 @@ export function UserPicker({
  value={keyword}
  onChange={(e) => setKeyword(e.target.value)}
  placeholder="이름, 부서, ID 검색..."
- className="w-full h-11 pl-10 pr-4 rounded-[0.1rem] border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+ className="w-full h-11 pl-10 pr-4 rounded-[0.1rem] border bg-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus:ring-2 focus:ring-primary/20 transition"
  autoFocus
  />
  <button

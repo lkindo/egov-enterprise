@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -47,15 +47,15 @@ export default function CommonCodeHubClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader 
-        title="마스터 데이터 거버넌스" 
-        breadcrumbs={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '통합 코드 허브' }]} 
+        title="留덉뒪???곗씠??嫄곕쾭?뚯뒪" 
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '肄붾뱶愿由? }, { label: '?듯빀 肄붾뱶 ?덈툕' }]} 
       />
 
       <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-10">
         <HubHeader 
-          title="코드" 
-          highlight="통합 허브" 
-          subtitle="시스템 전반의 표준 코드, 행정 표준 및 기관 노드 식별 체계의 통합 거버넌스 관리 센터입니다." 
+          title="肄붾뱶" 
+          highlight="?듯빀 ?덈툕" 
+          subtitle="?쒖뒪???꾨컲???쒖? 肄붾뱶, ?됱젙 ?쒖? 諛?湲곌? ?몃뱶 ?앸퀎 泥닿퀎???듯빀 嫄곕쾭?뚯뒪 愿由??쇳꽣?낅땲??" 
           icon={Database} 
         />
 
@@ -63,19 +63,19 @@ export default function CommonCodeHubClient({
         <div className="bg-slate-100/80 backdrop-blur-md p-2 rounded-[0.1rem] flex flex-wrap gap-2 border border-slate-200/50 shadow-inner">
           <HubTabButton 
             icon={FileCode} 
-            label="표준 코드" 
+            label="?쒖? 肄붾뱶" 
             active={activeTab === 'STANDARD'} 
             onClick={() => setActiveTab('STANDARD')} 
           />
           <HubTabButton 
             icon={MapPin} 
-            label="행정 표준" 
+            label="?됱젙 ?쒖?" 
             active={activeTab === 'ADMINIST'} 
             onClick={() => setActiveTab('ADMINIST')} 
           />
           <HubTabButton 
             icon={Building2} 
-            label="기관 노드" 
+            label="湲곌? ?몃뱶" 
             active={activeTab === 'INSTITUTION'} 
             onClick={() => setActiveTab('INSTITUTION')} 
           />
@@ -84,10 +84,10 @@ export default function CommonCodeHubClient({
 
       {/* Code Metrics Section */}
       <HubMetricGrid>
-        <HubMetricCard title="현재 등록 코드" value={groups.length + details.length} icon={Code2} color="primary" />
-        <HubMetricCard title="표준 상태 가용성" value="활성" icon={ShieldCheck} color="emerald" status="동기화됨" />
-        <HubMetricCard title="메타데이터 건전성" value="99.8%" icon={Zap} color="amber" />
-        <HubMetricCard title="노드 연동 속도" value="1.2s" icon={Timer} color="indigo" />
+        <HubMetricCard title="?꾩옱 ?깅줉 肄붾뱶" value={groups.length + details.length} icon={Code2} color="primary" />
+        <HubMetricCard title="?쒖? ?곹깭 媛?⑹꽦" value="?쒖꽦" icon={ShieldCheck} color="emerald" status="?숆린?붾맖" />
+        <HubMetricCard title="硫뷀??곗씠??嫄댁쟾?? value="99.8%" icon={Zap} color="amber" />
+        <HubMetricCard title="?몃뱶 ?곕룞 ?띾룄" value="1.2s" icon={Timer} color="indigo" />
       </HubMetricGrid>
 
       {/* --- Viewport Content --- */}
@@ -141,14 +141,14 @@ function HubTabButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon
         onClick();
       }}
       className={cn(
-        "relative flex items-center gap-3 px-10 py-4 rounded-[0.1rem] text-[11px] font-black tracking-tight transition-all active:scale-95 overflow-hidden group",
+        "relative flex items-center gap-3 px-10 py-4 rounded-[0.1rem] text-[11px] font-black tracking-tight transition active:scale-95 overflow-hidden group",
         active 
           ? "bg-white text-slate-900 shadow-2xl ring-1 ring-slate-200" 
           : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
       )}
     >
       <div className={cn(
-        "transition-all duration-500 group-hover:rotate-12",
+        "transition duration-500 group-hover:rotate-12",
         active ? "scale-110 text-primary" : "opacity-70"
       )}>
         <Icon size={18} />

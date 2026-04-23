@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -64,11 +64,11 @@ export default function BoardMasterListPage() {
 
   const columns: Column<BoardMaster>[] = [
     {
-      header: '마스터 아이템',
+      header: '留덉뒪???꾩씠??,
       accessor: (board: BoardMaster) => (
         <div className="flex items-center gap-6">
-           <div className="w-16 h-16 rounded-[0.1rem] bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-500">
-              {board.bbsTyCodeNm?.includes('지식') ? <BookOpen size={28} /> : 
+           <div className="w-16 h-16 rounded-[0.1rem] bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition duration-500">
+              {board.bbsTyCodeNm?.includes('吏??) ? <BookOpen size={28} /> : 
                board.bbsTyCodeNm === 'Visual Gallery' ? <ImageIcon size={28} /> : 
                <ListIcon size={28} />}
            </div>
@@ -81,7 +81,7 @@ export default function BoardMasterListPage() {
       className: 'px-10'
     },
     {
-      header: '메타 정보',
+      header: '硫뷀? ?뺣낫',
       accessor: (board: BoardMaster) => (
         <div className="space-y-1.5 text-left">
            <p className="text-sm font-bold text-slate-500 line-clamp-1 leading-snug">{board.bbsIntrcn}</p>
@@ -94,41 +94,41 @@ export default function BoardMasterListPage() {
       )
     },
     {
-      header: '상태',
+      header: '?곹깭',
       accessor: (board: BoardMaster) => (
         <div className="flex justify-center">
           <Badge className={cn(
             "px-4 py-1.5 rounded-full font-black text-[10px] uppercase border-none tracking-widest shadow-sm",
             board.useAt === 'Y' ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
           )}>
-            {board.useAt === 'Y' ? '활성' : '대기'}
+            {board.useAt === 'Y' ? '?쒖꽦' : '?湲?}
           </Badge>
         </div>
       ),
       className: 'text-center'
     },
     {
-      header: '사용량',
+      header: '?ъ슜??,
       accessor: (_board: BoardMaster) => (
         <div className="space-y-1 text-center">
            <p className="text-xl font-black text-slate-800 italic">0</p>
-           <p className="text-[10px] font-black text-slate-300 uppercase leading-none">게시글 수</p>
+           <p className="text-[10px] font-black text-slate-300 uppercase leading-none">寃뚯떆湲 ??/p>
         </div>
       ),
       className: 'text-center'
     },
     {
-      header: '작업 컨트롤',
+      header: '?묒뾽 而⑦듃濡?,
       accessor: (board: BoardMaster) => (
         <div className="flex items-center justify-end gap-3 pr-6">
-           <Button size="icon" variant="ghost" className="w-12 h-12 rounded-[0.1rem] text-slate-400 hover:bg-primary hover:text-white transition-all shadow-hover-sm">
+           <Button size="icon" variant="ghost" className="w-12 h-12 rounded-[0.1rem] text-slate-400 hover:bg-primary hover:text-white transition shadow-hover-sm">
               <Settings2 size={20} />
            </Button>
            <Button 
               onClick={() => router.push(`/admin/community/boards/selectBoardList?bbsId=${board.bbsId}`)}
               size="icon" 
               variant="ghost" 
-              className="w-12 h-12 rounded-[0.1rem] text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-hover-sm"
+              className="w-12 h-12 rounded-[0.1rem] text-slate-400 hover:bg-slate-900 hover:text-white transition shadow-hover-sm"
            >
               <ArrowRight size={20} />
            </Button>
@@ -141,23 +141,22 @@ export default function BoardMasterListPage() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000 max-w-[1600px] mx-auto px-4">
       <PageHeader 
-        title="게시판 마스터" 
-        breadcrumbs={[{ label: '커뮤니티' }, { label: '게시판 관리' }, { label: '마스터 콘솔' }]} 
+        title="寃뚯떆??留덉뒪?? 
+        breadcrumbs={[{ label: '而ㅻ??덊떚' }, { label: '寃뚯떆??愿由? }, { label: '留덉뒪??肄섏넄' }]} 
       />
 
       <HubHeader 
-        title="마스터 콘솔" 
-        highlight="게시판 통합 관리" 
-        subtitle="생성된 모든 게시판의 라이프사이클과 권한 매트릭스를 실시간으로 제어하고 모니터링합니다" 
+        title="留덉뒪??肄섏넄" 
+        highlight="寃뚯떆???듯빀 愿由? 
+        subtitle="?앹꽦??紐⑤뱺 寃뚯떆?먯쓽 ?쇱씠?꾩궗?댄겢怨?沅뚰븳 留ㅽ듃由?뒪瑜??ㅼ떆媛꾩쑝濡??쒖뼱?섍퀬 紐⑤땲?곕쭅?⑸땲?? 
         icon={Settings2} 
         actions={
           <Button 
             onClick={() => router.push('/admin/community/boards/maker')}
-            className="h-16 px-10 rounded-[0.1rem] bg-slate-900 dark:bg-primary border-none text-white font-black text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all gap-4 ring-8 ring-slate-900/5 dark:ring-primary/5 group"
+            className="h-16 px-10 rounded-[0.1rem] bg-slate-900 dark:bg-primary border-none text-white font-black text-sm shadow-2xl hover:scale-105 active:scale-95 transition gap-4 ring-8 ring-slate-900/5 dark:ring-primary/5 group"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-            생성 마법사
-            <Rocket className="w-4 h-4 text-primary dark:text-white opacity-40 group-hover:text-primary group-hover:opacity-100 transition-all" />
+            ?앹꽦 留덈쾿??            <Rocket className="w-4 h-4 text-primary dark:text-white opacity-40 group-hover:text-primary group-hover:opacity-100 transition" />
           </Button>
         }
       />
@@ -168,10 +167,10 @@ export default function BoardMasterListPage() {
         animate="show"
         className="grid grid-cols-1 md:grid-cols-4 gap-8"
       >
-        <InsightCard label="총계" value="32" desc="Active Board Masters" icon={Layers} color="text-indigo-500" />
-        <InsightCard label="교류" value="1.2k" desc="Engagement Traffic" icon={TrendingUp} color="text-rose-500" />
-        <InsightCard label="시스템" value="Optimal" desc="Storage Status" icon={Zap} color="text-emerald-500" />
-        <InsightCard label="보안" value="L4" desc="Encrypted Access" icon={ShieldCheck} color="text-amber-500" />
+        <InsightCard label="珥앷퀎" value="32" desc="Active Board Masters" icon={Layers} color="text-indigo-500" />
+        <InsightCard label="援먮쪟" value="1.2k" desc="Engagement Traffic" icon={TrendingUp} color="text-rose-500" />
+        <InsightCard label="?쒖뒪?? value="Optimal" desc="Storage Status" icon={Zap} color="text-emerald-500" />
+        <InsightCard label="蹂댁븞" value="L4" desc="Encrypted Access" icon={ShieldCheck} color="text-amber-500" />
       </motion.div>
 
       <div className="border border-slate-100 rounded-[0.1rem] overflow-hidden bg-white shadow-2xl shadow-slate-200/50">
@@ -180,7 +179,7 @@ export default function BoardMasterListPage() {
           data={boardList}
           loading={isLoading}
           search={{
-            placeholder: '게시판 명칭, 시스템 ID 검색..',
+            placeholder: '寃뚯떆??紐낆묶, ?쒖뒪??ID 寃??.',
             onSearch: (keyword) => setSearchWrd(keyword)
           }}
         />
@@ -192,12 +191,12 @@ export default function BoardMasterListPage() {
         </div>
         <div className="max-w-3xl space-y-8 relative z-10">
            <h3 className="text-5xl font-black italic tracking-tighter leading-tight uppercase transition-colors">Ready to scale your <span className="text-primary underline decoration-primary/30 decoration-8 underline-offset-8">ecosystem?</span></h3>
-           <p className="text-xl text-slate-500 dark:text-slate-400 font-bold leading-relaxed tracking-tight transition-colors">생태계를 확장할 준비가 되셨습니까? 마법사를 통해 복잡한 과정 없이 단 4단계만으로 사내 지식 허브를 구축하십시오.</p>
+           <p className="text-xl text-slate-500 dark:text-slate-400 font-bold leading-relaxed tracking-tight transition-colors">?앺깭怨꾨? ?뺤옣??以鍮꾧? ?섏뀲?듬땲源? 留덈쾿?щ? ?듯빐 蹂듭옟??怨쇱젙 ?놁씠 ??4?④퀎留뚯쑝濡??щ궡 吏???덈툕瑜?援ъ텞?섏떗?쒖삤.</p>
            <Button 
               onClick={() => router.push('/admin/community/boards/maker')}
-              className="h-20 px-12 rounded-[0.1rem] bg-primary text-white text-2xl font-black tracking-tighter shadow-[0_30px_60px_-15px_rgba(59,130,246,0.4)] hover:scale-110 active:scale-95 transition-all gap-4 ring-8 ring-primary/5 italic"
+              className="h-20 px-12 rounded-[0.1rem] bg-primary text-white text-2xl font-black tracking-tighter shadow-[0_30px_60px_-15px_rgba(59,130,246,0.4)] hover:scale-110 active:scale-95 transition gap-4 ring-8 ring-primary/5 italic"
            >
-              라이브 마법사 실행 <Rocket className="w-8 h-8" />
+              ?쇱씠釉?留덈쾿???ㅽ뻾 <Rocket className="w-8 h-8" />
            </Button>
         </div>
       </div>
@@ -207,7 +206,7 @@ export default function BoardMasterListPage() {
 
 function InsightCard({ label, value, desc, icon: Icon, color }: InsightCardProps) {
     return (
-      <motion.div variants={item} className="hub-card-premium p-8 space-y-6 group hover:ring-[30px] hover:ring-slate-100/30 transition-all border-2 border-slate-50/50">
+      <motion.div variants={item} className="hub-card-premium p-8 space-y-6 group hover:ring-[30px] hover:ring-slate-100/30 transition border-2 border-slate-50/50">
         <div className="flex items-center justify-between">
            <div className={cn("w-14 h-14 rounded-[0.1rem] bg-slate-50 dark:bg-slate-900 flex items-center justify-center border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-transform text-slate-400", color)}>
               <Icon size={28} />

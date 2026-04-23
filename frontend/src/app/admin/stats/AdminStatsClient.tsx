@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -75,7 +75,7 @@ export default function AdminStatsClient({
 
   const menuColumns = [
     {
-      header: '인텔리전스 노드',
+      header: '?명뀛由ъ쟾???몃뱶',
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-4 py-2">
           <div className="w-12 h-12 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110">
@@ -89,7 +89,7 @@ export default function AdminStatsClient({
       )
     },
     {
-      header: '상호작용 횟수',
+      header: '?곹샇?묒슜 ?잛닔',
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-primary opacity-40 italic" />
@@ -98,12 +98,12 @@ export default function AdminStatsClient({
       )
     },
     {
-      header: '영향력 매트릭스',
+      header: '?곹뼢??留ㅽ듃由?뒪',
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-6 min-w-[240px]">
           <div className="flex-1 h-3 bg-slate-100 dark:bg-muted/30 rounded-full overflow-hidden shadow-inner border border-border/10">
             <div
-              className="h-full bg-gradient-to-r from-primary via-indigo-500 to-violet-500 transition-all duration-1000 ease-out shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]"
+              className="h-full bg-gradient-to-r from-primary via-indigo-500 to-violet-500 transition duration-1000 ease-out shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]"
               style={{ width: `${item?.percentage || 0}%` }}
             />
           </div>
@@ -116,20 +116,20 @@ export default function AdminStatsClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <PageHeader
-        title="인텔리전스 시스템 아키텍처 분석"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '분석 대시보드' }]}
+        title="?명뀛由ъ쟾???쒖뒪???꾪궎?띿쿂 遺꾩꽍"
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '遺꾩꽍 ??쒕낫?? }]}
       />
 
       <HubHeader
-        title="시스템 분석"
-        highlight="매트릭스"
-        subtitle="전체 시스템의 실시간 트래픽 및 주요 메트릭 상호작용 통계 인텔리전스"
+        title="?쒖뒪??遺꾩꽍"
+        highlight="留ㅽ듃由?뒪"
+        subtitle="?꾩껜 ?쒖뒪?쒖쓽 ?ㅼ떆媛??몃옒??諛?二쇱슂 硫뷀듃由??곹샇?묒슜 ?듦퀎 ?명뀛由ъ쟾??
         icon={BarChart3}
         actions={
           <div className="flex gap-4 p-2 items-center">
             <select 
-              className="h-12 px-6 rounded-[0.1rem] border-2 border-border bg-white font-black text-[10px] tracking-widest uppercase outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer shadow-sm"
-              aria-label="통계 조회 기간 선택"
+              className="h-12 px-6 rounded-[0.1rem] border-2 border-border bg-white font-black text-[10px] tracking-widest uppercase focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus:ring-4 focus:ring-primary/10 transition cursor-pointer shadow-sm"
+              aria-label="?듦퀎 議고쉶 湲곌컙 ?좏깮"
             >
               <option>REALTIME_FLOW (14D)</option>
               <option>MONTHLY_BATCH (30D)</option>
@@ -147,9 +147,9 @@ export default function AdminStatsClient({
               <DataExportExcel
                 data={initialMenuData || []}
                 headers={[
-                  { label: '메뉴명', key: 'menuNm' },
-                  { label: '사용자 수', key: 'statsCo' },
-                  { label: '비중(%)', key: 'percentage' }
+                  { label: '硫붾돱紐?, key: 'menuNm' },
+                  { label: '?ъ슜????, key: 'statsCo' },
+                  { label: '鍮꾩쨷(%)', key: 'percentage' }
                 ]}
                 filename="system_intelligence_stats"
               />
@@ -159,16 +159,16 @@ export default function AdminStatsClient({
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-2">
-        <LuxuryStatCard title="누적 데이터 노드" value={initialSummary?.totalUsers || 0} icon={<Database size={26} />} trend="+2.5%" color="slate" />
-        <LuxuryStatCard title="활성 커넥션" value={initialSummary?.todayConnects || 0} icon={<CloudLightning size={26} />} trend="+12%" color="primary" />
-        <LuxuryStatCard title="데이터 영속성" value={initialSummary?.totalPosts || 0} icon={<ShieldCheck size={26} />} trend="+0.8%" color="indigo" />
+        <LuxuryStatCard title="?꾩쟻 ?곗씠???몃뱶" value={initialSummary?.totalUsers || 0} icon={<Database size={26} />} trend="+2.5%" color="slate" />
+        <LuxuryStatCard title="?쒖꽦 而ㅻ꽖?? value={initialSummary?.todayConnects || 0} icon={<CloudLightning size={26} />} trend="+12%" color="primary" />
+        <LuxuryStatCard title="?곗씠???곸냽?? value={initialSummary?.totalPosts || 0} icon={<ShieldCheck size={26} />} trend="+0.8%" color="indigo" />
       </div>
 
       <div className="grid grid-cols-12 gap-10 px-2 mt-4">
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-10">
           <HubSectionCard
-            title="네트워크 트래픽 진화"
-            description="시스템 전반에 걸친 데이터 스트림의 흐름 및 진화 양상을 분석합니다"
+            title="?ㅽ듃?뚰겕 ?몃옒??吏꾪솕"
+            description="?쒖뒪???꾨컲??嫄몄튇 ?곗씠???ㅽ듃由쇱쓽 ?먮쫫 諛?吏꾪솕 ?묒긽??遺꾩꽍?⑸땲??
             icon={Activity}
           >
             <div className="p-4 bg-slate-50/50 rounded-[0.1rem] border border-border/30 overflow-hidden group">
@@ -187,8 +187,8 @@ export default function AdminStatsClient({
 
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-10">
           <HubSectionCard
-            title="환경 기기 분포"
-            description="사용자 접속 환경의 프로파일링 및 기기별 세션 비중입니다"
+            title="?섍꼍 湲곌린 遺꾪룷"
+            description="?ъ슜???묒냽 ?섍꼍???꾨줈?뚯씪留?諛?湲곌린蹂??몄뀡 鍮꾩쨷?낅땲??
             icon={Monitor}
           >
             <div className="bg-slate-900 text-white rounded-[0.1rem] p-8 shadow-2xl relative overflow-hidden group min-h-[440px] flex items-center justify-center">
@@ -213,8 +213,8 @@ export default function AdminStatsClient({
       <div className="grid grid-cols-12 gap-10 px-2">
         <div className="col-span-12 lg:col-span-6 flex flex-col gap-10">
           <HubSectionCard
-            title="최다 상호작용 서비스"
-            description="사용자의 의도가 가장 밀집된 핵심 상호작용 지점 분석입니다"
+            title="理쒕떎 ?곹샇?묒슜 ?쒕퉬??
+            description="?ъ슜?먯쓽 ?섎룄媛 媛??諛吏묐맂 ?듭떖 ?곹샇?묒슜 吏??遺꾩꽍?낅땲??
             icon={Target}
           >
             <div className="p-8 bg-slate-50 rounded-[0.1rem] border border-border/30 shadow-inner">
@@ -231,8 +231,8 @@ export default function AdminStatsClient({
         </div>
         <div className="col-span-12 lg:col-span-6 flex flex-col gap-10">
           <HubSectionCard
-            title="지리적 트래픽 분포"
-            description="익명화된 데이터 기반 네트워크 지리적 기원지 매핑입니다"
+            title="吏由ъ쟻 ?몃옒??遺꾪룷"
+            description="?듬챸?붾맂 ?곗씠??湲곕컲 ?ㅽ듃?뚰겕 吏由ъ쟻 湲곗썝吏 留ㅽ븨?낅땲??
             icon={Globe}
           >
             <div className="p-4 bg-white rounded-[0.1rem] border-2 border-slate-50 flex items-center justify-center min-h-[480px] shadow-sm relative overflow-hidden">
@@ -244,11 +244,11 @@ export default function AdminStatsClient({
       </div>
 
       <HubSectionCard
-        title="운영 매트릭스 보고"
-        description="시스템 전반에 걸친 마이크로 상호작용 노드들의 세부 데이터 보고서입니다."
+        title="?댁쁺 留ㅽ듃由?뒪 蹂닿퀬"
+        description="?쒖뒪???꾨컲??嫄몄튇 留덉씠?щ줈 ?곹샇?묒슜 ?몃뱶?ㅼ쓽 ?몃? ?곗씠??蹂닿퀬?쒖엯?덈떎."
         icon={Cpu}
         statusBadges={
-          <HubStatusBadge label="고밀도 스트림" variant="success" className="bg-emerald-500/10 text-emerald-700 border-none animate-pulse text-[8px] font-black tracking-widest" />
+          <HubStatusBadge label="怨좊????ㅽ듃由? variant="success" className="bg-emerald-500/10 text-emerald-700 border-none animate-pulse text-[8px] font-black tracking-widest" />
         }
       >
         <div className="px-2 overflow-x-auto">
@@ -256,7 +256,7 @@ export default function AdminStatsClient({
             columns={menuColumns}
             data={(initialMenuData || []).slice(0, 10)}
             loading={loading}
-            emptyMessage="시스템 패턴 분석 중..."
+            emptyMessage="?쒖뒪???⑦꽩 遺꾩꽍 以?.."
             className="border-none rounded-none bg-transparent min-w-[700px]"
           />
         </div>
@@ -268,18 +268,18 @@ export default function AdminStatsClient({
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
           <div className="space-y-10 flex-1 text-center lg:text-left">
             <div className="space-y-4">
-              <h2 className="text-[11px] font-black tracking-[0.6em] text-white/60 uppercase leading-none">시스템 무결성 요약</h2>
+              <h2 className="text-[11px] font-black tracking-[0.6em] text-white/60 uppercase leading-none">?쒖뒪??臾닿껐???붿빟</h2>
               <h3 className="text-5xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] uppercase tabular-nums">
                 Optimized <br />
                 <span className="text-primary italic">Intelligence</span> Core
               </h3>
             </div>
             <p className="text-lg lg:text-xl text-white/70 font-bold max-w-3xl leading-relaxed tracking-tight">
-              시스템 자원의 99.9%가 효율적으로 관리되고 있습니다. 인텔리전스 엔진은 실시간 주요 이벤트를 추적하여 최적의 성능 프로파일을 동적으로 생성하고 있습니다.
+              ?쒖뒪???먯썝??99.9%媛 ?⑥쑉?곸쑝濡?愿由щ릺怨??덉뒿?덈떎. ?명뀛由ъ쟾???붿쭊? ?ㅼ떆媛?二쇱슂 ?대깽?몃? 異붿쟻?섏뿬 理쒖쟻???깅뒫 ?꾨줈?뚯씪???숈쟻?쇰줈 ?앹꽦?섍퀬 ?덉뒿?덈떎.
             </p>
           </div>
           <div className="shrink-0">
-            <Button className="h-24 px-16 bg-white text-slate-900 rounded-[0.1rem] font-black text-lg tracking-[0.2em] shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-6 group/btn uppercase border-none">
+            <Button className="h-24 px-16 bg-white text-slate-900 rounded-[0.1rem] font-black text-lg tracking-[0.2em] shadow-2xl hover:bg-primary hover:text-white transition hover:-translate-y-2 active:scale-95 flex items-center gap-6 group/btn uppercase border-none">
               Execute Global Report
               <ArrowUpRight size={28} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
             </Button>
@@ -307,7 +307,7 @@ function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
 
   return (
     <div className={cn(
-      "hub-table-container p-12 group hover:scale-[1.05] transition-all relative overflow-hidden bg-white border-border/50",
+      "hub-table-container p-12 group hover:scale-[1.05] transition relative overflow-hidden bg-white border-border/50",
       isAlert && value > 0 && "ring-4 ring-rose-500/10"
     )}>
       <div className="flex justify-between items-start mb-10 relative z-10">
@@ -332,7 +332,7 @@ function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
           {title}
         </p>
       </div>
-      <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] -rotate-12 group-hover:rotate-0 transition-all duration-1000 grayscale">
+      <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] -rotate-12 group-hover:rotate-0 transition duration-1000 grayscale">
         {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 240 }) : null}
       </div>
     </div>

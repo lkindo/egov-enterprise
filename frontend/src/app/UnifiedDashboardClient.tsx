@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, use } from 'react';
 import dynamic from 'next/dynamic';
@@ -72,7 +72,7 @@ export default function UnifiedDashboardClient({
   const [taskList] = useState<DashboardTask[]>(initialTaskList);
   const [pendingCount] = useState<number>(pendingApprovalCount);
 
-  // 접속 통계 데이터 조회 (최근 7일)
+  // ?묒냽 ?듦퀎 ?곗씠??議고쉶 (理쒓렐 7??
   const { data: connectStats = [] } = useQuery<StatsDto[]>({
     queryKey: ['dashboard', 'stats', 'connect'],
     queryFn: () => statsAdminService.getConnectStats({ statsKind: 'SERVICE' }),
@@ -104,10 +104,9 @@ export default function UnifiedDashboardClient({
         <div className="space-y-2">
           <HubInsightBadge label={t('dashboard.badge')} />
           <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-foreground leading-tight">
-            안녕하세요, <span className="text-primary ">{user.name}</span>님
-          </h1>
+            ?덈뀞?섏꽭?? <span className="text-primary ">{user.name}</span>??          </h1>
           <p className="text-lg text-muted-foreground font-medium max-w-xl">
-            오늘은 <span className="text-foreground font-bold underline decoration-primary/30 underline-offset-4">주요 인사이트</span> 및 실시간 지표를 분석했습니다.
+            ?ㅻ뒛? <span className="text-foreground font-bold underline decoration-primary/30 underline-offset-4">二쇱슂 ?몄궗?댄듃</span> 諛??ㅼ떆媛?吏?쒕? 遺꾩꽍?덉뒿?덈떎.
           </p>
         </div>
 
@@ -116,11 +115,10 @@ export default function UnifiedDashboardClient({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => router.push('/admin/community/boards')}
-            aria-label={t('dashboard.createNewPost') || '새 포스팅 작성'}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-slate-900 dark:text-white dark:border-white/10 rounded-[0.1rem] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+            aria-label={t('dashboard.createNewPost') || '???ъ뒪???묒꽦'}
+            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-slate-900 dark:text-white dark:border-white/10 rounded-[0.1rem] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition"
           >
-            <Plus size={20} /> 새 포스팅
-          </motion.button>
+            <Plus size={20} /> ???ъ뒪??          </motion.button>
         </div>
       </motion.div>
 
@@ -138,36 +136,36 @@ export default function UnifiedDashboardClient({
       <motion.div variants={hubContainerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <HubSummaryCard
           key="summary-tasks"
-          title="업무 현황"
+          title="?낅Т ?꾪솴"
           value={taskList.length.toString().padStart(2, '0')}
-          description={`신규 배정된 업무 ${taskList.filter((t: DashboardTask) => t.isNew).length}건이 있습니다.`}
+          description={`?좉퇋 諛곗젙???낅Т ${taskList.filter((t: DashboardTask) => t.isNew).length}嫄댁씠 ?덉뒿?덈떎.`}
           icon={<Zap size={24} />}
           trend={-5}
           color="orange"
         />
         <HubSummaryCard
           key="summary-notifications"
-          title="결재 대기"
+          title="寃곗옱 ?湲?
           value={pendingCount.toString().padStart(2, '0')}
-          description="현재 대기 중인 결재 요청입니다."
+          description="?꾩옱 ?湲?以묒씤 寃곗옱 ?붿껌?낅땲??"
           icon={<Bell size={24} />}
           trend={pendingCount > 0 ? 10 : 0}
           color="purple"
         />
         <HubSummaryCard
           key="summary-security"
-          title="보안 지수"
-          value="안전"
-          description="시스템 보안 및 인증 상태가 양호합니다."
+          title="蹂댁븞 吏??
+          value="?덉쟾"
+          description="?쒖뒪??蹂댁븞 諛??몄쬆 ?곹깭媛 ?묓샇?⑸땲??"
           icon={<ShieldCheck size={24} />}
           trend={0}
           color="emerald"
         />
         <HubSummaryCard
           key="summary-visitors"
-          title="오늘의 방문자"
+          title="?ㅻ뒛??諛⑸Ц??
           value={connectStats.length > 0 ? connectStats[connectStats.length-1].statsCo.toString() : '0'}
-          description="실시간 접속 데이터 기반"
+          description="?ㅼ떆媛??묒냽 ?곗씠??湲곕컲"
           icon={<BarChart3 size={24} />}
           trend={5}
           color="blue"
@@ -179,8 +177,8 @@ export default function UnifiedDashboardClient({
         <div className="xl:col-span-2 space-y-12">
           <HubChartCard
             key="main-visitor-chart"
-            title="트래픽 데이터 분석"
-            subtitle="시스템 실시간 방문자 분포 지표"
+            title="?몃옒???곗씠??遺꾩꽍"
+            subtitle="?쒖뒪???ㅼ떆媛?諛⑸Ц??遺꾪룷 吏??
             icon={<BarChart3 size={24} />}
             color="blue"
           >
@@ -190,7 +188,7 @@ export default function UnifiedDashboardClient({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <HubListCard
               key="list-notices"
-              title="최근 공지사항"
+              title="理쒓렐 怨듭??ы빆"
               items={notiList}
               icon={<Bell size={20} />}
               moreHref="/admin/community/boards"
@@ -198,7 +196,7 @@ export default function UnifiedDashboardClient({
             />
             <HubListCard
               key="list-tasks"
-              title="배정된 업무"
+              title="諛곗젙???낅Т"
               items={taskList}
               icon={<CheckCircle2 size={20} />}
               moreHref="/admin/community/boards"
@@ -218,7 +216,7 @@ export default function UnifiedDashboardClient({
               <div className="w-10 h-10 rounded-[0.1rem] bg-white/10 flex items-center justify-center">
                 <Clock size={22} className="text-primary" />
               </div>
-              실시간 피드
+              ?ㅼ떆媛??쇰뱶
             </h3>
             <div className="relative z-10">
               <ActivityFeed />
@@ -232,13 +230,12 @@ export default function UnifiedDashboardClient({
             <div className="flex items-center justify-between mb-8">
               <h3 className="hub-label-accent flex items-center gap-3">
                 <div className="w-2 h-2 bg-primary rounded-full animate-ping" />
-                시스템 활성 지표
-              </h3>
+                ?쒖뒪???쒖꽦 吏??              </h3>
             </div>
             <div className="space-y-8">
                <div className="space-y-2">
                  <div className="flex justify-between text-sm font-black">
-                   <span className="opacity-80">CPU 사용률</span>
+                   <span className="opacity-80">CPU ?ъ슜瑜?/span>
                    <span className="text-primary">24%</span>
                  </div>
                  <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
@@ -251,7 +248,7 @@ export default function UnifiedDashboardClient({
                </div>
                <div className="space-y-2">
                  <div className="flex justify-between text-sm font-black">
-                   <span className="opacity-80">메모리</span>
+                   <span className="opacity-80">硫붾え由?/span>
                    <span className="text-emerald-500">42%</span>
                  </div>
                  <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">

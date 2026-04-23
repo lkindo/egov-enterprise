@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,9 +43,8 @@ interface SecurityMatrixVisualizerProps {
 }
 
 /**
- * 보안 권한 매트릭스 시각화(Access Control Grid)
- * 역할(X축)과 메뉴(Y축)의 관계를 히트맵 형식의 격자로 시각화하여
- * 시스템 전체 보안 평면을 한눈에 조망하고 제어할 수 있게 합니다.
+ * 蹂댁븞 沅뚰븳 留ㅽ듃由?뒪 ?쒓컖??Access Control Grid)
+ * ??븷(X異?怨?硫붾돱(Y異???愿怨꾨? ?덊듃留??뺤떇??寃⑹옄濡??쒓컖?뷀븯?? * ?쒖뒪???꾩껜 蹂댁븞 ?됰㈃???쒕늿??議곕쭩?섍퀬 ?쒖뼱?????덇쾶 ?⑸땲??
  */
 export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> = ({ 
   authors, 
@@ -60,14 +59,14 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
 
   const filteredMenus = menus.filter(m => String(m.menuNm || '').toLowerCase().includes(searchMenu.toLowerCase()));
 
-  // 통계 계산
+  // ?듦퀎 怨꾩궛
   const totalCells = authors.length * menus.length;
   const activeCells = Array.from(mappings.values()).reduce((acc, set) => acc + set.size, 0);
   const coverage = totalCells > 0 ? (activeCells / totalCells) * 100 : 0;
 
   return (
     <div className={cn(
-        "relative flex flex-col gap-6 transition-all duration-700",
+        "relative flex flex-col gap-6 transition duration-700",
         isFullscreen ? "fixed inset-0 z-[100] bg-white p-12 overflow-y-auto" : ""
     )}>
        {/* UI Header / Stats */}
@@ -105,14 +104,14 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setIsFullscreen(!isFullscreen)}
-                className="h-14 w-14 rounded-[0.1rem] bg-white/10 text-white border border-white/10 hover:bg-white hover:text-slate-900 transition-all shadow-xl"
+                className="h-14 w-14 rounded-[0.1rem] bg-white/10 text-white border border-white/10 hover:bg-white hover:text-slate-900 transition shadow-xl"
              >
                 {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
              </Button>
              <Button 
                 onClick={onSave}
                 disabled={isSaving}
-                className="h-14 px-10 rounded-[0.1rem] bg-primary text-white font-black text-[11px] tracking-widest uppercase shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-1 gap-3 group"
+                className="h-14 px-10 rounded-[0.1rem] bg-primary text-white font-black text-[11px] tracking-widest uppercase shadow-2xl shadow-primary/30 hover:bg-primary/90 transition hover:-translate-y-1 gap-3 group"
              >
                 <Save size={18} className={cn(isSaving && "animate-spin")} /> {isSaving ? 'SYNCING...' : 'COMMIT_CHANGES'}
              </Button>
@@ -126,7 +125,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={20} />
                   <Input 
                       className="h-16 pl-16 rounded-[0.1rem] border-none shadow-xl text-md font-black tracking-tight focus:ring-8 focus:ring-primary/5"
-                      placeholder="메뉴 노드 검색(명칭, ID)..."
+                      placeholder="硫붾돱 ?몃뱶 寃??紐낆묶, ID)..."
                       value={searchMenu}
                       onChange={(e) => setSearchMenu(e.target.value)}
                   />
@@ -146,7 +145,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                       {authors.map((auth) => (
                          <th key={auth.authorCode} className="p-8 bg-slate-50/50 min-w-[150px] transition-colors hover:bg-slate-100">
                             <div className="flex flex-col items-center gap-2 group/header cursor-pointer">
-                               <div className="w-10 h-10 rounded-[0.1rem] bg-white border-2 border-slate-200 flex items-center justify-center text-slate-400 transition-all group-hover/header:bg-slate-900 group-hover/header:text-white group-hover/header:scale-110 shadow-sm">
+                               <div className="w-10 h-10 rounded-[0.1rem] bg-white border-2 border-slate-200 flex items-center justify-center text-slate-400 transition group-hover/header:bg-slate-900 group-hover/header:text-white group-hover/header:scale-110 shadow-sm">
                                   <Lock size={14} />
                                </div>
                                <span className="text-[11px] font-black text-slate-900 tracking-tighter truncate w-full text-center">{auth.authorNm}</span>
@@ -162,7 +161,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                          <td className="sticky left-0 z-20 bg-white p-6 border-r-4 border-slate-100 group-hover/row:bg-slate-50 transition-colors">
                             <div className="flex items-center gap-4">
                                <div className={cn(
-                                  "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+                                  "w-8 h-8 rounded-lg flex items-center justify-center transition",
                                   menu.upperMenuNo === 0 ? "bg-amber-50 text-amber-500" : "bg-slate-50 text-slate-400"
                                 )}>
                                   {menu.upperMenuNo === 0 ? <Database size={14} /> : <ChevronRight size={14} />}
@@ -185,7 +184,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
                                      whileTap={{ scale: 0.95 }}
                                      onClick={() => onToggle(auth.authorCode, menu.menuNo)}
                                      className={cn(
-                                        "w-full h-16 rounded-[0.1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden group/cell",
+                                        "w-full h-16 rounded-[0.1rem] flex items-center justify-center transition duration-500 relative overflow-hidden group/cell",
                                         isSelected 
                                            ? "bg-slate-900 shadow-xl border-none" 
                                            : "bg-white hover:bg-slate-100 border-2 border-dashed border-slate-100 hover:border-slate-200"
@@ -237,7 +236,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
           <div className="space-y-1">
              <p className="text-sm font-black text-slate-900 tracking-tight leading-none italic uppercase underline decoration-primary/20 decoration-4 underline-offset-4">Governance_Protocol_Guide</p>
              <p className="text-[11px] font-medium text-slate-400">
-                각 격자(Cell)를 클릭하여 해당 역할에 대한 메뉴 접근 권한을 토글합니다. 변경 사항은 우측 상단의 <span className="text-slate-900 font-black">COMMIT_CHANGES</span> 버튼을 눌러 실제 아키텍처에 반영해야 합니다.
+                媛?寃⑹옄(Cell)瑜??대┃?섏뿬 ?대떦 ??븷?????硫붾돱 ?묎렐 沅뚰븳???좉??⑸땲?? 蹂寃??ы빆? ?곗륫 ?곷떒??<span className="text-slate-900 font-black">COMMIT_CHANGES</span> 踰꾪듉???뚮윭 ?ㅼ젣 ?꾪궎?띿쿂??諛섏쁺?댁빞 ?⑸땲??
              </p>
           </div>
        </div>

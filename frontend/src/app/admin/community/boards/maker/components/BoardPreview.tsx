@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { cn } from '@/lib/utils';
@@ -32,9 +32,9 @@ interface PreviewProps {
 }
 
 const MOCK_POSTS = [
-  { id: 1, title: '전자정부 표준프레임워크 4.x 업데이트 가이드라인', author: '관리자', date: '2024-05-20', views: 1240, comments: 45, image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80' },
-  { id: 2, title: '리액트 서버 컴포넌트(RSC) 도입 시 주의사항 및 모범 사례', author: '기술혁신팀', date: '2024-05-19', views: 856, comments: 23, image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80' },
-  { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67, image: 'https://images.unsplash.com/photo-1558494949-ef010958384e?w=800&q=80' },
+  { id: 1, title: '?꾩옄?뺣? ?쒖??꾨젅?꾩썙??4.x ?낅뜲?댄듃 媛?대뱶?쇱씤', author: '愿由ъ옄', date: '2024-05-20', views: 1240, comments: 45, image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80' },
+  { id: 2, title: '由ъ븸???쒕쾭 而댄룷?뚰듃(RSC) ?꾩엯 ??二쇱쓽?ы빆 諛?紐⑤쾾 ?щ?', author: '湲곗닠?곸떊?', date: '2024-05-19', views: 856, comments: 23, image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80' },
+  { id: 3, title: 'MSA ?섍꼍?먯꽌??遺꾩궛 ?몃옖??뀡 泥섎━ ?꾨왂 (Saga ?⑦꽩)', author: '?뚮옯?쇱떎', date: '2024-05-18', views: 2301, comments: 67, image: 'https://images.unsplash.com/photo-1558494949-ef010958384e?w=800&q=80' },
 ];
 
 export function BoardPreview({ tmplatId, bbsNm, bbsIntrcn }: PreviewProps) {
@@ -106,7 +106,7 @@ function HubLayout({ posts }: { posts: any[] }) {
       </div>
       <div className="grid grid-cols-2 gap-6">
          {posts.slice(1).map(post => (
-            <div key={post.id} className="p-6 bg-slate-50 rounded-[0.1rem] border-2 border-slate-100 space-y-4 hover:border-slate-900 transition-all">
+            <div key={post.id} className="p-6 bg-slate-50 rounded-[0.1rem] border-2 border-slate-100 space-y-4 hover:border-slate-900 transition">
                 <h4 className="font-black text-slate-800 text-sm leading-snug truncate-2">{post.title}</h4>
                 <div className="flex justify-between items-center pt-2">
                    <div className="flex gap-4">
@@ -128,7 +128,7 @@ function ListLayout({ posts }: { posts: any[] }) {
   return (
     <div className="space-y-2">
        {posts.map(post => (
-          <div key={post.id} className="flex items-center justify-between p-6 border-b-2 border-slate-50 hover:bg-slate-50 transition-all group">
+          <div key={post.id} className="flex items-center justify-between p-6 border-b-2 border-slate-50 hover:bg-slate-50 transition group">
              <div className="flex-1 flex items-center gap-8">
                 <span className="text-[10px] font-black text-slate-300 w-10">0{post.id}</span>
                 <div className="flex-1">
@@ -156,9 +156,9 @@ function GalleryLayout({ posts }: { posts: any[] }) {
   return (
     <div className="grid grid-cols-1 gap-8">
        {posts.map(post => (
-          <div key={post.id} className="group overflow-hidden rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
+          <div key={post.id} className="group overflow-hidden rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-sm transition hover:shadow-2xl hover:-translate-y-2">
              <div className="h-48 overflow-hidden relative">
-                <img src={post.image} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 scale-110 group-hover:scale-100" />
+                <img src={post.image} className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition duration-700 scale-110 group-hover:scale-100" />
                 <div className="absolute top-4 right-4 px-4 py-1.5 bg-slate-900/40 backdrop-blur-md rounded-full text-white text-[8px] font-black tracking-widest uppercase">INSIGHT</div>
              </div>
              <div className="p-8 space-y-6">
@@ -184,7 +184,7 @@ function QnaLayout({ posts }: { posts: any[] }) {
   return (
     <div className="space-y-4">
        {posts.map((post, idx) => (
-          <div key={post.id} className="p-6 bg-white border-2 border-slate-100 rounded-[0.1rem] flex gap-6 hover:border-amber-500 transition-all group">
+          <div key={post.id} className="p-6 bg-white border-2 border-slate-100 rounded-[0.1rem] flex gap-6 hover:border-amber-500 transition group">
              <div className="flex flex-col items-center gap-1 min-w-[60px]">
                 <div className={cn(
                   "w-12 h-12 rounded-lg flex items-center justify-center font-black text-xl shadow-inner",
@@ -215,11 +215,11 @@ function FaqLayout({ posts }: { posts: any[] }) {
   return (
     <div className="space-y-4">
       {posts.slice(0, 3).map((post, idx) => (
-        <Card key={idx} className="border-2 border-slate-50 overflow-hidden rounded-[0.1rem] hover:border-purple-500 transition-all group">
+        <Card key={idx} className="border-2 border-slate-50 overflow-hidden rounded-[0.1rem] hover:border-purple-500 transition group">
           <div className="p-6 flex items-center justify-between">
             <div className="flex items-center gap-6">
               <div className={cn(
-                "w-12 h-12 rounded-lg flex items-center justify-center font-black text-xl transition-all",
+                "w-12 h-12 rounded-lg flex items-center justify-center font-black text-xl transition",
                 idx === 0 ? "bg-purple-500 text-white shadow-lg" : "bg-slate-100 text-slate-400"
               )}>
                 Q
@@ -245,7 +245,7 @@ function WikiLayout({ posts }: { posts: any[] }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {posts.map((post, idx) => (
-        <Card key={idx} className="group overflow-hidden border-2 border-slate-50 hover:border-slate-900 transition-all rounded-[0.1rem]">
+        <Card key={idx} className="group overflow-hidden border-2 border-slate-50 hover:border-slate-900 transition rounded-[0.1rem]">
           <div className="flex">
             <div className="w-16 bg-slate-50 flex items-center justify-center shrink-0 border-r border-slate-100 group-hover:bg-slate-900 group-hover:text-white transition-colors">
                <Book size={24} className="opacity-40" />
@@ -278,7 +278,7 @@ function CalendarLayout({ posts }: { posts: any[] }) {
           ))}
           {days.map((day, i) => (
              <div key={i} className={cn(
-               "h-24 p-2 border-2 border-slate-50 rounded-[0.1rem] transition-all relative group overflow-hidden",
+               "h-24 p-2 border-2 border-slate-50 rounded-[0.1rem] transition relative group overflow-hidden",
                day === 20 ? "bg-primary/5 border-primary/20" : "bg-white",
                day <= 0 || day > 31 ? "opacity-10" : "hover:border-slate-900"
              )}>

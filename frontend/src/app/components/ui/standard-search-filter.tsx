@@ -46,7 +46,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
 
   return (
     <div className={cn(
-      "border-2 border-border/60 bg-card shadow-sm mb-8 transition-all group overflow-hidden", 
+      "border-2 border-border/60 bg-card shadow-sm mb-8 transition group overflow-hidden", 
       isPremium ? "p-8 rounded-[0.1rem]" : "p-5 rounded-[0.1rem]",
       className
     )}>
@@ -66,7 +66,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
             variant="ghost"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="rounded-[0.1rem] font-black h-10 px-4 gap-2 hover:bg-muted transition-all text-muted-foreground"
+            className="rounded-[0.1rem] font-black h-10 px-4 gap-2 hover:bg-muted transition text-muted-foreground"
           >
             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             <span className="text-[10px] tracking-widest font-black uppercase">필터 {isExpanded ? '접기' : '펼치기'}</span>
@@ -86,7 +86,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
                     value={values[field.name] === '' ? '__ALL__' : (values[field.name] || '')}
                     onValueChange={(v) => handleValueChange(field.name, v === '__ALL__' ? '' : v)}
                   >
-                    <SelectTrigger className="h-12 rounded-[0.1rem] border border-input bg-background focus:ring-4 focus:ring-primary/10 hover:border-primary/50 transition-all font-bold text-sm ring-offset-background shadow-sm">
+                    <SelectTrigger className="h-12 rounded-[0.1rem] border border-input bg-background focus:ring-4 focus:ring-primary/10 hover:border-primary/50 transition font-bold text-sm ring-offset-background shadow-sm">
                       <SelectValue placeholder={field.placeholder || "전체"} />
                     </SelectTrigger>
                     <SelectContent className="rounded-[0.1rem] shadow-2xl border-border bg-background p-1">
@@ -107,7 +107,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-12 justify-start text-left font-bold text-sm rounded-[0.1rem] border border-input bg-background transition-all hover:border-primary/50 shadow-sm",
+                          "w-full h-12 justify-start text-left font-bold text-sm rounded-[0.1rem] border border-input bg-background transition hover:border-primary/50 shadow-sm",
                           !values[field.name] && "text-muted-foreground/50"
                         )}
                       >
@@ -144,7 +144,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
                     type="date"
                     value={values[field.name] || ''}
                     onChange={(e) => handleValueChange(field.name, e.target.value)}
-                    className="h-12 rounded-[0.1rem] border border-input bg-background font-bold text-sm ring-offset-background transition-all hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm"
+                    className="h-12 rounded-[0.1rem] border border-input bg-background font-bold text-sm ring-offset-background transition hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm"
                   />
                 ) : (
                   <div className="relative">
@@ -153,7 +153,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
                       placeholder={field.placeholder?.toUpperCase()}
                       value={values[field.name] || ''}
                       onChange={(e) => handleValueChange(field.name, e.target.value)}
-                      className="h-12 pl-11 rounded-[0.1rem] border border-input bg-background font-bold text-sm ring-offset-background transition-all hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm placeholder:font-black placeholder:text-[10px] placeholder:tracking-widest"
+                      className="h-12 pl-11 rounded-[0.1rem] border border-input bg-background font-bold text-sm ring-offset-background transition hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm placeholder:font-black placeholder:text-[10px] placeholder:tracking-widest"
                     />
                   </div>
                 )}
@@ -168,7 +168,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
             variant="ghost"
             size="sm"
             onClick={handleReset}
-            className="rounded-[0.1rem] h-11 px-5 font-black gap-2 text-[10px] tracking-widest text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-all uppercase"
+            className="rounded-[0.1rem] h-11 px-5 font-black gap-2 text-[10px] tracking-widest text-muted-foreground/60 hover:bg-muted hover:text-foreground transition uppercase"
           >
             <RotateCcw size={16} />
             초기화
@@ -176,7 +176,7 @@ export function SmartSearchPanel({ fields, onSearch, onReset, className, isPremi
           <Button
             type="submit"
             size="sm"
-            className="rounded-[0.1rem] h-11 px-8 font-black gap-2 shadow-lg shadow-primary/20 transition-all hover:-translate-y-1 text-[10px] tracking-widest uppercase"
+            className="rounded-[0.1rem] h-11 px-8 font-black gap-2 shadow-lg shadow-primary/20 transition hover:-translate-y-1 text-[10px] tracking-widest uppercase"
           >
             <Search size={16} />
             조회

@@ -92,7 +92,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                 </div>
                 <button 
                    onClick={onClose} 
-                   className="p-3 hover:bg-slate-100 dark:hover:bg-white/5 rounded-[0.1rem] transition-all hover:rotate-90 group"
+                   className="p-3 hover:bg-slate-100 dark:hover:bg-white/5 rounded-[0.1rem] transition hover:rotate-90 group"
                 >
                   <X size={24} className="group-hover:text-primary transition-colors" />
                 </button>
@@ -105,7 +105,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                        key={f}
                        onClick={() => setActiveFilter(f)}
                        className={cn(
-                          "px-4 py-2 rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase transition-all",
+                          "px-4 py-2 rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase transition",
                           activeFilter === f 
                              ? "bg-slate-900 text-white shadow-lg scale-105" 
                              : "bg-white text-slate-400 hover:bg-slate-100 border-2 border-slate-100"
@@ -114,7 +114,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                        {f}
                     </button>
                  ))}
-                 <button className="ml-auto w-10 h-10 rounded-[0.1rem] bg-white border-2 border-slate-100 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:border-rose-100 transition-all">
+                 <button className="ml-auto w-10 h-10 rounded-[0.1rem] bg-white border-2 border-slate-100 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:border-rose-100 transition">
                     <Trash2 size={16} />
                  </button>
               </div>
@@ -141,7 +141,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ delay: idx * 0.05 }}
                         className={cn(
-                          "group relative p-6 rounded-[0.1rem] border-2 transition-all duration-500 cursor-pointer overflow-hidden backdrop-blur-sm",
+                          "group relative p-6 rounded-[0.1rem] border-2 transition duration-500 cursor-pointer overflow-hidden backdrop-blur-sm",
                           notif.isRead
                             ? "bg-slate-50/30 border-slate-50 opacity-60"
                             : "bg-white border-slate-100 shadow-xl hover:shadow-primary/5 hover:border-primary/20",
@@ -170,7 +170,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
 
                         <div className="flex items-center justify-between mt-6 relative z-10 px-1">
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{notif.time}</span>
-                          <button className="flex items-center gap-2 text-[10px] font-black text-primary opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 tracking-[0.2em] uppercase italic">
+                          <button className="flex items-center gap-2 text-[10px] font-black text-primary opacity-0 group-hover:opacity-100 transition translate-x-4 group-hover:translate-x-0 tracking-[0.2em] uppercase italic">
                             RESOLVE_NODE <ArrowRight size={14} />
                           </button>
                         </div>
@@ -189,7 +189,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
 
               {/* Bottom Sticky Control */}
               <div className="p-8 border-t bg-white dark:bg-slate-950">
-                 <Button className="w-full h-14 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-[0.3em] uppercase text-[10px] shadow-2xl hover:bg-primary transition-all">
+                 <Button className="w-full h-14 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-[0.3em] uppercase text-[10px] shadow-2xl hover:bg-primary transition">
                     READ_ALL_BROADCASTS
                  </Button>
               </div>

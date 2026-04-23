@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -24,7 +24,7 @@ export default function LoginPage() {
     const { login, user, loading } = useAuth();
     const router = useRouter();
 
-    // 이미 로그인된 상태라면 대시보드로 자동 이동
+    // ?대? 濡쒓렇?몃맂 ?곹깭?쇰㈃ ??쒕낫?쒕줈 ?먮룞 ?대룞
     React.useEffect(() => {
         if (!loading && user) {
             router.replace('/admin/work-hub');
@@ -48,11 +48,10 @@ export default function LoginPage() {
         try {
             await login({ id, password });
             
-            // 프리미엄 체감을 위한 단계별 시각적 피드백
-            setTimeout(() => setAuthStep(2), 400);
+            // ?꾨━誘몄뾼 泥닿컧???꾪븳 ?④퀎蹂??쒓컖???쇰뱶諛?            setTimeout(() => setAuthStep(2), 400);
             
             await new Promise(resolve => setTimeout(resolve, 800));
-            toast.success("인증 성공: 보안 세션이 성공적으로 수립되었습니다.");
+            toast.success("?몄쬆 ?깃났: 蹂댁븞 ?몄뀡???깃났?곸쑝濡??섎┰?섏뿀?듬땲??");
             
             setTimeout(() => {
                 window.location.href = redirectUrl;
@@ -101,10 +100,10 @@ export default function LoginPage() {
                                 
                                 <div className="space-y-2">
                                     <h3 className="text-xl font-bold text-white">
-                                        {authStep === 1 ? "로그인 인증 중" : "인증 완료"}
+                                        {authStep === 1 ? "濡쒓렇???몄쬆 以? : "?몄쬆 ?꾨즺"}
                                     </h3>
                                     <p className="text-slate-400 text-sm">
-                                        {authStep === 1 ? "보안 노드에 접속 시도 중..." : "사용자 업무 환경 동기화 중..."}
+                                        {authStep === 1 ? "蹂댁븞 ?몃뱶???묒냽 ?쒕룄 以?.." : "?ъ슜???낅Т ?섍꼍 ?숆린??以?.."}
                                     </p>
                                 </div>
                             </motion.div>
@@ -116,41 +115,41 @@ export default function LoginPage() {
                             <Zap className="text-primary w-6 h-6 fill-primary" />
                         </div>
                         <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                            엔터프라이즈
+                            ?뷀꽣?꾨씪?댁쫰
                         </CardTitle>
                         <CardDescription className="text-slate-500 font-medium text-xs uppercase tracking-wider">
-                            글로벌 통합 관리 콘솔
+                            湲濡쒕쾶 ?듯빀 愿由?肄섏넄
                         </CardDescription>
                     </CardHeader>
 
                     <form onSubmit={handleSubmit}>
                         <CardContent className="space-y-5 px-8">
                             <div className="space-y-2">
-                                <Label htmlFor="id" className="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">사용자 아이디</Label>
+                                <Label htmlFor="id" className="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">?ъ슜???꾩씠??/Label>
                                 <div className="relative group">
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="id"
-                                        placeholder="시스템 아이디를 입력하세요"
+                                        placeholder="?쒖뒪???꾩씠?붾? ?낅젰?섏꽭??
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
-                                        className="h-12 pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all shadow-sm"
+                                        className="h-12 pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition shadow-sm"
                                         autoComplete="username"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password" className="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">액세스 키</Label>
+                                <Label htmlFor="password" className="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">?≪꽭????/Label>
                                 <div className="relative group">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="password"
                                         type={showPassword ? 'text' : 'password'}
-                                        placeholder="············"
+                                        placeholder="쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="h-12 pl-10 pr-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all shadow-sm"
+                                        className="h-12 pl-10 pr-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition shadow-sm"
                                         autoComplete="current-password"
                                     />
                                     <Button
@@ -169,10 +168,10 @@ export default function LoginPage() {
                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="remember" className="rounded-md border-slate-300" />
                                     <Label htmlFor="remember" className="text-xs font-medium text-slate-500 cursor-pointer select-none">
-                                        로그인 상태 유지
+                                        濡쒓렇???곹깭 ?좎?
                                     </Label>
                                 </div>
-                                <Button variant="link" className="text-xs font-semibold text-primary p-0 h-auto">비밀번호 찾기</Button>
+                                <Button variant="link" className="text-xs font-semibold text-primary p-0 h-auto">鍮꾨?踰덊샇 李얘린</Button>
                             </div>
 
                             {error && (
@@ -189,18 +188,18 @@ export default function LoginPage() {
 
                         <CardFooter className="px-8 pb-10 pt-2">
                             <Button 
-                                className="w-full h-12 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-sm shadow-lg transition-all active:scale-[0.98] flex items-center gap-2" 
+                                className="w-full h-12 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-sm shadow-lg transition active:scale-[0.98] flex items-center gap-2" 
                                 type="submit" 
                                 disabled={isSubmitting}
                             >
                                 <LogIn className="h-4 w-4" /> 
-                                시스템 접속하기
+                                ?쒖뒪???묒냽?섍린
                             </Button>
                         </CardFooter>
                     </form>
                 </Card>
                 <p className="mt-8 text-center text-[11px] font-medium text-slate-500 tracking-tight opacity-60">
-                    &copy; 2026 관리 통합 시스템. 보안 노드 01.
+                    &copy; 2026 愿由??듯빀 ?쒖뒪?? 蹂댁븞 ?몃뱶 01.
                 </p>
             </motion.div>
         </div>

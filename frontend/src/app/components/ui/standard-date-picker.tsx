@@ -22,7 +22,7 @@ export function StandardDatePicker({ date, onDateChange, placeholder, className 
  type="button"
  onClick={() => setIsOpen(!isOpen)}
  className={cn(
- "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+ "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
  !date && "text-muted-foreground"
  )}
  >
@@ -35,7 +35,7 @@ export function StandardDatePicker({ date, onDateChange, placeholder, className 
  {isOpen && (
  <>
  <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
- <div className="absolute top-11 left-0 z-50 rounded-md border bg-popover p-3 text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95">
+ <div className="absolute top-11 left-0 z-50 rounded-md border bg-popover p-3 text-popover-foreground shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 animate-in fade-in-0 zoom-in-95">
  <DayPicker
  mode="single"
  selected={date}

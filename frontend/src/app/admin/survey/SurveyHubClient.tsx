@@ -86,7 +86,7 @@ export default function SurveyHubClient() {
             <Button variant="outline" size="lg" className="h-12 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2">
               <Database size={16} /> 분석 아카이브
             </Button>
-            <Button size="lg" className="h-12 px-8 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2">
+            <Button size="lg" className="h-12 px-8 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition gap-2">
               <Plus size={18} /> 신규 설문 생성
             </Button>
           </div>
@@ -135,7 +135,7 @@ export default function SurveyHubClient() {
             <div className="relative group mb-8">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within:opacity-100 transition-opacity" size={16} />
               <Input
-                className="h-14 pl-12 pr-6 bg-muted/30 border-none rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all pointer-events-auto"
+                className="h-14 pl-12 pr-6 bg-muted/30 border-none rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition pointer-events-auto"
                 placeholder="검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -152,7 +152,7 @@ export default function SurveyHubClient() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className={cn(
-                      "group p-6 rounded-[0.1rem] border transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
+                      "group p-6 rounded-[0.1rem] border transition cursor-pointer flex items-center justify-between relative overflow-hidden",
                       selectedSurveyId === survey.id
                         ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
                         : "bg-white border-border/50 hover:border-primary/50 text-foreground shadow-sm"
@@ -187,7 +187,7 @@ export default function SurveyHubClient() {
                       <span className="text-[9px] font-black tracking-[0.2em] opacity-40 uppercase">명</span>
                     </div>
 
-                    <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.02] grayscale transition-all duration-700">
+                    <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.02] grayscale transition duration-700">
                       <ClipboardCheck size={80} />
                     </div>
                   </motion.div>
@@ -250,7 +250,7 @@ export default function SurveyHubClient() {
                       <Button variant="outline" className="h-16 flex-1 rounded-[0.1rem] border-2 border-border font-black tracking-[0.2em] shadow-sm uppercase gap-3">
                         <Share2 size={18} /> Protocol Link
                       </Button>
-                      <Button className="h-16 flex-[2] bg-slate-900 border-none text-white rounded-[0.1rem] font-black tracking-[0.3em] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all uppercase gap-3">
+                      <Button className="h-16 flex-[2] bg-slate-900 border-none text-white rounded-[0.1rem] font-black tracking-[0.3em] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition uppercase gap-3">
                         Export Data <Download size={20} />
                       </Button>
                     </div>
@@ -284,14 +284,14 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
     <button
       onClick={onClick}
       className={cn(
-        "w-full group p-6 rounded-[0.1rem] border-2 transition-all flex items-center gap-6",
+        "w-full group p-6 rounded-[0.1rem] border-2 transition flex items-center gap-6",
         active
           ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
           : "bg-white border-transparent hover:border-primary/20 text-slate-500 hover:text-slate-900"
       )}
     >
       <div className={cn(
-        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all shadow-md",
+        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition shadow-md",
         active ? "bg-white/10 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-primary/10 group-hover:text-primary shadow-inner"
       )}>
         {icon}
@@ -309,7 +309,7 @@ function Bar({ height, opacity, active = false, color }: any) {
         animate={{ height: `${height}%` }}
         transition={{ duration: 1, ease: "easeOut" }}
         className={cn(
-          "w-full rounded-t-2xl transition-all shadow-[0_-5px_20px_-5px_rgba(255,255,255,0.1)]",
+          "w-full rounded-t-2xl transition shadow-[0_-5px_20px_-5px_rgba(255,255,255,0.1)]",
           color
         )}
         style={{ opacity }}

@@ -90,7 +90,7 @@ export default function PollDetailPage() {
                             value={formData.pollNm}
                             onChange={(e) => setFormData(prev => ({ ...prev, pollNm: e.target.value }))}
                             placeholder="설문 주제를 입력하세요"
-                            className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
+                            className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white transition font-bold px-6"
                         />
                     </div>
 
@@ -165,7 +165,7 @@ export default function PollDetailPage() {
                     </div>
 
                     <div className="flex pt-6">
-                        <Button onClick={handleSave} className="w-full h-16 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
+                        <Button onClick={handleSave} className="w-full h-16 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition active:scale-95 gap-3">
                             <Send className="w-5 h-5" /> 설정 저장 완료
                         </Button>
                     </div>

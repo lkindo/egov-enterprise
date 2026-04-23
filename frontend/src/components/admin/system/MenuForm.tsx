@@ -142,7 +142,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                         {...field} 
                         value={String(field.value)}
                         readOnly={isEdit} 
-                        className="h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition-all shadow-inner"
+                        className="h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition shadow-inner"
                       />
                     </FormControl>
                     <FormMessage />
@@ -163,7 +163,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                         placeholder="순서" 
                         {...field} 
                         value={String(field.value)}
-                        className="h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition-all shadow-inner"
+                        className="h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition shadow-inner"
                       />
                     </FormControl>
                     <FormMessage />
@@ -184,7 +184,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                     <Input 
                       placeholder="메뉴명" 
                       {...field} 
-                      className="h-16 px-8 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                      className="h-16 px-8 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition shadow-inner"
                     />
                   </FormControl>
                   <FormMessage />
@@ -205,7 +205,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                       <Input 
                         placeholder="프로그램파일명" 
                         {...field} 
-                        className="h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
+                        className="h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition shadow-inner"
                       />
                     </FormControl>
                     <FormMessage />
@@ -226,7 +226,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                         placeholder="상위메뉴번호" 
                         {...field} 
                         value={String(field.value)}
-                        className="h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition-all shadow-inner"
+                        className="h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-black text-sm focus:bg-white transition shadow-inner"
                       />
                     </FormControl>
                     <FormMessage />
@@ -247,7 +247,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                     <Input 
                       placeholder="설명" 
                       {...field} 
-                      className="h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
+                      className="h-14 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition shadow-inner"
                     />
                   </FormControl>
                   <FormMessage />
@@ -261,13 +261,13 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
-                  className="h-16 px-10 rounded-[0.1rem] border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition-all flex-1"
+                  className="h-16 px-10 rounded-[0.1rem] border-2 border-slate-100 font-black text-sm tracking-tight hover:bg-slate-50 transition flex-1"
                 >
                   취소
                 </Button>
                 <Button 
                   type="submit"
-                  className="h-16 px-14 bg-slate-900 text-white rounded-[0.1rem] font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
+                  className="h-16 px-14 bg-slate-900 text-white rounded-[0.1rem] font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
                 >
                   <Save size={18} />
                   데이터 저장
@@ -278,7 +278,7 @@ export function MenuForm({ open, onOpenChange, data, onSuccess }: MenuFormProps)
                   type="button" 
                   variant="ghost" 
                   onClick={handleDelete}
-                  className="h-16 w-16 rounded-[0.1rem] text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm"
+                  className="h-16 w-16 rounded-[0.1rem] text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition shadow-sm"
                 >
                   <Trash2 size={24} />
                 </Button>

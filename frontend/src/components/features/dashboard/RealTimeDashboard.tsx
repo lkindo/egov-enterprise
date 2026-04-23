@@ -227,7 +227,7 @@ function RealTimeStatCard({ title, value, icon, trend, isAlert, color = 'blue' }
 
   return (
     <Card className={cn(
-      "transition-all hover:shadow-md",
+      "transition hover:shadow-md",
       isAlert && value > 0 && "border-red-200 bg-red-50/30 dark:bg-red-900/10"
     )}>
       <CardContent className="p-6">

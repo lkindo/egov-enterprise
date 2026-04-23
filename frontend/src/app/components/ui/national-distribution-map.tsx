@@ -62,7 +62,7 @@ export function NationalDistributionMap({ className }: { className?: string }) {
             )}
 
             <div className={cn(
-              "relative z-10 w-4 h-4 rounded-full border-2 border-background shadow-xl transition-all duration-500 group-hover/point:scale-150",
+              "relative z-10 w-4 h-4 rounded-full border-2 border-background shadow-xl transition duration-500 group-hover/point:scale-150",
               item.activity === 'high' ? "bg-blue-600 w-6 h-6" :
               item.activity === 'medium' ? "bg-blue-400 w-4 h-4" : "bg-blue-200 w-3 h-3"
             )} />

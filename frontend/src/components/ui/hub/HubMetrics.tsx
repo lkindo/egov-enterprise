@@ -44,7 +44,7 @@ export function HubMetricCard({
 
   return (
     <div className={cn(
-      "hub-table-container p-10 group hover:scale-[1.02] transition-all relative overflow-hidden bg-white border-border/50 shadow-md",
+      "hub-table-container p-10 group hover:scale-[1.02] transition relative overflow-hidden bg-white border-border/50 shadow-md",
       className
     )}>
       <div className="flex justify-between items-start mb-10 relative z-10">
@@ -75,7 +75,7 @@ export function HubMetricCard({
           {title}
         </p>
       </div>
-      <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] group-hover:scale-125 group-hover:rotate-12 transition-all duration-1000 grayscale pointer-events-none">
+      <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] group-hover:scale-125 group-hover:rotate-12 transition duration-1000 grayscale pointer-events-none">
         <Icon size={180} />
       </div>
     </div>

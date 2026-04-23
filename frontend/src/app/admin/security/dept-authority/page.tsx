@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -86,15 +86,15 @@ export default function DeptAuthorityPage() {
         allMembers: true
       }),
     onSuccess: () => {
-      toast('부서 전체 사용자에게 보안 정책이 일괄 적용되었습니다.', 'success');
+      toast('遺???꾩껜 ?ъ슜?먯뿉寃?蹂댁븞 ?뺤콉???쇨큵 ?곸슜?섏뿀?듬땲??', 'success');
       setSelectedAuthorCode(null);
     },
-    onError: () => toast('권한 저장 중 오류가 발생했습니다.', 'error')
+    onError: () => toast('沅뚰븳 ???以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error')
   });
 
   const columns: Column<AuthorInfo>[] = [
     {
-      header: '정책 프로파일 ID',
+      header: '?뺤콉 ?꾨줈?뚯씪 ID',
       accessor: (item: AuthorInfo) => (
           <div className="flex flex-col gap-0.5">
               <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic leading-none mb-1">POLICY_UID</span>
@@ -104,11 +104,11 @@ export default function DeptAuthorityPage() {
       className: 'w-48'
     },
     {
-      header: '권한 아키텍처 명칭',
+      header: '沅뚰븳 ?꾪궎?띿쿂 紐낆묶',
       accessor: (item: AuthorInfo) => (
           <div className="flex flex-col gap-0.5 py-2">
               <span className="font-black text-foreground tracking-tight text-md uppercase leading-tight">{item.authorNm}</span>
-              <span className="text-[9px] font-bold text-muted-foreground/40 truncate block max-w-[300px] italic leading-none">{item.authorDc || '규정 명세 없음'}</span>
+              <span className="text-[9px] font-bold text-muted-foreground/40 truncate block max-w-[300px] italic leading-none">{item.authorDc || '洹쒖젙 紐낆꽭 ?놁쓬'}</span>
           </div>
       )
     },
@@ -126,11 +126,11 @@ export default function DeptAuthorityPage() {
                 setSelectedAuthorCode(item.authorCode);
               }}
               className={cn(
-                  "relative flex items-center justify-center w-8 h-8 rounded-[0.1rem] transition-all duration-500 outline-none border-2",
+                  "relative flex items-center justify-center w-8 h-8 rounded-[0.1rem] transition duration-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 border-2",
                   isSelected ? "bg-primary border-primary shadow-xl shadow-primary/30 rotate-0 scale-110" : "bg-white border-slate-100 hover:border-primary/40 rotate-12"
               )}
             >
-              <CheckCircle size={16} className={cn("transition-all duration-700", isSelected ? "text-white scale-100 opacity-100 rotate-0" : "text-transparent scale-50 opacity-0 rotate-45")} />
+              <CheckCircle size={16} className={cn("transition duration-700", isSelected ? "text-white scale-100 opacity-100 rotate-0" : "text-transparent scale-50 opacity-0 rotate-45")} />
             </button>
           </div>
         );
@@ -140,13 +140,13 @@ export default function DeptAuthorityPage() {
 
   const handleSave = () => {
     if (!selectedDept) {
-      return toast('설정할 부서를 먼저 선택해 주세요.', 'info');
+      return toast('?ㅼ젙??遺?쒕? 癒쇱? ?좏깮??二쇱꽭??', 'info');
     }
     if (!selectedAuthorCode) {
-      return toast('부여할 권한을 선택해 주세요.', 'info');
+      return toast('遺?ы븷 沅뚰븳???좏깮??二쇱꽭??', 'info');
     }
 
-    if (confirm(`선택한 조직의 모든 구성원에게 '${selectedAuthorCode}' 보안 정책을 전역적으로 강제 적용하시겠습니까?`)) {
+    if (confirm(`?좏깮??議곗쭅??紐⑤뱺 援ъ꽦?먯뿉寃?'${selectedAuthorCode}' 蹂댁븞 ?뺤콉???꾩뿭?곸쑝濡?媛뺤젣 ?곸슜?섏떆寃좎뒿?덇퉴?`)) {
       saveMutation.mutate(selectedAuthorCode);
     }
   };
@@ -156,29 +156,29 @@ export default function DeptAuthorityPage() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="조직 기반 권한 일괄 프로비저닝"
-        breadcrumbs={[{ label: '보안 관리' }, { label: '조직 권한' }, { label: '일괄 관리' }]}
+        title="議곗쭅 湲곕컲 沅뚰븳 ?쇨큵 ?꾨줈鍮꾩???
+        breadcrumbs={[{ label: '蹂댁븞 愿由? }, { label: '議곗쭅 沅뚰븳' }, { label: '?쇨큵 愿由? }]}
       />
 
       <HubHeader 
         title="Department" 
         highlight="Batch" 
-        subtitle="조직 단위의 보안 역할 강제 배포 및 계정 권한 집합 토폴로지 통합 관리" 
+        subtitle="議곗쭅 ?⑥쐞??蹂댁븞 ??븷 媛뺤젣 諛고룷 諛?怨꾩젙 沅뚰븳 吏묓빀 ?좏뤃濡쒖? ?듯빀 愿由? 
         icon={Building2} 
         actions={
           <div className="flex gap-4 p-2 items-center">
             <Button
                 variant="ghost"
                 onClick={() => queryClient.invalidateQueries()}
-                className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+                className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition shadow-xl group active:scale-95 px-4"
             >
                 <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
             <Button
               onClick={handleSave}
-              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition hover:-translate-y-1 gap-3 group"
             >
-              <Save size={20} className="group-hover:scale-110 transition-transform duration-500" /> 정책 마스터 배포
+              <Save size={20} className="group-hover:scale-110 transition-transform duration-500" /> ?뺤콉 留덉뒪??諛고룷
             </Button>
           </div>
         }
@@ -194,12 +194,12 @@ export default function DeptAuthorityPage() {
       <div className="grid grid-cols-12 gap-12 min-h-[850px]">
         {/* Left: Department Explorer */}
         <div className="col-span-12 lg:col-span-4 h-full flex flex-col gap-8">
-            <HubSectionCard title="조직 아키텍처 식별" description="권한 정책 일괄 배포 시스템 내 하위 조직을 식별하세요" icon={Building2}>
+            <HubSectionCard title="議곗쭅 ?꾪궎?띿쿂 ?앸퀎" description="沅뚰븳 ?뺤콉 ?쇨큵 諛고룷 ?쒖뒪?????섏쐞 議곗쭅???앸퀎?섏꽭?? icon={Building2}>
                 <div className="space-y-8 pt-4">
                     <div className="relative group/search">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                         <Input
-                            placeholder="부서명 검색..."
+                            placeholder="遺?쒕챸 寃??.."
                             className="pl-12 h-14 bg-slate-50/50 border-none rounded-[0.1rem] text-sm font-black tracking-tight shadow-inner"
                             value={searchKeyword}
                             onChange={(e) => setSearchKeyword(e.target.value)}
@@ -225,7 +225,7 @@ export default function DeptAuthorityPage() {
                                             setSelectedAuthorCode(null);
                                         }}
                                         className={cn(
-                                            "group flex items-center justify-between p-6 w-full rounded-[0.1rem] border-2 transition-all duration-300 relative overflow-hidden",
+                                            "group flex items-center justify-between p-6 w-full rounded-[0.1rem] border-2 transition duration-300 relative overflow-hidden",
                                             selectedDept === d.orgnztId
                                                 ? "bg-slate-900 border-slate-900 shadow-2xl shadow-slate-900/20"
                                                 : "bg-white border-slate-50 hover:border-slate-200"
@@ -233,7 +233,7 @@ export default function DeptAuthorityPage() {
                                     >
                                         <div className="flex items-center gap-4 relative z-10">
                                             <div className={cn(
-                                                "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all",
+                                                "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition",
                                                 selectedDept === d.orgnztId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-300 group-hover:bg-slate-900 group-hover:text-white"
                                             )}>
                                                 <Users size={20} />
@@ -250,7 +250,7 @@ export default function DeptAuthorityPage() {
                                             </div>
                                         </div>
                                         <ChevronRight size={14} className={cn(
-                                            "transition-all shrink-0 relative z-10",
+                                            "transition shrink-0 relative z-10",
                                             selectedDept === d.orgnztId ? "opacity-100 translate-x-1" : "opacity-0 translate-x-0"
                                         )} />
                                         {selectedDept === d.orgnztId && (
@@ -268,8 +268,8 @@ export default function DeptAuthorityPage() {
         {/* Right: Policy Matrix Selection */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-10 h-full">
             <HubSectionCard 
-                title={currentDept ? `[${currentDept.orgnztNm}] 보안 마스터 정책 배포` : "보안 메트릭스 선택"} 
-                description="선택한 조직의 모든 계정에 동기화할 마스터 권한 아키텍처를 선택하십시오." 
+                title={currentDept ? `[${currentDept.orgnztNm}] 蹂댁븞 留덉뒪???뺤콉 諛고룷` : "蹂댁븞 硫뷀듃由?뒪 ?좏깮"} 
+                description="?좏깮??議곗쭅??紐⑤뱺 怨꾩젙???숆린?뷀븷 留덉뒪??沅뚰븳 ?꾪궎?띿쿂瑜??좏깮?섏떗?쒖삤." 
                 icon={ShieldCheck}
             >
                 <div className="relative h-full flex flex-col pt-4">
@@ -285,7 +285,7 @@ export default function DeptAuthorityPage() {
                                 </div>
                                 <div className="space-y-4">
                                     <h3 className="text-3xl font-black text-slate-200 uppercase tracking-tighter italic">Selection_Required</h3>
-                                    <p className="text-[11px] font-black text-slate-200 tracking-[0.4em] uppercase leading-relaxed font-mono max-w-xs mx-auto">식별된 부서의 보안 거버넌스 구성을 위해 좌측 리스트를 프로브하십시오</p>
+                                    <p className="text-[11px] font-black text-slate-200 tracking-[0.4em] uppercase leading-relaxed font-mono max-w-xs mx-auto">?앸퀎??遺?쒖쓽 蹂댁븞 嫄곕쾭?뚯뒪 援ъ꽦???꾪빐 醫뚯륫 由ъ뒪?몃? ?꾨줈釉뚰븯??떆??/p>
                                 </div>
                             </motion.div>
                         ) : (
@@ -307,7 +307,7 @@ export default function DeptAuthorityPage() {
                                             <h4 className="text-3xl font-black tracking-tighter leading-none">{currentDept?.orgnztNm}</h4>
                                             <span className="text-xs font-black text-white/40 tracking-widest font-mono">[{selectedDept}]</span>
                                         </div>
-                                        <p className="text-[10px] font-black text-primary/80 tracking-widest uppercase mt-2">이 부서의 모든 구성원에게 전역 정책 설정을 시작할 수 있는 상태입니다.</p>
+                                        <p className="text-[10px] font-black text-primary/80 tracking-widest uppercase mt-2">??遺?쒖쓽 紐⑤뱺 援ъ꽦?먯뿉寃??꾩뿭 ?뺤콉 ?ㅼ젙???쒖옉?????덈뒗 ?곹깭?낅땲??</p>
                                     </div>
                                 </div>
 
@@ -317,7 +317,7 @@ export default function DeptAuthorityPage() {
                                         data={roles}
                                         loading={loading}
                                         keyField="authorCode"
-                                        emptyMessage="시스템에 등록된 권한 그룹 정보가 없습니다."
+                                        emptyMessage="?쒖뒪?쒖뿉 ?깅줉??沅뚰븳 洹몃９ ?뺣낫媛 ?놁뒿?덈떎."
                                         onRowClick={(item) => setSelectedAuthorCode(item.authorCode)}
                                         className="border-none bg-transparent"
                                     />
@@ -329,9 +329,9 @@ export default function DeptAuthorityPage() {
                                     </div>
                                     <div className="space-y-1">
                                          <p className="text-[11px] font-black text-slate-800 tracking-tight leading-relaxed">
-                                            전역 정책 강제 배포(Batch Deployment) 시 해당 조직 구성원이 보유한 기존의 모든 개별 권한은 <span className="text-rose-500 underline decoration-2 underline-offset-4 font-black italic">영구적으로 파기</span>되고 마스터 정책으로 전면 교체됩니다.
+                                            ?꾩뿭 ?뺤콉 媛뺤젣 諛고룷(Batch Deployment) ???대떦 議곗쭅 援ъ꽦?먯씠 蹂댁쑀??湲곗〈??紐⑤뱺 媛쒕퀎 沅뚰븳? <span className="text-rose-500 underline decoration-2 underline-offset-4 font-black italic">?곴뎄?곸쑝濡??뚭린</span>?섍퀬 留덉뒪???뺤콉?쇰줈 ?꾨㈃ 援먯껜?⑸땲??
                                         </p>
-                                        <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase opacity-60">아키텍처 재설정 주의</span>
+                                        <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase opacity-60">?꾪궎?띿쿂 ?ъ꽕??二쇱쓽</span>
                                     </div>
                                 </div>
                             </motion.div>

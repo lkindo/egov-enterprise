@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -51,7 +51,7 @@ export default function AbsenceAdminClient({
     const newStatus = !currentStatus ? 'Y' : 'N';
     try {
       await absenceAdminService.updateAbsence(emplyrId, newStatus);
-      // 로컬 상태 업데이트
+      // 濡쒖뺄 ?곹깭 ?낅뜲?댄듃
       setAbsences(prev => {
         const existing = prev.find(a => a.emplyrId === emplyrId);
         if (existing) {
@@ -60,21 +60,21 @@ export default function AbsenceAdminClient({
           return [...prev, { emplyrId, userAbsnceAt: newStatus }];
         }
       });
-      toast.success(`${emplyrId} 사용자의 프로필이 ${newStatus === 'Y' ? '부재 모드' : '활성 모드'}로 전환되었습니다.`);
+      toast.success(`${emplyrId} ?ъ슜?먯쓽 ?꾨줈?꾩씠 ${newStatus === 'Y' ? '遺??紐⑤뱶' : '?쒖꽦 紐⑤뱶'}濡??꾪솚?섏뿀?듬땲??`);
     } catch {
-      toast.error('프로필 동기화 중 오류가 발생했습니다.');
+      toast.error('?꾨줈???숆린??以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
     }
   };
 
   const columns: Column<any>[] = [
     {
-      header: '아이덴티티 리소스',
+      header: '?꾩씠?댄떚??由ъ냼??,
       accessor: (item: any) => {
         const isAbsent = getAbsenceStatus(item.emplyrId);
         return (
           <div className="flex items-center gap-6 py-4">
             <div className={cn(
-              "w-16 h-16 rounded-[0.1rem] flex items-center justify-center text-white shadow-2xl transition-all duration-700 relative overflow-hidden group-hover:scale-110",
+              "w-16 h-16 rounded-[0.1rem] flex items-center justify-center text-white shadow-2xl transition duration-700 relative overflow-hidden group-hover:scale-110",
               isAbsent ? "bg-slate-400 rotate-12" : "bg-slate-900 -rotate-3 group-hover:rotate-0"
             )}>
               {isAbsent ? <Ghost size={24} className="text-white animate-pulse" /> : <User size={24} className="text-primary" />}
@@ -92,7 +92,7 @@ export default function AbsenceAdminClient({
       className: 'w-72'
     },
     {
-      header: '커뮤니케이션 엔드포인트',
+      header: '而ㅻ??덉??댁뀡 ?붾뱶?ъ씤??,
       accessor: (item: any) => (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
@@ -107,13 +107,13 @@ export default function AbsenceAdminClient({
       )
     },
     {
-      header: '가용성 프로필 / 트리거',
+      header: '媛?⑹꽦 ?꾨줈??/ ?몃━嫄?,
       accessor: (item: any) => {
         const isAbsent = getAbsenceStatus(item.emplyrId);
         return (
           <div className="flex items-center gap-6">
             <div className={cn(
-              "flex items-center gap-3 px-6 py-2.5 rounded-[0.1rem] border-2 transition-all min-w-[140px] justify-center shadow-sm",
+              "flex items-center gap-3 px-6 py-2.5 rounded-[0.1rem] border-2 transition min-w-[140px] justify-center shadow-sm",
               isAbsent ? "bg-rose-50 text-rose-600 border-rose-100/50" : "bg-emerald-50 text-emerald-600 border-emerald-100/50"
             )}>
               {isAbsent ? <Clock size={16} className="animate-pulse" /> : <CheckCircle2 size={16} />}
@@ -135,29 +135,28 @@ export default function AbsenceAdminClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="부재 관리 슈퍼바이저"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '사용자관리' }, { label: '부재관리' }]}
+        title="遺??愿由??덊띁諛붿씠?"
+        breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '?ъ슜?먭?由? }, { label: '遺?ш?由? }]}
       />
 
       <HubHeader
-        title="가용성"
+        title="媛?⑹꽦"
         highlight="Matrix"
-        subtitle="전사 인적 리소스의 실시간 가용성 및 부재 프로필 통합 제어 시스템"
+        subtitle="?꾩궗 ?몄쟻 由ъ냼?ㅼ쓽 ?ㅼ떆媛?媛?⑹꽦 諛?遺???꾨줈???듯빀 ?쒖뼱 ?쒖뒪??
         icon={UserX}
         actions={
           <div className="flex gap-4 p-2 items-center">
             <Button
               variant="ghost"
-              className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95"
+              className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition shadow-xl group active:scale-95"
             >
               <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
             <Button
               size="lg"
-              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition hover:-translate-y-1 gap-3 group"
             >
-              <Zap size={20} className="group-hover:animate-pulse" /> 가용성 프로필 동기화
-              <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Zap size={20} className="group-hover:animate-pulse" /> 媛?⑹꽦 ?꾨줈???숆린??              <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </Button>
           </div>
         }
@@ -166,7 +165,7 @@ export default function AbsenceAdminClient({
       <HubMetricGrid>
         <HubMetricCard title="TOTAL_RESOURCES" value={users.length} icon={User} color="primary" />
         <HubMetricCard title="OPERATIONAL_UNITS" value={users.length - totalAbsents} icon={UserCheck} color="emerald" status="ONLINE" />
-        <HubMetricCard title="STANDBY_UNITS" value={totalAbsents} icon={Ghost} color="rose" status={totalAbsents > 0 ? "ALERT" : "안정"} />
+        <HubMetricCard title="STANDBY_UNITS" value={totalAbsents} icon={Ghost} color="rose" status={totalAbsents > 0 ? "ALERT" : "?덉젙"} />
         <HubMetricCard title="SYSTEM_INTEGRITY" value="100%" icon={ShieldCheck} color="indigo" />
       </HubMetricGrid>
 
@@ -182,7 +181,7 @@ export default function AbsenceAdminClient({
                 <div className="w-16 h-16 rounded-[0.1rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                   <Activity size={32} className="text-primary" />
                 </div>
-                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary text-left">가용성<br />인텔리전스</h4>
+                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary text-left">媛?⑹꽦<br />?명뀛由ъ쟾??/h4>
               </div>
 
               <div className="space-y-8">
@@ -193,8 +192,8 @@ export default function AbsenceAdminClient({
                     <input
                       onChange={(e) => setSearchKeyword(e.target.value)}
                       value={searchKeyword}
-                      className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-[0.1rem] focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
-                      placeholder="리소스 명칭 또는 UID 필터링"
+                      className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-[0.1rem] focus:border-primary/50 focus:bg-white/10 transition text-xs font-black tracking-widest text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 placeholder:text-white/10 uppercase"
+                      placeholder="由ъ냼??紐낆묶 ?먮뒗 UID ?꾪꽣留?
                     />
                   </div>
                 </div>
@@ -202,10 +201,10 @@ export default function AbsenceAdminClient({
 
               <div className="pt-8 border-t border-white/5 flex items-center justify-between">
                 <p className="text-[10px] font-bold text-slate-400 leading-relaxed italic uppercase opacity-60 max-w-[200px] text-left">
-                  * 모든 부재 프로필 변경사항은 작업 매트릭스에 즉시 동기화됩니다.
+                  * 紐⑤뱺 遺???꾨줈??蹂寃쎌궗??? ?묒뾽 留ㅽ듃由?뒪??利됱떆 ?숆린?붾맗?덈떎.
                 </p>
                 <Button
-                  className="h-12 px-8 rounded-[0.1rem] bg-white text-slate-900 border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition-all hover:-translate-y-1"
+                  className="h-12 px-8 rounded-[0.1rem] bg-white text-slate-900 border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition hover:-translate-y-1"
                 >
                   SEARCH_RES
                 </Button>
@@ -217,8 +216,8 @@ export default function AbsenceAdminClient({
         {/* Resources Availability Matrix */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
           <HubSectionCard
-            title="리소스 가용성 상태 매트릭스"
-            description="인적 리소스의 실시간 활성/부재 상태를 실시간으로 모니터링하고 제어합니다"
+            title="由ъ냼??媛?⑹꽦 ?곹깭 留ㅽ듃由?뒪"
+            description="?몄쟻 由ъ냼?ㅼ쓽 ?ㅼ떆媛??쒖꽦/遺???곹깭瑜??ㅼ떆媛꾩쑝濡?紐⑤땲?곕쭅?섍퀬 ?쒖뼱?⑸땲??
             icon={SearchCode}
           >
             <div className="overflow-hidden">
@@ -226,7 +225,7 @@ export default function AbsenceAdminClient({
                 columns={columns}
                 data={users.filter((u: any) => String(u.userNm || '').includes(searchKeyword) || String(u.emplyrId || '').includes(searchKeyword))}
                 loading={loading}
-                emptyMessage="리소스 데이터를 분석 중입니다..."
+                emptyMessage="由ъ냼???곗씠?곕? 遺꾩꽍 以묒엯?덈떎..."
                 className="border-none bg-transparent"
               />
             </div>
