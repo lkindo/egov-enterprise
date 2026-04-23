@@ -18,6 +18,7 @@ public class BoardSearchResult {
     private String frstRegisterNm;
     private LocalDateTime createdDate;
     private Integer inqireCo;
+    private Integer likeCo;
     private Long parnts;
     private String replyAt;
     private Integer replyLc;

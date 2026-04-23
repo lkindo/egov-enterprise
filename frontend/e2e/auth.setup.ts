@@ -30,6 +30,7 @@ async function authenticate(request: any, id: string, authFilePath: string) {
         throw new Error(`[AUTH SETUP] Backend unreachable for ${id} (${err.message}).`);
     }
 
+    const webUrl = process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001';
     const storageState = {
         cookies: [
             { name: 'accessToken', value: token, domain: 'localhost', path: '/', expires: -1 },
@@ -38,14 +39,7 @@ async function authenticate(request: any, id: string, authFilePath: string) {
         ],
         origins: [
             {
-                origin: 'http://localhost:3002',
-                localStorage: [
-                    { name: 'accessToken', value: token },
-                    { name: 'egov_smart_tour_v1', value: 'true' }
-                ]
-            },
-            {
-                origin: 'http://127.0.0.1:3002',
+                origin: webUrl,
                 localStorage: [
                     { name: 'accessToken', value: token },
                     { name: 'egov_smart_tour_v1', value: 'true' }

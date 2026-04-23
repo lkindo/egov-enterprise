@@ -9,6 +9,16 @@ public class BoardPredicate {
     public static BooleanBuilder searchBoard(BoardSearchCondition condition) {
         BooleanBuilder builder = new BooleanBuilder();
 
+        if (condition.getSearchWrd() != null) {
+            String wrd = condition.getSearchWrd();
+            StringBuilder hex = new StringBuilder();
+            for (byte b : wrd.getBytes(java.nio.charset.StandardCharsets.UTF_8)) {
+                hex.append(String.format("%02X ", b));
+            }
+            System.out.println("DEBUG: BoardSearchCondition - searchCnd: " + condition.getSearchCnd() + 
+                               ", searchWrd: [" + wrd + "], Hex(UTF-8): " + hex.toString());
+        }
+        
         if (StringUtils.hasText(condition.getBbsId())) {
             builder.and(bbsIdEq(condition.getBbsId()));
         }

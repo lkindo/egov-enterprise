@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, use } from 'react';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { likeBoardArticle } from '@/app/actions/boardActions';
 import Link from 'next/link';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useBoardList } from '@/hooks/api/use-board-list';
@@ -41,6 +43,24 @@ const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardSta
 });
 
 import { BoardPost } from '@/types/business/board';
+
+// 검색어 하이라이팅 컴포넌트
+const HighlightText = ({ text, highlight }: { text: string | undefined; highlight: string }) => {
+  if (!text) return null;
+  if (!highlight.trim()) return <>{text}</>;
+  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+  return (
+    <>
+      {parts.map((part, i) => 
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <mark key={i} className="bg-yellow-200 text-slate-900 rounded-sm px-0.5">{part}</mark>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+};
 
 function FAQItem({ item }: { item: BoardPost }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -113,6 +133,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
   const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
 
@@ -127,11 +148,25 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
 
   useEffect(() => {
     setMounted(true);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('board-search-input')?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
   
   // URL 파라미터가 변경될 때마다 로컬 상태 동기화 (새로고침/뒤로가기 대응)
   useEffect(() => {
-    setSearchWrd(searchParams.get('searchWrd') || '');
+    // 검색어는 사용자가 입력 중일 수 있으므로 URL에 값이 있을 때만 명시적으로 동기화
+    const urlSearchWrd = searchParams.get('searchWrd');
+    if (urlSearchWrd !== null) {
+      setSearchWrd(urlSearchWrd);
+    }
+    
     setPage(Number(searchParams.get('page')) || 1);
     setSearchCnd(searchParams.get('searchCnd') || '0');
     setOrderBy(searchParams.get('orderBy') || 'date');
@@ -147,17 +182,125 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   // 관리자 대시보드용이 아닌 실제 서비스용 위치 확인
   const isManagementView = pathname?.includes('/admin/system/board-masters') || !bbsId?.startsWith('BBSMSTR_');
 
-  // useQuery는 현재 로컬 상태를 기반으로 동작하며, handleSearch가 URL을 바꾸면 컴포넌트가 재시작되면서 최신 상태를 반영함
+  // 실제 API 요청에 사용할 파라미터들 (URL 파라미터를 최우선으로 함)
+  const querySearchWrd = searchParams.get('searchWrd') || "";
+  const querySearchCnd = searchParams.get('searchCnd') || "0";
+  const queryOrderBy = searchParams.get('orderBy') || "date";
+  const queryPage = Number(searchParams.get('page')) || 1;
+  const queryStartDate = searchParams.get('startDate');
+  const queryEndDate = searchParams.get('endDate');
+
+  // 필터가 적용된 상태인지 확인 (SSR 캐시 무효화 판단용)
+  const hasFilter = !!querySearchWrd || querySearchCnd !== '0' || queryOrderBy !== 'date' || !!queryStartDate || !!queryEndDate;
+  
+  // useQuery는 URL 파라미터가 변경될 때만 실행됨 (조회 버튼 클릭 시 router.push로 트리거)
   const { data, isLoading: loading } = useBoardList({
     bbsId,
-    page,
+    page: queryPage,
     pageUnit: 10,
-    searchWrd,
-    searchCnd,
-    orderBy,
-    startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
-    endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined
-  }, initialData);
+    searchWrd: querySearchWrd,
+    searchCnd: querySearchCnd,
+    orderBy: queryOrderBy,
+    startDate: queryStartDate || undefined,
+    endDate: queryEndDate || undefined
+  }, hasFilter ? undefined : initialData);
+
+  // 낙관적 업데이트를 적용한 좋아요 뮤테이션
+  const likeMutation = useMutation({
+    mutationFn: (nttId: string) => likeBoardArticle(bbsId, nttId),
+    onMutate: async (nttId: string) => {
+      const currentParams = {
+        bbsId,
+        page: queryPage,
+        pageUnit: 10,
+        searchWrd: querySearchWrd,
+        searchCnd: querySearchCnd,
+        orderBy: queryOrderBy,
+        startDate: queryStartDate || undefined,
+        endDate: queryEndDate || undefined
+      };
+      const queryKey = ['boardList', currentParams];
+
+      // 진행 중인 쿼리 취소
+      await queryClient.cancelQueries({ queryKey });
+      
+      // 이전 상태 저장 (롤백용)
+      const previousData = queryClient.getQueryData(queryKey);
+      
+      // 캐시 데이터 즉시 업데이트
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (!old || !old.list) return old;
+        return {
+          ...old,
+          list: old.list.map((item: any) => 
+            String(item.nttId) === nttId ? { ...item, likeCo: (item.likeCo || 0) + 1 } : item
+          )
+        };
+      });
+      
+      return { previousData };
+    },
+    onError: (err, nttId, context) => {
+      // 실패 시 롤백
+      queryClient.setQueryData(['boardList', bbsId, queryPage, querySearchWrd, queryOrderBy], context?.previousData);
+    },
+    onSettled: () => {
+      // 최종적으로 서버 데이터와 동기화
+      queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+    }
+  });
+
+  const handleLike = (e: React.MouseEvent, nttId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    likeMutation.mutate(nttId);
+  };
+
+  // 프리미엄 스켈레톤 컴포넌트
+  const BoardSkeleton = () => {
+    if (tmplatId === 'hub') {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 p-10">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="space-y-4">
+              <Skeleton className="aspect-video w-full rounded-[0.1rem]" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (tmplatId === 'qna') {
+      return (
+        <div className="p-10 space-y-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex gap-6 p-6 border-2 border-slate-50">
+              <Skeleton className="w-16 h-16 rounded-lg shrink-0" />
+              <div className="space-y-3 flex-1">
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-4 w-full" />
+                <div className="flex gap-4">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="p-10 space-y-4">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <Skeleton key={i} className="h-20 w-full rounded-[0.1rem]" />
+        ))}
+      </div>
+    );
+  };
 
   const list: BoardPost[] = data?.list || [];
   const totalCount = data?.total || 0;
@@ -188,17 +331,19 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // URL 파라미터 생성
-    const params = new URLSearchParams();
-    params.set('bbsId', bbsId);
-    if (searchWrd) params.set('searchWrd', searchWrd);
-    if (searchCnd) params.set('searchCnd', searchCnd);
-    if (orderBy) params.set('orderBy', orderBy);
-    if (startDate) params.set('startDate', format(startDate, 'yyyy-MM-dd'));
-    if (endDate) params.set('endDate', format(endDate, 'yyyy-MM-dd'));
-    params.set('page', '1'); // 검색 시 항상 1페이지로
-
-    // URL 이동을 통해 조회 트리거 (react-query가 params 변경 감지)
+    // 기존 파라미터 보존하며 검색어/조건만 갱신
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (searchWrd.trim()) {
+      params.set('searchWrd', searchWrd.trim());
+    } else {
+      params.delete('searchWrd');
+    }
+    
+    params.set('searchCnd', searchCnd);
+    params.set('page', '1'); // 검색 시 1페이지로 강제 이동
+    
+    // URL 이동 (이동 시 searchParams가 변경되므로 useEffect에서 useBoardList를 트리거함)
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -280,12 +425,19 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                 <div className="relative flex-1 group !h-12">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10 group-focus-within:text-primary transition-colors" />
                   <Input
+                    id="board-search-input"
+                    data-testid="board-search-input"
                     type="text"
                     className="pl-12 pr-10 !h-12 text-sm border border-slate-200 bg-white shadow-sm rounded-[0.1rem] focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
                     placeholder="어떤 정보를 찾으시나요?"
                     value={searchWrd}
                     onChange={(e) => setSearchWrd(e.target.value)}
                   />
+                  {!searchWrd && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-[10px] font-black text-slate-400 pointer-events-none select-none">
+                      <span className="text-[8px] opacity-60">⌘</span>K
+                    </div>
+                  )}
                   {searchWrd && (
                     <button
                       type="button"
@@ -370,13 +522,15 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                   {mounted ? (
                     <Select value={orderBy} onValueChange={(value) => {
                       setOrderBy(value);
-                      // 정렬 변경 시 즉시 조회 실행
+                      // 정렬 변경 시 즉시 조회 실행 (검색어 및 조건 유지)
                       const params = new URLSearchParams(searchParams.toString());
                       params.set('orderBy', value);
+                      if (searchWrd) params.set('searchWrd', searchWrd);
+                      if (searchCnd) params.set('searchCnd', searchCnd);
                       params.set('page', '1');
                       router.push(`${pathname}?${params.toString()}`);
                     }}>
-                      <SelectTrigger className="w-full md:w-[140px] !h-12 rounded-[0.1rem] border border-slate-200 bg-white font-bold shadow-sm text-sm flex items-center leading-none">
+                      <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-12 rounded-[0.1rem] border border-slate-200 bg-white font-bold shadow-sm text-sm flex items-center leading-none">
                         <ArrowUpDown className="mr-2 h-3.5 w-3.5 text-primary opacity-50 shrink-0" />
                         <SelectValue placeholder="정렬 방식" />
                       </SelectTrigger>
@@ -487,18 +641,29 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                     </div>
                     <CardContent className="p-8 space-y-6">
                       <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
-                        <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors cursor-pointer line-clamp-2">{item.nttSj}</h3>
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors cursor-pointer line-clamp-2">
+                          <HighlightText text={item.nttSj} highlight={querySearchWrd} />
+                        </h3>
                       </Link>
                       <div className="flex items-center justify-between pt-6 border-t border-slate-50">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-white font-black text-[10px] italic border border-slate-200 dark:border-slate-800">OP</div>
                           <div className="flex flex-col">
-                            <span className="text-sm font-black text-slate-700 dark:text-slate-200 leading-none mb-1">{item.frstRegisterNm}</span>
+                            <span className="text-sm font-black text-slate-700 dark:text-slate-200 leading-none mb-1">
+                              <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
+                            </span>
                             <span className="text-[10px] font-bold text-slate-400">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
                           </div>
                         </div>
                         <div className="flex gap-6">
-                          <div className="flex items-center gap-1.5 text-slate-300 group-hover:text-primary transition-colors"><ThumbsUp size={16} /><span className="text-xs font-bold text-slate-400">0</span></div>
+                          <button 
+                            data-testid="like-button"
+                            onClick={(e) => handleLike(e, String(item.nttId))}
+                            className="flex items-center gap-1.5 text-slate-300 hover:text-primary transition-all active:scale-125"
+                          >
+                            <ThumbsUp size={16} className={cn(likeMutation.isPending && "animate-bounce")} />
+                            <span data-testid="like-count" className="text-xs font-black text-slate-900">{item.likeCo || 0}</span>
+                          </button>
                           <div className="flex items-center gap-1.5 text-slate-300"><Share2 size={16} /></div>
                         </div>
                       </div>
@@ -530,12 +695,16 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                         <span className="text-[11px] font-bold text-slate-300 italic flex items-center gap-1.5"><Clock size={12} /> {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
                       </div>
                       <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
-                        <h4 className="text-2xl font-black text-slate-800 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase italic">{item.nttSj}</h4>
+                        <h4 className="text-2xl font-black text-slate-800 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase italic">
+                          <HighlightText text={item.nttSj} highlight={querySearchWrd} />
+                        </h4>
                       </Link>
                       <div className="flex flex-wrap items-center gap-6 pt-2">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-black">AD</div>
-                          <span className="text-xs font-bold text-slate-500">{item.frstRegisterNm}</span>
+                          <span className="text-xs font-bold text-slate-500">
+                            <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
+                          </span>
                         </div>
                         <div className="h-4 w-px bg-slate-200" />
                         <div className="flex items-center gap-2 text-slate-400 font-black text-xs">
@@ -543,10 +712,14 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                           <span>{Math.floor(Math.random() * 5)} Answers</span>
                         </div>
                         <div className="h-4 w-px bg-slate-200" />
-                        <div className="flex items-center gap-2 text-slate-400 font-black text-xs">
-                          <Eye size={14} />
-                          <span>{item.inqireCo} views</span>
-                        </div>
+                        <button 
+                          data-testid="like-button"
+                          onClick={(e) => handleLike(e, String(item.nttId))}
+                          className="flex items-center gap-2 text-slate-400 hover:text-amber-500 font-black text-xs transition-all active:scale-110"
+                        >
+                          <ThumbsUp size={14} className={cn(likeMutation.isPending && "animate-bounce")} />
+                          <span data-testid="like-count">{item.likeCo || 0} Likes</span>
+                        </button>
                       </div>
                     </div>
                     <div className="absolute right-[-20px] top-[-20px] opacity-[0.03] group-hover:opacity-[0.08] transition-all">
@@ -664,13 +837,17 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                           <span className="text-[11px] font-bold text-slate-300 italic">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
                         </div>
                         <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
-                          <h4 className="text-2xl font-black text-slate-900 leading-tight group-hover:underline decoration-slate-900 decoration-4 underline-offset-8 transition-all">{item.nttSj}</h4>
+                          <h4 className="text-2xl font-black text-slate-900 leading-tight group-hover:underline decoration-slate-900 decoration-4 underline-offset-8 transition-all">
+                            <HighlightText text={item.nttSj} highlight={querySearchWrd} />
+                          </h4>
                         </Link>
                         <p className="text-slate-500 font-medium line-clamp-2 leading-relaxed">{item.nttCn}</p>
                         <div className="flex items-center gap-6 pt-4 border-t border-slate-50">
                           <div className="flex items-center gap-2">
                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</span>
-                             <span className="text-xs font-black text-slate-600">{item.frstRegisterNm}</span>
+                             <span className="text-xs font-black text-slate-600">
+                               <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
+                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Views</span>
@@ -685,7 +862,29 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
             ) : list.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-80 gap-4 text-slate-300">
                 <div className="p-10 bg-slate-50 rounded-full"><MessageSquare className="w-16 h-16 opacity-10" /></div>
-                <p className="text-xl font-black">게시글이 아직 없습니다.</p>
+                {querySearchWrd ? (
+                  <>
+                    <p className="text-xl font-black text-slate-400">
+                      &ldquo;<span className="text-primary">{querySearchWrd}</span>&rdquo;에 대한 검색 결과가 없습니다.
+                    </p>
+                    <p className="text-sm font-medium text-slate-400">다른 검색어를 시도하거나, 필터 조건을 변경해 보세요.</p>
+                    <button
+                      onClick={() => {
+                        setSearchWrd('');
+                        setSearchCnd('0');
+                        setOrderBy('date');
+                        setStartDate(undefined);
+                        setEndDate(undefined);
+                        router.push(`${pathname}?bbsId=${bbsId}`);
+                      }}
+                      className="mt-2 px-6 py-2.5 bg-slate-900 text-white font-black text-sm rounded-[0.1rem] hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2"
+                    >
+                      <X size={14} /> 필터 초기화
+                    </button>
+                  </>
+                ) : (
+                  <p className="text-xl font-black">게시글이 아직 없습니다.</p>
+                )}
               </div>
             ) : (
               <Table>
@@ -707,14 +906,14 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                       <TableCell className="px-6 py-8">
                         <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`} className="group/link flex flex-col gap-1">
                           <div className="text-xl font-black text-slate-800 group-hover/link:text-primary transition-colors line-clamp-1">
-                            {item.nttSj}
+                            <HighlightText text={item.nttSj} highlight={querySearchWrd} />
                           </div>
                         </Link>
                       </TableCell>
                       <TableCell className="text-center py-8">
                         <div className="font-bold text-slate-600 bg-slate-100/50 mx-auto w-fit px-5 py-2 rounded-[0.1rem] border border-slate-100 flex items-center gap-2">
                           <User size={14} className="opacity-30" />
-                          {item.frstRegisterNm}
+                          <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
                         </div>
                       </TableCell>
                       <TableCell className="text-center py-8">
@@ -729,6 +928,14 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                             <Eye size={14} className="opacity-40" />
                             {item.inqireCo}
                           </div>
+                          <button
+                            data-testid="like-button"
+                            onClick={(e) => handleLike(e, String(item.nttId))}
+                            className="font-black text-slate-400 bg-slate-50 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-slate-100 w-24 justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all active:scale-95 group-hover:bg-white"
+                          >
+                            <ThumbsUp size={14} className={cn("opacity-30", likeMutation.isPending && "animate-bounce")} />
+                            <span data-testid="like-count">{item.likeCo || 0}</span>
+                          </button>
                           <div className="font-black text-slate-400 bg-slate-50 px-4 py-1.5 rounded-lg flex items-center gap-2 border border-slate-100 w-24 justify-center group-hover:bg-white transition-colors">
                             <MessageSquare size={14} className="opacity-30" />
                             {0}
@@ -746,21 +953,29 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
             <div className="flex items-center justify-center gap-8 py-10">
               <Button
                 variant="outline"
-                onClick={() => setPage((p: number) => Math.max(1, p - 1))}
-                disabled={page === 1}
+                onClick={() => {
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.set('page', String(Math.max(1, queryPage - 1)));
+                  router.push(`${pathname}?${params.toString()}`);
+                }}
+                disabled={queryPage === 1}
                 className="h-12 px-8 font-black rounded-[0.1rem] border-2 hover:bg-slate-50"
               >
                 이전
               </Button>
               <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-900 px-8 py-3 rounded-[0.1rem] shadow-xl border border-slate-200 dark:border-slate-800">
-                <span className="text-lg font-black text-slate-900 dark:text-white">{page}</span>
+                <span className="text-lg font-black text-slate-900 dark:text-white">{queryPage}</span>
                 <div className="h-4 w-px bg-slate-300 dark:bg-white/20" />
                 <span className="text-sm font-bold text-slate-400 dark:text-white/50">{totalPages}</span>
               </div>
               <Button
                 variant="outline"
-                onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
+                onClick={() => {
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.set('page', String(Math.min(totalPages, queryPage + 1)));
+                  router.push(`${pathname}?${params.toString()}`);
+                }}
+                disabled={queryPage === totalPages}
                 className="h-12 px-8 font-black rounded-[0.1rem] border-2 hover:bg-slate-50"
               >
                 다음

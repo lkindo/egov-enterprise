@@ -34,6 +34,9 @@ public class BoardDto {
     @Schema(description = "조회수")
     private final Integer inqireCo;
 
+    @Schema(description = "추천수")
+    private final Integer likeCo;
+
     @Schema(description = "최초 등록 일시")
     private final LocalDateTime frstRegisterPnttm;
 
@@ -144,6 +147,7 @@ public class BoardDto {
                 .nttCn(entity.getNttCn())
                 .ntcrNm(entity.getNtcrNm())
                 .inqireCo(entity.getInqireCo())
+                .likeCo(entity.getLikeCo())
                 .frstRegisterPnttm(entity.getCreatedDate())
                 .atchFileId(entity.getAtchFileId())
                 .nttNo(entity.getNttNo())
@@ -184,6 +188,7 @@ public class BoardDto {
                 .nttSj(result.getNttSj())
                 .ntcrNm(result.getFrstRegisterNm())
                 .inqireCo(result.getInqireCo())
+                .likeCo(result.getLikeCo())
                 .frstRegisterPnttm(result.getCreatedDate())
                 .atchFileId(result.getAtchFileId())
                 .parnts(String.valueOf(result.getParnts()))
@@ -222,6 +227,7 @@ public class BoardDto {
                 .nttCn(detail.getNttCn())
                 .ntcrNm(detail.getFrstRegisterNm())
                 .inqireCo(detail.getInqireCo())
+                .likeCo(detail.getLikeCo())
                 .frstRegisterPnttm(detail.getCreatedDate())
                 .atchFileId(detail.getAtchFileId())
                 .nttNo(detail.getNttNo())

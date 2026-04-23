@@ -13,6 +13,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { saveBoardArticle } from '@/app/actions/boardActions';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import { BoardPost } from '@/types/business/board';
+import { useAutoSaveDraft } from '@/hooks/use-auto-save-draft';
+import { useEffect } from 'react';
 
 export default function InsertBoardArticlePage() {
   const router = useRouter();
@@ -35,6 +37,28 @@ export default function InsertBoardArticlePage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 자동 임시저장 훅 연동
+  const { restoreDraft, clearDraft, hasDraft } = useAutoSaveDraft({
+    storageKey: `board_insert_${bbsId}`,
+    getData: () => ({
+      title: form.nttSj || '',
+      content: form.nttCn || ''
+    }),
+    onRestore: (data) => {
+      setForm(prev => ({ ...prev, nttSj: data.title, nttCn: data.content }));
+    }
+  });
+
+  // 페이지 진입 시 임시저장 데이터 확인 및 복구 제안
+  useEffect(() => {
+    if (hasDraft && !form.nttSj && !form.nttCn) {
+      if (confirm('이전에 작성 중이던 임시저장 데이터가 있습니다. 복구하시겠습니까?')) {
+        restoreDraft();
+        toast('임시저장 데이터를 복구했습니다.', 'success');
+      }
+    }
+  }, [hasDraft, restoreDraft, toast]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nttCn || form.nttCn === '<p></p>') {
@@ -54,8 +78,9 @@ export default function InsertBoardArticlePage() {
 
       const result = await saveBoardArticle(null, formData);
       if (result.success) {
-        // 캐시 무효화 추가
+        // 캐시 무효화 및 임시저장 삭제
         queryClient.invalidateQueries({ queryKey: ['boardList'] });
+        clearDraft();
         
         toast('지식 자산이 성공적으로 등록되었습니다.', 'success');
         router.push(`/admin/community/boards/selectBoardList?bbsId=${bbsId}`);
@@ -102,6 +127,7 @@ export default function InsertBoardArticlePage() {
               <span className="text-[10px] font-black tracking-widest text-slate-500 dark:text-white/40 uppercase">Dataset Core Subject</span>
             </div>
             <Input
+              data-testid="article-title-input"
               value={form.nttSj}
               onChange={(e) => setForm({ ...form, nttSj: e.target.value })}
               className="h-20 bg-transparent border-none text-slate-900 dark:text-white text-3xl font-black placeholder:text-slate-900/10 dark:placeholder:text-white/10 focus-visible:ring-0 p-0 tracking-tight"
@@ -125,11 +151,13 @@ export default function InsertBoardArticlePage() {
               <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">실시간 동기화 준비됨</span>
             </div>
           </div>
-          <RichTextEditor
-            value={form.nttCn || ''}
-            onChange={(content) => setForm({ ...form, nttCn: content })}
-            placeholder="상세 내용을 기술하십시오..."
-          />
+          <div data-testid="rich-text-editor">
+            <RichTextEditor
+              value={form.nttCn || ''}
+              onChange={(content) => setForm({ ...form, nttCn: content })}
+              placeholder="상세 내용을 기술하십시오..."
+            />
+          </div>
         </div>
 
         {/* Bottom Actions Matrix */}

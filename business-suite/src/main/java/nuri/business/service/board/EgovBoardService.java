@@ -46,4 +46,6 @@ public interface EgovBoardService {
                         throws IOException;
 
         void deletePost(@NonNull String bbsId, @NonNull Long nttId, String authorId);
+
+        Integer incrementLike(@NonNull String bbsId, @NonNull Long nttId);
 }

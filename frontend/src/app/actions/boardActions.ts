@@ -110,3 +110,22 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
     return { success: false, message: errorMessage };
   }
 }
+
+export async function likeBoardArticle(bbsId: string, nttId: string): Promise<{ success: boolean; count?: number }> {
+  try {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('accessToken')?.value;
+    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+    const response = await client.patch<number>(`/boards/${bbsId}/posts/${nttId}/like`, null, axiosConfig);
+
+    if (response !== undefined) {
+      return { success: true, count: response };
+    } else {
+      return { success: false };
+    }
+  } catch (error) {
+    console.error('Like Action Error:', error);
+    return { success: false };
+  }
+}

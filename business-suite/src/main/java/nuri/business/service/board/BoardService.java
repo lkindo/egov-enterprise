@@ -367,4 +367,15 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 board.delete();
         }
+
+        @Override
+        @Transactional
+        public Integer incrementLike(@NonNull String bbsId, @NonNull Long nttId) {
+                Board board = boardRepository
+                                .findById(required(nttId, "nttId 는 null 일 수 없습니다"))
+                                .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
+
+                board.increaseLikeCo();
+                return board.getLikeCo();
+        }
 }

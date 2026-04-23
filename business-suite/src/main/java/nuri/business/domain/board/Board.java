@@ -110,6 +110,10 @@ public class Board extends BaseEntity implements Serializable {
     @Builder.Default
     private Integer fileCo = 0;
 
+    @Column(name = "LIKE_CO")
+    @Builder.Default
+    private Integer likeCo = 0;
+
     public void update(String nttSj, String nttCn, String ntcrId, String ntcrNm, String password, String ntceBgnde,
             String ntceEndde, String atchFileId, java.time.LocalDateTime eventDate, String qnaStatus, String qnaCategory, String secretAt) {
         this.nttSj = nttSj;
@@ -139,6 +143,13 @@ public class Board extends BaseEntity implements Serializable {
 
     public void updateReplyOrder(Long nttNo) {
         this.nttNo = nttNo;
+    }
+
+    public void increaseLikeCo() {
+        if (this.likeCo == null) {
+            this.likeCo = 0;
+        }
+        this.likeCo++;
     }
 
     // 카운트 업데이트 비즈니스 메서드

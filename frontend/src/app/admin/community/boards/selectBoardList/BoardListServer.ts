@@ -45,9 +45,10 @@ export async function getInitialBoardData(params: {
       masterInfo: masterResponse || null
     };
   } catch (error: any) {
-    // 401 오류는 인증이 필요한 상태이므로 호출자에서 redirect 시킬 수 있도록 다시 던짐
+    // 401 오류는 인증이 필요한 상태이므로 시스템 에러 대신 로그인 페이지로 리다이렉트
     if (error.response?.status === 401) {
-      throw error;
+      const { redirect } = require('next/navigation');
+      redirect('/login');
     }
     console.error('BoardListServer: Failed to fetch board list', error);
     return { list: [], total: 0, totalPage: 0 };

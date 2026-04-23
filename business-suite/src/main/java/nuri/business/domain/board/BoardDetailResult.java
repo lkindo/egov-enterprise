@@ -28,6 +28,7 @@ public class BoardDetailResult {
     private String ntceBgnde;
     private String ntceEndde;
     private Integer inqireCo;
+    private Integer likeCo;
     private String useAt;
     private String atchFileId;
     private Long parnts;

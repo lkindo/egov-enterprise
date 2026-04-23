@@ -1,8 +1,8 @@
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { WebSocketProvider } from '@/contexts/websocket-context';
 import { LayoutProvider } from '@/contexts/LayoutContext';
@@ -16,6 +16,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 const GlobalCommandCenter = dynamic(() => import('./components/ui/global-command-center').then(mod => mod.GlobalCommandCenter), { ssr: false });
 const SmartOnboardingHub = dynamic(() => import('./components/ui/smart-onboarding-hub').then(mod => mod.SmartOnboardingHub), { ssr: false });
+const SessionExpiryWarning = dynamic(() => import('./components/ui/session-expiry-warning').then(mod => mod.SessionExpiryWarning), { ssr: false });
 
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,19 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       })
   );
 
+  // Page Visibility API 연동: 탭이 보이지 않을 때 불필요한 백그라운드 폴링 중단
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      focusManager.setFocused(document.visibilityState === 'visible');
+    };
+    
+    // 초기 상태 설정
+    handleVisibilityChange();
+    
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => window.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
@@ -46,6 +60,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                       {children}
                     </StandardErrorBoundary>
                     <GlobalCommandCenter />
+                    <SessionExpiryWarning />
                     <SmartOnboardingHub />
                   </TooltipProvider>
                 </WebSocketProvider>

@@ -101,6 +101,12 @@ subprojects {
         finalizedBy 'jacocoTestReport'
     }
 
+    // 실행 시(bootRun 포함) UTF-8 인코딩 강제 설정
+    tasks.withType(JavaExec).configureEach {
+        systemProperty 'file.encoding', 'UTF-8'
+        systemProperty 'sun.jnu.encoding', 'UTF-8'
+    }
+
     dependencyManagement {
         imports {
             mavenBom "org.springframework.boot:spring-boot-dependencies:3.4.1"

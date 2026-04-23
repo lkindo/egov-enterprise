@@ -7,6 +7,7 @@ export interface BoardPost {
   ntcrNm?: string;
   frstRegisterNm?: string;
   inqireCo: number;
+  likeCo?: number;
   frstRegisterPnttm: string;
   createdDate?: string;
   atchFileId?: string;

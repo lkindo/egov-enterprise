@@ -23,7 +23,12 @@ export async function getInitialBoardDetailData(bbsId: string, nttId: string) {
     ]);
 
     return { article, masterInfo };
-  } catch (error) {
+  } catch (error: any) {
+    // 401 오류는 세션 만료 → 로그인 페이지로 우아하게 리다이렉트
+    if (error.response?.status === 401) {
+      const { redirect } = require('next/navigation');
+      redirect('/login');
+    }
     console.error('BoardDetailServer: Failed to fetch board detail', error);
     return { article: null, masterInfo: null };
   }

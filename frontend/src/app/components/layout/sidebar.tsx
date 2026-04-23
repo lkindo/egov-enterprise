@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { menuService } from '@/services/business/user/MenuService';
 import { useLayout } from '@/contexts/LayoutContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -123,7 +124,21 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
     }
   }, [isActive, hasChildren]);
 
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ROLE_ADMIN' || user?.userSe === 'USR';
+  
+  // 권한 체크: '관리', '보안', '설정' 키워드가 포함된 메뉴는 관리자만 활성
+  const isRestricted = !isAdmin && (
+    item.menuNm.includes('관리') || 
+    item.menuNm.includes('보안') || 
+    item.menuNm.includes('설정')
+  );
+
   const handleLinkClick = (e: React.MouseEvent) => {
+    if (isRestricted) {
+      e.preventDefault();
+      return;
+    }
     setSidebarOpen(false);
     if (href === '#') {
       if (hasChildren) {
@@ -141,6 +156,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
       isActive
         ? "bg-primary/5 text-primary"
         : "text-slate-600 hover:bg-accent hover:text-foreground",
+      isRestricted && "opacity-40 cursor-not-allowed grayscale",
       depth === 1 && "pl-10",
       depth === 2 && "pl-14",
       depth >= 3 && "pl-16",

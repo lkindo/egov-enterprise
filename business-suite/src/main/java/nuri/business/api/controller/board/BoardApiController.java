@@ -86,4 +86,13 @@ public class BoardApiController {
         boardService.deletePost(bbsId, id, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
+    @Operation(summary = "게시글 좋아요(추천)", description = "게시글의 추천수를 1 증가시킵니다. (낙관적 업데이트 테스트용)")
+    @PatchMapping("/{bbsId}/posts/{id}/like")
+    public ResponseEntity<ApiResponse<Integer>> likePost(
+            @PathVariable String bbsId,
+            @PathVariable Long id) {
+        // 실제 운영 환경에서는 중복 추천 방지 로직이 필요하나, 여기서는 낙관적 업데이트 시연을 위해 단순 증가 처리
+        return ResponseEntity.ok(ApiResponse.success(boardService.incrementLike(bbsId, id)));
+    }
 }
