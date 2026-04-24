@@ -127,8 +127,4 @@ Globals:
 # CORS 허용 오리진 (개발/기본 환경)
 # 운영 환경은 application-prod.yml에서 재정의
 cors:
-  allowed-origins:
-    - http://localhost:3000
-    - http://127.0.0.1:3000
-    - http://localhost:3001
-    - http://127.0.0.1:3001
+  allowed-origins: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001"
