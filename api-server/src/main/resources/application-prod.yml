@@ -46,3 +46,10 @@ logging:
     rollingpolicy:
       max-file-size: 100MB
       max-history: 30
+
+# CORS 허용 오리진 (운영 환경)
+# 운영 도메인은 환경변수로 주입하거나 여기에 직접 명시
+cors:
+  allowed-origins:
+    - ${CORS_ORIGIN_1:https://egov.example.com}
+    - ${CORS_ORIGIN_2:https://www.egov.example.com}

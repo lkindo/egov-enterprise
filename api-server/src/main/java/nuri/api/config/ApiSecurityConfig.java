@@ -67,7 +67,7 @@ public class ApiSecurityConfig {
                 return new EgovPasswordEncoder();
         }
 
-        @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001}")
+        @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins}")
         private List<String> allowedOrigins;
 
         @Bean
