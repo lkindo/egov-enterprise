@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -125,7 +125,7 @@ export const InsightBanner: React.FC = () => {
                    AI_INSIGHT_ENGINE
                 </div>
                 <div className="w-1.5 h-1.5 rounded-full bg-current animate-ping" />
-                <span className="text-[10px] font-bold opacity-70 uppercase tracking-widest">{activeInsight.timestamp}</span>
+                <span className="text-[10px] font-bold opacity-100 uppercase tracking-widest">{activeInsight.timestamp}</span>
              </div>
              
              <AnimatePresence mode="wait">

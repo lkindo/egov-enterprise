@@ -81,7 +81,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
    <ShieldCheck size={12} /> 보안 거버넌스 엔진 활성
  </div>
  <div className="h-3 w-px bg-muted" />
-   <span className="text-[10px] font-bold text-slate-600 tracking-tight leading-none opacity-80">실시간 데이터 무결성 모니터링</span>
+   <span className="text-[10px] font-bold text-slate-700 tracking-tight leading-none opacity-100">실시간 데이터 무결성 모니터링</span>
  </div>
  </div>
  </div>
@@ -150,7 +150,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  {(log.severity || 'low').toUpperCase()}
  </span>
  </div>
- <p className="text-sm font-bold text-slate-600 tracking-tight">
+ <p className="text-sm font-bold text-slate-700 tracking-tight">
    <span className="text-primary font-black">{log.action === 'CREATE' ? '생성' : log.action === 'UPDATE' ? '수정' : log.action === 'DELETE' ? '삭제' : '복구'}</span> {log.entityName}
  </p>
  </div>
@@ -161,7 +161,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-700">
  <Clock size={12} /> {log.timestamp}
  </div>
- <p className="text-[10px] font-bold text-slate-600 font-mono mt-1 opacity-80">{log.ipAddress}</p>
+ <p className="text-[10px] font-bold text-slate-700 font-mono mt-1 opacity-100">{log.ipAddress}</p>
  </div>
  {expandedLog === log.id ? <ChevronUp size={20} className="text-primary" /> : <ChevronDown size={20} className="text-muted-foreground/40" />}
  </div>
@@ -176,9 +176,9 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {log.changes?.map((change, cIdx) => (
  <div key={cIdx} className="space-y-3 p-5 rounded-[0.1rem] bg-white border border-primary/5 shadow-sm group/change">
- <label className="text-[10px] font-black text-slate-600 tracking-tight">{change.field}</label>
+ <label className="text-[10px] font-black text-slate-700 tracking-tight">{change.field}</label>
  <div className="flex items-center gap-4">
- <div className="flex-1 p-3 rounded-[0.1rem] bg-rose-50/80 border border-rose-100/50 text-sm font-medium text-rose-800 line-through decoration-rose-300 opacity-60">
+ <div className="flex-1 p-3 rounded-[0.1rem] bg-rose-50/80 border border-rose-100/50 text-sm font-medium text-rose-900 line-through decoration-rose-400 opacity-100">
  {change.before}
  </div>
  <ArrowRight size={14} className="text-muted-foreground/30 animate-pulse" />
@@ -219,7 +219,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
    <span className="text-[10px] font-black text-slate-700 tracking-tight">암호화 알고리즘 AES-256 (NIST)</span>
  </div>
  </div>
- <p className="text-[10px] font-black text-slate-600 tracking-tight opacity-70 mt-4 md:mt-0">
+ <p className="text-[10px] font-black text-slate-700 tracking-tight opacity-100 mt-4 md:mt-0">
  Total Audit Records: {logs?.length || 0} 데이터 무결성 검증 완료
  </p>
  </div>

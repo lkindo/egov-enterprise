@@ -107,13 +107,13 @@ export function AuditTimelineClient() {
            <div className="rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-2xl p-12 space-y-10 relative overflow-hidden flex-1">
               <div className="flex items-center justify-between border-b border-slate-50 pb-8 relative z-10">
                  <div className="space-y-1">
-                    <h3 className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase">행동 분석</h3>
+                    <h3 className="text-[10px] font-black text-slate-600 tracking-[0.4em] uppercase">행동 분석</h3>
                     <p className="text-2xl font-black tracking-tighter text-slate-900 uppercase italic leading-none">감사 로드맵 매트릭스</p>
                  </div>
                  <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 group cursor-pointer px-4 py-2 rounded-[0.1rem] hover:bg-slate-50 transition-all">
-                       <Calendar size={14} className="text-slate-400 group-hover:text-primary" />
-                       <span className="text-[10px] font-black tracking-widest text-slate-500 uppercase">전체 기간</span>
+                       <Calendar size={14} className="text-slate-600 group-hover:text-primary" />
+                       <span className="text-[10px] font-black tracking-widest text-slate-600 uppercase">전체 기간</span>
                     </div>
                     <div className="h-6 w-px bg-slate-100" />
                     <Filter size={18} className="text-slate-300 hover:text-slate-900 cursor-pointer transition-colors" />
@@ -147,7 +147,7 @@ export function AuditTimelineClient() {
                    <div className="h-80 flex flex-col items-center justify-center text-center opacity-30 select-none grayscale">
                       <Search size={100} className="text-slate-300 mb-6" />
                       <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">검색 결과가 없습니다</h3>
-                      <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase mt-4">다른 필터링 조건을 시도해 보십시오</p>
+                      <p className="text-[11px] font-bold text-slate-600 tracking-widest uppercase mt-4">다른 필터링 조건을 시도해 보십시오</p>
                    </div>
                 )}
               </div>
@@ -215,7 +215,7 @@ export function AuditTimelineClient() {
                     <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-tight mb-4">
                        데이터 인스턴스 <br /> 미선택
                     </h3>
-                    <p className="text-[10px] font-black text-slate-400 tracking-[0.6em] uppercase leading-relaxed max-w-[240px]">
+                    <p className="text-[10px] font-black text-slate-600 tracking-[0.6em] uppercase leading-relaxed max-w-[240px]">
                        분석할 타임라인 항목을 캡처하십시오
                     </p>
                  </div>

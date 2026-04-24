@@ -381,7 +381,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
               {tmplatId === 'TMPLT_HUB' ? <BookOpen className="w-8 h-8 text-primary" /> : <MessageSquare className="w-8 h-8 text-primary" />}
               <span>{masterInfo?.bbsNm || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}</span>
             </CardTitle>
-            <p className="text-slate-500 font-bold text-sm">총 <span className="text-primary">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
+            <p className="text-slate-600 font-bold text-sm">총 <span className="text-primary">{totalCount}개</span>의 소중한 이야기가 담겨있습니다.</p>
           </div>
           <CardAction className="flex items-center gap-3">
             {mounted && (
@@ -435,7 +435,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                   />
                   {!searchWrd && (
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-[10px] font-black text-slate-400 pointer-events-none select-none">
-                      <span className="text-[8px] opacity-60">⌘</span>K
+                      <span className="text-[8px] opacity-100">⌘</span>K
                     </div>
                   )}
                   {searchWrd && (
@@ -583,17 +583,17 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-white/10 flex items-center justify-center text-primary italic font-black text-xs border border-primary/20 dark:border-white/10">OP</div>
                             <div className="flex flex-col">
-                              <span className="text-[11px] font-black text-slate-400 dark:text-white/40 italic uppercase tracking-widest leading-none mb-1">Author</span>
+                              <span className="text-[11px] font-black text-slate-600 dark:text-white/80 italic uppercase tracking-widest leading-none mb-1">Author</span>
                               <span className="text-sm font-black">{list[0].frstRegisterNm}</span>
                             </div>
                           </div>
                           <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
-                          <div className="flex items-center gap-3 text-slate-400 dark:text-white/40">
+                          <div className="flex items-center gap-3 text-slate-600 dark:text-white/80">
                              <Clock size={16} />
                              <span className="text-xs font-bold">{list[0].createdDate ? String(list[0].createdDate).substring(0, 10) : 'Just now'}</span>
                           </div>
                           <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
-                          <div className="flex items-center gap-3 text-slate-400 dark:text-white/40">
+                          <div className="flex items-center gap-3 text-slate-600 dark:text-white/80">
                              <Eye size={16} />
                              <span className="text-xs font-bold">{list[0].inqireCo} views</span>
                           </div>
@@ -615,8 +615,8 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                       </Link>
                       <div className="flex justify-between items-center pt-4 border-t border-slate-200/50">
                         <div className="flex gap-4">
-                          <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs"><Eye size={14} /> {item.inqireCo}</div>
-                          <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs"><MessageSquare size={14} /> 0</div>
+                          <div className="flex items-center gap-1.5 text-slate-600 font-bold text-xs"><Eye size={14} /> {item.inqireCo}</div>
+                          <div className="flex items-center gap-1.5 text-slate-600 font-bold text-xs"><MessageSquare size={14} /> 0</div>
                         </div>
                         <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
                           <ChevronRight size={18} />
@@ -652,7 +652,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                             <span className="text-sm font-black text-slate-700 dark:text-slate-200 leading-none mb-1">
                               <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
                             </span>
-                            <span className="text-[10px] font-bold text-slate-400">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                            <span className="text-[10px] font-bold text-slate-600">{item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
                           </div>
                         </div>
                         <div className="flex gap-6">
@@ -692,7 +692,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                           <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none text-[10px] font-black px-3 py-1">
                             {item.qnaCategory || 'GENERAL_QNA'}
                           </Badge>
-                        <span className="text-[11px] font-bold text-slate-300 italic flex items-center gap-1.5"><Clock size={12} /> {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
+                        <span className="text-[11px] font-bold text-slate-600 italic flex items-center gap-1.5"><Clock size={12} /> {item.createdDate ? String(item.createdDate).substring(0, 10) : '-'}</span>
                       </div>
                       <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&nttId=${item.nttId}`}>
                         <h4 className="text-2xl font-black text-slate-800 leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase italic">
@@ -702,12 +702,12 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                       <div className="flex flex-wrap items-center gap-6 pt-2">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-black">AD</div>
-                          <span className="text-xs font-bold text-slate-500">
+                          <span className="text-xs font-bold text-slate-600">
                             <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
                           </span>
                         </div>
                         <div className="h-4 w-px bg-slate-200" />
-                        <div className="flex items-center gap-2 text-slate-400 font-black text-xs">
+                        <div className="flex items-center gap-2 text-slate-600 font-black text-xs">
                           <MessageSquare size={14} className="text-amber-400" />
                           <span>{Math.floor(Math.random() * 5)} Answers</span>
                         </div>
@@ -715,7 +715,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                         <button 
                           data-testid="like-button"
                           onClick={(e) => handleLike(e, String(item.nttId))}
-                          className="flex items-center gap-2 text-slate-400 hover:text-amber-500 font-black text-xs transition-all active:scale-110"
+                          className="flex items-center gap-2 text-slate-600 hover:text-amber-500 font-black text-xs transition-all active:scale-110"
                         >
                           <ThumbsUp size={14} className={cn(likeMutation.isPending && "animate-bounce")} />
                           <span data-testid="like-count">{item.likeCo || 0} Likes</span>

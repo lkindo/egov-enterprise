@@ -118,7 +118,7 @@ export default function LoginPage() {
                         <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                             엔터프라이즈
                         </CardTitle>
-                        <CardDescription className="text-slate-500 font-medium text-xs uppercase tracking-wider">
+                        <CardDescription className="text-slate-600 font-bold text-xs uppercase tracking-wider">
                             글로벌 통합 관리 콘솔
                         </CardDescription>
                     </CardHeader>
@@ -168,7 +168,7 @@ export default function LoginPage() {
                             <div className="flex items-center justify-between px-1">
                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="remember" className="rounded-md border-slate-300" />
-                                    <Label htmlFor="remember" className="text-xs font-medium text-slate-500 cursor-pointer select-none">
+                                    <Label htmlFor="remember" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
                                         로그인 상태 유지
                                     </Label>
                                 </div>
@@ -199,7 +199,7 @@ export default function LoginPage() {
                         </CardFooter>
                     </form>
                 </Card>
-                <p className="mt-8 text-center text-[11px] font-medium text-slate-500 tracking-tight opacity-60">
+                <p className="mt-8 text-center text-[11px] font-bold text-slate-700 tracking-tight">
                     &copy; 2026 관리 통합 시스템. 보안 노드 01.
                 </p>
             </motion.div>

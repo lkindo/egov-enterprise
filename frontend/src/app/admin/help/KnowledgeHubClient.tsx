@@ -476,7 +476,7 @@ function CategoryCard({ title, desc, icon, count, color, active, onClick }: any)
         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{desc}</p>
       </div>
       <div className={cn("absolute bottom-8 right-8 w-1 h-8 rounded-full transition-transform", active ? "bg-primary scale-y-100" : "bg-border scale-y-0 group-hover:scale-y-50")} />
-    </div>
+    </button>
   );
 }
 

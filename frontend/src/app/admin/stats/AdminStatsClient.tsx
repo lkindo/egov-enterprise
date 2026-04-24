@@ -41,7 +41,7 @@ const NationalDistributionMap = dynamic(() => import('@/app/components/ui/nation
   loading: () => (
     <div className="w-full h-[480px] flex flex-col items-center justify-center bg-white rounded-[0.1rem] space-y-4">
       <div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-500 rounded-full animate-spin" />
-      <p className="text-[10px] font-black tracking-[0.4em] text-slate-300 uppercase animate-pulse">Mapping Regional Traffic Intelligence...</p>
+      <p className="text-[10px] font-black tracking-[0.4em] text-slate-600 uppercase animate-pulse">Mapping Regional Traffic Intelligence...</p>
     </div>
   )
 });
@@ -92,7 +92,7 @@ export default function AdminStatsClient({
       header: '상호작용 횟수',
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-2">
-          <Activity size={14} className="text-primary opacity-40 italic" />
+          <Activity size={14} className="text-primary opacity-100 italic" />
           <span className="font-mono font-black text-primary text-lg tracking-tighter tabular-nums underline decoration-primary/20 decoration-4 underline-offset-4">{item?.statsCo?.toLocaleString() || '0'}</span>
         </div>
       )
@@ -248,7 +248,7 @@ export default function AdminStatsClient({
         description="시스템 전반에 걸친 마이크로 상호작용 노드들의 세부 데이터 보고서입니다."
         icon={Cpu}
         statusBadges={
-          <HubStatusBadge label="고밀도 스트림" variant="success" className="bg-emerald-500/10 text-emerald-700 border-none animate-pulse text-[8px] font-black tracking-widest" />
+          <HubStatusBadge label="고밀도 스트림" variant="success" className="bg-emerald-500/10 text-emerald-800 border-none animate-pulse text-[8px] font-black tracking-widest" />
         }
       >
         <div className="px-2 overflow-x-auto">
@@ -268,13 +268,13 @@ export default function AdminStatsClient({
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
           <div className="space-y-10 flex-1 text-center lg:text-left">
             <div className="space-y-4">
-              <h2 className="text-[11px] font-black tracking-[0.6em] text-white/60 uppercase leading-none">시스템 무결성 요약</h2>
+              <h2 className="text-[11px] font-black tracking-[0.6em] text-white/80 uppercase leading-none">시스템 무결성 요약</h2>
               <h3 className="text-5xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] uppercase tabular-nums">
                 Optimized <br />
                 <span className="text-primary italic">Intelligence</span> Core
               </h3>
             </div>
-            <p className="text-lg lg:text-xl text-white/70 font-bold max-w-3xl leading-relaxed tracking-tight">
+            <p className="text-lg lg:text-xl text-white/90 font-bold max-w-3xl leading-relaxed tracking-tight">
               시스템 자원의 99.9%가 효율적으로 관리되고 있습니다. 인텔리전스 엔진은 실시간 주요 이벤트를 추적하여 최적의 성능 프로파일을 동적으로 생성하고 있습니다.
             </p>
           </div>
@@ -318,7 +318,7 @@ function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
           <div className="flex flex-col items-end">
             <span className={cn(
               "text-[10px] font-black px-3 py-1 rounded-full tracking-widest uppercase",
-              color === 'rose' ? "bg-white text-rose-600 shadow-inner" : "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 shadow-sm"
+              color === 'rose' ? "bg-white text-rose-600 shadow-inner" : "bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 shadow-sm"
             )}>
               {trend}
             </span>
@@ -328,7 +328,7 @@ function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
       <div className="relative z-10">
         <h3 className="text-4xl font-black tracking-tighter tabular-nums leading-none text-foreground">{value?.toLocaleString() ?? 0}</h3>
         <p className="text-[10px] font-black text-slate-600 tracking-[0.4em] mt-5 flex items-center gap-3 uppercase leading-none">
-          <span className="w-6 h-0.5 bg-current opacity-40" />
+          <span className="w-6 h-0.5 bg-current opacity-100" />
           {title}
         </p>
       </div>

@@ -70,7 +70,7 @@
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 38%; /* Darkened from 46.9% to 38% for at least 4.5:1 contrast against white background */
+    --muted-foreground: 215.4 16.3% 30%; /* Darkened further to ensure >4.5:1 contrast even with minor opacity */
 
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
@@ -221,7 +221,7 @@
   }
   
   .hub-subtitle-label {
-    @apply text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-[0.4em] uppercase text-muted-foreground/90;
+    @apply text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-[0.4em] uppercase text-muted-foreground;
   }
 
   .hub-card-section {
@@ -260,7 +260,7 @@
 
   /* --- Hub Semantic Utilities --- */
   .hub-label-accent {
-     @apply text-[length:var(--font-size-hub-subtitle)] font-black tracking-[0.4em] uppercase opacity-70 group-focus-within:opacity-100 transition-opacity;
+     @apply text-[length:var(--font-size-hub-subtitle)] font-black tracking-[0.4em] uppercase opacity-90 group-focus-within:opacity-100 transition-opacity;
   }
 
   /* E2E Hidden Labels (Detectable by Playwright but invisible to users) */

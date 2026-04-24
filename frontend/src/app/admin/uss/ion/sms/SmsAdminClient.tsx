@@ -112,7 +112,7 @@ export default function SmsAdminClient({
             <span className="font-mono font-black text-foreground tracking-tighter leading-none">
               {item.trnsmitPnttm ? format(new Date(item.trnsmitPnttm), 'yyyy.MM.dd') : 'N/A'}
             </span>
-            <span className="text-[9px] font-bold text-muted-foreground mt-1 tracking-widest opacity-40">
+            <span className="text-[9px] font-bold text-slate-600 mt-1 tracking-widest opacity-100">
               {item.trnsmitPnttm ? format(new Date(item.trnsmitPnttm), 'HH:mm:ss') : 'WAITING'}
             </span>
           </div>
@@ -131,7 +131,7 @@ export default function SmsAdminClient({
     {
       header: '메시지 내용',
       accessor: (item: SmsDto) => (
-        <div className="max-w-[450px] truncate font-bold text-muted-foreground/80 tracking-tight italic text-left">
+        <div className="max-w-[450px] truncate font-bold text-slate-600 tracking-tight italic text-left">
           "{item.trnsmitCn}"
         </div>
       )
@@ -215,7 +215,7 @@ export default function SmsAdminClient({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
           <div className="text-left">
             <h3 className="text-2xl font-black tracking-tighter uppercase leading-none text-left">전송 로그</h3>
-            <p className="text-[9px] font-bold text-muted-foreground tracking-[0.3em] uppercase mt-2 opacity-50 text-left">메시지 출력 모니터링</p>
+            <p className="text-[9px] font-bold text-slate-600 tracking-[0.3em] uppercase mt-2 opacity-100 text-left">메시지 출력 모니터링</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative group/search flex-1 md:flex-none">
@@ -254,7 +254,7 @@ export default function SmsAdminClient({
                 </div>
                 <div className="text-center space-y-2">
                   <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase">메시지 작성</DialogTitle>
-                  <DialogDescription className="text-[10px] font-black tracking-[0.4em] uppercase opacity-40">
+                  <DialogDescription className="text-[10px] font-black tracking-[0.4em] uppercase opacity-100 text-slate-600">
                     Outbound Message Configuration
                   </DialogDescription>
                 </div>
@@ -266,7 +266,7 @@ export default function SmsAdminClient({
                   name="recptnTelno"
                   render={({ field }) => (
                     <FormItem className="space-y-4">
-                      <FormLabel className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
+                      <FormLabel className="text-[11px] font-black text-slate-600 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                         Target Terminal Number
                       </FormLabel>
@@ -290,7 +290,7 @@ export default function SmsAdminClient({
                   name="trnsmitCn"
                   render={({ field }) => (
                     <FormItem className="space-y-4">
-                      <FormLabel className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
+                      <FormLabel className="text-[11px] font-black text-slate-600 tracking-[0.2em] uppercase ml-2 flex items-center gap-3">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                         Payload Content
                       </FormLabel>
@@ -346,7 +346,7 @@ function SummaryBlock({ title, value, icon, status, color, bg }: any) {
       </div>
       <div>
         <h3 className="text-4xl font-black tracking-tighter text-foreground leading-none tabular-nums">{value}</h3>
-        <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase mt-4 leading-none">{title}</p>
+        <p className="text-[10px] font-black text-slate-600 tracking-[0.4em] uppercase mt-4 leading-none">{title}</p>
       </div>
       <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] group-hover:scale-125 group-hover:rotate-12 transition-all duration-1000 grayscale pointer-events-none">
         {React.cloneElement(icon, { size: 180 })}

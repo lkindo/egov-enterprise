@@ -143,10 +143,10 @@ const SortableMenuNode = ({
             {/* 계층 연결 라인 */}
             {!isOverlay && depth > 0 && (
                 <div 
-                    className="absolute top-0 bottom-0 border-l-2 border-slate-200/60" 
+                    className="absolute top-0 bottom-0 border-l-2 border-slate-300" 
                     style={{ left: `-${24}px`, height: '100%' }}
                 >
-                    <div className="absolute top-6 left-0 w-4 h-0.5 bg-slate-200/60" />
+                    <div className="absolute top-6 left-0 w-4 h-0.5 bg-slate-300" />
                 </div>
             )}
 
@@ -168,7 +168,7 @@ const SortableMenuNode = ({
                         {...listeners} 
                         className={cn(
                           "p-2 hover:bg-slate-100 rounded-lg cursor-grab active:cursor-grabbing transition-colors",
-                          depth === 0 ? "text-slate-500 hover:text-white" : "text-slate-300 hover:text-primary"
+                          depth === 0 ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-primary"
                         )}
                     >
                         <GripVertical size={20} />
@@ -205,14 +205,14 @@ const SortableMenuNode = ({
                             <div className="flex items-center gap-3 mt-1">
                                 <span className={cn(
                                   "text-[9px] font-bold px-1.5 py-0.5 rounded-md font-mono",
-                                  depth === 0 ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500 opacity-60"
+                                   depth === 0 ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-600 opacity-100"
                                 )}>
                                     NODE_{item.menuNo}
                                 </span>
                                 {item.progrmFileNm && (
                                     <span className={cn(
                                       "text-[9px] flex items-center gap-1 font-bold",
-                                      depth === 0 ? "text-slate-400" : "text-primary opacity-80"
+                                       depth === 0 ? "text-slate-300" : "text-primary opacity-100"
                                     )}>
                                         <LinkIcon size={10} /> {item.progrmFileNm}
                                     </span>
@@ -228,7 +228,7 @@ const SortableMenuNode = ({
                                 onClick={() => onCreate(item.menuNo)}
                                 className={cn(
                                   "h-9 w-9 rounded-xl",
-                                  depth === 0 ? "bg-slate-800 text-slate-400 hover:bg-primary hover:text-white" : "bg-slate-50 hover:bg-primary hover:text-white"
+                                   depth === 0 ? "bg-slate-800 text-slate-300" : "bg-slate-50 hover:bg-primary hover:text-white"
                                 )}
                             >
                                 <Plus size={14} />

@@ -167,7 +167,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
           </div>
           <div className="text-left">
             <span className="font-black tracking-tighter text-foreground block text-md uppercase leading-none">{item.progrmKoreanNm}</span>
-            <span className="text-[9px] font-black text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-40 text-left">SYSTEM_MODULE</span>
+            <span className="text-[9px] font-black text-slate-600 tracking-[0.3em] mt-2 uppercase opacity-100 text-left">SYSTEM_MODULE</span>
           </div>
         </div>
       )
@@ -186,7 +186,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
     {
       header: '엔드포인트(API/URL)',
       accessor: (item: Program) => (
-        <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/70 tracking-tighter italic text-left">
+        <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-600 tracking-tighter italic text-left">
           <LinkIcon size={12} className="text-primary opacity-40 shrink-0" />
           <span className="truncate">{item.url}</span>
         </div>

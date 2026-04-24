@@ -201,7 +201,7 @@ export default function UserOrgHubClient({
             <h4 className={cn("text-md font-black tracking-tighter leading-none uppercase", selectedItemId === user.esntlId ? "text-white" : "text-foreground")}>
               {user.userNm}
             </h4>
-            <p className={cn("text-[8px] font-black tracking-[0.3em] uppercase opacity-70 font-mono italic")}>{user.userId}</p>
+            <p className={cn("text-[8px] font-black tracking-[0.3em] uppercase opacity-100 font-mono italic")}>{user.userId}</p>
           </div>
         </div>
       )
@@ -223,7 +223,7 @@ export default function UserOrgHubClient({
             <h4 className={cn("text-md font-black tracking-tighter leading-none uppercase", selectedItemId === dept.orgnztId ? "text-white" : "text-foreground")}>
               {dept.orgnztNm}
             </h4>
-            <p className={cn("text-[8px] font-black tracking-[0.4em] uppercase opacity-70 font-mono italic")}>NODE_{dept.orgnztId}</p>
+            <p className={cn("text-[8px] font-black tracking-[0.4em] uppercase opacity-100 font-mono italic")}>NODE_{dept.orgnztId}</p>
           </div>
         </div>
       )
@@ -247,7 +247,7 @@ export default function UserOrgHubClient({
           <div className="flex gap-4 p-2 items-center">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="lg" className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
+                <Button variant="ghost" size="lg" aria-label="개인화 환경 설정" className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
                   <Settings size={22} className="group-hover:rotate-90 transition-transform duration-500" />
                 </Button>
               </TooltipTrigger>
@@ -304,7 +304,7 @@ export default function UserOrgHubClient({
               </div>
               <div className="space-y-4">
                 <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase font-mono italic">IDENTITY<br />INTELLIGENCE</h4>
-                <p className="text-[10px] text-white/30 font-black tracking-[0.4em] uppercase leading-relaxed font-mono">Active Directory (AD)<br />동기화 완료</p>
+                <p className="text-[10px] text-white/80 font-black tracking-[0.4em] uppercase leading-relaxed font-mono">Active Directory (AD)<br />동기화 완료</p>
               </div>
             </div>
           </div>
@@ -319,11 +319,11 @@ export default function UserOrgHubClient({
             <div className="space-y-8">
               <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-8">
                 <div>
-                  <span className="text-[10px] font-black text-muted-foreground/70 tracking-[0.4em] uppercase font-mono italic">실시간 디렉토리 동기화</span>
+                  <span className="text-[10px] font-black text-slate-600 tracking-[0.4em] uppercase font-mono italic">실시간 디렉토리 동기화</span>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" onClick={() => queryClient.invalidateQueries()} className="h-12 rounded-[0.1rem] px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
+                    <Button variant="ghost" size="sm" aria-label="서버 데이터 동기화" onClick={() => queryClient.invalidateQueries()} className="h-12 rounded-[0.1rem] px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm">
                       <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> SYNCHRONIZE
                     </Button>
                   </TooltipTrigger>
@@ -334,9 +334,9 @@ export default function UserOrgHubClient({
               </div>
 
               <div className="relative group/search">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-60 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                 <Input
-                  className="pl-16 h-16 bg-slate-50/50 border-none rounded-[0.1rem] text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/20 uppercase"
+                  className="pl-16 h-16 bg-slate-50/50 border-none rounded-[0.1rem] text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500 uppercase"
                   placeholder="Probing for identity..."
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -422,6 +422,7 @@ export default function UserOrgHubClient({
                     <Button 
                       variant="ghost" 
                       size="icon" 
+                      aria-label="객체 정보 수정"
                       className="h-16 w-16 rounded-[0.1rem] bg-slate-50 hover:bg-slate-900 hover:text-white shadow-sm border border-slate-100 transition-all group"
                       onClick={() => {
                         setFormMode('edit');
@@ -464,7 +465,7 @@ export default function UserOrgHubClient({
                             <ShieldCheck size={20} />
                           </div>
                           <div>
-                            <h4 className="text-[11px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono leading-none mb-1">권한 프로토콜</h4>
+                            <h4 className="text-[11px] font-black text-slate-600 tracking-[0.4em] uppercase font-mono leading-none mb-1">권한 프로토콜</h4>
                             <p className="text-sm font-black text-foreground tracking-tighter uppercase font-mono italic">활성 권한 매트릭스</p>
                           </div>
                         </div>
@@ -666,7 +667,7 @@ function NavButton({ icon, subLabel, label, active, onClick }: { icon: React.Rea
             {icon}
           </div>
           <div className="flex flex-col text-left relative z-10">
-            <span className={cn("text-[10px] font-black tracking-widest uppercase mb-1 opacity-60", active && "opacity-80 font-mono italic")}>{subLabel}</span>
+            <span className={cn("text-[10px] font-black tracking-widest uppercase mb-1 opacity-100", active && "opacity-100 font-mono italic")}>{subLabel}</span>
             <span className="text-md font-black tracking-tighter uppercase leading-tight font-mono italic">{label}</span>
           </div>
           {active && (

@@ -343,8 +343,8 @@ export default function AdminDashboardPage() {
            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-1000">
               <Zap size={120} />
            </div>
-           <h4 className="text-[10px] font-black tracking-[0.4em] uppercase opacity-60 mb-4">Strategic Bulletin</h4>
-           <h2 className="text-2xl font-black tracking-tighter mb-6 italic">Global Strategy Notice</h2>
+            <h3 className="text-[10px] font-black tracking-[0.4em] uppercase opacity-80 mb-4">Strategic Bulletin</h3>
+            <p className="text-2xl font-black tracking-tighter mb-6 italic">Global Strategy Notice</p>
            <p className="text-xs font-medium text-indigo-200 leading-relaxed uppercase">
              시스템 전반의 글로벌 보안 전략 및 정책 업데이트가 완료되었습니다. <br />
              데이터 오케스트레이션 엔진의 최적화 상태를 확인하세요.
@@ -354,12 +354,12 @@ export default function AdminDashboardPage() {
            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-1000">
               <Cpu size={120} />
            </div>
-           <h4 className="text-[10px] font-black tracking-[0.4em] uppercase opacity-60 mb-4">Resource Allocation</h4>
-           <h2 className="text-2xl font-black tracking-tighter mb-6 italic">Resource Provisioning</h2>
-           <p className="text-xs font-medium text-slate-400 leading-relaxed uppercase">
-             컴퓨팅 노드 및 스토리지 리소스의 동적 프로비저닝이 진행 중입니다. <br />
-             현재 시스템 부하 분산을 위한 지능형 샤딩 작업이 수행되고 있습니다.
-           </p>
+            <h3 className="text-[10px] font-black tracking-[0.4em] uppercase opacity-80 mb-4">Resource Allocation</h3>
+            <p className="text-2xl font-black tracking-tighter mb-6 italic">Resource Provisioning</p>
+            <p className="text-xs font-bold text-slate-500 leading-relaxed uppercase">
+              컴퓨팅 노드 및 스토리지 리소스의 동적 프로비저닝이 진행 중입니다. <br />
+              현재 시스템 부하 분산을 위한 지능형 샤딩 작업이 수행되고 있습니다.
+            </p>
         </div>
       </div>
     </div>
@@ -404,7 +404,7 @@ function DashboardStatCard({ title, value, icon, trend, color, link, description
                    title === '업무 인텔리전스' ? 'BUSINESS_INTELLIGENCE' : ''}
                 </span>
               </p>
-              <h2 className="text-4xl font-black text-slate-900 tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h2>
+               <h3 className="text-4xl font-black text-slate-900 tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</h3>
               <p className="text-[11px] font-bold text-slate-700 leading-tight uppercase">
                 {description}
               </p>

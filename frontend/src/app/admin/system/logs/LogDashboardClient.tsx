@@ -74,7 +74,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
             <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
               <Clock size={14} />
             </div>
-            <span className="text-[11px] font-mono font-black text-slate-500 tracking-tighter italic">
+            <span className="text-[11px] font-mono font-black text-slate-600 tracking-tighter italic">
               {item.creatDt || item.occcrrncDe || '-'}
             </span>
           </div>
@@ -90,7 +90,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
           header: '요청자',
           accessor: (item: any) => (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center bg-white shadow-sm font-black text-[10px] text-slate-400">
+              <div className="w-10 h-10 rounded-full border-2 border-slate-100 flex items-center justify-center bg-white shadow-sm font-black text-[10px] text-slate-600">
                 {item.loginNm?.substring(0, 1)}
               </div>
               <span className="text-xs font-bold text-slate-700">{item.loginNm} ({item.loginId})</span>
@@ -100,7 +100,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         {
           header: '접속 IP',
           accessor: (item: any) => (
-            <div className="font-mono text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1 rounded-lg border w-fit">{item.loginIp}</div>
+            <div className="font-mono text-[10px] font-black text-slate-600 bg-slate-50 px-3 py-1 rounded-lg border w-fit">{item.loginIp}</div>
           )
         },
         {
@@ -133,7 +133,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
       {
         header: '접속 정보',
         accessor: (item: any) => (
-          <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-slate-400">
+          <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-slate-600">
             <Globe size={11} className="opacity-40" />
             {item.rqesterIp || '127.0.0.1'}
           </div>
@@ -181,7 +181,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
                   "w-full group p-6 rounded-[0.1rem] border-2 transition-all flex items-center gap-5 relative overflow-hidden",
                   activeCategory === cat.id
                     ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
-                    : "bg-transparent border-transparent hover:bg-slate-100 text-slate-400 hover:text-slate-900"
+                    : "bg-transparent border-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900"
                 )}
               >
                 <div className={cn(
@@ -192,7 +192,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="text-[11px] font-black tracking-tighter uppercase leading-tight">{cat.label}</span>
-                  <span className="text-[7px] font-bold text-slate-400 tracking-widest uppercase opacity-60 truncate max-w-[120px]">{cat.description}</span>
+                  <span className="text-[7px] font-bold text-slate-600 tracking-widest uppercase opacity-100 truncate max-w-[120px]">{cat.description}</span>
                 </div>
               </button>
             ))}
@@ -243,7 +243,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
                 <Terminal size={22} />
               </div>
               <div className="text-left">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">로그 리소스 식별자</p>
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1">로그 리소스 식별자</p>
                 <p className="text-sm font-black text-slate-900 tracking-tight leading-none">{selectedLog?.logId || selectedLog?.requstId || '식별자 없음'}</p>
               </div>
             </div>
@@ -251,7 +251,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-2 italic">Raw Architecture Payload</h4>
+            <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] px-2 italic">Raw Architecture Payload</h4>
             <div className="p-10 rounded-[0.1rem] bg-slate-900 text-emerald-400 font-mono text-[11px] overflow-auto shadow-2xl relative group max-h-[400px]">
               <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-100 transition-opacity">
                 <Zap size={20} className="animate-pulse" />

@@ -228,6 +228,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             <Button 
                 variant="ghost" 
                 size="icon" 
+                aria-label="댓글 삭제"
                 onClick={(e) => { e.stopPropagation(); deleteCommentMutation.mutate(c.commentNo); }} 
                 className="text-white bg-rose-500/20 hover:bg-rose-500/40 rounded-[0.1rem] transition-all relative z-10 shrink-0 h-10 w-10"
             >
@@ -336,7 +337,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               <ShieldCheck size={40} className="text-primary" />
             </div>
             <div className="space-y-2">
-                <h4 className="text-xl font-black tracking-tighter uppercase">감사 프로토콜</h4>
+                <h3 className="text-xl font-black tracking-tighter uppercase">감사 프로토콜</h3>
                 <p className="text-[9px] font-black text-white/30 tracking-[0.4em] uppercase">보안 수준: 최상</p>
             </div>
             <div className="flex justify-center gap-2 opacity-20 mt-2">
@@ -350,12 +351,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-2xl flex-1 flex flex-col p-12 space-y-10 relative overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-100 pb-8 relative z-10">
               <div className="space-y-1">
-                <h3 className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase">데이터 스트림</h3>
+                <h3 className="text-[10px] font-black text-slate-600 tracking-[0.4em] uppercase">데이터 스트림</h3>
                 <p className="text-2xl font-black tracking-tighter text-foreground uppercase">인베스티게이션</p>
               </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
+                aria-label="데이터 스트림 새로고침"
                 onClick={() => queryClient.invalidateQueries()} 
                 className="h-14 w-14 rounded-[0.1rem] bg-slate-50 hover:bg-primary hover:text-white transition-all shadow-inner group"
               >
@@ -367,7 +369,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               <div className="relative group/search relative z-10">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                 <Input 
-                  className="pl-16 h-16 bg-slate-50 border-none rounded-[0.1rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/30" 
+                  className="pl-16 h-16 bg-slate-50 border-none rounded-[0.1rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-600" 
                   placeholder="로그 객체 필터링.." 
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -424,7 +426,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   <div className="border-b border-slate-100 pb-12 relative z-10">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/40" />
-                        <h3 className="text-[10px] font-black text-muted-foreground/40 tracking-[0.5em] uppercase">인스턴스 메타데이터</h3>
+                        <h3 className="text-[10px] font-black text-slate-600 tracking-[0.5em] uppercase">인스턴스 메타데이터</h3>
                     </div>
                     <h2 className="text-4xl font-black text-foreground tracking-tighter leading-none mb-4 uppercase">객체 상세 분석</h2>
                     <p className="text-xs font-mono font-black text-primary/60 tracking-widest uppercase">로그 고유 식별자 {selectedItemId}</p>
@@ -440,7 +442,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
                   <div className="pt-12 mt-auto border-t border-slate-100 space-y-8 relative z-10">
                     <div className="flex items-center justify-between px-6">
-                       <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase">결정 매트릭스</span>
+                       <span className="text-[10px] font-black text-slate-600 tracking-[0.4em] uppercase">결정 매트릭스</span>
                        <Activity size={20} className="text-primary animate-pulse" />
                     </div>
                     <Button className="w-full h-18 bg-slate-900 text-white rounded-[0.1rem] font-black tracking-[0.4em] text-[11px] shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 uppercase group overflow-hidden">
@@ -458,7 +460,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                     <Activity size={100} className="text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all" />
                 </div>
                 <h3 className="text-4xl font-black text-foreground tracking-tighter uppercase mb-4">인텔리전스 대기 중</h3>
-                <p className="text-[10px] font-black text-muted-foreground/30 tracking-[0.6em] uppercase leading-relaxed max-w-xs">분석할 로그 객체를 스트림에서 캡처하십시오</p>
+                <p className="text-[10px] font-black text-slate-600 tracking-[0.6em] uppercase leading-relaxed max-w-xs">분석할 로그 객체를 스트림에서 캡처하십시오</p>
               </div>
             )}
           </AnimatePresence>
