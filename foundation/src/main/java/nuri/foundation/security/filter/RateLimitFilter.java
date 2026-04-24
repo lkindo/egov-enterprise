@@ -1,30 +1,39 @@
 package nuri.foundation.security.filter;
 
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.Refill;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.springframework.context.annotation.Profile;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
- * Enterprise Rate Limiting Filter
- * Limits requests per IP address to prevent brute-force and DoS attacks.
+ * Enterprise Rate Limiting Filter using Bucket4j
+ * Prevents brute-force and DoS attacks with token bucket algorithm.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Profile("!stress-test & !bottleneck-test & !e2e")
 public class RateLimitFilter implements Filter {
 
-    private static final int MAX_REQUESTS_PER_MINUTE = 200;
-    private final Map<String, UserRequests> requestCache = new ConcurrentHashMap<>();
+    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+
+    private Bucket createNewBucket() {
+        // Default: 100 requests per minute
+        Bandwidth limit = Bandwidth.classic(100, Refill.greedy(100, Duration.ofMinutes(1)));
+        return Bucket.builder()
+                .addLimit(limit)
+                .build();
+    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -36,25 +45,20 @@ public class RateLimitFilter implements Filter {
         }
 
         String clientIp = getClientIp(httpRequest);
-        long currentTime = System.currentTimeMillis();
+        Bucket bucket = buckets.computeIfAbsent(clientIp, k -> createNewBucket());
 
-        UserRequests userRequests = requestCache.compute(clientIp, (key, value) -> {
-            if (value == null || (currentTime - value.startTime) > 60000) {
-                return new UserRequests(currentTime, new AtomicInteger(1));
-            }
-            value.count.incrementAndGet();
-            return value;
-        });
+        // Sensitive endpoints (e.g., login) consume more tokens
+        int tokensToConsume = httpRequest.getRequestURI().contains("/auth/login") ? 5 : 1;
 
-        if (userRequests.count.get() > MAX_REQUESTS_PER_MINUTE) {
+        if (bucket.tryConsume(tokensToConsume)) {
+            chain.doFilter(request, response);
+        } else {
             HttpServletResponse httpResponse = (HttpServletResponse) response;
             httpResponse.setStatus(429); // Too Many Requests
+            httpResponse.setHeader("X-Rate-Limit-Retry-After-Seconds", "60");
             httpResponse.setContentType("application/json;charset=UTF-8");
-            httpResponse.getWriter().write("{\"success\":false,\"code\":\"C429\",\"message\":\"Rate limit exceeded. Please try again after 1 minute.\"}");
-            return;
+            httpResponse.getWriter().write("{\"success\":false,\"code\":\"C429\",\"message\":\"Rate limit exceeded. Too many requests from this IP.\"}");
         }
-
-        chain.doFilter(request, response);
     }
 
     private String getClientIp(HttpServletRequest request) {
@@ -63,15 +67,5 @@ public class RateLimitFilter implements Filter {
             return xf.split(",")[0];
         }
         return request.getRemoteAddr();
-    }
-
-    private static class UserRequests {
-        private final long startTime;
-        private final AtomicInteger count;
-
-        public UserRequests(long startTime, AtomicInteger count) {
-            this.startTime = startTime;
-            this.count = count;
-        }
     }
 }

@@ -45,7 +45,11 @@ public class AuthApiController {
 
     @PostMapping("/logout")
     public ApiResponse<String> logout(HttpServletResponse response) {
-        jwtTokenProvider.addRefreshTokenCookie(response, "");
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            authService.logout(auth.getName());
+        }
+        jwtTokenProvider.removeRefreshTokenCookie(response);
         return ApiResponse.success("Logged out successfully");
     }
 

@@ -50,3 +50,10 @@ logging:
 # CORS 허용 오리진 (운영 환경)
 cors:
   allowed-origins: "${CORS_ORIGIN_1:https://egov.example.com},${CORS_ORIGIN_2:https://www.egov.example.com}"
+
+# Swagger/OpenAPI 보안 설정 (운영 환경 비활성화)
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
