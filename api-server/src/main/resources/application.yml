@@ -62,6 +62,12 @@ spring:
           scrollable_result_set_enabled: false
           time_zone_in_legacy_mapping: false
 
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+
 
 jwt:
   secret: ${JWT_SECRET}

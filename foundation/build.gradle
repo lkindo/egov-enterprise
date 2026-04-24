@@ -68,6 +68,7 @@ dependencies {
     api libs.opentelemetry.exporter.otlp
     api libs.micrometer.registry.prometheus
     api libs.spring.boot.admin.client
+    api 'com.github.loki4j:loki-logback-appender:1.5.2'
 
     // Utils
     api libs.icu4j

@@ -35,8 +35,10 @@ management:
       enabled: true
 
 logging:
+  loki:
+    url: ${LOKI_URL:http://loki:3100/loki/api/v1/push}
   level:
-    root: WARN
+    root: info
     nuri: INFO
     org.springframework: WARN
     org.hibernate: WARN

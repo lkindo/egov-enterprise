@@ -7,6 +7,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
+    ppr: 'incremental',
     // [bundle-barrel-imports] 배럴 임포트 자동 최적화 - 200-800ms 빌드 속도 향상
     optimizePackageImports: [
       'lucide-react',
