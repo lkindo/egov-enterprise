@@ -25,48 +25,48 @@ export function SurveyHubClient() {
     <Tabs value={currentTab} onValueChange={onTabChange} className="space-y-8">
       <div className="bg-slate-50/50 p-2 rounded-[0.1rem] border border-slate-100 shadow-sm inline-flex">
         <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
-          <TabsTrigger value="manage" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition">
+          <TabsTrigger value="manage" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition-all">
             <LayoutGrid size={16} /> 설문 관리
           </TabsTrigger>
-          <TabsTrigger value="stats" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition">
+          <TabsTrigger value="stats" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition-all">
             <BarChart3 size={16} /> 결과 통계
           </TabsTrigger>
-          <TabsTrigger value="questions" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition">
+          <TabsTrigger value="questions" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition-all">
             <HelpCircle size={16} /> 질문/문항
           </TabsTrigger>
-          <TabsTrigger value="respondents" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition">
+          <TabsTrigger value="respondents" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition-all">
             <Users size={16} /> 응답 그룹
           </TabsTrigger>
-          <TabsTrigger value="templates" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition">
+          <TabsTrigger value="templates" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition-all">
             <FileStack size={16} /> 템플릿 관리
           </TabsTrigger>
-          <TabsTrigger value="settings" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition">
+          <TabsTrigger value="settings" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-primary rounded-[0.1rem] h-12 px-6 font-bold text-xs gap-2 transition-all">
             <Settings2 size={16} /> 연동 설정
           </TabsTrigger>
         </TabsList>
       </div>
 
-      <TabsContent value="manage" className="focus-visible:focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <TabsContent value="manage" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
         <PollManagePage />
       </TabsContent>
 
-      <TabsContent value="stats" className="focus-visible:focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <TabsContent value="stats" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
         <SurveyStatsPage />
       </TabsContent>
 
-      <TabsContent value="questions" className="focus-visible:focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <TabsContent value="questions" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
         <PlaceholderCard title="질문 및 문항 라이브러리" description="설문 구성을 위한 핵심 질문 및 선택지 구조를 관리합니다." icon={HelpCircle} />
       </TabsContent>
 
-      <TabsContent value="respondents" className="focus-visible:focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <TabsContent value="respondents" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
         <PlaceholderCard title="응답 그룹 관리" description="설문 조사 대상인 사용자 집단 및 세그먼트를 정의합니다." icon={Users} />
       </TabsContent>
 
-      <TabsContent value="templates" className="focus-visible:focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <TabsContent value="templates" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
         <PlaceholderCard title="설문 템플릿 관리" description="표준화된 설문 양식을 생성하고 재사용 가능한 설문 세트를 관리합니다." icon={FileStack} />
       </TabsContent>
 
-       <TabsContent value="settings" className="focus-visible:focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+       <TabsContent value="settings" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
         <PlaceholderCard title="대외 기관 연동 설정" description="시스템 간의 설문 데이터 연동 프로토콜을 관리합니다." icon={Settings2} />
       </TabsContent>
     </Tabs>

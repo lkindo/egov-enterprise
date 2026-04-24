@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -24,7 +24,7 @@ export default function SurveyListPage() {
         const res = await surveyAdminService.getSurveys({ page: 0, size: 10 });
         setData(res.list || []);
       } catch (error) {
-        toast('?ㅻЦ 紐⑸줉??遺덈윭?ㅼ? 紐삵뻽?듬땲??', 'error');
+        toast('설문 목록을 불러오지 못했습니다.', 'error');
       } finally {
         setLoading(false);
       }
@@ -35,7 +35,7 @@ export default function SurveyListPage() {
   const columns = [
 
     {
-      header: '?ㅻЦ ?쒕ぉ',
+      header: '설문 제목',
       accessor: (item: Survey) => (
         <div className="font-bold text-foreground group-hover:text-primary transition-colors">
           {item.qestnrSj}
@@ -43,7 +43,7 @@ export default function SurveyListPage() {
       )
     },
     {
-      header: '李몄뿬 湲곌컙',
+      header: '참여 기간',
       accessor: (item: Survey) => (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar size={12} />
@@ -60,7 +60,7 @@ export default function SurveyListPage() {
             e.stopPropagation();
             router.push(`/survey/${item.qestnrId}`);
           }}
-          className="p-2 hover:bg-primary/10 text-primary rounded-full transition"
+          className="p-2 hover:bg-primary/10 text-primary rounded-full transition-all"
         >
           <ArrowRight size={18} />
         </button>
@@ -71,13 +71,13 @@ export default function SurveyListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="?⑤씪???ㅻЦ 議곗궗"
-        breadcrumbs={[{ label: '?낅Т吏?? }, { label: '?ㅻЦ議곗궗' }]}
+        title="온라인 설문 조사"
+        breadcrumbs={[{ label: '업무지원' }, { label: '설문조사' }]}
       />
 
       <StandardSearchFilter
         fields={[
-          { name: 'searchWrd', label: '?ㅻЦ紐?寃??, type: 'text', placeholder: '?쒕ぉ ?낅젰...' }
+          { name: 'searchWrd', label: '설문명 검색', type: 'text', placeholder: '제목 입력...' }
         ]}
         onSearch={(v) => console.log('Filtering...', v)}
       />
@@ -88,7 +88,7 @@ export default function SurveyListPage() {
           data={data}
           loading={loading}
           onRowClick={(item) => router.push(`/survey/${item.qestnrId}`)}
-          emptyMessage="?깅줉???ㅻЦ 議곗궗媛 ?놁뒿?덈떎."
+          emptyMessage="등록된 설문 조사가 없습니다."
         />
       </div>
     </div>

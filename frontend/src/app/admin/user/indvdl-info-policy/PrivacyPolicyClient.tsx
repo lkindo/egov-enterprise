@@ -66,14 +66,14 @@ export default function PrivacyPolicyClient({
                 <Button
                   variant="ghost"
                   onClick={() => setIsEditing(false)}
-                  className="h-14 px-8 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 font-black text-[10px] tracking-widest uppercase hover:text-rose-500 hover:bg-rose-50 transition shadow-xl active:scale-95 px-6"
+                  className="h-14 px-8 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 font-black text-[10px] tracking-widest uppercase hover:text-rose-500 hover:bg-rose-50 transition-all shadow-xl active:scale-95 px-6"
                 >
                   CANCEL_CHANGES
                 </Button>
                 <Button
                   onClick={handleSave}
                   disabled={loading}
-                  className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition hover:-translate-y-1 gap-3 group"
+                  className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
                 >
                   {loading ? <RefreshCcw size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />} 
                   COMMIT_SPECIFICATION
@@ -83,7 +83,7 @@ export default function PrivacyPolicyClient({
             ) : (
               <Button
                 onClick={() => setIsEditing(true)}
-                className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition hover:-translate-y-1 gap-3 group"
+                className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
               >
                 <FileCode size={20} /> POLICY_SPEC_OVERRIDE
               </Button>
@@ -162,7 +162,7 @@ export default function PrivacyPolicyClient({
                             <Input
                                 value={policy.title}
                                 onChange={(e) => setPolicy(prev => ({ ...prev, title: e.target.value }))}
-                                className="h-16 px-10 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-xl font-black tracking-tight focus:ring-8 focus:ring-primary/5 transition shadow-inner uppercase"
+                                className="h-16 px-10 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-xl font-black tracking-tight focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase"
                                 placeholder="프로토콜 명칭 정의"
                             />
                         ) : (
@@ -179,7 +179,7 @@ export default function PrivacyPolicyClient({
                             <Textarea
                                 value={policy.content}
                                 onChange={(e) => setPolicy(prev => ({ ...prev, content: e.target.value }))}
-                                className="min-h-[550px] p-12 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-base font-bold leading-[2] focus:ring-8 focus:ring-primary/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition resize-none shadow-inner custom-scrollbar text-left font-sans"
+                                className="min-h-[550px] p-12 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-base font-bold leading-[2] focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner custom-scrollbar text-left font-sans"
                                 placeholder="데이터 보호 규정 상세 명세를 입력하십시오..."
                             />
                         ) : (

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -51,7 +51,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
       setTotal(res.total || 0);
       setPageNumber(page);
     } catch (error) {
-      toast('?곗씠?곕? 遺덈윭?ㅻ뒗 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+      toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
 
   const columns: Column<AdministCode>[] = [
     { 
-        header: '?됱젙 ?앸퀎??, 
+        header: '행정 식별자', 
         accessor: (item: any) => (
             <div className="flex items-center gap-4 py-3">
                 <div className="w-10 h-10 rounded-[0.1rem] bg-primary flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
@@ -76,54 +76,54 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
                 </div>
                 <div className="flex flex-col gap-0.5">
                     <span className="font-mono font-black text-foreground tracking-tighter text-sm uppercase">{item.administZoneCode}</span>
-                    <span className="text-[8px] font-black text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-40">援ъ뿭 ?앸퀎肄붾뱶</span>
+                    <span className="text-[8px] font-black text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-40">구역 식별코드</span>
                 </div>
             </div>
         ),
         className: 'w-56' 
     },
     { 
-      header: '?꾨찓??援щ텇', 
+      header: '도메인 구분', 
       accessor: (item: any) => (
         <div className={cn(
             "px-3 py-1.5 rounded-lg border w-fit text-[9px] font-black tracking-widest uppercase shadow-sm",
             item.administZoneSe === '1' ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-600 border-slate-200'
         )}>
-            {item.administZoneSe === '1' ? '踰뺤젙?? : '?됱젙??}
+            {item.administZoneSe === '1' ? '법정동' : '행정동'}
         </div>
       ),
       className: 'w-32'
     },
     { 
-        header: '?됱젙援ъ뿭紐?, 
+        header: '행정구역명', 
         accessor: (item: any) => (
             <div className="flex flex-col gap-1 py-4">
                 <span className="font-black text-foreground tracking-tight text-md uppercase leading-tight">{item.administZoneNm}</span>
                 <div className="flex items-center gap-2">
                     <Compass size={10} className="text-primary opacity-40" />
-                    <span className="text-[9px] font-black text-muted-foreground/50 tracking-[0.2em] font-mono uppercase italic leading-none">吏由ъ쟻 ?ㅼ엫?ㅽ럹?댁뒪</span>
+                    <span className="text-[9px] font-black text-muted-foreground/50 tracking-[0.2em] font-mono uppercase italic leading-none">지리적 네임스페이스</span>
                 </div>
             </div>
         )
     },
     { 
-        header: '?곸쐞 ?몃뱶 ID', 
+        header: '상위 노드 ID', 
         accessor: (item: any) => (
             <div className="flex items-center gap-2 font-mono text-[10px] font-black text-muted-foreground/60 tabular-nums tracking-tighter italic">
-                {item.upperAdministZoneCode || '理쒖긽??猷⑦듃'}
+                {item.upperAdministZoneCode || '최상위 루트'}
             </div>
         ), 
         className: 'w-32' 
     },
     { 
-      header: '?ъ슜?щ?', 
+      header: '사용여부', 
       accessor: (item: any) => (
         <div className={cn(
             "flex items-center gap-2 px-3 py-1.5 rounded-full border w-fit shadow-sm",
             item.useAt === 'Y' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
         )}>
             <div className={cn("w-1.5 h-1.5 rounded-full shadow-sm", item.useAt === 'Y' ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
-            <span className="text-[9px] font-black tracking-widest uppercase">{item.useAt === 'Y' ? '?쒖꽦' : '以묐떒??}</span>
+            <span className="text-[9px] font-black tracking-widest uppercase">{item.useAt === 'Y' ? '활성' : '중단됨'}</span>
         </div>
       ),
       className: 'w-32'
@@ -134,31 +134,31 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       
       <HubHeader 
-        title="?됱젙 援ъ뿭" 
-        highlight="?몃깽?좊━" 
-        subtitle="?꾧뎅 ?됱젙 援ъ뿭???곕Ⅸ 踰뺤젙??諛??됱젙??肄붾뱶 泥닿퀎瑜?怨듦컙 ?명뀛由ъ쟾???듯빀 愿由? 
+        title="행정 구역" 
+        highlight="인벤토리" 
+        subtitle="전국 행정 구역에 따른 법정동 및 행정동 코드 체계를 공간 인텔리전스 통합 관리" 
         icon={Milestone} 
         actions={
           <div className="flex gap-4 p-2 items-center">
             <Button
                 variant="ghost"
                 onClick={() => loadData()}
-                className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition shadow-xl group active:scale-95 px-4"
+                className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
             >
                 <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
-             <Button className="h-14 px-10 rounded-[0.1rem] bg-primary border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:brightness-110 transition hover:-translate-y-1 gap-3 group">
-                <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" /> ?좉퇋 ?됱젙 肄붾뱶 ?몄뒪?댁뒪 ?깅줉
+             <Button className="h-14 px-10 rounded-[0.1rem] bg-primary border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-3 group">
+                <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" /> 신규 행정 코드 인스턴스 등록
              </Button>
           </div>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="?꾩껜 援ъ뿭 ?? value={stats.totalCount} icon={Database} color="primary" />
-        <HubMetricCard title="踰뺤젙???몃뱶" value={stats.legalDist} icon={Map} color="indigo" />
-        <HubMetricCard title="?됱젙???몃뱶" value={stats.adminDist} icon={Compass} color="amber" />
-        <HubMetricCard title="?숆린??吏?? value={`${stats.syncStatus}%`} icon={ShieldCheck} color="emerald" status="理쒖쟻" />
+        <HubMetricCard title="전체 구역 수" value={stats.totalCount} icon={Database} color="primary" />
+        <HubMetricCard title="법정동 노드" value={stats.legalDist} icon={Map} color="indigo" />
+        <HubMetricCard title="행정동 노드" value={stats.adminDist} icon={Compass} color="amber" />
+        <HubMetricCard title="동기화 지수" value={`${stats.syncStatus}%`} icon={ShieldCheck} color="emerald" status="최적" />
       </HubMetricGrid>
 
       <div className="grid grid-cols-12 gap-12">
@@ -173,21 +173,21 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
                         <div className="w-20 h-20 rounded-[0.1rem] bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
                             <Monitor size={36} className="text-primary" />
                         </div>
-                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">怨듦컙 ?명뀛由ъ쟾??br />?덈툕</h4>
+                        <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">공간 인텔리전스<br />허브</h4>
                     </div>
                     
                     <p className="text-sm text-slate-500 font-bold leading-relaxed italic border-l-4 border-primary pl-8">
-                        ?됱젙援ъ뿭肄붾뱶 泥닿퀎(KAS)???곗씠??臾닿껐?깆쓣 蹂댁옣?섎ŉ, ?꾧뎅 怨듦컙?뺣낫 ?듯빀 愿由?泥닿퀎? ?ㅼ떆媛꾩쑝濡??숆린?붾맗?덈떎.
+                        행정구역코드 체계(KAS)는 데이터 무결성을 보장하며, 전국 공간정보 통합 관리 체계와 실시간으로 동기화됩니다.
                     </p>
 
                     <div className="space-y-6 pt-12 border-t border-slate-100">
                         <div className="flex items-center justify-between group/stat">
-                            <span className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">?곗씠???섏쭛 ?붿쭊</span>
-                            <span className="text-lg font-black font-mono tracking-tighter text-emerald-500">?뺤긽</span>
+                            <span className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">데이터 수집 엔진</span>
+                            <span className="text-lg font-black font-mono tracking-tighter text-emerald-500">정상</span>
                         </div>
                         <div className="flex items-center justify-between group/stat">
-                            <span className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase group-hover/stat:text-amber-500 transition-colors">?숆린??鍮덈룄</span>
-                            <span className="text-lg font-black font-mono tracking-tighter">留ㅼ씪 00??/span>
+                            <span className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase group-hover/stat:text-amber-500 transition-colors">동기화 빈도</span>
+                            <span className="text-lg font-black font-mono tracking-tighter">매일 00시</span>
                         </div>
                     </div>
                 </div>
@@ -196,19 +196,19 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
 
         {/* Data Area */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-10">
-            <HubSectionCard title="?됱젙 肄붾뱶 留ㅽ듃由?뒪 ?먯깋湲? description="?쒖뒪?쒖뿉 ?깅줉??紐⑤뱺 ?됱젙 援ъ뿭 諛?踰뺤젙??硫뷀??곗씠?곗쓽 ?덉씠?댁떆 ?꾨줈?좎퐳 ?곸꽭?낅땲?? icon={SearchCode}>
+            <HubSectionCard title="행정 코드 매트릭스 탐색기" description="시스템에 등록된 모든 행정 구역 및 법정동 메타데이터의 레이턴시 프로토콜 상세입니다" icon={SearchCode}>
                 <form onSubmit={(e) => { e.preventDefault(); loadData(searchWrd, 1); }} className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
                     <div className="relative group/search flex-1">
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={18} />
                         <Input
-                            placeholder="?됱젙援ъ뿭紐낆쓣 ?낅젰?섏뿬 硫뷀??곗씠???뷀떚?곕? 議고쉶?섏꽭??."
+                            placeholder="행정구역명을 입력하여 메타데이터 엔티티를 조회하세요.."
                             value={searchWrd}
                             onChange={(e) => setSearchWrd(e.target.value)}
-                            className="h-14 pl-14 pr-6 w-full bg-slate-50 border-none rounded-[0.1rem] text-[11px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition placeholder:text-slate-300"
+                            className="h-14 pl-14 pr-6 w-full bg-slate-50 border-none rounded-[0.1rem] text-[11px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
                         />
                     </div>
-                    <Button type="submit" size="lg" className="h-14 px-10 rounded-[0.1rem] bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition gap-3 group">
-                        <Layers size={18} className="group-hover:rotate-180 transition-transform duration-500" /> ?곗씠???꾪꽣留??ㅽ뻾
+                    <Button type="submit" size="lg" className="h-14 px-10 rounded-[0.1rem] bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition-all gap-3 group">
+                        <Layers size={18} className="group-hover:rotate-180 transition-transform duration-500" /> 데이터 필터링 실행
                     </Button>
                 </form>
 
@@ -225,7 +225,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
                                 columns={columns}
                                 data={data}
                                 loading={loading}
-                                emptyMessage="?깅줉???됱젙肄붾뱶 ?곗씠?곌? 議댁옱?섏? ?딆뒿?덈떎."
+                                emptyMessage="등록된 행정코드 데이터가 존재하지 않습니다."
                                 className="border-none bg-transparent"
                             />
                         </motion.div>

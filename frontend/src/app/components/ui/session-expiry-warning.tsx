@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Shield, Clock, X } from 'lucide-react';
@@ -6,18 +6,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
- * ?몄뀡 留뚮즺 寃쎄퀬 而댄룷?뚰듃
+ * 세션 만료 경고 컴포넌트
  * 
- * JWT ?좏겙??留뚮즺 ?쒓컙??紐⑤땲?곕쭅?섏뿬, 留뚮즺 5遺??꾩뿉 
- * "?몄뀡???곗옣?섏떆寃좎뒿?덇퉴?" ?앹뾽???쒖떆?⑸땲??
+ * JWT 토큰의 만료 시간을 모니터링하여, 만료 5분 전에 
+ * "세션을 연장하시겠습니까?" 팝업을 표시합니다.
  * 
- * - ?곗옣: ?좏겙 ?щ컻湲?reissue) API ?몄텧
- * - 臾댁떆: 留뚮즺 ???먮룞 濡쒓렇?꾩썐 諛?濡쒓렇???섏씠吏 ?대룞
+ * - 연장: 토큰 재발급(reissue) API 호출
+ * - 무시: 만료 시 자동 로그아웃 및 로그인 페이지 이동
  */
 export function SessionExpiryWarning() {
   const { user, logout } = useAuth();
   const [showWarning, setShowWarning] = useState(false);
-  const [remainingSeconds, setRemainingSeconds] = useState(300); // 5遺?= 300珥?  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState(300); // 5분 = 300초
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   const getTokenExpiry = useCallback((): number | null => {
@@ -27,14 +28,16 @@ export function SessionExpiryWarning() {
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp ? payload.exp * 1000 : null; // ms 蹂??    } catch {
+      return payload.exp ? payload.exp * 1000 : null; // ms 변환
+    } catch {
       return null;
     }
   }, []);
 
   const handleExtendSession = useCallback(async () => {
     try {
-      // client.ts??reissue 濡쒖쭅??吏곸젒 ?몃━嫄?      const { default: client } = await import('@/lib/api/client');
+      // client.ts의 reissue 로직을 직접 트리거
+      const { default: client } = await import('@/lib/api/client');
       const res: any = await (client as any).post('/auth/reissue', {});
       
       if (res?.accessToken) {
@@ -42,7 +45,7 @@ export function SessionExpiryWarning() {
         document.cookie = `accessToken=${res.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       }
     } catch {
-      // reissue ?ㅽ뙣 ?쒖뿉??議곗슜??泥섎━ (?ъ슜?먭? ?묒뾽??怨꾩냽?????덈룄濡?
+      // reissue 실패 시에도 조용히 처리 (사용자가 작업을 계속할 수 있도록)
     }
     setShowWarning(false);
   }, []);
@@ -56,8 +59,8 @@ export function SessionExpiryWarning() {
   useEffect(() => {
     if (!user) return;
 
-    const WARNING_THRESHOLD = 5 * 60 * 1000; // 留뚮즺 5遺???寃쎄퀬
-    const CHECK_INTERVAL = 30 * 1000; // 30珥덈쭏??泥댄겕
+    const WARNING_THRESHOLD = 5 * 60 * 1000; // 만료 5분 전 경고
+    const CHECK_INTERVAL = 30 * 1000; // 30초마다 체크
 
     const checkExpiry = () => {
       const expiry = getTokenExpiry();
@@ -67,24 +70,25 @@ export function SessionExpiryWarning() {
       const timeLeft = expiry - now;
 
       if (timeLeft <= 0) {
-        // ?대? 留뚮즺??        handleLogout();
+        // 이미 만료됨
+        handleLogout();
       } else if (timeLeft <= WARNING_THRESHOLD && !showWarning) {
-        // 5遺??대궡: 寃쎄퀬 ?쒖떆
+        // 5분 이내: 경고 표시
         setRemainingSeconds(Math.floor(timeLeft / 1000));
         setShowWarning(true);
       }
     };
 
-    // 二쇨린??泥댄겕
+    // 주기적 체크
     timerRef.current = setInterval(checkExpiry, CHECK_INTERVAL);
-    checkExpiry(); // 利됱떆 1???ㅽ뻾
+    checkExpiry(); // 즉시 1회 실행
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [user, getTokenExpiry, handleLogout, showWarning]);
 
-  // 移댁슫?몃떎????대㉧
+  // 카운트다운 타이머
   useEffect(() => {
     if (!showWarning) {
       if (countdownRef.current) clearInterval(countdownRef.current);
@@ -116,7 +120,7 @@ export function SessionExpiryWarning() {
     <AnimatePresence>
       {showWarning && (
         <>
-          {/* 諛곌꼍 ?ㅻ쾭?덉씠 */}
+          {/* 배경 오버레이 */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -125,7 +129,7 @@ export function SessionExpiryWarning() {
             onClick={() => setShowWarning(false)}
           />
 
-          {/* 寃쎄퀬 ?앹뾽 */}
+          {/* 경고 팝업 */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -134,13 +138,13 @@ export function SessionExpiryWarning() {
             className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-full max-w-md"
           >
             <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-              {/* ?ㅻ뜑 */}
+              {/* 헤더 */}
               <div className="bg-amber-50 border-b border-amber-100 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-amber-100 rounded-lg">
                     <Shield className="w-5 h-5 text-amber-600" />
                   </div>
-                  <span className="font-black text-amber-800 text-sm">?몄뀡 留뚮즺 ?덉젙</span>
+                  <span className="font-black text-amber-800 text-sm">세션 만료 예정</span>
                 </div>
                 <button
                   onClick={() => setShowWarning(false)}
@@ -150,33 +154,34 @@ export function SessionExpiryWarning() {
                 </button>
               </div>
 
-              {/* 蹂몃Ц */}
+              {/* 본문 */}
               <div className="p-8 text-center">
                 <div className="inline-flex items-center gap-2 bg-rose-50 text-rose-600 px-4 py-2 rounded-full mb-6">
                   <Clock size={16} />
                   <span className="font-black text-lg tabular-nums">{formatTime(remainingSeconds)}</span>
                 </div>
                 <h3 className="text-xl font-black text-slate-900 mb-2">
-                  ?몄뀡??怨?留뚮즺?⑸땲??                </h3>
+                  세션이 곧 만료됩니다
+                </h3>
                 <p className="text-slate-500 font-medium text-sm leading-relaxed">
-                  蹂댁븞???꾪빐 ?μ떆媛??쒕룞???놁쑝硫??먮룞?쇰줈 濡쒓렇?꾩썐?⑸땲??<br />
-                  ?묒뾽??怨꾩냽?섏떆?ㅻ㈃ ?몄뀡???곗옣??二쇱꽭??
+                  보안을 위해 장시간 활동이 없으면 자동으로 로그아웃됩니다.<br />
+                  작업을 계속하시려면 세션을 연장해 주세요.
                 </p>
               </div>
 
-              {/* ?≪뀡 */}
+              {/* 액션 */}
               <div className="px-6 pb-6 flex gap-3">
                 <button
                   onClick={handleLogout}
                   className="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-500 font-black text-sm rounded-[0.1rem] hover:bg-slate-50 transition-colors"
                 >
-                  濡쒓렇?꾩썐
+                  로그아웃
                 </button>
                 <button
                   onClick={handleExtendSession}
-                  className="flex-1 px-4 py-3 bg-slate-900 text-white font-black text-sm rounded-[0.1rem] hover:bg-slate-800 shadow-xl transition active:scale-95"
+                  className="flex-1 px-4 py-3 bg-slate-900 text-white font-black text-sm rounded-[0.1rem] hover:bg-slate-800 shadow-xl transition-all active:scale-95"
                 >
-                  ?몄뀡 ?곗옣
+                  세션 연장
                 </button>
               </div>
             </div>

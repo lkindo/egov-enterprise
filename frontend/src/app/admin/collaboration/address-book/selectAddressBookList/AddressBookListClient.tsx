@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { use, useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -61,12 +61,12 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
     };
 
     const handleDelete = async (adbkId: string) => {
-        if (!confirm('??젣?섏떆寃좎뒿?덇퉴?')) return;
+        if (!confirm('삭제하시겠습니까?')) return;
         try {
             await addressbookUserService.deleteAddressBook(adbkId);
             fetchList(pageNo, searchWrd);
         } catch {
-            alert('??젣???ㅽ뙣?덉뒿?덈떎.');
+            alert('삭제에 실패했습니다.');
         }
     };
 
@@ -83,13 +83,14 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 text-[10px] font-black text-primary tracking-[0.2em] bg-primary/5 px-4 py-1.5 rounded-full w-fit">
-                        <Home className="w-3 h-3" /> HOME <ChevronRight className="w-3 h-3 opacity-30" /> ?묒뾽 <ChevronRight className="w-3 h-3 opacity-30" /> 二쇱냼濡?                    </div>
+                        <Home className="w-3 h-3" /> HOME <ChevronRight className="w-3 h-3 opacity-30" /> 협업 <ChevronRight className="w-3 h-3 opacity-30" /> 주소록
+                    </div>
                     <div className="space-y-1">
                         <h1 className="text-4xl font-black tracking-tighter text-slate-900 ">
                             Contact <span className="text-primary ">Directory</span>
                         </h1>
                         <p className="text-muted-foreground font-medium text-sm max-w-lg leading-relaxed">
-                            遺??諛??몃? ?묒뾽???꾪븳 ?듯빀 二쇱냼濡??쇳꽣?낅땲?? ?깅챸, 議곗쭅, 吏곸콉 湲곕컲??鍮좊Ⅸ ?곕씫泥?議고쉶媛 媛?ν빀?덈떎.
+                            부서 및 외부 협업을 위한 통합 주소록 센터입니다. 성명, 조직, 직책 기반의 빠른 연락처 조회가 가능합니다.
                         </p>
                     </div>
                 </div>
@@ -97,13 +98,14 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                 <div className="flex items-center gap-3">
                     <div className="bg-slate-900 text-white px-6 py-4 rounded-[0.1rem] shadow-2xl flex items-center gap-3 ring-8 ring-slate-50 border border-white/10 shrink-0">
                         <UserCircle className="w-5 h-5 text-primary" />
-                        <span className="text-sm font-bold opacity-60 tracking-tight">?꾩껜 ?깅줉 ?곕씫泥?/span>
+                        <span className="text-sm font-bold opacity-60 tracking-tight">전체 등록 연락처</span>
                         <div className="h-4 w-px bg-white/20 mx-1" />
-                        <span className="text-2xl font-black">{totalCount}嫄?/span>
+                        <span className="text-2xl font-black">{totalCount}건</span>
                     </div>
                     <Link href="/admin/collaboration/address-book/insertAddressBook">
-                        <Button size="lg" className="h-16 px-8 gap-3 bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/20 rounded-[0.1rem] font-black transition active:scale-95 shrink-0">
-                            <Plus className="w-5 h-5" /> ?좉퇋 ?곕씫泥?                        </Button>
+                        <Button size="lg" className="h-16 px-8 gap-3 bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/20 rounded-[0.1rem] font-black transition-all active:scale-95 shrink-0">
+                            <Plus className="w-5 h-5" /> 신규 연락처
+                        </Button>
                     </Link>
                 </div>
             </div>
@@ -115,14 +117,15 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
                             <Input
                                 type="text"
-                                className="pl-12 h-14 text-base font-bold bg-white border-2 border-slate-100 focus:border-slate-900 focus-visible:ring-slate-100/5 transition shadow-inner rounded-[0.1rem]"
-                                placeholder="?깅챸, ?꾪솕踰덊샇, ?뚯냽 ?깆쑝濡??뺣? 寃??.."
+                                className="pl-12 h-14 text-base font-bold bg-white border-2 border-slate-100 focus:border-slate-900 focus-visible:ring-slate-100/5 transition-all shadow-inner rounded-[0.1rem]"
+                                placeholder="성명, 전화번호, 소속 등으로 정밀 검색..."
                                 value={searchWrd}
                                 onChange={(e) => setSearchWrd(e.target.value)}
                             />
                         </div>
-                        <Button type="submit" className="h-14 px-10 font-black bg-slate-900 hover:bg-black text-white rounded-[0.1rem] shadow-xl transition active:scale-95">
-                            寃?됲븯湲?                        </Button>
+                        <Button type="submit" className="h-14 px-10 font-black bg-slate-900 hover:bg-black text-white rounded-[0.1rem] shadow-xl transition-all active:scale-95">
+                            검색하기
+                        </Button>
                     </form>
                 </CardHeader>
                 <CardContent className="pt-8 px-10">
@@ -131,10 +134,10 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                             <TableHeader className="bg-slate-50/80">
                                 <TableRow className="hover:bg-transparent">
                                     <TableHead className="w-[100px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">SEQ</TableHead>
-                                    <TableHead className="font-black text-slate-900 text-[10px] py-6 tracking-[0.2em] px-8">?ъ슜???꾨줈??/TableHead>
-                                    <TableHead className="w-[250px] font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">?곕씫泥??뺣낫</TableHead>
-                                    <TableHead className="font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">?꾩튂 ?뺣낫</TableHead>
-                                    <TableHead className="w-[150px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">?깅줉 ?쇱옄</TableHead>
+                                    <TableHead className="font-black text-slate-900 text-[10px] py-6 tracking-[0.2em] px-8">사용자 프로필</TableHead>
+                                    <TableHead className="w-[250px] font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">연락처 정보</TableHead>
+                                    <TableHead className="font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">위치 정보</TableHead>
+                                    <TableHead className="w-[150px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">등록 일자</TableHead>
                                     <TableHead className="w-[100px] text-center font-black text-slate-400 text-[10px] py-6 tracking-[0.2em]">ACTION</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -153,18 +156,18 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                                 ) : list.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={6} className="h-64 text-center text-slate-300 font-black tracking-tighter opacity-40 italic text-xl">
-                                            留ㅼ묶?섎뒗 ?곕씫泥??뺣낫瑜?李얠쓣 ???놁뒿?덈떎.
+                                            매칭되는 연락처 정보를 찾을 수 없습니다.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     list.map((item, idx) => (
-                                        <TableRow key={item.adbkId} className="hover:bg-slate-50/50 transition border-b last:border-0 group">
+                                        <TableRow key={item.adbkId} className="hover:bg-slate-50/50 transition-all border-b last:border-0 group">
                                             <TableCell className="text-center font-mono text-xs text-slate-400 py-8">
                                                 {(pageNo - 1) * 10 + idx + 1}
                                             </TableCell>
                                             <TableCell className="px-8 py-8">
                                                 <Link href={`/admin/collaboration/address-book/selectAddressBookDetail/${item.adbkId}`} className="flex items-center gap-5 group/item">
-                                                    <div className="w-14 h-14 bg-slate-900 rounded-[0.1rem] flex items-center justify-center text-primary font-black text-xl shadow-xl ring-4 ring-slate-50 transition group-hover/item:scale-110">
+                                                    <div className="w-14 h-14 bg-slate-900 rounded-[0.1rem] flex items-center justify-center text-primary font-black text-xl shadow-xl ring-4 ring-slate-50 transition-all group-hover/item:scale-110">
                                                         {item.adbkNm?.charAt(0)}
                                                     </div>
                                                     <div className="space-y-1">
@@ -183,7 +186,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                                                 <div className="space-y-2">
                                                     <div className="flex items-center gap-3 text-sm font-black text-slate-600">
                                                         <Phone className="w-4 h-4 text-primary opacity-40" />
-                                                        <span className="font-mono tracking-tighter">{item.telNo || '?뺣낫 ?놁쓬'}</span>
+                                                        <span className="font-mono tracking-tighter">{item.telNo || '정보 없음'}</span>
                                                     </div>
                                                     <div className="flex items-center gap-3 text-sm font-bold text-slate-400">
                                                         <Mail className="w-4 h-4 opacity-30" />
@@ -195,7 +198,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                                                 <div className="flex items-start gap-3">
                                                     <MapPin className="w-4 h-4 text-primary opacity-40 mt-1 shrink-0" />
                                                     <p className="text-sm font-bold text-slate-500 leading-relaxed max-w-[300px]">
-                                                        {item.adres || '?깅줉??二쇱냼 ?뺣낫媛 ?놁뒿?덈떎.'}
+                                                        {item.adres || '등록된 주소 정보가 없습니다.'}
                                                     </p>
                                                 </div>
                                             </TableCell>
@@ -209,7 +212,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => handleDelete(item.adbkId)}
-                                                    className="h-12 w-12 text-slate-300 hover:text-rose-500 hover:bg-rose-50/50 transition opacity-0 group-hover:opacity-100 rounded-[0.1rem] border border-transparent hover:border-rose-100 shadow-sm"
+                                                    className="h-12 w-12 text-slate-300 hover:text-rose-500 hover:bg-rose-50/50 transition-all opacity-0 group-hover:opacity-100 rounded-[0.1rem] border border-transparent hover:border-rose-100 shadow-sm"
                                                 >
                                                     <Trash2 className="w-5 h-5" />
                                                 </Button>
@@ -228,7 +231,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                                 size="lg"
                                 onClick={() => setPageNo(p => Math.max(1, p - 1))}
                                 disabled={pageNo === 1}
-                                className="px-14 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition tracking-[0.2em] text-[10px]"
+                                className="px-14 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-[0.2em] text-[10px]"
                             >
                                 PREV
                             </Button>
@@ -242,7 +245,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                                 size="lg"
                                 onClick={() => setPageNo(p => Math.min(totalPages, p + 1))}
                                 disabled={pageNo === totalPages}
-                                className="px-14 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition tracking-[0.2em] text-[10px]"
+                                className="px-14 h-16 rounded-[0.1rem] font-black text-slate-400 border-2 border-transparent hover:border-slate-100 hover:bg-white transition-all tracking-[0.2em] text-[10px]"
                             >
                                 NEXT
                             </Button>

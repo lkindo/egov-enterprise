@@ -39,7 +39,7 @@ export function IntelligenceMeetingPlanner() {
  <div className="flex gap-2">
  {[1, 2, 3, 4, 5].map(day => (
  <button key={day} className={cn(
- "w-12 h-16 rounded-[0.1rem] border-2 font-black text-sm flex flex-col items-center justify-center transition",
+ "w-12 h-16 rounded-[0.1rem] border-2 font-black text-sm flex flex-col items-center justify-center transition-all",
  day === 3 ? "bg-slate-900 border-slate-900 text-white shadow-xl shadow-slate-900/20" : "bg-slate-50 border-slate-100 text-slate-400 hover:border-primary/20"
  )}>
  <span className="opacity-40 text-[8px] mb-1">Mar</span>
@@ -57,7 +57,7 @@ export function IntelligenceMeetingPlanner() {
  { time: '16:00', event: 'Security Protocol Audit', tech: 'Strategy Suite', status: 'pending' },
  ].map((m, i) => (
  <div key={i} className={cn(
- "group p-6 rounded-[0.1rem] border-2 transition flex items-center justify-between",
+ "group p-6 rounded-[0.1rem] border-2 transition-all flex items-center justify-between",
  m.status === 'current' ? "bg-primary/5 border-primary/20 shadow-lg" : "bg-muted/10 border-transparent hover:bg-card hover:border-primary/10"
  )}>
  <div className="flex items-center gap-8">
@@ -82,7 +82,7 @@ export function IntelligenceMeetingPlanner() {
  ))}
  </div>
 
- <Button className="absolute bottom-10 right-10 h-16 w-16 rounded-[0.1rem] bg-slate-900 text-white shadow-2xl shadow-slate-900/40 hover:-translate-y-2 transition active:scale-95 group">
+ <Button className="absolute bottom-10 right-10 h-16 w-16 rounded-[0.1rem] bg-slate-900 text-white shadow-2xl shadow-slate-900/40 hover:-translate-y-2 transition-all active:scale-95 group">
  <Plus size={28} className="group-hover:rotate-90 transition-transform duration-500" />
  </Button>
  </div>
@@ -113,7 +113,7 @@ export function IntelligenceMeetingPlanner() {
  </div>
  <div className="space-y-4">
  {MOCK_ROOMS.map(room => (
- <div key={room.id} className="flex items-center justify-between p-4 rounded-[0.1rem] hover:bg-primary/5 transition">
+ <div key={room.id} className="flex items-center justify-between p-4 rounded-[0.1rem] hover:bg-primary/5 transition-all">
  <div className="flex items-center gap-3">
  <div className={cn(
  "w-2 h-2 rounded-full",

@@ -54,7 +54,7 @@ export function ReorderableList<T>({
  onDragOver={(e) => onDragOver(e, idx)}
  onDragEnd={onDragEnd}
  className={cn(
- "flex items-center gap-3 p-3 border rounded-lg bg-card transition",
+ "flex items-center gap-3 p-3 border rounded-lg bg-card transition-all",
  dragged踰덊샇 === idx ? "opacity-40 scale-[0.98] border-primary shadow-inner" : "hover:shadow-md",
  "cursor-grab active:cursor-grabbing"
  )}

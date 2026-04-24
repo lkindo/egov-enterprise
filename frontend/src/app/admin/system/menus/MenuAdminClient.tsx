@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo, use } from 'react';
 import { createPortal } from 'react-dom';
@@ -136,11 +136,11 @@ const SortableMenuNode = ({
 
     const content = (
         <div className={cn(
-            "group select-none relative transition duration-300",
+            "group select-none relative transition-all duration-300",
             isDragging && !isOverlay && "opacity-40 scale-[0.98] ring-2 ring-primary/30 ring-dashed bg-primary/5 rounded-xl",
             isOverlay && "shadow-3xl z-[9999] pointer-events-none"
         )}>
-            {/* 怨꾩링 ?곌껐 ?쇱씤 */}
+            {/* 계층 연결 라인 */}
             {!isOverlay && depth > 0 && (
                 <div 
                     className="absolute top-0 bottom-0 border-l-2 border-slate-200/60" 
@@ -151,7 +151,7 @@ const SortableMenuNode = ({
             )}
 
             <div className={cn(
-                "flex items-center justify-between p-4 rounded-xl border transition relative overflow-hidden",
+                "flex items-center justify-between p-4 rounded-xl border transition-all relative overflow-hidden",
                 depth === 0 
                   ? "bg-slate-900 border-slate-800 shadow-xl min-h-[5rem]" 
                   : depth === 1 
@@ -221,7 +221,7 @@ const SortableMenuNode = ({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                         {depth < 2 && (
                             <Button
                                 variant="ghost" size="icon"
@@ -296,9 +296,11 @@ export default function MenuAdminClient({
   const [offsetLeft, setOffsetLeft] = useState(0);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
-  // ?곗씠??珥덇린??  useEffect(() => {
-    // 1. ?쒕쾭?먯꽌 ???됰㈃ ?곗씠?곕? ?몃━ 援ъ“濡?蹂??    const tree = listToTree(initialMenus);
-    // 2. ?몃━ 援ъ“瑜??ㅼ떆 DnD???됰㈃ ?곗씠?곕줈 蹂??(depth 怨꾩궛 ?ы븿)
+  // 데이터 초기화
+  useEffect(() => {
+    // 1. 서버에서 온 평면 데이터를 트리 구조로 변환
+    const tree = listToTree(initialMenus);
+    // 2. 트리 구조를 다시 DnD용 평면 데이터로 변환 (depth 계산 포함)
     const flat = flattenTree(tree);
     
     setFlattenedMenus(flat);
@@ -309,13 +311,14 @@ export default function MenuAdminClient({
     setExpandedIds(new Set(idsWithChildren));
   }, [initialMenus]);
 
-  // ?ъ쁺(Projection) ?뺣낫 怨꾩궛
+  // 투영(Projection) 정보 계산
   const projected = useMemo(() => {
     if (!activeId || !overId) return null;
     return getProjection(flattenedMenus, activeId, overId, offsetLeft, INDENTATION_WIDTH);
   }, [flattenedMenus, activeId, overId, offsetLeft]);
 
-  // 媛?쒖쟻 硫붾돱 ?꾪꽣留?  const visibleFlattenedMenus = useMemo(() => {
+  // 가시적 메뉴 필터링
+  const visibleFlattenedMenus = useMemo(() => {
     const visible: FlattenedItem[] = [];
     const isParentExpanded = (parentId: number | null): boolean => {
         if (parentId === null || parentId === 0) return true;
@@ -326,7 +329,7 @@ export default function MenuAdminClient({
 
     flattenedMenus.forEach(item => {
         if (isParentExpanded(item.parentId)) {
-            // ?쒕옒洹?以묒씤 ?꾩씠?쒖씤 寃쎌슦 projected depth ?곸슜
+            // 드래그 중인 아이템인 경우 projected depth 적용
             const isDragging = activeId === item.menuNo;
             visible.push({
                 ...item,
@@ -378,7 +381,7 @@ export default function MenuAdminClient({
             const newIndex = items.findIndex(m => m.menuNo === over.id);
             const newItems = arrayMove(items, oldIndex, newIndex);
             
-            // 理쒖쥌 depth? parentId 諛섏쁺
+            // 최종 depth와 parentId 반영
             const dragItemIndex = newItems.findIndex(m => m.menuNo === active.id);
             newItems[dragItemIndex] = {
                 ...newItems[dragItemIndex],
@@ -389,7 +392,7 @@ export default function MenuAdminClient({
             return newItems;
         });
         setHasChanges(true);
-        toast('援ъ“媛 ?낅뜲?댄듃?섏뿀?듬땲??', 'info');
+        toast('구조가 업데이트되었습니다.', 'info');
     }
 
     setActiveId(null);
@@ -433,12 +436,12 @@ export default function MenuAdminClient({
       const res = await updateMenuOrdersAction(submitData as any);
       if (res.success) { toast(res.message, 'success'); setHasChanges(false); router.refresh(); }
       else { toast(res.message, 'error'); }
-    } catch (err: any) { console.error(err); toast('???以??ㅻ쪟 諛쒖깮', 'error'); }
+    } catch (err: any) { console.error(err); toast('저장 중 오류 발생', 'error'); }
     finally { setIsSaving(false); }
   };
 
   const handleDelete = async (id: number) => {
-    if (await confirm({ title: '硫붾돱 ??젣', message: '?섏쐞 硫붾돱媛 ?ы븿?????덉뒿?덈떎.', variant: 'destructive' })) {
+    if (await confirm({ title: '메뉴 삭제', message: '하위 메뉴가 포함될 수 있습니다.', variant: 'destructive' })) {
         const res = await deleteMenuAction(null, id);
         if (res.success) { toast(res.message, 'success'); router.refresh(); }
         else { toast(res.message, 'error'); }
@@ -449,39 +452,39 @@ export default function MenuAdminClient({
 
   return (
     <div className="space-y-12 pb-24">
-      <PageHeader title="?쒖뒪??硫붾돱 ?꾪궎?띿쿂" breadcrumbs={[{ label: '?쒖뒪?쒓?由? }, { label: '硫붾돱 愿由? }]} />
+      <PageHeader title="시스템 메뉴 아키텍처" breadcrumbs={[{ label: '시스템관리' }, { label: '메뉴 관리' }]} />
 
       <HubHeader
-        title="硫붾돱" highlight="?꾪궎?띿쿂"
-        subtitle="??ぉ??醫뚯슦濡??吏곸뿬 怨꾩링(Depth)??議곗젙?섍퀬, ?꾩븘?섎줈 ?뚯뼱 ?쒖꽌瑜??ㅼ떆媛꾩쑝濡??ㅺ퀎?섏떗?쒖삤."
+        title="메뉴" highlight="아키텍처"
+        subtitle="항목을 좌우로 움직여 계층(Depth)을 조정하고, 위아래로 끌어 순서를 실시간으로 설계하십시오."
         icon={FolderTree}
         actions={
-          <Button onClick={() => handleOpenCreate(0)} size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-bold shadow-2xl hover:bg-primary transition hover:-translate-y-1 gap-3">
-            <Plus size={20} /> ?좉퇋 ?깅줉
+          <Button onClick={() => handleOpenCreate(0)} size="lg" className="h-14 px-10 rounded-2xl bg-slate-900 text-white font-bold shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
+            <Plus size={20} /> 신규 등록
           </Button>
         }
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="?꾩껜 ?몃뱶" value={flattenedMenus.length} icon={Database} color="primary" />
-        <HubMetricCard title="怨꾩링 源딆씠" value={Math.max(...flattenedMenus.map(m => m.depth), 0) + 1} icon={Layers} color="indigo" />
-        <HubMetricCard title="?쒖꽦 寃쎈줈" value={flattenedMenus.filter(m => !!m.modernRoute).length} icon={Network} color="emerald" />
-        <HubMetricCard title="?곌껐 臾닿껐?? value="理쒖쟻" icon={ShieldCheck} color="amber" />
+        <HubMetricCard title="전체 노드" value={flattenedMenus.length} icon={Database} color="primary" />
+        <HubMetricCard title="계층 깊이" value={Math.max(...flattenedMenus.map(m => m.depth), 0) + 1} icon={Layers} color="indigo" />
+        <HubMetricCard title="활성 경로" value={flattenedMenus.filter(m => !!m.modernRoute).length} icon={Network} color="emerald" />
+        <HubMetricCard title="연결 무결성" value="최적" icon={ShieldCheck} color="amber" />
       </HubMetricGrid>
 
       <HubSectionCard
-        title="?쒖뒪???ㅻ퉬寃뚯씠???몃━"
-        description="洹몃┰ ?몃뱾???↔퀬 ??ぉ???먯쑀濡?쾶 諛곗튂?섏떗?쒖삤. 媛濡??대룞?쇰줈 遺紐?愿怨꾧? 蹂寃쎈맗?덈떎."
+        title="시스템 네비게이션 트리"
+        description="그립 핸들을 잡고 항목을 자유롭게 배치하십시오. 가로 이동으로 부모 관계가 변경됩니다."
         icon={SearchCode}
         action={
           <div className="flex gap-4 items-center">
             <div className="flex bg-slate-100 p-1 rounded-xl">
-              <Button variant="ghost" className="h-8 px-3 text-[10px] font-bold" onClick={() => setExpandedIds(new Set(flattenedMenus.map(m => m.menuNo)))}><ChevronsUpDown size={14} className="mr-1" /> ?쇱튂湲?/Button>
-              <Button variant="ghost" className="h-8 px-3 text-[10px] font-bold" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-1" /> ?묎린</Button>
+              <Button variant="ghost" className="h-8 px-3 text-[10px] font-bold" onClick={() => setExpandedIds(new Set(flattenedMenus.map(m => m.menuNo)))}><ChevronsUpDown size={14} className="mr-1" /> 펼치기</Button>
+              <Button variant="ghost" className="h-8 px-3 text-[10px] font-bold" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-1" /> 접기</Button>
             </div>
             {hasChanges && (
                 <Button onClick={handleSaveChanges} disabled={isSaving} className="bg-emerald-500 text-white hover:bg-emerald-600 h-10 px-6 rounded-xl font-bold text-xs gap-2 shadow-lg scale-in-center">
-                    {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save size={16} />} ?덉씠?꾩썐 ?곸슜
+                    {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save size={16} />} 레이아웃 적용
                 </Button>
             )}
           </div>
@@ -537,13 +540,13 @@ export default function MenuAdminClient({
 
       <StandardModal
         isOpen={isModalOpen} onClose={() => setIsOpen(false)}
-        title={mode === 'create' ? '?좉퇋 硫붾돱 ?뺤쓽' : '硫붾돱 援ъ꽦 ?섏젙'}
+        title={mode === 'create' ? '신규 메뉴 정의' : '메뉴 구성 수정'}
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4 pt-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-bold">痍⑥냼</Button>
-            <Button onClick={form.handleSubmit(onFormSubmit)} disabled={form.formState.isSubmitting} className="flex-[2] h-14 rounded-2xl bg-primary text-white font-bold shadow-2xl hover:brightness-110 transition hover:-translate-y-1 gap-2">
-              <Save size={18} /> {mode === 'create' ? '?깅줉 ?꾨즺' : '?섏젙 ?꾨즺'}
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-14 rounded-2xl font-bold">취소</Button>
+            <Button onClick={form.handleSubmit(onFormSubmit)} disabled={form.formState.isSubmitting} className="flex-[2] h-14 rounded-2xl bg-primary text-white font-bold shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-2">
+              <Save size={18} /> {mode === 'create' ? '등록 완료' : '수정 완료'}
             </Button>
           </div>
         }
@@ -554,15 +557,15 @@ export default function MenuAdminClient({
               control={form.control} name="menuNm"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-700 ml-1">硫붾돱 紐낆묶 *</FormLabel>
-                  <FormControl><Input {...field} className="h-14 rounded-2xl font-bold px-5" placeholder="硫붾돱 ?대쫫 ?낅젰" /></FormControl>
+                  <FormLabel className="text-xs font-bold text-slate-700 ml-1">메뉴 명칭 *</FormLabel>
+                  <FormControl><Input {...field} className="h-14 rounded-2xl font-bold px-5" placeholder="메뉴 이름 입력" /></FormControl>
                   <FormMessage className="text-[10px] font-bold text-rose-600 ml-1" />
                 </FormItem>
               )}
             />
             <div className="grid grid-cols-2 gap-6">
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-slate-700 ml-1">?곸쐞 ?몃뱶</FormLabel>
+                  <FormLabel className="text-xs font-bold text-slate-700 ml-1">상위 노드</FormLabel>
                   <div className="h-14 rounded-2xl border-2 border-slate-100 flex items-center px-5 text-xs font-bold bg-slate-50/50 text-slate-400">
                     {form.getValues('upperMenuId') === 0 ? 'SYSTEM_ROOT' : `NODE_${form.getValues('upperMenuId')}`}
                   </div>
@@ -571,7 +574,7 @@ export default function MenuAdminClient({
                   control={form.control} name="menuOrdr"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold text-slate-700 ml-1">?뺣젹 ?쒖꽌 *</FormLabel>
+                      <FormLabel className="text-xs font-bold text-slate-700 ml-1">정렬 순서 *</FormLabel>
                       <FormControl><Input {...field} type="number" onChange={e => field.onChange(Number(e.target.value))} className="h-14 rounded-2xl font-bold px-5" /></FormControl>
                       <FormMessage className="text-[10px] font-bold text-rose-600 ml-1" />
                     </FormItem>

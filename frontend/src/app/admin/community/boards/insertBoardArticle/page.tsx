@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -34,7 +34,7 @@ export default function InsertBoardArticlePage() {
     bbsId: bbsId,
     nttSj: '',
     nttCn: '',
-    ntcrNm: '愿由ъ옄',
+    ntcrNm: '관리자',
     password: '1',
     parntsId: parntsId,
     replyAt: parntsId ? 'Y' : 'N',
@@ -43,7 +43,7 @@ export default function InsertBoardArticlePage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ?먮룞 ?꾩떆??????곕룞
+  // 자동 임시저장 훅 연동
   const { restoreDraft, clearDraft, hasDraft } = useAutoSaveDraft({
     storageKey: `board_insert_${bbsId}`,
     getData: () => ({
@@ -55,12 +55,12 @@ export default function InsertBoardArticlePage() {
     }
   });
 
-  // ?섏씠吏 吏꾩엯 ???꾩떆????곗씠???뺤씤 諛?蹂듦뎄 ?쒖븞
+  // 페이지 진입 시 임시저장 데이터 확인 및 복구 제안
   useEffect(() => {
     if (hasDraft && !form.nttSj && !form.nttCn) {
-      if (confirm('?댁쟾???묒꽦 以묒씠???꾩떆????곗씠?곌? ?덉뒿?덈떎. 蹂듦뎄?섏떆寃좎뒿?덇퉴?')) {
+      if (confirm('이전에 작성 중이던 임시저장 데이터가 있습니다. 복구하시겠습니까?')) {
         restoreDraft();
-        toast('?꾩떆????곗씠?곕? 蹂듦뎄?덉뒿?덈떎.', 'success');
+        toast('임시저장 데이터를 복구했습니다.', 'success');
       }
     }
   }, [hasDraft, restoreDraft, toast]);
@@ -68,7 +68,7 @@ export default function InsertBoardArticlePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nttCn || form.nttCn === '<p></p>') {
-      toast('?댁슜???낅젰??二쇱꽭??', 'error');
+      toast('내용을 입력해 주세요.', 'error');
       return;
     }
 
@@ -84,17 +84,17 @@ export default function InsertBoardArticlePage() {
 
       const result = await saveBoardArticle(null, formData);
       if (result.success) {
-        // 罹먯떆 臾댄슚??諛??꾩떆?????젣
+        // 캐시 무효화 및 임시저장 삭제
         queryClient.invalidateQueries({ queryKey: ['boardList'] });
         clearDraft();
         
-        toast('吏???먯궛???깃났?곸쑝濡??깅줉?섏뿀?듬땲??', 'success');
+        toast('지식 자산이 성공적으로 등록되었습니다.', 'success');
         router.push(`/admin/community/boards/selectBoardList?bbsId=${bbsId}`);
       } else {
-        toast(result.message || '?깅줉 ?ㅽ뙣', 'error');
+        toast(result.message || '등록 실패', 'error');
       }
     } catch {
-      toast('?깅줉 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+      toast('등록 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -107,9 +107,9 @@ export default function InsertBoardArticlePage() {
         <Button
           variant="outline"
           onClick={() => router.back()}
-          className="w-16 h-16 rounded-[0.1rem] border-2 group hover:bg-slate-900 transition duration-500 shadow-xl active:scale-95"
+          className="w-16 h-16 rounded-[0.1rem] border-2 group hover:bg-slate-900 transition-all duration-500 shadow-xl active:scale-95"
         >
-          <ArrowLeft className="group-hover:text-white group-hover:-translate-x-1 transition" />
+          <ArrowLeft className="group-hover:text-white group-hover:-translate-x-1 transition-all" />
         </Button>
         <div className="space-y-2">
           <div className="flex items-center gap-3">
@@ -137,7 +137,7 @@ export default function InsertBoardArticlePage() {
               value={form.nttSj}
               onChange={(e) => setForm({ ...form, nttSj: e.target.value })}
               className="h-20 bg-transparent border-none text-slate-900 dark:text-white text-3xl font-black placeholder:text-slate-900/10 dark:placeholder:text-white/10 focus-visible:ring-0 p-0 tracking-tight"
-              placeholder="?쒕ぉ???낅젰?섏떗?쒖삤..."
+              placeholder="제목을 입력하십시오..."
               autoFocus
               required
             />
@@ -150,18 +150,18 @@ export default function InsertBoardArticlePage() {
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
               <Package size={18} className="text-primary" />
-              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest transition-colors">吏???몃뱶 肄섑뀗痢?/h3>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest transition-colors">지식 노드 콘텐츠</h3>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">?ㅼ떆媛??숆린??以鍮꾨맖</span>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">실시간 동기화 준비됨</span>
             </div>
           </div>
           <div data-testid="rich-text-editor">
             <RichTextEditor
               value={form.nttCn || ''}
               onChange={(content) => setForm({ ...form, nttCn: content })}
-              placeholder="?곸꽭 ?댁슜??湲곗닠?섏떗?쒖삤..."
+              placeholder="상세 내용을 기술하십시오..."
             />
           </div>
         </div>
@@ -185,14 +185,14 @@ export default function InsertBoardArticlePage() {
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              className="h-16 flex-1 sm:flex-none px-10 rounded-[0.1rem] border-2 font-black tracking-widest text-[11px] uppercase hover:bg-slate-50 transition"
+              className="h-16 flex-1 sm:flex-none px-10 rounded-[0.1rem] border-2 font-black tracking-widest text-[11px] uppercase hover:bg-slate-50 transition-all"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="h-16 flex-1 sm:flex-none px-12 rounded-[0.1rem] bg-primary text-white font-black tracking-widest text-[11px] uppercase hover:scale-105 active:scale-95 transition shadow-xl shadow-primary/20 gap-3 group"
+              className="h-16 flex-1 sm:flex-none px-12 rounded-[0.1rem] bg-primary text-white font-black tracking-widest text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 gap-3 group"
             >
               {isSubmitting ? (
                 <span className="animate-pulse">Saving Node...</span>

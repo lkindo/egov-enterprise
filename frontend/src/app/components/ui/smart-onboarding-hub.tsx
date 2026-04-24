@@ -98,7 +98,7 @@ export function SmartOnboardingHub() {
         {/* Progress Strip */}
         <div className="absolute top-0 left-0 w-full h-1 flex px-10 pt-4 gap-2 z-20">
           {steps.map((_, idx) => (
-            <div key={idx} className={cn("h-1 rounded-full flex-1 transition duration-700", idx <= currentStep ? "bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]" : "bg-white/10")} />
+            <div key={idx} className={cn("h-1 rounded-full flex-1 transition-all duration-700", idx <= currentStep ? "bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]" : "bg-white/10")} />
           ))}
         </div>
 
@@ -156,17 +156,17 @@ export function SmartOnboardingHub() {
           </div>
 
           <div className="flex items-center justify-between gap-4 pt-10 border-t border-white/5">
-            <Button variant="ghost" onClick={prevStep} className={cn("rounded-[0.1rem] font-black h-12 px-6 text-white/40 hover:text-white transition", currentStep === 0 && "invisible")}>
+            <Button variant="ghost" onClick={prevStep} className={cn("rounded-[0.1rem] font-black h-12 px-6 text-white/40 hover:text-white transition-all", currentStep === 0 && "invisible")}>
               <ChevronLeft size={20} /> 이전
             </Button>
 
             <div className="flex gap-3">
               {currentStep < steps.length - 1 ? (
-                <Button onClick={nextStep} className="rounded-[0.1rem] font-black h-14 px-10 bg-primary text-white shadow-[0_15px_30px_-5px_rgba(59,130,246,0.3)] hover:scale-[1.05] active:scale-95 transition gap-3">
+                <Button onClick={nextStep} className="rounded-[0.1rem] font-black h-14 px-10 bg-primary text-white shadow-[0_15px_30px_-5px_rgba(59,130,246,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
                   {currentStep === 0 ? "플랫폼 둘러보기" : "다음 기능"} <ArrowRight size={18} />
                 </Button>
               ) : (
-                <Button onClick={handleComplete} className="rounded-[0.1rem] font-black h-14 px-12 bg-emerald-500 text-white shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)] hover:scale-[1.05] active:scale-95 transition gap-3">
+                <Button onClick={handleComplete} className="rounded-[0.1rem] font-black h-14 px-12 bg-emerald-500 text-white shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
                   시작하기 <CheckCircle2 size={18} />
                 </Button>
               )}

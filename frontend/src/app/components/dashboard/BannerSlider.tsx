@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
@@ -61,7 +61,7 @@ export function BannerSlider() {
         src={imageUrl}
         alt={currentBanner.bannerNm}
         fill
-        className="object-cover transition duration-500 ease-in-out transform scale-105 group-hover:scale-100"
+        className="object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
         style={{ opacity: 0.8 }}
         priority
       />
@@ -78,9 +78,9 @@ export function BannerSlider() {
             href={currentBanner.linkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 w-fit px-4 py-2 bg-white text-black rounded-[0.1rem] font-bold hover:bg-primary hover:text-white transition text-sm"
+            className="flex items-center gap-2 w-fit px-4 py-2 bg-white text-black rounded-[0.1rem] font-bold hover:bg-primary hover:text-white transition-all text-sm"
           >
-            ?먯꽭??蹂닿린 <ExternalLink size={14} />
+            자세히 보기 <ExternalLink size={14} />
           </a>
         )}
       </div>
@@ -106,7 +106,7 @@ export function BannerSlider() {
                 key={`banner-dot-${banner.bannerId || idx}`}
                 onClick={() => setCurrentIndex(idx)}
                 className={cn(
-                  "w-2 h-2 rounded-full transition",
+                  "w-2 h-2 rounded-full transition-all",
                   idx === currentIndex ? "bg-white w-6" : "bg-white/40"
                 )}
               />

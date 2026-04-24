@@ -28,16 +28,16 @@ export default function NotificationsPage() {
         breadcrumbs={[{ label: '시스템 관리' }, { label: '메시징 센터' }]}
         actions={
           <div className="flex gap-3">
-            <Button variant="outline" className="rounded-[0.1rem] h-11 px-6 border-2 gap-2 font-bold hover:bg-primary/5 transition">
+            <Button variant="outline" className="rounded-[0.1rem] h-11 px-6 border-2 gap-2 font-bold hover:bg-primary/5 transition-all">
               <BarChart3 size={18} /> 분석 리포트
             </Button>
-            <Button variant="outline" className="rounded-[0.1rem] h-11 px-6 border-2 gap-2 font-bold hover:bg-primary/5 transition">
+            <Button variant="outline" className="rounded-[0.1rem] h-11 px-6 border-2 gap-2 font-bold hover:bg-primary/5 transition-all">
               <Settings size={18} /> 채널 설정
             </Button>
             <Button
               onClick={() => setView(view === 'hub' ? 'dispatch' : 'hub')}
               className={cn(
-                "rounded-[0.1rem] h-11 px-8 shadow-xl gap-2 font-black transition",
+                "rounded-[0.1rem] h-11 px-8 shadow-xl gap-2 font-black transition-all",
                 view === 'hub' ? "bg-primary shadow-primary/20" : "bg-slate-900 shadow-slate-900/20"
               )}
             >
@@ -94,7 +94,7 @@ export default function NotificationsPage() {
                 { title: 'SMS Quick-Replies', icon: <MessageSquare className="text-emerald-500" />, desc: '가장 많이 사용되는 SMS 단축 문구 및 예약' },
                 { title: 'AI Assistant', icon: <Sparkles className="text-indigo-500" />, desc: '맞춤형 메시지 톤앤매너 및 콘텐츠 자동 교정' },
               ].map((card, i) => (
-                <div key={i} className="p-8 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-xl group hover:border-primary/20 transition cursor-pointer">
+                <div key={i} className="p-8 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-xl group hover:border-primary/20 transition-all cursor-pointer">
                   <div className="w-16 h-16 rounded-[0.1rem] bg-slate-50 border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     {card.icon}
                   </div>

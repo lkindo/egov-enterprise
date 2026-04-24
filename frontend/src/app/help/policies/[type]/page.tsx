@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -8,8 +8,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { Scale } from 'lucide-react';
-
-import DOMPurify from 'isomorphic-dompurify';
 
 export default function PolicyViewPage() {
   const { type } = useParams();
@@ -55,7 +53,7 @@ export default function PolicyViewPage() {
         <CardContent className="p-12">
           <div 
             className="prose prose-slate dark:prose-invert max-w-none text-lg leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(policy?.content || '') }}
+            dangerouslySetInnerHTML={{ __html: policy?.content || '' }}
           />
         </CardContent>
       </Card>

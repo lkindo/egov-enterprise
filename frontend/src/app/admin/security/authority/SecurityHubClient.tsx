@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo, useEffect, use } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -63,14 +63,14 @@ import { useAppForm } from '@/hooks/useAppForm';
 // --- Validation Schemas ---
 const authorSchema = z.object({
   authorCode: z.string()
-    .min(1, '沅뚰븳 肄붾뱶???꾩닔?낅땲??')
-    .max(30, '沅뚰븳 肄붾뱶??30???대궡?ъ빞 ?⑸땲??')
-    .regex(/^[A-Z0-9_]+$/, '?곷Ц ?臾몄옄, ?レ옄, ?몃뜑諛?_)留?媛?ν빀?덈떎.'),
+    .min(1, '권한 코드는 필수입니다.')
+    .max(30, '권한 코드는 30자 이내여야 합니다.')
+    .regex(/^[A-Z0-9_]+$/, '영문 대문자, 숫자, 언더바(_)만 가능합니다.'),
   authorNm: z.string()
-    .min(1, '沅뚰븳 紐낆묶? ?꾩닔?낅땲??')
-    .max(60, '沅뚰븳 紐낆묶? 60???대궡?ъ빞 ?⑸땲??'),
+    .min(1, '권한 명칭은 필수입니다.')
+    .max(60, '권한 명칭은 60자 이내여야 합니다.'),
   authorDc: z.string()
-    .max(200, '?댁슜???덈Т 源곷땲?? (理쒕? 200??')
+    .max(200, '내용이 너무 깁니다. (최대 200자)')
     .optional()
     .or(z.literal('')),
 });
@@ -189,15 +189,15 @@ export default function SecurityHubClient({
     try {
       if (authorMode === 'create') {
         await authorAdminService.createAuthor(values as AuthorInfo);
-        toast('蹂댁븞 沅뚰븳 ?꾪궎?띿쿂媛 ?깃났?곸쑝濡?諛섏쁺?섏뿀?듬땲??', 'success');
+        toast('보안 권한 아키텍처가 성공적으로 반영되었습니다.', 'success');
       } else {
         await authorAdminService.updateAuthor(values.authorCode, values as AuthorInfo);
-        toast('蹂댁븞 沅뚰븳 ?꾪궎?띿쿂媛 ?깃났?곸쑝濡??섏젙?섏뿀?듬땲??', 'success');
+        toast('보안 권한 아키텍처가 성공적으로 수정되었습니다.', 'success');
       }
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
       setIsAuthorModalOpen(false);
     } catch (error) {
-      toast('???以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?낅젰???뺤씤?댁＜?몄슂.', 'error');
+      toast('저장 중 오류가 발생했습니다. 입력을 확인해주세요.', 'error');
     }
   });
 
@@ -211,7 +211,7 @@ export default function SecurityHubClient({
       return userAuthorityAdminService.saveUserAuthorities(mappings);
     },
     onSuccess: () => {
-      toast('?ъ슜??沅뚰븳 ?좊떦??諛섏쁺?섏뿀?듬땲??', 'success');
+      toast('사용자 권한 할당이 반영되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-user-authorities', selectedAuthorCode] });
     }
   });
@@ -219,7 +219,7 @@ export default function SecurityHubClient({
   const saveMenuMappingMutation = useMutation({
     mutationFn: () => menuAdminService.saveMenuCreation(selectedAuthorCode, Array.from(tempMenuMappings)),
     onSuccess: () => {
-      toast('硫붾돱 ?묎렐 沅뚰븳???낅뜲?댄듃?섏뿀?듬땲??', 'success');
+      toast('메뉴 접근 권한이 업데이트되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus', selectedAuthorCode] });
     }
   });
@@ -237,7 +237,7 @@ export default function SecurityHubClient({
       await Promise.all(promises);
       setGlobalMappings(allMappings);
     } catch (e) {
-      toast('湲濡쒕쾶 留ㅽ듃由?뒪 ?곗씠??濡쒕뱶 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+      toast('글로벌 매트릭스 데이터 로드 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsGlobalLoading(false);
     }
@@ -266,10 +266,10 @@ export default function SecurityHubClient({
         menuAdminService.saveMenuCreation(code, Array.from(set))
       );
       await Promise.all(promises);
-      toast('湲濡쒕쾶 蹂댁븞 ?뺤콉???꾩궗?곸쑝濡??숆린?붾릺?덉뒿?덈떎.', 'success');
+      toast('글로벌 보안 정책이 전사적으로 동기화되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus'] });
     } catch (e) {
-      toast('湲濡쒕쾶 ?뺤콉 ???以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+      toast('글로벌 정책 저장 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsGlobalLoading(false);
     }
@@ -315,14 +315,14 @@ export default function SecurityHubClient({
   };
 
   const handleAuthorDelete = async (code: string) => {
-    if (!confirm('沅뚰븳????젣?섏떆寃좎뒿?덇퉴? 愿???좊떦 ?뺣낫媛 紐⑤몢 ?щ씪吏묐땲??')) return;
+    if (!confirm('권한을 삭제하시겠습니까? 관련 할당 정보가 모두 사라집니다.')) return;
     try {
       await authorAdminService.deleteAuthor(code);
-      toast('沅뚰븳????젣?섏뿀?듬땲??', 'success');
+      toast('권한이 삭제되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
       if (selectedAuthorCode === code) setSelectedAuthorCode('');
     } catch (e) {
-      toast('??젣 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+      toast('삭제 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -341,8 +341,8 @@ export default function SecurityHubClient({
             </span>
           </div>
           <div className={cn("flex gap-1", selectedAuthorCode === auth.authorCode ? "opacity-100" : "opacity-0 group-hover/role-item:opacity-100 transition-opacity")}>
-            <button onClick={(e) => { e.stopPropagation(); handleOpenAuthorEdit(auth); }} className="p-2 hover:bg-white/10 rounded-[0.1rem] transition"><Settings size={12} /></button>
-            <button onClick={(e) => { e.stopPropagation(); handleAuthorDelete(auth.authorCode); }} className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-[0.1rem] transition"><Trash2 size={12} /></button>
+            <button onClick={(e) => { e.stopPropagation(); handleOpenAuthorEdit(auth); }} className="p-2 hover:bg-white/10 rounded-[0.1rem] transition-all"><Settings size={12} /></button>
+            <button onClick={(e) => { e.stopPropagation(); handleAuthorDelete(auth.authorCode); }} className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-[0.1rem] transition-all"><Trash2 size={12} /></button>
           </div>
         </div>
       )
@@ -356,7 +356,7 @@ export default function SecurityHubClient({
         <div className="flex items-center justify-between w-full py-1">
           <div className="flex items-center gap-4 relative z-10">
             <div className={cn(
-              "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition",
+              "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition-all",
               tempUserMappings.has(user.uniqId) ? "bg-white/20" : "bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
             )}>
               <Fingerprint size={16} />
@@ -387,21 +387,21 @@ export default function SecurityHubClient({
       >
         <div
           className={cn(
-            "group flex items-center gap-4 py-3 px-6 rounded-[0.1rem] transition cursor-pointer relative overflow-hidden group active:scale-[0.99]",
+            "group flex items-center gap-4 py-3 px-6 rounded-[0.1rem] transition-all cursor-pointer relative overflow-hidden group active:scale-[0.99]",
             tempMenuMappings.has(node.menuNo) ? "bg-slate-900 border-none shadow-xl text-white" : "hover:bg-slate-50 border border-transparent"
           )}
           style={{ marginLeft: `${depth * 24}px` }}
           onClick={() => toggleMenuMapping(node.menuNo, !tempMenuMappings.has(node.menuNo))}
         >
           <div className={cn(
-            "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition",
+            "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all",
             tempMenuMappings.has(node.menuNo) ? "bg-primary border-primary scale-110 shadow-[0_0_10px_rgba(255,255,255,0.3)]" : "border-slate-200 bg-white"
           )}>
             {tempMenuMappings.has(node.menuNo) && <ShieldCheck size={12} className="text-white" />}
           </div>
 
           <div className={cn(
-            "w-8 h-8 rounded-lg flex items-center justify-center transition",
+            "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
             node.children && node.children.length > 0 ? "text-amber-500 bg-amber-50 group-hover:bg-amber-500 group-hover:text-white" : "text-slate-400 bg-slate-50 group-hover:bg-slate-900 group-hover:text-white"
           )}>
             {node.children && node.children.length > 0 ? <Folder size={14} /> : <File size={14} />}
@@ -439,14 +439,14 @@ export default function SecurityHubClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
-        title="?듯빀 蹂댁븞 嫄곕쾭?뚯뒪 ?덈툕"
-        breadcrumbs={[{ label: '蹂댁븞 愿由? }, { label: '沅뚰븳 ?ㅼ젙' }, { label: '?듯빀 而⑦듃濡? }]}
+        title="통합 보안 거버넌스 허브"
+        breadcrumbs={[{ label: '보안 관리' }, { label: '권한 설정' }, { label: '통합 컨트롤' }]}
       />
 
       <HubHeader
         title="Security"
         highlight="Fabric"
-        subtitle="?쒖뒪???꾨컲 蹂댁븞 ??븷(Role), ?ъ슜???좊떦 留ㅽ듃由?뒪 諛?怨꾩링???묎렐 ?쒖뼱 ?뺤콉 ?듯빀 ?꾪궎?띿쿂"
+        subtitle="시스템 전반 보안 역할(Role), 사용자 할당 매트릭스 및 계층적 접근 제어 정책 통합 아키텍처"
         icon={Lock}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -457,7 +457,7 @@ export default function SecurityHubClient({
                     variant="ghost"
                     onClick={() => setViewMode('TOPOLOGY')}
                     className={cn(
-                      "h-10 px-6 rounded-[0.1rem] text-[9px] font-black tracking-widest uppercase transition",
+                      "h-10 px-6 rounded-[0.1rem] text-[9px] font-black tracking-widest uppercase transition-all",
                       viewMode === 'TOPOLOGY' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
                     )}
                   >
@@ -465,7 +465,8 @@ export default function SecurityHubClient({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[0.1rem] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
-                  蹂댁븞 媛앹껜 媛꾩쓽 怨꾩링??愿怨??쒓컖??                </TooltipContent>
+                  보안 객체 간의 계층적 관계 시각화
+                </TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -474,7 +475,7 @@ export default function SecurityHubClient({
                     variant="ghost"
                     onClick={() => { setViewMode('MATRIX'); loadGlobalMappings(); }}
                     className={cn(
-                      "h-10 px-6 rounded-[0.1rem] text-[9px] font-black tracking-widest uppercase transition",
+                      "h-10 px-6 rounded-[0.1rem] text-[9px] font-black tracking-widest uppercase transition-all",
                       viewMode === 'MATRIX' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
                     )}
                   >
@@ -482,7 +483,7 @@ export default function SecurityHubClient({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[0.1rem] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
-                  ?꾩궗??沅뚰븳 ?좊떦 ?꾪솴 ?쇨큵 寃??諛??섏젙
+                  전사적 권한 할당 현황 일괄 검토 및 수정
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -492,13 +493,13 @@ export default function SecurityHubClient({
                 <Button
                   variant="ghost"
                   onClick={() => queryClient.invalidateQueries()}
-                  className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition shadow-xl group active:scale-95 px-4"
+                  className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
                 >
                   <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[0.1rem] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
-                ?쒕쾭濡쒕???理쒖떊 ?뺤콉 ?뺣낫 濡쒕뱶
+                서버로부터 최신 정책 정보 로드
               </TooltipContent>
             </Tooltip>
 
@@ -506,13 +507,13 @@ export default function SecurityHubClient({
               <TooltipTrigger asChild>
                 <Button
                   onClick={handleOpenAuthorCreate}
-                  className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition hover:-translate-y-1 gap-3 group"
+                  className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
                 >
-                  <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> ?좉퇋 蹂댁븞 ?꾪궎?띿쿂 ?ㅼ젙
+                  <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 아키텍처 설정
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[0.1rem] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
-                ?덈줈????븷 ?먮뒗 蹂댁븞 洹몃９ ?뺤쓽
+                새로운 역할 또는 보안 그룹 정의
               </TooltipContent>
             </Tooltip>
           </div>
@@ -557,13 +558,13 @@ export default function SecurityHubClient({
 
             {/* Left: Role Inventory */}
             <div className="col-span-12 lg:col-span-3 space-y-8 h-full">
-              <HubSectionCard title="??븷 ?몃깽?좊━" description="?쒖뒪???묎렐 沅뚰븳???뺤쓽?섎뒗 蹂댁븞 ?꾨줈?뚯씪 由ъ뒪?몄엯?덈떎." icon={Lock}>
+              <HubSectionCard title="역할 인벤토리" description="시스템 접근 권한을 정의하는 보안 프로파일 리스트입니다." icon={Lock}>
                 <div className="space-y-8 pt-4">
                   <div className="relative group/search">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                     <Input
                       className="pl-12 h-14 bg-slate-50/50 border-none rounded-[0.1rem] text-sm font-black tracking-tight shadow-inner"
-                      placeholder="??븷 寃??ID, 紐낆묶)..."
+                      placeholder="역할 검색(ID, 명칭)..."
                       value={roleSearchKeyword}
                       onChange={(e) => setRoleSearchKeyword(e.target.value)}
                     />
@@ -594,8 +595,8 @@ export default function SecurityHubClient({
             {/* Center: Identity Matrix */}
             <div className="col-span-12 lg:col-span-4 space-y-8 h-full">
               <HubSectionCard
-                title="?ъ슜???좊떦"
-                description="?좏깮????븷???좊떦??媛쒕퀎 ?앸퀎?먮뱾???ㅼ떆媛??좊떦 ?곹깭?낅땲??"
+                title="사용자 할당"
+                description="선택한 역할에 할당된 개별 식별자들의 실시간 할당 상태입니다."
                 icon={Users}
                 action={
                   <Tooltip>
@@ -604,13 +605,13 @@ export default function SecurityHubClient({
                         size="sm"
                         onClick={() => saveUserMappingMutation.mutate()}
                         disabled={!selectedAuthorCode}
-                        className="h-10 px-6 rounded-[0.1rem] bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition shadow-xl disabled:opacity-10 gap-2"
+                        className="h-10 px-6 rounded-[0.1rem] bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                       >
                         <Save size={14} /> COMMIT_ENTITY
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-[0.1rem] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
-                      ?섏젙???ъ슜??留ㅽ븨 ?뺣낫瑜?DB??理쒖쥌 諛섏쁺
+                      수정된 사용자 매핑 정보를 DB에 최종 반영
                     </TooltipContent>
                   </Tooltip>
                 }
@@ -620,7 +621,7 @@ export default function SecurityHubClient({
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                     <Input
                       className="pl-12 h-14 bg-slate-50/50 border-none rounded-[0.1rem] text-sm font-black tracking-tight shadow-inner"
-                      placeholder="?ъ슜??寃??ID, ?깅챸)..."
+                      placeholder="사용자 검색(ID, 성명)..."
                       value={userSearchKeyword}
                       onChange={(e) => setUserSearchKeyword(e.target.value)}
                     />
@@ -631,11 +632,11 @@ export default function SecurityHubClient({
                       {!selectedAuthorCode ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center p-20 text-center space-y-6">
                           <div className="w-20 h-20 rounded-[0.1rem] bg-slate-50 flex items-center justify-center text-slate-200">
-                            <Users size={40} className="愿由ъ옄 沅뚰븳" />
+                            <Users size={40} className="관리자 권한" />
                           </div>
                           <div className="space-y-2">
                             <h4 className="text-xl font-black text-slate-300 uppercase tracking-tighter">Identity_Idle</h4>
-                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">蹂댁븞 ??븷???좏깮?섏뿬 ?앸퀎???꾨줈釉뚮? ?쒖꽦?뷀븯??떆??/p>
+                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 역할을 선택하여 식별자 프로브를 활성화하십시오</p>
                           </div>
                         </motion.div>
                       ) : (
@@ -665,8 +666,8 @@ export default function SecurityHubClient({
             {/* Right: Policy Topology */}
             <div className="col-span-12 lg:col-span-5 h-full">
               <HubSectionCard
-                title="?묎렐 ?뺤콉 ?좏뤃濡쒖?"
-                description="??븷蹂??숈쟻 硫붾돱 ?몃뱶 怨꾩링 諛??꾪궎?띿쿂 ?묎렐 ?섏? ?ㅼ젙?낅땲??"
+                title="접근 정책 토폴로지"
+                description="역할별 동적 메뉴 노드 계층 및 아키텍처 접근 수준 설정입니다."
                 icon={Layers}
                 action={
                   <Tooltip>
@@ -675,13 +676,14 @@ export default function SecurityHubClient({
                         size="sm"
                         onClick={() => saveMenuMappingMutation.mutate()}
                         disabled={!selectedAuthorCode}
-                        className="h-10 px-6 rounded-[0.1rem] bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition shadow-xl disabled:opacity-10 gap-2"
+                        className="h-10 px-6 rounded-[0.1rem] bg-slate-900 text-white font-black text-[10px] tracking-widest uppercase hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                       >
                         <RefreshCcw size={14} /> SYNC_POLICY
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="bg-slate-900 text-white border-none rounded-[0.1rem] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
-                      ?꾩옱 ?몃뱶 援ъ“瑜?蹂댁븞 ?뺤콉???숆린??                    </TooltipContent>
+                      현재 노드 구조를 보안 정책에 동기화
+                    </TooltipContent>
                   </Tooltip>
                 }
               >
@@ -696,7 +698,8 @@ export default function SecurityHubClient({
                     <div className="relative z-10 space-y-1">
                       <span className="text-[10px] font-black text-white/30 tracking-[0.4em] uppercase font-mono">Policy_Manifest</span>
                       <div className="text-white text-lg font-black tracking-tighter leading-none">
-                        {tempMenuMappings.size} 媛쒖쓽 ?쒖꽦 ?몃뱶媛 <span className="text-primary">{selectedAuthorCode || 'N/A'}</span> ??留ㅽ븨??                      </div>
+                        {tempMenuMappings.size} 개의 활성 노드가 <span className="text-primary">{selectedAuthorCode || 'N/A'}</span> 에 매핑됨
+                      </div>
                     </div>
                   </div>
 
@@ -709,7 +712,7 @@ export default function SecurityHubClient({
                           </div>
                           <div className="space-y-2">
                             <h4 className="text-xl font-black text-slate-300 uppercase tracking-tighter">Topology_Idle</h4>
-                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">蹂댁븞 嫄곕쾭?뚯뒪 ??븷???좏깮?섏뿬 怨꾩링 ?몃뱶瑜?濡쒕뱶?섏떗?쒖삤</p>
+                            <p className="text-[10px] font-black text-slate-200 tracking-[0.3em] uppercase leading-relaxed">보안 거버넌스 역할을 선택하여 계층 노드를 로드하십시오</p>
                           </div>
                         </motion.div>
                       ) : isMenusLoading ? (
@@ -735,23 +738,23 @@ export default function SecurityHubClient({
       <StandardModal
         isOpen={isAuthorModalOpen}
         onClose={() => setIsAuthorModalOpen(false)}
-        title={authorMode === 'create' ? '?좉퇋 沅뚰븳 ?깅줉' : '蹂댁븞 ??븷 ?꾪궎?띿쿂 ?곸꽭 ?섏젙'}
+        title={authorMode === 'create' ? '신규 권한 등록' : '보안 역할 아키텍처 상세 수정'}
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-6 pt-4">
-            <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-[0.1rem] font-black text-[10px] tracking-widest border-2">痍⑥냼</Button>
+            <Button variant="outline" onClick={() => setIsAuthorModalOpen(false)} className="flex-1 h-14 rounded-[0.1rem] font-black text-[10px] tracking-widest border-2">취소</Button>
             <Button 
                 onClick={handleAuthorSubmit} 
-                className="flex-[2] h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition hover:-translate-y-2 group px-6"
+                className="flex-[2] h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group px-6"
             >
-              <Zap size={18} className="group-hover:animate-pulse mr-2" /> {authorMode === 'create' ? '沅뚰븳 諛고룷' : '沅뚰븳 ?섏젙'}
+              <Zap size={18} className="group-hover:animate-pulse mr-2" /> {authorMode === 'create' ? '권한 배포' : '권한 수정'}
             </Button>
           </div>
         }
       >
         <form onSubmit={handleAuthorSubmit} className="p-4 space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <FormField label="蹂댁븞 ??븷 ?앸퀎??Role Code)" required description="?쒖뒪???꾨컲???곸슜?섎뒗 ?좎씪????븷 怨좎쑀 肄붾뱶">
+            <FormField label="보안 역할 식별자(Role Code)" required description="시스템 전반에 적용되는 유일한 역할 고유 코드">
               <div className="relative group/id">
                 <Key size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
                 <Input
@@ -766,7 +769,7 @@ export default function SecurityHubClient({
               </div>
               {authorForm.formState.errors.authorCode && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{authorForm.formState.errors.authorCode.message}</p>}
             </FormField>
-            <FormField label="??븷 ?덉씠釉?紐낆묶" required description="UI 諛?鍮꾩쫰?덉뒪 ?덉씠?댁뿉???앸퀎 紐낅Ц?붾맂 ?대쫫">
+            <FormField label="역할 레이블 명칭" required description="UI 및 비즈니스 레이어에서 식별 명문화된 이름">
               <div className="relative group/nm">
                 <ShieldCheck size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
                 <Input
@@ -775,23 +778,23 @@ export default function SecurityHubClient({
                     "h-16 pl-16 rounded-[0.1rem] border-2 text-md font-black tracking-tight shadow-inner",
                     authorForm.formState.errors.authorNm ? "border-rose-500 bg-rose-50" : "border-slate-100"
                   )}
-                  placeholder="??븷 紐낆묶 ?낅젰 (MAX_60)"
+                  placeholder="역할 명칭 입력 (MAX_60)"
                 />
               </div>
               {authorForm.formState.errors.authorNm && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{authorForm.formState.errors.authorNm.message}</p>}
             </FormField>
           </div>
 
-          <FormField label="蹂댁븞 ?뺤콉 ?뺣낫 紐낆꽭" description="?대떦 ??븷???곸꽭 紐⑹쟻 諛??곗씠???묎렐 踰붿쐞??????뺣낫 紐낆꽭">
+          <FormField label="보안 정책 정보 명세" description="해당 역할의 상세 목적 및 데이터 접근 범위에 대한 정보 명세">
             <div className="relative group/dc">
               <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
               <textarea
                 {...authorForm.register('authorDc')}
                 className={cn(
-                  "min-h-[160px] w-full pl-16 p-8 rounded-[0.1rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition resize-none shadow-inner",
+                  "min-h-[160px] w-full pl-16 p-8 rounded-[0.1rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner",
                   authorForm.formState.errors.authorDc ? "border-rose-500 bg-rose-50" : "border-slate-100"
                 )}
-                placeholder="?곸꽭 紐낆꽭 ?낅젰... (理쒕? 200??"
+                placeholder="상세 명세 입력... (최대 200자)"
               />
               {authorForm.formState.errors.authorDc && <p className="text-[10px] font-bold text-rose-500 mt-2 ml-2 tracking-tight">{authorForm.formState.errors.authorDc.message}</p>}
             </div>

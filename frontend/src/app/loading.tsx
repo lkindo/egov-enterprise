@@ -1,6 +1,6 @@
 ﻿export default function GlobalLoading() {
  return (
- <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-md transition duration-500">
+ <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-md transition-all duration-500">
  <div className="relative">
  {/* Animated Rings */}
  <div className="w-24 h-24 border-4 border-primary/20 rounded-full animate-pulse" />

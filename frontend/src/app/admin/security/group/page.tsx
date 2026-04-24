@@ -143,7 +143,7 @@ export default function GroupManagePage() {
       header: '도메인 그룹 ID',
       accessor: (item: GroupManage) => (
         <div className="flex items-center gap-4 py-3">
-          <div className="w-10 h-10 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition duration-500">
+          <div className="w-10 h-10 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-all duration-500">
             <Fingerprint size={18} className="text-primary" />
           </div>
           <div className="flex flex-col">
@@ -178,10 +178,10 @@ export default function GroupManagePage() {
       className: 'text-right w-32',
       accessor: (item: GroupManage) => (
         <div className="flex justify-end gap-2 pr-4">
-          <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="h-10 w-10 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-[0.1rem] border border-slate-100 transition font-black shadow-sm group">
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="h-10 w-10 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-[0.1rem] border border-slate-100 transition-all font-black shadow-sm group">
             <Settings size={16} className="group-hover:rotate-45 transition-transform" />
           </Button>
-          <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(item.groupId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-[0.1rem] transition shadow-sm">
+          <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(item.groupId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-[0.1rem] transition-all shadow-sm">
             <Trash2 size={16} />
           </Button>
         </div>
@@ -206,13 +206,13 @@ export default function GroupManagePage() {
             <Button
               variant="ghost"
               onClick={() => queryClient.invalidateQueries()}
-              className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition shadow-xl group active:scale-95 px-4"
+              className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
             >
               <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
             <Button
               onClick={handleCreate}
-              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition hover:-translate-y-1 gap-3 group"
+              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
               <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 그룹 설정
             </Button>
@@ -243,7 +243,7 @@ export default function GroupManagePage() {
                   value={params.searchKeyword || ''}
                   onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                 />
-                <Button type="submit" className="h-16 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition hover:-translate-y-1">ANALYZE_RESOURCES</Button>
+                <Button type="submit" className="h-16 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE_RESOURCES</Button>
               </form>
             </div>
             <div>
@@ -315,7 +315,7 @@ export default function GroupManagePage() {
                 id="groupDc"
                 value={formData.groupDc || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, groupDc: e.target.value }))}
-                className="min-h-[160px] pl-16 p-8 rounded-[0.1rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition resize-none shadow-inner"
+                className="min-h-[160px] pl-16 p-8 rounded-[0.1rem] border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
                 placeholder="상세 명세 입력..."
               />
             </div>
@@ -323,7 +323,7 @@ export default function GroupManagePage() {
 
           <div className="flex gap-6 pt-4">
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 h-14 rounded-[0.1rem] font-black text-[10px] tracking-widest border-2">취소</Button>
-            <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="flex-[2] h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition hover:-translate-y-2 group">
+            <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="flex-[2] h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
               {(createMutation.isPending || updateMutation.isPending) ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
               <span className="ml-2">{editingGroup ? '그룹 수정' : '신규 그룹 배포'}</span>
             </Button>

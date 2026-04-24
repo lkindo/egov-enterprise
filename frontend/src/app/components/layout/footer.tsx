@@ -1,4 +1,4 @@
-﻿import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface FooterProps {
   className?: string;
@@ -19,9 +19,9 @@ export function Footer({ className }: FooterProps) {
           </p>
         </div>
         <div className="flex items-center gap-8 text-[11px] font-black text-slate-600 uppercase tracking-widest">
-          <a href="#" className="hover:text-primary hover:opacity-100 transition font-bold">?댁슜?쎄?</a>
-          <a href="#" className="hover:text-primary hover:opacity-100 transition font-bold">媛쒖씤?뺣낫泥섎━諛⑹묠</a>
-          <a href="#" className="hover:text-primary hover:opacity-100 transition font-bold text-left">怨좉컼吏??/a>
+          <a href="#" className="hover:text-primary hover:opacity-100 transition-all font-bold">이용약관</a>
+          <a href="#" className="hover:text-primary hover:opacity-100 transition-all font-bold">개인정보처리방침</a>
+          <a href="#" className="hover:text-primary hover:opacity-100 transition-all font-bold text-left">고객지원</a>
         </div>
       </div>
     </footer>

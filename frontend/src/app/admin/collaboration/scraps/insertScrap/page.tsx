@@ -91,7 +91,7 @@ const InsertScrapPage = () => {
                     placeholder="스크랩 명을 입력하세요"
                     value={formData.scrapNm}
                     onChange={(e) => setFormData({ ...formData, scrapNm: e.target.value })}
-                    className="h-14 pl-16 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition font-bold"
+                    className="h-14 pl-16 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
                   />
                 </div>
               </div>
@@ -110,7 +110,7 @@ const InsertScrapPage = () => {
                     placeholder="https://example.com"
                     value={formData.scrapUrl}
                     onChange={(e) => setFormData({ ...formData, scrapUrl: e.target.value })}
-                    className="h-14 pl-16 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition font-bold"
+                    className="h-14 pl-16 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-bold"
                   />
                 </div>
               </div>
@@ -125,7 +125,7 @@ const InsertScrapPage = () => {
                   placeholder="이 지식에 대한 상세한 기록을 남겨주세요..."
                   value={formData.scrapDc}
                   onChange={(e) => setFormData({ ...formData, scrapDc: e.target.value })}
-                  className="min-h-[180px] p-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition font-medium leading-relaxed resize-none shadow-inner"
+                  className="min-h-[180px] p-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 transition-all font-medium leading-relaxed resize-none shadow-inner"
                 />
               </div>
             </div>
@@ -145,14 +145,14 @@ const InsertScrapPage = () => {
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              className="w-full md:w-auto h-16 px-10 rounded-[0.1rem] border-2 font-black text-slate-600 hover:bg-slate-100 transition flex items-center gap-2 group"
+              className="w-full md:w-auto h-16 px-10 rounded-[0.1rem] border-2 font-black text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2 group"
             >
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> 취소 및 돌아가기
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="w-full md:flex-1 h-16 rounded-[0.1rem] font-black text-lg shadow-xl shadow-indigo-100 bg-indigo-600 hover:bg-indigo-700 hover:-translate-y-1 transition flex items-center gap-3 group"
+              className="w-full md:flex-1 h-16 rounded-[0.1rem] font-black text-lg shadow-xl shadow-indigo-100 bg-indigo-600 hover:bg-indigo-700 hover:-translate-y-1 transition-all flex items-center gap-3 group"
             >
               {loading ? (
                 <>

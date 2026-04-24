@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { Check } from 'lucide-react';
@@ -23,7 +23,7 @@ export function MultiStepStepper({ steps, currentStep, className }: MultiStepSte
  {/* Step Circle */}
  <div className="flex flex-col items-center gap-2 relative">
  <div className={cn(
- "w-10 h-10 rounded-full flex items-center justify-center border-2 transition duration-300",
+ "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300",
  currentStep === step.id ? "bg-primary border-primary text-primary-foreground shadow-md scale-110" :
  currentStep > step.id ? "bg-green-500 border-green-500 text-white" :
  "bg-background border-muted text-muted-foreground"
@@ -42,7 +42,7 @@ export function MultiStepStepper({ steps, currentStep, className }: MultiStepSte
  {idx < steps.length - 1 && (
  <div className="flex-1 h-[2px] mx-4 bg-muted overflow-hidden">
  <div
- className="h-full bg-primary transition duration-500 ease-out"
+ className="h-full bg-primary transition-all duration-500 ease-out"
  style={{ width: currentStep > step.id ? '100%' : '0%' }}
  />
  </div>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -11,7 +11,8 @@ import { useToast } from '@/app/components/ui/toast';
 import { useSearchState } from '@/lib/hooks/use-search-state';
 import { Plus, Eye, Megaphone, Loader2 } from 'lucide-react';
 
-const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 怨듭??ы빆 湲곕낯媛?
+const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 공지사항 기본값
+
 function CommunityDetailContent() {
     const router = useRouter();
     const params = useParams();
@@ -33,8 +34,8 @@ function CommunityDetailContent() {
         async function loadPosts() {
             try {
                 setLoading(true);
-                // ?ㅼ쭏?곸쑝濡쒕뒗 communityId???곕Ⅸ bbsId瑜?議고쉶?댁빞 ???섎룄 ?덉쑝??
-                // 湲곗〈 濡쒖쭅??紐낆떆??寃쎈줈瑜??곕쫭?덈떎.
+                // 실질적으로는 communityId에 따른 bbsId를 조회해야 할 수도 있으나 
+                // 기존 로직에 명시된 경로를 따릅니다.
                 const res = await boardUserService.getPosts(values.bbsId, {
                     page: parseInt(values.page),
                     size: 10,
@@ -44,7 +45,7 @@ function CommunityDetailContent() {
                 setData(res.list || []);
                 setTotal(res.total || 0);
             } catch {
-                toast('紐⑸줉??遺덈윭?ㅻ뒗 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 'error');
+                toast('목록을 불러오는 중 오류가 발생했습니다.', 'error');
             } finally {
                 setLoading(false);
             }
@@ -54,16 +55,16 @@ function CommunityDetailContent() {
 
     const columns = [
         {
-            header: '踰덊샇',
+            header: '번호',
             accessor: (item: BoardPost) => (
                 item.noticeAt === 'Y' ?
-                    <span className="flex items-center gap-1.5 text-blue-600 font-bold"><Megaphone size={14} /> 怨듭?</span> :
+                    <span className="flex items-center gap-1.5 text-blue-600 font-bold"><Megaphone size={14} /> 공지</span> :
                     item.nttId
             ),
             className: 'w-20'
         },
         {
-            header: '?쒕ぉ',
+            header: '제목',
             accessor: (item: BoardPost) => (
                 <div className="flex flex-col gap-0.5">
                     <span className="font-bold text-foreground hover:text-primary transition-colors">{item.nttSj}</span>
@@ -72,10 +73,10 @@ function CommunityDetailContent() {
             ),
             className: 'min-w-[300px]'
         },
-        { header: '?묒꽦??, accessor: (item: BoardPost) => item.ntcrNm || '?듬챸' },
-        { header: '?좎쭨', accessor: (item: BoardPost) => item.createdDate?.substring(0, 10) || '-' },
+        { header: '작성자', accessor: (item: BoardPost) => item.ntcrNm || '익명' },
+        { header: '날짜', accessor: (item: BoardPost) => item.createdDate?.substring(0, 10) || '-' },
         {
-            header: '議고쉶',
+            header: '조회',
             accessor: (item: BoardPost) => (
                 <div className="flex items-center gap-1 text-muted-foreground">
                     <Eye size={14} />
@@ -88,14 +89,14 @@ function CommunityDetailContent() {
     return (
         <div className="space-y-6">
             <PageHeader
-                title="而ㅻ??덊떚 ?곸꽭 諛?寃뚯떆湲"
-                breadcrumbs={[{ label: '而ㅻ??덊떚 愿由?, href: '/admin/community' }, { label: '而ㅻ??덊떚 ?곸꽭' }]}
+                title="커뮤니티 상세 및 게시글"
+                breadcrumbs={[{ label: '커뮤니티 관리', href: '/admin/community' }, { label: '커뮤니티 상세' }]}
                 actions={
                     <button
                         onClick={() => router.push('/admin/community/boards/write')}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-[0.1rem] font-bold shadow-md hover:shadow-lg transition"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-[0.1rem] font-bold shadow-md hover:shadow-lg transition-all"
                     >
-                        <Plus size={18} /> ??湲 ?곌린
+                        <Plus size={18} /> 새 글 쓰기
                     </button>
                 }
             />
@@ -104,23 +105,23 @@ function CommunityDetailContent() {
                 fields={[
                     {
                         name: 'bbsId',
-                        label: '寃뚯떆???좏깮',
+                        label: '게시판 선택',
                         type: 'select',
                         options: [
-                            { label: '怨듭??ы빆', value: 'BBSMSTR_AAAAAAAAAAAA' },
-                            { label: '?먯쑀寃뚯떆??, value: 'BBSMSTR_BBBBBBBBBBBB' },
-                            { label: '?낅Т寃뚯떆??, value: 'BBSMSTR_CCCCCCCCCCCC' }
+                            { label: '공지사항', value: 'BBSMSTR_AAAAAAAAAAAA' },
+                            { label: '자유게시판', value: 'BBSMSTR_BBBBBBBBBBBB' },
+                            { label: '업무게시판', value: 'BBSMSTR_CCCCCCCCCCCC' }
                         ]
                     },
-                    { name: 'searchWrd', label: '寃?됱뼱', type: 'text', placeholder: '?쒕ぉ, ?댁슜 ?낅젰...' },
+                    { name: 'searchWrd', label: '검색어', type: 'text', placeholder: '제목, 내용 입력...' },
                     {
                         name: 'searchCnd',
-                        label: '寃??議곌굔',
+                        label: '검색 조건',
                         type: 'select',
                         options: [
-                            { label: '?쒕ぉ', value: '0' },
-                            { label: '?댁슜', value: '1' },
-                            { label: '?묒꽦??, value: '2' }
+                            { label: '제목', value: '0' },
+                            { label: '내용', value: '1' },
+                            { label: '작성자', value: '2' }
                         ]
                     }
                 ]}
@@ -132,12 +133,12 @@ function CommunityDetailContent() {
                 data={data}
                 loading={loading}
                 onRowClick={(item) => router.push(`/admin/community/boards/${item.nttId}?bbsId=${item.bbsId}`)}
-                emptyMessage="寃뚯떆湲??議댁옱?섏? ?딆뒿?덈떎."
+                emptyMessage="게시글이 존재하지 않습니다."
             />
 
             <div className="flex justify-center pt-4">
                 <p className="text-sm text-muted-foreground font-medium">
-                    珥?<span className="text-foreground font-bold">{total}</span> 媛쒖쓽 寃뚯떆湲???덉뒿?덈떎.
+                    총 <span className="text-foreground font-bold">{total}</span> 개의 게시글이 있습니다.
                 </p>
             </div>
         </div>
@@ -149,7 +150,7 @@ export default function CommunityDetailPage() {
         <Suspense fallback={
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <p className="text-muted-foreground font-medium animate-pulse">而ㅻ??덊떚 ?뺣낫瑜?遺덈윭?ㅺ퀬 ?덉뒿?덈떎...</p>
+                <p className="text-muted-foreground font-medium animate-pulse">커뮤니티 정보를 불러오고 있습니다...</p>
             </div>
         }>
             <CommunityDetailContent />

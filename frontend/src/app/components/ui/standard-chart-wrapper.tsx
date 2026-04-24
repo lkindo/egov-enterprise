@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import {
@@ -24,7 +24,7 @@ export function StandardChartWrapper({
     title, type, data, dataKeys, loading, className, height = 300
 }: StandardChartWrapperProps) {
     return (
-        <div className={cn("p-6 border rounded-[0.1rem] bg-card shadow-sm transition hover:shadow-md", className)}>
+        <div className={cn("p-6 border rounded-[0.1rem] bg-card shadow-sm transition-all hover:shadow-md", className)}>
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-[11px] font-black text-slate-700 tracking-tight">{title}</h3>
             </div>
@@ -154,7 +154,7 @@ export function StandardChartWrapper({
                             </LineChart>
                         ) : (
                             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                                筌△뫂???醫륁굨?섓쭪?癒?┷筌왖 ??녿뮸??덈뼄.
+                                李⑦듃 ?좏삎님吏먮릺吏 ?딆뒿?덈떎.
                             </div>
                         )}
                     </ResponsiveContainer>

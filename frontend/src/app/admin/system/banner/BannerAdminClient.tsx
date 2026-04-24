@@ -275,7 +275,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
     {
       header: '비주얼 자산 스냅샷',
       accessor: (item: Banner) => (
-        <div className="w-56 h-24 bg-slate-900 rounded-[0.1rem] overflow-hidden border-2 border-slate-100 shadow-xl relative group/img cursor-zoom-in transition duration-500 hover:scale-[1.05] hover:z-50">
+        <div className="w-56 h-24 bg-slate-900 rounded-[0.1rem] overflow-hidden border-2 border-slate-100 shadow-xl relative group/img cursor-zoom-in transition-all duration-500 hover:scale-[1.05] hover:z-50">
           <ImageIcon size={24} className="absolute inset-0 m-auto text-white/10" />
           {item.bannerImageFile && (
             <Image
@@ -312,7 +312,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
     {
       header: '우선순위',
       accessor: (item: Banner) => (
-        <div className="w-12 h-12 rounded-[0.1rem] bg-slate-50 border-2 border-slate-100 flex items-center justify-center shadow-inner group-hover:bg-slate-900 group-hover:text-white transition duration-500">
+        <div className="w-12 h-12 rounded-[0.1rem] bg-slate-50 border-2 border-slate-100 flex items-center justify-center shadow-inner group-hover:bg-slate-900 group-hover:text-white transition-all duration-500">
           <span className="font-black text-lg font-mono tabular-nums leading-none">{item.sortOrdr}</span>
         </div>
       ),
@@ -331,10 +331,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       className: 'text-right',
       accessor: (item: Banner) => (
         <div className="flex justify-end gap-2 pr-4">
-          <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-[0.1rem] border border-slate-200 transition font-black" onClick={() => handleEdit(item)}>
+          <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-[0.1rem] border border-slate-200 transition-all font-black" onClick={() => handleEdit(item)}>
             <Settings size={16} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-[0.1rem] transition" onClick={() => handleDelete(item.bannerId)}>
+          <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-[0.1rem] transition-all" onClick={() => handleDelete(item.bannerId)}>
             <Trash2 size={16} />
           </Button>
         </div>
@@ -387,10 +387,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       className: 'text-right w-32',
       accessor: (item: Popup) => (
         <div className="flex justify-end gap-2 pr-4">
-          <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-[0.1rem] border border-slate-200 transition font-black" onClick={() => handleEdit(item)}>
+          <Button variant="ghost" size="icon" className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-[0.1rem] border border-slate-200 transition-all font-black" onClick={() => handleEdit(item)}>
             <Settings size={16} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-[0.1rem] transition" onClick={() => handleDelete(item.popupId)}>
+          <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-[0.1rem] transition-all" onClick={() => handleDelete(item.popupId)}>
             <Trash2 size={16} />
           </Button>
         </div>
@@ -414,7 +414,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
           <Button
             onClick={handleCreate}
             size="lg"
-            className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition hover:-translate-y-1 gap-3"
+            className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
           >
             <Plus size={20} /> 신규 {activeTab === 'banner' ? '배너' : '팝업'} 등록
           </Button>
@@ -434,11 +434,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
             <button
               onClick={() => setTab('banner')}
               className={cn(
-                "w-full group p-8 rounded-[0.1rem] border-2 transition flex items-center gap-6 relative overflow-hidden",
+                "w-full group p-8 rounded-[0.1rem] border-2 transition-all flex items-center gap-6 relative overflow-hidden",
                 activeTab === 'banner' ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-slate-50 text-slate-400 hover:text-slate-900"
               )}
             >
-              <div className={cn("w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition shadow-lg relative z-10", activeTab === 'banner' ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white")}>
+              <div className={cn("w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'banner' ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white")}>
                 <ImageIcon size={22} />
               </div>
               <div className="flex flex-col text-left relative z-10">
@@ -450,11 +450,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
             <button
               onClick={() => setTab('popup')}
               className={cn(
-                "w-full group p-8 rounded-[0.1rem] border-2 transition flex items-center gap-6 relative overflow-hidden",
+                "w-full group p-8 rounded-[0.1rem] border-2 transition-all flex items-center gap-6 relative overflow-hidden",
                 activeTab === 'popup' ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-slate-50 text-slate-400 hover:text-slate-900"
               )}
             >
-              <div className={cn("w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition shadow-lg relative z-10", activeTab === 'popup' ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-indigo-500 group-hover:text-white")}>
+              <div className={cn("w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'popup' ? "bg-white/10 text-white shadow-black/20" : "bg-white text-slate-300 group-hover:bg-indigo-500 group-hover:text-white")}>
                 <Monitor size={22} />
               </div>
               <div className="flex flex-col text-left relative z-10">
@@ -518,7 +518,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
             <Button
               onClick={activeTab === 'banner' ? (bannerForm.handleSubmit(onBannerSubmit) as any) : (popupForm.handleSubmit(onPopupSubmit) as any)}
               disabled={activeTab === 'banner' ? bannerForm.formState.isSubmitting : popupForm.formState.isSubmitting}
-              className="flex-[2] h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition hover:-translate-y-2 group"
+              className="flex-[2] h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group"
             >
               <Zap size={18} className="group-hover:animate-pulse mr-2" /> {editingItem ? '자산 수정' : '운영 배포'}
             </Button>
@@ -605,7 +605,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                         <FormItem className="space-y-1.5 p-0.5">
                           <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 명세 및 설명 (Metadata)</FormLabel>
                           <FormControl>
-                            <textarea {...field} className="w-full min-h-[120px] p-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
+                            <textarea {...field} className="w-full min-h-[120px] p-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50 text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
                           </FormControl>
                           <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
                         </FormItem>

@@ -64,12 +64,12 @@ export function NotificationSender() {
                   key={item.id}
                   onClick={() => setChannel(item.id as any)}
                   className={cn(
-                    "p-6 rounded-[0.1rem] border-2 transition flex flex-col items-center gap-3 group/item",
+                    "p-6 rounded-[0.1rem] border-2 transition-all flex flex-col items-center gap-3 group/item",
                     channel === item.id ? "bg-primary text-white border-primary shadow-2xl shadow-primary/20 scale-[1.05]" : "bg-card border-transparent hover:border-primary/20 hover:bg-primary/5 text-muted-foreground"
                   )}
                 >
                   <div className={cn(
-                    "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition duration-500",
+                    "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all duration-500",
                     channel === item.id ? "bg-white/20 rotate-12" : "bg-muted group-hover/item:bg-primary/10"
                   )}>
                     {React.cloneElement(item.icon as React.ReactElement<any>, { size: 20 })}
@@ -119,7 +119,7 @@ export function NotificationSender() {
                 variant="ghost"
                 onClick={simulateAIGenerate}
                 disabled={isGenerating}
-                className="rounded-[0.1rem] h-10 px-6 gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-black text-[10px] tracking-tight shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition"
+                className="rounded-[0.1rem] h-10 px-6 gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-black text-[10px] tracking-tight shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all"
               >
                 {isGenerating ? <Zap size={14} className="animate-spin" /> : <Sparkles size={14} />}
                 AI 콘텐츠 초안 생성
@@ -127,7 +127,7 @@ export function NotificationSender() {
             </div>
 
             <textarea
-              className="flex-1 w-full bg-transparent border-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 resize-none text-xl font-bold placeholder:text-muted-foreground/10 custom-scrollbar leading-relaxed"
+              className="flex-1 w-full bg-transparent border-none outline-none resize-none text-xl font-bold placeholder:text-muted-foreground/10 custom-scrollbar leading-relaxed"
               placeholder="메시지 내용을 입력하거나 AI 드래프트를 활용하세요..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}

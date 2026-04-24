@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -23,7 +23,7 @@ interface SearchResult {
     icon: React.ReactNode;
 }
 
-// 移댄뀒怨좊━蹂??꾩씠肄?留ㅽ븨
+// 카테고리별 아이콘 매핑
 const categoryIcons = {
     Menu: <Settings size={14} />,
     Content: <FileText size={14} />,
@@ -38,7 +38,7 @@ export function CommandPalette() {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // 硫붾돱 ?곗씠??濡쒕뱶
+    // 메뉴 데이터 로드
     useEffect(() => {
         if (!isOpen) return;
 
@@ -70,7 +70,7 @@ export function CommandPalette() {
         loadMenus();
     }, [isOpen]);
 
-    // ?꾪꽣留곷맂 寃곌낵
+    // 필터링된 결과
     const filteredResults = results.filter(item =>
         (item.title || '').toLowerCase().includes(query.toLowerCase()) ||
         (item.category || '').toLowerCase().includes(query.toLowerCase()) ||
@@ -107,13 +107,13 @@ export function CommandPalette() {
     return (
         <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4 md:px-0 bg-black/80 animate-in fade-in duration-300">
             <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border shadow-2xl rounded-[0.1rem] overflow-hidden animate-in zoom-in-95 duration-200">
-                {/* 寃???낅젰 ?곸뿭 */}
+                {/* 검색 입력 영역 */}
                 <div className="flex items-center p-6 border-b gap-4">
                     <Search className="text-muted-foreground" size={20} />
                     <input
                         autoFocus
-                        className="flex-1 bg-transparent border-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 text-lg font-bold placeholder:text-muted-foreground/50 text-foreground"
-                        placeholder="臾댁뾿??李얠쑝?쒕굹?? (硫붾돱, ?ъ슜?? 寃뚯떆湲...)"
+                        className="flex-1 bg-transparent border-none outline-none text-lg font-bold placeholder:text-muted-foreground/50 text-foreground"
+                        placeholder="무엇을 찾으시나요? (메뉴, 사용자, 게시글...)"
                         value={query}
                         onChange={(e) => {
                             setQuery(e.target.value);
@@ -128,7 +128,7 @@ export function CommandPalette() {
                         }}
                     />
                     {isLoading && (
-                        <div className="text-xs text-muted-foreground animate-pulse">濡쒕뵫 以?..</div>
+                        <div className="text-xs text-muted-foreground animate-pulse">로딩 중...</div>
                     )}
                     <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
                         <span className="text-[10px] font-black text-muted-foreground">ESC</span>
@@ -138,7 +138,7 @@ export function CommandPalette() {
                     </button>
                 </div>
 
-                {/* 寃곌낵 ?곸뿭 */}
+                {/* 결과 영역 */}
                 <div className="max-h-[50vh] overflow-y-auto p-4 space-y-4 custom-scrollbar">
                     {isLoading ? (
                         <div className="p-20 flex flex-col items-center justify-center text-center space-y-4">
@@ -146,8 +146,8 @@ export function CommandPalette() {
                                 <Search size={40} className="text-muted-foreground/30" />
                             </div>
                             <div>
-                                <p className="text-lg font-black text-foreground">硫붾돱瑜?遺덈윭?ㅻ뒗 以?.</p>
-                                <p className="text-sm text-muted-foreground font-bold">?좎떆留?湲곕떎??二쇱꽭??</p>
+                                <p className="text-lg font-black text-foreground">메뉴를 불러오는 중..</p>
+                                <p className="text-sm text-muted-foreground font-bold">잠시만 기다려 주세요.</p>
                             </div>
                         </div>
                     ) : filteredResults.length > 0 ? (
@@ -165,7 +165,7 @@ export function CommandPalette() {
                                                     <button
                                                         key={result.id}
                                                         className={cn(
-                                                            "w-full group p-4 rounded-[0.1rem] flex items-center justify-between transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 border-2 border-transparent",
+                                                            "w-full group p-4 rounded-[0.1rem] flex items-center justify-between transition-all outline-none border-2 border-transparent",
                                                             globalIdx === selectedIndex ? "bg-primary text-primary-foreground shadow-lg scale-[1.01]" : "hover:bg-muted text-foreground"
                                                         )}
                                                         onClick={() => onSelect(result.url)}
@@ -173,7 +173,7 @@ export function CommandPalette() {
                                                     >
                                                         <div className="flex items-center gap-4 text-left">
                                                             <div className={cn(
-                                                                "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition",
+                                                                "w-10 h-10 rounded-[0.1rem] flex items-center justify-center transition-all",
                                                                 globalIdx === selectedIndex ? "bg-white/20 border-white/10 shadow-inner" : "bg-primary/5 text-primary border border-primary/10"
                                                             )}>
                                                                 {result.icon}
@@ -191,7 +191,7 @@ export function CommandPalette() {
                                                             </div>
                                                         </div>
                                                         <ArrowRight className={cn(
-                                                            "transition duration-300",
+                                                            "transition-all duration-300",
                                                             globalIdx === selectedIndex ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
                                                         )} size={16} />
                                                     </button>
@@ -208,22 +208,22 @@ export function CommandPalette() {
                                 <Search size={40} className="text-muted-foreground/30" />
                             </div>
                             <div>
-                                <p className="text-lg font-black text-foreground">寃곌낵媛 ?놁뒿?덈떎.</p>
-                                <p className="text-sm text-muted-foreground font-bold">?ㅻⅨ ?ㅼ썙?쒕줈 寃?됲빐 蹂댁꽭??</p>
+                                <p className="text-lg font-black text-foreground">결과가 없습니다.</p>
+                                <p className="text-sm text-muted-foreground font-bold">다른 키워드로 검색해 보세요.</p>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* ?명꽣 ?뚰듃 */}
+                {/* 푸터 힌트 */}
                 <div className="p-4 bg-muted/30 border-t flex items-center justify-center gap-6">
                     <div className="flex items-center gap-2">
                         <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">Enter</kbd>
-                        <span className="text-[10px] font-bold text-muted-foreground">?좏깮</span>
+                        <span className="text-[10px] font-bold text-muted-foreground">선택</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">?묅넃</kbd>
-                        <span className="text-[10px] font-bold text-muted-foreground">?대룞</span>
+                        <kbd className="px-2 py-1 bg-background border rounded text-[10px] font-black">↑↓</kbd>
+                        <span className="text-[10px] font-bold text-muted-foreground">이동</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <Command size={12} className="text-muted-foreground" />
@@ -235,7 +235,7 @@ export function CommandPalette() {
     );
 }
 
-// 硫붾돱 ?꾩씠肄?諛섑솚 ?⑥닔
+// 메뉴 아이콘 반환 함수
 function getMenuIcon(route: string): React.ReactNode {
     if (route.includes('stats') || route.includes('dashboard')) return <LayoutDashboard size={14} />;
     if (route.includes('user')) return <Users size={14} />;

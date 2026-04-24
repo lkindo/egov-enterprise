@@ -54,10 +54,10 @@ export default function WorkflowPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-6 py-3 bg-muted rounded-full font-black text-sm tracking-tight hover:bg-muted/80 transition">
+                    <button className="flex items-center gap-2 px-6 py-3 bg-muted rounded-full font-black text-sm tracking-tight hover:bg-muted/80 transition-all">
                         <History size={16} /> 히스토리
                     </button>
-                    <button className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-black text-sm tracking-tight shadow-xl hover:bg-primary/90 transition">
+                    <button className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-black text-sm tracking-tight shadow-xl hover:bg-primary/90 transition-all">
                         <Plus size={16} /> 신규 워크플로우
                     </button>
                 </div>
@@ -142,7 +142,7 @@ export default function WorkflowPage() {
                                     </div>
                                 </div>
 
-                                <button className="w-full py-5 bg-primary text-white rounded-full font-black text-sm tracking-tight shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition">
+                                <button className="w-full py-5 bg-primary text-white rounded-full font-black text-sm tracking-tight shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
                                     승인 처리하기
                                 </button>
                             </div>

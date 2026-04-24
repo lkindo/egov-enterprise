@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
@@ -57,7 +57,7 @@ const Sidebar = () => {
   };
 
   return (
-    <nav className="nav" aria-label="?쒕툕 硫붾돱">
+    <nav className="nav" aria-label="서브 메뉴">
       <div className="inner">
         {parentMenu ? <h2 className="text-xl font-bold mb-6">{parentMenu.menuNm}</h2> : null}
 
@@ -76,7 +76,7 @@ const Sidebar = () => {
                   <li key={item.menuNo}>
                     <Link
                       href={item.modernRoute || item.chkURL || '#'}
-                      className={`block px-3 py-2 rounded-lg text-sm transition ${isActive(item.modernRoute || item.chkURL || '')
+                      className={`block px-3 py-2 rounded-lg text-sm transition-all ${isActive(item.modernRoute || item.chkURL || '')
                         ? 'bg-primary text-white font-bold shadow-md shadow-primary/20'
                         : 'text-slate-600 hover:bg-slate-100'
                         }`}
@@ -99,13 +99,14 @@ const Sidebar = () => {
               <li>
                 <Link
                   href="/admin/observability"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition group ${isActive('/admin/observability')
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all group ${isActive('/admin/observability')
                     ? 'bg-slate-900 text-white font-bold shadow-xl shadow-slate-900/20'
                     : 'text-slate-600 hover:bg-slate-50'
                     }`}
                 >
                   <Activity size={16} className={isActive('/admin/observability') ? 'text-emerald-400' : 'text-slate-400 group-hover:text-primary transition-colors'} />
-                  ?쒖뒪???듯빀 愿??                </Link>
+                  시스템 통합 관제
+                </Link>
               </li>
             </ul>
           </div>

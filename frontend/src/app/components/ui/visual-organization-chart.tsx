@@ -91,7 +91,7 @@ export function VisualOrganizationChart() {
  <div
  onClick={() => setSelectedNode(node)}
  className={cn(
- "group relative flex items-center gap-4 p-4 rounded-[0.1rem] border-2 transition cursor-pointer min-w-[280px]",
+ "group relative flex items-center gap-4 p-4 rounded-[0.1rem] border-2 transition-all cursor-pointer min-w-[280px]",
  isSelected ? "bg-card border-primary shadow-xl shadow-primary/5 ring-4 ring-primary/5" : "bg-muted/10 border-transparent hover:bg-card hover:border-primary/20"
  )}
  style={{ marginLeft: depth * 40 }}
@@ -120,7 +120,7 @@ export function VisualOrganizationChart() {
  <Button
  variant="ghost"
  size="icon"
- className="rounded-[0.1rem] h-8 w-8 hover:bg-primary/10 hover:text-primary transition"
+ className="rounded-[0.1rem] h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all"
  onClick={(e) => toggleNode(node.id, e)}
  >
  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -154,7 +154,7 @@ export function VisualOrganizationChart() {
  <div className="relative">
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40" size={16} />
  <input
- className="w-full bg-muted/40 border-none rounded-[0.1rem] py-3 pl-12 pr-4 text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ring-2 ring-transparent focus:ring-primary/20 transition font-medium"
+ className="w-full bg-muted/40 border-none rounded-[0.1rem] py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all font-medium"
  placeholder="검색..."
  value={search}
  onChange={(e) => setSearch(e.target.value)}
@@ -167,7 +167,7 @@ export function VisualOrganizationChart() {
  { id: 'd2', name: '기술전략부', count: 45, icon: <Zap size={14} /> },
  { id: 'd3', name: '운영기획부', count: 28, icon: <ArrowUpRight size={14} /> },
  ].map(dept => (
- <button key={dept.id} className="w-full flex items-center justify-between p-4 rounded-[0.1rem] hover:bg-primary/5 transition group">
+ <button key={dept.id} className="w-full flex items-center justify-between p-4 rounded-[0.1rem] hover:bg-primary/5 transition-all group">
  <div className="flex items-center gap-3">
  <div className="p-2 bg-background rounded-lg border text-muted-foreground group-hover:text-primary transition-colors">{dept.icon}</div>
  <span className="text-sm font-black text-muted-foreground group-hover:text-foreground">{dept.name}</span>

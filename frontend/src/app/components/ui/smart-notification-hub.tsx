@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState } from 'react';
 import {
   Bell,
@@ -38,9 +38,9 @@ export function SmartNotificationHub() {
     {
       id: 'nt-001',
       type: 'system',
-      title: '蹂댁븞 ?뺤콉 蹂寃??덈궡',
-      content: '?⑥뒪?뚮뱶 留뚮즺 二쇨린 ?뺤콉??30?쇰줈 ?⑥텞?섏뿀?듬땲??',
-      recipient: '?꾩껜 ?ъ슜??,
+      title: '보안 정책 변경 안내',
+      content: '패스워드 만료 주기 정책이 30일로 단축되었습니다.',
+      recipient: '전체 사용자',
       timestamp: '2026-02-23 10:30:15',
       status: 'sent',
       severity: 'high'
@@ -48,8 +48,8 @@ export function SmartNotificationHub() {
     {
       id: 'nt-002',
       type: 'mail',
-      title: '?곌컙 ?깃낵 遺꾩꽍 蹂닿퀬',
-      content: '2025?꾨룄 ?깃낵 遺꾩꽍 寃곌낵 由ы룷?멸? 諛쒖넚?섏뿀?듬땲??',
+      title: '연간 성과 분석 보고',
+      content: '2025년도 성과 분석 결과 리포트가 발송되었습니다.',
       recipient: 'executives@company.com',
       timestamp: '2026-02-23 09:15:00',
       status: 'pending',
@@ -58,8 +58,8 @@ export function SmartNotificationHub() {
     {
       id: 'nt-003',
       type: 'sms',
-      title: '?쒕쾭 怨쇰???寃쎄퀬',
-      content: '[EGov] DB ?쒕쾭 CPU ?먯쑀??95% 珥덇낵 諛쒖깮',
+      title: '서버 과부하 경고',
+      content: '[EGov] DB 서버 CPU 점유율 95% 초과 발생',
       recipient: '010-XXXX-XXXX',
       timestamp: '2026-02-23 08:45:22',
       status: 'failed',
@@ -68,8 +68,8 @@ export function SmartNotificationHub() {
     {
       id: 'nt-004',
       type: 'system',
-      title: '?좉퇋 ?낅뜲?댄듃 ?꾨즺',
-      content: '?뚮옯??v2.4.0 ?⑥튂媛 ?깃났?곸쑝濡??곸슜?섏뿀?듬땲??',
+      title: '신규 업데이트 완료',
+      content: '플랫폼 v2.4.0 패치가 성공적으로 적용되었습니다.',
       recipient: 'Admin.Lee',
       timestamp: '2026-02-22 23:00:00',
       status: 'sent',
@@ -105,14 +105,14 @@ export function SmartNotificationHub() {
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: '?꾩껜 ?뚮┝', count: 1284, delta: '+12%', icon: <Bell />, color: 'primary' },
-          { label: '?쒖뒪??怨듭?', count: 42, delta: '+2', icon: <Bot />, color: 'indigo' },
-          { label: '硫붿씪 諛쒖넚', count: 856, delta: '+45', icon: <Mail />, color: 'blue' },
-          { label: 'SMS ?꾩넚', count: 386, delta: '-5%', icon: <MessageSquare />, color: 'emerald' },
+          { label: '전체 알림', count: 1284, delta: '+12%', icon: <Bell />, color: 'primary' },
+          { label: '시스템 공지', count: 42, delta: '+2', icon: <Bot />, color: 'indigo' },
+          { label: '메일 발송', count: 856, delta: '+45', icon: <Mail />, color: 'blue' },
+          { label: 'SMS 전송', count: 386, delta: '-5%', icon: <MessageSquare />, color: 'emerald' },
         ].map((stat, i) => (
           <div key={`hub-stat-${i}`} className="p-8 pb-6 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-xl relative overflow-hidden group">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-muted rounded-[0.1rem] text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition duration-500">
+              <div className="p-3 bg-muted rounded-[0.1rem] text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500">
                 {React.cloneElement(stat.icon as React.ReactElement<any>, { size: 20 })}
               </div>
               <span className={cn(
@@ -137,9 +137,9 @@ export function SmartNotificationHub() {
                   <div className="absolute top-0 right-0 w-3 h-3 bg-rose-500 border-2 border-white rounded-full" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black tracking-tighter">?ㅼ떆媛??곗씠???ㅽ듃由?/h2>
+                  <h2 className="text-xl font-black tracking-tighter">실시간 데이터 스트림</h2>
                   <div className="flex items-center gap-2 mt-0.5 text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 梨꾨꼸 臾닿껐??理쒖쟻?붾맖
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 채널 무결성 최적화됨
                   </div>
                 </div>
               </div>
@@ -151,7 +151,7 @@ export function SmartNotificationHub() {
                       key={tab}
                       onClick={() => setActiveTab(tab as any)}
                       className={cn(
-                        "px-4 py-2 rounded-[0.1rem] text-[10px] font-black tracking-tight transition",
+                        "px-4 py-2 rounded-[0.1rem] text-[10px] font-black tracking-tight transition-all",
                         activeTab === tab ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-primary/5"
                       )}
                     >{tab}</button>
@@ -160,8 +160,8 @@ export function SmartNotificationHub() {
                 <div className="relative w-48 hidden md:block">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30" size={14} />
                   <input
-                    className="w-full bg-muted/20 border-none rounded-[0.1rem] py-2.5 pl-10 pr-4 text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ring-2 ring-transparent focus:ring-primary/10 transition"
-                    placeholder="寃??諛??꾪꽣留?.."
+                    className="w-full bg-muted/20 border-none rounded-[0.1rem] py-2.5 pl-10 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/10 transition-all"
+                    placeholder="검색 및 필터링..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
@@ -171,7 +171,7 @@ export function SmartNotificationHub() {
 
             <div className="space-y-4 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
               {filteredLogs.map((log, i) => (
-                <div key={log.id || `hub-log-${i}`} className="group flex items-center gap-6 p-6 rounded-[0.1rem] bg-muted/10 border-2 border-transparent hover:bg-card hover:border-primary/10 hover:shadow-xl transition duration-500 animate-in fade-in slide-in-from-right-4" style={{ animationDelay: `${i * 100}ms` }}>
+                <div key={log.id || `hub-log-${i}`} className="group flex items-center gap-6 p-6 rounded-[0.1rem] bg-muted/10 border-2 border-transparent hover:bg-card hover:border-primary/10 hover:shadow-xl transition-all duration-500 animate-in fade-in slide-in-from-right-4" style={{ animationDelay: `${i * 100}ms` }}>
                   <div className={cn(
                     "w-14 h-14 rounded-[0.1rem] flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform duration-500",
                     log.type === 'system' ? "bg-indigo-500/10 text-indigo-500" : log.type === 'mail' ? "bg-blue-500/10 text-blue-500" : "bg-emerald-500/10 text-emerald-500"
@@ -201,7 +201,7 @@ export function SmartNotificationHub() {
                     <div className="p-2 bg-background rounded-full border shadow-sm group-hover:rotate-12 transition-transform">
                       {getStatusIcon(log.status)}
                     </div>
-                    <span className="text-[9px] font-black text-muted-foreground opacity-40">{log.status === 'sent' ? '諛쒖넚 ?꾨즺' : log.status === 'pending' ? '?湲?以? : '?ㅽ뙣'}</span>
+                    <span className="text-[9px] font-black text-muted-foreground opacity-40">{log.status === 'sent' ? '발송 완료' : log.status === 'pending' ? '대기 중' : '실패'}</span>
                   </div>
 
                   <Button variant="ghost" size="icon" className="rounded-[0.1rem] h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical size={16} /></Button>
@@ -219,16 +219,16 @@ export function SmartNotificationHub() {
                 <Zap size={40} className="text-white fill-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-black tracking-tighter">AI ?ㅻ쭏??諛곕떖</h3>
-                <p className="text-sm font-bold opacity-80 mt-2 leading-relaxed">?섏떊?먯쓽 ?낅Т ?⑦꽩??遺꾩꽍?섏뿬<br />理쒓퀬???쒓컙???뚮┝??諛곕떖?⑸땲??/p>
+                <h3 className="text-2xl font-black tracking-tighter">AI 스마트 배달</h3>
+                <p className="text-sm font-bold opacity-80 mt-2 leading-relaxed">수신자의 업무 패턴을 분석하여<br />최고의 시간에 알림을 배달합니다</p>
               </div>
-              <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-[0.1rem] h-14 font-black shadow-xl">諛쒖넚 理쒖쟻???붿쭊 ?쒖꽦</Button>
+              <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-[0.1rem] h-14 font-black shadow-xl">발송 최적화 엔진 활성</Button>
             </div>
           </div>
 
           <div className="p-10 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-xl space-y-8 flex-1">
             <div>
-              <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-6">梨꾨꼸 ?곹깭 吏??/h4>
+              <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-6">채널 상태 지수</h4>
               <div className="space-y-6">
                 {[
                   { name: 'System Push', score: 99, color: 'primary' },
@@ -249,11 +249,11 @@ export function SmartNotificationHub() {
             </div>
 
             <div className="pt-8 border-t border-primary/5 space-y-4">
-              <h4 className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">吏?ν삎 ?몄궗?댄듃</h4>
+              <h4 className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">지능형 인사이트</h4>
               <div className="p-5 rounded-[0.1rem] bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-4">
                 <Info size={16} className="text-indigo-500 mt-0.5" />
                 <p className="text-[10px] font-bold text-indigo-900/60 leading-relaxed">
-                  ?ㅼ쟾 10?쒖뿉??11???ъ씠??諛쒖넚???뚮┝???뺤씤?⑥씠 媛???믪뒿?덈떎. 以묒슂??怨듭??????쒓컙???쒖슜?섏꽭??
+                  오전 10시에서 11시 사이에 발송된 알림의 확인율이 가장 높습니다. 중요한 공지는 이 시간을 활용하세요.
                 </p>
               </div>
             </div>

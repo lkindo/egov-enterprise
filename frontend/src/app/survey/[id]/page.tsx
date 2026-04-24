@@ -112,7 +112,7 @@ function StatsContent() {
                     </div>
                     <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                       <div
-                        className="bg-primary h-2.5 rounded-full transition duration-500"
+                        className="bg-primary h-2.5 rounded-full transition-all duration-500"
                         style={{ width: `${stat.qustnrPercent || 0}%` }}
                       ></div>
                     </div>

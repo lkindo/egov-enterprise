@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, AlertCircle, LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -77,8 +77,8 @@ export function HubListCard({
         {moreHref && (
           <Link
             href={moreHref}
-            className="w-12 h-12 bg-muted/30 rounded-[0.1rem] flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition focus-visible:focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-2 focus-visible:ring-primary"
-            aria-label={`${title} ?붾낫湲?}
+            className="w-12 h-12 bg-muted/30 rounded-[0.1rem] flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label={`${title} 더보기`}
           >
             <ArrowRight size={20} />
           </Link>
@@ -94,7 +94,7 @@ export function HubListCard({
               key={`list-item-${title}-${item.id || item.nttId || idx}`}
               whileHover={{ x: 5 }}
               className={cn(
-                "flex flex-col gap-2 p-6 rounded-[0.1rem] border border-transparent transition cursor-pointer group/item",
+                "flex flex-col gap-2 p-6 rounded-[0.1rem] border border-transparent transition-all cursor-pointer group/item",
                 itemHoverColorMap[color]
               )}
             >
@@ -112,7 +112,7 @@ export function HubListCard({
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-30 gap-4">
             <AlertCircle size={40} />
-            <p className="text-sm font-black tracking-tight">?곗씠?곌? ?놁뒿?덈떎.</p>
+            <p className="text-sm font-black tracking-tight">데이터가 없습니다.</p>
           </div>
         )}
       </div>

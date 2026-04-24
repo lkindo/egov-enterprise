@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -52,12 +52,12 @@ const ScrapListPage = () => {
     }, [pageNo]);
 
     const handleDelete = async (id: string) => {
-        if (!confirm('??젣?섏떆寃좎뒿?덇퉴?')) return;
+        if (!confirm('삭제하시겠습니까?')) return;
         try {
             await axios.delete(`/scrap/${id}`);
             fetchList();
         } catch (error) {
-            alert('??젣???ㅽ뙣?덉뒿?덈떎.');
+            alert('삭제에 실패했습니다.');
         }
     };
 
@@ -69,31 +69,32 @@ const ScrapListPage = () => {
                 <CardHeader className="flex flex-row items-center justify-between pb-6 bg-gradient-to-r from-muted/50 to-transparent border-b px-10 pt-10">
                     <div className="space-y-1">
                         <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                            <Bookmark className="w-6 h-6 text-primary" /> ?ㅽ겕??紐⑸줉
+                            <Bookmark className="w-6 h-6 text-primary" /> 스크랩 목록
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">?섏쨷???ㅼ떆 蹂?以묒슂???섏씠吏? ?뺣낫瑜?愿由ы븯?몄슂.</p>
+                        <p className="text-sm text-muted-foreground">나중에 다시 볼 중요한 페이지와 정보를 관리하세요.</p>
                     </div>
                     <Link href="/admin/collaboration/scraps/insertScrap">
                         <Button size="sm" className="gap-2 shadow-sm font-bold">
-                            <Plus className="w-4 h-4" /> ?좉퇋 ?깅줉
+                            <Plus className="w-4 h-4" /> 신규 등록
                         </Button>
                     </Link>
                 </CardHeader>
                 <CardContent className="p-10 pt-8">
                     <div className="mb-6 flex items-center justify-between">
                         <div className="bg-muted px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 border">
-                            ?꾩껜 <span className="text-primary font-black">{totalCount}</span>嫄댁쓽 ?ㅽ겕??                        </div>
+                            전체 <span className="text-primary font-black">{totalCount}</span>건의 스크랩
+                        </div>
                     </div>
 
                     <div className="rounded-[0.1rem] border shadow-sm overflow-hidden bg-white">
                         <Table>
                             <TableHeader className="bg-muted/30">
                                 <TableRow>
-                                    <TableHead className="w-[80px] text-center font-bold">踰덊샇</TableHead>
-                                    <TableHead className="w-[250px] font-bold">?ㅽ겕?⑸챸</TableHead>
-                                    <TableHead className="font-bold">URL / ?ㅻ챸</TableHead>
-                                    <TableHead className="w-[120px] text-center font-bold">?깅줉??/TableHead>
-                                    <TableHead className="w-[100px] text-center font-bold">愿由?/TableHead>
+                                    <TableHead className="w-[80px] text-center font-bold">번호</TableHead>
+                                    <TableHead className="w-[250px] font-bold">스크랩명</TableHead>
+                                    <TableHead className="font-bold">URL / 설명</TableHead>
+                                    <TableHead className="w-[120px] text-center font-bold">등록일</TableHead>
+                                    <TableHead className="w-[100px] text-center font-bold">관리</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -110,7 +111,7 @@ const ScrapListPage = () => {
                                 ) : list.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium">
-                                            ??λ맂 ?ㅽ겕?⑹씠 ?놁뒿?덈떎. ?좎씡???뺣낫瑜???ν빐蹂댁꽭??
+                                            저장된 스크랩이 없습니다. 유익한 정보를 저장해보세요.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -130,7 +131,7 @@ const ScrapListPage = () => {
                                                         {item.scrapUrl?.length > 70 ? item.scrapUrl.substring(0, 70) + '...' : item.scrapUrl}
                                                         <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
                                                     </a>
-                                                    <span className="text-sm text-muted-foreground font-medium truncate max-w-[500px]">{item.scrapDc || '?ㅻ챸 ?놁쓬'}</span>
+                                                    <span className="text-sm text-muted-foreground font-medium truncate max-w-[500px]">{item.scrapDc || '설명 없음'}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center text-sm text-muted-foreground font-medium">
@@ -141,7 +142,7 @@ const ScrapListPage = () => {
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => handleDelete(item.scrapId)}
-                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition opacity-0 group-hover:opacity-100"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
@@ -163,7 +164,7 @@ const ScrapListPage = () => {
                                 disabled={pageNo === 1}
                                 className="px-6 font-bold shadow-sm"
                             >
-                                ?댁쟾
+                                이전
                             </Button>
                             <div className="flex items-center gap-2 px-6 py-2 bg-muted rounded-full">
                                 <span className="text-sm font-black text-primary">{pageNo}</span>
@@ -177,7 +178,7 @@ const ScrapListPage = () => {
                                 disabled={pageNo === totalPages}
                                 className="px-6 font-bold shadow-sm"
                             >
-                                ?ㅼ쓬
+                                다음
                             </Button>
                         </div>
                     )}

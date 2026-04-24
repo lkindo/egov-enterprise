@@ -100,7 +100,7 @@ export const InsightBanner: React.FC = () => {
        <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-indigo-500/10 to-primary/20 rounded-[0.1rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
        
        <div className={cn(
-          "relative min-h-[140px] rounded-[0.1rem] border-2 bg-white/80 backdrop-blur-3xl p-10 flex flex-col lg:flex-row items-center gap-10 transition duration-700 overflow-hidden shadow-2xl shadow-slate-200/50 hover:shadow-primary/5",
+          "relative min-h-[140px] rounded-[0.1rem] border-2 bg-white/80 backdrop-blur-3xl p-10 flex flex-col lg:flex-row items-center gap-10 transition-all duration-700 overflow-hidden shadow-2xl shadow-slate-200/50 hover:shadow-primary/5",
           getSeverityStyles(activeInsight.severity)
        )} role="region" aria-label="시스템 인텔리전스 인사이트">
           {/* Animated Wave Background Area */}
@@ -163,13 +163,13 @@ export const InsightBanner: React.FC = () => {
                    <div 
                       key={idx} 
                       className={cn(
-                         "w-2 h-2 rounded-full transition duration-500",
+                         "w-2 h-2 rounded-full transition-all duration-500",
                          idx === currentIndex ? "w-6 bg-slate-900" : "bg-slate-200"
                       )} 
                    />
                 ))}
              </div>
-             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-[0.1rem] hover:bg-slate-900 hover:text-white transition" aria-label="인사이트 상세보기">
+             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-[0.1rem] hover:bg-slate-900 hover:text-white transition-all" aria-label="인사이트 상세보기">
                 <Maximize2 size={16} />
              </Button>
           </div>

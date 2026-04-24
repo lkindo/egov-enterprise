@@ -105,7 +105,7 @@ export default function SmsListPage() {
                                         <Input
                                             id="recptnTelno"
                                             placeholder="010-0000-0000"
-                                            className="pl-10 h-11 border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition rounded-[0.1rem]"
+                                            className="pl-10 h-11 border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition-all rounded-[0.1rem]"
                                             value={newSms.recptnTelno}
                                             onChange={(e) => setNewSms({ ...newSms, recptnTelno: e.target.value })}
                                         />
@@ -117,7 +117,7 @@ export default function SmsListPage() {
                                         <Textarea
                                             id="trnsmitCn"
                                             placeholder="전달할 내용을 입력하세요..."
-                                            className="min-h-[150px] border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition p-4 pt-10 rounded-[0.1rem]"
+                                            className="min-h-[150px] border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition-all p-4 pt-10 rounded-[0.1rem]"
                                             value={newSms.trnsmitCn}
                                             onChange={(e) => setNewSms({ ...newSms, trnsmitCn: e.target.value })}
                                         />
@@ -148,7 +148,7 @@ export default function SmsListPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input
                             placeholder="전송 내용이나 번호로 검색..."
-                            className="pl-10 h-11 border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition w-full md:max-w-md rounded-[0.1rem]"
+                            className="pl-10 h-11 border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 transition-all w-full md:max-w-md rounded-[0.1rem]"
                             value={searchKeyword}
                             onChange={(e) => setSearchKeyword(e.target.value)}
                         />

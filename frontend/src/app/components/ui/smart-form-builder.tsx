@@ -144,7 +144,7 @@ export function SmartFormBuilder() {
  <button
  key={tool.type}
  onClick={() => addField(tool.type as FieldType)}
- className="flex items-center gap-3 p-4 bg-muted/30 hover:bg-primary/10 hover:text-primary rounded-[0.1rem] transition font-bold text-sm border border-transparent hover:border-primary/20 group"
+ className="flex items-center gap-3 p-4 bg-muted/30 hover:bg-primary/10 hover:text-primary rounded-[0.1rem] transition-all font-bold text-sm border border-transparent hover:border-primary/20 group"
  >
  <div className="p-2 bg-background rounded-[0.1rem] shadow-sm group-hover:scale-110 transition-transform">{tool.icon}</div>
  {tool.label}
@@ -167,7 +167,7 @@ export function SmartFormBuilder() {
  {/* Center: Canvas */}
  <div className="flex-1 flex flex-col items-center overflow-y-auto custom-scrollbar bg-slate-100 dark:bg-slate-800 rounded-[0.1rem] border-2 border-dashed border-primary/10 p-10">
  <div className={cn(
- "bg-background shadow-2xl transition duration-700 overflow-hidden relative",
+ "bg-background shadow-2xl transition-all duration-700 overflow-hidden relative",
  previewMode === 'desktop' ? "w-full max-w-3xl rounded-[0.1rem] p-12" : "w-[375px] rounded-[0.1rem] border-[8px] border-slate-900 p-8 pt-16 min-h-[667px]"
  )}>
  {previewMode === 'mobile' ? <div className="absolute top-6 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-900 rounded-full" /> : null}
@@ -184,7 +184,7 @@ export function SmartFormBuilder() {
  key={field.id}
  onClick={() => setSelectedField(field.id)}
  className={cn(
- "group relative p-6 rounded-[0.1rem] border-2 transition cursor-pointer",
+ "group relative p-6 rounded-[0.1rem] border-2 transition-all cursor-pointer",
  field.width === 'full' ? "col-span-2" : "col-span-1",
  selectedField === field.id ? "border-primary bg-primary/[0.02] shadow-lg shadow-primary/5" : "border-transparent hover:border-primary/20 hover:bg-muted/30"
  )}
@@ -243,11 +243,11 @@ export function SmartFormBuilder() {
  <div className="bg-muted/50 p-1 rounded-[0.1rem] flex gap-1 border border-primary/5">
  <button
  onClick={() => updateField(activeField.id, { width: 'half' })}
- className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black transition", activeField.width === 'half' ? "bg-background shadow-sm text-primary" : "text-muted-foreground")}
+ className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all", activeField.width === 'half' ? "bg-background shadow-sm text-primary" : "text-muted-foreground")}
  >절반</button>
  <button
  onClick={() => updateField(activeField.id, { width: 'full' })}
- className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black transition", activeField.width === 'full' ? "bg-background shadow-sm text-primary" : "text-muted-foreground")}
+ className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all", activeField.width === 'full' ? "bg-background shadow-sm text-primary" : "text-muted-foreground")}
  >전체</button>
  </div>
  </div>
@@ -256,7 +256,7 @@ export function SmartFormBuilder() {
  <div
  onClick={() => updateField(activeField.id, { required: !activeField.required })}
  className={cn(
- "h-9 rounded-[0.1rem] flex items-center justify-center cursor-pointer transition border-2",
+ "h-9 rounded-[0.1rem] flex items-center justify-center cursor-pointer transition-all border-2",
  activeField.required ? "bg-primary border-primary text-white" : "bg-muted/30 border-transparent text-muted-foreground font-black text-[10px]"
  )}
  >

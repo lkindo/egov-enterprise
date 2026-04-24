@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, memo, useCallback } from 'react';
+import React, { useState, useMemo, memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -61,11 +61,8 @@ const DataRow = memo(function DataRow({
 
   return (
     <tr
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if((e.key === 'Enter' || e.key === ' ') && onRowClick) { e.preventDefault(); onRowClick(item); } }}
       className={cn(
-        "group transition duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-within:bg-muted/30 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+        "group transition-all duration-300 outline-none focus-within:bg-muted/30",
         isSelected ? "bg-primary/5" : "hover:bg-muted/40",
         onRowClick && "cursor-pointer"
       )}
@@ -76,7 +73,7 @@ const DataRow = memo(function DataRow({
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
-            aria-label="???좏깮"
+            aria-label="행 선택"
           />
         </td>
       )}
@@ -88,7 +85,7 @@ const DataRow = memo(function DataRow({
             column.className
           )}
         >
-          <div className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+          <div className="outline-none">
             {typeof column.accessor === 'function'
               ? (column.accessor as any)(item)
               : item?.[column.accessor as any]}
@@ -111,11 +108,8 @@ const MobileCard = memo(function MobileCard({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if((e.key === 'Enter' || e.key === ' ') && onRowClick) { e.preventDefault(); onRowClick(item); } }}
       className={cn(
-        "text-left w-full p-6 rounded-[0.1rem] border-2 transition relative overflow-hidden focus-visible:focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-2 focus-visible:ring-primary",
+        "p-6 rounded-[0.1rem] border-2 transition-all relative overflow-hidden",
         isSelected ? "border-primary bg-primary/5 shadow-lg scale-[1.02]" : "border-border bg-card hover:border-primary/30"
       )}
       onClick={() => onRowClick?.(item)}
@@ -124,7 +118,7 @@ const MobileCard = memo(function MobileCard({
         <div className="flex items-center gap-3 flex-1 overflow-hidden">
           {enableSelection && (
             <div onClick={(e) => e.stopPropagation()} className="relative z-10">
-              <Checkbox checked={isSelected} onCheckedChange={onToggle} className="w-6 h-6 rounded-lg" aria-label="??ぉ ?좏깮" />
+              <Checkbox checked={isSelected} onCheckedChange={onToggle} className="w-6 h-6 rounded-lg" aria-label="항목 선택" />
             </div>
           )}
           <div className="flex flex-col gap-1 overflow-hidden">
@@ -155,7 +149,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   data,
   loading,
   onRowClick,
-  emptyMessage = "?곗씠?곌? ?놁뒿?덈떎.",
+  emptyMessage = "데이터가 없습니다.",
   enableSelection = false,
   bulkActions = [],
   keyField = 'id' as keyof T,
@@ -203,11 +197,11 @@ export function StandardDataTable<T extends { [key: string]: any }>({
         <form onSubmit={handleSearchSubmit} className="relative group max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
           <Input
-            placeholder={search.placeholder || '寃?됱뼱 ?낅젰...'}
-            className="h-12 pl-12 rounded-[0.1rem] border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition font-bold text-sm"
+            placeholder={search.placeholder || '검색어 입력...'}
+            className="h-12 pl-12 rounded-[0.1rem] border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            aria-label="?곗씠??寃??
+            aria-label="데이터 검색"
           />
         </form>
       )}
@@ -220,8 +214,8 @@ export function StandardDataTable<T extends { [key: string]: any }>({
         >
           <div className="flex items-center gap-6">
             <div className="flex flex-col">
-              <span className="text-[10px] font-black opacity-60 tracking-widest uppercase">?좏깮 紐⑤뱶</span>
-              <span className="text-sm font-black">{selectedIds.size}媛쒖쓽 ??ぉ ?좏깮??/span>
+              <span className="text-[10px] font-black opacity-60 tracking-widest uppercase">선택 모드</span>
+              <span className="text-sm font-black">{selectedIds.size}개의 항목 선택됨</span>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div className="flex gap-2">
@@ -245,14 +239,14 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             onClick={() => setSelectedIds(new Set())}
             className="text-xs font-black h-9 px-4 hover:bg-white/10 text-white/80"
           >
-            ?좏깮 ?댁젣
+            선택 해제
           </Button>
         </div>
       )}
 
       {/* 1. Desktop View - Glass Style Table */}
       <div className={cn(
-        "hidden md:block w-full overflow-hidden border-2 border-border/60 bg-card shadow-sm transition",
+        "hidden md:block w-full overflow-hidden border-2 border-border/60 bg-card shadow-sm transition-all",
         isPremium ? "rounded-[0.1rem]" : "rounded-[0.1rem]"
       )}>
         <div className="overflow-x-auto">
@@ -264,7 +258,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                     <Checkbox
                       checked={(data || []).length > 0 && selectedIds.size === (data || []).length}
                       onCheckedChange={toggleAll}
-                      aria-label="?꾩껜 ??ぉ ?좏깮"
+                      aria-label="전체 항목 선택"
                     />
                   </th>
                 )}
@@ -368,7 +362,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             className="w-12 h-12 rounded-[0.1rem] border-2"
             disabled={pagination.currentPage === 1}
             onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-            aria-label="?댁쟾 ?섏씠吏"
+            aria-label="이전 페이지"
           >
             <ChevronLeft size={20} />
           </Button>
@@ -385,7 +379,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             className="w-12 h-12 rounded-[0.1rem] border-2"
             disabled={pagination.currentPage === pagination.totalPages}
             onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-            aria-label="?ㅼ쓬 ?섏씠吏"
+            aria-label="다음 페이지"
           >
             <ChevronRight size={20} />
           </Button>
@@ -402,21 +396,21 @@ function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => v
         <AlertCircle size={40} className="text-rose-500" />
       </div>
       <div className="space-y-2">
-        <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">?곗씠??濡쒕뱶 ?ㅽ뙣</p>
+        <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">데이터 로드 실패</p>
         <div className="p-4 bg-rose-50/50 rounded-[0.1rem] border border-rose-100 inline-block">
           <p className="text-[10px] font-black font-mono text-rose-800 tracking-tight opacity-70">
             ERROR_STREAM: {(error as any)?.response?.data?.message || error.message || 'UNKNOWN_EXCEPTION'}
           </p>
         </div>
         <p className="text-xs text-slate-700 font-bold tracking-tight max-w-[360px] mx-auto leading-relaxed mt-4">
-          ?곗씠?곕쿋?댁뒪 ?몄뀡?쇰줈遺??媛앹껜 ?뺣낫瑜??섏떊?섏? 紐삵뻽?듬땲?? <br />?ㅽ듃?뚰겕 ?곌껐 ?곹깭瑜??뺤씤?섍굅???꾨옒 踰꾪듉???듯빐 ?ㅼ떆 ?쒕룄?섏떗?쒖삤.
+          데이터베이스 세션으로부터 객체 정보를 수신하지 못했습니다. <br />네트워크 연결 상태를 확인하거나 아래 버튼을 통해 다시 시도하십시오.
         </p>
       </div>
       <div className="flex gap-4 mt-6">
         <Button
           variant="outline"
           size="lg"
-          className="rounded-[0.1rem] font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition group shadow-lg"
+          className="rounded-[0.1rem] font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group shadow-lg"
           onClick={() => onRetry ? onRetry() : window.location.reload()}
         >
           <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
@@ -439,17 +433,17 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
       <div className="space-y-2">
         <p className="text-xl font-black text-foreground tracking-tighter uppercase">{emptyMessage}</p>
         <p className="text-xs text-slate-700 font-bold tracking-tight max-w-[320px] mx-auto leading-relaxed">
-          ?쒖뒪?쒖뿉???곗씠?곕? 議고쉶?섏? 紐삵뻽?듬땲?? <br />寃??議곌굔??議곗젙?섍굅???ㅼ떆 珥덇린?뷀빐 蹂댁떗?쒖삤.
+          시스템에서 데이터를 조회하지 못했습니다. <br />검색 조건을 조정하거나 다시 초기화해 보십시오.
         </p>
       </div>
       <Button
         variant="outline"
         size="lg"
-        className="mt-6 rounded-[0.1rem] font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition group"
+        className="mt-6 rounded-[0.1rem] font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group"
         onClick={() => typeof window !== 'undefined' && window.location.reload()}
       >
         <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
-        ?꾩껜 ?덈줈怨좎묠
+        전체 새로고침
       </Button>
     </div>
   );

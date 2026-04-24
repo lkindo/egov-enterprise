@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { MessageSquare, User, Clock, Trash2, Edit2, Send, X, Check } from 'lucide-react';
@@ -55,20 +55,20 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
       fetchComments();
     } catch (error) {
       console.error('Failed to create comment', error);
-      alert('?볤? ?깅줉???ㅽ뙣?덉뒿?덈떎.');
+      alert('댓글 등록에 실패했습니다.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('?볤?????젣?섏떆寃좎뒿?덇퉴?')) return;
+    if (!confirm('댓글을 삭제하시겠습니까?')) return;
     try {
       await commentService.deleteComment(id);
       fetchComments();
     } catch (error) {
       console.error('Failed to delete comment', error);
-      alert('?볤? ??젣???ㅽ뙣?덉뒿?덈떎.');
+      alert('댓글 삭제에 실패했습니다.');
     }
   };
 
@@ -84,7 +84,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
       fetchComments();
     } catch (error) {
       console.error('Failed to update comment', error);
-      alert('?볤? ?섏젙???ㅽ뙣?덉뒿?덈떎.');
+      alert('댓글 수정에 실패했습니다.');
     }
   };
 
@@ -109,8 +109,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
             <MessageSquare className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">?볤?</h3>
-            <p className="text-sm font-bold text-slate-400 tracking-tight">{comments.length} 媛쒖쓽 ?앷컖</p>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">댓글</h3>
+            <p className="text-sm font-bold text-slate-400 tracking-tight">{comments.length} 개의 생각</p>
           </div>
         </div>
       </div>
@@ -119,11 +119,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
       <div className="space-y-6">
         {comments.length === 0 ? (
           <div className="py-20 text-center border-2 border-dashed border-slate-100 rounded-[0.1rem] bg-slate-50/50">
-            <p className="text-slate-400 font-bold tracking-tight">?꾩쭅 ?깅줉???볤????놁뒿?덈떎. 泥?踰덉㎏ ?볤????④꺼蹂댁꽭??</p>
+            <p className="text-slate-400 font-bold tracking-tight">아직 등록된 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!</p>
           </div>
         ) : (
           comments.map((comment) => (
-            <Card key={comment.id} className="border-none shadow-xl shadow-slate-100/50 rounded-[0.1rem] overflow-hidden bg-white ring-1 ring-slate-50 hover:ring-slate-100 transition group">
+            <Card key={comment.id} className="border-none shadow-xl shadow-slate-100/50 rounded-[0.1rem] overflow-hidden bg-white ring-1 ring-slate-50 hover:ring-slate-100 transition-all group">
               <CardContent className="p-8">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start justify-between">
@@ -178,10 +178,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
         <Card className="relative border-none shadow-2xl rounded-[0.1rem] bg-white ring-1 ring-slate-100 overflow-hidden">
           <CardContent className="p-8 space-y-4">
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="secondary" className="px-3 py-1 rounded-lg bg-slate-900 text-white font-black hover:bg-slate-900">?볤?</Badge>
+              <Badge variant="secondary" className="px-3 py-1 rounded-lg bg-slate-900 text-white font-black hover:bg-slate-900">댓글</Badge>
             </div>
             <Textarea
-              placeholder="硫붿떆吏瑜??낅젰?섏꽭??.."
+              placeholder="메시지를 입력하세요..."
               value={commentCn}
               onChange={(e) => setCommentCn(e.target.value)}
               className="min-h-[150px] border-none focus-visible:ring-0 text-lg font-medium text-slate-700 resize-none p-0 bg-transparent placeholder:text-slate-300"
@@ -190,9 +190,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ nttId, bbsId }) => {
               <Button
                 type="submit"
                 disabled={submitting || !commentCn.trim()}
-                className="h-14 px-8 rounded-[0.1rem] bg-slate-900 hover:bg-black text-white font-black shadow-xl shadow-slate-200 flex gap-2 active:scale-95 transition"
+                className="h-14 px-8 rounded-[0.1rem] bg-slate-900 hover:bg-black text-white font-black shadow-xl shadow-slate-200 flex gap-2 active:scale-95 transition-all"
               >
-                <Send className="w-4 h-4" /> 寃뚯떆?섍린
+                <Send className="w-4 h-4" /> 게시하기
               </Button>
             </div>
           </CardContent>

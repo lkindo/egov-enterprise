@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -30,7 +30,7 @@ export default function HelpCenterPage() {
           setQnas(res.list || []);
         }
       } catch {
-        toast('?꾩?留??곗씠?곕? 遺덈윭?ㅼ? 紐삵뻽?듬땲??', 'error');
+        toast('도움말 데이터를 불러오지 못했습니다.', 'error');
       } finally {
         setLoading(false);
       }
@@ -40,19 +40,19 @@ export default function HelpCenterPage() {
 
   const qnaColumns = [
     {
-      header: '?쒕ぉ',
+      header: '제목',
       accessor: (item: QNA) => <span className="font-bold text-slate-700">{item.qestnSj}</span>,
     },
     {
-      header: '?묒꽦??,
+      header: '작성자',
       accessor: (item: QNA) => <span className="text-slate-500 font-medium">{item.wrterNm}</span>
     },
     {
-      header: '?깅줉??,
+      header: '등록일',
       accessor: (item: QNA) => <span className="text-slate-400 font-mono text-xs">{item.writngDe}</span>
     },
     {
-      header: '?곹깭',
+      header: '상태',
       accessor: (item: QNA) => (
         <StatusBadge status={item.qnaProcessSttusCode === '3' ? 'Y' : 'R'} />
       )
@@ -62,8 +62,8 @@ export default function HelpCenterPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-24 p-8 animate-in fade-in duration-1000">
       <PageHeader
-        title="?꾩?留?而ㅼ뒪?곕㉧ ?쇳꽣"
-        breadcrumbs={[{ label: '吏?먯꽌鍮꾩뒪' }, { label: '?꾩?留먯꽱?? }]}
+        title="도움말 커스터머 센터"
+        breadcrumbs={[{ label: '지원서비스' }, { label: '도움말센터' }]}
       />
 
       <div className="bg-slate-900 rounded-[0.1rem] p-16 text-white text-center shadow-2xl relative overflow-hidden group">
@@ -71,14 +71,14 @@ export default function HelpCenterPage() {
             <Sparkles size={200} className="text-primary" />
         </div>
         <div className="relative z-10 space-y-6">
-            <h2 className="text-5xl font-black tracking-tighter leading-tight">臾댁뾿???꾩??쒕┫源뚯슂?</h2>
-            <p className="text-slate-400 text-lg font-medium max-w-2xl mx-auto">?먯＜ 臾삳뒗 吏덈Ц???뺤씤?섍굅??1:1 ?꾨떞 臾몄쓽瑜??듯빐 臾몄젣瑜??좎냽?섍쾶 ?닿껐?섏꽭??</p>
+            <h2 className="text-5xl font-black tracking-tighter leading-tight">무엇을 도와드릴까요?</h2>
+            <p className="text-slate-400 text-lg font-medium max-w-2xl mx-auto">자주 묻는 질문을 확인하거나 1:1 전담 문의를 통해 문제를 신속하게 해결하세요.</p>
             <div className="max-w-xl mx-auto relative mt-12 scale-100 group-hover:scale-[1.02] transition-transform">
             <Search className="absolute left-6 top-5 text-slate-300" size={24} />
             <input
                 type="text"
-                placeholder="?ㅼ썙?쒕줈 ?좎냽?섍쾶 寃?됲븯?몄슂..."
-                className="w-full h-16 pl-16 pr-6 rounded-[0.1rem] bg-white/10 border border-white/10 text-white text-lg font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus:ring-4 focus:ring-primary/20 backdrop-blur-md placeholder:text-slate-500"
+                placeholder="키워드로 신속하게 검색하세요..."
+                className="w-full h-16 pl-16 pr-6 rounded-[0.1rem] bg-white/10 border border-white/10 text-white text-lg font-bold outline-none focus:ring-4 focus:ring-primary/20 backdrop-blur-md placeholder:text-slate-500"
             />
             </div>
         </div>
@@ -89,13 +89,13 @@ export default function HelpCenterPage() {
           active={tab === 'faq'}
           onClick={() => setTab('faq')}
           icon={<HelpCircle size={22} />}
-          label="FAQ ?먯＜ 臾삳뒗 吏덈Ц"
+          label="FAQ 자주 묻는 질문"
         />
         <TabButton
           active={tab === 'qna'}
           onClick={() => setTab('qna')}
           icon={<MessageCircle size={22} />}
-          label="1:1 Q&A ?듭뒪?쇳듃 ?곷떞"
+          label="1:1 Q&A 익스퍼트 상담"
         />
       </div>
 
@@ -106,11 +106,11 @@ export default function HelpCenterPage() {
                 <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200">
                     <Search size={32} />
                 </div>
-                <p className="font-black text-slate-300 uppercase tracking-widest">?깅줉???먯＜ 臾삳뒗 吏덈Ц???놁뒿?덈떎.</p>
+                <p className="font-black text-slate-300 uppercase tracking-widest">등록된 자주 묻는 질문이 없습니다.</p>
             </div>
           ) : (
             faqs.map((faq) => (
-              <div key={faq.faqId} className="bg-white border-2 border-slate-50 rounded-[0.1rem] overflow-hidden transition hover:shadow-2xl hover:shadow-slate-200/50 hover:border-primary/20 scale-100 hover:scale-[1.01]">
+              <div key={faq.faqId} className="bg-white border-2 border-slate-50 rounded-[0.1rem] overflow-hidden transition-all hover:shadow-2xl hover:shadow-slate-200/50 hover:border-primary/20 scale-100 hover:scale-[1.01]">
                 <button
                   onClick={() => setExpandedFaq(expandedFaq === faq.faqId ? null : faq.faqId)}
                   className="w-full px-12 py-10 flex items-center justify-between group"
@@ -118,7 +118,7 @@ export default function HelpCenterPage() {
                   <span className="font-black text-2xl text-slate-800 group-hover:text-primary transition-colors text-left flex items-start gap-4">
                     <span className="text-primary opacity-30 text-3xl italic">Q.</span> {faq.qestnSj}
                   </span>
-                  <div className={cn("w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition", expandedFaq === faq.faqId ? "bg-slate-900 text-white rotate-180" : "bg-slate-50 font-black text-slate-400 group-hover:bg-slate-100")}>
+                  <div className={cn("w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all", expandedFaq === faq.faqId ? "bg-slate-900 text-white rotate-180" : "bg-slate-50 font-black text-slate-400 group-hover:bg-slate-100")}>
                     <ChevronDown size={24} />
                   </div>
                 </button>
@@ -137,18 +137,18 @@ export default function HelpCenterPage() {
           <div className="space-y-8 bg-white p-12 rounded-[0.1rem] border-2 border-slate-50 shadow-xl overflow-hidden">
             <div className="flex justify-between items-center pb-8 border-b border-slate-50">
                 <div className="space-y-1">
-                    <h3 className="text-2xl font-black tracking-tight uppercase">??臾몄쓽 ?댁뿭</h3>
+                    <h3 className="text-2xl font-black tracking-tight uppercase">내 문의 내역</h3>
                     <p className="text-xs font-bold text-slate-300 tracking-[0.2em] uppercase">Private Interaction History</p>
                 </div>
-                <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-sm tracking-widest gap-3 shadow-2xl hover:bg-primary transition">
-                    <PlusCircle size={20} /> ?덈줈??臾몄쓽 ?묒꽦
+                <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-sm tracking-widest gap-3 shadow-2xl hover:bg-primary transition-all">
+                    <PlusCircle size={20} /> 새로운 문의 작성
                 </Button>
             </div>
             <StandardDataTable
               columns={qnaColumns}
               data={qnas}
               loading={loading}
-              emptyMessage="?깅줉??Q&A 臾몄쓽 ?댁뿭???놁뒿?덈떎."
+              emptyMessage="등록된 Q&A 문의 내역이 없습니다."
               className="border-none shadow-none rounded-none"
             />
           </div>
@@ -163,7 +163,7 @@ function TabButton({ active, onClick, icon, label }: any) {
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-10 py-5 rounded-[0.1rem] font-black text-[11px] transition duration-500 uppercase tracking-widest",
+        "flex items-center gap-3 px-10 py-5 rounded-[0.1rem] font-black text-[11px] transition-all duration-500 uppercase tracking-widest",
         active
           ? "bg-white text-slate-900 shadow-2xl shadow-slate-200 scale-105 z-10"
           : "text-slate-400 hover:text-slate-600"

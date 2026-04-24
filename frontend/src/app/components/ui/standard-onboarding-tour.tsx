@@ -98,7 +98,7 @@ export function StandardOnboardingTour() {
  <div
  key={idx}
  className={cn(
- "h-full rounded-full transition duration-500 flex-1",
+ "h-full rounded-full transition-all duration-500 flex-1",
  idx <= currentStep ? "bg-primary" : "bg-muted/30"
  )}
  />
@@ -146,12 +146,12 @@ export function StandardOnboardingTour() {
  <Button variant="ghost" onClick={handleComplete} className="rounded-[0.1rem] font-bold h-12 px-6 text-muted-foreground" aria-label="가이드 건너뛰기">
  건너뛰기
  </Button>
- <Button onClick={nextStep} className="rounded-[0.1rem] font-black h-12 px-8 gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition" aria-label="다음 단계로 이동">
+ <Button onClick={nextStep} className="rounded-[0.1rem] font-black h-12 px-8 gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all" aria-label="다음 단계로 이동">
  다음 가이드 <ChevronRight size={18} />
  </Button>
  </>
  ) : (
- <Button onClick={handleComplete} className="rounded-[0.1rem] font-black h-12 px-10 gap-2 shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white hover:scale-105 transition" aria-label="가이드 완료 및 시작하기">
+ <Button onClick={handleComplete} className="rounded-[0.1rem] font-black h-12 px-10 gap-2 shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white hover:scale-105 transition-all" aria-label="가이드 완료 및 시작하기">
  시작하기 <CheckCircle2 size={18} />
  </Button>
  )}

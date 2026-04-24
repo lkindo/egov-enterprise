@@ -122,7 +122,7 @@ const BBSDetailClient = () => {
               </p>
             </div>
             <div className="hidden lg:block relative">
-              <div className="w-32 h-32 rounded-[0.1rem] bg-gradient-to-br from-primary/20 to-transparent border-2 border-white/10 flex items-center justify-center rotate-12 hover:rotate-0 transition duration-700 shadow-2xl">
+              <div className="w-32 h-32 rounded-[0.1rem] bg-gradient-to-br from-primary/20 to-transparent border-2 border-white/10 flex items-center justify-center rotate-12 hover:rotate-0 transition-all duration-700 shadow-2xl">
                 <MessageSquare className="w-12 h-12 text-white/40" />
               </div>
               <div className="absolute -top-4 -right-4 w-12 h-12 rounded-[0.1rem] bg-primary flex items-center justify-center shadow-xl animate-bounce duration-[2000ms]">
@@ -151,7 +151,7 @@ const BBSDetailClient = () => {
                 name="nttSj"
                 placeholder={tmplatId === 'TMPLT_QNA' ? "질문 제목을 입력하세요." : "매력적이고 명확한 제목을 입력하세요."}
                 className={cn(
-                  "h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition rounded-[0.1rem] px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
+                  "h-20 text-3xl font-black border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[0.1rem] px-8 bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background placeholder:text-muted-foreground/30",
                   tmplatId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
                   state?.field === 'nttSj' && "border-rose-500 bg-rose-50"
                 )}
@@ -172,7 +172,7 @@ const BBSDetailClient = () => {
                       type="button" 
                       onClick={() => setSelectedCategory(cat)}
                       className={cn(
-                        "h-14 font-black text-[10px] tracking-widest border-2 transition rounded-[0.1rem]",
+                        "h-14 font-black text-[10px] tracking-widest border-2 transition-all rounded-[0.1rem]",
                         selectedCategory === cat ? "bg-amber-500 border-amber-500 text-white" : "border-amber-100 hover:border-amber-500 hover:bg-amber-50 text-amber-500"
                       )}
                     >
@@ -224,7 +224,7 @@ const BBSDetailClient = () => {
                       : "전달하고자 하는 내용을 상세히 작성하세요..."
                   }
                   className={cn(
-                    "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition rounded-[0.1rem] bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
+                    "min-h-[500px] p-10 text-xl font-medium leading-loose border-2 border-primary/5 focus:border-primary focus-visible:ring-primary/10 transition-all rounded-[0.1rem] bg-muted/30 shadow-inner group-focus-within:shadow-2xl group-focus-within:bg-background resize-none",
                     tmplatId === 'TMPLT_QNA' && "focus:border-amber-500 focus-visible:ring-amber-500/10",
                     state?.field === 'nttCn' && "border-rose-500 bg-rose-50"
                   )}
@@ -241,7 +241,7 @@ const BBSDetailClient = () => {
               <Label className="text-[11px] font-black tracking-[0.3em] text-muted-foreground flex items-center gap-3">
                 <Paperclip className="w-4 h-4" /> 03. 첨부 파일
               </Label>
-              <div className="p-8 rounded-[0.1rem] border-2 border-dashed border-primary/10 bg-muted/20 hover:border-primary/30 transition">
+              <div className="p-8 rounded-[0.1rem] border-2 border-dashed border-primary/10 bg-muted/20 hover:border-primary/30 transition-all">
                 <StandardFileUploader
                   onFilesChange={setFiles}
                   maxFiles={5}
@@ -252,7 +252,7 @@ const BBSDetailClient = () => {
 
             {/* 보안 공지 */}
             <div className="p-10 bg-slate-900 rounded-[0.1rem] flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden group/notice">
-              <div className="absolute right-[-20%] top-[-50%] bg-primary/20 w-[400px] h-[400px] rounded-full blur-[100px] group-hover/notice:bg-primary/30 transition duration-1000" />
+              <div className="absolute right-[-20%] top-[-50%] bg-primary/20 w-[400px] h-[400px] rounded-full blur-[100px] group-hover/notice:bg-primary/30 transition-all duration-1000" />
               <div className="w-20 h-20 bg-slate-800 rounded-[0.1rem] border border-slate-700 shadow-2xl flex items-center justify-center shrink-0 group-hover/notice:rotate-12 transition-transform">
                 <CheckCircle2 className="w-8 h-8 text-primary" />
               </div>
@@ -270,13 +270,13 @@ const BBSDetailClient = () => {
               type="button"
               variant="ghost"
               onClick={() => router.back()}
-              className="h-20 px-16 font-black tracking-[0.3em] text-sm text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition rounded-[0.1rem] active:scale-95 border-2 border-transparent"
+              className="h-20 px-16 font-black tracking-[0.3em] text-sm text-muted-foreground hover:bg-background hover:text-rose-500 hover:shadow-2xl transition-all rounded-[0.1rem] active:scale-95 border-2 border-transparent"
             >
               <ArrowLeft className="w-5 h-5 mr-4" /> 이전으로
             </Button>
             <Button
               type="submit"
-              className="h-20 px-24 gap-4 font-black tracking-[0.3em] text-sm shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition active:scale-95 ring-[12px] ring-primary/5 rounded-[0.1rem]"
+              className="h-20 px-24 gap-4 font-black tracking-[0.3em] text-sm shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95 ring-[12px] ring-primary/5 rounded-[0.1rem]"
               disabled={isPending}
             >
               {isPending ? (

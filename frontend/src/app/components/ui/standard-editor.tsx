@@ -22,7 +22,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
   };
 
   return (
-    <div className="border rounded-[0.1rem] overflow-hidden bg-card focus-within:ring-2 focus-within:ring-primary/20 transition shadow-sm">
+    <div className="border rounded-[0.1rem] overflow-hidden bg-card focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-sm">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/20">
         <button type="button" onClick={() => applyStyle('bold')} className="p-2 hover:bg-accent rounded-md"><Bold size={18} /></button>
@@ -46,7 +46,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
  onChange={(e) => onChange(e.target.value)}
  placeholder={placeholder || "이용님입력하세요.."}
  style={{ minHeight }}
- className="w-full p-4 resize-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 bg-transparent text-sm leading-relaxed"
+ className="w-full p-4 resize-none outline-none bg-transparent text-sm leading-relaxed"
  />
 
  {/* Word Count / Info */}

@@ -61,7 +61,7 @@ export function StandardSummaryCard({
     // Legacy / Minimalist fallback
     return (
       <div className={cn(
-        "p-6 rounded-[0.1rem] border shadow-sm bg-card transition hover:shadow-md flex flex-col justify-between",
+        "p-6 rounded-[0.1rem] border shadow-sm bg-card transition-all hover:shadow-md flex flex-col justify-between",
         isAlert && value && Number(value) > 0 ? "border-red-200 bg-red-50/30 animate-pulse" : "",
         className
       )}>
@@ -94,7 +94,7 @@ export function StandardSummaryCard({
   // Premium Hub-style variant
   return (
     <div className={cn(
-      "p-8 rounded-[0.1rem] border transition hover:scale-[1.05] group overflow-hidden relative shadow-lg",
+      "p-8 rounded-[0.1rem] border transition-all hover:scale-[1.05] group overflow-hidden relative shadow-lg",
       variantStyles[variant],
       className
     )}>
@@ -120,7 +120,7 @@ export function StandardSummaryCard({
       </div>
       
       {/* Background Icon Watermark */}
-      <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.05] group-hover:rotate-12 group-hover:scale-110 transition duration-700 text-foreground">
+      <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.05] group-hover:rotate-12 group-hover:scale-110 transition-all duration-700 text-foreground">
         {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 120 }) : null}
       </div>
     </div>

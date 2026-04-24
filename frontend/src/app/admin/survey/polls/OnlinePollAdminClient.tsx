@@ -141,7 +141,7 @@ export default function OnlinePollAdminClient({
                     <div className="flex items-center gap-6 min-w-[200px]">
                         <div className="flex-1 h-3 bg-slate-100 dark:bg-muted/30 rounded-full overflow-hidden shadow-inner border border-border/10">
                             <div 
-                                className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full transition duration-1000 shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]" 
+                                className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]" 
                                 style={{ width: `${Math.min(100, (totalVotes / 100) * 100)}%` }} 
                             />
                         </div>
@@ -157,7 +157,7 @@ export default function OnlinePollAdminClient({
             header: '상태',
             accessor: (item: OnlinePollDto) => (
                 <div className={cn(
-                    "flex items-center gap-2 px-4 py-1.5 rounded-full border w-fit shadow-sm transition",
+                    "flex items-center gap-2 px-4 py-1.5 rounded-full border w-fit shadow-sm transition-all",
                     item.pollDsuseYn === 'N' 
                         ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
                         : "bg-slate-100 text-slate-400 border-border/50"
@@ -194,7 +194,7 @@ export default function OnlinePollAdminClient({
                         <Button
                             size="lg"
                             onClick={() => setIsAddOpen(true)}
-                            className="h-12 px-8 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition gap-2"
+                            className="h-12 px-8 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2"
                         >
                             <Plus size={18} /> 신규 프로토콜 생성
                         </Button>
@@ -243,7 +243,7 @@ export default function OnlinePollAdminClient({
                                 placeholder="설문 필터링..."
                                 value={searchKeyword}
                                 onChange={(e) => setSearchKeyword(e.target.value)}
-                                className="h-14 pl-12 pr-6 w-full md:w-[320px] bg-muted/30 border-none rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition"
+                                className="h-14 pl-12 pr-6 w-full md:w-[320px] bg-muted/30 border-none rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                             />
                         </div>
                     </div>
@@ -286,7 +286,7 @@ export default function OnlinePollAdminClient({
                                 placeholder="설문 명..."
                                 value={newPoll.pollNm}
                                 onChange={(e) => setNewPoll(prev => ({ ...prev, pollNm: e.target.value }))}
-                                className="h-18 px-8 rounded-[0.1rem] border-none bg-slate-50 text-xl font-black focus:bg-white focus:ring-8 focus:ring-primary/5 transition shadow-inner uppercase tracking-tight"
+                                className="h-18 px-8 rounded-[0.1rem] border-none bg-slate-50 text-xl font-black focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
                             />
                         </section>
                         
@@ -299,7 +299,7 @@ export default function OnlinePollAdminClient({
                                         type="date"
                                         value={newPoll.pollBeginDe}
                                         onChange={(e) => setNewPoll(prev => ({ ...prev, pollBeginDe: e.target.value }))}
-                                        className="h-16 pl-14 pr-6 rounded-[0.1rem] border-none bg-slate-50 font-black text-sm focus:bg-white transition shadow-inner"
+                                        className="h-16 pl-14 pr-6 rounded-[0.1rem] border-none bg-slate-50 font-black text-sm focus:bg-white transition-all shadow-inner"
                                     />
                                 </div>
                             </div>
@@ -311,7 +311,7 @@ export default function OnlinePollAdminClient({
                                         type="date"
                                         value={newPoll.pollEndDe}
                                         onChange={(e) => setNewPoll(prev => ({ ...prev, pollEndDe: e.target.value }))}
-                                        className="h-16 pl-14 pr-6 rounded-[0.1rem] border-none bg-slate-50 font-black text-sm focus:bg-white transition shadow-inner"
+                                        className="h-16 pl-14 pr-6 rounded-[0.1rem] border-none bg-slate-50 font-black text-sm focus:bg-white transition-all shadow-inner"
                                     />
                                 </div>
                             </div>
@@ -326,7 +326,7 @@ export default function OnlinePollAdminClient({
                                 <button 
                                     type="button" 
                                     onClick={handleAddItem}
-                                    className="h-10 px-6 rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase border border-primary/20 text-primary hover:bg-primary/5 flex items-center gap-2 transition active:scale-95"
+                                    className="h-10 px-6 rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase border border-primary/20 text-primary hover:bg-primary/5 flex items-center gap-2 transition-all active:scale-95"
                                 >
                                     <Plus size={14} /> Append Node
                                 </button>
@@ -352,7 +352,7 @@ export default function OnlinePollAdminClient({
                                                     items[index].pollIemNm = e.target.value;
                                                     setNewPoll(prev => ({ ...prev, pollItems: items }));
                                                 }}
-                                                className="h-16 px-6 rounded-[0.1rem] border-none bg-slate-50 font-bold text-sm focus:bg-white focus:ring-8 focus:ring-primary/5 transition shadow-inner uppercase tracking-tight"
+                                                className="h-16 px-6 rounded-[0.1rem] border-none bg-slate-50 font-bold text-sm focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
                                             />
                                         </div>
                                         {index > 1 && (
@@ -361,7 +361,7 @@ export default function OnlinePollAdminClient({
                                                 variant="ghost" 
                                                 size="sm" 
                                                 onClick={() => handleRemoveItem(index)}
-                                                className="h-16 w-16 rounded-[0.1rem] text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                                                className="h-16 w-16 rounded-[0.1rem] text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
                                             >
                                                 <Trash2 size={20} />
                                             </Button>
@@ -383,7 +383,7 @@ export default function OnlinePollAdminClient({
                         <Button
                             onClick={handleAdd}
                             disabled={loading}
-                            className="h-18 flex-1 bg-slate-900 border-none text-white rounded-[0.1rem] font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
+                            className="h-18 flex-1 bg-slate-900 border-none text-white rounded-[0.1rem] font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
                         >
                             {loading ? <RefreshCcw size={18} className="animate-spin" /> : <MonitorCheck size={18} />}
                             Commit Protocol
@@ -397,7 +397,7 @@ export default function OnlinePollAdminClient({
 
 function SummaryBlock({ title, value, icon, status, color, bg }: any) {
     return (
-        <div className={cn("hub-table-container p-12 group hover:scale-[1.02] transition relative overflow-hidden bg-white border-border/50 shadow-md", bg)}>
+        <div className={cn("hub-table-container p-12 group hover:scale-[1.02] transition-all relative overflow-hidden bg-white border-border/50 shadow-md", bg)}>
             <div className="flex justify-between items-start mb-10">
                 <div className={cn("w-14 h-14 rounded-[0.1rem] bg-slate-50 dark:bg-muted/10 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
                     {icon}
@@ -408,7 +408,7 @@ function SummaryBlock({ title, value, icon, status, color, bg }: any) {
                 <h3 className="text-4xl font-black tracking-tighter text-foreground leading-none tabular-nums">{value?.toLocaleString() ?? 0}</h3>
                 <p className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase mt-4 leading-none">{title}</p>
             </div>
-            <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] group-hover:scale-125 group-hover:rotate-12 transition duration-1000 grayscale">
+            <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] group-hover:scale-125 group-hover:rotate-12 transition-all duration-1000 grayscale">
                 {React.cloneElement(icon, { size: 180 })}
             </div>
         </div>

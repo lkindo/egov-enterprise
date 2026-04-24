@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { ChevronRight, Home } from 'lucide-react';
@@ -52,7 +52,7 @@ export function PageHeader({ title, breadcrumbs, actions, className }: PageHeade
           </h1>
           {/* Hub-style premium accent bar */}
           <div className="flex gap-1.5">
-             <div className="h-1.5 w-12 bg-primary rounded-full shadow-[0_0_15px_rgba(var(--primary),0.3)] transition" />
+             <div className="h-1.5 w-12 bg-primary rounded-full shadow-[0_0_15px_rgba(var(--primary),0.3)] transition-all" />
              <div className="h-1.5 w-1.5 bg-primary/30 rounded-full" />
              <div className="h-1.5 w-1.5 bg-primary/10 rounded-full" />
           </div>
