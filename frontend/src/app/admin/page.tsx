@@ -22,7 +22,11 @@ import {
   Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { GaugeChart, RealtimeSparkline, ActivityAreaChart, DistributionPieChart } from '@/app/components/ui/observability-charts';
+import dynamic from 'next/dynamic';
+const GaugeChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.GaugeChart), { ssr: false });
+const RealtimeSparkline = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.RealtimeSparkline), { ssr: false });
+const ActivityAreaChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.ActivityAreaChart), { ssr: false });
+const DistributionPieChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.DistributionPieChart), { ssr: false });
 import { VisualAuditTimeline, AuditLog as UIAuditLog } from '@/app/components/ui/visual-audit-timeline';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';

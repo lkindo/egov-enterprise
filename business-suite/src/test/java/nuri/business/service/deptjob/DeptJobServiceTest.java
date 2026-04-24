@@ -57,7 +57,7 @@ class DeptJobServiceTest {
         given(deptJobRepository.findAll(any(Predicate.class), any(Pageable.class))).willReturn(page);
         given(deptJobBoxRepository.findById("BOX_01")).willReturn(Optional.of(DeptJobBox.builder().deptId("DEPT_01").build()));
         given(organizationManageRepository.findById("DEPT_01")).willReturn(Optional.of(OrganizationManage.builder().orgnztNm("DeptName").build()));
-        given(userRepository.findByEsntlId("USER_01")).willReturn(Optional.of(User.builder().userNm("UserName").build()));
+        given(userRepository.findByEsntlId("USER_01")).willReturn(Optional.of(User.builder().userId("USER_01").esntlId("USER_01").userNm("UserName").password("pass").build()));
 
         // when
         Page<DeptJobDto> result = deptJobService.getDeptJobList(null, "BOX_01", null, null, Pageable.unpaged());
@@ -74,7 +74,7 @@ class DeptJobServiceTest {
         given(deptJobRepository.findById("JOB_01")).willReturn(Optional.of(entity));
         given(deptJobBoxRepository.findById("BOX_01")).willReturn(Optional.of(DeptJobBox.builder().deptId("DEPT_01").build()));
         given(organizationManageRepository.findById("DEPT_01")).willReturn(Optional.of(OrganizationManage.builder().orgnztNm("DeptName").build()));
-        given(userRepository.findByEsntlId("USER_01")).willReturn(Optional.of(User.builder().userNm("UserName").build()));
+        given(userRepository.findByEsntlId("USER_01")).willReturn(Optional.of(User.builder().userId("USER_01").esntlId("USER_01").userNm("UserName").password("pass").build()));
 
         // when
         DeptJobDto result = deptJobService.getDeptJob("JOB_01");

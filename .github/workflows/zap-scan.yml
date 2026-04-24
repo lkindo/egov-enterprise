@@ -1,0 +1,41 @@
+name: OWASP ZAP Security Scan
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Run weekly on Sunday
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  zap_scan:
+    runs-on: ubuntu-latest
+    name: Scan the application
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Start Docker Infrastructure
+        run: docker-compose up -d db api frontend
+      
+      - name: Wait for services
+        run: |
+          echo "Waiting for services to be ready..."
+          sleep 30
+          
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://egov-frontend:3000'
+          network_name: 'egov-enterprise_egov-net'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+          
+      - name: ZAP Full Scan for API
+        uses: zaproxy/action-full-scan@v0.12.0
+        with:
+          target: 'http://egov-api:8080/v3/api-docs'
+          network_name: 'egov-enterprise_egov-net'
+          allow_issue_writing: false
+          
+      - name: Stop Docker Infrastructure
+        if: always()
+        run: docker-compose down

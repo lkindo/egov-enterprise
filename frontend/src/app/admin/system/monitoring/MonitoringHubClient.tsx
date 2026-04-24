@@ -43,15 +43,13 @@ import { useToast } from '@/app/components/ui/toast';
 import { auditAdminService } from '@/services/foundation/system/AuditAdminService';
 import { commentAdminService } from '@/services/foundation/system/CommentAdminService';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
+import { monitoringAdminService } from '@/services/foundation/system/MonitoringAdminService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { 
-  GaugeChart, 
-  RealtimeSparkline, 
-  SystemStatusRadar,
-  ActivityAreaChart
-} from '@/app/components/ui/observability-charts';
 import dynamic from 'next/dynamic';
+const GaugeChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.GaugeChart), { ssr: false });
+const RealtimeSparkline = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.RealtimeSparkline), { ssr: false });
+const SystemStatusRadar = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.SystemStatusRadar), { ssr: false });
 
 const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').then(mod => mod.TopologyMap), {
   ssr: false,
@@ -120,6 +118,28 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     enabled: activeTab === 'COMMENTS'
   });
   const comments = commentData?.list || [];
+
+  // Real-time Metrics Queries
+  const { data: healthData } = useQuery({
+    queryKey: ['admin-health'],
+    queryFn: () => monitoringAdminService.getHealth(),
+    refetchInterval: 30000,
+    enabled: activeTab === 'OBSERVABILITY'
+  });
+
+  const { data: cpuUsage = 0 } = useQuery({
+    queryKey: ['admin-metrics-cpu'],
+    queryFn: () => monitoringAdminService.getCpuUsage(),
+    refetchInterval: 5000,
+    enabled: activeTab === 'OBSERVABILITY'
+  });
+
+  const { data: memUsage = 0 } = useQuery({
+    queryKey: ['admin-metrics-mem'],
+    queryFn: () => monitoringAdminService.getMemoryUsage(),
+    refetchInterval: 5000,
+    enabled: activeTab === 'OBSERVABILITY'
+  });
 
   const deleteCommentMutation = useMutation({
     mutationFn: (id: number) => commentAdminService.deleteComment(id),
@@ -243,8 +263,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const renderObservability = () => (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="grid grid-cols-2 gap-6">
-        <GaugeChart value={12.4} title="CPU_LOAD" unit="%" color="#10B981" />
-        <GaugeChart value={54.8} title="MEMORY_ALLOC" unit="%" color="#3B82F6" />
+        <GaugeChart value={Number(cpuUsage.toFixed(1))} title="CPU_LOAD" unit="%" color="#10B981" />
+        <GaugeChart value={Number(memUsage.toFixed(1))} title="MEMORY_ALLOC" unit="%" color="#3B82F6" />
       </div>
 
       <div className="grid grid-cols-2 gap-6">
@@ -263,7 +283,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       <SystemStatusRadar 
          title="HEURISTIC_SYSTEM_HEALTH"
          data={[
-            { subject: '가용성', A: 99 },
+            { subject: '가용성', A: healthData?.status === 'UP' ? 100 : 0 },
             { subject: '보안성', A: 95 },
             { subject: '응답속도', A: 88 },
             { subject: '무결성', A: 100 },
@@ -278,12 +298,17 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         </div>
         <div className="relative z-10 space-y-12">
           <div className="flex items-center gap-6">
-            <div className="w-5 h-5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_20px_rgba(16,185,129,0.8)]" />
-            <h3 className="text-3xl font-black tracking-tighter uppercase leading-none italic">코어 엔진: 최적 상태</h3>
+            <div className={cn(
+              "w-5 h-5 rounded-full animate-pulse shadow-[0_0_20px_rgba(16,185,129,0.8)]",
+              healthData?.status === 'UP' ? "bg-emerald-500" : "bg-rose-500"
+            )} />
+            <h3 className="text-3xl font-black tracking-tighter uppercase leading-none italic">
+              코어 엔진: {healthData?.status === 'UP' ? '최적 상태' : '점검 필요'}
+            </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <StatusIndicator label="API Microservices" status="온라인" icon={Network} />
-            <StatusIndicator label="PostgreSQL Cluster" status="동기화됨" icon={Database} />
+            <StatusIndicator label="API Microservices" status={healthData?.status || 'UNKNOWN'} icon={Network} />
+            <StatusIndicator label="PostgreSQL Cluster" status={healthData?.components?.db?.status || 'UNKNOWN'} icon={Database} />
             <StatusIndicator label="Redis Cache Fabric" status="안정" icon={CheckCircle2} />
           </div>
         </div>

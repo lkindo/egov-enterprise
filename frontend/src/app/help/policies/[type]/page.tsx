@@ -1,7 +1,8 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import DOMPurify from 'isomorphic-dompurify';
 import { policyAdminService, SystemPolicy } from '@/services/foundation/system/PolicyAdminService';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -53,7 +54,7 @@ export default function PolicyViewPage() {
         <CardContent className="p-12">
           <div 
             className="prose prose-slate dark:prose-invert max-w-none text-lg leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: policy?.content || '' }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(policy?.content || '') }}
           />
         </CardContent>
       </Card>

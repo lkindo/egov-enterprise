@@ -11,6 +11,7 @@ import {
   Package, CheckCircle2, Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
+import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -160,7 +161,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
                 "prose-blockquote:border-l-[6px] prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-12 prose-blockquote:py-10 prose-blockquote:rounded-r-[2rem] prose-blockquote:italic",
                 "prose-code:bg-slate-100 prose-code:p-1 prose-code:rounded prose-pre:bg-slate-900 prose-pre:p-8 prose-pre:rounded-[0.1rem]"
               )}
-              dangerouslySetInnerHTML={{ __html: article.knoCn || (article as any).nttCn || '' }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.knoCn || (article as any).nttCn || '') }}
             />
 
             <div className="pt-24 flex items-center justify-center opacity-10">

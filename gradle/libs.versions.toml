@@ -4,6 +4,8 @@ spring-boot = "3.4.3"
 spring-doc = "2.8.5"
 spring-ai = "1.0.0-M5"
 micrometer-tracing = "1.4.3"
+micrometer = "1.14.4"
+spring-boot-admin = "3.4.1"
 postgresql = "42.7.5"
 commons-io = "2.18.0"
 commons-lang3 = "3.17.0"
@@ -43,6 +45,9 @@ spring-ai-pgvector = { group = "org.springframework.ai", name = "spring-ai-pgvec
 # Observability
 micrometer-tracing-bridge-otel = { group = "io.micrometer", name = "micrometer-tracing-bridge-otel", version.ref = "micrometer-tracing" }
 opentelemetry-exporter-otlp = { group = "io.opentelemetry", name = "opentelemetry-exporter-otlp" }
+
+micrometer-registry-prometheus = { group = "io.micrometer", name = "micrometer-registry-prometheus", version.ref = "micrometer" }
+spring-boot-admin-client = { group = "de.codecentric", name = "spring-boot-admin-starter-client", version.ref = "spring-boot-admin" }
 
 springdoc-openapi = { group = "org.springdoc", name = "springdoc-openapi-starter-webmvc-ui", version.ref = "spring-doc" }
 postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }

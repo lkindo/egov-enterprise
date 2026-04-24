@@ -67,7 +67,7 @@ public class ApiSecurityConfig {
                 return new EgovPasswordEncoder();
         }
 
-        @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}")
+        @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001}")
         private List<String> allowedOrigins;
 
         @Bean
@@ -86,7 +86,9 @@ public class ApiSecurityConfig {
         @Order(1)
         public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
                 http
-                                .securityMatcher(AntPathRequestMatcher.antMatcher("/api/v1/**"))
+                                .securityMatchers(matchers -> matchers.requestMatchers(
+                                                AntPathRequestMatcher.antMatcher("/api/v1/**"),
+                                                AntPathRequestMatcher.antMatcher("/actuator/**")))
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(AbstractHttpConfigurer::disable)
                                 .authorizeHttpRequests(auth -> auth
@@ -96,9 +98,11 @@ public class ApiSecurityConfig {
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/menus/**"),
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/images/**"),
                                                                 AntPathRequestMatcher.antMatcher("/api/v1/users/signup"),
-                                                                AntPathRequestMatcher.antMatcher("/api/v1/users/check-id"))
+                                                                AntPathRequestMatcher.antMatcher("/api/v1/users/check-id"),
+                                                                AntPathRequestMatcher.antMatcher("/actuator/health"))
                                                 .permitAll()
                                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**")).hasAnyRole("ADMIN", "SYSTEM")
+                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**")).hasAnyRole("ADMIN", "SYSTEM")
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(
@@ -141,10 +145,8 @@ public class ApiSecurityConfig {
                                                                 AntPathRequestMatcher.antMatcher("/favicon.ico"),
                                                                 AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
                                                                 AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
-                                                                AntPathRequestMatcher.antMatcher("/actuator/health"),
                                                                 AntPathRequestMatcher.antMatcher("/error"))
                                                 .permitAll()
-                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**")).hasAnyRole("ADMIN", "SYSTEM")
                                                 .anyRequest().authenticated())
                                 .formLogin(form -> form.disable())
                                 .logout(logout -> logout.disable())

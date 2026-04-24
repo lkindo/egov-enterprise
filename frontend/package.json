@@ -22,7 +22,7 @@
     "lighthouse": "lhci autorun",
     "lighthouse:desktop": "lhci autorun --collect.settings.preset=desktop",
     "lighthouse:mobile": "lhci autorun --collect.settings.preset=mobile",
-    "analyze": "cross-env ANALYZE=true npm run build",
+    "analyze": "cross-env ANALYZE=true next build --webpack",
     "analyze:server": "cross-env ANALYZE=true npm run build",
     "analyze:browser": "cross-env ANALYZE=true npm run build",
     "storybook": "storybook dev -p 6006",

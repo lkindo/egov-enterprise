@@ -65,6 +65,8 @@ dependencies {
     // Observability (OTEL)
     api libs.micrometer.tracing.bridge.otel
     api libs.opentelemetry.exporter.otlp
+    api libs.micrometer.registry.prometheus
+    api libs.spring.boot.admin.client
 
     // Utils
     api libs.icu4j
