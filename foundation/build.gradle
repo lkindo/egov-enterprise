@@ -22,7 +22,7 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-cache'
     api 'org.springframework.boot:spring-boot-starter-actuator'
     api libs.caffeine
-    api 'com.github.vladimir-bukhtoyarov:bucket4j-core:7.6.0'
+    api 'com.bucket4j:bucket4j_jdk17-core:8.18.0'
 
 
     // JWT

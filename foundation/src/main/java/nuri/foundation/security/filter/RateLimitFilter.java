@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@Profile("!stress-test & !bottleneck-test & !e2e")
+@Profile("!stress-test & !bottleneck-test")
 public class RateLimitFilter implements Filter {
 
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
