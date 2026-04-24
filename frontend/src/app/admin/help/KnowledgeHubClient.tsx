@@ -265,13 +265,14 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                         <p className="text-muted-foreground font-black text-sm uppercase tracking-widest text-center">지식 기록을 찾을 수 없음</p>
                       </div>
                     ) : displayItems.map((item: any) => (
-                      <motion.div 
+                      <motion.button 
                         layout
+                        type="button"
                         key={item.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.id}`)}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-8 bg-white border border-border/40 rounded-[0.1rem] md:rounded-[0.1rem] hover:ring-[15px] md:hover:ring-[20px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group shadow-sm hover:shadow-2xl"
+                        className="w-full flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-8 bg-white border border-border/40 rounded-[0.1rem] md:rounded-[0.1rem] hover:ring-[15px] md:hover:ring-[20px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group shadow-sm hover:shadow-2xl text-left"
                       >
                         <div className="flex gap-4 md:gap-6 items-start">
                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-[0.1rem] md:rounded-[0.1rem] bg-slate-50 flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors shrink-0">
@@ -297,7 +298,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                            </div>
                            <ArrowRight className="text-muted-foreground/20 group-hover:text-primary group-hover:translate-x-2 transition-all w-5 h-5 md:w-6 md:h-6" />
                         </div>
-                      </motion.div>
+                      </motion.button>
                     ))}
                   </>
                 )}
@@ -310,7 +311,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
           <HubSectionCard title="Trending Radar" description="인게이지먼트가 높은 데이터 지식" icon={TrendingUp}>
             <div className="space-y-4">
               {hotItems.map((item: any, idx: number) => (
-                <div key={item.id} onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.id}`)} className="flex items-center gap-5 p-4 rounded-[0.1rem] hover:bg-slate-50 transition-all cursor-pointer group">
+                <button type="button" key={item.id} onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.id}`)} className="w-full flex items-center gap-5 p-4 rounded-[0.1rem] hover:bg-slate-50 transition-all cursor-pointer group text-left">
                   <span className="text-3xl font-black text-muted-foreground/20 group-hover:text-primary/20 transition-colors w-8 italic">{idx + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-slate-800 tracking-tight truncate leading-none uppercase">{item.nttSj}</p>
@@ -320,7 +321,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                     </div>
                   </div>
                   <ChevronRight size={16} className="text-muted-foreground/20" />
-                </div>
+                </button>
               ))}
             </div>
           </HubSectionCard>
@@ -378,6 +379,7 @@ function HubInsightBadge({ label, className }: { label: string, className?: stri
 function FilterButton({ active, onClick, label }: any) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         "px-6 py-2 rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase transition-all",
@@ -453,10 +455,11 @@ function CategoryCard({ title, desc, icon, count, color, active, onClick }: any)
   };
 
   return (
-    <div 
+    <button 
+      type="button"
       onClick={onClick}
       className={cn(
-        "relative p-8 rounded-[0.1rem] border-2 transition-all duration-500 cursor-pointer group flex flex-col gap-6",
+        "relative p-8 rounded-[0.1rem] border-2 transition-all duration-500 cursor-pointer group flex flex-col gap-6 text-left w-full",
         active 
           ? "border-primary bg-primary/5 shadow-2xl scale-105" 
           : "border-border/40 bg-white hover:border-primary/20 hover:ring-[20px] hover:ring-primary/5"

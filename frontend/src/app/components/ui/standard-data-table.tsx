@@ -61,8 +61,11 @@ const DataRow = memo(function DataRow({
 
   return (
     <tr
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if((e.key === 'Enter' || e.key === ' ') && onRowClick) { e.preventDefault(); onRowClick(item); } }}
       className={cn(
-        "group transition-all duration-300 outline-none focus-within:bg-muted/30",
+        "group transition-all duration-300 outline-none focus-within:bg-muted/30 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
         isSelected ? "bg-primary/5" : "hover:bg-muted/40",
         onRowClick && "cursor-pointer"
       )}
@@ -108,8 +111,11 @@ const MobileCard = memo(function MobileCard({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if((e.key === 'Enter' || e.key === ' ') && onRowClick) { e.preventDefault(); onRowClick(item); } }}
       className={cn(
-        "p-6 rounded-[0.1rem] border-2 transition-all relative overflow-hidden",
+        "text-left w-full p-6 rounded-[0.1rem] border-2 transition-all relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         isSelected ? "border-primary bg-primary/5 shadow-lg scale-[1.02]" : "border-border bg-card hover:border-primary/30"
       )}
       onClick={() => onRowClick?.(item)}
