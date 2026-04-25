@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -105,9 +105,9 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
             </div>
             <div className="flex flex-col gap-1 text-left">
                 <span className="px-3 py-1 bg-slate-100 text-slate-900 rounded-lg text-[10px] font-black tracking-tight border border-slate-200 w-fit">
-                    {item.jobSe || item.jobSeCode || 'STATIC_NODE'}
+                    {(item?.jobSe || item?.jobSeCode) || 'STATIC_NODE'}
                 </span>
-                <span className="font-black tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item.sancltNm}</span>
+                <span className="font-black tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item?.sancltNm || 'Untitled Sequence'}</span>
             </div>
         </div>
       )
@@ -120,8 +120,8 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
                 <Fingerprint size={16} />
             </div>
             <div className="flex flex-col text-left">
-                <span className="text-sm font-black text-foreground tracking-tight">{item.applcntId}</span>
-                <span className="text-[9px] font-black text-muted-foreground/40 tracking-[0.3em] font-mono italic">ID: {item.infrmlSanctnId.slice(0, 8)}</span>
+                <span className="text-sm font-black text-foreground tracking-tight">{item?.applcntId || 'UNKNOWN'}</span>
+                <span className="text-[9px] font-black text-muted-foreground/40 tracking-[0.3em] font-mono italic">ID: {item?.infrmlSanctnId?.slice(0, 8) || 'N/A'}</span>
             </div>
         </div>
       ),
