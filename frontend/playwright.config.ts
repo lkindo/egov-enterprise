@@ -29,6 +29,12 @@ export default defineConfig({
             testMatch: /.*\.setup\.ts/,
         },
         {
+            name: 'debug',
+            use: {
+                ...devices['Desktop Chrome'],
+            },
+        },
+        {
             name: 'admin-tests',
             testIgnore: /.*rbac_rigorous\.spec\.ts/,
             use: {

@@ -44,7 +44,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
     } catch (error) {
-      console.warn('[AuthContext] 인증 유효성 검사 실패:', error);
+      // E2E 환경에서 토큰 만료는 빈번하므로 로그 수준 낮춤
+      if (process.env.NEXT_PUBLIC_APP_ENV !== 'e2e') {
+        console.warn('[AuthContext] 인증 유효성 검사 실패:', error);
+      }
       setUser(null);
       localStorage.removeItem('accessToken');
       document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';

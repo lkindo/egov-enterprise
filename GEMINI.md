@@ -29,7 +29,7 @@ graph TD
 ### Backend
 - **Core**: Java 21 / Spring Boot 3.4.1 / eGovFrame 4.x
 - **Build**: Gradle (Multi-module: `api-server`, `business-suite`, `foundation`)
-- **Database**: PostgreSQL 17 (Port 5433) / Supabase
+- **Database**: OCI PostgreSQL 17 (Port 5432)
 - **Test**: JUnit 5, Mockito, JaCoCo (Target Coverage: 50%+)
 
 ### Frontend
