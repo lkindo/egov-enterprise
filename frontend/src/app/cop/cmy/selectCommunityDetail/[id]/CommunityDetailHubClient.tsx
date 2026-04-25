@@ -1,0 +1,206 @@
+'use client';
+
+import React, { useState, useTransition } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { PageHeader } from '@/app/components/layout/page-header';
+import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
+import { Button } from '@/components/ui/button';
+import { 
+  Users, 
+  ShieldCheck, 
+  Calendar,
+  ChevronLeft,
+  ArrowUpRight,
+  MessageSquare,
+  Globe,
+  Settings,
+  UserPlus,
+  Share2,
+  ExternalLink,
+  BookOpen,
+  Info
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { communityService } from '@/services/business/community/communityService';
+import { CommunityVO } from '@/types/business/community';
+import Link from 'next/link';
+import { useToast } from '@/app/components/ui/toast';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+
+export default function CommunityDetailHubClient({ 
+  id,
+  initialData 
+}: { 
+  id: string;
+  initialData: CommunityVO 
+}) {
+  const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
+
+  const { data: community, isLoading, error } = useQuery({
+    queryKey: ['community', id],
+    queryFn: () => communityService.getCommunity(id),
+    initialData: initialData
+  });
+
+  if (!community) return null;
+
+  return (
+    <TooltipProvider delayDuration={0}>
+      <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+        <PageHeader
+          title={community.cmmntyNm}
+          breadcrumbs={[{ label: '협업 서비스' }, { label: '커뮤니티 공간', href: '/cop/cmy/selectCommunityList' }, { label: '상세 정보' }]}
+          actions={
+            <Link href="/cop/cmy/selectCommunityList">
+              <Button variant="outline" className="h-12 gap-3 font-bold border-2 rounded-xl hover:bg-slate-900 hover:text-white transition-all uppercase tracking-widest text-[10px]">
+                <ChevronLeft size={16} /> 목록으로 돌아가기
+              </Button>
+            </Link>
+          }
+        />
+
+        <HubHeader
+          title="Space"
+          highlight="Detail"
+          subtitle={`IDENTITY NODE: ${id}`}
+          icon={Globe}
+          actions={
+            <div className="flex gap-4 p-2 items-center">
+               <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="lg" className="h-14 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
+                    <Share2 size={22} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                  커뮤니티 공유하기
+                </TooltipContent>
+              </Tooltip>
+
+              <Button 
+                size="lg" 
+                className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+              >
+                <UserPlus size={20} />
+                커뮤니티 가입 신청
+                <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Button>
+            </div>
+          }
+        />
+
+        <div className="grid grid-cols-12 gap-12">
+          {/* Main Content Area */}
+          <div className="col-span-12 lg:col-span-8 space-y-12">
+            <HubSectionCard
+              title="Overview & Intelligence"
+              description="커뮤니티의 비전과 주요 운영 정보를 확인하세요"
+              icon={Info}
+            >
+              <div className="space-y-12 py-6">
+                <div className="space-y-6">
+                   <h3 className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono italic">Introduction_cn</h3>
+                   <div className="p-10 bg-slate-50 border-2 border-slate-100 rounded-xl shadow-inner relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6 text-primary">
+                        <BookOpen size={120} />
+                      </div>
+                      <p className="text-2xl font-black tracking-tighter text-slate-900 leading-relaxed italic relative z-10">
+                        "{community.cmmntyIntrcn || '등록된 소개 정보가 정의되지 않았습니다.'}"
+                      </p>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <DetailBlock icon={<ShieldCheck size={18} />} label="Operational Manager" value={community.frstRegisterNm || 'System_Admin'} />
+                  <DetailBlock icon={<Calendar size={18} />} label="Initialization Date" value={community.frstRegisterPnttm?.substring(0, 10) || 'Unknown'} />
+                  <DetailBlock icon={<Users size={18} />} label="Member Count" value="42_Active_Entities" />
+                  <DetailBlock icon={<Globe size={18} />} label="Visibility Protocol" value={community.useAt === 'Y' ? 'PUBLIC_ACCESS' : 'PRIVATE_NODE'} />
+                </div>
+              </div>
+            </HubSectionCard>
+
+            <HubSectionCard
+              title="Knowledge Stream"
+              description="커뮤니티 내에서 공유된 최신 지식 자산 목록입니다"
+              icon={MessageSquare}
+            >
+              <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/30">
+                <div className="w-20 h-20 bg-white border-2 border-slate-100 rounded-xl flex items-center justify-center text-slate-300 shadow-xl mb-8 group-hover:rotate-12 transition-transform">
+                  <BookOpen size={32} />
+                </div>
+                <h4 className="text-xl font-black text-slate-400 tracking-tighter uppercase font-mono italic">No_Posts_Detected</h4>
+                <p className="text-[10px] font-black text-slate-300 tracking-[0.4em] mt-4 uppercase font-mono italic">해당 커뮤니티에 등록된 게시글이 없습니다</p>
+              </div>
+            </HubSectionCard>
+          </div>
+
+          {/* Sidebar Area */}
+          <div className="col-span-12 lg:col-span-4 space-y-12">
+            <div className="rounded-xl bg-slate-900 text-white p-12 space-y-10 shadow-2xl relative overflow-hidden group border-none">
+              <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
+                <Settings size={240} className="text-primary" />
+              </div>
+              <div className="relative z-10 space-y-8 text-center">
+                <div className="w-20 h-20 bg-white/10 rounded-xl flex items-center justify-center mx-auto border border-white/5 shadow-inner group-hover:rotate-12 transition-transform">
+                  <ShieldCheck size={40} className="text-primary" />
+                </div>
+                <div className="space-y-4">
+                  <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase font-mono italic">SECURITY<br />POLICY</h4>
+                  <p className="text-[10px] text-white/60 font-black tracking-[0.4em] uppercase leading-relaxed font-mono italic">가입 승인 필요<br />내부 임직원 전용</p>
+                </div>
+                <Button className="w-full h-14 bg-white text-slate-900 rounded-xl font-black text-[10px] tracking-widest uppercase hover:bg-primary hover:text-white transition-all shadow-xl group">
+                  ADMIN_PANEL_LOGIN <ChevronLeft size={16} className="rotate-180 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="hub-glass-premium rounded-xl p-10 space-y-10 border-2 border-slate-100 shadow-2xl relative overflow-hidden group">
+               <div className="flex items-center justify-between border-b border-slate-200/50 pb-6">
+                  <h4 className="text-sm font-black text-slate-900 tracking-tighter uppercase font-mono italic">Member_Pulse</h4>
+                  <span className="text-[10px] font-black text-primary tracking-widest uppercase font-mono">Live</span>
+               </div>
+               <div className="space-y-6">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="flex items-center justify-between group/user">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-[10px] group-hover/user:bg-slate-900 group-hover/user:text-white transition-all">
+                          ID
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-slate-800 tracking-tight uppercase font-mono italic">Active_Entity_{i}</p>
+                          <p className="text-[8px] text-slate-400 font-black tracking-widest uppercase font-mono">Connected</p>
+                        </div>
+                      </div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                    </div>
+                  ))}
+               </div>
+               <Button variant="ghost" className="w-full h-12 text-[10px] font-black text-slate-400 tracking-widest uppercase hover:text-primary transition-colors font-mono italic">
+                  VIEW_ALL_ENTITIES <ArrowUpRight size={14} className="ml-2" />
+               </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+}
+
+function DetailBlock({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
+  return (
+    <div className="p-8 rounded-xl bg-slate-50 border border-slate-100 transition-all hover:bg-white hover:shadow-2xl hover:scale-[1.03] group relative overflow-hidden">
+      <div className="absolute top-0 right-0 p-6 opacity-[0.03] scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6 text-primary">
+        {icon}
+      </div>
+      <h5 className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-3 uppercase mb-4 font-mono relative z-10 italic">
+        {icon} {label}
+      </h5>
+      <p className="text-xl font-black tracking-tighter text-slate-900 truncate font-mono relative z-10 italic">
+        {value}
+      </p>
+    </div>
+  );
+}

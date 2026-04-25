@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, use } from 'react';
+import React, { useState, useMemo, useEffect, use, useTransition } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ShieldCheck,
@@ -74,6 +74,7 @@ export default function SecurityHubClient({
   const initialAuthorities = use(authoritiesPromise);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
   const [selectedAuthorCode, setSelectedAuthorCode] = useState<string>('');
   const [userSearchKeyword, setUserSearchKeyword] = useState('');
   const [roleSearchKeyword, setRoleSearchKeyword] = useState('');
@@ -427,7 +428,7 @@ export default function SecurityHubClient({
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
-                    onClick={() => setViewMode('TOPOLOGY')}
+                    onClick={() => startTransition(() => setViewMode('TOPOLOGY'))}
                     className={cn(
                       "h-10 px-6 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all",
                       viewMode === 'TOPOLOGY' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"
@@ -445,7 +446,7 @@ export default function SecurityHubClient({
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
-                    onClick={() => { setViewMode('MATRIX'); loadGlobalMappings(); }}
+                    onClick={() => startTransition(() => { setViewMode('MATRIX'); loadGlobalMappings(); })}
                     className={cn(
                       "h-10 px-6 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all",
                       viewMode === 'MATRIX' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-900"

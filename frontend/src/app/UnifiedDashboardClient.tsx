@@ -211,7 +211,7 @@ export default function UnifiedDashboardClient({
         <div className="space-y-12">
           <motion.div
             variants={hubItemVariants}
-            className="hub-card-premium p-10 bg-slate-900 text-white min-h-[500px] group"
+            className="hub-card-dark min-h-[500px] group"
           >
             <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-[100px]" />
             <h3 className="text-2xl font-black mb-12 flex items-center gap-4 relative z-10 tracking-tight">

@@ -44,6 +44,7 @@
   "exclude": [
     "node_modules",
     "scripts",
+    "skills",
     "**/*.stories.tsx",
     "**/*.stories.ts"
   ]

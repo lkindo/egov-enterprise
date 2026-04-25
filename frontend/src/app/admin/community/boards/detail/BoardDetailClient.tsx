@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -175,7 +175,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 
       {/* --- Attachments Section --- */}
       {article.atchFileId && (
-        <div className="hub-card-premium p-12 bg-slate-900 border-none text-white shadow-2xl relative overflow-hidden group">
+        <div className="hub-card-dark p-12 shadow-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-1000">
             <Package size={80} />
           </div>

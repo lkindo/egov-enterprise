@@ -43,15 +43,15 @@ export default function HelpCenterPage() {
   const qnaColumns = [
     {
       header: '제목',
-      accessor: (item: QNA) => <span className="font-bold text-slate-700">{item.qestnSj}</span>,
+      accessor: (item: QNA) => <span className="font-bold text-foreground/80">{item.qestnSj}</span>,
     },
     {
       header: '작성자',
-      accessor: (item: QNA) => <span className="text-slate-500 font-medium">{item.wrterNm}</span>
+      accessor: (item: QNA) => <span className="text-muted-foreground/60 font-medium">{item.wrterNm}</span>
     },
     {
       header: '등록일',
-      accessor: (item: QNA) => <span className="text-slate-400 font-mono text-xs">{item.writngDe}</span>
+      accessor: (item: QNA) => <span className="text-muted-foreground/40 font-mono text-xs">{item.writngDe}</span>
     },
     {
       header: '상태',
@@ -86,7 +86,7 @@ export default function HelpCenterPage() {
         </div>
       </div>
 
-      <div className="flex justify-center p-2 bg-slate-100 rounded-[0.1rem] w-fit mx-auto">
+      <div className="flex justify-center p-2 bg-muted rounded-[0.1rem] w-fit mx-auto">
         <TabButton
           active={tab === 'faq'}
           onClick={() => setTab('faq')}
@@ -182,8 +182,8 @@ function TabButton({ active, onClick, icon, label }: any) {
       className={cn(
         "flex items-center gap-3 px-10 py-5 rounded-[0.1rem] font-black text-[11px] transition-all duration-500 uppercase tracking-widest",
         active
-          ? "bg-white text-slate-900 shadow-2xl shadow-slate-200 scale-105 z-10"
-          : "text-slate-400 hover:text-slate-600"
+          ? "bg-background text-foreground shadow-2xl scale-105 z-10"
+          : "text-muted-foreground/60 hover:text-foreground"
       )}
     >
       {icon}

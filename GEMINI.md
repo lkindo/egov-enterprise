@@ -92,5 +92,21 @@ graph TD
 | `pageIndex` 직접 계산 | `ApiService`의 자동 매핑 로직에 위임 |
 | 복잡한 로직을 Server Component에 인라인 작성 | 별도의 `Service` 또는 `Logic` 파일로 분리 |
 
+## 9. CCG Orchestration (Claude + Claude + Gemini)
+
+본 프로젝트는 **@nst173/superpowers-ccg**를 기반으로 하되, 사용자의 환경에 맞춰 최적화된 협업 체계를 구축하였다.
+- **Claude (Antigravity)**: 전체 오케스트레이션 및 **백엔드/시스템/인프라** 구현 담당
+- **Gemini (via MCP)**: **프론트엔드/UI/UX/스타일** 구현 전문가
+
+복잡한 작업 시 `.agent/skills/superpowers-ccg`의 스킬을 호출하여 적절한 모델로 작업을 라우팅하고, 풀스택 작업 시 Claude와 Gemini의 **교차 검증(CROSS_VALIDATION)**을 수행한다.
+
+## 10. Map-Driven Development (via Graphify)
+
+복잡한 아키텍처 변경이나 대규모 기능 추가 시 **지식 그래프(Knowledge Graph)**를 활용하여 효율성을 극대화한다.
+- **Pre-flight Analysis**: 대형 작업 시작 전 `/graphify`를 실행하여 영향 범위(Blast Radius)를 시각적으로 파악한다.
+- **Strategic CP0**: 브레인스토밍 단계에서 그래프를 쿼리하여 숨겨진 의존성과 기술적 부채를 사전에 식별한다.
+- **Token Optimization**: 이미 구축된 그래프 인덱스를 활용하여 불필요한 파일 전체 읽기를 지양하고 토큰 소모를 최소화한다.
+- **Graph Maintenance**: 대규모 구현 완료 후 `/graphify --update`를 통해 최신 아키텍처 상태를 지도에 반영한다.
+
 ---
-*Last Updated: 2026-04-18 (Updated via Antigravity)*
+*Last Updated: 2026-04-25 (Updated via Antigravity)*

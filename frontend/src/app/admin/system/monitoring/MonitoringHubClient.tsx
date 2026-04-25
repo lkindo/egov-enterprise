@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useTransition } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -78,17 +78,20 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     ? queryTab 
     : defaultTab;
 
+  const [isPending, startTransition] = useTransition();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [page, setPage] = useState(1);
 
   const setActiveTab = (tab: MonitoringTab) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('tab', tab.toLowerCase());
-    router.push(`/admin/system/monitoring?${params.toString()}`, { scroll: false });
-    setSelectedItemId(null);
-    setPage(1);
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams);
+      params.set('tab', tab.toLowerCase());
+      router.push(`/admin/system/monitoring?${params.toString()}`, { scroll: false });
+      setSelectedItemId(null);
+      setPage(1);
+    });
   };
 
   const { data: auditData, isLoading: isAuditLoading } = useQuery({

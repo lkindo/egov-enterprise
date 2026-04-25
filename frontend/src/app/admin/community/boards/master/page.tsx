@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -66,15 +66,15 @@ export default function BoardMasterListPage() {
     {
       header: '마스터 아이템',
       accessor: (board: BoardMaster) => (
-        <div className="flex items-center gap-6">
-           <div className="w-16 h-16 rounded-xl bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-500">
+        <div className="flex items-center gap-6 group">
+           <div className="w-16 h-16 rounded-xl bg-background border-2 border-border/50 shadow-sm flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-500">
               {board.bbsTyCodeNm?.includes('지식') ? <BookOpen size={28} /> : 
                board.bbsTyCodeNm === 'Visual Gallery' ? <ImageIcon size={28} /> : 
                <ListIcon size={28} />}
            </div>
            <div className="space-y-1 text-left">
-              <p className="text-2xl font-black text-slate-800 tracking-tighter italic leading-none">{board.bbsNm}</p>
-              <p className="text-[11px] font-black text-slate-300 uppercase leading-none tracking-widest">{board.bbsId}</p>
+              <p className="text-2xl font-black text-foreground tracking-tighter italic leading-none">{board.bbsNm}</p>
+              <p className="text-[11px] font-black text-muted-foreground/40 uppercase leading-none tracking-widest">{board.bbsId}</p>
            </div>
         </div>
       ),
@@ -86,7 +86,7 @@ export default function BoardMasterListPage() {
         <div className="space-y-1.5 text-left">
            <p className="text-sm font-bold text-slate-500 line-clamp-1 leading-snug">{board.bbsIntrcn}</p>
            <div className="flex gap-2">
-              <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-none px-3 font-black text-[10px] uppercase tracking-tighter">
+            <Badge variant="secondary" className="bg-muted text-muted-foreground border-none px-3 font-black text-[10px] uppercase tracking-tighter">
                 {board.bbsTyCodeNm}
               </Badge>
            </div>
@@ -111,8 +111,8 @@ export default function BoardMasterListPage() {
       header: '사용량',
       accessor: (_board: BoardMaster) => (
         <div className="space-y-1 text-center">
-           <p className="text-xl font-black text-slate-800 italic">0</p>
-           <p className="text-[10px] font-black text-slate-300 uppercase leading-none">게시글 수</p>
+           <p className="text-xl font-black text-foreground italic">0</p>
+           <p className="text-[10px] font-black text-muted-foreground/40 uppercase leading-none">게시글 수</p>
         </div>
       ),
       className: 'text-center'
@@ -121,14 +121,14 @@ export default function BoardMasterListPage() {
       header: '작업 컨트롤',
       accessor: (board: BoardMaster) => (
         <div className="flex items-center justify-end gap-3 pr-6">
-           <Button size="icon" variant="ghost" className="w-12 h-12 rounded-xl text-slate-400 hover:bg-primary hover:text-white transition-all shadow-hover-sm">
+           <Button size="icon" variant="ghost" className="w-12 h-12 rounded-xl text-muted-foreground hover:bg-primary hover:text-white transition-all shadow-sm">
               <Settings2 size={20} />
            </Button>
            <Button 
               onClick={() => router.push(`/admin/community/boards/selectBoardList?bbsId=${board.bbsId}`)}
               size="icon" 
               variant="ghost" 
-              className="w-12 h-12 rounded-xl text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-hover-sm"
+              className="w-12 h-12 rounded-xl text-muted-foreground hover:bg-slate-900 dark:hover:bg-white dark:hover:text-slate-900 hover:text-white transition-all shadow-sm"
            >
               <ArrowRight size={20} />
            </Button>
@@ -174,7 +174,7 @@ export default function BoardMasterListPage() {
         <InsightCard label="보안" value="L4" desc="Encrypted Access" icon={ShieldCheck} color="text-amber-500" />
       </motion.div>
 
-      <div className="border border-slate-100 rounded-xl overflow-hidden bg-white shadow-2xl shadow-slate-200/50">
+      <div className="hub-table-container">
         <StandardDataTable<BoardMaster>
           columns={columns}
           data={boardList}

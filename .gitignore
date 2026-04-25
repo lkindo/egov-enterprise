@@ -145,9 +145,11 @@
 # ----- AI Tools -----
 **/.jules/
 **/.sisyphus/
-**/.agent/
+**/.agent/*
+!**/.agent/skills/
 **/.gemini/*
 !**/.gemini/tasks/
+!**/.claude/settings.json
 
 # ----- Upload/Storage -----
 **/upload/
