@@ -82,7 +82,7 @@ export default function BoardWritePage() {
                             value={formData.nttSj}
                             onChange={(e) => setFormData({ ...formData, nttSj: e.target.value })}
                             placeholder="제목을 입력해 주세요."
-                            className="w-full h-12 px-4 rounded-[0.1rem] border bg-card text-lg font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+                            className="w-full h-12 px-4 rounded-xl border bg-card text-lg font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
                         />
                     </FormField>
 
@@ -97,7 +97,7 @@ export default function BoardWritePage() {
 
                 {/* Sidebar Options (Right) */}
                 <div className="space-y-6">
-                    <div className="p-6 border rounded-[0.1rem] bg-card shadow-sm space-y-6">
+                    <div className="p-6 border rounded-xl bg-card shadow-sm space-y-6">
                         <h3 className="font-bold flex items-center gap-2 border-b pb-4 mb-4">
                             <AlertCircle size={18} className="text-primary" />
                             게시 옵션
@@ -107,7 +107,7 @@ export default function BoardWritePage() {
                             <select
                                 value={formData.bbsId}
                                 onChange={(e) => setFormData({ ...formData, bbsId: e.target.value })}
-                                className="w-full h-12 px-4 rounded-[0.1rem] border bg-card text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+                                className="w-full h-12 px-4 rounded-xl border bg-card text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
                             >
                                 <option value="BBSMSTR_AAAAAAAAAAAA">공지사항</option>
                                 <option value="BBSMSTR_BBBBBBBBBBBB">자유게시판</option>
@@ -137,7 +137,7 @@ export default function BoardWritePage() {
                         </div>
                     </div>
 
-                    <div className="p-6 border rounded-[0.1rem] bg-card shadow-sm">
+                    <div className="p-6 border rounded-xl bg-card shadow-sm">
                         <h3 className="font-bold flex items-center gap-2 border-b pb-4 mb-4 text-sm text-muted-foreground">
                             첨부파일
                         </h3>

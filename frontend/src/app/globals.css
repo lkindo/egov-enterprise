@@ -231,23 +231,46 @@
   .hub-icon-box {
     @apply w-16 h-16 bg-primary rounded-[0.1rem] flex items-center justify-center shadow-2xl skew-y-1 hover:rotate-6 transition-transform duration-500 dark:bg-primary/20 dark:text-primary;
   }
-  
   .hub-badge-status {
     @apply flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-muted rounded-full text-[length:var(--font-size-hub-subtitle)] font-[number:var(--font-weight-hub-title)] tracking-widest uppercase;
   }
 
-  .hub-table-container {
-    @apply bg-card border-2 border-border p-4 lg:p-12 rounded-[0.1rem] shadow-sm relative overflow-hidden;
-  }
+  .hub-bento-card {
+  position: relative;
+  overflow: hidden;
+  background: white;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border-radius: 0.75rem; /* rounded-xl (12px) */
+  box-shadow: 
+    0 4px 6px -1px rgb(0 0 0 / 0.05), 
+    0 2px 4px -2px rgb(0 0 0 / 0.05),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.5);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-  .hub-card-premium {
-    @apply border-2 border-primary/5 rounded-[0.1rem] bg-card shadow-2xl shadow-primary/5 relative overflow-hidden transition-all duration-500 hover:shadow-primary/10;
-  }
+.hub-bento-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  box-shadow: 
+    0 20px 25px -5px rgb(0 0 0 / 0.1), 
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
 
-  .hub-badge-insight {
-    @apply inline-flex items-center gap-2 text-primary font-black text-[11px] tracking-[0.3em] bg-primary/10 w-fit px-4 py-1.5 rounded-full border border-primary/20 shadow-sm opacity-0;
-    animation: hub-fade-in 0.7s ease-out forwards, hub-zoom-in 0.7s ease-out forwards;
-  }
+.hub-card-section {
+  @apply rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur-sm p-6 transition-all duration-500 hover:shadow-lg hover:shadow-slate-200/40;
+}
+
+.hub-icon-box {
+  @apply w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary transition-all duration-500 group-hover:scale-110 group-hover:bg-primary group-hover:text-white;
+}
+
+.hub-table-container {
+  @apply rounded-xl border border-slate-200/60 overflow-hidden bg-white/80 shadow-sm transition-all duration-500;
+}
+
+.hub-card-premium {
+  @apply rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-2xl relative overflow-hidden;
+}
 
   /* --- Premium Animations --- */
   .premium-hover {

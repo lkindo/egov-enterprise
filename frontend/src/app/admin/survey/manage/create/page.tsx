@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -63,12 +63,12 @@ export default function CreatePollPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => router.back()} className="rounded-[0.1rem] font-bold gap-2 hover:bg-slate-100 transition-all">
+        <Button variant="ghost" onClick={() => router.back()} className="rounded-xl font-bold gap-2 hover:bg-slate-100 transition-all">
             <ArrowLeft className="w-4 h-4" /> 뒤로가기
         </Button>
       </div>
 
-      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-[0.1rem] bg-white ring-1 ring-slate-100">
+      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-xl bg-white ring-1 ring-slate-100">
         <CardHeader className="bg-slate-900 pb-12 pt-12 px-10 text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
                 <Sparkles size={120} />
@@ -90,7 +90,7 @@ export default function CreatePollPage() {
               value={formData.pollNm}
               onChange={(e) => setFormData(prev => ({ ...prev, pollNm: e.target.value }))}
               placeholder="설문 주제를 입력하세요"
-              className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
+              className="h-14 rounded-xl border-2 bg-slate-50/50 focus:bg-white transition-all font-bold px-6"
             />
           </div>
 
@@ -102,7 +102,7 @@ export default function CreatePollPage() {
                   <Button
                     variant={"outline"}
                     className={cn(
-                      "h-14 w-full justify-start text-left font-bold rounded-[0.1rem] border-2 bg-slate-50/50 px-6",
+                      "h-14 w-full justify-start text-left font-bold rounded-xl border-2 bg-slate-50/50 px-6",
                       !beginDate && "text-muted-foreground"
                     )}
                   >
@@ -110,7 +110,7 @@ export default function CreatePollPage() {
                     {beginDate ? format(beginDate, "yyyy-MM-dd") : <span>날짜 선택</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-[0.1rem] border-none shadow-2xl overflow-hidden">
+                <PopoverContent className="w-auto p-0 rounded-xl border-none shadow-2xl overflow-hidden">
                   <Calendar
                     mode="single"
                     selected={beginDate}
@@ -128,7 +128,7 @@ export default function CreatePollPage() {
                   <Button
                     variant={"outline"}
                     className={cn(
-                      "h-14 w-full justify-start text-left font-bold rounded-[0.1rem] border-2 bg-slate-50/50 px-6",
+                      "h-14 w-full justify-start text-left font-bold rounded-xl border-2 bg-slate-50/50 px-6",
                       !endDate && "text-muted-foreground"
                     )}
                   >
@@ -136,7 +136,7 @@ export default function CreatePollPage() {
                     {endDate ? format(endDate, "yyyy-MM-dd") : <span>날짜 선택</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-[0.1rem] border-none shadow-2xl overflow-hidden">
+                <PopoverContent className="w-auto p-0 rounded-xl border-none shadow-2xl overflow-hidden">
                   <Calendar
                     mode="single"
                     selected={endDate}
@@ -154,10 +154,10 @@ export default function CreatePollPage() {
               value={formData.pollKindCode}
               onValueChange={(value) => setFormData(prev => ({ ...prev, pollKindCode: value }))}
             >
-              <SelectTrigger className="h-14 rounded-[0.1rem] border-2 bg-slate-50/50 font-bold px-6">
+              <SelectTrigger className="h-14 rounded-xl border-2 bg-slate-50/50 font-bold px-6">
                 <SelectValue placeholder="유형 선택" />
               </SelectTrigger>
-              <SelectContent className="rounded-[0.1rem] border-none shadow-2xl">
+              <SelectContent className="rounded-xl border-none shadow-2xl">
                 <SelectItem value="001" className="font-bold py-3 text-slate-700">📋 일반 설문</SelectItem>
                 <SelectItem value="002" className="font-bold py-3 text-slate-700">🗳️ 투표</SelectItem>
               </SelectContent>
@@ -165,7 +165,7 @@ export default function CreatePollPage() {
           </div>
 
           <div className="flex pt-6">
-            <Button onClick={handleSave} className="w-full h-16 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
+            <Button onClick={handleSave} className="w-full h-16 rounded-xl bg-slate-900 border-none text-white font-black text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
                 <Send className="w-5 h-5" /> 설문 등록 완료
             </Button>
           </div>

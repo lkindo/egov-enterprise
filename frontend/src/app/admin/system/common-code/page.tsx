@@ -62,17 +62,17 @@ function CommonCodeLoading() {
   return (
     <div className="space-y-12 animate-pulse p-8">
       <div className="flex items-center gap-6 mb-12">
-        <div className="h-16 w-16 bg-slate-100 rounded-[0.1rem]" />
+        <div className="h-16 w-16 bg-slate-100 rounded-xl" />
         <div className="space-y-4">
-          <div className="h-10 w-64 bg-slate-100 rounded-[0.1rem]" />
+          <div className="h-10 w-64 bg-slate-100 rounded-xl" />
           <div className="h-4 w-48 bg-slate-100 rounded-lg opacity-40" />
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
         <div className="lg:col-span-1 space-y-6">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-slate-50 rounded-[0.1rem]" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-slate-50 rounded-xl" />)}
         </div>
-        <div className="lg:col-span-3 h-[700px] bg-slate-50 rounded-[0.1rem]" />
+        <div className="lg:col-span-3 h-[700px] bg-slate-50 rounded-xl" />
       </div>
     </div>
   );

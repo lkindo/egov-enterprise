@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, use } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
@@ -39,7 +39,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardStats), {
   ssr: false,
-  loading: () => <Skeleton className="h-[280px] w-full rounded-[0.1rem]" />
+  loading: () => <Skeleton className="h-[280px] w-full rounded-xl" />
 });
 
 import { BoardPost } from '@/types/business/board';
@@ -68,7 +68,7 @@ function FAQItem({ item }: { item: BoardPost }) {
   return (
     <Card 
       className={cn(
-        "overflow-hidden transition-all duration-300 rounded-[0.1rem] border-2",
+        "overflow-hidden transition-all duration-300 rounded-xl border-2",
         isOpen ? "border-purple-500 bg-purple-50/10 shadow-xl" : "border-slate-100 hover:border-purple-200"
       )}
     >
@@ -263,7 +263,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 p-10">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="space-y-4">
-              <Skeleton className="aspect-video w-full rounded-[0.1rem]" />
+              <Skeleton className="aspect-video w-full rounded-xl" />
               <div className="space-y-2">
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-full" />
@@ -296,7 +296,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
     return (
       <div className="p-10 space-y-4">
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-          <Skeleton key={i} className="h-20 w-full rounded-[0.1rem]" />
+          <Skeleton key={i} className="h-20 w-full rounded-xl" />
         ))}
       </div>
     );
@@ -374,7 +374,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
       {/* 관리자 뷰에서만 통계 리포트 호출 */}
       {isAdmin && isManagementView && <BoardStats />}
 
-      <Card className="border-none shadow-2xl overflow-hidden rounded-[0.1rem] ring-1 ring-slate-200 bg-white">
+      <Card className="border-none shadow-2xl overflow-hidden rounded-xl ring-1 ring-slate-200 bg-white">
         <CardHeader className="bg-white py-12 px-12 md:px-20 flex flex-col md:flex-row items-center justify-between gap-10 border-b border-slate-50">
           <div className="flex-1 space-y-4">
             <CardTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
@@ -388,13 +388,13 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
               <>
                 {isAdmin && (
                   <Link href="/admin/community/boards/master">
-                    <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-slate-200 dark:border-white/20 bg-white text-slate-900 dark:text-white hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 font-black shadow-xl transition-all rounded-[0.1rem]">
+                    <Button variant="outline" size="lg" className="h-14 px-8 gap-2 border-2 border-slate-200 dark:border-white/20 bg-white text-slate-900 dark:text-white hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 font-black shadow-xl transition-all rounded-xl">
                       <Settings2 className="w-6 h-6" /> 게시판 관리
                     </Button>
                   </Link>
                 )}
                 <Link href={`/admin/community/boards/insertBoardArticle?bbsId=${bbsId}`}>
-                  <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-[0.1rem]">
+                  <Button size="lg" className="h-14 px-8 gap-2 bg-primary text-white hover:scale-105 font-black shadow-xl transition-all rounded-xl">
                     <div className="flex items-center gap-2">
                       <Plus className="w-6 h-6" /> 글쓰기
                     </div>
@@ -405,12 +405,12 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
           </CardAction>
         </CardHeader>
         <CardContent className="pt-10 px-10">
-          <div className="flex flex-row items-center gap-3 mb-4 bg-slate-50/50 p-6 rounded-[0.1rem] border border-slate-200 shadow-inner">
+          <div className="flex flex-row items-center gap-3 mb-4 bg-slate-50/50 p-6 rounded-xl border border-slate-200 shadow-inner">
             <form onSubmit={handleSearch} className="flex flex-col gap-3 w-full">
               <div className="flex flex-col md:flex-row items-center gap-3 w-full">
                 {mounted ? (
                   <Select value={searchCnd} onValueChange={setSearchCnd}>
-                    <SelectTrigger className="w-full md:w-[220px] !h-12 rounded-[0.1rem] border border-slate-200 bg-white font-bold shadow-sm flex items-center leading-none">
+                    <SelectTrigger className="w-full md:w-[220px] !h-12 rounded-xl border border-slate-200 bg-white font-bold shadow-sm flex items-center leading-none">
                       <SelectValue placeholder="검색 조건" />
                     </SelectTrigger>
                     <SelectContent>
@@ -420,7 +420,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                     </SelectContent>
                   </Select>
                 ) : (
-                  <div className="w-full md:w-[220px] h-12 rounded-[0.1rem] border border-slate-200 bg-slate-100 animate-pulse" />
+                  <div className="w-full md:w-[220px] h-12 rounded-xl border border-slate-200 bg-slate-100 animate-pulse" />
                 )}
                 <div className="relative flex-1 group !h-12">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10 group-focus-within:text-primary transition-colors" />
@@ -428,7 +428,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                     id="board-search-input"
                     data-testid="board-search-input"
                     type="text"
-                    className="pl-12 pr-10 !h-12 text-sm border border-slate-200 bg-white shadow-sm rounded-[0.1rem] focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
+                    className="pl-12 pr-10 !h-12 text-sm border border-slate-200 bg-white shadow-sm rounded-xl focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
                     placeholder="어떤 정보를 찾으시나요?"
                     value={searchWrd}
                     onChange={(e) => setSearchWrd(e.target.value)}
@@ -465,7 +465,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                         <Button
                           variant="outline"
                           className={cn(
-                            "!h-12 px-5 justify-start text-left font-bold rounded-[0.1rem] border border-slate-200 bg-white shadow-sm w-full md:w-[220px] flex items-center leading-none",
+                            "!h-12 px-5 justify-start text-left font-bold rounded-xl border border-slate-200 bg-white shadow-sm w-full md:w-[220px] flex items-center leading-none",
                             !startDate && "text-muted-foreground"
                           )}
                         >
@@ -483,7 +483,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                           </span>
                         </Button>
                       </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 rounded-[0.1rem] overflow-hidden border-none shadow-2xl" align="start">
+                    <PopoverContent className="w-auto p-0 rounded-xl overflow-hidden border-none shadow-2xl" align="start">
                       <div className="p-3 bg-white border-b flex items-center justify-between">
                         <span className="font-black text-slate-800 text-sm">기간 설정</span>
                         <Button
@@ -516,7 +516,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                     </PopoverContent>
                   </Popover>
                 ) : (
-                  <div className="w-full md:w-[220px] h-12 rounded-[0.1rem] border border-slate-200 bg-slate-100 animate-pulse" />
+                  <div className="w-full md:w-[220px] h-12 rounded-xl border border-slate-200 bg-slate-100 animate-pulse" />
                 )}
 
                   {mounted ? (
@@ -530,7 +530,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                       params.set('page', '1');
                       router.push(`${pathname}?${params.toString()}`);
                     }}>
-                      <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-12 rounded-[0.1rem] border border-slate-200 bg-white font-bold shadow-sm text-sm flex items-center leading-none">
+                      <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-12 rounded-xl border border-slate-200 bg-white font-bold shadow-sm text-sm flex items-center leading-none">
                         <ArrowUpDown className="mr-2 h-3.5 w-3.5 text-primary opacity-50 shrink-0" />
                         <SelectValue placeholder="정렬 방식" />
                       </SelectTrigger>
@@ -541,28 +541,28 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                       </SelectContent>
                     </Select>
                   ) : (
-                    <div className="w-full md:w-[140px] h-12 rounded-[0.1rem] border border-slate-200 bg-slate-100 animate-pulse" />
+                    <div className="w-full md:w-[140px] h-12 rounded-xl border border-slate-200 bg-slate-100 animate-pulse" />
                   )}
                 </div>
 
-                <Button type="submit" size="lg" className="!h-12 px-10 gap-2 bg-slate-900 border border-slate-900 shadow-xl hover:scale-105 transition-all active:scale-95 font-black text-white rounded-[0.1rem] flex items-center leading-none">
+                <Button type="submit" size="lg" className="!h-12 px-10 gap-2 bg-slate-900 border border-slate-900 shadow-xl hover:scale-105 transition-all active:scale-95 font-black text-white rounded-xl flex items-center leading-none">
                   <Search className="w-4 h-4 shrink-0" /> 조회
                 </Button>
               </div>
             </form>
           </div>
 
-          <div className="rounded-[0.1rem] border-2 border-slate-50 overflow-hidden shadow-2xl bg-white mb-10">
+          <div className="rounded-xl border-2 border-slate-50 overflow-hidden shadow-2xl bg-white mb-10">
             {loading ? (
               <Table>
                 <TableBody>
                   {Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={`board-loading-${i}`} className="border-b last:border-0">
-                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-[0.1rem]" /></TableCell>
-                      <TableCell className="py-8 px-6"><Skeleton className="h-8 w-full rounded-[0.1rem]" /></TableCell>
-                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-[0.1rem]" /></TableCell>
-                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-[0.1rem]" /></TableCell>
-                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-[0.1rem]" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
+                      <TableCell className="py-8 px-6"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
+                      <TableCell className="py-8"><Skeleton className="h-8 w-full rounded-xl" /></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -572,7 +572,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                 {/* Hub Featured Section */}
                 {page === 1 && (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <Card className="lg:col-span-12 p-10 bg-slate-50 dark:bg-slate-900 rounded-[0.1rem] text-slate-900 dark:text-white relative overflow-hidden group border-none shadow-xl">
+                    <Card className="lg:col-span-12 p-10 bg-slate-50 dark:bg-slate-900 rounded-xl text-slate-900 dark:text-white relative overflow-hidden group border-none shadow-xl">
                       <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-primary/10 dark:bg-primary/20 blur-[100px] rounded-full" />
                       <div className="relative z-10 space-y-6">
                         <Badge className="bg-primary hover:bg-primary text-white border-none font-black tracking-[0.4em] uppercase py-1 px-4 text-[10px]">FEATURED_KNOWLEDGE</Badge>
@@ -606,7 +606,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                 {/* Grid for minor posts */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {(page === 1 ? list.slice(1) : list).map((item: BoardPost) => (
-                    <Card key={item.nttId} className="group p-8 bg-slate-50/50 rounded-[0.1rem] border-2 border-slate-100 space-y-6 hover:border-primary transition-all cursor-pointer relative overflow-hidden">
+                    <Card key={item.nttId} className="group p-8 bg-slate-50/50 rounded-xl border-2 border-slate-100 space-y-6 hover:border-primary transition-all cursor-pointer relative overflow-hidden">
                       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 group-hover:scale-125 transition-all text-primary">
                         <BookOpen size={60} />
                       </div>
@@ -629,7 +629,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
             ) : tmplatId === 'TMPLT_GALLERY' && list.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-10 p-10">
                 {list.map((item: BoardPost) => (
-                  <Card key={item.nttId} className="group overflow-hidden rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
+                  <Card key={item.nttId} className="group overflow-hidden rounded-xl bg-white border-2 border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
                     <div className="h-64 overflow-hidden relative bg-slate-100">
                       {/* Using a consistent visual pattern for empty images, could be replaced with real images from storage */}
                       <div className="w-full h-full flex items-center justify-center bg-slate-200 overflow-hidden relative">
@@ -674,7 +674,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
             ) : tmplatId === 'TMPLT_QNA' && list.length > 0 ? (
               <div className="space-y-6 p-10">
                 {list.map((item: BoardPost, idx: number) => (
-                  <Card key={item.nttId} className="group p-8 bg-white border-2 border-slate-100 rounded-[0.1rem] flex gap-8 hover:border-amber-500 transition-all cursor-pointer relative overflow-hidden">
+                  <Card key={item.nttId} className="group p-8 bg-white border-2 border-slate-100 rounded-xl flex gap-8 hover:border-amber-500 transition-all cursor-pointer relative overflow-hidden">
                       <div className="flex flex-col items-center gap-2 min-w-[80px]">
                         <div className={cn(
                           "w-16 h-16 rounded-xl flex items-center justify-center font-black text-2xl shadow-inner transition-all group-hover:scale-110",
@@ -730,7 +730,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
               </div>
             ) : tmplatId === 'TMPLT_CALENDAR' ? (
               <div className="p-10 space-y-8">
-                <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-8 rounded-[0.1rem] text-slate-900 dark:text-white border border-slate-100 dark:border-slate-800 transition-colors">
+                <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-8 rounded-xl text-slate-900 dark:text-white border border-slate-100 dark:border-slate-800 transition-colors">
                   <div className="space-y-1">
                     <p className="text-primary font-black tracking-[0.2em] text-[10px] uppercase">Event schedule</p>
                     <h3 className="text-3xl font-black italic tracking-tighter uppercase">
@@ -744,7 +744,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                         const prev = new Date(year, month - 1, 1);
                         setStartDate(prev);
                       }}
-                      className="h-12 w-12 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-[0.1rem] transition-all text-slate-900 dark:text-white"
+                      className="h-12 w-12 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-xl transition-all text-slate-900 dark:text-white"
                     >
                       <ChevronRight className="rotate-180" size={20} />
                     </Button>
@@ -754,7 +754,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                         const next = new Date(year, month + 1, 1);
                         setStartDate(next);
                       }}
-                      className="h-12 w-12 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-[0.1rem] transition-all text-slate-900 dark:text-white"
+                      className="h-12 w-12 border-slate-200 dark:border-white/20 bg-white/50 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 rounded-xl transition-all text-slate-900 dark:text-white"
                     >
                       <ChevronRight size={20} />
                     </Button>
@@ -771,7 +771,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
 
                     return (
                       <div key={i} className={cn(
-                        "min-h-[160px] p-4 border-2 transition-all relative group rounded-[0.1rem]",
+                        "min-h-[160px] p-4 border-2 transition-all relative group rounded-xl",
                         isToday ? "bg-primary/5 border-primary/20 shadow-inner" : "bg-white border-slate-50 hover:border-slate-300",
                         !isCurrentMonth ? "opacity-10 pointer-events-none bg-slate-50/50" : ""
                       )}>
@@ -826,7 +826,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
             ) : tmplatId === 'TMPLT_WIKI' && list.length > 0 ? (
               <div className="p-10 space-y-8">
                 {list.map((item: BoardPost) => (
-                  <Card key={item.nttId} className="group overflow-hidden border-2 border-slate-50 hover:border-slate-900 transition-all rounded-[0.1rem]">
+                  <Card key={item.nttId} className="group overflow-hidden border-2 border-slate-50 hover:border-slate-900 transition-all rounded-xl">
                     <div className="flex flex-col md:flex-row">
                       <div className="w-full md:w-16 bg-slate-100 flex md:flex-col items-center justify-center p-4 gap-2 shrink-0">
                         <Book className="text-slate-400 group-hover:text-slate-900 transition-colors" size={24} />
@@ -877,7 +877,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                         setEndDate(undefined);
                         router.push(`${pathname}?bbsId=${bbsId}`);
                       }}
-                      className="mt-2 px-6 py-2.5 bg-slate-900 text-white font-black text-sm rounded-[0.1rem] hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2"
+                      className="mt-2 px-6 py-2.5 bg-slate-900 text-white font-black text-sm rounded-xl hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2"
                     >
                       <X size={14} /> 필터 초기화
                     </button>
@@ -911,7 +911,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                         </Link>
                       </TableCell>
                       <TableCell className="text-center py-8">
-                        <div className="font-bold text-slate-600 bg-slate-100/50 mx-auto w-fit px-5 py-2 rounded-[0.1rem] border border-slate-100 flex items-center gap-2">
+                        <div className="font-bold text-slate-600 bg-slate-100/50 mx-auto w-fit px-5 py-2 rounded-xl border border-slate-100 flex items-center gap-2">
                           <User size={14} className="opacity-30" />
                           <HighlightText text={item.frstRegisterNm} highlight={querySearchWrd} />
                         </div>
@@ -959,11 +959,11 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                   router.push(`${pathname}?${params.toString()}`);
                 }}
                 disabled={queryPage === 1}
-                className="h-12 px-8 font-black rounded-[0.1rem] border-2 hover:bg-slate-50"
+                className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
               >
                 이전
               </Button>
-              <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-900 px-8 py-3 rounded-[0.1rem] shadow-xl border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-900 px-8 py-3 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800">
                 <span className="text-lg font-black text-slate-900 dark:text-white">{queryPage}</span>
                 <div className="h-4 w-px bg-slate-300 dark:bg-white/20" />
                 <span className="text-sm font-bold text-slate-400 dark:text-white/50">{totalPages}</span>
@@ -976,7 +976,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                   router.push(`${pathname}?${params.toString()}`);
                 }}
                 disabled={queryPage === totalPages}
-                className="h-12 px-8 font-black rounded-[0.1rem] border-2 hover:bg-slate-50"
+                className="h-12 px-8 font-black rounded-xl border-2 hover:bg-slate-50"
               >
                 다음
               </Button>

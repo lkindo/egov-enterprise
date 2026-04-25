@@ -13,6 +13,7 @@ export interface HubSummaryCardProps {
   trend?: number;
   color?: HubSummaryColor;
   className?: string;
+  e2eLabel?: string;
 }
 
 const colorMap: Record<HubSummaryColor, string> = {
@@ -49,14 +50,15 @@ export function HubSummaryCard({
   icon, 
   trend, 
   color = 'blue',
-  className
+  className,
+  e2eLabel
 }: HubSummaryCardProps) {
   return (
     <motion.div
       variants={cardVariants}
       whileHover={{ y: -8, transition: { duration: 0.2 } }}
       className={cn(
-        "p-10 rounded-[0.1rem] border transition-all flex flex-col justify-between h-[320px] relative overflow-hidden group",
+        "p-10 rounded-xl transition-all duration-500 flex flex-col justify-between h-[320px] relative overflow-hidden group hub-glass-2",
         colorMap[color],
         className
       )}
@@ -77,7 +79,10 @@ export function HubSummaryCard({
       </div>
 
       <div className="space-y-2 relative z-10">
-        <p className="text-[11px] font-black tracking-[0.3em] opacity-80 mb-2 uppercase">{title}</p>
+        <p className="text-[11px] font-black tracking-[0.3em] opacity-80 mb-2 uppercase flex items-center gap-2">
+          {title}
+          {e2eLabel && <span className="e2e-label sr-only">{e2eLabel}</span>}
+        </p>
         <h4 className="text-3xl font-black tracking-tighter leading-none tabular-nums">{value}</h4>
         {description && (
           <div className="pt-6">

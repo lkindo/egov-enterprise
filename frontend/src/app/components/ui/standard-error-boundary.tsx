@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
@@ -51,7 +51,7 @@ export class StandardErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center border-2 border-dashed rounded-[0.1rem] bg-destructive/5 border-destructive/20">
+        <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center border-2 border-dashed rounded-xl bg-destructive/5 border-destructive/20">
           <div className="p-4 bg-destructive/10 text-destructive rounded-full mb-4">
             <AlertTriangle size={48} />
           </div>

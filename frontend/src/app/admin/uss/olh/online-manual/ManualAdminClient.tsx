@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -43,6 +43,7 @@ import {
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ManualAdminClient({ 
   initialManuals 
@@ -134,7 +135,7 @@ export default function ManualAdminClient({
       header: '매뉴얼 명칭',
       accessor: (item: ManualDto) => (
         <div className="flex items-center gap-4 py-2">
-          <div className="w-10 h-10 rounded-[0.1rem] bg-primary/5 flex items-center justify-center text-primary border border-primary/10 shadow-inner">
+          <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 shadow-inner">
             <FileText size={18} />
           </div>
           <div className="flex flex-col text-left">
@@ -173,7 +174,7 @@ export default function ManualAdminClient({
             variant="ghost" 
             size="sm" 
             onClick={() => handleOpenEdit(item)}
-            className="h-10 w-10 rounded-[0.1rem] text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+            className="h-10 w-10 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
           >
             <Edit2 size={16} />
           </Button>
@@ -181,7 +182,7 @@ export default function ManualAdminClient({
             variant="ghost" 
             size="sm" 
             onClick={() => item.onlineMnlId && handleDelete(item.onlineMnlId)}
-            className="h-10 w-10 rounded-[0.1rem] text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
+            className="h-10 w-10 rounded-xl text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
           >
             <Trash2 size={16} />
           </Button>
@@ -191,7 +192,12 @@ export default function ManualAdminClient({
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 px-4 md:px-0 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="max-w-6xl mx-auto space-y-12 px-4 md:px-0 pb-24"
+    >
       <PageHeader
         title="온라인 가이드 아키텍처"
         breadcrumbs={[{ label: '부가서비스' }, { label: '온라인 매뉴얼' }]}
@@ -200,13 +206,13 @@ export default function ManualAdminClient({
             <Button
               onClick={handleRefresh}
               variant="outline"
-              className="h-14 w-14 rounded-[0.1rem] border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95 px-4"
+              className="h-14 w-14 rounded-xl border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95 px-4"
             >
               <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
             </Button>
             <Button
               onClick={handleOpenAdd}
-              className="h-14 px-8 bg-slate-900 text-white rounded-[0.1rem] font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3"
+              className="h-14 px-8 bg-slate-900 text-white rounded-xl font-black text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3"
             >
               <Plus size={18} /> 새 매뉴얼 등록
             </Button>
@@ -214,10 +220,15 @@ export default function ManualAdminClient({
         }
       />
 
-      <div className="responsive-card p-6 md:p-12 border-2 border-slate-100 bg-white/50 backdrop-blur-xl relative overflow-hidden group rounded-[0.1rem] shadow-sm">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2 }}
+        className="responsive-card p-6 md:p-12 border-2 border-slate-100 bg-white/50 backdrop-blur-xl relative overflow-hidden group rounded-xl shadow-sm"
+      >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-10">
           <div className="flex items-center gap-4 text-left">
-            <div className="w-12 h-12 bg-slate-900 text-white rounded-[0.1rem] flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg">
               <BookOpen size={24} />
             </div>
             <div className="text-left">
@@ -233,12 +244,12 @@ export default function ManualAdminClient({
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleRefresh()}
-                className="h-14 pl-12 pr-6 w-full md:w-[300px] rounded-[0.1rem] border-2 border-slate-100 font-black text-[10px] tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-white"
+                className="h-14 pl-12 pr-6 w-full md:w-[300px] rounded-xl border-2 border-slate-100 font-black text-[10px] tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-white"
               />
             </div>
             <Button
               onClick={handleRefresh}
-              className="h-14 px-8 bg-slate-900 text-white rounded-[0.1rem] font-black text-[10px] tracking-tight shadow-xl hover:bg-primary transition-all active:scale-95"
+              className="h-14 px-8 bg-slate-900 text-white rounded-xl font-black text-[10px] tracking-tight shadow-xl hover:bg-primary transition-all active:scale-95"
             >
               검색
             </Button>
@@ -251,17 +262,17 @@ export default function ManualAdminClient({
             data={manuals}
             loading={loading}
             emptyMessage="등록된 매뉴얼 정보가 없습니다."
-            className="border-none bg-slate-50/50 rounded-[0.1rem] p-8"
+            className="border-none bg-slate-50/50 rounded-xl p-8"
           />
         </div>
-      </div>
+      </motion.div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[500px] border-none shadow-2xl rounded-[0.1rem] overflow-hidden p-0 bg-white">
+        <DialogContent className="sm:max-w-[500px] border-none shadow-2xl rounded-xl overflow-hidden p-0 bg-white">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onFormSubmit)}>
               <DialogHeader className="p-8 pb-0 space-y-4">
-                <div className="w-16 h-16 bg-primary text-white rounded-[0.1rem] flex items-center justify-center shadow-2xl shadow-primary/30 mx-auto">
+                <div className="w-16 h-16 bg-primary text-white rounded-xl flex items-center justify-center shadow-2xl shadow-primary/30 mx-auto">
                   {mode === 'edit' ? <Edit2 size={28} /> : <Plus size={28} />}
                 </div>
                 <div className="text-center space-y-2">
@@ -285,7 +296,7 @@ export default function ManualAdminClient({
                         <Input
                           {...field}
                           placeholder="매뉴얼 명을 입력하세요..."
-                          className="h-16 px-8 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                          className="h-16 px-8 rounded-xl border-2 border-slate-100 bg-slate-50/50 text-lg font-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -303,7 +314,7 @@ export default function ManualAdminClient({
                         <Input
                           {...field}
                           placeholder="/src/docs/manuals/..."
-                          className="h-16 px-8 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                          className="h-16 px-8 rounded-xl border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -321,7 +332,7 @@ export default function ManualAdminClient({
                         <Textarea
                           {...field}
                           placeholder="매뉴얼 설명을 입력하세요..."
-                          className="min-h-[120px] p-8 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-sm font-bold outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
+                          className="min-h-[120px] p-8 rounded-xl border-2 border-slate-100 bg-slate-50/50 text-sm font-bold outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
                         />
                       </FormControl>
                       <FormMessage className="text-[10px] font-bold" />
@@ -335,14 +346,14 @@ export default function ManualAdminClient({
                   type="button"
                   variant="outline"
                   onClick={() => setIsFormOpen(false)}
-                  className="h-16 px-10 rounded-[0.1rem] border-2 border-slate-100 font-black text-[11px] tracking-[0.2em] uppercase hover:bg-slate-50 transition-all flex-1"
+                  className="h-16 px-10 rounded-xl border-2 border-slate-100 font-black text-[11px] tracking-[0.2em] uppercase hover:bg-slate-50 transition-all flex-1"
                 >
                   취소
                 </Button>
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="h-16 px-16 bg-slate-900 border-none text-white rounded-[0.1rem] font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex-1"
+                  className="h-16 px-16 bg-slate-900 border-none text-white rounded-xl font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex-1"
                 >
                   {loading ? '처리 중...' : mode === 'edit' ? '수정 완료' : '등록 완료'}
                 </Button>
@@ -351,6 +362,6 @@ export default function ManualAdminClient({
           </Form>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 }

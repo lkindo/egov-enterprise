@@ -1,106 +1,84 @@
-﻿/** 전체 레코드 수 */;
+'use client';
 
-import React from 'react';
-import { PageHeader } from './page-header';
-import { SmartSearchPanel, FilterField } from '../ui/standard-search-filter';
-import { UltimateDataGrid, ColumnDef } from '../ui/ultimate-data-grid';
-import { useMessage } from '@/hooks/useMessage';
-import { PagePagination } from '@/components/common/PagePagination';
+import { useLayout } from '@/contexts/LayoutContext';
+import { cn } from '@/lib/utils';
+import { Sidebar } from './sidebar';
+import { Header } from './header';
+import { Footer } from './footer';
+import { DynamicBreadcrumb } from './DynamicBreadcrumb';
+import { RouteProgress } from './route-progress';
+import { ScrollToTop } from './scroll-to-top';
+import { GlobalUIComponents } from './GlobalUIComponents';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface StandardAdminLayoutProps<T extends { [key: string]: any }> {
- title: string;
- breadcrumbParent?: string;
- filterFields: FilterField[];
- onSearch: (values: Record<string, any>) => void;
- onReset?: () => void;
+export function StandardAdminLayout({ children }: { children: React.ReactNode }) {
+  const { isSidebarOpen } = useLayout();
 
- gridTitle: string;
- columns: ColumnDef<T>[];
- data: T[];
- keyField: keyof T;
+  return (
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 font-sans selection:bg-primary/10 selection:text-primary">
+      {/* 🚀 Global Core Utility Layer */}
+      <RouteProgress />
+      <ScrollToTop />
+      <GlobalUIComponents />
 
- /** ?꾩껜 ?덉퐫님님*/
- totalCount?: number;
- /** ?섏씠吏님님ぉ 님(湲곕낯 10) */
- pageSize?: number;
- /** 현재 ?섏씠吏 踰덊샇 (1-based) */
- currentPage?: number;
- /** 페이지 변경 콜백 */
- onPageChange?: (page: number) => void;
+      {/* 🏗️ Core Architecture Shell */}
+      <Header />
 
- actionButton?: React.ReactNode;
- children?: React.ReactNode; // 紐⑤떖 님異붽? ?붿냼
+      <div className="flex pt-16 h-screen overflow-hidden">
+        {/* 🧭 Navigation Layer */}
+        <Sidebar />
+
+        {/* 🎬 Scene Stage Area */}
+        <main
+          className={cn(
+            "flex-1 flex flex-col min-w-0 transition-all duration-500 ease-in-out relative overflow-hidden",
+            "lg:ml-72" // Sidebar width constant
+          )}
+        >
+          {/* 🏔️ Contextual Navigation & Scene Header */}
+          <div className="sticky top-0 z-30 bg-white/40 dark:bg-slate-950/40 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 px-6 py-4 flex items-center justify-between">
+            <DynamicBreadcrumb />
+            <div className="flex items-center gap-3">
+               <div className="flex -space-x-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-950 bg-slate-200 animate-pulse" />
+                  ))}
+               </div>
+               <span className="text-[10px] font-black text-slate-400 tracking-tight uppercase">Current Session Active</span>
+            </div>
+          </div>
+
+          {/* 🌌 Main Viewport Context */}
+          <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key="admin-content-stage"
+                initial={{ opacity: 0, y: 10, scale: 0.995 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.995 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="p-6 lg:p-10 space-y-10 max-w-[1600px] mx-auto pb-24"
+              >
+                {/* Hub 2.0 Standard Container Wrapper */}
+                <div className="relative">
+                   {/* Background Decorative Mesh (Subtle) */}
+                   <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+                   <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+                   
+                   {/* Actual Page Content */}
+                   {children}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+            
+            {/* 🏁 System Terminal Layer (Footer) */}
+            <Footer />
+          </div>
+        </main>
+      </div>
+
+      {/* 🎭 Visual Overlay Effects */}
+      <div className="fixed inset-0 pointer-events-none z-[9999] border-[12px] border-white/5 opacity-50 dark:border-slate-900/5" />
+    </div>
+  );
 }
-
-/**
- * ?쒖? 관리자 ?섏씠吏 ?덉씠?꾩썐 而댄룷?뚰듃
- * - 寃님?꾪꽣, 데이터洹몃━님 ?섏씠吏 ㅻ뜑瑜님듯빀님?쒖? ⑦꽩
- */
-export function StandardAdminLayout<T extends { [key: string]: any }>({
- title,
- breadcrumbParent = 'ADMIN',
- filterFields,
- onSearch,
- onReset,
- gridTitle,
- columns,
- data,
- keyField,
- totalCount,
- pageSize = 10,
- currentPage = 1,
- onPageChange,
- actionButton,
- children
-}: StandardAdminLayoutProps<T>) {
- const { t } = useMessage();
-
- const totalPageCount = totalCount !== undefined ? Math.max(1, Math.ceil(totalCount / pageSize)) : undefined;
-
- return (
- <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
- {/* 1. Page Header */}
- <PageHeader
- title={title}
- breadcrumbs={[{ label: breadcrumbParent }, { label: title }]}
- actions={actionButton}
- />
-
- {/* 2. Search Panel */}
- <div className="rounded-[0.1rem] bg-slate-50 border border-slate-100 p-8 shadow-inner">
- <SmartSearchPanel
- fields={filterFields}
- onSearch={onSearch}
- onReset={onReset}
- />
- </div>
-
- {/* 3. Data Grid + Pagination */}
- <div className="rounded-[0.1rem] bg-white shadow-2xl border border-slate-100 overflow-hidden ring-1 ring-slate-50">
- <UltimateDataGrid
- title={gridTitle}
- columns={columns}
- data={data}
- keyField={keyField as string}
- />
- {totalPageCount !== undefined && totalPageCount > 1 && onPageChange && (
- <div className="border-t border-slate-100 px-8 py-4">
- <PagePagination
- pagination={{
- currentPageNo: currentPage,
- totalPageCount,
- totalRecordCount: totalCount,
- recordCountPerPage: pageSize,
- }}
- onPageChange={onPageChange}
- />
- </div>
- )}
- </div>
-
- {/* 4. Extra Content (Modals, etc.) */}
- {children}
- </div>
- );
-}
-

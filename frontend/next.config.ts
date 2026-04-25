@@ -2,12 +2,10 @@ import type { NextConfig } from "next";
 import withBundleAnalyzer from '@next/bundle-analyzer';
 
 const nextConfig = {
+  cacheComponents: true,
   // output: 'standalone', // Standalone mode causes symlink EPERM on Windows without Developer Mode/Admin. Disabling for local build verification.
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   experimental: {
-    ppr: 'incremental',
+    // ppr: 'incremental', // Merged into cacheComponents
     // [bundle-barrel-imports] 배럴 임포트 자동 최적화 - 200-800ms 빌드 속도 향상
     optimizePackageImports: [
       'lucide-react',

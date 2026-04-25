@@ -39,7 +39,7 @@ export function BoardStats() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
       {/* 트래픽 추이 */}
-      <Card className="lg:col-span-2 border-none shadow-lg rounded-[0.1rem] overflow-hidden ring-1 ring-slate-100">
+      <Card className="lg:col-span-2 border-none shadow-lg rounded-xl overflow-hidden ring-1 ring-slate-100">
         <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-8">
           <CardTitle className="text-lg font-black flex items-center gap-2">
             <TrendingUp size={18} className="text-primary" />
@@ -69,7 +69,7 @@ export function BoardStats() {
       </Card>
 
       {/* 작성자 분포 */}
-      <Card className="border-none shadow-lg rounded-[0.1rem] overflow-hidden ring-1 ring-slate-100">
+      <Card className="border-none shadow-lg rounded-xl overflow-hidden ring-1 ring-slate-100">
         <CardHeader className="pb-2 pt-6 px-8">
           <CardTitle className="text-lg font-black flex items-center gap-2">
             <Users size={18} className="text-primary" />

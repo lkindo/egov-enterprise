@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -52,7 +52,7 @@ export default function PollManagePage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-[0.1rem] text-primary">
+            <div className="p-2 bg-primary/10 rounded-xl text-primary">
               <LayoutGrid size={18} />
             </div>
             <span className="text-sm font-black text-primary tracking-tight uppercase">Survey Governance</span>
@@ -60,24 +60,24 @@ export default function PollManagePage() {
           <h1 className="text-4xl font-black tracking-tighter text-foreground ">온라인 설문 <span className="text-primary">관리</span></h1>
           <p className="text-muted-foreground font-bold text-sm max-w-lg">조직 내 의견 수렴 및 투표 프로세스를 통합 관리하고 분석합니다.</p>
         </div>
-        <Button onClick={() => router.push('/admin/survey/manage/create')} className="h-14 px-8 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-sm tracking-tight shadow-xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
+        <Button onClick={() => router.push('/admin/survey/manage/create')} className="h-14 px-8 rounded-xl bg-slate-900 border-none text-white font-black text-sm tracking-tight shadow-xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
           <Plus className="w-5 h-5" /> 설문 신규 등록
         </Button>
       </div>
 
-      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-[0.1rem] bg-white ring-1 ring-slate-100">
+      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-xl bg-white ring-1 ring-slate-100">
         <CardHeader className="bg-slate-50/50 border-b p-8">
           <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full group">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
               <Input
                 placeholder="설문명을 입력하여 검색하세요"
-                className="h-14 pl-14 rounded-[0.1rem] border-2 border-transparent bg-white shadow-sm focus:border-primary focus:ring-0 transition-all font-bold"
+                className="h-14 pl-14 rounded-xl border-2 border-transparent bg-white shadow-sm focus:border-primary focus:ring-0 transition-all font-bold"
                 value={params.searchKeyword || ''}
                 onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
               />
             </div>
-            <Button type="submit" className="h-14 px-10 rounded-[0.1rem] bg-white border-2 border-slate-200 text-slate-900 font-black text-sm hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all active:scale-95">조회하기</Button>
+            <Button type="submit" className="h-14 px-10 rounded-xl bg-white border-2 border-slate-200 text-slate-900 font-black text-sm hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all active:scale-95">조회하기</Button>
           </form>
         </CardHeader>
         <CardContent className="p-0">

@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
 
-export const dynamic = 'force-dynamic';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

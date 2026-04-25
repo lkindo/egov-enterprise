@@ -100,7 +100,7 @@ function CommunityDetailContent() {
                 actions={
                     <button
                         onClick={() => router.push('/admin/community/boards/write')}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-[0.1rem] font-bold shadow-md hover:shadow-lg transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
                     >
                         <Plus size={18} /> 새 글 쓰기
                     </button>

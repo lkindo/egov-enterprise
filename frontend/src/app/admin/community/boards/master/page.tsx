@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -67,7 +67,7 @@ export default function BoardMasterListPage() {
       header: '마스터 아이템',
       accessor: (board: BoardMaster) => (
         <div className="flex items-center gap-6">
-           <div className="w-16 h-16 rounded-[0.1rem] bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-500">
+           <div className="w-16 h-16 rounded-xl bg-white border-2 border-slate-50 shadow-sm flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-500">
               {board.bbsTyCodeNm?.includes('지식') ? <BookOpen size={28} /> : 
                board.bbsTyCodeNm === 'Visual Gallery' ? <ImageIcon size={28} /> : 
                <ListIcon size={28} />}
@@ -121,14 +121,14 @@ export default function BoardMasterListPage() {
       header: '작업 컨트롤',
       accessor: (board: BoardMaster) => (
         <div className="flex items-center justify-end gap-3 pr-6">
-           <Button size="icon" variant="ghost" className="w-12 h-12 rounded-[0.1rem] text-slate-400 hover:bg-primary hover:text-white transition-all shadow-hover-sm">
+           <Button size="icon" variant="ghost" className="w-12 h-12 rounded-xl text-slate-400 hover:bg-primary hover:text-white transition-all shadow-hover-sm">
               <Settings2 size={20} />
            </Button>
            <Button 
               onClick={() => router.push(`/admin/community/boards/selectBoardList?bbsId=${board.bbsId}`)}
               size="icon" 
               variant="ghost" 
-              className="w-12 h-12 rounded-[0.1rem] text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-hover-sm"
+              className="w-12 h-12 rounded-xl text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-hover-sm"
            >
               <ArrowRight size={20} />
            </Button>
@@ -153,7 +153,7 @@ export default function BoardMasterListPage() {
         actions={
           <Button 
             onClick={() => router.push('/admin/community/boards/maker')}
-            className="h-16 px-10 rounded-[0.1rem] bg-slate-900 dark:bg-primary border-none text-white font-black text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all gap-4 ring-8 ring-slate-900/5 dark:ring-primary/5 group"
+            className="h-16 px-10 rounded-xl bg-slate-900 dark:bg-primary border-none text-white font-black text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all gap-4 ring-8 ring-slate-900/5 dark:ring-primary/5 group"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
             생성 마법사
@@ -174,7 +174,7 @@ export default function BoardMasterListPage() {
         <InsightCard label="보안" value="L4" desc="Encrypted Access" icon={ShieldCheck} color="text-amber-500" />
       </motion.div>
 
-      <div className="border border-slate-100 rounded-[0.1rem] overflow-hidden bg-white shadow-2xl shadow-slate-200/50">
+      <div className="border border-slate-100 rounded-xl overflow-hidden bg-white shadow-2xl shadow-slate-200/50">
         <StandardDataTable<BoardMaster>
           columns={columns}
           data={boardList}
@@ -186,7 +186,7 @@ export default function BoardMasterListPage() {
         />
       </div>
 
-      <div className="p-12 rounded-[0.1rem] bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-none text-slate-900 dark:text-white overflow-hidden relative group transition-colors">
+      <div className="p-12 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-none text-slate-900 dark:text-white overflow-hidden relative group transition-colors">
         <div className="absolute top-0 right-0 p-20 opacity-[0.03] dark:opacity-[0.05] group-hover:scale-110 transition-transform duration-[10s] pointer-events-none grayscale">
            <Rocket size={400} />
         </div>
@@ -195,7 +195,7 @@ export default function BoardMasterListPage() {
            <p className="text-xl text-slate-500 dark:text-slate-400 font-bold leading-relaxed tracking-tight transition-colors">생태계를 확장할 준비가 되셨습니까? 마법사를 통해 복잡한 과정 없이 단 4단계만으로 사내 지식 허브를 구축하십시오.</p>
            <Button 
               onClick={() => router.push('/admin/community/boards/maker')}
-              className="h-20 px-12 rounded-[0.1rem] bg-primary text-white text-2xl font-black tracking-tighter shadow-[0_30px_60px_-15px_rgba(59,130,246,0.4)] hover:scale-110 active:scale-95 transition-all gap-4 ring-8 ring-primary/5 italic"
+              className="h-20 px-12 rounded-xl bg-primary text-white text-2xl font-black tracking-tighter shadow-[0_30px_60px_-15px_rgba(59,130,246,0.4)] hover:scale-110 active:scale-95 transition-all gap-4 ring-8 ring-primary/5 italic"
            >
               라이브 마법사 실행 <Rocket className="w-8 h-8" />
            </Button>
@@ -209,7 +209,7 @@ function InsightCard({ label, value, desc, icon: Icon, color }: InsightCardProps
     return (
       <motion.div variants={item} className="hub-card-premium p-8 space-y-6 group hover:ring-[30px] hover:ring-slate-100/30 transition-all border-2 border-slate-50/50">
         <div className="flex items-center justify-between">
-           <div className={cn("w-14 h-14 rounded-[0.1rem] bg-slate-50 dark:bg-slate-900 flex items-center justify-center border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-transform text-slate-400", color)}>
+           <div className={cn("w-14 h-14 rounded-xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-transform text-slate-400", color)}>
               <Icon size={28} />
            </div>
            <MoreVertical className="text-slate-200 dark:text-slate-700" size={20} />

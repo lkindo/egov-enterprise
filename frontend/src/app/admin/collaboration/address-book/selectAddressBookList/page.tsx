@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+﻿import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { getInitialAddressBookData } from './AddressBookListServer';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +12,7 @@ const AddressBookListClient = dynamic(() => import('./AddressBookListClient'), {
 function AddressBookListSkeleton() {
   return (
     <div className="flex flex-col gap-8 p-8 max-w-7xl mx-auto w-full">
-       <div className="h-64 bg-slate-50 flex items-center justify-center rounded-[0.1rem] border-2 border-dashed border-slate-200">
+       <div className="h-64 bg-slate-50 flex items-center justify-center rounded-xl border-2 border-dashed border-slate-200">
           <p className="text-[10px] font-black tracking-widest text-muted-foreground animate-pulse uppercase">Syncing Address Book...</p>
        </div>
     </div>

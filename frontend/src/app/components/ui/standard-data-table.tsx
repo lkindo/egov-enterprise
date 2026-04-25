@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo, useCallback } from 'react';
+﻿import React, { useState, useMemo, memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -115,7 +115,7 @@ const MobileCard = memo(function MobileCard({
       tabIndex={0}
       onKeyDown={(e) => { if((e.key === 'Enter' || e.key === ' ') && onRowClick) { e.preventDefault(); onRowClick(item); } }}
       className={cn(
-        "text-left w-full p-6 rounded-[0.1rem] border-2 transition-all relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        "text-left w-full p-6 rounded-xl border-2 transition-all relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         isSelected ? "border-primary bg-primary/5 shadow-lg scale-[1.02]" : "border-border bg-card hover:border-primary/30"
       )}
       onClick={() => onRowClick?.(item)}
@@ -204,7 +204,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
           <Input
             placeholder={search.placeholder || '검색어 입력...'}
-            className="h-12 pl-12 rounded-[0.1rem] border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
+            className="h-12 pl-12 rounded-xl border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             aria-label="데이터 검색"
@@ -215,7 +215,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       {/* Bulk Action Toolbar - High Tech Style */}
       {enableSelection && selectedIds.size > 0 && (
         <div
-          className="flex items-center justify-between p-4 bg-primary text-white rounded-[0.1rem] shadow-xl animate-in fade-in zoom-in-95"
+          className="flex items-center justify-between p-4 bg-primary text-white rounded-xl shadow-xl animate-in fade-in zoom-in-95"
           role="toolbar"
         >
           <div className="flex items-center gap-6">
@@ -230,7 +230,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                   key={`bulk-action-${idx}`}
                   size="sm"
                   variant="secondary"
-                  className="h-9 px-4 rounded-[0.1rem] font-black text-[10px] tracking-tight gap-2 shadow-lg"
+                  className="h-9 px-4 rounded-xl font-black text-[10px] tracking-tight gap-2 shadow-lg"
                   onClick={() => action.onClick(selectedItems)}
                 >
                   {action.icon}
@@ -253,7 +253,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       {/* 1. Desktop View - Glass Style Table */}
       <div className={cn(
         "hidden md:block w-full overflow-hidden border-2 border-border/60 bg-card shadow-sm transition-all",
-        isPremium ? "rounded-[0.1rem]" : "rounded-[0.1rem]"
+        isPremium ? "rounded-xl" : "rounded-xl"
       )}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left border-collapse">
@@ -328,14 +328,14 @@ export function StandardDataTable<T extends { [key: string]: any }>({
       <div className="md:hidden space-y-5 px-1">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={`loading-card-${i}`} className="h-56 bg-muted/20 animate-pulse rounded-[0.1rem]" />
+            <div key={`loading-card-${i}`} className="h-56 bg-muted/20 animate-pulse rounded-xl" />
           ))
         ) : error ? (
-          <div className="p-16 bg-card border-2 border-border/60 rounded-[0.1rem] text-center shadow-inner">
+          <div className="p-16 bg-card border-2 border-border/60 rounded-xl text-center shadow-inner">
             <ErrorStateDisplay error={error} onRetry={onRetry} />
           </div>
         ) : (data || []).length === 0 ? (
-          <div className="p-16 bg-card border-2 border-dashed border-border/60 rounded-[0.1rem] text-center shadow-inner">
+          <div className="p-16 bg-card border-2 border-dashed border-border/60 rounded-xl text-center shadow-inner">
             <EmptyStateDisplay emptyMessage={emptyMessage} />
           </div>
         ) : (
@@ -365,7 +365,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           <Button
             variant="outline"
             size="icon"
-            className="w-12 h-12 rounded-[0.1rem] border-2"
+            className="w-12 h-12 rounded-xl border-2"
             disabled={pagination.currentPage === 1}
             onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
             aria-label="이전 페이지"
@@ -373,7 +373,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             <ChevronLeft size={20} />
           </Button>
 
-          <div className="flex items-center gap-2 px-6 h-12 bg-white border-2 rounded-[0.1rem]">
+          <div className="flex items-center gap-2 px-6 h-12 bg-white border-2 rounded-xl">
             <span className="text-sm font-black italic">{pagination.currentPage}</span>
             <span className="text-[10px] font-black text-slate-900 uppercase">of</span>
             <span className="text-sm font-black italic text-slate-900">{pagination.totalPages}</span>
@@ -382,7 +382,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           <Button
             variant="outline"
             size="icon"
-            className="w-12 h-12 rounded-[0.1rem] border-2"
+            className="w-12 h-12 rounded-xl border-2"
             disabled={pagination.currentPage === pagination.totalPages}
             onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
             aria-label="다음 페이지"
@@ -403,7 +403,7 @@ function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => v
       </div>
       <div className="space-y-2">
         <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">데이터 로드 실패</p>
-        <div className="p-4 bg-rose-50/50 rounded-[0.1rem] border border-rose-100 inline-block">
+        <div className="p-4 bg-rose-50/50 rounded-xl border border-rose-100 inline-block">
           <p className="text-[10px] font-black font-mono text-rose-800 tracking-tight opacity-70">
             ERROR_STREAM: {(error as any)?.response?.data?.message || error.message || 'UNKNOWN_EXCEPTION'}
           </p>
@@ -416,7 +416,7 @@ function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => v
         <Button
           variant="outline"
           size="lg"
-          className="rounded-[0.1rem] font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group shadow-lg"
+          className="rounded-xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group shadow-lg"
           onClick={() => onRetry ? onRetry() : window.location.reload()}
         >
           <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
@@ -445,7 +445,7 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
       <Button
         variant="outline"
         size="lg"
-        className="mt-6 rounded-[0.1rem] font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group"
+        className="mt-6 rounded-xl font-black text-[10px] tracking-[0.2em] border-2 px-10 hover:bg-slate-900 hover:text-white transition-all group"
         onClick={() => typeof window !== 'undefined' && window.location.reload()}
       >
         <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />

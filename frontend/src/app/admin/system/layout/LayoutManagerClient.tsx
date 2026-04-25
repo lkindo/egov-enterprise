@@ -100,7 +100,7 @@ export default function LayoutManagerClient() {
         <div className="flex items-center gap-3">
           <Button 
             onClick={handleThemeSave} 
-            className="h-14 px-10 rounded-[0.1rem] font-black gap-3 shadow-2xl shadow-primary/30 text-lg bg-primary hover:scale-105 transition-transform"
+            className="h-14 px-10 rounded-xl font-black gap-3 shadow-2xl shadow-primary/30 text-lg bg-primary hover:scale-105 transition-transform"
           >
             <CheckCircle2 size={22} />
             전체 플랫폼 적용
@@ -117,7 +117,7 @@ export default function LayoutManagerClient() {
               <Palette size={20} className="text-primary" />
               곡률 시스템 (Radius Scale)
             </h3>
-            <Card className="rounded-[0.1rem] border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-white/60 backdrop-blur-3xl p-2 overflow-hidden">
+            <Card className="rounded-xl border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-white/60 backdrop-blur-3xl p-2 overflow-hidden">
               <CardContent className="space-y-8 pt-8">
                 <div className="space-y-6">
                   <div className="flex justify-between items-end px-2">
@@ -137,11 +137,11 @@ export default function LayoutManagerClient() {
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-6 bg-slate-50 rounded-[0.1rem] border border-slate-100">
+                    <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
                       <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Section Scale</p>
                       <p className="text-2xl font-black">{(parseFloat(themeConfig.borderRadius) * 3.5).toFixed(1)}<span className="text-xs ml-1">rem</span></p>
                     </div>
-                    <div className="p-6 bg-slate-50 rounded-[0.1rem] border border-slate-100">
+                    <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
                       <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Item Scale</p>
                       <p className="text-2xl font-black">{(parseFloat(themeConfig.borderRadius) * 1.5).toFixed(1)}<span className="text-xs ml-1">rem</span></p>
                     </div>
@@ -156,7 +156,7 @@ export default function LayoutManagerClient() {
               <Brush size={20} className="text-primary" />
               브랜드 아이덴티티 (Color)
             </h3>
-            <Card className="rounded-[0.1rem] border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-white/60 backdrop-blur-3xl p-2">
+            <Card className="rounded-xl border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-white/60 backdrop-blur-3xl p-2">
               <CardContent className="space-y-6 pt-8">
                 <div className="grid grid-cols-4 gap-4">
                   {['#3b82f6', '#10b981', '#f43f5e', '#8b5cf6'].map((color) => (
@@ -167,7 +167,7 @@ export default function LayoutManagerClient() {
                         setThemeConfig(newConfig);
                         applyDesignTokens(newConfig);
                       }}
-                      className={`h-14 rounded-[0.1rem] transition-all border-4 ${themeConfig.primaryColor === color ? 'border-primary ring-8 ring-primary/10 scale-105' : 'border-transparent'}`}
+                      className={`h-14 rounded-xl transition-all border-4 ${themeConfig.primaryColor === color ? 'border-primary ring-8 ring-primary/10 scale-105' : 'border-transparent'}`}
                       style={{ backgroundColor: color }}
                     />
                   ))}
@@ -180,9 +180,9 @@ export default function LayoutManagerClient() {
                       setThemeConfig(newConfig);
                       applyDesignTokens(newConfig);
                     }}
-                    className="h-14 w-24 cursor-pointer p-2 rounded-[0.1rem] border-none shadow-inner bg-slate-50"
+                    className="h-14 w-24 cursor-pointer p-2 rounded-xl border-none shadow-inner bg-slate-50"
                   />
-                  <div className="flex-1 h-14 bg-slate-50 rounded-[0.1rem] flex items-center px-6 font-black text-lg text-slate-700 justify-center tracking-widest border border-slate-100">
+                  <div className="flex-1 h-14 bg-slate-50 rounded-xl flex items-center px-6 font-black text-lg text-slate-700 justify-center tracking-widest border border-slate-100">
                     {themeConfig.primaryColor.toUpperCase()}
                   </div>
                 </div>
@@ -190,7 +190,7 @@ export default function LayoutManagerClient() {
             </Card>
           </section>
 
-          <div className="p-8 bg-amber-50 rounded-[0.1rem] border-2 border-dashed border-amber-200 space-y-3">
+          <div className="p-8 bg-amber-50 rounded-xl border-2 border-dashed border-amber-200 space-y-3">
             <div className="flex items-center gap-2 text-amber-700 font-black">
               <Info size={18} />
               <span>안내 사항</span>
@@ -204,9 +204,9 @@ export default function LayoutManagerClient() {
 
         {/* 우측: 시각적 시뮬레이터 */}
         <div className="col-span-12 lg:col-span-8">
-          <div className="h-full min-h-[700px] bg-slate-100/40 rounded-[0.1rem] border-4 border-dashed border-slate-200 flex flex-col items-center justify-center p-12 relative overflow-hidden group">
+          <div className="h-full min-h-[700px] bg-slate-100/40 rounded-xl border-4 border-dashed border-slate-200 flex flex-col items-center justify-center p-12 relative overflow-hidden group">
             <div className="absolute top-10 left-12 flex items-center gap-4">
-              <Badge variant="outline" className="bg-white/80 backdrop-blur-md border-none font-bold px-5 py-2.5 rounded-[0.1rem] flex gap-3 shadow-lg">
+              <Badge variant="outline" className="bg-white/80 backdrop-blur-md border-none font-bold px-5 py-2.5 rounded-xl flex gap-3 shadow-lg">
                 <Monitor size={16} className="text-primary" /> 
                 System Real-time Simulator
               </Badge>

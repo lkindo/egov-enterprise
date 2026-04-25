@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect } from 'react';
 import { AlertTriangle, RefreshCcw, Home, ArrowLeft, Bug, Shield } from 'lucide-react';
@@ -166,7 +166,7 @@ function ActionButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-6 py-3 rounded-[0.1rem] font-black text-sm transition-all active:scale-95 ${
+      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm transition-all active:scale-95 ${
         primary
           ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-xl'
           : 'border-2 border-slate-200 text-slate-600 hover:bg-slate-50'

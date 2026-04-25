@@ -33,7 +33,7 @@ export function NotificationSender() {
   };
 
   return (
-    <div className="bg-card border-2 border-primary/10 rounded-[0.1rem] p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] relative overflow-hidden group/sender">
+    <div className="bg-card border-2 border-primary/10 rounded-xl p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] relative overflow-hidden group/sender">
       {/* Decorative Grid Background */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black_70%,transparent_100%)]" />
 
@@ -42,7 +42,7 @@ export function NotificationSender() {
         <div className="space-y-10">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-primary rounded-[0.1rem] text-white shadow-xl shadow-primary/30">
+              <div className="p-3 bg-primary rounded-xl text-white shadow-xl shadow-primary/30">
                 <Target size={24} />
               </div>
               <h2 className="text-3xl font-black tracking-tighter">발송 제어 센터</h2>
@@ -64,12 +64,12 @@ export function NotificationSender() {
                   key={item.id}
                   onClick={() => setChannel(item.id as any)}
                   className={cn(
-                    "p-6 rounded-[0.1rem] border-2 transition-all flex flex-col items-center gap-3 group/item",
+                    "p-6 rounded-xl border-2 transition-all flex flex-col items-center gap-3 group/item",
                     channel === item.id ? "bg-primary text-white border-primary shadow-2xl shadow-primary/20 scale-[1.05]" : "bg-card border-transparent hover:border-primary/20 hover:bg-primary/5 text-muted-foreground"
                   )}
                 >
                   <div className={cn(
-                    "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all duration-500",
+                    "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500",
                     channel === item.id ? "bg-white/20 rotate-12" : "bg-muted group-hover/item:bg-primary/10"
                   )}>
                     {React.cloneElement(item.icon as React.ReactElement<any>, { size: 20 })}
@@ -82,9 +82,9 @@ export function NotificationSender() {
 
           <div className="space-y-4">
             <label className="text-[10px] font-black text-primary tracking-[0.3em] ml-2">수신 대상자 분할</label>
-            <div className="p-6 rounded-[0.1rem] bg-muted/40 border-2 border-dashed border-primary/10 flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group/target">
+            <div className="p-6 rounded-xl bg-muted/40 border-2 border-dashed border-primary/10 flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group/target">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-[0.1rem] bg-white border flex items-center justify-center shadow-inner group-hover/target:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-xl bg-white border flex items-center justify-center shadow-inner group-hover/target:scale-110 transition-transform">
                   <Users className="text-muted-foreground" size={20} />
                 </div>
                 <div>
@@ -97,7 +97,7 @@ export function NotificationSender() {
           </div>
 
           <div className="flex gap-4 pt-6">
-            <div className="flex-1 p-6 rounded-[0.1rem] bg-indigo-500/5 border border-indigo-500/10">
+            <div className="flex-1 p-6 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
               <div className="flex items-center gap-2 text-indigo-600 mb-2">
                 <ShieldCheck size={16} />
                 <span className="text-[9px] font-black tracking-tight leading-none">무결성 검증 통과</span>
@@ -109,17 +109,17 @@ export function NotificationSender() {
 
         {/* Right: Content Editor */}
         <div className="flex flex-col gap-6">
-          <div className="flex-1 flex flex-col p-10 bg-card border-2 border-primary/10 rounded-[0.1rem] shadow-2xl relative group/editor">
+          <div className="flex-1 flex flex-col p-10 bg-card border-2 border-primary/10 rounded-xl shadow-2xl relative group/editor">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-[0.1rem] text-primary"><Layers size={18} /></div>
+                <div className="p-3 bg-primary/10 rounded-xl text-primary"><Layers size={18} /></div>
                 <span className="text-sm font-black tracking-tight">콘텐츠 편집기</span>
               </div>
               <Button
                 variant="ghost"
                 onClick={simulateAIGenerate}
                 disabled={isGenerating}
-                className="rounded-[0.1rem] h-10 px-6 gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-black text-[10px] tracking-tight shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all"
+                className="rounded-xl h-10 px-6 gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-black text-[10px] tracking-tight shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all"
               >
                 {isGenerating ? <Zap size={14} className="animate-spin" /> : <Sparkles size={14} />}
                 AI 콘텐츠 초안 생성
@@ -135,12 +135,12 @@ export function NotificationSender() {
 
             <div className="pt-6 border-t border-primary/5 flex items-center justify-between">
               <div className="flex gap-2">
-                <Button variant="outline" size="icon" className="h-10 w-10 rounded-[0.1rem] border-2"><Bot size={16} /></Button>
-                <Button variant="outline" size="icon" className="h-10 w-10 rounded-[0.1rem] border-2"><Calendar size={16} /></Button>
+                <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-2"><Bot size={16} /></Button>
+                <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-2"><Calendar size={16} /></Button>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-[10px] font-black text-muted-foreground opacity-40">Words: {message.length}</span>
-                <Button className="h-14 px-10 rounded-[0.1rem] font-black text-sm tracking-[0.2em] shadow-2xl shadow-primary/30 gap-3 group/send">
+                <Button className="h-14 px-10 rounded-xl font-black text-sm tracking-[0.2em] shadow-2xl shadow-primary/30 gap-3 group/send">
                   메시지 일괄 발송 <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                 </Button>
               </div>
@@ -154,9 +154,9 @@ export function NotificationSender() {
           </div>
 
           {/* Preview Banner */}
-          <div className="p-6 bg-slate-900 rounded-[0.1rem] text-white flex items-center justify-between shadow-xl">
+          <div className="p-6 bg-slate-900 rounded-xl text-white flex items-center justify-between shadow-xl">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white/20 rounded-[0.1rem] flex items-center justify-center">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
                 <Zap size={18} className="text-yellow-400" />
               </div>
               <div>

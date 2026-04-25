@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -60,7 +60,7 @@ export default function CommonCodeHubClient({
         />
 
         {/* --- Multi-Level Hub Switcher --- */}
-        <div className="bg-slate-100/80 backdrop-blur-md p-2 rounded-[0.1rem] flex flex-wrap gap-2 border border-slate-200/50 shadow-inner">
+        <div className="bg-slate-100/80 backdrop-blur-md p-2 rounded-xl flex flex-wrap gap-2 border border-slate-200/50 shadow-inner">
           <HubTabButton 
             icon={FileCode} 
             label="표준 코드" 
@@ -141,7 +141,7 @@ function HubTabButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon
         onClick();
       }}
       className={cn(
-        "relative flex items-center gap-3 px-10 py-4 rounded-[0.1rem] text-[11px] font-black tracking-tight transition-all active:scale-95 overflow-hidden group",
+        "relative flex items-center gap-3 px-10 py-4 rounded-xl text-[11px] font-black tracking-tight transition-all active:scale-95 overflow-hidden group",
         active 
           ? "bg-white text-slate-900 shadow-2xl ring-1 ring-slate-200" 
           : "text-slate-500 hover:text-slate-700 hover:bg-white/50"

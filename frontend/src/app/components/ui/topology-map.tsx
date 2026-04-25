@@ -97,7 +97,7 @@ export const TopologyMap = () => {
   const nodeMeta = hoveredNode ? getRealNodeMeta(hoveredNode) : null;
 
   return (
-    <div className="relative w-full h-[700px] bg-slate-950 rounded-[0.1rem] overflow-hidden border border-white/5 group shadow-2xl">
+    <div className="relative w-full h-[700px] bg-slate-950 rounded-xl overflow-hidden border border-white/5 group shadow-2xl">
       {/* Dynamic Background */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1),transparent_70%)]" />
@@ -180,7 +180,7 @@ export const TopologyMap = () => {
           >
             <div className="flex flex-col items-center gap-4">
                <div className={cn(
-                 "w-20 h-20 rounded-[0.1rem] flex items-center justify-center border border-white/10 transition-all duration-500",
+                 "w-20 h-20 rounded-xl flex items-center justify-center border border-white/10 transition-all duration-500",
                  hoveredNode === node.id ? "bg-slate-800 scale-110" : "bg-slate-900",
                  node.status === 'down' ? 'border-rose-500/50' : node.status === 'warning' ? 'border-amber-500/50' : 'border-emerald-500/50'
                )}>
@@ -218,7 +218,7 @@ export const TopologyMap = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            className="absolute top-10 right-10 w-80 bg-slate-900 border border-white/10 rounded-[0.1rem] p-8 shadow-2xl backdrop-blur-xl z-20"
+            className="absolute top-10 right-10 w-80 bg-slate-900 border border-white/10 rounded-xl p-8 shadow-2xl backdrop-blur-xl z-20"
           >
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -226,7 +226,7 @@ export const TopologyMap = () => {
                 <Activity size={18} className="text-primary animate-pulse" />
               </div>
               
-              <div className="p-4 bg-white/5 rounded-[0.1rem] border border-white/5 space-y-4">
+              <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-4">
                 <div className="flex justify-between items-center">
                    <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">SysName</span>
                    <span className="text-xs font-mono font-bold text-white max-w-[150px] truncate" title={nodeMeta?.label || hoveredNode}>{nodeMeta?.label || hoveredNode}</span>
@@ -256,7 +256,7 @@ export const TopologyMap = () => {
               </div>
               
               {nodeMeta?.status === 'down' && (
-                  <div className="flex items-center gap-2 text-rose-500 bg-rose-500/10 p-3 rounded-[0.1rem] border border-rose-500/20">
+                  <div className="flex items-center gap-2 text-rose-500 bg-rose-500/10 p-3 rounded-xl border border-rose-500/20">
                       <ZapOff size={14} />
                       <span className="text-[10px] font-black uppercase tracking-widest">Service Unreachable</span>
                   </div>

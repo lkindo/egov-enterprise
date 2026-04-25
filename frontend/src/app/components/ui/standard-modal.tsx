@@ -55,7 +55,7 @@ export function StandardModal({
       />
       <div
         className={cn(
-          "bg-card border border-border rounded-[0.1rem] shadow-xl w-full flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 overflow-hidden relative z-50",
+          "bg-card border border-border rounded-xl shadow-xl w-full flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 overflow-hidden relative z-50",
           maxWidthClasses[maxWidth]
         )}
       >

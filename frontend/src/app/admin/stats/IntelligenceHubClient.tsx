@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -72,7 +72,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
       {/* --- Header --- */}
       <div className="flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-slate-900 rounded-[0.1rem] flex items-center justify-center shadow-2xl skew-x-2">
+          <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center shadow-2xl skew-x-2">
             <BarChart3 size={28} className="text-white" />
           </div>
           <div>
@@ -85,10 +85,10 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           </div>
         </div>
         <div className="flex gap-4">
-          <Button variant="outline" className="h-14 px-6 rounded-[0.1rem] border-2 font-black tracking-tight gap-2">
+          <Button variant="outline" className="h-14 px-6 rounded-xl border-2 font-black tracking-tight gap-2">
             <Download size={18} /> 데이터셋 내보내기
           </Button>
-          <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition-all gap-2">
+          <Button className="h-14 px-8 rounded-xl bg-slate-900 text-white font-black tracking-tight shadow-xl shadow-slate-200 hover:-translate-y-1 transition-all gap-2">
             <RefreshCcw size={20} /> 강제 새로고침
           </Button>
         </div>
@@ -98,7 +98,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
 
         {/* --- Left Column: Navigation (20%) --- */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
-          <Card className="rounded-[0.1rem] border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100">
+          <Card className="rounded-xl border-0 bg-white shadow-2xl p-4 ring-1 ring-slate-100">
             <NavButton icon={<LayoutDashboard size={20} />} label="글로벌 개요" active={activeTab === 'DASHBOARD'} onClick={() => setActiveTab('DASHBOARD')} />
             <NavButton icon={<Users size={20} />} label="사용자 통계" active={activeTab === 'USER_STATS'} onClick={() => setActiveTab('USER_STATS')} />
             <NavButton icon={<Box size={20} />} label="콘텐츠 지표" active={activeTab === 'CONTENT_STATS'} onClick={() => setActiveTab('CONTENT_STATS')} />
@@ -107,7 +107,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             <NavButton icon={<FileText size={20} />} label="운영 보고서" active={activeTab === 'REPORTS'} onClick={() => setActiveTab('REPORTS')} />
           </Card>
 
-          <Card className="rounded-[0.1rem] border-0 bg-slate-900 text-white shadow-2xl p-10 space-y-8 relative overflow-hidden group">
+          <Card className="rounded-xl border-0 bg-slate-900 text-white shadow-2xl p-10 space-y-8 relative overflow-hidden group">
             <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
             <div className="relative z-10 space-y-6">
               <h3 className="text-[10px] font-black text-white/70 tracking-tight italic leading-tight">예상 효율성</h3>
@@ -129,7 +129,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             <StatSummaryCard icon={<Database size={24} />} label="데이터 사용량" value={`${dataUsage?.length || 0}GB`} trend="-2.1%" />
           </div>
 
-          <Card className="rounded-[0.1rem] border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100 min-h-[500px] flex flex-col">
+          <Card className="rounded-xl border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100 min-h-[500px] flex flex-col">
             <CardHeader className="bg-slate-50/50 border-b p-10 flex flex-row items-center justify-between">
               <div className="space-y-1">
                 <h3 className="text-[10px] font-black text-slate-600 tracking-[0.4em] italic">심층 분석 뷰포트</h3>
@@ -143,8 +143,8 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                 </CardTitle>
               </div>
               <div className="flex gap-4">
-                <Button variant="outline" className="rounded-[0.1rem] h-10 px-4 text-[9px] font-black tracking-tight">최근 30일</Button>
-                <Button size="default" variant="ghost" className="rounded-[0.1rem] h-10 px-4 text-[9px] font-black tracking-tight" aria-label="데이터 필터 설정"><Filter size={18} className="mr-2" /> 필터</Button>
+                <Button variant="outline" className="rounded-xl h-10 px-4 text-[9px] font-black tracking-tight">최근 30일</Button>
+                <Button size="default" variant="ghost" className="rounded-xl h-10 px-4 text-[9px] font-black tracking-tight" aria-label="데이터 필터 설정"><Filter size={18} className="mr-2" /> 필터</Button>
               </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-12">
@@ -160,9 +160,9 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                     <div className="space-y-6">
                       {isSurveyLoading && <div className="p-10 text-center opacity-40 italic">설문 저장소 동기화 중...</div>}
                       {surveys?.list?.map((s: any) => (
-                        <div key={s.qestnrId} className="p-8 rounded-[0.1rem] bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all">
+                        <div key={s.qestnrId} className="p-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all">
                           <div className="flex items-center gap-6">
-                            <div className="w-14 h-14 bg-white rounded-[0.1rem] flex items-center justify-center shadow-sm">
+                            <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm">
                               <Vote className="text-primary" />
                             </div>
                             <div className="space-y-1">
@@ -174,7 +174,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                               </p>
                             </div>
                           </div>
-                          <Button variant="ghost" className="rounded-[0.1rem] h-10 text-[9px] font-black tracking-tight gap-2 transition-all group-hover:translate-x-2">분석 상세 보기 <ChevronRight size={14} /></Button>
+                          <Button variant="ghost" className="rounded-xl h-10 text-[9px] font-black tracking-tight gap-2 transition-all group-hover:translate-x-2">분석 상세 보기 <ChevronRight size={14} /></Button>
                         </div>
                       ))}
                     </div>
@@ -214,14 +214,14 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
     <button
       onClick={onClick}
       className={cn(
-        "w-full group p-6 rounded-[0.1rem] border-2 transition-all flex items-center gap-5 mb-2",
+        "w-full group p-6 rounded-xl border-2 transition-all flex items-center gap-5 mb-2",
         active
           ? "bg-slate-900 border-slate-900 text-white shadow-xl"
           : "bg-white border-transparent hover:border-slate-50 text-slate-600 hover:text-slate-900"
       )}
     >
       <div className={cn(
-        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all",
+        "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
         active ? "bg-white/10 text-white" : "bg-slate-50 text-slate-600 group-hover:bg-slate-100"
       )}>
         {icon}
@@ -233,10 +233,10 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
 
 function StatSummaryCard({ icon, label, value, trend, color = 'slate' }: { icon: React.ReactNode, label: string, value: string, trend: string, color?: string }) {
   return (
-    <Card className="rounded-[0.1rem] border-0 bg-white shadow-2xl p-10 ring-1 ring-slate-100 hover:scale-[1.05] transition-all">
+    <Card className="rounded-xl border-0 bg-white shadow-2xl p-10 ring-1 ring-slate-100 hover:scale-[1.05] transition-all">
       <div className="space-y-6">
         <div className={cn(
-          "w-14 h-14 rounded-[0.1rem] flex items-center justify-center shadow-lg transition-transform hover:rotate-12",
+          "w-14 h-14 rounded-xl flex items-center justify-center shadow-lg transition-transform hover:rotate-12",
           color === 'primary' ? "bg-primary/10 text-primary" : "bg-slate-50 text-slate-600"
         )}>
           {icon}

@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import {
  History as HistoryIcon,
@@ -67,11 +67,11 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  };
 
  return (
- <div className={cn("flex flex-col gap-8 bg-card border-2 border-primary/5 rounded-[0.1rem] p-10 shadow-2xl", className)}>
+ <div className={cn("flex flex-col gap-8 bg-card border-2 border-primary/5 rounded-xl p-10 shadow-2xl", className)}>
  {/* Header Intelligence */}
  <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-primary/5">
  <div className="flex items-center gap-5">
- <div className="p-4 bg-primary/10 rounded-[0.1rem] text-primary shadow-inner">
+ <div className="p-4 bg-primary/10 rounded-xl text-primary shadow-inner">
  <HistoryIcon size={28} className="animate-spin-slow" />
  </div>
  <div>
@@ -90,14 +90,14 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div className="relative flex-1 md:w-64">
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={16} />
  <input
- className="w-full bg-muted/40 border-none rounded-[0.1rem] py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all"
+ className="w-full bg-muted/40 border-none rounded-xl py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all"
  placeholder="검색.."
  aria-label="감사 로그 검색"
  value={filter}
  onChange={(e) => setFilter(e.target.value)}
  />
  </div>
- <Button variant="outline" size="icon" className="rounded-[0.1rem] border-2 h-11 w-11 hover:bg-primary/5" aria-label="필터 설정"><Filter size={18} /></Button>
+ <Button variant="outline" size="icon" className="rounded-xl border-2 h-11 w-11 hover:bg-primary/5" aria-label="필터 설정"><Filter size={18} /></Button>
  </div>
  </div>
 
@@ -132,7 +132,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  tabIndex={0}
  aria-expanded={expandedLog === log.id}
  className={cn(
- "group cursor-pointer rounded-[0.1rem] border-2 transition-all overflow-hidden outline-none focus:ring-2 focus:ring-primary",
+ "group cursor-pointer rounded-xl border-2 transition-all overflow-hidden outline-none focus:ring-2 focus:ring-primary",
  expandedLog === log.id
  ? "bg-card border-primary/20 shadow-xl"
  : "bg-white dark:bg-slate-800 border-transparent hover:bg-muted/40"
@@ -140,7 +140,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  >
  <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
  <div className="flex items-center gap-5">
- <div className="w-12 h-12 rounded-[0.1rem] bg-background flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+ <div className="w-12 h-12 rounded-xl bg-background flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
  <User size={20} className="text-muted-foreground" />
  </div>
  <div className="space-y-1">
@@ -175,14 +175,14 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  </h4>
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {log.changes?.map((change, cIdx) => (
- <div key={cIdx} className="space-y-3 p-5 rounded-[0.1rem] bg-white border border-primary/5 shadow-sm group/change">
+ <div key={cIdx} className="space-y-3 p-5 rounded-xl bg-white border border-primary/5 shadow-sm group/change">
  <label className="text-[10px] font-black text-slate-700 tracking-tight">{change.field}</label>
  <div className="flex items-center gap-4">
- <div className="flex-1 p-3 rounded-[0.1rem] bg-rose-50/80 border border-rose-100/50 text-sm font-medium text-rose-900 line-through decoration-rose-400 opacity-100">
+ <div className="flex-1 p-3 rounded-xl bg-rose-50/80 border border-rose-100/50 text-sm font-medium text-rose-900 line-through decoration-rose-400 opacity-100">
  {change.before}
  </div>
  <ArrowRight size={14} className="text-muted-foreground/30 animate-pulse" />
- <div className="flex-1 p-3 rounded-[0.1rem] bg-emerald-50 border border-emerald-100/50 text-sm font-bold text-emerald-800 transition-all group-hover/change:bg-emerald-100">
+ <div className="flex-1 p-3 rounded-xl bg-emerald-50 border border-emerald-100/50 text-sm font-bold text-emerald-800 transition-all group-hover/change:bg-emerald-100">
  {change.after}
  </div>
  </div>
@@ -191,12 +191,12 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  </div>
 
  <div className="flex justify-end gap-3 pt-4 border-t border-primary/5">
- <Button variant="ghost" size="sm" className="rounded-[0.1rem] font-bold h-10 px-6 gap-2 text-slate-700 hover:bg-rose-50 hover:text-rose-700">
+ <Button variant="ghost" size="sm" className="rounded-xl font-bold h-10 px-6 gap-2 text-slate-700 hover:bg-rose-50 hover:text-rose-700">
  분석 리포트 생성
  </Button>
- <Button variant="outline" size="sm" className="rounded-[0.1rem] font-black h-10 px-6 gap-2 border-2 hover:bg-primary/5">
+ <Button variant="outline" size="sm" className="rounded-xl font-black h-10 px-6 gap-2 border-2 hover:bg-primary/5">
  <Monitor size={16} /> 시각화 검증 </Button>
- <Button size="sm" className="rounded-[0.1rem] font-black h-10 px-8 gap-2 bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200">
+ <Button size="sm" className="rounded-xl font-black h-10 px-8 gap-2 bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200">
  <RotateCcw size={16} /> 스냅샷 롤백
  </Button>
  </div>

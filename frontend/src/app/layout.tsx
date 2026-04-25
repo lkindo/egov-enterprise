@@ -8,6 +8,7 @@ import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
 import { Inter, Outfit } from 'next/font/google';
 import dynamic from 'next/dynamic';
+import { PageTransition } from './components/layout/page-transition';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -35,22 +36,41 @@ export const metadata: Metadata = {
   description: 'KRDS 기반 모던 전사 공통 모듈 및 디지털 정부 혁신 플랫폼',
 };
 
+async function AppShell({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
+  const menusPromise = getInitialMenus(accessToken);
+
+  return (
+    <div className="relative flex min-h-screen flex-col bg-background/50 selection:bg-primary/20 selection:text-primary">
+      <Suspense>
+        <Header menusPromise={menusPromise} />
+      </Suspense>
+      <div className="flex flex-1">
+        <Suspense>
+          <Sidebar menusPromise={menusPromise} />
+        </Suspense>
+        <main className="flex-1 lg:pl-72 pt-1 min-w-0 transition-opacity duration-300 overflow-x-hidden">
+          <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-14rem)]">
+            <PageTransition>
+                <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px]">Loading page content...</div>}>
+                  {children}
+                </Suspense>
+            </PageTransition>
+          </div>
+          <Footer className="border-t border-border/20 py-8 mb-4 px-6" />
+        </main>
+      </div>
+    </div>
+  );
+}
 
 
-
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('accessToken')?.value;
-  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-  // [P1: Waterfall Elimination] Initiate menu promise early, don't await here.
-  const menusPromise = getInitialMenus(accessToken);
-
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className={`${inter.variable} ${outfit.variable} antialiased font-sans`} suppressHydrationWarning>
@@ -61,25 +81,20 @@ export default async function RootLayout({
           disableTransitionOnChange
           enableColorScheme
         >
-          <Providers>
-            <GlobalUIComponents />
-            <div className="relative flex min-h-screen flex-col bg-background/50 selection:bg-primary/20 selection:text-primary">
-              <Suspense>
-                <Header menusPromise={menusPromise} />
+          <Suspense fallback={null}>
+            <Providers>
+              <Suspense fallback={null}>
+                <GlobalUIComponents />
               </Suspense>
-              <div className="flex flex-1">
-                <Suspense>
-                  <Sidebar menusPromise={menusPromise} />
-                </Suspense>
-                <main className="flex-1 lg:pl-72 pt-1 min-w-0 transition-opacity duration-300">
-                  <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-14rem)] animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Application...</div>}>
+                <AppShell>
+                  <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px]">Loading page content...</div>}>
                     {children}
-                  </div>
-                  <Footer className="border-t border-border/20 py-8 mb-4 px-6" />
-                </main>
-              </div>
-            </div>
-          </Providers>
+                  </Suspense>
+                </AppShell>
+              </Suspense>
+            </Providers>
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>

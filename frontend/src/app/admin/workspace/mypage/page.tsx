@@ -48,25 +48,25 @@ export default function MyPageManagement() {
           Array(6)
             .fill(0)
             .map((_, i) => (
-              <div key={i} className="h-48 bg-slate-100 animate-pulse rounded-[0.1rem]" />
+              <div key={i} className="h-48 bg-slate-100 animate-pulse rounded-xl" />
             ))
         ) : contents.length > 0 ? (
           contents.map((item) => (
             <div
               key={item.cntntsId}
-              className={`p-10 bg-white border-2 rounded-[0.1rem] shadow-sm hover:shadow-2xl transition-all duration-500 group ${
+              className={`p-10 bg-white border-2 rounded-xl shadow-sm hover:shadow-2xl transition-all duration-500 group ${
                 item.cntntsUseAt === 'Y' ? 'border-primary/20' : 'opacity-60 grayscale border-slate-100'
               }`}
             >
               <div className="flex justify-between items-start mb-8">
-                <div className={`w-16 h-16 rounded-[0.1rem] flex items-center justify-center transition-all duration-500 ${
+                <div className={`w-16 h-16 rounded-xl flex items-center justify-center transition-all duration-500 ${
                   item.cntntsUseAt === 'Y' ? 'bg-primary/10 text-primary group-hover:scale-110' : 'bg-slate-100 text-slate-400'
                 }`}>
                   <LayoutGrid size={32} />
                 </div>
                 <button
                   onClick={() => toggleStatus(item)}
-                  className={`w-12 h-12 rounded-[0.1rem] transition-all duration-300 flex items-center justify-center ${
+                  className={`w-12 h-12 rounded-xl transition-all duration-300 flex items-center justify-center ${
                     item.cntntsUseAt === 'Y' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white shadow-emerald-500/10' : 'text-slate-400 bg-slate-100 hover:bg-slate-200'
                   }`}
                 >
@@ -82,7 +82,7 @@ export default function MyPageManagement() {
             </div>
           ))
         ) : (
-          <div className="col-span-full py-32 text-center bg-slate-50 rounded-[0.1rem] border-4 border-dashed border-slate-200 flex flex-col items-center gap-6">
+          <div className="col-span-full py-32 text-center bg-slate-50 rounded-xl border-4 border-dashed border-slate-200 flex flex-col items-center gap-6">
             <LayoutGrid size={64} className="text-slate-200" />
             <p className="text-slate-400 font-black tracking-widest uppercase text-xs">등록된 마이페이지 콘텐츠가 현재 클러스터에 존재하지 않습니다.</p>
           </div>

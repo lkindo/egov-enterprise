@@ -43,8 +43,8 @@ export default async function ProgramAdminPage({
     <div className="p-8 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
       <Suspense fallback={
         <div className="animate-pulse space-y-12">
-          <div className="h-20 bg-slate-100 rounded-[0.1rem] w-1/3" />
-          <div className="h-[600px] bg-slate-100 rounded-[0.1rem]" />
+          <div className="h-20 bg-slate-100 rounded-xl w-1/3" />
+          <div className="h-[600px] bg-slate-100 rounded-xl" />
         </div>
       }>
         {/* searchWrd prop 추가하여 타입 오류 해결 */}

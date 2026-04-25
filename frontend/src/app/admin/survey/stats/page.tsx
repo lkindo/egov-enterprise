@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -46,7 +46,7 @@ export default function SurveyStatsPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
             <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-500/10 rounded-[0.1rem] text-amber-600">
+                <div className="p-2 bg-amber-500/10 rounded-xl text-amber-600">
                     <TrendingUp size={18} />
                 </div>
                 <span className="text-sm font-black text-amber-600 tracking-tight uppercase">Data Analytics</span>
@@ -57,8 +57,8 @@ export default function SurveyStatsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="rounded-[0.1rem] border-none shadow-sm bg-slate-900 text-white p-8 space-y-4 text-left">
-                <div className="w-12 h-12 rounded-[0.1rem] bg-white/10 flex items-center justify-center">
+            <Card className="rounded-xl border-none shadow-sm bg-slate-900 text-white p-8 space-y-4 text-left">
+                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
                     <FileBarChart size={24} className="text-amber-400" />
                 </div>
                 <div className="text-left">
@@ -66,8 +66,8 @@ export default function SurveyStatsPage() {
                     <h3 className="text-4xl font-black text-left">{totalCount}</h3>
                 </div>
             </Card>
-            <Card className="rounded-[0.1rem] border-none shadow-sm bg-white p-8 space-y-4 ring-1 ring-slate-100 text-left">
-                <div className="w-12 h-12 rounded-[0.1rem] bg-amber-100 flex items-center justify-center">
+            <Card className="rounded-xl border-none shadow-sm bg-white p-8 space-y-4 ring-1 ring-slate-100 text-left">
+                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
                     <TrendingUp size={24} className="text-amber-600" />
                 </div>
                 <div className="text-left">
@@ -75,8 +75,8 @@ export default function SurveyStatsPage() {
                     <h3 className="text-4xl font-black text-left">78.4<span className="text-lg text-slate-300 font-bold ml-1">%</span></h3>
                 </div>
             </Card>
-            <Card className="rounded-[0.1rem] border-none shadow-sm bg-white p-8 space-y-4 ring-1 ring-slate-100 text-left">
-                <div className="w-12 h-12 rounded-[0.1rem] bg-slate-100 flex items-center justify-center text-left">
+            <Card className="rounded-xl border-none shadow-sm bg-white p-8 space-y-4 ring-1 ring-slate-100 text-left">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-left">
                     <PieChart size={24} className="text-slate-600" />
                 </div>
                 <div className="text-left">
@@ -86,19 +86,19 @@ export default function SurveyStatsPage() {
             </Card>
       </div>
 
-      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-[0.1rem] bg-white ring-1 ring-slate-100">
+      <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-xl bg-white ring-1 ring-slate-100">
         <CardHeader className="bg-slate-50/50 border-b p-8 text-left">
             <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-center gap-4">
                 <div className="relative flex-1 w-full group">
                     <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-amber-500 transition-colors" />
                     <Input
                         placeholder="분석할 설문명을 입력하세요"
-                        className="h-14 pl-14 rounded-[0.1rem] border-2 border-transparent bg-white shadow-sm focus:border-amber-500 focus:ring-0 transition-all font-bold text-left"
+                        className="h-14 pl-14 rounded-xl border-2 border-transparent bg-white shadow-sm focus:border-amber-500 focus:ring-0 transition-all font-bold text-left"
                         value={params.searchKeyword || ''}
                         onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
                     />
                 </div>
-                <Button type="submit" className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-sm shadow-sm transition-all active:scale-95">분석 조회</Button>
+                <Button type="submit" className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-sm shadow-sm transition-all active:scale-95">분석 조회</Button>
             </form>
         </CardHeader>
         <CardContent className="p-0 text-left">
@@ -143,7 +143,7 @@ export default function SurveyStatsPage() {
                         <Badge variant="outline" className="rounded-md font-bold px-3 border-amber-200 text-amber-600 bg-amber-50 group-hover:bg-amber-100 transition-colors">집계중</Badge>
                     </TableCell>
                     <TableCell className="text-right px-8 py-6">
-                      <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/survey/stats/${poll.pollId}`)} className="rounded-[0.1rem] font-black text-xs gap-2 group-hover:bg-amber-500 group-hover:text-white transition-all">
+                      <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/survey/stats/${poll.pollId}`)} className="rounded-xl font-black text-xs gap-2 group-hover:bg-amber-500 group-hover:text-white transition-all">
                         <BarChart3 className="h-4 w-4" /> 결과 리포트
                       </Button>
                     </TableCell>

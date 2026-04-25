@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { z } from 'zod';
@@ -105,7 +105,7 @@ export default function SmsAdminClient({
       header: '발송 일시',
       accessor: (item: SmsDto) => (
         <div className="flex items-center gap-4 py-2">
-          <div className="w-10 h-10 rounded-[0.1rem] bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-inner">
+          <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-inner">
             <Calendar size={16} />
           </div>
           <div className="flex flex-col text-left">
@@ -165,14 +165,14 @@ export default function SmsAdminClient({
               variant="outline"
               size="lg"
               onClick={handleSearch}
-              className="h-12 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2"
+              className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2"
             >
               <RefreshCcw size={16} className={cn(loading && "animate-spin")} /> 로그 동기화
             </Button>
             <Button
               size="lg"
               onClick={() => setIsSendOpen(true)}
-              className="h-12 px-8 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2"
+              className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2"
             >
               <Plus size={18} /> 새 메시지 구성
             </Button>
@@ -224,7 +224,7 @@ export default function SmsAdminClient({
                 placeholder="검색..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="h-14 pl-12 pr-6 w-full md:w-[320px] bg-slate-50 border-none rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all font-mono"
+                className="h-14 pl-12 pr-6 w-full md:w-[320px] bg-slate-50 border-none rounded-xl text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all font-mono"
               />
             </div>
           </div>
@@ -243,13 +243,13 @@ export default function SmsAdminClient({
 
       {/* Send Message Composition Dialog */}
       <Dialog open={isSendOpen} onOpenChange={setIsSendOpen}>
-        <DialogContent className="sm:max-w-[550px] rounded-[0.1rem] p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-white/95 backdrop-blur-3xl overflow-hidden relative">
+        <DialogContent className="sm:max-w-[550px] rounded-xl p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-white/95 backdrop-blur-3xl overflow-hidden relative">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSend)}>
               <div className="absolute top-[-20%] right-[-20%] w-64 h-64 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
               
               <DialogHeader className="p-12 pb-0 space-y-6 relative z-10">
-                <div className="w-20 h-20 bg-slate-900 text-white rounded-[0.1rem] flex items-center justify-center shadow-2xl shadow-primary/30 mx-auto transition-transform hover:rotate-12 duration-500 border-4 border-white/20">
+                <div className="w-20 h-20 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-2xl shadow-primary/30 mx-auto transition-transform hover:rotate-12 duration-500 border-4 border-white/20">
                   <Send size={32} />
                 </div>
                 <div className="text-center space-y-2">
@@ -276,7 +276,7 @@ export default function SmsAdminClient({
                           <Input
                             {...field}
                             placeholder="010-0000-0000"
-                            className="h-18 pl-16 pr-8 rounded-[0.1rem] border-none bg-slate-50 text-xl font-black tabular-nums focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-wider"
+                            className="h-18 pl-16 pr-8 rounded-xl border-none bg-slate-50 text-xl font-black tabular-nums focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-wider"
                           />
                         </div>
                       </FormControl>
@@ -299,7 +299,7 @@ export default function SmsAdminClient({
                           <Textarea
                             {...field}
                             placeholder="메시지 내용을 입력하세요..."
-                            className="min-h-[180px] p-8 rounded-[0.1rem] border-none bg-slate-50 text-base font-bold outline-none focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"
+                            className="min-h-[180px] p-8 rounded-xl border-none bg-slate-50 text-base font-bold outline-none focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"
                           />
                         </div>
                       </FormControl>
@@ -314,14 +314,14 @@ export default function SmsAdminClient({
                   type="button"
                   variant="outline"
                   onClick={() => setIsSendOpen(false)}
-                  className="h-18 px-10 rounded-[0.1rem] border-2 border-slate-100 font-black text-[11px] tracking-widest uppercase hover:bg-slate-50 transition-all hover:border-slate-200"
+                  className="h-18 px-10 rounded-xl border-2 border-slate-100 font-black text-[11px] tracking-widest uppercase hover:bg-slate-50 transition-all hover:border-slate-200"
                 >
                   Terminate
                 </Button>
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="h-18 px-16 bg-slate-900 border-none text-white rounded-[0.1rem] font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
+                  className="h-18 px-16 bg-slate-900 border-none text-white rounded-xl font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
                 >
                   {loading ? <RefreshCcw size={18} className="animate-spin" /> : <Zap size={18} />}
                   Execute Send
@@ -339,7 +339,7 @@ function SummaryBlock({ title, value, icon, status, color, bg }: any) {
   return (
     <div className={cn("hub-table-container p-12 group hover:scale-[1.02] transition-all relative overflow-hidden bg-white text-left", bg)}>
       <div className="flex justify-between items-start mb-10">
-        <div className={cn("w-14 h-14 rounded-[0.1rem] bg-slate-50 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
+        <div className={cn("w-14 h-14 rounded-xl bg-slate-50 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
           {icon}
         </div>
         <HubStatusBadge label={`SYSTEM STATUS: ${status}`} variant="default" className="text-[8px] font-black tracking-widest shadow-sm" />

@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -191,12 +191,12 @@ export function GlobalCommandCenter() {
       />
 
       <div
-        className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border-2 border-primary/20 rounded-[0.1rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-500 ring-1 ring-white/30"
+        className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border-2 border-primary/20 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-500 ring-1 ring-white/30"
         onKeyDown={handleKeyDown}
       >
         {/* Search Header */}
         <div className="flex items-center px-10 py-8 border-b border-primary/10 gap-6">
-          <div className="p-3 bg-primary/10 rounded-[0.1rem] text-primary animate-pulse">
+          <div className="p-3 bg-primary/10 rounded-xl text-primary animate-pulse">
             <Search size={28} />
           </div>
           <input
@@ -210,7 +210,7 @@ export function GlobalCommandCenter() {
             }}
           />
           <div className="hidden sm:flex items-center gap-3">
-            <div className="px-3 py-1.5 bg-muted rounded-[0.1rem] border text-[10px] font-black text-muted-foreground tracking-tight">ESC로 닫기</div>
+            <div className="px-3 py-1.5 bg-muted rounded-xl border text-[10px] font-black text-muted-foreground tracking-tight">ESC로 닫기</div>
           </div>
         </div>
 
@@ -237,7 +237,7 @@ export function GlobalCommandCenter() {
                           <button
                             key={item.id}
                             className={cn(
-                              "w-full flex items-center justify-between p-5 rounded-[0.1rem] transition-all duration-300 group text-left",
+                              "w-full flex items-center justify-between p-5 rounded-xl transition-all duration-300 group text-left",
                               isFocused
                                 ? "bg-primary text-primary-foreground shadow-2xl shadow-primary/30 scale-[1.01] z-10"
                                 : "hover:bg-primary/5 text-foreground"
@@ -247,7 +247,7 @@ export function GlobalCommandCenter() {
                           >
                             <div className="flex items-center gap-5">
                               <div className={cn(
-                                "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all duration-500",
+                                "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500",
                                 isFocused ? "bg-white/20 rotate-12 scale-110" : "bg-muted group-hover:bg-primary/10 group-hover:rotate-6 shadow-inner"
                               )}>
                                 {item.icon || <ShieldCheck size={20} />}
@@ -280,7 +280,7 @@ export function GlobalCommandCenter() {
             </div>
           ) : (
             <div className="py-24 text-center space-y-6">
-              <div className="w-24 h-24 bg-muted/30 rounded-[0.1rem] flex items-center justify-center mx-auto animate-bounce">
+              <div className="w-24 h-24 bg-muted/30 rounded-xl flex items-center justify-center mx-auto animate-bounce">
                 <Zap size={32} className="text-muted-foreground/20" />
               </div>
               <div>

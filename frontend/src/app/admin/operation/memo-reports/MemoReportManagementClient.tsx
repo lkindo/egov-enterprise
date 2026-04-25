@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -59,10 +59,10 @@ export default function MemoReportManagementClient() {
         icon={Mail} 
         actions={
           <div className="flex gap-4">
-             <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-100 text-slate-900 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
+             <Button className="h-14 px-8 rounded-xl bg-slate-100 text-slate-900 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
                <History size={18} /> 이전 리포트
              </Button>
-             <Button className="h-14 px-8 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
+             <Button className="h-14 px-8 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
                <Plus size={18} /> 신규 보고 작성
              </Button>
           </div>
@@ -74,7 +74,7 @@ export default function MemoReportManagementClient() {
         {/* Left: Tabbed Stream (50%) */}
         <div className="col-span-12 lg:col-span-6 flex flex-col gap-6">
            <div className="flex items-center justify-between px-6">
-              <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-[0.1rem] border ring-1 ring-slate-100">
+              <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl border ring-1 ring-slate-100">
                  <NavTab active={activeTab === 'RECEIVED'} icon={<Inbox size={16} />} label="RECEIVED" onClick={() => handleTabChange('RECEIVED')} />
                  <NavTab active={activeTab === 'MY'} icon={<Send size={16} />} label="MY OPS" onClick={() => handleTabChange('MY')} />
                  <NavTab active={activeTab === 'ALL'} icon={<Globe size={16} />} label="GLOBAL" onClick={() => handleTabChange('ALL')} />
@@ -84,13 +84,13 @@ export default function MemoReportManagementClient() {
                  <Input 
                    value={searchKeyword}
                    onChange={(e) => setSearchKeyword(e.target.value)}
-                   className="h-11 bg-white border-2 border-slate-50 rounded-[0.1rem] pl-11 font-black text-xs focus:border-primary/20 transition-all" 
+                   className="h-11 bg-white border-2 border-slate-50 rounded-xl pl-11 font-black text-xs focus:border-primary/20 transition-all" 
                    placeholder="리포트 검색.." 
                  />
               </div>
            </div>
 
-           <Card className="flex-1 rounded-[0.1rem] border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100/50 flex flex-col min-h-[500px]">
+           <Card className="flex-1 rounded-xl border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100/50 flex flex-col min-h-[500px]">
               <div className="flex-1 overflow-y-auto p-10 space-y-4 scrollbar-elegant">
                  {isLoading ? (
                     <div className="h-full flex items-center justify-center animate-pulse text-slate-300 text-[10px] font-black tracking-[0.5em]">SYNCHRONIZING REPORT DATA...</div>
@@ -107,7 +107,7 @@ export default function MemoReportManagementClient() {
                          key={report.reprtId} 
                          onClick={() => setSelectedReportId(report.reprtId)}
                          className={cn(
-                           "p-6 rounded-[0.1rem] border-2 transition-all cursor-pointer group flex items-start justify-between",
+                           "p-6 rounded-xl border-2 transition-all cursor-pointer group flex items-start justify-between",
                            selectedReportId === report.reprtId 
                              ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.03]" 
                              : "bg-white border-transparent hover:border-slate-50 text-slate-600 shadow-sm"
@@ -115,7 +115,7 @@ export default function MemoReportManagementClient() {
                        >
                          <div className="flex items-start gap-5">
                              <div className={cn(
-                               "w-14 h-14 rounded-[0.1rem] flex flex-col items-center justify-center border transition-colors",
+                               "w-14 h-14 rounded-xl flex flex-col items-center justify-center border transition-colors",
                                selectedReportId === report.reprtId ? "bg-white/10 border-white/20" : "bg-slate-50 border-slate-100 group-hover:bg-primary/5"
                              )}>
                                  <span className={cn("text-[8px] font-black", selectedReportId === report.reprtId ? "text-white/40" : "text-slate-400")}>REPORT</span>
@@ -172,7 +172,7 @@ export default function MemoReportManagementClient() {
                    exit={{ opacity: 0, x: -20 }}
                    className="h-full"
                  >
-                    <Card className="h-full rounded-[0.1rem] border-0 bg-slate-900 text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative group">
+                    <Card className="h-full rounded-xl border-0 bg-slate-900 text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative group">
                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-rose-500/5 opacity-40 pointer-events-none" />
                        
                        <CardHeader className="p-12 border-b border-white/5 flex flex-row items-center justify-between relative z-10 bg-white/5 backdrop-blur-3xl">
@@ -181,8 +181,8 @@ export default function MemoReportManagementClient() {
                              <h3 className="text-2xl font-black tracking-tighter italic">{selectedReport.reprtSj}</h3>
                           </div>
                           <div className="flex items-center gap-3">
-                             <Button size="icon" variant="ghost" className="w-12 h-12 bg-white/5 rounded-[0.1rem] border border-white/10 hover:bg-white/10 transition-all"><Trash2 size={20} className="text-rose-500" /></Button>
-                             <Button size="icon" variant="ghost" className="w-12 h-12 bg-white/5 rounded-[0.1rem] border border-white/10 hover:bg-white/10 transition-all"><MoreVertical size={20} /></Button>
+                             <Button size="icon" variant="ghost" className="w-12 h-12 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all"><Trash2 size={20} className="text-rose-500" /></Button>
+                             <Button size="icon" variant="ghost" className="w-12 h-12 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all"><MoreVertical size={20} /></Button>
                           </div>
                        </CardHeader>
 
@@ -213,7 +213,7 @@ export default function MemoReportManagementClient() {
                              <div className="flex items-center gap-3 text-[10px] font-black text-primary tracking-[0.3em] uppercase">
                                  <Layers size={14} /> 보고 핵심 데이터 유닛 (Report Core)
                              </div>
-                             <div className="p-8 bg-white/5 border border-white/5 rounded-[0.1rem] text-sm font-bold text-white/70 leading-relaxed tracking-tight italic">
+                             <div className="p-8 bg-white/5 border border-white/5 rounded-xl text-sm font-bold text-white/70 leading-relaxed tracking-tight italic">
                                  {selectedReport.reprtCn}
                              </div>
                           </div>
@@ -223,7 +223,7 @@ export default function MemoReportManagementClient() {
                                <div className="flex items-center gap-3 text-[10px] font-black text-emerald-400 tracking-[0.3em] uppercase">
                                   <Zap size={14} /> 시스템 지시사항 (Direct Matter)
                                </div>
-                               <div className="p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-[0.1rem] text-sm font-black text-emerald-400 tracking-tight flex items-start gap-4">
+                               <div className="p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-sm font-black text-emerald-400 tracking-tight flex items-start gap-4">
                                   <MessageSquare size={20} className="shrink-0 animate-pulse mt-1" />
                                   <p>{selectedReport.drctMatter}</p>
                                </div>
@@ -232,13 +232,13 @@ export default function MemoReportManagementClient() {
                        </CardContent>
 
                        <div className="p-12 border-t border-white/5 bg-white/5 backdrop-blur-3xl flex gap-6 relative z-10">
-                          <Button className="h-16 flex-1 rounded-[0.1rem] bg-white text-slate-900 font-black tracking-[0.2em] text-[10px] hover:scale-105 transition-all shadow-2xl">상세 수정</Button>
-                          <Button className="h-16 flex-[2] rounded-[0.1rem] bg-primary text-white font-black tracking-[0.4em] text-[10px] hover:scale-105 transition-all shadow-2xl shadow-primary/40 uppercase italic">지시사항 등록</Button>
+                          <Button className="h-16 flex-1 rounded-xl bg-white text-slate-900 font-black tracking-[0.2em] text-[10px] hover:scale-105 transition-all shadow-2xl">상세 수정</Button>
+                          <Button className="h-16 flex-[2] rounded-xl bg-primary text-white font-black tracking-[0.4em] text-[10px] hover:scale-105 transition-all shadow-2xl shadow-primary/40 uppercase italic">지시사항 등록</Button>
                        </div>
                     </Card>
                  </motion.div>
               ) : (
-                 <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none bg-white rounded-[0.1rem] border-2 border-dashed border-slate-200">
+                 <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none bg-white rounded-xl border-2 border-dashed border-slate-200">
                     <History size={64} className="mb-8" />
                     <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">SELECT REPORT NODE</h3>
                     <p className="text-[10px] font-bold text-slate-400 tracking-[0.5em] mt-2 leading-relaxed">데이터 흐름 확인하려면 <br /> 좌측 스트림에서 리포트를 선택하세요</p>
@@ -258,7 +258,7 @@ function NavTab({ active, icon, label, onClick }: any) {
     <button 
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-6 py-3 rounded-[0.1rem] transition-all font-black text-[10px] tracking-widest",
+        "flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-black text-[10px] tracking-widest",
         active ? "bg-white text-slate-900 shadow-xl" : "text-slate-400 hover:text-slate-600"
       )}
     >

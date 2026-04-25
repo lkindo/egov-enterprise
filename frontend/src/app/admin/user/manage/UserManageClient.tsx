@@ -1,390 +1,324 @@
+'use client';
 
 import React, { useState } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { PageResponse } from '@/types/foundation/system';
-import { UserManage, UserSearchParams } from '@/types/foundation/user';
-import { useToast } from '@/app/components/ui/toast';
-import {
-  Pencil,
-  Trash2,
-  Plus,
-  Mail,
-  Users,
-  ShieldCheck,
-  Clock,
-  Search,
-  Settings2,
+import { useQuery } from '@tanstack/react-query';
+import { 
+  Users, 
+  Search, 
+  UserPlus, 
+  Shield, 
+  Activity, 
+  MoreHorizontal, 
+  Mail, 
+  Calendar,
   Filter,
+  RefreshCw,
+  Database,
+  ArrowUpRight,
   UserCheck,
   UserX,
-  UserPlus,
-  Fingerprint,
+  History,
+  Lock,
   Zap,
   LayoutGrid,
-  SearchCode,
-  ShieldAlert,
-  Settings,
-  MoreHorizontal
+  List,
+  ChevronRight
 } from 'lucide-react';
-import dynamic from 'next/dynamic';
-import { FormField } from '@/app/components/ui/standard-form';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { createUserAction, updateUserAction, deleteUserAction } from '@/app/actions/userActions';
-import { useRouter } from 'next/navigation';
-import { useMessage } from '@/hooks/useMessage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { userAdminService } from '@/services/foundation/system/UserAdminService';
+import { UserManage, UserSearchParams } from '@/types/foundation/user';
+import { PageResponse } from '@/types/foundation/system';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
-const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
-
-export default function UserManageClient({ initialData, initialParams }: { initialData: PageResponse<UserManage>; initialParams: UserSearchParams }) {
-  const { t } = useMessage();
-  const router = useRouter();
-  const { toast } = useToast();
-  const confirm = useConfirm();
-
-  const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserManage | null>(null);
-  const [formData, setFormData] = useState<UserManage>({
-    userId: '',
-    userNm: '',
-    password: '',
-    emailAdres: '',
-    userSttusCode: 'P',
+export default function UserManageClient() {
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [searchParams, setSearchParams] = useState<UserSearchParams>({
+    pageIndex: 1,
+    size: 10,
+    searchCondition: '1',
+    searchKeyword: ''
   });
 
-  const users = initialData?.list || [];
-  const [params, setParams] = useState<UserSearchParams>(initialParams);
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['users', searchParams],
+    queryFn: () => userAdminService.getUserList(searchParams),
+  });
 
-  const handleOpenCreate = () => {
-    setEditingUser(null);
-    setFormData({ userId: '', userNm: '', password: '', emailAdres: '', userSttusCode: 'P' });
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEdit = (user: UserManage) => {
-    setEditingUser(user);
-    setFormData({ ...user, password: '' });
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = async (userId: string) => {
-    const ok = await confirm({
-      title: '사용자 데이터 영구 삭제',
-      message: '해당 사용자 계정 및 연결된 활동 로그 데이터가 모두 삭제됩니다. 정말로 진행하시겠습니까?',
-      variant: 'destructive',
-      confirmText: '삭제'
-    });
-    if (!ok) return;
-
-    setLoading(true);
-    try {
-      const res = await deleteUserAction(null, userId);
-      if (res.success) {
-        toast(res.message, 'success');
-        router.refresh();
-      } else {
-        toast(res.message, 'error');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = editingUser ? await updateUserAction(null, formData) : await createUserAction(null, formData);
-      if (res.success) {
-        toast(res.message, 'success');
-        setIsModalOpen(false);
-        router.refresh();
-      } else {
-        toast(res.message, 'error');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const columns: Column<UserManage>[] = [
-    {
-      header: '사용자 아이디 (Identity)',
-      accessor: (item) => (
-        <div className="flex items-center gap-5 py-4">
-          <div className="w-14 h-14 rounded-[0.1rem] bg-slate-900 flex items-center justify-center text-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-            <Fingerprint size={24} className="text-primary" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="font-black tracking-tighter text-foreground text-md uppercase leading-none">{item.userId}</span>
-            <span className="text-[9px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono italic">UID_SYNC_PROBE: {item.userId.length * 7}</span>
-          </div>
-        </div>
-      )
-    },
-    {
-      header: '성명 (Display Name)',
-      accessor: (item) => (
-        <span className="font-black text-foreground tracking-tight text-sm uppercase">{item.userNm}</span>
-      ),
-      className: 'w-48'
-    },
-    {
-      header: '커뮤니케이션 엔드포인트',
-      accessor: (item) => (
-        <div className="flex items-center gap-3 text-slate-700 font-bold tracking-tighter lowercase">
-          <Mail size={14} className="text-slate-400" />
-          <span className="text-[13px]">{item.emailAdres}</span>
-        </div>
-      )
-    },
-    {
-      header: '인증 상태',
-      accessor: (item) => <HubStatusBadge status={item.userSttusCode === 'A' ? '활성' : item.userSttusCode === 'P' ? 'PENDING' : 'DISABLED'} />,
-      className: 'w-32'
-    },
-    {
-      header: 'MANAGEMENT',
-      className: 'text-right w-32',
-      accessor: (item) => (
-        <div className="flex justify-end gap-2 pr-4">
-          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)} className="h-10 w-10 bg-slate-100 hover:bg-slate-900 hover:text-white rounded-[0.1rem] border border-slate-200 transition-all font-black shadow-sm">
-            <Settings size={16} />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(item.userId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-[0.1rem] transition-all shadow-sm">
-            <Trash2 size={16} />
-          </Button>
-        </div>
-      )
-    }
-  ];
+  const users = data?.list || [];
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="전사 사용자 인증 거버넌스"
-        breadcrumbs={[{ label: '사용자 관리' }, { label: '사용자 정보' }]}
-      />
-
-      <HubHeader
-        title="Identity"
-        highlight="Fabric"
-        subtitle="전사 사용자 계정 자격 증명 및 통합 디렉토리 동기화 프로토콜 제어"
-        icon={Users}
-        actions={
-          <div className="flex gap-4 p-2 items-center">
-            <Button
-              variant="ghost"
-              className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95"
-            >
-              <Settings2 size={22} className="group-hover:rotate-90 transition-transform duration-500" />
-            </Button>
-            <Button
-              onClick={handleOpenCreate}
-              size="lg"
-              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
-            >
-              <UserPlus size={20} /> 신규 등록
-            </Button>
-          </div>
-        }
-      />
-
-      <HubMetricGrid>
-        <HubMetricCard title="ACTIVE_RESOURCES" value={users.filter((u: UserManage) => u.userSttusCode === 'A').length} icon={UserCheck} color="emerald" status="TRUSTED" />
-        <HubMetricCard title="PENDING_AUTH" value={users.filter((u: UserManage) => u.userSttusCode === 'P').length} icon={Clock} color="amber" />
-        <HubMetricCard title="SECURITY_ALERTS" value={users.filter((u: UserManage) => u.userSttusCode === 'D').length} icon={ShieldAlert} color="rose" />
-        <HubMetricCard title="IDENTITY_POOL" value={users.length} icon={Users} color="primary" />
-      </HubMetricGrid>
-
-      <div className="grid grid-cols-12 gap-12">
-        {/* Search Panel */}
-        <div className="col-span-12 lg:col-span-4 h-full">
-          <div className="rounded-[0.1rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
-            <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
-              <ShieldCheck size={240} className="text-primary" />
+    <div className="space-y-10">
+      {/* 🔮 Top Command Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+              <Users size={20} />
             </div>
-            <div className="relative z-10 space-y-12">
-              <div className="space-y-3">
-                <div className="w-16 h-16 rounded-[0.1rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
-                  <Zap size={32} className="text-primary" />
-                </div>
-                <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">인증<br />코어 프로토콜</h4>
-              </div>
-
-              <div className="space-y-8">
-                <div className="space-y-3">
-                  <label htmlFor="user-search-input" className="text-[10px] font-black text-white/70 tracking-[0.4em] px-2 uppercase font-mono">Input_Identity_Probe</label>
-                  <div className="relative group/search">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/60 group-focus-within/search:text-primary transition-colors" size={20} aria-hidden="true" />
-                    <input
-                      id="user-search-input"
-                      onChange={(e) => setParams({ ...params, searchKeyword: e.target.value })}
-                      className="w-full h-16 pl-16 pr-8 bg-white/10 border-2 border-white/20 rounded-[0.1rem] focus:border-primary/50 focus:bg-white/20 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/40 uppercase"
-                      placeholder="사용자명 또는 고유 ID"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label htmlFor="user-status-filter" className="text-[10px] font-black text-white/70 tracking-[0.4em] px-2 uppercase font-mono">Status_Filter_Mask</label>
-                  <select
-                    id="user-status-filter"
-                    onChange={(e) => setParams({ ...params, sbscrbSttus: e.target.value })}
-                    className="w-full h-16 px-8 bg-white/10 border-2 border-white/20 rounded-[0.1rem] focus:border-primary/50 focus:bg-white/20 transition-all text-[10px] font-black tracking-widest text-white outline-none appearance-none cursor-pointer uppercase"
-                  >
-                    <option value="" className="bg-slate-900">--- ALL_ENTITIES (전체) ---</option>
-                    <option value="P" className="bg-slate-900 text-amber-500">--- PENDING (승인대기) ---</option>
-                    <option value="A" className="bg-slate-900 text-emerald-500">--- ACTIVE_LIVE (활성) ---</option>
-                    <option value="D" className="bg-slate-900 text-rose-500">--- BLOCKED (비활성) ---</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="pt-8 border-t border-white/5 flex items-center justify-between">
-                <p className="text-[10px] font-bold text-slate-400 leading-relaxed italic uppercase max-w-[180px]">
-                  * 다요소인증(MFA) 적용 계정입니다.
-                </p>
-                <Button variant="ghost" className="h-10 px-4 rounded-[0.1rem] bg-white/5 text-primary text-[9px] font-black tracking-widest uppercase hover:bg-primary hover:text-white transition-all">조회</Button>
-              </div>
-            </div>
+            <h1 className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white uppercase">Identity Stream</h1>
           </div>
+          <p className="text-slate-500 font-bold text-sm tracking-tight pl-1">
+            엔터프라이즈 계정 거버넌스 및 실시간 권한 매트릭스 관리
+          </p>
         </div>
 
-        {/* User Identity Stream */}
-        <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
-          <HubSectionCard
-            title="사용자 아이덴티티 스트림 인벤토리"
-            description="전사 통합 디렉토리에 등록된 모든 사용자 개체의 보안 속성 및 인증 상태 관리 명세입니다."
-            icon={SearchCode}
-          >
-            <div className="overflow-hidden">
-              <StandardDataTable<UserManage>
-                columns={columns}
-                data={users}
-                emptyMessage="조회된 사용자 데이터가 데이터베이스 스트림에 존재하지 않습니다."
-                className="border-none bg-transparent"
-              />
-            </div>
-          </HubSectionCard>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200/50">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={cn("h-8 rounded-lg px-3", viewMode === 'table' && "bg-white dark:bg-slate-700 shadow-sm text-primary")}
+              onClick={() => setViewMode('table')}
+            >
+              <List size={14} className="mr-2" />
+              <span className="text-[10px] font-black uppercase">Table</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={cn("h-8 rounded-lg px-3", viewMode === 'grid' && "bg-white dark:bg-slate-700 shadow-sm text-primary")}
+              onClick={() => setViewMode('grid')}
+            >
+              <LayoutGrid size={14} className="mr-2" />
+              <span className="text-[10px] font-black uppercase">Grid</span>
+            </Button>
+          </div>
+          <Button className="h-12 rounded-xl px-6 bg-slate-900 hover:bg-black dark:bg-primary dark:hover:bg-primary/90 text-white font-black text-xs tracking-widest uppercase shadow-xl transition-all hover:scale-105 active:scale-95 group">
+            <UserPlus size={16} className="mr-2 group-hover:rotate-12 transition-transform" />
+            Provision New Identity
+          </Button>
         </div>
       </div>
 
-      <StandardModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingUser ? '사용자 아키텍처 명세 수정' : '신규 아이덴티티 프로비저닝'}
-        maxWidth="2xl"
-        footer={
-          <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-14 rounded-[0.1rem] font-black text-[10px] tracking-widest border-2">취소</Button>
-            <Button onClick={handleSubmit} disabled={loading} className="flex-[2] h-14 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group">
-              <Zap size={18} className="group-hover:animate-pulse" /> 실행
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-10 pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <FormField 
-              label="사용자 고유 식별 명칭" 
-              htmlFor="userId" 
-              required 
-              description="시스템 접근을 위한 고유 액세스 토큰"
-            >
-              <div className="relative group/id">
-                <Fingerprint size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
-                <Input
-                  id="userId"
-                  value={formData.userId || ''}
-                  onChange={e => setFormData({ ...formData, userId: e.target.value })}
-                  readOnly={!!editingUser}
-                  aria-required="true"
-                  aria-describedby="userId-description"
-                  className="h-16 pl-16 rounded-[0.1rem] border-2 text-md font-black tracking-tighter shadow-inner bg-slate-50/50"
-                  placeholder="사용자 식별자"
-                />
-              </div>
-            </FormField>
-            <FormField label="사용자 성명 (Canonical Name)" htmlFor="userNm" required>
-              <div className="relative group/name">
-                <UserPlus size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/name:opacity-100 transition-opacity" />
-                <Input
-                  id="userNm"
-                  value={formData.userNm || ''}
-                  onChange={e => setFormData({ ...formData, userNm: e.target.value })}
-                  aria-required="true"
-                  className="h-16 pl-16 rounded-[0.1rem] border-2 text-md font-black tracking-tight shadow-inner"
-                  placeholder="표시 이름"
-                />
-              </div>
-            </FormField>
-          </div>
-
-          <FormField 
-            label="인증 크리덴셜 (Credential Phase)" 
-            htmlFor="password" 
-            required={!editingUser} 
-            description={editingUser ? "보안 강화를 위해 필요시에만 변경하십시오." : "보안 강도가 높은 복합 비밀번호를 권장합니다."}
-          >
-            <div className="relative group/pw">
-              <ShieldCheck size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/pw:opacity-100 transition-opacity" />
-              <Input
-                id="password"
-                type="password"
-                value={formData.password || ''}
-                onChange={e => setFormData({ ...formData, password: e.target.value })}
-                aria-required={!editingUser}
-                aria-describedby="password-description"
-                className="h-16 pl-16 rounded-[0.1rem] border-2 text-sm font-black tracking-widest shadow-inner py-4"
-                placeholder="••••••••••••••••"
-              />
+      {/* 🧩 Bento Grid Layout */}
+      <div className="grid grid-cols-12 gap-6">
+        
+        {/* 🛡️ Search & Filter Control (Bento Left) */}
+        <div className="col-span-12 lg:col-span-4 space-y-6">
+          <div className="hub-bento-card bg-slate-900 border-none p-8 text-white group relative overflow-hidden h-full flex flex-col justify-between">
+            <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Shield size={160} />
             </div>
-          </FormField>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <FormField label="커뮤니케이션 엔드포인트" required>
-              <div className="relative group/email">
-                <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/email:opacity-100 transition-opacity" />
-                <Input
-                  type="email"
-                  value={formData.emailAdres || ''}
-                  onChange={e => setFormData({ ...formData, emailAdres: e.target.value })}
-                  className="h-14 pl-14 rounded-[0.1rem] border-2 font-black tracking-tighter text-xs shadow-inner lowercase"
-                  placeholder="이메일 주소"
-                />
+            
+            <div className="relative z-10 space-y-8">
+              <div className="space-y-1">
+                <Badge className="bg-primary/20 text-primary border-none rounded-lg text-[9px] font-black tracking-widest px-3 mb-3">SEC_PROTOCOL_01</Badge>
+                <h2 className="text-2xl font-black tracking-tight leading-none uppercase">Authentication<br/>Core Protocol</h2>
               </div>
-            </FormField>
-            <FormField label="아이덴티티 로드 프로토콜">
-              <select
-                value={formData.userSttusCode || ''}
-                onChange={e => setFormData({ ...formData, userSttusCode: e.target.value })}
-                className="w-full h-14 px-6 rounded-[0.1rem] border-2 bg-slate-50 font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/10 outline-none transition-all cursor-pointer shadow-inner"
-              >
-                <option value="P">--- 대기 중 (비승인 대기) ---</option>
-                <option value="A">--- 활성 (정상) ---</option>
-                <option value="D">--- 비활성 (차단) ---</option>
-              </select>
-            </FormField>
-          </div>
 
-          <div className="p-8 rounded-[0.1rem] bg-indigo-50/30 border-2 border-indigo-100/50 flex items-start gap-4">
-            <ShieldCheck className="text-indigo-500 mt-1 shrink-0" size={20} />
-            <div className="space-y-1">
-              <h6 className="text-[10px] font-black text-indigo-900 tracking-widest">암호화 정책 활성</h6>
-              <p className="text-[10px] font-bold text-indigo-700/60 leading-relaxed">사용자 생성 및 수정 시 모든 개인정보는 AES-256 규격으로 암호화되어 저장됩니다.</p>
+              <div className="space-y-4">
+                <div className="relative group/input">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/input:text-primary transition-colors" size={18} />
+                  <Input 
+                    placeholder="Search by Identity..." 
+                    className="bg-white/5 border-white/10 h-14 pl-12 rounded-xl text-lg font-bold placeholder:text-slate-500 focus:ring-primary focus:border-primary transition-all"
+                    value={searchParams.searchKeyword}
+                    onChange={(e) => setSearchParams((prev: UserSearchParams) => ({ ...prev, searchKeyword: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/opt">
+                    <p className="text-[9px] font-black text-slate-500 mb-2 group-hover/opt:text-primary tracking-widest">FILTER_BY</p>
+                    <div className="flex items-center justify-between font-black text-xs">
+                      <span>Status</span>
+                      <ChevronRight size={12} className="opacity-40" />
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/opt">
+                    <p className="text-[9px] font-black text-slate-500 mb-2 group-hover/opt:text-primary tracking-widest">SORT_BY</p>
+                    <div className="flex items-center justify-between font-black text-xs">
+                      <span>Last Activity</span>
+                      <ChevronRight size={12} className="opacity-40" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-10 pt-6 border-t border-white/10 relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-black tracking-widest opacity-60">REAL-TIME SYNC ACTIVE</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => refetch()} className="text-white/40 hover:text-white hover:bg-white/5 h-8 px-2">
+                  <RefreshCw size={14} className="mr-2" />
+                  <span className="text-[9px] font-black">REFRESH</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </StandardModal>
+
+        {/* 📊 Inventory & Data Grid (Bento Right) */}
+        <div className="col-span-12 lg:col-span-8">
+          <div className="hub-bento-card p-0 bg-white dark:bg-slate-900 shadow-xl border-slate-200/50 h-full flex flex-col">
+            <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                  <Database size={16} />
+                </div>
+                <h3 className="text-sm font-black tracking-tighter uppercase text-slate-600 dark:text-slate-300">Identity Inventory</h3>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 px-3 py-1 bg-slate-200/50 dark:bg-slate-800 rounded-lg">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">TOTAL {data?.total || 0}</span>
+                </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800">
+                  <MoreHorizontal size={14} />
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-hidden">
+              <Table className="relative">
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
+                    <TableHead className="w-[80px] py-6 text-[10px] font-black text-slate-400 uppercase text-center">Protocol</TableHead>
+                    <TableHead className="py-6 text-[10px] font-black text-slate-400 uppercase">Core Identity</TableHead>
+                    <TableHead className="py-6 text-[10px] font-black text-slate-400 uppercase">Clearance</TableHead>
+                    <TableHead className="py-6 text-[10px] font-black text-slate-400 uppercase">State</TableHead>
+                    <TableHead className="py-6 text-[10px] font-black text-slate-400 uppercase text-right">Integrity</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    [...Array(5)].map((_, i) => (
+                      <TableRow key={`skeleton-${i}`} className="animate-pulse">
+                        <TableCell colSpan={5} className="py-10">
+                          <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-xl w-full" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : users.length > 0 ? (
+                    users.map((user: UserManage, idx: number) => (
+                      <TableRow key={user.esntlId} className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-slate-50 dark:border-slate-800">
+                        <TableCell className="text-center font-mono text-[10px] font-bold text-slate-400 group-hover:text-primary transition-colors">
+                          #{idx + 1 + ((searchParams.pageIndex || 1) - 1) * (searchParams.size || 10)}
+                        </TableCell>
+                        <TableCell className="py-5">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-inner">
+                              <UserCheck size={18} />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-black text-slate-900 dark:text-white text-base tracking-tight leading-none mb-1">{user.userNm}</span>
+                              <span className="text-[11px] font-bold text-slate-400 leading-none">{user.userId} • {user.emailAdres}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                             <div className="flex items-center gap-2">
+                               <Shield size={10} className="text-slate-400" />
+                               <span className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-tighter">Level_04</span>
+                             </div>
+                             <span className="text-[9px] font-bold text-slate-400 italic">Global Admin Access</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="rounded-lg bg-emerald-500/10 text-emerald-600 border-none font-black text-[9px] tracking-widest px-3 py-1">
+                             OPERATIONAL
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-900 hover:text-white dark:hover:bg-primary transition-all">
+                              <Activity size={16} />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-900 hover:text-white dark:hover:bg-primary transition-all">
+                              <ArrowUpRight size={16} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-32 text-center">
+                         <div className="flex flex-col items-center gap-4 opacity-20">
+                            <Zap size={64} className="animate-bounce" />
+                            <p className="text-2xl font-black tracking-tighter uppercase">No Identity Records Detected</p>
+                         </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            
+            <div className="px-8 py-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+               <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Encryption Standard: AES-256-GCM</p>
+               <div className="flex items-center gap-2">
+                  {[1, 2, 3].map(p => (
+                    <Button key={p} variant="outline" className={cn("w-8 h-8 p-0 rounded-lg font-black text-[10px]", p === 1 && "bg-slate-900 text-white border-none shadow-lg")}>
+                      {p}
+                    </Button>
+                  ))}
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 🚀 System Analytics Row (Bento Bottom) */}
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-12 md:col-span-4">
+           <div className="hub-bento-card p-8 group hover:border-primary/50">
+              <div className="flex items-center justify-between mb-6">
+                 <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-600">
+                    <UserX size={20} />
+                 </div>
+                 <ArrowUpRight size={16} className="text-slate-300 group-hover:text-primary transition-colors" />
+              </div>
+              <h4 className="text-base font-black tracking-tight mb-1 uppercase">Dormant Streams</h4>
+              <p className="text-[11px] font-bold text-slate-500 leading-relaxed">
+                최근 90일간 활동이 없는 12개의 아이덴티티가 발견되었습니다. 보안 프로토콜에 따른 정리가 권장됩니다.
+              </p>
+           </div>
+        </div>
+        <div className="col-span-12 md:col-span-4">
+           <div className="hub-bento-card p-8 group hover:border-indigo-500/50">
+              <div className="flex items-center justify-between mb-6">
+                 <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                    <Lock size={20} />
+                 </div>
+                 <ArrowUpRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
+              </div>
+              <h4 className="text-base font-black tracking-tight mb-1 uppercase">Security Lockdowns</h4>
+              <p className="text-[11px] font-bold text-slate-500 leading-relaxed">
+                비정상적 접근 시도로 인해 일시 격리된 3개의 계정이 존재합니다. 관리자 검토가 필요합니다.
+              </p>
+           </div>
+        </div>
+        <div className="col-span-12 md:col-span-4">
+           <div className="hub-bento-card p-8 group hover:border-amber-500/50">
+              <div className="flex items-center justify-between mb-6">
+                 <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                    <History size={20} />
+                 </div>
+                 <ArrowUpRight size={16} className="text-slate-300 group-hover:text-amber-500 transition-colors" />
+              </div>
+              <h4 className="text-base font-black tracking-tight mb-1 uppercase">Audit Trailing</h4>
+              <p className="text-[11px] font-bold text-slate-500 leading-relaxed">
+                전체 시스템 무결성 검사가 완료되었습니다. 모든 아이덴티티 변경 사항이 중앙 감사 로그에 기록되었습니다.
+              </p>
+           </div>
+        </div>
+      </div>
     </div>
   );
 }

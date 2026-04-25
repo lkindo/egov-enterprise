@@ -40,7 +40,7 @@ export default function WorkflowPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-[0.1rem] text-primary">
+                        <div className="p-2 bg-primary/10 rounded-xl text-primary">
                             <GitBranch size={18} />
                         </div>
                         <span className="text-sm font-black text-primary tracking-tight">워크플로우 엔진</span>
@@ -93,7 +93,7 @@ export default function WorkflowPage() {
 
                 {/* 3. Detail Sidebar */}
                 <div className="space-y-6">
-                    <div className="p-8 border rounded-[0.1rem] bg-card shadow-lg space-y-8">
+                    <div className="p-8 border rounded-xl bg-card shadow-lg space-y-8">
                         <div className="flex items-center justify-between">
                             <h3 className="text-sm font-black text-foreground tracking-tight">단계 상세 정보</h3>
                             <button className="p-2 hover:bg-muted rounded-full"><MoreHorizontal size={14} /></button>
@@ -103,7 +103,7 @@ export default function WorkflowPage() {
                             <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
                                 <div className="space-y-4">
                                     <div className={cn(
-                                        "w-14 h-14 rounded-[0.1rem] flex items-center justify-center",
+                                        "w-14 h-14 rounded-xl flex items-center justify-center",
                                         selectedNode.status === 'current' ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
                                     )}>
                                         {selectedNode.status === 'completed' ? <CheckCircle2 size={30} /> : <Clock size={30} />}
@@ -117,7 +117,7 @@ export default function WorkflowPage() {
                                 <div className="space-y-6">
                                     <div className="space-y-2">
                                         <span className="text-[9px] font-black text-muted-foreground tracking-[0.2em]">현재 담당자</span>
-                                        <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-[0.1rem] border border-white/5">
+                                        <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl border border-white/5">
                                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-sm ">
                                                 {selectedNode.assignee?.charAt(0)}
                                             </div>

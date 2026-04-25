@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -86,7 +86,7 @@ const ScrapListPage = () => {
                         </div>
                     </div>
 
-                    <div className="rounded-[0.1rem] border shadow-sm overflow-hidden bg-white">
+                    <div className="rounded-xl border shadow-sm overflow-hidden bg-white">
                         <Table>
                             <TableHeader className="bg-muted/30">
                                 <TableRow>

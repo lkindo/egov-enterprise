@@ -80,7 +80,7 @@ export function UserPicker({
  value={keyword}
  onChange={(e) => setKeyword(e.target.value)}
  placeholder="이름, 부서, ID 검색..."
- className="w-full h-11 pl-10 pr-4 rounded-[0.1rem] border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+ className="w-full h-11 pl-10 pr-4 rounded-xl border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
  autoFocus
  />
  <button
@@ -91,7 +91,7 @@ export function UserPicker({
  </form>
 
  {/* Results Area */}
- <div className="bg-card border rounded-[0.1rem] overflow-hidden min-h-[350px] flex flex-col">
+ <div className="bg-card border rounded-xl overflow-hidden min-h-[350px] flex flex-col">
  {loading ? (
  <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground animate-pulse font-medium">
  검색 중..

@@ -39,7 +39,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
       header: '포상 명칭',
       accessor: (item) => (
         <div className="flex items-center gap-6 py-2">
-          <div className="w-12 h-12 rounded-[0.1rem] bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-100 shadow-inner group-hover:bg-amber-500 group-hover:text-white transition-all">
+          <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-100 shadow-inner group-hover:bg-amber-500 group-hover:text-white transition-all">
             <Trophy size={20} />
           </div>
           <div className="flex flex-col gap-0.5 min-w-0">
@@ -117,11 +117,11 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
             <Button
               variant="outline"
               onClick={() => queryClient.invalidateQueries()}
-              className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-lg active:scale-95"
+              className="h-14 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-lg active:scale-95"
             >
               <RefreshCcw size={22} className="hover:rotate-180 transition-transform duration-700" />
             </Button>
-            <Button className="h-14 px-10 rounded-[0.1rem] bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase hover:bg-primary transition-all hover:-translate-y-1 gap-3 shadow-2xl">
+            <Button className="h-14 px-10 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase hover:bg-primary transition-all hover:-translate-y-1 gap-3 shadow-2xl">
                             <Plus size={20} /> 포상 기록 신규 저장
             </Button>
           </div>
@@ -146,11 +146,11 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
               <Input
                                 placeholder="포상 명칭 또는 대상자 식별자로 분석..."
-                className="h-16 pl-16 rounded-[0.1rem] border-2 bg-slate-50/50 text-sm font-black tracking-tight shadow-inner"
+                className="h-16 pl-16 rounded-xl border-2 bg-slate-50/50 text-sm font-black tracking-tight shadow-inner"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
               />
-              <Button type="submit" className="h-16 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE</Button>
+              <Button type="submit" className="h-16 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE</Button>
             </form>
             <div>
               <span className="text-[10px] font-black text-muted-foreground/30 tracking-[0.4em] uppercase font-mono italic tabular-nums">DATA_PROBE_UPDATING...</span>

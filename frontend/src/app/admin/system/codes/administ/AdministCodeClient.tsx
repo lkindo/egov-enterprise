@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -71,7 +71,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
         header: '행정 식별자', 
         accessor: (item: any) => (
             <div className="flex items-center gap-4 py-3">
-                <div className="w-10 h-10 rounded-[0.1rem] bg-primary flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                     <MapPin size={18} />
                 </div>
                 <div className="flex flex-col gap-0.5">
@@ -143,11 +143,11 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
             <Button
                 variant="ghost"
                 onClick={() => loadData()}
-                className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+                className="h-14 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
             >
                 <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
-             <Button className="h-14 px-10 rounded-[0.1rem] bg-primary border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-3 group">
+             <Button className="h-14 px-10 rounded-xl bg-primary border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-3 group">
                 <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" /> 신규 행정 코드 인스턴스 등록
              </Button>
           </div>
@@ -164,13 +164,13 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
       <div className="grid grid-cols-12 gap-12">
         {/* Navigation Sidebar */}
         <div className="col-span-12 lg:col-span-4 h-full">
-            <div className="rounded-[0.1rem] bg-white/80 backdrop-blur-xl text-slate-900 p-12 shadow-2xl relative overflow-hidden group h-full border border-slate-200/50 ring-1 ring-slate-100 min-h-[500px]">
+            <div className="rounded-xl bg-white/80 backdrop-blur-xl text-slate-900 p-12 shadow-2xl relative overflow-hidden group h-full border border-slate-200/50 ring-1 ring-slate-100 min-h-[500px]">
                 <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                     <Milestone size={240} className="text-primary" />
                 </div>
                 <div className="relative z-10 space-y-12">
                     <div className="space-y-4">
-                        <div className="w-20 h-20 rounded-[0.1rem] bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
+                        <div className="w-20 h-20 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner">
                             <Monitor size={36} className="text-primary" />
                         </div>
                         <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase">공간 인텔리전스<br />허브</h4>
@@ -204,10 +204,10 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
                             placeholder="행정구역명을 입력하여 메타데이터 엔티티를 조회하세요.."
                             value={searchWrd}
                             onChange={(e) => setSearchWrd(e.target.value)}
-                            className="h-14 pl-14 pr-6 w-full bg-slate-50 border-none rounded-[0.1rem] text-[11px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
+                            className="h-14 pl-14 pr-6 w-full bg-slate-50 border-none rounded-xl text-[11px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300"
                         />
                     </div>
-                    <Button type="submit" size="lg" className="h-14 px-10 rounded-[0.1rem] bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition-all gap-3 group">
+                    <Button type="submit" size="lg" className="h-14 px-10 rounded-xl bg-primary border-none text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:brightness-110 transition-all gap-3 group">
                         <Layers size={18} className="group-hover:rotate-180 transition-transform duration-500" /> 데이터 필터링 실행
                     </Button>
                 </form>

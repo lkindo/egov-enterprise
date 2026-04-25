@@ -21,7 +21,7 @@ const MOCK_MAP_DATA: MapData[] = [
 
 export function NationalDistributionMap({ className }: { className?: string }) {
   return (
-    <div className={cn("p-8 border rounded-[0.1rem] bg-card shadow-sm overflow-hidden relative", className)}>
+    <div className={cn("p-8 border rounded-xl bg-card shadow-sm overflow-hidden relative", className)}>
       <div className="flex items-center justify-between mb-8">
         <div className="space-y-1">
           <h3 className="text-sm font-black text-foreground tracking-tight flex items-center gap-2">
@@ -68,7 +68,7 @@ export function NationalDistributionMap({ className }: { className?: string }) {
             )} />
 
             {/* Tooltip on Point */}
-            <div className="absolute top-0 left-full ml-3 opacity-0 group-hover/point:opacity-100 transition-opacity bg-background/95 backdrop-blur-md border shadow-2xl p-3 rounded-[0.1rem] min-w-[140px] pointer-events-none z-50">
+            <div className="absolute top-0 left-full ml-3 opacity-0 group-hover/point:opacity-100 transition-opacity bg-background/95 backdrop-blur-md border shadow-2xl p-3 rounded-xl min-w-[140px] pointer-events-none z-50">
               <p className="text-[9px] font-black text-muted-foreground mb-1">{item.region}</p>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs font-bold text-foreground">접속/업무</span>
@@ -85,7 +85,7 @@ export function NationalDistributionMap({ className }: { className?: string }) {
         ))}
       </div>
 
-      <div className="absolute bottom-4 right-4 left-4 p-4 rounded-[0.1rem] bg-muted/30 backdrop-blur-sm border border-white/10 flex items-center justify-between">
+      <div className="absolute bottom-4 right-4 left-4 p-4 rounded-xl bg-muted/30 backdrop-blur-sm border border-white/10 flex items-center justify-between">
         <div className="flex flex-col">
           <span className="text-[9px] font-black text-slate-600 tracking-tight">분석 핵심 지점</span>
           <span className="text-xs font-black text-foreground ">서울 본사 / 영남 허브</span>

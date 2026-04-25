@@ -1,4 +1,4 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -13,12 +13,12 @@ export interface Network {
  subnet: string;
  domnServer: string;
  userNm: string;
- useAt: string;
+ useAt: 'Y' | 'N';
 }
 
 class NetworkAdminService extends AdminService {
  constructor() {
- super('/network');
+ super('/ntwrksvc-monitoring');
  }
 
  /** ㅽ듃?뚰겕 紐⑸줉 조회 */

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import {
@@ -24,14 +24,14 @@ export function StandardChartWrapper({
     title, type, data, dataKeys, loading, className, height = 300
 }: StandardChartWrapperProps) {
     return (
-        <div className={cn("p-6 border rounded-[0.1rem] bg-card shadow-sm transition-all hover:shadow-md", className)}>
+        <div className={cn("p-6 border rounded-xl bg-card shadow-sm transition-all hover:shadow-md", className)}>
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-[11px] font-black text-slate-700 tracking-tight">{title}</h3>
             </div>
 
             <div style={{ width: '100%', height }}>
                 {loading ? (
-                    <div className="w-full h-full flex items-center justify-center bg-muted/20 rounded-[0.1rem] animate-pulse">
+                    <div className="w-full h-full flex items-center justify-center bg-muted/20 rounded-xl animate-pulse">
                         <div className="h-4 w-24 bg-muted rounded" />
                     </div>
                 ) : (
@@ -167,7 +167,7 @@ export function StandardChartWrapper({
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: unknown[]; label?: string }) {
     if (active && payload && (payload as unknown[]).length) {
         return (
-            <div className="bg-background/95 backdrop-blur-sm border shadow-2xl rounded-[0.1rem] p-3 min-w-[120px]">
+            <div className="bg-background/95 backdrop-blur-sm border shadow-2xl rounded-xl p-3 min-w-[120px]">
                 <p className="text-[10px] font-black text-muted-foreground mb-1 tracking-tighter">{label}</p>
                 <div className="space-y-1">
                     {(payload as any[] || []).map((p, idx) => (

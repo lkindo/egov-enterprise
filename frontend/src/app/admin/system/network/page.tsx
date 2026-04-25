@@ -1,4 +1,4 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { networkAdminService, Network } from '@/services/foundation/system/NetworkAdminService';
 import NetworkAdminClient from './NetworkAdminClient';
@@ -8,7 +8,7 @@ export const metadata = {
   description: '시스템 전반의 네트워크 토폴로지 정보를 관리하고 최적의 연결성을 보장합니다',
 };
 
-export default async function AdminNetworkPage() {
+async function NetworkDataContainer() {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
@@ -23,9 +23,13 @@ export default async function AdminNetworkPage() {
     console.error('Server-side fetch network data failed:', error);
   }
 
+  return <NetworkAdminClient initialNetworks={initialNetworks} />;
+}
+
+export default function AdminNetworkPage() {
   return (
     <Suspense fallback={<NetworkAdminLoading />}>
-      <NetworkAdminClient initialNetworks={initialNetworks} />
+      <NetworkDataContainer />
     </Suspense>
   );
 }
@@ -33,15 +37,15 @@ export default async function AdminNetworkPage() {
 function NetworkAdminLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-24 h-[calc(100vh-120px)] flex flex-col text-left">
-      <div className="h-14 w-96 bg-slate-100 rounded-[0.1rem]" />
+      <div className="h-14 w-96 bg-slate-100 rounded-xl" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 shrink-0">
-        {[1, 2, 3, 4].map(i => <div key={i} className="h-44 bg-slate-50 rounded-[0.1rem]" />)}
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-44 bg-slate-50 rounded-xl" />)}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 shrink-0">
-        <div className="md:col-span-2 h-64 bg-slate-900/5 rounded-[0.1rem]" />
-        <div className="h-64 bg-slate-50 rounded-[0.1rem]" />
+        <div className="md:col-span-2 h-64 bg-slate-900/5 rounded-xl" />
+        <div className="h-64 bg-slate-50 rounded-xl" />
       </div>
-      <div className="flex-1 bg-slate-100/50 rounded-[0.1rem] p-12 mt-8" />
+      <div className="flex-1 bg-slate-100/50 rounded-xl p-12 mt-8" />
     </div>
   );
 }

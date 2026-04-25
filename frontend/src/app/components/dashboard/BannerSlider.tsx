@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
@@ -43,7 +43,7 @@ export function BannerSlider() {
   };
 
   if (loading) {
-    return <div className="w-full h-48 bg-muted animate-pulse rounded-[0.1rem]" />;
+    return <div className="w-full h-48 bg-muted animate-pulse rounded-xl" />;
   }
 
   if (banners.length === 0) {
@@ -56,7 +56,7 @@ export function BannerSlider() {
     : `/api/v1/files/download?fileId=${currentBanner.bannerImageFile || currentBanner.bannerImage}`;
 
   return (
-    <div className="relative group w-full h-48 md:h-64 overflow-hidden rounded-[0.1rem] bg-slate-900 shadow-lg">
+    <div className="relative group w-full h-48 md:h-64 overflow-hidden rounded-xl bg-slate-900 shadow-lg">
       <Image
         src={imageUrl}
         alt={currentBanner.bannerNm}
@@ -78,7 +78,7 @@ export function BannerSlider() {
             href={currentBanner.linkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 w-fit px-4 py-2 bg-white text-black rounded-[0.1rem] font-bold hover:bg-primary hover:text-white transition-all text-sm"
+            className="flex items-center gap-2 w-fit px-4 py-2 bg-white text-black rounded-xl font-bold hover:bg-primary hover:text-white transition-all text-sm"
           >
             자세히 보기 <ExternalLink size={14} />
           </a>

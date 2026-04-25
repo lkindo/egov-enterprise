@@ -114,7 +114,7 @@ export default function OnlinePollAdminClient({
             header: '설문 명',
             accessor: (item: OnlinePollDto) => (
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-[0.1rem] bg-slate-900 border border-slate-800 flex items-center justify-center text-white shadow-xl transition-transform group-hover:scale-110">
+                    <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-white shadow-xl transition-transform group-hover:scale-110">
                         <Vote size={22} />
                     </div>
                     <div>
@@ -187,14 +187,14 @@ export default function OnlinePollAdminClient({
                             variant="outline"
                             size="lg"
                             onClick={handleRefresh}
-                            className="h-12 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2"
+                            className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2"
                         >
                             <RefreshCcw size={16} className={cn(loading && "animate-spin")} /> 엔진 동기화
                         </Button>
                         <Button
                             size="lg"
                             onClick={() => setIsAddOpen(true)}
-                            className="h-12 px-8 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2"
+                            className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2"
                         >
                             <Plus size={18} /> 신규 프로토콜 생성
                         </Button>
@@ -243,7 +243,7 @@ export default function OnlinePollAdminClient({
                                 placeholder="설문 필터링..."
                                 value={searchKeyword}
                                 onChange={(e) => setSearchKeyword(e.target.value)}
-                                className="h-14 pl-12 pr-6 w-full md:w-[320px] bg-muted/30 border-none rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                                className="h-14 pl-12 pr-6 w-full md:w-[320px] bg-muted/30 border-none rounded-xl text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                             />
                         </div>
                     </div>
@@ -261,11 +261,11 @@ export default function OnlinePollAdminClient({
             </HubSectionCard>
 
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto rounded-[0.1rem] p-12 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-white/95 backdrop-blur-3xl relative overflow-x-hidden">
+                <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto rounded-xl p-12 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-white/95 backdrop-blur-3xl relative overflow-x-hidden">
                     <div className="absolute top-[-15%] left-[-15%] w-64 h-64 bg-primary/5 blur-[80px] rounded-full pointer-events-none" />
                     
                     <DialogHeader className="space-y-6 relative z-10 text-center">
-                        <div className="w-20 h-20 bg-slate-900 text-white rounded-[0.1rem] flex items-center justify-center shadow-2xl mx-auto transition-transform hover:rotate-12 duration-500 border-4 border-white/20">
+                        <div className="w-20 h-20 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-2xl mx-auto transition-transform hover:rotate-12 duration-500 border-4 border-white/20">
                             <Vote size={32} />
                         </div>
                         <div className="space-y-2">
@@ -286,7 +286,7 @@ export default function OnlinePollAdminClient({
                                 placeholder="설문 명..."
                                 value={newPoll.pollNm}
                                 onChange={(e) => setNewPoll(prev => ({ ...prev, pollNm: e.target.value }))}
-                                className="h-18 px-8 rounded-[0.1rem] border-none bg-slate-50 text-xl font-black focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
+                                className="h-18 px-8 rounded-xl border-none bg-slate-50 text-xl font-black focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
                             />
                         </section>
                         
@@ -299,7 +299,7 @@ export default function OnlinePollAdminClient({
                                         type="date"
                                         value={newPoll.pollBeginDe}
                                         onChange={(e) => setNewPoll(prev => ({ ...prev, pollBeginDe: e.target.value }))}
-                                        className="h-16 pl-14 pr-6 rounded-[0.1rem] border-none bg-slate-50 font-black text-sm focus:bg-white transition-all shadow-inner"
+                                        className="h-16 pl-14 pr-6 rounded-xl border-none bg-slate-50 font-black text-sm focus:bg-white transition-all shadow-inner"
                                     />
                                 </div>
                             </div>
@@ -311,7 +311,7 @@ export default function OnlinePollAdminClient({
                                         type="date"
                                         value={newPoll.pollEndDe}
                                         onChange={(e) => setNewPoll(prev => ({ ...prev, pollEndDe: e.target.value }))}
-                                        className="h-16 pl-14 pr-6 rounded-[0.1rem] border-none bg-slate-50 font-black text-sm focus:bg-white transition-all shadow-inner"
+                                        className="h-16 pl-14 pr-6 rounded-xl border-none bg-slate-50 font-black text-sm focus:bg-white transition-all shadow-inner"
                                     />
                                 </div>
                             </div>
@@ -326,7 +326,7 @@ export default function OnlinePollAdminClient({
                                 <button 
                                     type="button" 
                                     onClick={handleAddItem}
-                                    className="h-10 px-6 rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase border border-primary/20 text-primary hover:bg-primary/5 flex items-center gap-2 transition-all active:scale-95"
+                                    className="h-10 px-6 rounded-xl text-[10px] font-black tracking-widest uppercase border border-primary/20 text-primary hover:bg-primary/5 flex items-center gap-2 transition-all active:scale-95"
                                 >
                                     <Plus size={14} /> Append Node
                                 </button>
@@ -339,7 +339,7 @@ export default function OnlinePollAdminClient({
                                         key={index} 
                                         className="flex items-center gap-4 group/item"
                                     >
-                                        <div className="w-14 h-16 rounded-[0.1rem] bg-slate-900/5 dark:bg-muted/30 flex flex-col items-center justify-center font-black text-slate-300 dark:text-muted-foreground text-[10px] shadow-inner border border-border/10 shrink-0">
+                                        <div className="w-14 h-16 rounded-xl bg-slate-900/5 dark:bg-muted/30 flex flex-col items-center justify-center font-black text-slate-300 dark:text-muted-foreground text-[10px] shadow-inner border border-border/10 shrink-0">
                                             <span className="opacity-40 uppercase mb-0.5">노드</span>
                                             <span className="text-foreground leading-none">{String(index + 1).padStart(2, '0')}</span>
                                         </div>
@@ -352,7 +352,7 @@ export default function OnlinePollAdminClient({
                                                     items[index].pollIemNm = e.target.value;
                                                     setNewPoll(prev => ({ ...prev, pollItems: items }));
                                                 }}
-                                                className="h-16 px-6 rounded-[0.1rem] border-none bg-slate-50 font-bold text-sm focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
+                                                className="h-16 px-6 rounded-xl border-none bg-slate-50 font-bold text-sm focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all shadow-inner uppercase tracking-tight"
                                             />
                                         </div>
                                         {index > 1 && (
@@ -361,7 +361,7 @@ export default function OnlinePollAdminClient({
                                                 variant="ghost" 
                                                 size="sm" 
                                                 onClick={() => handleRemoveItem(index)}
-                                                className="h-16 w-16 rounded-[0.1rem] text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                                                className="h-16 w-16 rounded-xl text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
                                             >
                                                 <Trash2 size={20} />
                                             </Button>
@@ -376,14 +376,14 @@ export default function OnlinePollAdminClient({
                         <Button
                             variant="outline"
                             onClick={() => setIsAddOpen(false)}
-                            className="h-18 px-12 rounded-[0.1rem] border-2 border-border font-black text-[11px] tracking-widest uppercase hover:bg-slate-50"
+                            className="h-18 px-12 rounded-xl border-2 border-border font-black text-[11px] tracking-widest uppercase hover:bg-slate-50"
                         >
                             Terminate
                         </Button>
                         <Button
                             onClick={handleAdd}
                             disabled={loading}
-                            className="h-18 flex-1 bg-slate-900 border-none text-white rounded-[0.1rem] font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
+                            className="h-18 flex-1 bg-slate-900 border-none text-white rounded-xl font-black text-[11px] tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
                         >
                             {loading ? <RefreshCcw size={18} className="animate-spin" /> : <MonitorCheck size={18} />}
                             Commit Protocol
@@ -399,7 +399,7 @@ function SummaryBlock({ title, value, icon, status, color, bg }: any) {
     return (
         <div className={cn("hub-table-container p-12 group hover:scale-[1.02] transition-all relative overflow-hidden bg-white border-border/50 shadow-md", bg)}>
             <div className="flex justify-between items-start mb-10">
-                <div className={cn("w-14 h-14 rounded-[0.1rem] bg-slate-50 dark:bg-muted/10 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
+                <div className={cn("w-14 h-14 rounded-xl bg-slate-50 dark:bg-muted/10 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
                     {icon}
                 </div>
                 <HubStatusBadge label={`SYSTEM STATUS: ${status}`} variant="default" className="text-[8px] font-black tracking-widest shadow-sm" />

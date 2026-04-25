@@ -50,15 +50,15 @@ export default async function BannerAdminPage() {
 function BannerAdminLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse p-6">
-      <div className="h-14 w-96 bg-slate-100 rounded-[0.1rem]" />
+      <div className="h-14 w-96 bg-slate-100 rounded-xl" />
       <div className="flex justify-center">
-        <div className="h-20 w-[400px] bg-slate-50 rounded-[0.1rem]" />
+        <div className="h-20 w-[400px] bg-slate-50 rounded-xl" />
       </div>
-      <div className="h-40 w-full bg-slate-100 rounded-[0.1rem]" />
+      <div className="h-40 w-full bg-slate-100 rounded-xl" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {[1, 2, 3, 4].map(i => <div key={i} className="h-48 bg-slate-50 rounded-[0.1rem]" />)}
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-48 bg-slate-50 rounded-xl" />)}
       </div>
-      <div className="h-96 w-full bg-slate-100/50 rounded-[0.1rem]" />
+      <div className="h-96 w-full bg-slate-100/50 rounded-xl" />
     </div>
   );
 }

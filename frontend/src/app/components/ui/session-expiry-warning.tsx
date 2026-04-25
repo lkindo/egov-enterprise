@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Shield, Clock, X } from 'lucide-react';
@@ -173,13 +173,13 @@ export function SessionExpiryWarning() {
               <div className="px-6 pb-6 flex gap-3">
                 <button
                   onClick={handleLogout}
-                  className="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-500 font-black text-sm rounded-[0.1rem] hover:bg-slate-50 transition-colors"
+                  className="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-500 font-black text-sm rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   로그아웃
                 </button>
                 <button
                   onClick={handleExtendSession}
-                  className="flex-1 px-4 py-3 bg-slate-900 text-white font-black text-sm rounded-[0.1rem] hover:bg-slate-800 shadow-xl transition-all active:scale-95"
+                  className="flex-1 px-4 py-3 bg-slate-900 text-white font-black text-sm rounded-xl hover:bg-slate-800 shadow-xl transition-all active:scale-95"
                 >
                   세션 연장
                 </button>

@@ -61,12 +61,12 @@ export function StandardSummaryCard({
     // Legacy / Minimalist fallback
     return (
       <div className={cn(
-        "p-6 rounded-[0.1rem] border shadow-sm bg-card transition-all hover:shadow-md flex flex-col justify-between",
+        "p-6 rounded-xl border shadow-sm bg-card transition-all hover:shadow-md flex flex-col justify-between",
         isAlert && value && Number(value) > 0 ? "border-red-200 bg-red-50/30 animate-pulse" : "",
         className
       )}>
         <div className="flex justify-between items-start mb-4">
-          <div className={cn("p-3 rounded-[0.1rem]", variantStyles[variant])}>
+          <div className={cn("p-3 rounded-xl", variantStyles[variant])}>
             {icon}
           </div>
           {trend && (
@@ -94,13 +94,13 @@ export function StandardSummaryCard({
   // Premium Hub-style variant
   return (
     <div className={cn(
-      "p-8 rounded-[0.1rem] border transition-all hover:scale-[1.05] group overflow-hidden relative shadow-lg",
+      "p-8 rounded-xl border transition-all hover:scale-[1.05] group overflow-hidden relative shadow-lg",
       variantStyles[variant],
       className
     )}>
       <div className="flex justify-between items-start mb-6 relative z-10">
         <div className={cn(
-          "w-12 h-12 rounded-[0.1rem] flex items-center justify-center group-hover:rotate-6 transition-transform shadow-lg", 
+          "w-12 h-12 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform shadow-lg", 
           iconBgMap[variant] || "bg-white/20 text-current"
         )}>
           {icon}

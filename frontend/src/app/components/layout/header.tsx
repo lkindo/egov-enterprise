@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, use } from 'react';
 import { useTheme } from 'next-themes';
@@ -157,7 +157,7 @@ export function Header({
         </Link>
 
         <div className="flex-1 flex justify-center">
-          <nav className="hidden xl:flex items-center gap-1 bg-muted/50 p-1 rounded-[0.1rem] border border-border/50" aria-label="도메인 네비게이션">
+          <nav className="hidden xl:flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border/50" aria-label="도메인 네비게이션">
             {menus.map((menu, index) => {
               const Icon = DOMAIN_ICON_MAP[menu.menuNo] || CircleDot;
               const isActive = activeMenuNo === menu.menuNo;

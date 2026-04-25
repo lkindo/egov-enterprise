@@ -1,263 +1,290 @@
+'use client';
 
-import React, { useState } from 'react';
-import {
-  Bell,
-  Mail,
-  MessageSquare,
-  Send,
-  Search,
-  Filter,
+import React, { useState, useEffect } from 'react';
+import { 
+  Bell, 
+  Shield, 
+  Zap, 
+  Activity, 
+  Cpu, 
+  Globe, 
+  Mail, 
+  MessageSquare, 
+  AlertCircle,
+  ArrowRight,
+  Sparkles,
+  Maximize2,
+  RefreshCw,
+  X,
+  ChevronRight,
   Clock,
   CheckCircle2,
-  AlertTriangle,
-  Info,
-  MoreVertical,
-  ChevronRight,
-  Zap,
-  Bot
+  Lock
 } from 'lucide-react';
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
-export interface NotificationRecord {
+interface Notification {
   id: string;
-  type: 'system' | 'mail' | 'sms';
   title: string;
   content: string;
-  recipient: string;
-  timestamp: string;
-  status: 'sent' | 'pending' | 'failed';
-  severity: 'low' | 'medium' | 'high';
+  time: string;
+  type: 'security' | 'system' | 'message' | 'alert';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: 'new' | 'read' | 'archived';
 }
 
+const SAMPLE_NOTIFICATIONS: Notification[] = [
+  {
+    id: '1',
+    title: 'Security Protocol Alpha Activated',
+    content: 'Multiple failed login attempts detected from IP: 192.168.1.104. Automated firewall rules applied.',
+    time: '2 mins ago',
+    type: 'security',
+    priority: 'critical',
+    status: 'new'
+  },
+  {
+    id: '2',
+    title: 'System Intelligence Optimized',
+    content: 'AI-driven database indexing complete. Query performance improved by 24.5%.',
+    time: '15 mins ago',
+    type: 'system',
+    priority: 'medium',
+    status: 'new'
+  },
+  {
+    id: '3',
+    title: 'New Collaborative Message',
+    content: 'Admin_User_01 sent a new strategy document for the upcoming Q3 infrastructure review.',
+    time: '1 hour ago',
+    type: 'message',
+    priority: 'low',
+    status: 'read'
+  }
+];
+
 export function SmartNotificationHub() {
-  const [activeTab, setActiveTab] = useState<'all' | 'system' | 'mail' | 'sms'>('all');
-  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'all' | 'critical' | 'unread'>('all');
+  const [notifications, setNotifications] = useState<Notification[]>(SAMPLE_NOTIFICATIONS);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [progress, setProgress] = useState(100);
 
-  const MOCK_NOTIFICATIONS: NotificationRecord[] = [
-    {
-      id: 'nt-001',
-      type: 'system',
-      title: '보안 정책 변경 안내',
-      content: '패스워드 만료 주기 정책이 30일로 단축되었습니다.',
-      recipient: '전체 사용자',
-      timestamp: '2026-02-23 10:30:15',
-      status: 'sent',
-      severity: 'high'
-    },
-    {
-      id: 'nt-002',
-      type: 'mail',
-      title: '연간 성과 분석 보고',
-      content: '2025년도 성과 분석 결과 리포트가 발송되었습니다.',
-      recipient: 'executives@company.com',
-      timestamp: '2026-02-23 09:15:00',
-      status: 'pending',
-      severity: 'medium'
-    },
-    {
-      id: 'nt-003',
-      type: 'sms',
-      title: '서버 과부하 경고',
-      content: '[EGov] DB 서버 CPU 점유율 95% 초과 발생',
-      recipient: '010-XXXX-XXXX',
-      timestamp: '2026-02-23 08:45:22',
-      status: 'failed',
-      severity: 'high'
-    },
-    {
-      id: 'nt-004',
-      type: 'system',
-      title: '신규 업데이트 완료',
-      content: '플랫폼 v2.4.0 패치가 성공적으로 적용되었습니다.',
-      recipient: 'Admin.Lee',
-      timestamp: '2026-02-22 23:00:00',
-      status: 'sent',
-      severity: 'low'
-    }
-  ];
+  // Auto-refresh simulation
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress((prev) => {
+        if (prev <= 0) return 100;
+        return prev - 0.5;
+      });
+    }, 100);
+    return () => clearInterval(timer);
+  }, []);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'sent': return <CheckCircle2 className="text-emerald-500" size={14} />;
-      case 'pending': return <Clock className="text-amber-500 animate-pulse" size={14} />;
-      case 'failed': return <AlertTriangle className="text-rose-500" size={14} />;
-      default: return <Info className="text-blue-500" size={14} />;
+  const getTypeIcon = (type: Notification['type']) => {
+    switch (type) {
+      case 'security': return <Lock size={16} className="text-rose-500" />;
+      case 'system': return <Cpu size={16} className="text-indigo-500" />;
+      case 'message': return <MessageSquare size={16} className="text-emerald-500" />;
+      case 'alert': return <AlertCircle size={16} className="text-amber-500" />;
     }
   };
 
-  const getSeverityStyle = (severity: string) => {
-    switch (severity) {
-      case 'high': return "bg-rose-500 text-white";
-      case 'medium': return "bg-amber-500 text-white";
-      default: return "bg-slate-200 text-slate-700";
+  const getPriorityBadge = (priority: Notification['priority']) => {
+    switch (priority) {
+      case 'critical': return <Badge className="bg-rose-500/10 text-rose-600 border-none rounded-lg text-[9px] font-black tracking-widest px-2">CRITICAL</Badge>;
+      case 'high': return <Badge className="bg-rose-500/10 text-rose-500 border-none rounded-lg text-[9px] font-black tracking-widest px-2">HIGH</Badge>;
+      case 'medium': return <Badge className="bg-indigo-500/10 text-indigo-500 border-none rounded-lg text-[9px] font-black tracking-widest px-2">MEDIUM</Badge>;
+      case 'low': return <Badge className="bg-slate-100 text-slate-500 border-none rounded-lg text-[9px] font-black tracking-widest px-2">LOW</Badge>;
     }
   };
-
-  const filteredLogs = MOCK_NOTIFICATIONS.filter(log => {
-    const matchTab = activeTab === 'all' || log.type === activeTab;
-    const matchSearch = String(log.title || '').toLowerCase().includes(search.toLowerCase()) || 
-                      String(log.content || '').toLowerCase().includes(search.toLowerCase());
-    return matchTab && matchSearch;
-  });
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-700">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {[
-          { label: '전체 알림', count: 1284, delta: '+12%', icon: <Bell />, color: 'primary' },
-          { label: '시스템 공지', count: 42, delta: '+2', icon: <Bot />, color: 'indigo' },
-          { label: '메일 발송', count: 856, delta: '+45', icon: <Mail />, color: 'blue' },
-          { label: 'SMS 전송', count: 386, delta: '-5%', icon: <MessageSquare />, color: 'emerald' },
-        ].map((stat, i) => (
-          <div key={`hub-stat-${i}`} className="p-8 pb-6 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-xl relative overflow-hidden group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-muted rounded-[0.1rem] text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500">
-                {React.cloneElement(stat.icon as React.ReactElement<any>, { size: 20 })}
-              </div>
-              <span className={cn(
-                "text-[10px] font-black px-2 py-0.5 rounded-lg",
-                stat.delta.startsWith('+') ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
-              )}>{stat.delta}</span>
-            </div>
-            <h4 className="text-[10px] font-black text-muted-foreground tracking-tight leading-none mb-2">{stat.label}</h4>
-            <p className="text-3xl font-black tracking-tighter">{stat.count.toLocaleString()}</p>
-            <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-primary/5 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
+    <div className="space-y-8">
+      {/* 🚀 Hub Scene Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xl shadow-slate-200 dark:shadow-none">
+                <Bell size={20} className="animate-bounce" />
+             </div>
+             <h2 className="text-3xl font-black tracking-tighter uppercase text-slate-900 dark:text-white">Smart Notification Hub</h2>
           </div>
-        ))}
+          <p className="text-sm font-bold text-slate-500 tracking-tight pl-1">실시간 인텔리전스 및 보안 프로토콜 통합 알림</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/50">
+             {['all', 'unread', 'critical'].map((tab) => (
+               <Button
+                 key={tab}
+                 variant="ghost"
+                 size="sm"
+                 className={cn(
+                   "h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all",
+                   activeTab === tab ? "bg-white dark:bg-slate-700 shadow-sm text-primary" : "text-slate-500"
+                 )}
+                 onClick={() => setActiveTab(tab as any)}
+               >
+                 {tab}
+               </Button>
+             ))}
+          </div>
+          <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm">
+             <RefreshCw size={16} />
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-8">
-        <div className="flex-1 flex flex-col gap-8">
-          <div className="p-10 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-2xl space-y-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-primary/5">
-              <div className="flex items-center gap-4">
-                <div className="p-4 bg-primary/10 rounded-[0.1rem] text-primary relative">
-                  <Zap size={24} className="animate-pulse" />
-                  <div className="absolute top-0 right-0 w-3 h-3 bg-rose-500 border-2 border-white rounded-full" />
+      {/* 🧩 Intelligence Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        
+        {/* 📟 Active Stream (Main Bento Card) */}
+        <div className="md:col-span-8 space-y-4">
+          <div className="hub-bento-card border-none bg-white dark:bg-slate-900 shadow-xl p-0 h-full flex flex-col">
+             <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="flex items-center gap-3">
+                   <Activity size={18} className="text-primary animate-pulse" />
+                   <span className="text-[10px] font-black tracking-widest text-slate-500 uppercase">Live Intelligence Stream</span>
                 </div>
-                <div>
-                  <h2 className="text-xl font-black tracking-tighter">실시간 데이터 스트림</h2>
-                  <div className="flex items-center gap-2 mt-0.5 text-[10px] font-bold text-muted-foreground opacity-50 tracking-tight">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 채널 무결성 최적화됨
-                  </div>
+                <div className="flex items-center gap-4">
+                   <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-black text-slate-400">NEXT_SYNC</span>
+                      <Progress value={progress} className="w-20 h-1 bg-slate-200 dark:bg-slate-800" />
+                   </div>
                 </div>
-              </div>
+             </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex bg-muted/40 p-1.5 rounded-[0.1rem] border-2 border-primary/5">
-                  {['all', 'system', 'mail', 'sms'].map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab as any)}
-                      className={cn(
-                        "px-4 py-2 rounded-[0.1rem] text-[10px] font-black tracking-tight transition-all",
-                        activeTab === tab ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-primary/5"
-                      )}
-                    >{tab}</button>
-                  ))}
-                </div>
-                <div className="relative w-48 hidden md:block">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30" size={14} />
-                  <input
-                    className="w-full bg-muted/20 border-none rounded-[0.1rem] py-2.5 pl-10 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/10 transition-all"
-                    placeholder="검색 및 필터링..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
+             <div className="flex-1 p-4 space-y-2">
+                <AnimatePresence mode="popLayout">
+                   {notifications.map((notif) => (
+                      <motion.div
+                        key={notif.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className={cn(
+                          "group p-6 rounded-xl transition-all duration-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/50 relative overflow-hidden",
+                          notif.status === 'new' && "bg-primary/5 border-primary/10"
+                        )}
+                      >
+                         <div className="flex items-start gap-6">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                               {getTypeIcon(notif.type)}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                               <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                     <h3 className="font-black text-slate-900 dark:text-white tracking-tight leading-none group-hover:text-primary transition-colors">
+                                        {notif.title}
+                                     </h3>
+                                     {getPriorityBadge(notif.priority)}
+                                  </div>
+                                  <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-tighter">
+                                     <Clock size={10} />
+                                     {notif.time}
+                                  </span>
+                               </div>
+                               <p className="text-[13px] font-bold text-slate-500 leading-relaxed max-w-2xl">
+                                  {notif.content}
+                                </p>
+                                <div className="pt-2 flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                   <Button variant="ghost" size="sm" className="h-7 rounded-lg text-[9px] font-black px-3 hover:bg-primary hover:text-white uppercase tracking-widest">
+                                      View Protocol
+                                   </Button>
+                                   <Button variant="ghost" size="sm" className="h-7 rounded-lg text-[9px] font-black px-3 hover:bg-slate-200 dark:hover:bg-slate-700 uppercase tracking-widest">
+                                      Acknowledge
+                                   </Button>
+                                </div>
+                            </div>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                                  <X size={14} className="text-slate-400 hover:text-rose-500" />
+                               </Button>
+                            </div>
+                         </div>
+                         {notif.status === 'new' && (
+                           <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+                         )}
+                      </motion.div>
+                   ))}
+                </AnimatePresence>
+             </div>
 
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
-              {filteredLogs.map((log, i) => (
-                <div key={log.id || `hub-log-${i}`} className="group flex items-center gap-6 p-6 rounded-[0.1rem] bg-muted/10 border-2 border-transparent hover:bg-card hover:border-primary/10 hover:shadow-xl transition-all duration-500 animate-in fade-in slide-in-from-right-4" style={{ animationDelay: `${i * 100}ms` }}>
-                  <div className={cn(
-                    "w-14 h-14 rounded-[0.1rem] flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform duration-500",
-                    log.type === 'system' ? "bg-indigo-500/10 text-indigo-500" : log.type === 'mail' ? "bg-blue-500/10 text-blue-500" : "bg-emerald-500/10 text-emerald-500"
-                  )}>
-                    {log.type === 'system' ? <Bot size={24} /> : log.type === 'mail' ? <Mail size={24} /> : <MessageSquare size={24} />}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-sm font-black text-foreground truncate">{log.title}</h3>
-                      <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full tracking-tight", getSeverityStyle(log.severity))}>
-                        {log.severity}
-                      </span>
-                    </div>
-                    <p className="text-sm font-bold text-muted-foreground/60 leading-relaxed truncate">{log.content}</p>
-                    <div className="flex items-center gap-4 mt-2">
-                      <span className="text-[10px] font-black text-primary tracking-tight flex items-center gap-1.5 opacity-60">
-                        <Send size={10} /> {log.recipient}
-                      </span>
-                      <span className="text-[10px] font-bold text-muted-foreground/30 flex items-center gap-1.5">
-                        <Clock size={10} /> {log.timestamp}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="p-2 bg-background rounded-full border shadow-sm group-hover:rotate-12 transition-transform">
-                      {getStatusIcon(log.status)}
-                    </div>
-                    <span className="text-[9px] font-black text-muted-foreground opacity-40">{log.status === 'sent' ? '발송 완료' : log.status === 'pending' ? '대기 중' : '실패'}</span>
-                  </div>
-
-                  <Button variant="ghost" size="icon" className="rounded-[0.1rem] h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical size={16} /></Button>
-                </div>
-              ))}
-            </div>
+             <div className="px-8 py-6 border-t border-slate-100 dark:border-slate-800 flex justify-center bg-slate-50/50 dark:bg-slate-800/30">
+                <Button variant="ghost" className="text-[11px] font-black text-slate-400 hover:text-primary uppercase tracking-[0.2em] group">
+                   Load Archived Intelligence
+                   <ChevronRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+             </div>
           </div>
         </div>
 
-        <div className="w-full xl:w-96 flex flex-col gap-8">
-          <div className="p-8 bg-gradient-to-br from-primary to-blue-600 border-none rounded-[0.1rem] text-white shadow-2xl shadow-primary/30 relative overflow-hidden group flex flex-col justify-center h-80">
-            <div className="absolute inset-0 bg-white/5 opacity-50 backdrop-blur-3xl animate-pulse" />
-            <div className="relative z-10 flex flex-col items-center text-center space-y-4">
-              <div className="w-20 h-20 bg-white/20 rounded-[0.1rem] flex items-center justify-center backdrop-blur-md group-hover:scale-110 transition-transform duration-700">
-                <Zap size={40} className="text-white fill-white" />
+        {/* 📊 Intelligence Matrix (Side Bento Cards) */}
+        <div className="md:col-span-4 space-y-6">
+           {/* System Health Bento */}
+           <div className="hub-bento-card p-8 bg-slate-900 text-white border-none group overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12 group-hover:rotate-45 transition-transform duration-700">
+                 <Zap size={120} />
               </div>
-              <div>
-                <h3 className="text-2xl font-black tracking-tighter">AI 스마트 배달</h3>
-                <p className="text-sm font-bold opacity-80 mt-2 leading-relaxed">수신자의 업무 패턴을 분석하여<br />최고의 시간에 알림을 배달합니다</p>
-              </div>
-              <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-[0.1rem] h-14 font-black shadow-xl">발송 최적화 엔진 활성</Button>
-            </div>
-          </div>
-
-          <div className="p-10 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-xl space-y-8 flex-1">
-            <div>
-              <h4 className="text-[10px] font-black text-primary tracking-[0.3em] mb-6">채널 상태 지수</h4>
-              <div className="space-y-6">
-                {[
-                  { name: 'System Push', score: 99, color: 'primary' },
-                  { name: 'Email SMTP', score: 94, color: 'blue' },
-                  { name: 'SMS Gateway', score: 88, color: 'emerald' },
-                ].map((channel, i) => (
-                  <div key={`channel-health-${i}`} className="space-y-2">
-                    <div className="flex justify-between items-end">
-                      <span className="text-sm font-black text-foreground">{channel.name}</span>
-                      <span className="text-[10px] font-black text-primary">{channel.score}%</span>
+              <div className="relative z-10 space-y-6">
+                 <div className="space-y-1">
+                    <Badge className="bg-emerald-500/20 text-emerald-400 border-none rounded-lg text-[9px] font-black px-3 mb-2 tracking-widest uppercase">Operational</Badge>
+                    <h3 className="text-xl font-black tracking-tight uppercase">Intelligence Health</h3>
+                 </div>
+                 <div className="space-y-4">
+                    <div className="space-y-2">
+                       <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
+                          <span className="text-slate-400">Neural Sync</span>
+                          <span>98.2%</span>
+                       </div>
+                       <Progress value={98.2} className="h-1.5 bg-white/10" />
                     </div>
-                    <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden p-0.5">
-                      <div className={cn("h-full rounded-full animate-in slide-in-from-left duration-1000", `bg-${channel.color}`)} style={{ width: `${channel.score}%` }} />
+                    <div className="space-y-2">
+                       <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
+                          <span className="text-slate-400">Security Shield</span>
+                          <span className="text-emerald-400">Active</span>
+                       </div>
+                       <div className="grid grid-cols-5 gap-1">
+                          {[1, 2, 3, 4, 5].map((i) => (
+                            <div key={i} className={cn("h-1 rounded-full", i <= 4 ? "bg-emerald-500" : "bg-emerald-500/20")} />
+                          ))}
+                       </div>
                     </div>
-                  </div>
-                ))}
+                 </div>
               </div>
-            </div>
+           </div>
 
-            <div className="pt-8 border-t border-primary/5 space-y-4">
-              <h4 className="text-[10px] font-black text-muted-foreground tracking-tight opacity-50">지능형 인사이트</h4>
-              <div className="p-5 rounded-[0.1rem] bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-4">
-                <Info size={16} className="text-indigo-500 mt-0.5" />
-                <p className="text-[10px] font-bold text-indigo-900/60 leading-relaxed">
-                  오전 10시에서 11시 사이에 발송된 알림의 확인율이 가장 높습니다. 중요한 공지는 이 시간을 활용하세요.
-                </p>
+           {/* Quick Actions Bento */}
+           <div className="hub-bento-card p-8 bg-white dark:bg-slate-900 border-slate-200/50 shadow-xl group">
+              <h3 className="text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase mb-6 flex items-center gap-3">
+                 <Sparkles size={14} className="text-primary" />
+                 Global Commands
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                 {[
+                   { label: 'Broadcast', icon: Globe },
+                   { label: 'Alert_All', icon: AlertCircle },
+                   { label: 'Email_Gen', icon: Mail },
+                   { label: 'Shield_Lock', icon: Shield }
+                 ].map((cmd) => (
+                   <Button
+                     key={cmd.label}
+                     variant="outline"
+                     className="flex flex-col items-center justify-center h-24 gap-2 rounded-xl border-slate-100 dark:border-slate-800 hover:border-primary/50 hover:bg-primary/5 transition-all group/cmd"
+                   >
+                     <cmd.icon size={20} className="text-slate-400 group-hover/cmd:text-primary transition-colors" />
+                     <span className="text-[9px] font-black uppercase text-slate-500 tracking-tighter">{cmd.label}</span>
+                   </Button>
+                 ))}
               </div>
-            </div>
-          </div>
+              <Button className="w-full mt-6 h-12 rounded-xl bg-slate-900 dark:bg-primary hover:scale-[1.02] transition-transform font-black text-[10px] tracking-widest uppercase text-white shadow-xl">
+                 Execute Global Protocol
+              </Button>
+           </div>
         </div>
       </div>
     </div>

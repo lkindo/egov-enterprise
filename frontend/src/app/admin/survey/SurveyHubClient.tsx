@@ -83,10 +83,10 @@ export default function SurveyHubClient() {
         icon={ClipboardCheck}
         actions={
           <div className="flex gap-4 p-2">
-            <Button variant="outline" size="lg" className="h-12 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-2">
+            <Button variant="outline" size="lg" className="h-12 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-2">
               <Database size={16} /> 분석 아카이브
             </Button>
-            <Button size="lg" className="h-12 px-8 rounded-[0.1rem] font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2">
+            <Button size="lg" className="h-12 px-8 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2">
               <Plus size={18} /> 신규 설문 생성
             </Button>
           </div>
@@ -109,7 +109,7 @@ export default function SurveyHubClient() {
             <div className="absolute top-[-20%] right-[-20%] w-48 h-48 bg-primary/20 blur-[60px] rounded-full group-hover:scale-150 transition-transform duration-[2s]" />
             <div className="relative z-10 space-y-8">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 bg-white/10 rounded-[0.1rem] flex items-center justify-center text-primary shadow-2xl border border-white/5">
+                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-primary shadow-2xl border border-white/5">
                   <TrendingUp size={24} />
                 </div>
                 <HubStatusBadge label="동기화됨" variant="success" className="bg-emerald-500/20 border-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-widest uppercase" />
@@ -135,7 +135,7 @@ export default function SurveyHubClient() {
             <div className="relative group mb-8">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within:opacity-100 transition-opacity" size={16} />
               <Input
-                className="h-14 pl-12 pr-6 bg-muted/30 border-none rounded-[0.1rem] text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all pointer-events-auto"
+                className="h-14 pl-12 pr-6 bg-muted/30 border-none rounded-xl text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all pointer-events-auto"
                 placeholder="검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -152,7 +152,7 @@ export default function SurveyHubClient() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className={cn(
-                      "group p-6 rounded-[0.1rem] border transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
+                      "group p-6 rounded-xl border transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
                       selectedSurveyId === survey.id
                         ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
                         : "bg-white border-border/50 hover:border-primary/50 text-foreground shadow-sm"
@@ -228,7 +228,7 @@ export default function SurveyHubClient() {
                         </h4>
                         <span className="text-[9px] font-black text-primary tracking-widest uppercase">라이브 게이지</span>
                       </div>
-                      <div className="h-56 rounded-[0.1rem] bg-slate-950 border-8 border-slate-900 flex items-end justify-between p-12 gap-8 relative overflow-hidden shadow-2xl">
+                      <div className="h-56 rounded-xl bg-slate-950 border-8 border-slate-900 flex items-end justify-between p-12 gap-8 relative overflow-hidden shadow-2xl">
                         <div className="absolute inset-x-0 bottom-0 h-1 bg-primary/10 blur-[40px] pointer-events-none" />
                         <Bar height={40} opacity={0.3} color="bg-white/10" />
                         <Bar height={70} opacity={0.5} color="bg-white/20" />
@@ -247,10 +247,10 @@ export default function SurveyHubClient() {
                     </div>
 
                     <div className="flex gap-4 p-2">
-                      <Button variant="outline" className="h-16 flex-1 rounded-[0.1rem] border-2 border-border font-black tracking-[0.2em] shadow-sm uppercase gap-3">
+                      <Button variant="outline" className="h-16 flex-1 rounded-xl border-2 border-border font-black tracking-[0.2em] shadow-sm uppercase gap-3">
                         <Share2 size={18} /> Protocol Link
                       </Button>
-                      <Button className="h-16 flex-[2] bg-slate-900 border-none text-white rounded-[0.1rem] font-black tracking-[0.3em] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all uppercase gap-3">
+                      <Button className="h-16 flex-[2] bg-slate-900 border-none text-white rounded-xl font-black tracking-[0.3em] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all uppercase gap-3">
                         Export Data <Download size={20} />
                       </Button>
                     </div>
@@ -258,8 +258,8 @@ export default function SurveyHubClient() {
                 </HubSectionCard>
               </motion.div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none grayscale bg-slate-50 dark:bg-muted/5 rounded-[0.1rem] border-4 border-dashed border-border/20">
-                <div className="w-24 h-24 bg-white dark:bg-slate-900 rounded-[0.1rem] flex items-center justify-center text-muted-foreground/20 shadow-inner mb-10 border border-border/10">
+              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none grayscale bg-slate-50 dark:bg-muted/5 rounded-xl border-4 border-dashed border-border/20">
+                <div className="w-24 h-24 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-muted-foreground/20 shadow-inner mb-10 border border-border/10">
                   <PieChart size={48} />
                 </div>
                 <div className="space-y-4">
@@ -284,14 +284,14 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
     <button
       onClick={onClick}
       className={cn(
-        "w-full group p-6 rounded-[0.1rem] border-2 transition-all flex items-center gap-6",
+        "w-full group p-6 rounded-xl border-2 transition-all flex items-center gap-6",
         active
           ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
           : "bg-white border-transparent hover:border-primary/20 text-slate-500 hover:text-slate-900"
       )}
     >
       <div className={cn(
-        "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all shadow-md",
+        "w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-md",
         active ? "bg-white/10 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-primary/10 group-hover:text-primary shadow-inner"
       )}>
         {icon}
@@ -327,7 +327,7 @@ function DetailStat({ icon, label, value, color }: { icon: React.ReactNode, labe
   };
 
   return (
-    <div className={cn("p-8 rounded-[0.1rem] border-2 space-y-4 shadow-sm group hover:scale-105 transition-transform", colorMap[color])}>
+    <div className={cn("p-8 rounded-xl border-2 space-y-4 shadow-sm group hover:scale-105 transition-transform", colorMap[color])}>
       <div className="flex items-center gap-3">
         {icon}
         <span className="text-[9px] font-black tracking-[0.2em] uppercase opacity-40 leading-none">{label}</span>

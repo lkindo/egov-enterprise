@@ -32,6 +32,7 @@ export interface UserSearchParams {
   searchCondition?: string;
   searchKeyword?: string;
   sbscrbSttus?: string;
+  size?: number;
 }
 
 export interface UserDto {

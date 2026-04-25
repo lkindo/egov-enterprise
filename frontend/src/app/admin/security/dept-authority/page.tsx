@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -126,7 +126,7 @@ export default function DeptAuthorityPage() {
                 setSelectedAuthorCode(item.authorCode);
               }}
               className={cn(
-                  "relative flex items-center justify-center w-8 h-8 rounded-[0.1rem] transition-all duration-500 outline-none border-2",
+                  "relative flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-500 outline-none border-2",
                   isSelected ? "bg-primary border-primary shadow-xl shadow-primary/30 rotate-0 scale-110" : "bg-white border-slate-100 hover:border-primary/40 rotate-12"
               )}
             >
@@ -170,13 +170,13 @@ export default function DeptAuthorityPage() {
             <Button
                 variant="ghost"
                 onClick={() => queryClient.invalidateQueries()}
-                className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+                className="h-14 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
             >
                 <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
             <Button
               onClick={handleSave}
-              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+              className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
               <Save size={20} className="group-hover:scale-110 transition-transform duration-500" /> 정책 마스터 배포
             </Button>
@@ -200,7 +200,7 @@ export default function DeptAuthorityPage() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={16} />
                         <Input
                             placeholder="부서명 검색..."
-                            className="pl-12 h-14 bg-slate-50/50 border-none rounded-[0.1rem] text-sm font-black tracking-tight shadow-inner"
+                            className="pl-12 h-14 bg-slate-50/50 border-none rounded-xl text-sm font-black tracking-tight shadow-inner"
                             value={searchKeyword}
                             onChange={(e) => setSearchKeyword(e.target.value)}
                         />
@@ -225,7 +225,7 @@ export default function DeptAuthorityPage() {
                                             setSelectedAuthorCode(null);
                                         }}
                                         className={cn(
-                                            "group flex items-center justify-between p-6 w-full rounded-[0.1rem] border-2 transition-all duration-300 relative overflow-hidden",
+                                            "group flex items-center justify-between p-6 w-full rounded-xl border-2 transition-all duration-300 relative overflow-hidden",
                                             selectedDept === d.orgnztId
                                                 ? "bg-slate-900 border-slate-900 shadow-2xl shadow-slate-900/20"
                                                 : "bg-white border-slate-50 hover:border-slate-200"
@@ -233,7 +233,7 @@ export default function DeptAuthorityPage() {
                                     >
                                         <div className="flex items-center gap-4 relative z-10">
                                             <div className={cn(
-                                                "w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all",
+                                                "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
                                                 selectedDept === d.orgnztId ? "bg-white/10 text-white" : "bg-slate-50 text-slate-300 group-hover:bg-slate-900 group-hover:text-white"
                                             )}>
                                                 <Users size={20} />
@@ -280,7 +280,7 @@ export default function DeptAuthorityPage() {
                                 animate={{ opacity: 1 }} 
                                 className="h-full min-h-[600px] flex flex-col items-center justify-center text-center p-12 group select-none"
                             >
-                                <div className="w-24 h-24 rounded-[0.1rem] bg-slate-50 flex items-center justify-center text-slate-100 shadow-inner mb-10 group-hover:scale-110 transition-transform duration-1000">
+                                <div className="w-24 h-24 rounded-xl bg-slate-50 flex items-center justify-center text-slate-100 shadow-inner mb-10 group-hover:scale-110 transition-transform duration-1000">
                                     <Key size={56} className="opacity-20" />
                                 </div>
                                 <div className="space-y-4">
@@ -294,11 +294,11 @@ export default function DeptAuthorityPage() {
                                 animate={{ opacity: 1, y: 0 }} 
                                 className="space-y-8"
                             >
-                                <div className="p-10 bg-slate-900 rounded-[0.1rem] text-white flex items-center gap-8 shadow-2xl relative overflow-hidden group">
+                                <div className="p-10 bg-slate-900 rounded-xl text-white flex items-center gap-8 shadow-2xl relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                                         <Database size={160} className="text-primary" />
                                     </div>
-                                    <div className="w-20 h-20 bg-white/10 rounded-[0.1rem] flex items-center justify-center border border-white/5 shadow-inner relative z-10">
+                                    <div className="w-20 h-20 bg-white/10 rounded-xl flex items-center justify-center border border-white/5 shadow-inner relative z-10">
                                         <Building2 size={36} className="text-primary" />
                                     </div>
                                     <div className="relative z-10 space-y-2">
@@ -311,7 +311,7 @@ export default function DeptAuthorityPage() {
                                     </div>
                                 </div>
 
-                                <div className="min-h-[500px] bg-white rounded-[0.1rem] border-2 border-slate-50 p-4">
+                                <div className="min-h-[500px] bg-white rounded-xl border-2 border-slate-50 p-4">
                                     <StandardDataTable
                                         columns={columns}
                                         data={roles}
@@ -323,8 +323,8 @@ export default function DeptAuthorityPage() {
                                     />
                                 </div>
 
-                                <div className="p-8 flex items-center gap-6 rounded-[0.1rem] bg-slate-50 border-2 border-dashed border-slate-100">
-                                    <div className="w-12 h-12 bg-white rounded-[0.1rem] shadow-xl flex items-center justify-center shrink-0 border border-slate-100">
+                                <div className="p-8 flex items-center gap-6 rounded-xl bg-slate-50 border-2 border-dashed border-slate-100">
+                                    <div className="w-12 h-12 bg-white rounded-xl shadow-xl flex items-center justify-center shrink-0 border border-slate-100">
                                         <ShieldAlert size={24} className="text-rose-500" />
                                     </div>
                                     <div className="space-y-1">

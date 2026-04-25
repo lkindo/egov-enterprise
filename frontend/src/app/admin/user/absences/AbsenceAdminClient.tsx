@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -74,7 +74,7 @@ export default function AbsenceAdminClient({
         return (
           <div className="flex items-center gap-6 py-4">
             <div className={cn(
-              "w-16 h-16 rounded-[0.1rem] flex items-center justify-center text-white shadow-2xl transition-all duration-700 relative overflow-hidden group-hover:scale-110",
+              "w-16 h-16 rounded-xl flex items-center justify-center text-white shadow-2xl transition-all duration-700 relative overflow-hidden group-hover:scale-110",
               isAbsent ? "bg-slate-400 rotate-12" : "bg-slate-900 -rotate-3 group-hover:rotate-0"
             )}>
               {isAbsent ? <Ghost size={24} className="text-white animate-pulse" /> : <User size={24} className="text-primary" />}
@@ -113,7 +113,7 @@ export default function AbsenceAdminClient({
         return (
           <div className="flex items-center gap-6">
             <div className={cn(
-              "flex items-center gap-3 px-6 py-2.5 rounded-[0.1rem] border-2 transition-all min-w-[140px] justify-center shadow-sm",
+              "flex items-center gap-3 px-6 py-2.5 rounded-xl border-2 transition-all min-w-[140px] justify-center shadow-sm",
               isAbsent ? "bg-rose-50 text-rose-600 border-rose-100/50" : "bg-emerald-50 text-emerald-600 border-emerald-100/50"
             )}>
               {isAbsent ? <Clock size={16} className="animate-pulse" /> : <CheckCircle2 size={16} />}
@@ -148,13 +148,13 @@ export default function AbsenceAdminClient({
           <div className="flex gap-4 p-2 items-center">
             <Button
               variant="ghost"
-              className="h-14 w-14 rounded-[0.1rem] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95"
+              className="h-14 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95"
             >
               <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
             </Button>
             <Button
               size="lg"
-              className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+              className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
               <Zap size={20} className="group-hover:animate-pulse" /> 가용성 프로필 동기화
               <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -173,13 +173,13 @@ export default function AbsenceAdminClient({
       <div className="grid grid-cols-12 gap-12">
         {/* Statistics & Search Panel */}
         <div className="col-span-12 lg:col-span-4 h-full">
-          <div className="rounded-[0.1rem] p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
+          <div className="rounded-xl p-12 bg-slate-900 text-white shadow-2xl relative overflow-hidden group h-full border-none">
             <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
               <Fingerprint size={240} className="text-primary" />
             </div>
             <div className="relative z-10 space-y-12">
               <div className="space-y-3">
-                <div className="w-16 h-16 rounded-[0.1rem] bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
+                <div className="w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
                   <Activity size={32} className="text-primary" />
                 </div>
                 <h4 className="text-3xl font-black tracking-tighter leading-tight uppercase text-primary text-left">가용성<br />인텔리전스</h4>
@@ -193,7 +193,7 @@ export default function AbsenceAdminClient({
                     <input
                       onChange={(e) => setSearchKeyword(e.target.value)}
                       value={searchKeyword}
-                      className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-[0.1rem] focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
+                      className="w-full h-16 pl-16 pr-8 bg-white/5 border-2 border-white/5 rounded-xl focus:border-primary/50 focus:bg-white/10 transition-all text-xs font-black tracking-widest text-white outline-none placeholder:text-white/10 uppercase"
                       placeholder="리소스 명칭 또는 UID 필터링"
                     />
                   </div>
@@ -205,7 +205,7 @@ export default function AbsenceAdminClient({
                   * 모든 부재 프로필 변경사항은 작업 매트릭스에 즉시 동기화됩니다.
                 </p>
                 <Button
-                  className="h-12 px-8 rounded-[0.1rem] bg-white text-slate-900 border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition-all hover:-translate-y-1"
+                  className="h-12 px-8 rounded-xl bg-white text-slate-900 border-none font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary hover:text-white transition-all hover:-translate-y-1"
                 >
                   SEARCH_RES
                 </Button>

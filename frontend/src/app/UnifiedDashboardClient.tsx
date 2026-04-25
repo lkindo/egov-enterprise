@@ -117,7 +117,7 @@ export default function UnifiedDashboardClient({
             whileTap={{ scale: 0.95 }}
             onClick={() => router.push('/admin/community/boards')}
             aria-label={t('dashboard.createNewPost') || '새 포스팅 작성'}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-slate-900/10 bg-white text-slate-900 dark:bg-slate-900 dark:text-white dark:border-white/10 rounded-[0.1rem] font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border-2 border-border/10 bg-background text-foreground dark:bg-card dark:text-foreground dark:border-white/10 rounded-[0.1rem] font-black hover:bg-muted transition-all shadow-lg"
           >
             <Plus size={20} /> 새 포스팅
           </motion.button>
@@ -130,7 +130,7 @@ export default function UnifiedDashboardClient({
       </motion.div>
 
       {/* Real-time Insights */}
-      <motion.div variants={hubItemVariants} className="p-4 md:p-8 border-2 border-primary/5 rounded-[0.1rem] bg-slate-50 dark:bg-slate-900/50 shadow-inner">
+      <motion.div variants={hubItemVariants} className="p-4 md:p-8 border-2 border-primary/5 rounded-[0.1rem] bg-accent/30 dark:bg-accent/10 shadow-inner">
         <RealTimeDashboard />
       </motion.div>
 

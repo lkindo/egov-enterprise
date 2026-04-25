@@ -38,7 +38,7 @@ export function StandardFileUploader({
 
  return (
  <div className={cn("space-y-4", className)}>
- <label className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-[0.1rem] cursor-pointer bg-muted/5 hover:bg-muted/10 transition-colors border-muted-foreground/20">
+ <label className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer bg-muted/5 hover:bg-muted/10 transition-colors border-muted-foreground/20">
  <div className="flex flex-col items-center justify-center pt-5 pb-6">
  <Upload className="w-8 h-8 mb-3 text-muted-foreground" />
  <p className="mb-1 text-sm text-foreground font-semibold">?대┃섍굅님?뚯씪님?쒕옒洹명븯?몄슂</p>

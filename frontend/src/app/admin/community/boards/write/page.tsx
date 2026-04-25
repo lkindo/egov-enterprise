@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -82,7 +82,7 @@ export default function BoardWritePage() {
           <Button
             variant="outline"
             onClick={() => router.back()}
-            className="h-12 rounded-[0.1rem] font-black gap-2 border-slate-200"
+            className="h-12 rounded-xl font-black gap-2 border-slate-200"
           >
             <ArrowLeft size={18} /> 이전으로
           </Button>
@@ -92,19 +92,19 @@ export default function BoardWritePage() {
       <div className="max-w-5xl mx-auto">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-10">
-            <Card className="border-none shadow-2xl rounded-[0.1rem] overflow-hidden bg-white ring-1 ring-slate-100">
+            <Card className="border-none shadow-2xl rounded-xl overflow-hidden bg-white ring-1 ring-slate-100">
               <CardHeader className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white p-10 pb-16 border-b border-slate-100 dark:border-slate-800 relative overflow-hidden">
                 <div className="flex justify-between items-start relative z-10">
                   <div className="space-y-3">
                     <CardTitle className="text-4xl font-black tracking-tighter flex items-center gap-4">
-                      <div className="p-3 bg-primary/10 rounded-[0.1rem]">
+                      <div className="p-3 bg-primary/10 rounded-xl">
                         <FileText className="w-8 h-8 text-primary" />
                       </div>
                       새 콘텐츠 전개
                     </CardTitle>
                     <p className="text-slate-500 dark:text-slate-400 font-bold text-lg">시스템 전역에 배포될 새로운 게시물 데이터를 정의합니다.</p>
                   </div>
-                  <div className="p-4 bg-primary/5 dark:bg-white/5 rounded-[0.1rem] backdrop-blur-xl border border-primary/10 dark:border-white/10 text-right">
+                  <div className="p-4 bg-primary/5 dark:bg-white/5 rounded-xl backdrop-blur-xl border border-primary/10 dark:border-white/10 text-right">
                     <span className="text-[10px] font-black tracking-widest text-primary uppercase animate-pulse">Waiting for Submit</span>
                   </div>
                 </div>
@@ -116,9 +116,9 @@ export default function BoardWritePage() {
 
               <CardContent className="p-10 -mt-8 space-y-10">
                 {/* Basic Info Node */}
-                <div className="bg-white rounded-[0.1rem] p-8 border border-slate-100 shadow-xl space-y-8">
+                <div className="bg-white rounded-xl p-8 border border-slate-100 shadow-xl space-y-8">
                   <div className="flex items-center gap-3 border-b border-slate-50 pb-6 mb-2">
-                    <div className="w-10 h-10 rounded-[0.1rem] bg-slate-50 flex items-center justify-center text-slate-400 font-black italic">01</div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 font-black italic">01</div>
                     <h3 className="text-xl font-black tracking-tight">기본 메타데이터</h3>
                   </div>
 
@@ -135,7 +135,7 @@ export default function BoardWritePage() {
                             <Input
                               {...field}
                               placeholder="BBS_0000000000000001"
-                              className="h-14 rounded-[0.1rem] bg-slate-50/50 border-slate-100 font-black text-lg focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                              className="h-14 rounded-xl bg-slate-50/50 border-slate-100 font-black text-lg focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                             />
                           </FormControl>
                           <FormMessage className="text-[10px] font-bold text-rose-500" />
@@ -155,7 +155,7 @@ export default function BoardWritePage() {
                             <Input
                               {...field}
                               placeholder="게시물의 핵심 제목을 입력하십시오."
-                              className="h-14 rounded-[0.1rem] font-black text-lg focus:ring-4 focus:ring-primary/10 transition-all shadow-sm"
+                              className="h-14 rounded-xl font-black text-lg focus:ring-4 focus:ring-primary/10 transition-all shadow-sm"
                             />
                           </FormControl>
                           <FormMessage className="text-[10px] font-bold text-rose-500" />
@@ -166,9 +166,9 @@ export default function BoardWritePage() {
                 </div>
 
                 {/* Content Body Node */}
-                <div className="bg-white rounded-[0.1rem] p-8 border border-slate-100 shadow-xl space-y-8">
+                <div className="bg-white rounded-xl p-8 border border-slate-100 shadow-xl space-y-8">
                   <div className="flex items-center gap-3 border-b border-slate-50 pb-6 mb-2">
-                    <div className="w-10 h-10 rounded-[0.1rem] bg-slate-50 flex items-center justify-center text-slate-400 font-black italic">02</div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 font-black italic">02</div>
                     <h3 className="text-xl font-black tracking-tight">본문 콘텐츠 데이터</h3>
                   </div>
 
@@ -181,7 +181,7 @@ export default function BoardWritePage() {
                           <Textarea
                             {...field}
                             placeholder="본문 내용을 상세히 기술하십시오. 마크다운 및 HTML 파싱을 지원합니다."
-                            className="min-h-[400px] p-10 rounded-[0.1rem] border-2 border-slate-50 bg-slate-50/30 focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all text-lg font-medium leading-relaxed resize-none shadow-inner"
+                            className="min-h-[400px] p-10 rounded-xl border-2 border-slate-50 bg-slate-50/30 focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all text-lg font-medium leading-relaxed resize-none shadow-inner"
                           />
                         </FormControl>
                         <FormMessage className="text-[10px] font-bold text-rose-500" />
@@ -192,7 +192,7 @@ export default function BoardWritePage() {
 
                 {/* Policy & Date Node */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                  <div className="bg-slate-50/50 rounded-[0.1rem] p-8 border border-slate-100 space-y-6">
+                  <div className="bg-slate-50/50 rounded-xl p-8 border border-slate-100 space-y-6">
                     <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
                       <ShieldCheck size={18} className="text-primary" />
                       <h4 className="font-black text-sm uppercase tracking-widest text-slate-900">배포 및 보안 정책</h4>
@@ -203,7 +203,7 @@ export default function BoardWritePage() {
                         control={form.control}
                         name="noticeAt"
                         render={({ field }) => (
-                          <div className="flex items-center justify-between p-4 bg-white rounded-[0.1rem] shadow-sm border border-slate-100">
+                          <div className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-slate-100">
                             <div className="space-y-0.5">
                               <Label className="text-sm font-black text-slate-800">공지사항 설정</Label>
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Notification Priority</p>
@@ -220,7 +220,7 @@ export default function BoardWritePage() {
                         control={form.control}
                         name="secretAt"
                         render={({ field }) => (
-                          <div className="flex items-center justify-between p-4 bg-white rounded-[0.1rem] shadow-sm border border-slate-100">
+                          <div className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-slate-100">
                             <div className="space-y-0.5">
                               <Label className="text-sm font-black text-slate-800">비밀글 보호</Label>
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Privacy Guard</p>
@@ -235,7 +235,7 @@ export default function BoardWritePage() {
                     </div>
                   </div>
 
-                  <div className="bg-slate-50/50 rounded-[0.1rem] p-8 border border-slate-100 space-y-6">
+                  <div className="bg-slate-50/50 rounded-xl p-8 border border-slate-100 space-y-6">
                     <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
                       <Calendar size={18} className="text-primary" />
                       <h4 className="font-black text-sm uppercase tracking-widest text-slate-900">게시 기간 스케줄링</h4>
@@ -249,7 +249,7 @@ export default function BoardWritePage() {
                           <FormItem className="space-y-2">
                             <FormLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest">게시 시작일</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} className="h-14 rounded-[0.1rem] border-slate-200 font-bold" />
+                              <Input type="date" {...field} className="h-14 rounded-xl border-slate-200 font-bold" />
                             </FormControl>
                             <FormMessage className="text-[10px] font-bold text-rose-500" />
                           </FormItem>
@@ -263,7 +263,7 @@ export default function BoardWritePage() {
                           <FormItem className="space-y-2">
                             <FormLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest">게시 종료일</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} className="h-14 rounded-[0.1rem] border-slate-200 font-bold" />
+                              <Input type="date" {...field} className="h-14 rounded-xl border-slate-200 font-bold" />
                             </FormControl>
                             <FormMessage className="text-[10px] font-bold text-rose-500" />
                           </FormItem>
@@ -277,7 +277,7 @@ export default function BoardWritePage() {
                           <FormItem className="space-y-2">
                             <FormLabel className="text-[10px] font-black text-slate-400 uppercase tracking-widest">행사/이벤트 일자</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} className="h-14 rounded-[0.1rem] border-slate-200 font-bold bg-primary/5" />
+                              <Input type="date" {...field} className="h-14 rounded-xl border-slate-200 font-bold bg-primary/5" />
                             </FormControl>
                             <FormMessage className="text-[10px] font-bold text-rose-500" />
                           </FormItem>
@@ -290,7 +290,7 @@ export default function BoardWritePage() {
                 {/* Final Action Area */}
                 <div className="flex items-center justify-between pt-10 border-t-2 border-slate-50 border-dashed">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary/5 rounded-[0.1rem] flex items-center justify-center">
+                    <div className="w-12 h-12 bg-primary/5 rounded-xl flex items-center justify-center">
                       <Settings2 size={24} className="text-primary animate-spin-slow" />
                     </div>
                     <div className="text-left">
@@ -303,14 +303,14 @@ export default function BoardWritePage() {
                       type="button"
                       variant="ghost"
                       onClick={() => router.back()}
-                      className="h-16 px-10 rounded-[0.1rem] font-black text-sm uppercase tracking-widest hover:bg-slate-50"
+                      className="h-16 px-10 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-slate-50"
                     >
                       취소
                     </Button>
                     <Button
                       type="submit"
                       disabled={loading}
-                      className="h-20 px-16 bg-slate-900 dark:bg-primary text-white rounded-[0.1rem] font-black text-[11px] tracking-[0.4em] uppercase shadow-[0_24px_48px_-8px_rgba(15,23,42,0.3)] dark:shadow-primary/40 transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-4"
+                      className="h-20 px-16 bg-slate-900 dark:bg-primary text-white rounded-xl font-black text-[11px] tracking-[0.4em] uppercase shadow-[0_24px_48px_-8px_rgba(15,23,42,0.3)] dark:shadow-primary/40 transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-4"
                     >
                       <Save size={20} />
                       {loading ? 'DEPLOYING...' : '이벤트 게시'}

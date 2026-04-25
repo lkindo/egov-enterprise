@@ -9,15 +9,14 @@ test.describe('Global Validation Audit', () => {
   test.use({ storageState: 'playwright/.auth/admin.json' });
 
   const targetPages = [
-    { name: '사용자 관리', url: '/admin/user/manage', btnName: 'MEMBER_PROVISION' },
-    { name: '메뉴 관리', url: '/admin/system/menus', btnName: '노드 설계' },
-    { name: '공통코드 관리', url: '/admin/system/common-code', btnName: '등록' },
-    { name: '프로그램 관리', url: '/admin/system/programs', btnName: '등록' },
-    { name: '권한 관리', url: '/admin/system/security', btnName: '추가' },
-    { name: '배너 관리', url: '/admin/operation/banners', btnName: 'Banner_Provision' },
-    { name: '팝업 관리', url: '/admin/operation/popups', btnName: 'Popup_Provision' },
-    { name: '시스템 정책', url: '/admin/system/policies', btnName: '수정' },
-    { name: '약식 결재', url: '/admin/system/ism', btnName: '의결' },
+    { name: '사용자 관리', url: '/admin/user/manage', btnName: '사용자 등록' },
+    { name: '부서 관리', url: '/admin/user/manage', btnName: '신규 부서 등록', tabName: '부서 관리' },
+    { name: '인프라 관리', url: '/admin/system/network', btnName: '신규 노드 등록' },
+    { name: '프로그램 관리', url: '/admin/system/programs', btnName: '신규 등록' },
+    { name: '메뉴 관리', url: '/admin/system/menus', btnName: '신규 등록' },
+    { name: '공통코드 관리', url: '/admin/system/common-code', btnName: '신규 등록' },
+    { name: '배너 관리', url: '/admin/system/banner', btnName: '신규 배너 등록' },
+    { name: '보안 권한 허브', url: '/admin/security/authority', btnName: '신규 보안 아키텍처 설정' },
   ];
 
   for (const target of targetPages) {
@@ -26,19 +25,28 @@ test.describe('Global Validation Audit', () => {
       
       await page.goto(target.url, { waitUntil: 'networkidle' });
 
+      // 0. 탭 전환이 필요한 경우 (예: 부서 관리)
+      if (target.tabName) {
+        const tabBtn = page.getByRole('button', { name: target.tabName }).first();
+        if (await tabBtn.isVisible()) {
+          await tabBtn.click();
+          await page.waitForTimeout(500);
+        }
+      }
+
       // 1. 등록/수정 폼 열기
-      // 텍스트 기반 검색 (i flag로 대소문자 무시)
-      const openBtn = page.getByRole('button', { name: new RegExp(target.btnName, 'i') }).first();
+      // 텍스트 기반 검색 (더 유연한 로케이터 사용)
+      const openBtn = page.locator('button').filter({ hasText: new RegExp(target.btnName, 'i') }).first();
       
       if (await openBtn.isVisible()) {
         await openBtn.click();
-        await page.waitForTimeout(800); // 폼 렌더링 대기
+        await page.waitForTimeout(1000); // 폼 렌더링 대기
       } else {
-        // 테이블 내의 수정 버튼 시도 (첫 번째 행)
-        const firstRowEditBtn = page.locator('table tr').first().locator('button').filter({ hasText: new RegExp(target.btnName, 'i') });
-        if (await firstRowEditBtn.isVisible()) {
-           await firstRowEditBtn.click();
-           await page.waitForTimeout(800);
+        // 백업: 테이블 내의 수정 버튼 시도
+        const tableEditBtn = page.locator('table button, .data-table button').filter({ hasText: /수정|편집|Edit/i }).first();
+        if (await tableEditBtn.isVisible()) {
+           await tableEditBtn.click();
+           await page.waitForTimeout(1000);
         } else {
            console.log(`>>> Warning: ${target.btnName} button not found. Skipping.`);
            return;

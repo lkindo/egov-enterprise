@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import React from 'react';
+import { useAppForm } from '@/hooks/useAppForm';
 import * as z from 'zod';
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +34,8 @@ import {
 } from 'lucide-react';
 import { ProgrmManage } from '@/types/foundation/system';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
-import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 
 const formSchema = z.object({
   progrmFileNm: z.string().min(1, { message: "프로그램파일명은 필수입니다." }),
@@ -43,6 +44,8 @@ const formSchema = z.object({
   progrmDc: z.string().optional(),
   url: z.string().min(1, { message: "URL은 필수입니다." }),
 });
+
+type ProgramFormValues = z.infer<typeof formSchema>;
 
 interface ProgramFormProps {
   open: boolean;
@@ -53,8 +56,9 @@ interface ProgramFormProps {
 
 export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramFormProps) {
   const isEdit = !!data;
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const confirm = useConfirm();
+
+  const form = useAppForm(formSchema, {
     defaultValues: {
       progrmFileNm: data?.progrmFileNm || '',
       progrmStrePath: data?.progrmStrePath || '/',
@@ -64,31 +68,41 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: ProgramFormValues) => {
     try {
       if (isEdit) {
         await programAdminService.updateProgram(data.progrmFileNm!, values as ProgrmManage);
+        toast.success('프로그램 정보가 수정되었습니다.');
       } else {
         await programAdminService.createProgram(values as ProgrmManage);
+        toast.success('신규 프로그램이 등록되었습니다.');
       }
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error(error);
-      alert('저장 중 오류가 발생했습니다.');
+      toast.error('저장 중 오류가 발생했습니다.');
     }
   };
 
   const handleDelete = async () => {
     if (!data?.progrmFileNm) return;
-    if (confirm('정말로 삭제하시겠습니까?')) {
+    
+    const ok = await confirm({
+      title: '프로그램 영구 삭제',
+      message: '해당 프로그램 명세가 시스템에서 영구적으로 제거됩니다. 정말로 진행하시겠습니까?',
+      variant: 'destructive'
+    });
+
+    if (ok) {
       try {
         await programAdminService.deleteProgram(data.progrmFileNm);
+        toast.success('프로그램이 삭제되었습니다.');
         onSuccess();
         onOpenChange(false);
       } catch (error) {
         console.error(error);
-        alert('삭제 중 오류가 발생했습니다.');
+        toast.error('삭제 중 오류가 발생했습니다.');
       }
     }
   };

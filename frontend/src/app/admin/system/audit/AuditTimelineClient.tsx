@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -79,14 +79,14 @@ export function AuditTimelineClient() {
             <Button 
                 variant="outline" 
                 size="lg" 
-                className="h-14 px-8 rounded-[0.1rem] border-2 font-black text-[10px] tracking-widest uppercase gap-3 hover:bg-slate-50 transition-all shadow-sm group"
+                className="h-14 px-8 rounded-xl border-2 font-black text-[10px] tracking-widest uppercase gap-3 hover:bg-slate-50 transition-all shadow-sm group"
             >
               <Download size={18} className="group-hover:translate-y-0.5 transition-transform" /> 리포트 추출
             </Button>
             <Button 
                 size="lg" 
                 onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-audit-timeline'] })}
-                className="h-14 px-10 rounded-[0.1rem] bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[10px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
             >
               <RefreshCcw size={20} className={cn(isFetching && "animate-spin")} /> 실시간 리프레시
             </Button>
@@ -104,14 +104,14 @@ export function AuditTimelineClient() {
       <div className="grid grid-cols-12 gap-12 px-2 h-full">
         {/* --- Main Timeline Filter & List --- */}
         <div className="col-span-12 lg:col-span-7 flex flex-col gap-10">
-           <div className="rounded-[0.1rem] bg-white border-2 border-slate-100 shadow-2xl p-12 space-y-10 relative overflow-hidden flex-1">
+           <div className="rounded-xl bg-white border-2 border-slate-100 shadow-2xl p-12 space-y-10 relative overflow-hidden flex-1">
               <div className="flex items-center justify-between border-b border-slate-50 pb-8 relative z-10">
                  <div className="space-y-1">
                     <h3 className="text-[10px] font-black text-slate-600 tracking-[0.4em] uppercase">행동 분석</h3>
                     <p className="text-2xl font-black tracking-tighter text-slate-900 uppercase italic leading-none">감사 로드맵 매트릭스</p>
                  </div>
                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 group cursor-pointer px-4 py-2 rounded-[0.1rem] hover:bg-slate-50 transition-all">
+                    <div className="flex items-center gap-2 group cursor-pointer px-4 py-2 rounded-xl hover:bg-slate-50 transition-all">
                        <Calendar size={14} className="text-slate-600 group-hover:text-primary" />
                        <span className="text-[10px] font-black tracking-widest text-slate-600 uppercase">전체 기간</span>
                     </div>
@@ -123,7 +123,7 @@ export function AuditTimelineClient() {
               <div className="relative group z-10">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-200 group-focus-within:text-primary transition-colors" size={20} />
                 <Input 
-                  className="pl-16 h-16 bg-slate-50 border-none rounded-[0.1rem] text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300" 
+                  className="pl-16 h-16 bg-slate-50 border-none rounded-xl text-xs font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-300" 
                   placeholder="행위, 시스템명 또는 행동 상세 필터링.." 
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -132,7 +132,7 @@ export function AuditTimelineClient() {
 
               <div className="space-y-2 relative z-10 pt-4 overflow-y-auto max-h-[800px] pr-4 custom-scrollbar">
                 {isLoading ? (
-                   [1,2,3,4,5].map(i => <div key={i} className="h-40 bg-slate-50 rounded-[0.1rem] animate-pulse mb-8" />)
+                   [1,2,3,4,5].map(i => <div key={i} className="h-40 bg-slate-50 rounded-xl animate-pulse mb-8" />)
                 ) : logs.length > 0 ? (
                    logs.map((log, idx) => (
                       <TimelineItem 
@@ -169,7 +169,7 @@ export function AuditTimelineClient() {
                     transition={{ duration: 0.6, ease: "circOut" }}
                     className="h-full"
                  >
-                    <div className="rounded-[0.1rem] bg-slate-900 border-4 border-slate-900 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] h-full p-16 space-y-12 flex flex-col relative overflow-hidden group">
+                    <div className="rounded-xl bg-slate-900 border-4 border-slate-900 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] h-full p-16 space-y-12 flex flex-col relative overflow-hidden group">
                        <div className="border-b border-white/5 pb-12 relative z-10 transition-transform duration-700 group-hover:-translate-y-1">
                           <div className="flex items-center gap-3 mb-6">
                               <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse" />
@@ -187,7 +187,7 @@ export function AuditTimelineClient() {
                                 <span>Payload Matrix</span>
                                 <Database size={12} />
                              </div>
-                             <div className="p-10 bg-white/5 border border-white/5 rounded-[0.1rem] shadow-inner relative overflow-hidden group/pre">
+                             <div className="p-10 bg-white/5 border border-white/5 rounded-xl shadow-inner relative overflow-hidden group/pre">
                                 <pre className="text-[12px] font-mono text-white/80 leading-relaxed font-bold break-all whitespace-pre-wrap relative z-10 italic">
                                    {JSON.stringify(selectedLog, null, 3)}
                                 </pre>
@@ -197,7 +197,7 @@ export function AuditTimelineClient() {
                        </div>
 
                        <div className="pt-12 mt-auto border-t border-white/5 space-y-8 relative z-10">
-                          <Button className="w-full h-20 bg-white text-slate-900 rounded-[0.1rem] font-black tracking-[0.4em] text-[11px] shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 uppercase group overflow-hidden">
+                          <Button className="w-full h-20 bg-white text-slate-900 rounded-xl font-black tracking-[0.4em] text-[11px] shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 uppercase group overflow-hidden">
                              감사 보고 증명서 발급
                              <ArrowRight size={20} className="ml-4 group-hover:translate-x-2 transition-transform" />
                           </Button>
@@ -208,8 +208,8 @@ export function AuditTimelineClient() {
                     </div>
                  </motion.div>
               ) : (
-                 <div className="h-full min-h-[700px] flex flex-col items-center justify-center p-20 text-center opacity-40 select-none rounded-[0.1rem] border-4 border-dashed border-slate-100 bg-slate-50/50 group hover:border-primary/20 hover:bg-white transition-all duration-1000 group">
-                    <div className="w-32 h-32 rounded-[0.1rem] bg-white border-2 border-slate-100 flex items-center justify-center mb-12 shadow-2xl group-hover:rotate-[15deg] transition-all duration-700">
+                 <div className="h-full min-h-[700px] flex flex-col items-center justify-center p-20 text-center opacity-40 select-none rounded-xl border-4 border-dashed border-slate-100 bg-slate-50/50 group hover:border-primary/20 hover:bg-white transition-all duration-1000 group">
+                    <div className="w-32 h-32 rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center mb-12 shadow-2xl group-hover:rotate-[15deg] transition-all duration-700">
                         <Activity size={100} className="text-slate-300 group-hover:text-primary transition-colors" />
                     </div>
                     <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-tight mb-4">
