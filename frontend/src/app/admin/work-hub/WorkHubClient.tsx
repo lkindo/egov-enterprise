@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -30,6 +30,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { scheduleService } from '@/services/business/user/ScheduleService';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
+import { HubListSkeleton, HubDetailSkeleton } from '@/components/ui/hub/HubSkeleton';
 
 import { reportService } from '@/services/business/user/ReportService';
 
@@ -54,6 +55,10 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
   const [searchKeyword, setSearchKeyword] = useState('');
 
+  // Calendar States
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
   const setTab = (tab: 'job' | 'report' | 'calendar') => {
     setTabState(tab);
     const params = new URLSearchParams(searchParams);
@@ -63,6 +68,15 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   };
 
   // --- Queries ---
+  const yearMonth = currentDate.getFullYear() + String(currentDate.getMonth() + 1).padStart(2, '0');
+
+  const { data: monthlyData, isLoading: isCalendarLoading } = useQuery({
+    queryKey: ['work-monthly-schedule', yearMonth],
+    queryFn: () => scheduleService.getMonthlySchedule(yearMonth),
+    enabled: activeTab === 'calendar'
+  });
+  const monthlySchedules = monthlyData?.schedules || [];
+
   const { data: scheduleData } = useQuery({
     queryKey: ['work-schedule', searchKeyword],
     queryFn: () => scheduleService.getScheduleList({ pageIndex: 1 }),
@@ -70,25 +84,27 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   });
   const schedules = scheduleData?.list || [];
 
-  const { data: jobData } = useQuery({
+  const { data: jobData, isLoading: isJobLoading } = useQuery({
     queryKey: ['work-jobs', searchKeyword],
     queryFn: () => deptJobUserService.getDeptJobBoxes({ searchWrd: searchKeyword }),
     enabled: activeTab === 'job'
   });
   const jobs = jobData?.list || [];
 
-  const { data: reportData } = useQuery({
+  const { data: reportData, isLoading: isReportLoading } = useQuery({
     queryKey: ['work-reports', searchKeyword],
     queryFn: () => reportService.getReports({ page: 0, size: 50, searchWrd: searchKeyword }),
     enabled: activeTab === 'report'
   });
   const reports = reportData?.list || [];
 
+  const isLoading = isCalendarLoading || isJobLoading || isReportLoading;
+
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
-    if (activeTab === 'job') return jobs.find(j => j.deptJobbxId === selectedItemId);
-    if (activeTab === 'report') return reports.find(r => r.reprtId === selectedItemId);
-    if (activeTab === 'calendar') return schedules.find(s => s.schdulId === selectedItemId);
+    if (activeTab === 'job') return jobs.find((j: any) => j.deptJobbxId === selectedItemId);
+    if (activeTab === 'report') return reports.find((r: any) => r.reprtId === selectedItemId);
+    if (activeTab === 'calendar') return schedules.find((s: any) => s.schdulId === selectedItemId);
     return null;
   }, [selectedItemId, activeTab, jobs, reports, schedules]);
 
@@ -167,26 +183,138 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
     </div>
   );
 
-  const renderCalendar = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="p-8 rounded-xl bg-white border-2 border-slate-100 shadow-xl space-y-8">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-black tracking-tighter uppercase">통합 스마트 캘린더</h3>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="rounded-full text-[9px] font-black">개인 일정</Button>
-            <Button size="sm" variant="default" className="rounded-full text-[9px] font-black bg-slate-900 text-white">부서 일정</Button>
+  const renderCalendar = () => {
+    const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const prevMonthDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
+
+    const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+    const handlePrevMonth = () => {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    };
+
+    const handleNextMonth = () => {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    };
+
+    const isToday = (day: number) => {
+      const today = new Date();
+      return today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
+    };
+
+    const isSelected = (day: number) => {
+      return selectedDate.getDate() === day && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear();
+    };
+
+    const getEventsForDay = (day: number) => {
+      const dateStr = `${currentDate.getFullYear()}${String(currentDate.getMonth() + 1).padStart(2, '0')}${String(day).padStart(2, '0')}`;
+      return monthlySchedules.filter(s => s.schdulBgnde.startsWith(dateStr));
+    };
+
+    return (
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="hub-glass-premium p-8 rounded-xl border-2 border-slate-100/50 shadow-2xl space-y-8 relative overflow-hidden group">
+          {/* Header */}
+          <div className="flex items-center justify-between relative z-10">
+            <div className="space-y-1">
+              <h3 className="text-2xl font-black tracking-tighter uppercase font-mono italic">
+                {currentDate.toLocaleString('default', { month: 'long' })} <span className="text-primary italic underline decoration-4 decoration-primary/20 underline-offset-4">{currentDate.getFullYear()}</span>
+              </h3>
+              <p className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase italic opacity-40">Intelligence_Calendar_Hub</p>
+            </div>
+            <div className="flex gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handlePrevMonth}
+                className="h-10 w-10 rounded-lg hover:bg-white hover:shadow-md transition-all text-slate-400 hover:text-primary"
+              >
+                <ChevronRight className="rotate-180" size={18} />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleNextMonth}
+                className="h-10 w-10 rounded-lg hover:bg-white hover:shadow-md transition-all text-slate-400 hover:text-primary"
+              >
+                <ChevronRight size={18} />
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="aspect-[4/3] bg-slate-50 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-slate-100 p-12 space-y-4">
-          <div className="w-16 h-16 rounded-xl bg-white shadow-lg flex items-center justify-center text-primary mb-2">
-            <Calendar size={32} />
+
+          {/* Grid */}
+          <div className="grid grid-cols-7 gap-3 relative z-10">
+            {weekDays.map(day => (
+              <div key={day} className="text-center py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono italic">{day}</div>
+            ))}
+            
+            {prevMonthDays.map(i => (
+              <div key={`prev-${i}`} className="aspect-square opacity-10" />
+            ))}
+
+            {days.map(day => {
+              const events = getEventsForDay(day);
+              const hasEvents = events.length > 0;
+              
+              return (
+                <motion.div
+                  key={day}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSelectedDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
+                  className={cn(
+                    "aspect-square rounded-xl border-2 flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden",
+                    isSelected(day) 
+                      ? "bg-slate-900 border-slate-900 text-white shadow-xl z-20" 
+                      : isToday(day)
+                        ? "bg-primary/5 border-primary/20 text-primary"
+                        : "bg-white border-slate-50 text-slate-400 hover:border-slate-200"
+                  )}
+                >
+                  <span className={cn(
+                    "text-lg font-black tracking-tighter tabular-nums italic font-mono",
+                    isSelected(day) ? "text-white" : isToday(day) ? "text-primary" : "text-slate-900/60"
+                  )}>{day}</span>
+                  
+                  {hasEvents && !isSelected(day) && (
+                    <div className="flex gap-1 mt-1">
+                      {events.slice(0, 3).map((_, i) => (
+                        <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                      ))}
+                    </div>
+                  )}
+
+                  {isSelected(day) && (
+                    <div className="absolute top-2 right-2">
+                       <Sparkles size={10} className="text-primary animate-pulse" />
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
-          <p className="text-sm font-black text-slate-900 tracking-tighter uppercase">대화형 스케줄링 시스템</p>
-          <p className="text-[10px] font-bold text-slate-400 max-w-[200px] text-center leading-relaxed">준비된 캘린더 엔진이 비즈니스 일정을 실시간으로 동기화합니다.</p>
+
+          <div className="flex items-center justify-between pt-6 border-t border-slate-100 relative z-10">
+             <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                   <div className="w-3 h-3 rounded-full bg-primary/20 border border-primary/40" />
+                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic font-mono">Today</span>
+                </div>
+                <div className="flex items-center gap-2">
+                   <div className="w-3 h-3 rounded-full bg-primary" />
+                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic font-mono">Event</span>
+                </div>
+             </div>
+             <Button variant="ghost" className="h-10 px-4 rounded-xl text-[9px] font-black text-primary tracking-widest uppercase italic font-mono hover:bg-primary/5">
+                <RefreshCcw size={12} className={cn("mr-2", isCalendarLoading && "animate-spin")} /> Sync_Stream
+             </Button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
@@ -271,7 +399,15 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.4 }}
                 >
-                  {activeTab === 'job' ? renderJobList() : activeTab === 'report' ? renderReportList() : renderCalendar()}
+                  {isLoading ? (
+                    <HubListSkeleton />
+                  ) : activeTab === 'job' ? (
+                    renderJobList()
+                  ) : activeTab === 'report' ? (
+                    renderReportList()
+                  ) : (
+                    renderCalendar()
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -295,7 +431,92 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
             }
           >
             <AnimatePresence mode="wait">
-              {selectedItemId ? (
+              {isLoading ? (
+                <HubDetailSkeleton />
+              ) : activeTab === 'calendar' ? (
+                <motion.div
+                  key={selectedDate.toISOString()}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-10 py-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h4 className="text-2xl font-black tracking-tighter uppercase font-mono italic">
+                        {selectedDate.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
+                      </h4>
+                      <p className="text-[10px] font-black text-primary tracking-[0.4em] uppercase italic opacity-60">Selected_Node_Insight</p>
+                    </div>
+                    <Button size="sm" className="h-10 px-6 rounded-xl bg-slate-900 text-white font-black text-[9px] tracking-widest uppercase gap-2 hover:bg-primary transition-all">
+                      <Plus size={14} /> 일정 추가
+                    </Button>
+                  </div>
+
+                  {(() => {
+                    const dateStr = `${selectedDate.getFullYear()}${String(selectedDate.getMonth() + 1).padStart(2, '0')}${String(selectedDate.getDate()).padStart(2, '0')}`;
+                    const dayEvents = monthlySchedules.filter(s => s.schdulBgnde.startsWith(dateStr));
+                    
+                    if (dayEvents.length === 0) {
+                      return (
+                        <div className="p-20 border-4 border-dashed border-border/20 rounded-xl flex flex-col items-center justify-center text-center space-y-8 bg-slate-50/50 dark:bg-muted/5 grayscale">
+                          <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-muted-foreground/20 shadow-inner border border-border/10">
+                            <Clock size={32} />
+                          </div>
+                          <div className="space-y-4">
+                            <h3 className="text-xl font-black text-foreground tracking-tighter uppercase opacity-40">Empty Timeline</h3>
+                            <p className="text-[10px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed italic font-mono">
+                              해당 날짜에 예정된 비즈니스 프로세스가 없습니다.
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                        {dayEvents.map((event, idx) => (
+                          <motion.div
+                            key={event.schdulId}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            className="group p-8 rounded-xl border-2 border-slate-100 bg-white hover:border-primary/20 hover:shadow-2xl transition-all relative overflow-hidden"
+                          >
+                            <div className="flex items-start justify-between relative z-10">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                  <span className={cn(
+                                    "px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase font-mono italic",
+                                    event.schdulSe === '1' ? "bg-indigo-500/10 text-indigo-500" : "bg-emerald-500/10 text-emerald-500"
+                                  )}>
+                                    {event.schdulSe === '1' ? 'DEPT_OPS' : 'PERSONAL'}
+                                  </span>
+                                  <span className="text-[10px] font-black text-slate-300 tabular-nums font-mono italic">
+                                    {event.schdulBgnde.substring(8, 10)}:{event.schdulBgnde.substring(10, 12)}
+                                  </span>
+                                </div>
+                                <h5 className="text-xl font-black tracking-tighter text-slate-900 group-hover:text-primary transition-colors italic">
+                                  {event.schdulNm}
+                                </h5>
+                                <p className="text-sm text-slate-500 font-medium line-clamp-2 italic">
+                                  "{event.schdulCn}"
+                                </p>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-900 hover:text-white transition-all">
+                                <ArrowUpRight size={18} />
+                              </Button>
+                            </div>
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:rotate-12 transition-transform duration-1000">
+                               <Calendar size={80} className="text-primary" />
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </motion.div>
+              ) : selectedItemId ? (
                 <motion.div
                   key={selectedItemId}
                   initial={{ opacity: 0, y: 20 }}
@@ -324,9 +545,9 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                     <Briefcase size={48} />
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">{activeTab === 'calendar' ? 'Ready to Sync' : '시스템 대기'}</h3>
-                    <p className="text-[11px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed">
-                      {activeTab === 'calendar' ? 'Connect Calendar Service for Insights' : 'Select Object to Capture Stream'}
+                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">시스템 대기</h3>
+                    <p className="text-[11px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed font-mono italic">
+                      Select Object to Capture Stream
                     </p>
                   </div>
                 </div>

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import CollaborationHubClient from '../CollaborationHubClient';
+import NoteSendHubClient from './NoteSendHubClient';
 
 export default function MailSendPage() {
- return <CollaborationHubClient defaultTab="MESSAGES" />;
+  return <NoteSendHubClient />;
 }

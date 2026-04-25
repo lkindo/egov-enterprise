@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -27,8 +27,22 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { statsAdminService } from '@/services/foundation/system/StatsAdminService';
+import { statsAdminService, StatsDto } from '@/services/foundation/system/StatsAdminService';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer,
+  LineChart as RechartsLineChart,
+  Line,
+  AreaChart,
+  Area
+} from 'recharts';
+import { HubMetricSkeleton, HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
 
 // --- Types ---
 type StatsTab = 'DASHBOARD' | 'USER_STATS' | 'CONTENT_STATS' | 'SYSTEM_STATS' | 'SURVEYS' | 'REPORTS';
@@ -123,11 +137,15 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
         {/* --- Center/Right Columns: Interactive Data (80%) --- */}
         <div className="col-span-12 lg:col-span-9 space-y-8">
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <StatSummaryCard icon={<Activity size={24} />} label="활성 세션" value={`${userStats?.length || 0}`} trend="+12%" />
-            <StatSummaryCard icon={<Monitor size={24} />} label="화면 요청" value={`${screenStats?.length || 0}k`} trend="+5.4k" color="primary" />
-            <StatSummaryCard icon={<Database size={24} />} label="데이터 사용량" value={`${dataUsage?.length || 0}GB`} trend="-2.1%" />
-          </div>
+          {isUserLoading || isBbsLoading || isScreenLoading ? (
+            <HubMetricSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <StatSummaryCard icon={<Activity size={24} />} label="활성 세션" value={`${userStats?.length || 0}`} trend="+12%" />
+              <StatSummaryCard icon={<Monitor size={24} />} label="화면 요청" value={`${screenStats?.length || 0}k`} trend="+5.4k" color="primary" />
+              <StatSummaryCard icon={<Database size={24} />} label="데이터 사용량" value={`${dataUsage?.length || 0}GB`} trend="-2.1%" />
+            </div>
+          )}
 
           <Card className="rounded-xl border-0 bg-white shadow-2xl overflow-hidden ring-1 ring-slate-100 min-h-[500px] flex flex-col">
             <CardHeader className="bg-slate-50/50 border-b p-10 flex flex-row items-center justify-between">
@@ -156,9 +174,10 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                   exit={{ opacity: 0, y: -20 }}
                   className="h-full"
                 >
-                  {activeTab === 'SURVEYS' ? (
+                  {isUserLoading || isBbsLoading || isScreenLoading ? (
+                    <HubListSkeleton />
+                  ) : activeTab === 'SURVEYS' ? (
                     <div className="space-y-6">
-                      {isSurveyLoading && <div className="p-10 text-center opacity-40 italic">설문 저장소 동기화 중...</div>}
                       {surveys?.list?.map((s: any) => (
                         <div key={s.qestnrId} className="p-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all">
                           <div className="flex items-center gap-6">
@@ -179,21 +198,57 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                       ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-20 text-center space-y-10">
-                      <div className="w-64 h-64 mx-auto bg-slate-50 rounded-full flex items-center justify-center relative shadow-inner">
-                        <TrendingUp size={120} className="text-slate-100" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <LineChart size={64} className="text-primary" />
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        <h4 className="text-3xl font-black italic tracking-tighter text-slate-900">
-                          {isUserLoading || isBbsLoading || isScreenLoading ? '인텔리전스 엔진 처리 중...' : '데이터셋 동기화 완료'}
-                        </h4>
-                        <p className="text-[10px] font-black text-slate-600 tracking-[0.5em]">
-                          거버넌스 데이터 검증 및 최적화 프로세스 완료
-                        </p>
-                      </div>
+                    <div className="h-[400px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={activeTab === 'USER_STATS' ? userStats : activeTab === 'CONTENT_STATS' ? bbsStats : screenStats}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                        >
+                          <defs>
+                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="statsDate" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fontSize: 10, fontWeight: 900, fill: '#cbd5e1' }}
+                            dy={10}
+                          />
+                          <YAxis 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fontSize: 10, fontWeight: 900, fill: '#cbd5e1' }}
+                          />
+                          <RechartsTooltip 
+                            contentStyle={{ 
+                                borderRadius: '16px', 
+                                border: 'none', 
+                                boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
+                                fontWeight: 900,
+                                fontSize: '12px'
+                            }} 
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="creatCo" 
+                            stroke="#3b82f6" 
+                            strokeWidth={4}
+                            fillOpacity={1} 
+                            fill="url(#colorValue)" 
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="inqireCo" 
+                            stroke="#10b981" 
+                            strokeWidth={4}
+                            fillOpacity={0}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
                     </div>
                   )}
                 </motion.div>

@@ -1,159 +1,230 @@
-﻿'use client';
+'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
+import React, { useState, Suspense } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { 
+  Plus, Eye, Megaphone, Loader2, 
+  Search, Filter, ChevronRight, MessageSquare, 
+  User, Calendar as CalendarIcon, Clock, Layers,
+  ArrowUpRight, Sparkles
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { BoardPost } from '@/types/business/board';
 import { useToast } from '@/app/components/ui/toast';
-import { useSearchState } from '@/lib/hooks/use-search-state';
-import { Plus, Eye, Megaphone, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
+import { HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
 
 const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 공지사항 기본값
 
-function CommunityDetailContent() {
+function CommunityBoardContent() {
     const router = useRouter();
     const params = useParams();
-    const communityId = params.id as string;
+    const searchParams = useSearchParams();
     const { toast } = useToast();
 
-    const { values, setSearchValues } = useSearchState({
-        bbsId: DEFAULT_BBS_ID,
-        searchWrd: '',
-        searchCnd: '0',
-        page: '0'
+    const [searchWrd, setSearchWrd] = useState('');
+    const [bbsId, setBbsId] = useState(searchParams.get('bbsId') || DEFAULT_BBS_ID);
+    const [page, setPage] = useState(0);
+
+    const { data: boardData, isLoading } = useQuery({
+        queryKey: ['community-board', bbsId, searchWrd, page],
+        queryFn: () => boardUserService.getPosts(bbsId, {
+            page: page,
+            size: 10,
+            searchWrd: searchWrd,
+            searchCnd: '0'
+        }),
     });
 
-    const [loading, setLoading] = useState(true);
-    const [data, setData] = useState<BoardPost[]>([]);
-    const [total, setTotal] = useState(0);
+    const posts = boardData?.list || [];
+    const totalCount = boardData?.total || 0;
 
-    useEffect(() => {
-        async function loadPosts() {
-            try {
-                setLoading(true);
-                // 실질적으로는 communityId에 따른 bbsId를 조회해야 할 수도 있으나 
-                // 기존 로직에 명시된 경로를 따릅니다.
-                const res = await boardUserService.getPosts(values.bbsId, {
-                    page: parseInt(values.page),
-                    size: 10,
-                    searchWrd: values.searchWrd,
-                    searchCnd: values.searchCnd
-                });
-                setData(res.list || []);
-                setTotal(res.total || 0);
-            } catch {
-                toast('목록을 불러오는 중 오류가 발생했습니다.', 'error');
-            } finally {
-                setLoading(false);
-            }
-        }
-        loadPosts();
-    }, [values, toast, communityId, values.bbsId, values.page, values.searchWrd, values.searchCnd]);
-
-    const columns = [
-        {
-            header: '번호',
-            accessor: (item: BoardPost) => (
-                item.noticeAt === 'Y' ?
-                    <span className="flex items-center gap-1.5 text-blue-600 font-bold"><Megaphone size={14} /> 공지</span> :
-                    item.nttId
-            ),
-            className: 'w-20'
-        },
-        {
-            header: '제목',
-            accessor: (item: BoardPost) => (
-                <div className="flex flex-col gap-0.5">
-                    <span className="font-bold text-foreground hover:text-primary transition-colors">{item.nttSj}</span>
-                    {item.nttCn ? <span className="text-[11px] text-muted-foreground line-clamp-1">{item.nttCn.substring(0, 50)}</span> : null}
-                </div>
-            ),
-            className: 'min-w-[300px]'
-        },
-        { header: '작성자', accessor: (item: BoardPost) => item.ntcrNm || '익명' },
-        { header: '날짜', accessor: (item: BoardPost) => item.createdDate?.substring(0, 10) || '-' },
-        {
-            header: '조회',
-            accessor: (item: BoardPost) => (
-                <div className="flex items-center gap-1 text-muted-foreground">
-                    <Eye size={14} />
-                    {item.inqireCo}
-                </div>
-            )
-        }
-    ];
+    const handleRowClick = (item: BoardPost) => {
+        router.push(`/admin/community/boards/${item.nttId}?bbsId=${item.bbsId || bbsId}`);
+    };
 
     return (
-        <div className="space-y-6">
-            <PageHeader
-                title="커뮤니티 상세 및 게시글"
-                breadcrumbs={[{ label: '커뮤니티 관리', href: '/admin/community' }, { label: '커뮤니티 상세' }]}
-                actions={
-                    <button
+        <motion.div 
+            initial="hidden"
+            animate="visible"
+            variants={hubContainerVariants}
+            className="space-y-12 pb-24"
+        >
+            {/* 1. Hub Header Matrix */}
+            <motion.div variants={hubItemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-10 px-2">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                        <span className="text-[10px] font-black tracking-[0.5em] text-primary uppercase leading-none px-3 py-1 bg-primary/5 rounded-full border border-primary/10">Board Intelligence</span>
+                    </div>
+                    <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic leading-none transition-colors">
+                        Knowledge <span className="text-primary">Stream</span>
+                    </h1>
+                    <p className="text-sm font-bold text-slate-400 max-w-lg leading-relaxed uppercase tracking-widest italic">
+                        Real-time synchronization of organizational knowledge nodes and business insights.
+                    </p>
+                </div>
+                <div className="flex items-center gap-4">
+                    <Button 
                         onClick={() => router.push('/admin/community/boards/write')}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+                        className="h-16 px-10 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
                     >
-                        <Plus size={18} /> 새 글 쓰기
-                    </button>
-                }
-            />
+                        <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> Create New Node
+                    </Button>
+                </div>
+            </motion.div>
 
-            <StandardSearchFilter
-                fields={[
-                    {
-                        name: 'bbsId',
-                        label: '게시판 선택',
-                        type: 'select',
-                        options: [
-                            { label: '공지사항', value: 'BBSMSTR_AAAAAAAAAAAA' },
-                            { label: '자유게시판', value: 'BBSMSTR_BBBBBBBBBBBB' },
-                            { label: '업무게시판', value: 'BBSMSTR_CCCCCCCCCCCC' }
-                        ]
-                    },
-                    { name: 'searchWrd', label: '검색어', type: 'text', placeholder: '제목, 내용 입력...' },
-                    {
-                        name: 'searchCnd',
-                        label: '검색 조건',
-                        type: 'select',
-                        options: [
-                            { label: '제목', value: '0' },
-                            { label: '내용', value: '1' },
-                            { label: '작성자', value: '2' }
-                        ]
-                    }
-                ]}
-                onSearch={(v) => setSearchValues({ ...v, page: '0' })}
-            />
+            {/* 2. Search & Filter Matrix */}
+            <motion.div variants={hubItemVariants} className="px-2">
+                <div className="hub-glass-premium p-8 rounded-xl border-2 border-slate-100/50 shadow-2xl flex flex-col md:flex-row gap-6 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none group-focus-within:opacity-10 transition-opacity">
+                        <Search size={120} className="rotate-12" />
+                    </div>
+                    <div className="relative z-10 flex-1 flex flex-col md:flex-row gap-4">
+                        <div className="relative group/search flex-1">
+                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within/search:text-primary transition-colors" />
+                            <Input 
+                                value={searchWrd}
+                                onChange={(e) => setSearchWrd(e.target.value)}
+                                className="h-14 pl-14 bg-white/50 border-2 border-slate-100 rounded-xl text-lg font-black placeholder:text-slate-200 focus:border-primary/20 focus:ring-0 transition-all shadow-inner"
+                                placeholder="데이터셋 내 지식 검색..."
+                                aria-label="게시글 검색"
+                            />
+                        </div>
+                        <div className="flex gap-3">
+                            <select 
+                                value={bbsId}
+                                onChange={(e) => setBbsId(e.target.value)}
+                                className="h-14 px-8 bg-white border-2 border-slate-100 rounded-xl font-black text-[10px] tracking-widest uppercase outline-none focus:border-primary/20 transition-all shadow-sm"
+                                aria-label="게시판 선택"
+                            >
+                                <option value="BBSMSTR_AAAAAAAAAAAA">시스템 공지사항</option>
+                                <option value="BBSMSTR_BBBBBBBBBBBB">자유게시판</option>
+                                <option value="BBSMSTR_CCCCCCCCCCCC">갤러리 게시판</option>
+                            </select>
+                            <Button variant="outline" className="h-14 w-14 rounded-xl border-2 border-slate-100 p-0 shadow-sm" aria-label="상세 필터">
+                                <Filter size={20} />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
 
-            <StandardDataTable
-                columns={columns}
-                data={data}
-                loading={loading}
-                onRowClick={(item) => router.push(`/admin/community/boards/${item.nttId}?bbsId=${item.bbsId}`)}
-                emptyMessage="게시글이 존재하지 않습니다."
-            />
+            {/* 3. Knowledge Streams Matrix (List) */}
+            <motion.div variants={hubItemVariants} className="px-2">
+                {isLoading ? (
+                    <HubListSkeleton />
+                ) : posts.length === 0 ? (
+                    <div className="hub-glass-premium p-32 rounded-xl border-4 border-dashed border-slate-100 flex flex-col items-center justify-center text-center space-y-8 grayscale opacity-50">
+                        <Layers size={64} className="text-slate-200" />
+                        <div className="space-y-4">
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">No Data Nodes Found</h3>
+                            <p className="text-[10px] font-bold text-slate-400 max-w-xs mx-auto tracking-widest leading-relaxed uppercase">
+                                지정된 매트릭스 내에 활성화된 데이터 노드가 존재하지 않습니다.
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {posts.map((item, idx) => (
+                            <motion.div
+                                key={item.nttId}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                onClick={() => handleRowClick(item)}
+                                className="group flex flex-col md:flex-row md:items-center justify-between p-8 bg-white border-2 border-slate-50 rounded-xl hover:border-primary/20 hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden"
+                                role="button"
+                                aria-label={`${item.nttSj} 게시글 보기`}
+                            >
+                                <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:rotate-12 transition-transform duration-1000 grayscale group-hover:grayscale-0 group-hover:opacity-10 pointer-events-none">
+                                    <MessageSquare size={120} className="text-primary" />
+                                </div>
+                                <div className="flex gap-8 items-start md:items-center relative z-10 flex-1">
+                                    <div className="w-16 h-16 rounded-xl bg-slate-50 flex flex-col items-center justify-center border border-slate-100 group-hover:bg-primary/5 transition-colors shrink-0">
+                                        {item.noticeAt === 'Y' ? (
+                                            <Megaphone size={24} className="text-primary animate-bounce" />
+                                        ) : (
+                                            <>
+                                                <span className="text-[8px] font-black text-slate-400 uppercase leading-none mb-1">Index</span>
+                                                <span className="text-xl font-black text-slate-900 italic font-mono">{idx + 1 + page * 10}</span>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div className="space-y-3 flex-1">
+                                        <div className="flex items-center gap-3">
+                                            {item.noticeAt === 'Y' && <Badge className="bg-primary text-white font-black text-[9px] uppercase tracking-widest border-none">Emergency</Badge>}
+                                            <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase italic">{item.frstRegisterPnttm?.split(' ')[0]}</span>
+                                        </div>
+                                        <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors italic">
+                                            {item.nttSj}
+                                        </h3>
+                                        <div className="flex flex-wrap items-center gap-6 text-[10px] font-bold text-slate-500 uppercase tracking-tight">
+                                            <span className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full"><User size={12} className="text-primary" /> {item.frstRegisterNm}</span>
+                                            <span className="flex items-center gap-2"><Eye size={12} /> {item.inqireCo} Interactions</span>
+                                            <span className="flex items-center gap-2"><Clock size={12} /> Access Granted</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4 mt-6 md:mt-0 relative z-10">
+                                    <div className="w-12 h-12 rounded-full border-2 border-slate-50 flex items-center justify-center group-hover:border-primary/30 group-hover:bg-primary/5 transition-all group-hover:rotate-45">
+                                        <ChevronRight size={20} className="text-slate-300 group-hover:text-primary transition-colors" />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+            </motion.div>
 
-            <div className="flex justify-center pt-4">
-                <p className="text-sm text-muted-foreground font-medium">
-                    총 <span className="text-foreground font-bold">{total}</span> 개의 게시글이 있습니다.
-                </p>
-            </div>
-        </div>
+            {/* 4. Footer Matrix */}
+            <motion.div variants={hubItemVariants} className="flex justify-center pt-10">
+                <div className="inline-flex items-center gap-8 px-10 py-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-xl group/footer">
+                    <div className="flex items-center gap-3">
+                        <Sparkles size={16} className="text-primary animate-pulse" />
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic">Intelligence_Node_Total: <span className="text-slate-900 font-mono">{totalCount}</span></span>
+                    </div>
+                    <div className="w-px h-6 bg-slate-200" />
+                    <div className="flex gap-2">
+                        {Array.from({ length: Math.ceil(totalCount / 10) }).map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setPage(i)}
+                                className={cn(
+                                    "w-10 h-10 rounded-lg font-black text-xs font-mono transition-all",
+                                    page === i 
+                                        ? "bg-slate-900 text-white shadow-lg scale-110" 
+                                        : "bg-white text-slate-400 border border-slate-100 hover:border-primary/20 hover:text-primary"
+                                )}
+                                aria-label={`${i + 1} 페이지로 이동`}
+                            >
+                                {String(i + 1).padStart(2, '0')}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </motion.div>
+        </motion.div>
     );
 }
 
-export default function CommunityDetailPage() {
+export default function CommunityBoardPage() {
     return (
         <Suspense fallback={
-            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <p className="text-muted-foreground font-medium animate-pulse">커뮤니티 정보를 불러오고 있습니다...</p>
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-6">
+                <div className="w-16 h-16 rounded-xl bg-primary/5 flex items-center justify-center animate-bounce">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                </div>
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em] animate-pulse">Syncing Matrix Stream...</p>
             </div>
         }>
-            <CommunityDetailContent />
+            <CommunityBoardContent />
         </Suspense>
     );
 }

@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import client from '@/lib/api/client';
+import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { BoardPost, BoardResponse } from '@/types/business/board';
 
 export interface BoardListParams {
   bbsId: string;
-  page: number;
+  page: number; // 0-based index
   pageUnit: number;
   searchWrd: string;
   searchCnd: string;
@@ -18,16 +18,15 @@ export const useBoardList = (params: BoardListParams, initialData?: { list: Boar
     queryKey: ['boardList', params],
     initialData,
     queryFn: async () => {
-      const { bbsId, page, pageUnit, ...restParams } = params;
-      const queryParams = {
-        page: page - 1, // Zero-based index for backend
+      const { bbsId, page, pageUnit, searchWrd, searchCnd } = params;
+      
+      const data = await boardUserService.getPosts(bbsId, {
+        page: page, // Passing 0-based page, ApiService will handle pageIndex
         size: pageUnit || 10,
-        ...restParams
-      };
+        searchWrd,
+        searchCnd
+      });
 
-      const data = await client.get<BoardResponse>(`/boards/${bbsId}`, { params: queryParams });
-
-      // PageResponse 구조 반영 (list, total, totalPage)
       return {
         list: data.list || [],
         total: data.total || 0,
