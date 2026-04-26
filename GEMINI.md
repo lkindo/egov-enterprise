@@ -5,6 +5,16 @@
 
 ---
 
+## 0. 에이전트 행동 규율 (Agent Behavioral Discipline) - [CRITICAL]
+
+에이전트는 모든 사용자 요청 수신 시 다음의 **탐색-계획-실행** 루틴을 반드시 준수한다.
+
+1.  **Discovery First (`using-superpowers`)**: 모든 응답(단순 질문 포함) 및 탐색 전, 반드시 `using-superpowers` 스킬을 호출하여 현재 태스크에 적용 가능한 최적의 워크플로우/스킬을 식별한다.
+2.  **Context-Aware Analysis**: 지시를 받자마자 코드를 수정하지 않고, 먼저 `brainstorming` 또는 `systematic-debugging` 스킬을 통해 요구사항을 분석하고 영향 범위를 파악한다.
+3.  **Strict Orchestration**: 복잡한 구현이나 프론트엔드/백엔드 협업이 필요한 경우, 예외 없이 `superpowers-ccg` 워크플로우를 가동하여 모델별 역할을 분담한다.
+
+---
+
 ## 1. 프로젝트 개요 (Project Overview)
 
 - **이름**: eGov Enterprise (차세대 기업용 표준 프레임워크 기반 서비스)
@@ -94,11 +104,13 @@ graph TD
 
 ## 9. CCG Orchestration (Claude + Claude + Gemini)
 
-본 프로젝트는 **@nst173/superpowers-ccg**를 기반으로 하되, 사용자의 환경에 맞춰 최적화된 협업 체계를 구축하였다.
-- **Claude (Antigravity)**: 전체 오케스트레이션 및 **백엔드/시스템/인프라** 구현 담당
-- **Gemini (via MCP)**: **프론트엔드/UI/UX/스타일** 구현 전문가
+본 프로젝트는 **@nst173/superpowers-ccg**를 기반으로 한 오케스트레이션을 **기본 실행 프로세스**로 채택한다.
+- **Claude (Antigravity)**: 오케스트레이터로서 전체 설계를 담당하며, **백엔드/시스템/인프라** 구현을 직접 수행한다.
+- **Gemini (via MCP)**: **프론트엔드/UI/UX/스타일** 구현 전문가로 활용한다.
 
-복잡한 작업 시 `.agent/skills/superpowers-ccg`의 스킬을 호출하여 적절한 모델로 작업을 라우팅하고, 풀스택 작업 시 Claude와 Gemini의 **교차 검증(CROSS_VALIDATION)**을 수행한다.
+**강제 사항**:
+- 모든 기능 구현 작업은 `.agent/skills/superpowers-ccg`의 워크플로우(CP0~CP4)를 따라 모델별 작업을 라우팅한다.
+- 풀스택 작업 시 Claude와 Gemini의 **교차 검증(CROSS_VALIDATION)**을 수행하여 아키텍처의 일관성을 확보한다.
 
 ## 10. Map-Driven Development (via Graphify)
 
@@ -109,4 +121,4 @@ graph TD
 - **Graph Maintenance**: 대규모 구현 완료 후 `/graphify --update`를 통해 최신 아키텍처 상태를 지도에 반영한다.
 
 ---
-*Last Updated: 2026-04-25 (Updated via Antigravity)*
+*Last Updated: 2026-04-27 (Updated via Antigravity)*
