@@ -32,6 +32,8 @@ spring:
   jackson:
     serialization:
       fail-on-empty-beans: false
+  flyway:
+    enabled: false
   # 순환 참조 허용 (테스트 환경)
   main:
     allow-circular-references: false
@@ -63,6 +65,9 @@ file:
 jwt:
   secret: test-secret-key-for-unit-testing-purposes-only-12345678901234567890
   expiration: 3600000
+
+cors:
+  allowed-origins: "http://localhost:3000"
 
 # 로깅 설정
 logging:

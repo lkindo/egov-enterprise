@@ -274,7 +274,7 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
               animationDuration={0}
             />
           </AreaChart>
-        </ResponsiveContainer>
+        </SafeResponsiveContainer>
       </div>
     </div>
   );
@@ -302,7 +302,7 @@ export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: D
     <div className="flex flex-col items-center h-full">
       <h3 className="text-[10px] font-black text-slate-600 tracking-[0.3em] uppercase mb-6">{title}</h3>
       <div className="w-full h-full min-h-[220px]">
-        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100} debounce={50}>
+        <SafeResponsiveContainer>
           <PieChart>
             <Pie
               data={data || []}
@@ -331,7 +331,7 @@ export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: D
               }}
             />
           </PieChart>
-        </ResponsiveContainer>
+        </SafeResponsiveContainer>
       </div>
       <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4 w-full px-4">
         {(data || []).map((item, index) => (

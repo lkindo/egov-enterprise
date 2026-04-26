@@ -7,36 +7,6 @@ vi.mock('next/config', () => ({
   default: () => ({ publicRuntimeConfig: {}, serverRuntimeConfig: {} }),
 }));
 
-// 2. Mock Lucide Icons - EXPLICITLY AND MANUALLY (NO PROXY)
-vi.mock('lucide-react', () => {
-  const R = require('react');
-  const Icon = (name: string) => {
-      const C = (props: any) => R.createElement('span', { ...props, 'data-testid': `icon-${name.toLowerCase()}` }, name);
-      C.displayName = name;
-      return C;
-  };
-  return {
-    Plus: Icon('Plus'),
-    Trash2: Icon('Trash2'),
-    Settings: Icon('Settings'),
-    Cpu: Icon('Cpu'),
-    Box: Icon('Box'),
-    SearchCode: Icon('SearchCode'),
-    Link: Icon('Link'),
-    Layers: Icon('Layers'),
-    ShieldCheck: Icon('ShieldCheck'),
-    Zap: Icon('Zap'),
-    RefreshCcw: Icon('RefreshCcw'),
-    Search: Icon('Search'),
-    Activity: Icon('Activity'),
-    Terminal: Icon('Terminal'),
-    Globe: Icon('Globe'),
-    FileCode: Icon('FileCode'),
-    CheckCircle2: Icon('CheckCircle2'),
-    ShieldAlert: Icon('ShieldAlert'),
-    Database: Icon('Database'),
-  };
-});
 
 // 3. Mock Next.js Navigation
 vi.mock('next/navigation', () => ({

@@ -22,7 +22,9 @@ import {
   Zap,
   LayoutGrid,
   List,
-  ChevronRight
+  ChevronRight,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,7 +84,7 @@ export default function UserManageClient() {
               onClick={() => setViewMode('table')}
             >
               <List size={14} className="mr-2" />
-              <span className="text-[10px] font-black uppercase">Table</span>
+              <span className="text-[10px] font-black uppercase">테이블</span>
             </Button>
             <Button 
               variant="ghost" 
@@ -91,12 +93,12 @@ export default function UserManageClient() {
               onClick={() => setViewMode('grid')}
             >
               <LayoutGrid size={14} className="mr-2" />
-              <span className="text-[10px] font-black uppercase">Grid</span>
+              <span className="text-[10px] font-black uppercase">그리드</span>
             </Button>
           </div>
           <Button className="h-12 rounded-xl px-6 bg-slate-900 hover:bg-black dark:bg-primary dark:hover:bg-primary/90 text-white font-black text-xs tracking-widest uppercase shadow-xl transition-all hover:scale-105 active:scale-95 group">
             <UserPlus size={16} className="mr-2 group-hover:rotate-12 transition-transform" />
-            Provision New Identity
+            신규 계정 생성
           </Button>
         </div>
       </div>
@@ -114,14 +116,14 @@ export default function UserManageClient() {
             <div className="relative z-10 space-y-8">
               <div className="space-y-1">
                 <Badge className="bg-primary/20 text-primary border-none rounded-lg text-[9px] font-black tracking-widest px-3 mb-3">SEC_PROTOCOL_01</Badge>
-                <h2 className="text-2xl font-black tracking-tight leading-none uppercase">Authentication<br/>Core Protocol</h2>
+                <h2 className="text-2xl font-black tracking-tight leading-none uppercase">Security<br/>Core Protocol</h2>
               </div>
 
               <div className="space-y-4">
                 <div className="relative group/input">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/input:text-primary transition-colors" size={18} />
                   <Input 
-                    placeholder="Search by Identity..." 
+                    placeholder="아이덴티티 검색..." 
                     className="bg-white/5 border-white/10 h-14 pl-12 rounded-xl text-lg font-bold placeholder:text-slate-500 focus:ring-primary focus:border-primary transition-all"
                     value={searchParams.searchKeyword}
                     onChange={(e) => setSearchParams((prev: UserSearchParams) => ({ ...prev, searchKeyword: e.target.value }))}
@@ -132,14 +134,14 @@ export default function UserManageClient() {
                   <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/opt">
                     <p className="text-[9px] font-black text-slate-500 mb-2 group-hover/opt:text-primary tracking-widest">FILTER_BY</p>
                     <div className="flex items-center justify-between font-black text-xs">
-                      <span>Status</span>
+                      <span>상태</span>
                       <ChevronRight size={12} className="opacity-40" />
                     </div>
                   </div>
                   <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/opt">
                     <p className="text-[9px] font-black text-slate-500 mb-2 group-hover/opt:text-primary tracking-widest">SORT_BY</p>
                     <div className="flex items-center justify-between font-black text-xs">
-                      <span>Last Activity</span>
+                      <span>최근 활동</span>
                       <ChevronRight size={12} className="opacity-40" />
                     </div>
                   </div>
@@ -170,12 +172,12 @@ export default function UserManageClient() {
                 <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                   <Database size={16} />
                 </div>
-                <h3 className="text-sm font-black tracking-tighter uppercase text-slate-600 dark:text-slate-300">Identity Inventory</h3>
+                <h3 className="text-sm font-black tracking-tighter uppercase text-slate-600 dark:text-slate-300">사용자 인벤토리</h3>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 px-3 py-1 bg-slate-200/50 dark:bg-slate-800 rounded-lg">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">TOTAL {data?.total || 0}</span>
+                  <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">전체 {data?.total || 0}</span>
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800">
                   <MoreHorizontal size={14} />
@@ -191,7 +193,7 @@ export default function UserManageClient() {
                     <TableHead className="py-6 text-[10px] font-black text-slate-400 uppercase">Core Identity</TableHead>
                     <TableHead className="py-6 text-[10px] font-black text-slate-400 uppercase">Clearance</TableHead>
                     <TableHead className="py-6 text-[10px] font-black text-slate-400 uppercase">State</TableHead>
-                    <TableHead className="py-6 text-[10px] font-black text-slate-400 uppercase text-right">Integrity</TableHead>
+                    <TableHead className="py-6 text-[10px] font-black text-slate-400 uppercase text-right">관리</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -237,10 +239,10 @@ export default function UserManageClient() {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-900 hover:text-white dark:hover:bg-primary transition-all">
-                              <Activity size={16} />
+                              <Edit2 size={16} />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-900 hover:text-white dark:hover:bg-primary transition-all">
-                              <ArrowUpRight size={16} />
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-rose-500 hover:text-white transition-all text-rose-500">
+                              <Trash2 size={16} />
                             </Button>
                           </div>
                         </TableCell>
@@ -251,7 +253,7 @@ export default function UserManageClient() {
                       <TableCell colSpan={5} className="py-32 text-center">
                          <div className="flex flex-col items-center gap-4 opacity-20">
                             <Zap size={64} className="animate-bounce" />
-                            <p className="text-2xl font-black tracking-tighter uppercase">No Identity Records Detected</p>
+                            <p className="text-2xl font-black tracking-tighter uppercase">검색 결과가 없습니다</p>
                          </div>
                       </TableCell>
                     </TableRow>

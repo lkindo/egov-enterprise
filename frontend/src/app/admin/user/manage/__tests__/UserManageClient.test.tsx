@@ -8,10 +8,9 @@ vi.mock('next/config', () => ({
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import UserManageClient from '../UserManageClient';
-import * as userActions from '@/app/actions/userActions';
-import { useToast } from '@/app/components/ui/toast';
-import { useMessage } from '@/hooks/useMessage';
+import { userAdminService } from '@/services/foundation/system/UserAdminService';
 
 // MOCK UI COMPONENTS
 vi.mock('@/components/ui/button', () => ({ 
@@ -22,151 +21,84 @@ vi.mock('@/components/ui/button', () => ({
 vi.mock('@/components/ui/input', () => ({ 
   Input: (props: any) => <input {...props} /> 
 }));
-vi.mock('@/components/ui/badge', () => ({ Badge: ({ children }: any) => <span>{children}</span> }));
-vi.mock('@/app/components/ui/toast', () => ({ 
-  useToast: vi.fn(() => ({ toast: vi.fn() })) 
-}));
-vi.mock('@/hooks/useMessage', () => ({ 
-  useMessage: vi.fn(() => ({ t: (key: string) => key })) 
-}));
-
-// Lucide icons are mocked globally in vitest.setup.ts
-
-
-vi.mock('@/app/components/ui/standard-modal', () => ({ 
-  StandardModal: ({ children, isOpen, title, onClose, footer }: any) => isOpen ? (
-    <div data-testid="dialog">
-      <h2>{title}</h2>
-      <button onClick={onClose}>모달 닫기</button>
-      {children}
-      <div data-testid="modal-footer">{footer}</div>
-    </div>
-  ) : null 
+vi.mock('@/components/ui/badge', () => ({ Badge: ({ children, variant, className }: any) => <span className={className}>{children}</span> }));
+vi.mock('@/components/ui/table', () => ({
+  Table: ({ children }: any) => <table>{children}</table>,
+  TableHeader: ({ children }: any) => <thead>{children}</thead>,
+  TableBody: ({ children }: any) => <tbody>{children}</tbody>,
+  TableRow: ({ children }: any) => <tr>{children}</tr>,
+  TableHead: ({ children }: any) => <th>{children}</th>,
+  TableCell: ({ children }: any) => <td>{children}</td>,
 }));
 
-vi.mock('@/app/components/ui/standard-form', () => ({ 
-  FormField: ({ children, label }: any) => (
-    <div>
-      <label>
-        {label}
-        {children}
-      </label>
-    </div>
-  )
+// Mock Service
+vi.mock('@/services/foundation/system/UserAdminService', () => ({
+  userAdminService: {
+    getUserList: vi.fn(),
+  }
 }));
 
-vi.mock('@/app/components/ui/standard-data-table', () => ({ 
-  StandardDataTable: ({ data, columns }: any) => (
-    <table data-testid="data-table">
-      <thead>
-        <tr>{columns.map((c: any, i: number) => <th key={i}>{c.header}</th>)}</tr>
-      </thead>
-      <tbody>
-        {data.map((item: any, i: number) => (
-          <tr key={i}>
-            {columns.map((c: any, j: number) => <td key={j}>{c.accessor(item)}</td>)}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  ) 
-}));
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
 
-vi.mock('@/app/actions/userActions', () => ({ 
-  createUserAction: vi.fn(), 
-  updateUserAction: vi.fn(), 
-  deleteUserAction: vi.fn() 
-}));
-
-const mockRefresh = vi.fn();
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    refresh: mockRefresh,
-  }),
-}));
+const renderWithClient = (ui: React.ReactElement) => {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+};
 
 describe('UserManageClient Component', () => {
-  const mockInitialData = {
+  const mockData = {
     list: [
-      { userId: 'user1', userNm: 'User One', emailAdres: 'user1@test.com', userSttusCode: 'A' },
-      { userId: 'user2', userNm: 'User Two', emailAdres: 'user2@test.com', userSttusCode: 'P' },
+      { esntlId: '1', userId: 'user1', userNm: 'User One', emailAdres: 'user1@test.com', userSttusCode: 'A' },
+      { esntlId: '2', userId: 'user2', userNm: 'User Two', emailAdres: 'user2@test.com', userSttusCode: 'P' },
     ],
     total: 2,
     page: 1,
     size: 10,
     totalPage: 1
   };
-  const mockInitialParams = { searchKeyword: '', searchCondition: '0', sbscrbSttus: '', pageNo: 1 };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('confirm', vi.fn(() => true));
+    vi.mocked(userAdminService.getUserList).mockResolvedValue(mockData);
   });
 
-  it('renders user list correctly', () => {
-    render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
-    expect(screen.getAllByText('user1').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('User Two').length).toBeGreaterThan(0);
-  });
-
-  it('opens create dialog when newUser button is clicked', async () => {
-    render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
-    const createBtn = screen.getByText(/신규 등록/i);
-    fireEvent.click(createBtn);
-
-    const dialog = await screen.findByTestId('dialog');
-    expect(dialog).toBeDefined();
-    expect(within(dialog).getByText('신규 아이덴티티 프로비저닝')).toBeDefined();
-  });
-
-  it('opens edit dialog with user data when settings icon is clicked', async () => {
-    render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
+  it('renders user list correctly from service', async () => {
+    renderWithClient(<UserManageClient />);
     
-    const editBtns = screen.getAllByText('Settings');
-    fireEvent.click(editBtns[0].closest('button')!);
-
-    const dialog = await screen.findByTestId('dialog');
-    expect(dialog).toBeDefined();
-    expect(within(dialog).getByText('사용자 아키텍처 명세 수정')).toBeDefined();
-    
-    // Check ID input value (should be user1)
-    const idInput = within(dialog).getByDisplayValue('user1') as HTMLInputElement;
-    expect(idInput).toBeDefined();
-    expect(idInput.readOnly).toBe(true);
-  });
-
-  it('handles user deletion after confirmation', async () => {
-    vi.mocked(userActions.deleteUserAction).mockResolvedValue({ success: true, message: 'Deleted' });
-
-    render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
-    
-    const deleteBtns = screen.getAllByText('Trash2');
-    fireEvent.click(deleteBtns[0].closest('button')!);
-
     await waitFor(() => {
-      expect(userActions.deleteUserAction).toHaveBeenCalled();
+      expect(screen.getByText('User One')).toBeDefined();
+      expect(screen.getByText('User Two')).toBeDefined();
     });
   });
 
-  it('handles user creation submission', async () => {
-    vi.mocked(userActions.createUserAction).mockResolvedValue({ success: true, message: 'Created' });
+  it('renders bento-style titles', async () => {
+    renderWithClient(<UserManageClient />);
+    expect(screen.getByText(/Identity Stream/i)).toBeDefined();
+    expect(screen.getByText(/사용자 인벤토리/i)).toBeDefined();
+  });
+
+  it('contains the new creation button', async () => {
+    renderWithClient(<UserManageClient />);
+    expect(screen.getByText(/신규 계정 생성/i)).toBeDefined();
+  });
+
+  it('shows edit and delete buttons in each row', async () => {
+    renderWithClient(<UserManageClient />);
     
-    render(<UserManageClient initialData={mockInitialData} initialParams={mockInitialParams} />);
-    
-    fireEvent.click(screen.getByText(/신규 등록/i));
-
-    const dialog = await screen.findByTestId('dialog');
-
-    fireEvent.change(within(dialog).getByPlaceholderText('사용자 식별자'), { target: { value: 'newuser' } });
-    fireEvent.change(within(dialog).getByPlaceholderText('표시 이름'), { target: { value: 'New User' } });
-    fireEvent.change(within(dialog).getByPlaceholderText('••••••••••••••••'), { target: { value: 'password123' } });
-
-    fireEvent.click(within(dialog).getByText('실행'));
-
     await waitFor(() => {
-      expect(userActions.createUserAction).toHaveBeenCalled();
-      expect(mockRefresh).toHaveBeenCalled();
+      const editIcons = screen.getAllByText('Edit2');
+      const deleteIcons = screen.getAllByText('Trash2');
+      expect(editIcons.length).toBe(2);
+      expect(deleteIcons.length).toBe(2);
     });
   });
 });

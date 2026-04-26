@@ -7,44 +7,50 @@ vi.mock('next/config', () => ({
 
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import CommunityListPage from '../cmy/selectCommunityList/page';
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import CommunityHubClient from '../cmy/selectCommunityList/CommunityHubClient';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-vi.mock('@/lib/api/client', () => ({
- default: {
- get: vi.fn().mockResolvedValue({ result: { content: [], totalElements: 0 } }),
- post: vi.fn().mockResolvedValue({}),
- put: vi.fn().mockResolvedValue({}),
- delete: vi.fn().mockResolvedValue({}),
- }
+// Mock UI Components
+vi.mock('@/components/ui/hub/HubHeader', () => ({
+  HubHeader: ({ title, highlight }: any) => <div>{title} {highlight}</div>
+}));
+vi.mock('@/components/ui/hub/HubSectionCard', () => ({
+  HubSectionCard: ({ title, children }: any) => <div><h2>{title}</h2>{children}</div>
+}));
+vi.mock('@/app/components/ui/standard-data-table', () => ({
+  StandardDataTable: ({ data }: any) => (
+    <table>
+      <tbody>
+        {data.map((item: any) => (
+          <tr key={item.cmmntyId}><td>{item.cmmntyNm}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}));
+vi.mock('@/app/components/layout/page-header', () => ({
+  PageHeader: () => null
 }));
 
-vi.mock('next/link', () => ({
- default: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
-}));
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false }
+  }
+});
 
-vi.mock('@/services/business/community/communityService', () => ({
- getCommunityList: vi.fn().mockResolvedValue({
- resultList: [
- {
- cmmntyId: 'CMM_0001',
- cmmntyNm: '개발팀 커뮤니티',
- cmmntyIntrcn: '개발 관련 논의',
- frstRegisterNm: '테스트님',
- frstRegisterPnttm: '2024-05-01'
- }
- ],
- totalCount: 1,
- })
-}));
+const renderWithClient = (ui: React.ReactElement) => {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+};
 
-describe('CommunityListPage', () => {
- beforeEach(() => {
- vi.clearAllMocks();
- });
-
- it('renders list of communities', async () => {
- const { getCommunityList } = await import('@/services/business/community/communityService');
-  (getCommunityList as any).mockResolvedValue({
+describe('CommunityHubClient', () => {
+  const mockInitialData = {
     list: [
       {
         cmmntyId: 'CMM_0001',
@@ -56,12 +62,13 @@ describe('CommunityListPage', () => {
     ],
     total: 1,
     totalPage: 1
+  };
+
+  it('renders list of communities from initialData', async () => {
+    renderWithClient(<CommunityHubClient initialData={mockInitialData} />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('개발팀 커뮤니티')).toBeDefined();
+    });
   });
-
- render(<CommunityListPage />);
-
- await waitFor(() => {
- expect(screen.getByText('개발팀 커뮤니티')).toBeDefined();
- });
- });
 });

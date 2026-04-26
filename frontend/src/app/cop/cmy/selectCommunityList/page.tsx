@@ -2,7 +2,7 @@ import React from 'react';
 import { communityService } from '@/services/business/community/communityService';
 import CommunityHubClient from './CommunityHubClient';
 
-export const dynamic = 'force-dynamic';
+
 
 export default async function CommunityListPage() {
   // Fetch initial data on server for better SEO and LCP

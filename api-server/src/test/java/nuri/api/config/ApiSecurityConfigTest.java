@@ -115,7 +115,7 @@ public class ApiSecurityConfigTest {
     @Test
     @DisplayName("CORS 설정 확인 - OPTIONS 요청 - 허용 헤더 반환")
     void corsConfigurationTest() throws Exception {
-        mockMvc.perform(options("/api/v1/health")
+        mockMvc.perform(options("/api/v1/users/signup")
                         .header("Origin", "http://localhost:3000")
                         .header("Access-Control-Request-Method", "GET"))
                 .andExpect(status().isOk())

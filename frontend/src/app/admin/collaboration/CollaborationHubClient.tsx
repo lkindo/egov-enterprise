@@ -28,7 +28,8 @@ import {
   Layers,
   Send,
   MessageSquare,
-  Loader2
+  Loader2,
+  ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';

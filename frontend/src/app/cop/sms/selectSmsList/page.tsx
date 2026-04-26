@@ -2,7 +2,7 @@ import React from 'react';
 import { smsAdminService } from '@/services/foundation/operation/SmsAdminService';
 import SmsHubClient from './SmsHubClient';
 
-export const dynamic = 'force-dynamic';
+
 
 export default async function SmsListPage() {
   // Fetch initial data on server
