@@ -49,6 +49,7 @@ export const MESSAGES = {
       desc: '방화벽 활성 및 세션 확인 완료',
     },
     liveBadge: '실시간',
+    createNewPost: '새 포스팅 작성',
   },
   admin: {
     user: {

@@ -131,6 +131,7 @@ function LoginContent() {
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="id"
+                                        name="id"
                                         placeholder="시스템 아이디를 입력하세요"
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
@@ -146,6 +147,7 @@ function LoginContent() {
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="password"
+                                        name="password"
                                         type={showPassword ? 'text' : 'password'}
                                         placeholder="············"
                                         value={password}

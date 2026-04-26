@@ -199,7 +199,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                     </div>
                   ) : (
                     <div className="h-[400px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
                         <AreaChart
                           data={activeTab === 'USER_STATS' ? userStats : activeTab === 'CONTENT_STATS' ? bbsStats : screenStats}
                           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}

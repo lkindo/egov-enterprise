@@ -29,28 +29,34 @@ export default defineConfig({
             testMatch: /.*\.setup\.ts/,
         },
         {
-            name: 'debug',
-            use: {
-                ...devices['Desktop Chrome'],
-            },
-        },
-        {
-            name: 'admin-tests',
-            testIgnore: /.*rbac_rigorous\.spec\.ts/,
-            use: {
-                ...devices['Desktop Chrome'],
-                storageState: path.resolve(__dirname, 'playwright/.auth/admin.json'),
-            },
+            name: 'tier-1-core',
+            testMatch: /01-core-base\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
             dependencies: ['setup'],
         },
         {
-            name: 'user-tests',
-            testMatch: /.*rbac_rigorous\.spec\.ts/,
-            use: {
-                ...devices['Desktop Chrome'],
-                storageState: path.resolve(__dirname, 'playwright/.auth/user.json'),
-            },
+            name: 'tier-2-admin',
+            testMatch: /02-admin-system\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
             dependencies: ['setup'],
         },
+        {
+            name: 'tier-3-business',
+            testMatch: /03-board-community\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
+            name: 'tier-4-quality',
+            testMatch: /04-quality-resilience\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
+            name: 'full-suite',
+            testMatch: /.*\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        }
     ],
 });

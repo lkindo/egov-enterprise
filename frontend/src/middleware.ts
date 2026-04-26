@@ -14,22 +14,6 @@ export function middleware(request: NextRequest) {
   // Always log in E2E environment for debugging
   console.log(`[Middleware Check] Path: ${pathname} | hasToken: ${hasToken} | userRole: ${userRole}`);
 
-  // 0. 레거시경로 리다이렉트(하위 호환성및 E2E 설정
-  const legacyMap: Record<string, string> = {
-    '/cop/adb': '/admin/collaboration/address-book',
-    '/cop/bbs': '/admin/community/boards',
-    '/cop/cmy': '/admin/community/clubs',
-    '/cop/scp': '/admin/collaboration/scraps',
-    '/cop/djm': '/admin/work-hub',
-    '/approvals': '/admin/sanctn/forms',
-    '/cop/smt/sim': '/admin/work-hub',
-  };
-
-  const legacyTarget = Object.keys(legacyMap).find(key => pathname.startsWith(key));
-  if (legacyTarget) {
-    return NextResponse.redirect(new URL(legacyMap[legacyTarget], request.url));
-  }
-
   // 1. 로그인여부 확인
   if (!hasToken) {
     const loginUrl = new URL('/login', request.url);

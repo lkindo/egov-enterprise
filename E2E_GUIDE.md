@@ -35,24 +35,35 @@ taskkill /F /IM node.exe /T; taskkill /F /IM chrome.exe /T
 
 ---
 
-## 📊 현재 복구 및 보완된 모듈
-- **BBS (게시판)**: POM 기반 리팩토링 및 검색 로직 보정 완료 (`bbs.spec.ts`)
-- **Common Code (공통코드)**: 계층 트레이스 및 필드 매핑 보완 (`admin-code.spec.ts`)
-- **User Management**: 모킹 기반 테스트 및 실제 DB 클린업 스크립트 확보
+## 📊 계층형 테스트 구조 (Tiered Architecture)
+
+본 프로젝트는 중복을 제거하고 검증력을 높이기 위해 테스트를 4개 계층으로 운영합니다.
+
+1.  **Tier 1: Core Base (`01-core-base.spec.ts`)**: 인증, 대시보드 위젯, 전역 레이아웃 무결성.
+2.  **Tier 2: Admin System (`02-admin-system.spec.ts`)**: 사용자 CRUD, 메뉴 계층, 공통코드 관리.
+3.  **Tier 3: Business Domain (`03-board-community.spec.ts`)**: 게시판 생성 마법사, 게시글 생명주기(다중 템플릿).
+4.  **Tier 4: Quality & Resilience (`04-quality-resilience.spec.ts`)**: 보안(RBAC/CSRF), UX(자동저장), 접근성(A11y), 시각적 회귀.
 
 ---
 
 ## 💻 주요 명령어
 ```bash
-npm run test:e2e        # (권장) 전체 E2E 테스트 실행
-npm run test:cleanup    # DB 가비지 데이터(user_test_ 접두사 등) 강제 정리
-npm run test:e2e:full   # [정리 -> 테스트 -> 다시 정리] 통합 사이클 실행
-npm run test:e2e:ui     # 시각적 UI 모드에서 테스트 디버깅
+# 전체 테스트 실행 (계층 순차 실행)
+npm run test:e2e
+
+# 특정 계층만 실행
+npx playwright test e2e/01-core-base.spec.ts --project=tier-1-core
+
+# UI 모드에서 디버깅
+npm run test:e2e:ui
 ```
 
 ---
 
-## 🛠️ 향후 과제
-- **Visual Regression**: 주요 대시보드 화면에 대해 스톱샷(Snapshot) 비교 테스트 도입.
-- **A11y Testing**: `@axe-core/playwright`를 활용한 웹 접근성 자동화 검증 추가.
-- **Load Testing Integration**: 핵심 시나리오에 대한 부하 테스트용 데이터 셋 확장.
+## 🛠️ 유지보수 지침
+- **POM 활용**: 새로운 페이지 추가 시 `e2e/pages`에 클래스를 정의하고 `fixtures/base-test.ts`에 등록하십시오.
+- **자동 클린업**: 테스트 종료 시 `globalTeardown`에 등록된 `cleanup-db.ts`가 가비지 데이터를 자동으로 정리합니다.
+- **에러 감시**: `ConsoleErrorGuard`가 모든 테스트에서 자동으로 동작하며, 하이드레이션 오류나 런타임 예외 발생 시 테스트를 즉시 실패 처리합니다.
+
+---
+*Last Updated: 2026-04-26 (Tiered E2E Migration Completed)*

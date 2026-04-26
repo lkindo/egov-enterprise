@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -37,6 +37,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
         heading: {
           levels: [1, 2, 3],
         },
+        link: false,
       }),
       Link.configure({
         openOnClick: false,

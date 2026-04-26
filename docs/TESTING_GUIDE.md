@@ -122,64 +122,28 @@ class MenuServiceIntegrationTest {
 
 ---
 
-## E2E 테스트
+## E2E 테스트 (Playwright)
 
-### Playwright 설정
+### 계층형 아키텍처 (Tiered Architecture)
 
-```typescript
-// playwright.config.ts
-export default defineConfig({
-    testDir: './e2e',
-    timeout: 120000,
-    retries: process.env.CI ? 3 : 1,
-    workers: process.env.CI ? 2 : undefined,
-    projects: [
-        {
-            name: 'admin-tests',
-            use: {
-                ...devices['Desktop Chrome'],
-                storageState: 'playwright/.auth/admin.json',
-            },
-        },
-    ],
-});
-```
+본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별로 체계적인 검증을 수행하기 위해 테스트를 4개 계층으로 관리합니다.
 
-### 테스트 작성 예시
-
-```typescript
-// e2e/01-admin-domain.spec.ts
-import { test, expect } from '@playwright/test';
-
-test.describe('Admin Domain Tests', () => {
-    test('should login and access admin panel', async ({ page }) => {
-        // 로그인
-        await page.goto('/login');
-        await page.fill('#userId', 'admin');
-        await page.fill('#password', 'password123');
-        await page.click('button[type="submit"]');
-
-        // 관리자 패널 확인
-        await expect(page).toHaveURL('/admin');
-        await expect(page.getByText('관리자 대시보드')).toBeVisible();
-    });
-});
-```
+1.  **Tier 1: Core Base (`01-core-base.spec.ts`)**: 인증(로그인/로그아웃), 대시보드 위젯 및 차트 렌더링, 전역 레이아웃 무결성.
+2.  **Tier 2: Admin System (`02-admin-system.spec.ts`)**: 사용자 CRUD, 메뉴 계층 관리, 공통코드 관리 등 시스템 설정의 무결성.
+3.  **Tier 3: Business Domain (`03-board-community.spec.ts`)**: 게시판 생성 마법사(Wizard), 게시글 생명주기(일반/Q&A/일정), 커뮤니티 부가 서비스.
+4.  **Tier 4: Quality & Resilience (`04-quality-resilience.spec.ts`)**: 보안(RBAC/CSRF/XSS), UX(낙관적 업데이트/자동저장), 웹 접근성(A11y), 시각적 회귀(Visual Regression).
 
 ### 실행 명령어
 
 ```bash
-# 전체 E2E 테스트
+# 전체 E2E 테스트 실행 (모든 계층 순차 실행)
 npm run test:e2e
 
-# UI 모드 (디버깅)
+# 특정 계층만 실행
+npx playwright test e2e/01-core-base.spec.ts --project=tier-1-core
+
+# UI 모드 (인터랙티브 디버깅)
 npm run test:e2e:ui
-
-# 특정 테스트 실행
-npx playwright test e2e/01-admin-domain.spec.ts
-
-# Sharding (병렬 실행)
-npx playwright test --shard=1/3
 ```
 
 ---

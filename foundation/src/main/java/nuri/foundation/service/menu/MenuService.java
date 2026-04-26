@@ -447,16 +447,24 @@ public class MenuService {
             program = programRepository.findById(progrmFileNm).orElse(null);
         }
 
+        String finalUrl = "/";
         if (program != null && program.getUrl() != null) {
             String legacyUrl = program.getUrl();
             if (legacyUrl.contains(".do")) {
                 String inferredFromLegacy = inferFromLegacyUrl(legacyUrl);
-                return inferredFromLegacy != null ? inferredFromLegacy : "#";
+                finalUrl = inferredFromLegacy != null ? inferredFromLegacy : "#";
+            } else {
+                finalUrl = "/".equals(legacyUrl) ? "#" : legacyUrl;
             }
-            return "/".equals(legacyUrl) ? "#" : legacyUrl;
         }
 
-        return "/";
+        // Final safety check: remove any remaining .do or legacy paths
+        if (finalUrl.contains(".do")) {
+            log.warn(">>> [MenuService] Unhandled legacy URL detected: {}", finalUrl);
+            return "#";
+        }
+
+        return finalUrl;
     }
 
     private String inferModernRoute(String progrmFileNm) {

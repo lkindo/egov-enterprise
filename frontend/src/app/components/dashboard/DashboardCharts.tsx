@@ -27,11 +27,14 @@ export function DashboardVisitorChart({ data }: ChartProps) {
     visitors: item.statsCo || 0
   }));
 
-  if (!chartData.length) return <div className="h-[300px] flex items-center justify-center text-muted-foreground">데이터가 없습니다.</div>;
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted || !chartData.length) return <div className="h-[300px] flex items-center justify-center text-muted-foreground">데이터가 없습니다.</div>;
 
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
         <AreaChart
           data={chartData}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
@@ -88,7 +91,10 @@ export function DashboardPostChart({ data }: ChartProps) {
     posts: (item.creatCo || 0) + (item.inqireCo || 0)
   }));
 
-  if (!chartData.length) {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted || !chartData.length) {
     return (
       <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm font-bold tracking-tight opacity-30">
         데이터가 없습니다.
@@ -98,7 +104,7 @@ export function DashboardPostChart({ data }: ChartProps) {
 
   return (
     <div className="h-[200px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
           <XAxis

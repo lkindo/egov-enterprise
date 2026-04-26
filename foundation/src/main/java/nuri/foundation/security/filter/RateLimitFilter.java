@@ -27,10 +27,10 @@ public class RateLimitFilter implements Filter {
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     private Bucket createNewBucket() {
-        // Default: 100 requests per minute
+        // Default: 10000 requests per minute for stable E2E testing
         Bandwidth limit = Bandwidth.builder()
-                .capacity(100)
-                .refillGreedy(100, Duration.ofMinutes(1))
+                .capacity(10000)
+                .refillGreedy(10000, Duration.ofMinutes(1))
                 .build();
         return Bucket.builder()
                 .addLimit(limit)

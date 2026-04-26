@@ -49,7 +49,7 @@ class BoardAdminService extends AdminService {
 
     /** 게시글 등록 (Article) */
     async createBoardArticle(data: any, config?: AxiosRequestConfig): Promise<void> {
-        // 백엔드 BbsApiController.createBoard는 @RequestPart("board")와 @RequestPart(value = "file", required = false)를 기대함
+        // 백엔드 BbsApiController.createBoard는 @RequestMapping("/api/v1/bbs") 아래 @PostMapping("/{bbsId}")를 가짐
         // multipart/form-data 형식으로 전송 필요
         const formData = new FormData();
 
@@ -57,10 +57,8 @@ class BoardAdminService extends AdminService {
         const boardBlob = new Blob([JSON.stringify(data)], { type: 'application/json' });
         formData.append('board', boardBlob);
 
-        // 파일이 있을 경우 'file' 파트 추가 (현재 UI에는 파일 업로드 기능이 없으므로 생략 가능하나 규격상 대응)
-
-        // bbsId를 경로 파라미터로 사용 (/api/v1/boards/{bbsId})
-        return this.client.post(`/boards/${data.bbsId}`, formData, {
+        // bbsId를 경로 파라미터로 사용 (/api/v1/bbs/{bbsId})
+        return this.client.post(`/bbs/${data.bbsId}`, formData, {
             ...config,
             headers: {
                 ...config?.headers,

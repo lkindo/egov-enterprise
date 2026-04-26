@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -52,7 +52,7 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
         <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
       </div>
       <div className="w-full h-[180px] relative">
-        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100} debounce={50}>
           <PieChart>
             <Pie
               data={data}
@@ -110,7 +110,7 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
         </span>
       </div>
       <div className="h-12 w-full">
-        <ResponsiveContainer width="100%" height={48} minWidth={50} minHeight={30}>
+        <ResponsiveContainer width="100%" height={48} minWidth={50} minHeight={30} debounce={50}>
           <LineChart data={data || []}>
             <Line
               type="monotone"
@@ -142,7 +142,7 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
  <div className="p-8 border rounded-xl bg-card shadow-lg flex flex-col items-center">
  <h3 className="text-sm font-black text-foreground tracking-[0.2em] mb-8">{title}</h3>
  <div className="w-full h-[300px]">
- <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+ <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data || []}>
  <PolarGrid stroke="#475569" strokeOpacity={0.2} />
  <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }} />
@@ -196,7 +196,7 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
         </div>
       </div>
       <div style={{ width: '100%', height: height }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100} debounce={50}>
           <AreaChart data={data || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -268,7 +268,7 @@ export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: D
     <div className="flex flex-col items-center h-full">
       <h3 className="text-[10px] font-black text-slate-600 tracking-[0.3em] uppercase mb-6">{title}</h3>
       <div className="w-full h-full min-h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100} debounce={50}>
           <PieChart>
             <Pie
               data={data || []}

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useMemo, use } from 'react';
 import Link from 'next/link';
@@ -97,11 +97,6 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
     
     // Ensure leading slash for internal links
     const formatted = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
-    
-    // Legacy mapping (expand as needed)
-    if (String(formatted).includes('selectBoardList.do')) return '/admin/community/boards/selectBoardList';
-    if (String(formatted).includes('AdminStats.do')) return '/admin/stats';
-    if (String(formatted).includes('selectAddressBookList.do')) return '/admin/collaboration/address-book/selectAddressBookList';
     
     return formatted;
   }, [item.modernRoute, item.chkURL]);

@@ -26,16 +26,25 @@ interface DraftData {
  * 게시글 작성 자동 임시저장 훅
  */
 export function useAutoSaveDraft(options: AutoSaveOptions) {
-  const { storageKey, interval = 30000, minLength = 10, getData, onRestore } = options;
+  const { storageKey, interval = 3000, minLength = 10, getData, onRestore } = options;
   const { toast } = useToast();
   const fullKey = `egov-draft-${storageKey}`;
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [hasDraft, setHasDraft] = useState(false);
 
+  // Use refs for callbacks to prevent infinite loops when inline functions are passed
+  const onRestoreRef = useRef(onRestore);
+  const getDataRef = useRef(getData);
+
+  useEffect(() => {
+    onRestoreRef.current = onRestore;
+    getDataRef.current = getData;
+  }, [onRestore, getData]);
+
   // 저장 실행
   const saveDraft = useCallback(() => {
-    const { title, content } = getData();
+    const { title, content } = getDataRef.current();
 
     // 최소 글자 수 미만이면 저장하지 않음
     if ((title + content).length < minLength) return;
@@ -52,7 +61,7 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
     } catch {
       // localStorage 용량 초과 등 예외 무시
     }
-  }, [fullKey, getData, minLength]);
+  }, [fullKey, minLength]);
 
   // 복원
   const restoreDraft = useCallback((): DraftData | null => {
@@ -60,12 +69,12 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
       const raw = localStorage.getItem(fullKey);
       if (!raw) return null;
       const data = JSON.parse(raw) as DraftData;
-      if (onRestore) onRestore({ title: data.title, content: data.content });
+      if (onRestoreRef.current) onRestoreRef.current({ title: data.title, content: data.content });
       return data;
     } catch {
       return null;
     }
-  }, [fullKey, onRestore]);
+  }, [fullKey]);
 
   // 삭제 (정상 제출 시 호출)
   const clearDraft = useCallback(() => {

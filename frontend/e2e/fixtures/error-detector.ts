@@ -8,14 +8,13 @@ export class ConsoleErrorGuard {
   private page: Page;
   
   // 무시할 로그 패턴들 (정규식 또는 문자열)
+  // 실제 코드에서 수정 가능한 경고들은 여기서 제거하여 테스트 실패를 유도함
   private ignorePatterns: (string | RegExp)[] = [
     'React DevTools',
     'unsupported by',
     'Lit is in dev mode',
-    /401 \(Unauthorized\)/i, // 인증 체크 시 발생하는 401은 실패로 간주하지 않음
-    /Check your network connection/i, 
-    /width\(-1\) and height\(-1\) of chart should be greater than 0/i, // Recharts transient warning
-    /Message key not found/i, // i18n transient warning during hydration/load
+    /401 \(Unauthorized\)/i, // 특정 권한 테스트에서 의도된 401은 추후 별도 처리
+    /Check your network connection/i,
   ];
 
   constructor(page: Page) {
@@ -56,13 +55,29 @@ export class ConsoleErrorGuard {
         const url = response.url();
         const resourceType = request.resourceType();
         
-        // 특정 API 에러(의도된 에러 처리 등)를 제외하고 정적 자산 로드 실패 위주로 수집 가능
-        if (['image', 'stylesheet', 'font', 'script', 'media'].includes(resourceType)) {
-          const message = `[RESOURCE LOAD FAILED]: ${url} [${status}] (${resourceType})`;
+        // 특정 API 에러(401/403)는 인증 테스트에서 의도될 수 있으므로 일단 로깅만 하거나 필터링
+        const isAuthExpected = [401, 403].includes(status) && (url.includes('/api/auth') || url.includes('/api/user/info'));
+
+        if (!isAuthExpected) {
+          const message = `[HTTP ${status}]: ${url} (${resourceType})`;
           this.errors.push(message);
           console.error(`❌ ${message}`);
         }
       }
+    });
+
+    // 4. 네트워크 요청 중단/실패 감시 (DNS, Timeout 등)
+    this.page.on('requestfailed', (request) => {
+      const url = request.url();
+      const failure = request.failure();
+      const errorText = failure?.errorText || 'Unknown error';
+      
+      // net::ERR_ABORTED는 페이지 전환이나 RSC 패치 시 브라우저가 의도적으로 중단한 것이므로 무시
+      if (errorText === 'net::ERR_ABORTED') return;
+
+      const message = `[NETWORK FAILED]: ${url} - ${errorText}`;
+      this.errors.push(message);
+      console.error(`❌ ${message}`);
     });
   }
 

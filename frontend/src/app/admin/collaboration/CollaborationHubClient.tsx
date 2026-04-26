@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -46,6 +47,7 @@ interface CollaborationHubClientProps {
 }
 
 export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: CollaborationHubClientProps) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<CollaborationTab>(defaultTab);
