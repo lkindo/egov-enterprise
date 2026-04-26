@@ -1,27 +1,61 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
- ResponsiveContainer,
- PieChart,
- Pie,
- Cell,
- LineChart,
- Line,
- YAxis,
- Tooltip,
- Radar,
- RadarChart,
- PolarGrid,
- PolarAngleAxis,
- PolarRadiusAxis,
- AreaChart,
- Area,
- XAxis,
- CartesianGrid,
- Legend
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  YAxis,
+  Tooltip,
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  AreaChart,
+  Area,
+  XAxis,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer
 } from 'recharts';
 import { cn } from '@/lib/utils';
+
+/**
+ * Recharts의 'width(-1)' 경고를 방지하기 위해 컨테이너 크기가 0보다 클 때만 렌더링하는 안전한 래퍼
+ */
+const SafeResponsiveContainer = ({ children, ...props }: any) => {
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setDimensions({ width, height });
+        }
+      }
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={containerRef} className="w-full h-full min-h-[inherit]">
+      {dimensions.width > 0 && dimensions.height > 0 && (
+        <ResponsiveContainer {...props} width="100%" height="100%">
+          {children}
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+};
 
 /**
  * 1. GaugeChart
@@ -52,7 +86,7 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
         <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
       </div>
       <div className="w-full h-[180px] relative">
-        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100} debounce={50}>
+        <SafeResponsiveContainer>
           <PieChart>
             <Pie
               data={data}
@@ -70,7 +104,7 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
               <Cell key="gauge-muted" fill="var(--muted)" />
             </Pie>
           </PieChart>
-        </ResponsiveContainer>
+        </SafeResponsiveContainer>
         <div className="absolute inset-x-0 bottom-[20%] flex flex-col items-center justify-center">
           <span className="text-3xl font-black tracking-tighter text-foreground">{Math.round(value)}{unit}</span>
           <span className="text-[10px] font-bold text-slate-600 tracking-tight">{title}</span>
@@ -142,20 +176,20 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
  <div className="p-8 border rounded-xl bg-card shadow-lg flex flex-col items-center">
  <h3 className="text-sm font-black text-foreground tracking-[0.2em] mb-8">{title}</h3>
  <div className="w-full h-[300px]">
- <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
- <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data || []}>
- <PolarGrid stroke="#475569" strokeOpacity={0.2} />
- <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }} />
- <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
- <Radar
- name="System Health"
- dataKey="A"
- stroke="#3B82F6"
- fill="#3B82F6"
- fillOpacity={0.5}
- />
- </RadarChart>
- </ResponsiveContainer>
+        <SafeResponsiveContainer>
+          <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
+            <PolarGrid stroke="var(--border)" />
+            <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
+            <Radar
+              name="Security Score"
+              dataKey="A"
+              stroke="#3B82F6"
+              fill="#3B82F6"
+              fillOpacity={0.5}
+            />
+          </RadarChart>
+        </SafeResponsiveContainer>
  </div>
  <div className="mt-4 grid grid-cols-2 gap-4 w-full">
  {(data || []).map((item, idx) => (
@@ -196,7 +230,7 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
         </div>
       </div>
       <div style={{ width: '100%', height: height }}>
-        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100} debounce={50}>
+        <SafeResponsiveContainer>
           <AreaChart data={data || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
