@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -133,6 +133,7 @@ export default function InsertBoardArticlePage() {
               <span className="text-[10px] font-black tracking-widest text-slate-500 dark:text-white/40 uppercase">Dataset Core Subject</span>
             </div>
             <Input
+              name="nttSj"
               data-testid="article-title-input"
               value={form.nttSj}
               onChange={(e) => setForm({ ...form, nttSj: e.target.value })}

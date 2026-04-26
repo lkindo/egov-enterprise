@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import {
@@ -360,7 +360,7 @@ export default function AdminDashboardPage() {
            </div>
             <h3 className="text-[10px] font-black tracking-[0.4em] uppercase opacity-80 mb-4">Resource Allocation</h3>
             <p className="text-2xl font-black tracking-tighter mb-6 italic">Resource Provisioning</p>
-            <p className="text-xs font-bold text-slate-500 leading-relaxed uppercase">
+            <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase">
               컴퓨팅 노드 및 스토리지 리소스의 동적 프로비저닝이 진행 중입니다. <br />
               현재 시스템 부하 분산을 위한 지능형 샤딩 작업이 수행되고 있습니다.
             </p>

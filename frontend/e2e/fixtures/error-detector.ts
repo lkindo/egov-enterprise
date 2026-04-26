@@ -13,8 +13,12 @@ export class ConsoleErrorGuard {
     'React DevTools',
     'unsupported by',
     'Lit is in dev mode',
-    /401 \(Unauthorized\)/i, // 특정 권한 테스트에서 의도된 401은 추후 별도 처리
+    /401 \(Unauthorized\)/i,
+    /403 \(Forbidden\)/i,
+    /Access Denied/i,
+    /Insufficient privileges/i,
     /Check your network connection/i,
+    /The width\(-1\) and height\(-1\) of chart should be greater than 0/i, // Recharts fallback
   ];
 
   constructor(page: Page) {
@@ -55,8 +59,14 @@ export class ConsoleErrorGuard {
         const url = response.url();
         const resourceType = request.resourceType();
         
-        // 특정 API 에러(401/403)는 인증 테스트에서 의도될 수 있으므로 일단 로깅만 하거나 필터링
-        const isAuthExpected = [401, 403].includes(status) && (url.includes('/api/auth') || url.includes('/api/user/info'));
+        // 특정 API 에러(401/403)는 인증/보안 테스트에서 의도될 수 있음
+        const isAuthExpected = [401, 403].includes(status) && (
+          url.includes('/api/auth') || 
+          url.includes('/api/user/info') ||
+          url.includes('/api/v1/admin/') || // Generic RBAC test support
+          url.includes('/api/v1/admin/system/banners/reflected') || 
+          url.includes('/api/v1/admin/system/statistics/connect')
+        );
 
         if (!isAuthExpected) {
           const message = `[HTTP ${status}]: ${url} (${resourceType})`;

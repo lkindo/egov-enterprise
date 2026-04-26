@@ -1,12 +1,12 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import {
-    ResponsiveContainer,
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
     LineChart, Line, AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
 
 const CHART_COLORS = ['#0055FB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE'];
 
@@ -35,7 +35,7 @@ export function StandardChartWrapper({
                         <div className="h-4 w-24 bg-muted rounded" />
                     </div>
                 ) : (
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <SafeResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                         {type === 'bar' ? (
                             <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                                 <defs>
@@ -154,12 +154,15 @@ export function StandardChartWrapper({
                             </LineChart>
                         ) : (
                             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                                李⑦듃 ?좏삎님吏먮릺吏 ?딆뒿?덈떎.
+                                李⑦듃 ?좏삎님吏€먮릺吏€ ?딆뒿?덈떎.
                             </div>
                         )}
-                    </ResponsiveContainer>
+                    </SafeResponsiveContainer>
                 )}
             </div>
+        </div>
+    );
+}</div>
         </div>
     );
 }

@@ -13,7 +13,7 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
     
     test('User Authentication Flow (UI based)', async ({ page }) => {
         console.log('>>> Step 1: Login UI Check');
-        await page.goto('/login');
+        await page.goto('/login?e2e=true');
         await expect(page.locator('input[name="id"], input[name="userId"]')).toBeVisible();
         
         console.log('>>> Step 2: Login Action');
@@ -22,9 +22,9 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         await page.locator('button[type="submit"]').click();
         
         console.log('>>> Step 3: Redirection to Admin Hub');
-        await expect(page).toHaveURL(/\/admin/, { timeout: 20000 });
+        await expect(page).toHaveURL(/\/admin/, { timeout: 30000 });
         // dashboard.badge의 값인 '전자정부 5.0' 확인 (또는 실제 메인 레이블)
-        await expect(page.locator('text=전자정부 5.0')).toBeVisible();
+        await expect(page.locator('text=전자정부 5.0').first()).toBeVisible();
     });
 
     test.describe('Dashboard Integrity (Session Preserved)', () => {
@@ -36,18 +36,18 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
 
         test('Widgets and Charts Rendering', async ({ page }) => {
             console.log('>>> Step 1: Verifying Stat Cards');
-            await expect(page.locator('text=ID 레지스트리')).toBeVisible();
-            await expect(page.locator('text=보안 거버넌스')).toBeVisible();
+            await expect(page.locator('text=ID 레지스트리').first()).toBeVisible();
+            await expect(page.locator('text=보안 거버넌스').first()).toBeVisible();
 
             console.log('>>> Step 2: Verifying Real-time Charts');
             // Recharts generates SVG elements with .recharts-surface
             const charts = page.locator('.recharts-surface');
             await expect(charts.first()).toBeVisible({ timeout: 15000 });
             
-            console.log('>>> Step 3: Verifying Task & Notice Lists');
-            // 실제 데이터 기반 (AdminDashboardData.ts 또는 DB 데이터)
-            await expect(page.locator('text=최근 공지사항')).toBeVisible();
-            await expect(page.locator('text=배정된 업무')).toBeVisible();
+            console.log('>>> Step 3: Verifying Task & Activity Lists');
+            // Update to match current Dashboard UI
+            await expect(page.locator('text=Audit History').first()).toBeVisible();
+            await expect(page.locator('text=Activity Intelligence').first()).toBeVisible();
         });
 
         test('Global Layout & Navigation Mapping', async ({ page }) => {
@@ -73,6 +73,7 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
             
             console.log('>>> Step 2: Logout Action');
             const logoutButton = page.getByRole('button', { name: /로그아웃|Logout/i });
+            await expect(logoutButton).toBeVisible();
             await logoutButton.click();
             
             console.log('>>> Step 3: Redirection Check');

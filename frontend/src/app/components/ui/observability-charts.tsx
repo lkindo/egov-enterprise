@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 /**
  * Recharts의 'width(-1)' 경고를 방지하기 위해 컨테이너 크기가 0보다 클 때만 렌더링하는 안전한 래퍼
  */
-const SafeResponsiveContainer = ({ children, ...props }: any) => {
+export const SafeResponsiveContainer = ({ children, ...props }: any) => {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -144,7 +144,7 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
         </span>
       </div>
       <div className="h-12 w-full">
-        <ResponsiveContainer width="100%" height={48} minWidth={50} minHeight={30} debounce={50}>
+        <SafeResponsiveContainer height={48} debounce={50}>
           <LineChart data={data || []}>
             <Line
               type="monotone"
@@ -156,7 +156,7 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
             />
             <YAxis hide domain={[0, 100]} />
           </LineChart>
-        </ResponsiveContainer>
+        </SafeResponsiveContainer>
       </div>
     </div>
   );

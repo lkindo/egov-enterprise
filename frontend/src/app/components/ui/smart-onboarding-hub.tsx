@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -30,8 +30,11 @@ export function SmartOnboardingHub() {
   useEffect(() => {
     setMounted(true);
     if (typeof window !== 'undefined') {
+      // E2E 테스트 환경에서는 자동으로 투어를 비활성화
+      const isTestEnv = process.env.NEXT_PUBLIC_APP_ENV === 'test' || window.location.search.includes('e2e=true');
       const hasSeenTour = localStorage.getItem('egov_smart_tour_v1');
-      if (!hasSeenTour) {
+      
+      if (!hasSeenTour && !isTestEnv) {
         const timer = setTimeout(() => setIsOpen(true), 2000);
         return () => clearTimeout(timer);
       }

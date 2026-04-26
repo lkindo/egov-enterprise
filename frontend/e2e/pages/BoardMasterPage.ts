@@ -48,8 +48,9 @@ export class BoardMasterPage {
   }
 
   async fillStep2(templateName: string = 'Enterprise List') {
-    const templateSelector = this.page.getByText(templateName).first();
-    const altTemplate = this.page.getByText(/Enterprise List|Basic List|Korean Hub/i).first();
+    // Both English and Korean labels might exist depending on i18n
+    const templateSelector = this.page.locator(`text=${templateName}, :text-is("${templateName}")`).first();
+    const altTemplate = this.page.locator('text=지식 허브, text=Knowledge Hub, text=Enterprise List').first();
 
     if (await templateSelector.isVisible().catch(() => false)) {
       await templateSelector.click();

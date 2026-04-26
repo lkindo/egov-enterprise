@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -216,6 +216,7 @@ export function BoardMakerWizard() {
         bbsNm: data.bbsNm,
         bbsIntrcn: data.bbsIntrcn,
         bbsTyCode: data.bbsTyCode,
+        bbsAttrbCode: 'BBSA01', // Missing field causing 500 error
         replyPosblAt: data.replyPosblAt ? 'Y' : 'N',
         fileAtchPosblAt: data.fileAtchPosblAt ? 'Y' : 'N',
         atchPosblFileNumber: Number(data.atchPosblFileNumber),

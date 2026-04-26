@@ -24,7 +24,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
             await boardMasterPage.fillStep1(boardName, 'E2E Optimized Board Description');
 
             console.log('>>> Step 3: Phase 2 - Template Choice');
-            await boardMasterPage.fillStep2('Knowledge Hub');
+            await boardMasterPage.fillStep2('지식 허브');
 
             console.log('>>> Step 4: Phase 3 - ACL Permissions');
             await boardMasterPage.fillStep3();
@@ -51,33 +51,61 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 
                 console.log('>>> Step 2: Creating Article');
                 await page.locator('input[name="nttSj"]').fill(template.title);
-                await page.locator('textarea[name="nttCn"]').fill('This is a test content for article lifecycle.');
-                await page.locator('button:has-text("등록"), button[type="submit"]').first().click();
+                console.log('>>> Step 2.5: Filling Content in RichTextEditor');
+                await page.locator('.ProseMirror').fill('This is a test content for article lifecycle.');
+                await page.locator('button:has-text("등록"), button:has-text("Commit Knowledge"), button[type="submit"]').first().click();
                 
-                await expect(page).toHaveURL(/\/admin\/community\/boards\/selectBoardList/);
+                // Redirection can go to Detail or List depending on the page implementation
+                await expect(page).toHaveURL(/\/admin\/community\/boards\/(selectBoardList|detail)/, { timeout: 15000 });
 
                 console.log('>>> Step 3: Verifying in List and Opening Detail');
-                const searchInput = page.locator('input[placeholder*="검색"]').first();
-                await searchInput.fill(template.title);
-                await page.keyboard.press('Enter');
+                if (page.url().includes('detail')) {
+                    await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
+                }
                 
-                const titleLink = page.getByText(template.title).first();
-                await expect(titleLink).toBeVisible({ timeout: 15000 });
-                await titleLink.click();
+                // Wait for initial load
+                await page.waitForSelector('.animate-pulse', { state: 'hidden' }).catch(() => {});
+                
+                const searchInput = page.locator('#board-search-input, [data-testid="board-search-input"], input[placeholder*="찾으시나요"], input[placeholder*="검색"]').first();
+                await searchInput.fill(template.title);
+                await page.locator('button:has-text("조회"), button:has-text("Search")').first().click();
+                
+                // Wait for search results
+                await page.waitForTimeout(3000);
+                await page.waitForSelector('.animate-pulse', { state: 'hidden' }).catch(() => {});
+
+                console.log('>>> Step 3.5: Clicking Article Link');
+                // Target the specific link or text containing the title
+                const articleLink = page.getByText(template.title).first();
+                await articleLink.click({ timeout: 15000 });
 
                 console.log('>>> Step 4: Updating Article');
-                const editBtn = page.locator('button:has-text("수정"), button:has-text("Edit")').first();
+                const editBtn = page.locator('button:has-text("수정"), button:has-text("Edit"), button:has-text("Entry")').first();
                 await editBtn.click();
                 await page.locator('input[name="nttSj"]').fill(`${template.title} [Updated]`);
-                await page.locator('button:has-text("저장"), button:has-text("Update")').first().click();
+                // Save button text is "Commit Knowledge" in the creation/edit page
+                await page.locator('button:has-text("저장"), button:has-text("Update"), button:has-text("Commit")').first().click();
                 
+                // Wait for redirection back to list
+                await expect(page).toHaveURL(/\/admin\/community\/boards\/selectBoardList/);
+                
+                // Wait for list to load and find the updated article
+                await page.waitForSelector('.animate-pulse', { state: 'hidden' }).catch(() => {});
+                const updatedArticleLink = page.getByText(`${template.title} [Updated]`).first();
+                await expect(updatedArticleLink).toBeVisible({ timeout: 15000 });
+                
+                // Must click the article again to go to detail page for deletion
+                console.log('>>> Step 4.5: Re-opening Detail for Verification & Deletion');
+                await updatedArticleLink.click();
                 await expect(page.getByText(`${template.title} [Updated]`)).toBeVisible();
 
                 console.log('>>> Step 5: Deleting Article');
-                const deleteBtn = page.locator('button:has-text("삭제"), button:has-text("Delete")').first();
+                // The delete button is icon-only in the detail page
+                const deleteBtn = page.locator('button.text-rose-500, button:has-text("삭제"), button:has-text("Delete")').first();
+                // Handle alert - MUST be set up before the action that triggers it
+                page.once('dialog', dialog => dialog.accept());
                 await deleteBtn.click();
-                // Handle alert
-                page.on('dialog', dialog => dialog.accept());
+                
                 await expect(page).toHaveURL(/\/admin\/community\/boards\/selectBoardList/);
             });
         }
@@ -89,7 +117,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
             { name: 'Online Polls', url: '/admin/survey/manage' },
             { name: 'Smart Scrap', url: '/admin/collaboration/scraps/selectScrapList' },
             { name: 'Corporate Addressbook', url: '/admin/collaboration/address-book/selectAddressBookList' },
-            { name: 'Electronic Approvals', url: '/admin/approvals' }
+            { name: 'Electronic Approvals', url: '/admin/sanctn/workflow' }
         ];
 
         for (const service of services) {

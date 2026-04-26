@@ -8,12 +8,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Cell,
 } from 'recharts';
 import { StatsDto } from '@/services/foundation/system/StatsAdminService';
+import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
 
 interface ChartProps {
   data: StatsDto[];
@@ -34,7 +31,7 @@ export function DashboardVisitorChart({ data }: ChartProps) {
 
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+      <SafeResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
         <AreaChart
           data={chartData}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
@@ -80,7 +77,7 @@ export function DashboardVisitorChart({ data }: ChartProps) {
             fill="url(#colorVisitors)"
           />
         </AreaChart>
-      </ResponsiveContainer>
+      </SafeResponsiveContainer>
     </div>
   );
 }
@@ -104,7 +101,7 @@ export function DashboardPostChart({ data }: ChartProps) {
 
   return (
     <div className="h-[200px] w-full">
-      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+      <SafeResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
           <XAxis
@@ -123,7 +120,7 @@ export function DashboardPostChart({ data }: ChartProps) {
             ))}
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+      </SafeResponsiveContainer>
     </div>
   );
 }
