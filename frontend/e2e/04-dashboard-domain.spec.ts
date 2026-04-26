@@ -45,22 +45,6 @@ test.describe('Dashboard Features', () => {
         await expect(links).toBeVisible({ timeout: 20000 });
         console.log('>>> Navigation links verified');
     });
-
-    test('should handle logout', async ({ page }) => {
-        // Find user menu trigger
-        const profileTrigger = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
-        await expect(profileTrigger).toBeVisible({ timeout: 15000 });
-        await profileTrigger.click();
-        
-        // Find logout button inside popover
-        const logoutButton = page.getByRole('button', { name: /로그아웃|Logout/i });
-        await expect(logoutButton).toBeVisible({ timeout: 5000 });
-        await logoutButton.click();
-        
-        // Should redirect to login
-        await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
-        console.log('>>> Logout successful');
-    });
 });
 
 test.describe('Advanced Dashboard & Stats Interaction', () => {
@@ -107,5 +91,26 @@ test.describe('Advanced Dashboard & Stats Interaction', () => {
             await expect(page.locator('aside')).toBeVisible();
         }
         console.log('>>> Mobile responsive layout verified');
+    });
+});
+
+test.describe('Logout Flow', () => {
+    test.use({ storageState: 'playwright/.auth/admin.json' });
+
+    test('should handle logout successfully', async ({ page }) => {
+        await page.goto('/admin');
+        // Find user menu trigger
+        const profileTrigger = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
+        await expect(profileTrigger).toBeVisible({ timeout: 15000 });
+        await profileTrigger.click();
+        
+        // Find logout button inside popover
+        const logoutButton = page.getByRole('button', { name: /로그아웃|Logout/i });
+        await expect(logoutButton).toBeVisible({ timeout: 10000 });
+        await logoutButton.click();
+        
+        // Should redirect to login
+        await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
+        console.log('>>> Logout successful');
     });
 });

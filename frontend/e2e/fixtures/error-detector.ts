@@ -14,6 +14,8 @@ export class ConsoleErrorGuard {
     'Lit is in dev mode',
     /401 \(Unauthorized\)/i, // 인증 체크 시 발생하는 401은 실패로 간주하지 않음
     /Check your network connection/i, 
+    /width\(-1\) and height\(-1\) of chart should be greater than 0/i, // Recharts transient warning
+    /Message key not found/i, // i18n transient warning during hydration/load
   ];
 
   constructor(page: Page) {

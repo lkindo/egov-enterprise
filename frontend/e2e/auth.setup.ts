@@ -33,9 +33,9 @@ async function authenticate(request: any, id: string, authFilePath: string) {
     const webUrl = process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001';
     const storageState = {
         cookies: [
-            { name: 'accessToken', value: token, domain: 'localhost', path: '/', expires: -1 },
+            { name: 'accessToken', value: token, domain: 'localhost', path: '/', expires: -1, httpOnly: false },
             { name: 'refreshToken', value: refreshToken, domain: 'localhost', path: '/', expires: -1, httpOnly: true },
-            { name: 'userRole', value: role, domain: 'localhost', path: '/', expires: -1 }
+            { name: 'userRole', value: role, domain: 'localhost', path: '/', expires: -1, httpOnly: false }
         ],
         origins: [
             {
