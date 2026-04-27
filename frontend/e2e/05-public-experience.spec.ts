@@ -63,7 +63,9 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
 
         await test.step('User: Verify Promotion Assets', async () => {
             console.log('>>> Verifying popup and banner on Dashboard');
-            await userPage.goto('/admin'); 
+            await userPage.goto('/'); 
+            await userPage.evaluate(() => localStorage.clear());
+            await userPage.reload();
             
             // 1. Popup check
             const popup = userPage.locator('.fixed, .absolute, [role="dialog"]').filter({ hasText: popupTitle }).first();

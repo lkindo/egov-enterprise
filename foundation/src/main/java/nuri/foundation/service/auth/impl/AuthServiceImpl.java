@@ -48,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
             if ("Y".equals(policy.getOtpEnabledAt())) {
                 if (request.getOtpCode() == null) {
                     log.warn(">>> [Login] OTP Required for userId: {}", userId);
-                    throw new BusinessException(ErrorCode.AUTH_ERROR, "OTP 번호가 필요합니다.");
+                    throw new BusinessException("OTP 번호가 필요합니다.", ErrorCode.AUTH_ERROR);
                 }
                 
                 nuri.foundation.domain.user.entity.User user = userRepository.findById(userId)
@@ -56,7 +56,7 @@ public class AuthServiceImpl implements AuthService {
                 
                 if (!otpService.verifyCode(user.getOtpSecret(), request.getOtpCode())) {
                     log.warn(">>> [Login] Invalid OTP for userId: {}", userId);
-                    throw new BusinessException(ErrorCode.AUTH_ERROR, "OTP 번호가 일치하지 않습니다.");
+                    throw new BusinessException("OTP 번호가 일치하지 않습니다.", ErrorCode.AUTH_ERROR);
                 }
                 log.info(">>> [Login] OTP Verification Success for userId: {}", userId);
             }

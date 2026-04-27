@@ -1,17 +1,16 @@
 import { Page, Locator, expect } from '@playwright/test';
+import { format } from 'date-fns';
 
 export class PromotionPage {
     readonly page: Page;
     readonly tabBanner: Locator;
     readonly tabPopup: Locator;
-    readonly createButton: Locator;
     readonly modalSubmitButton: Locator;
 
     constructor(page: Page) {
         this.page = page;
         this.tabBanner = page.getByRole('button', { name: '배너 설정' });
         this.tabPopup = page.getByRole('button', { name: '팝업 설정' });
-        this.createButton = page.getByRole('button', { name: /신규 .* 등록/ });
         this.modalSubmitButton = page.locator('button').filter({ hasText: /운영.*배포/ });
     }
 
@@ -22,19 +21,30 @@ export class PromotionPage {
 
     async createPopup(title: string) {
         await this.tabPopup.click({ force: true });
-        // Label changes dynamically: '신규 배너 등록' -> '신규 팝업 등록'
         await this.page.getByRole('button', { name: /신규.*팝업.*등록|신규.*등록/ }).click();
         
         await this.page.getByLabel(/팝업 타이틀/).fill(title);
         
-        // Fill dates (Today to next week)
-        const today = new Date().toISOString().split('T')[0];
-        const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        // Calculate dates: type="date" native HTML input → use fill() with YYYY-MM-DD format
+        const now = new Date();
+        const startDate = new Date(now);
+        startDate.setDate(now.getDate() + 1);
+        const endDate = new Date(now);
+        endDate.setDate(now.getDate() + 7);
         
-        // Use more specific locators for date inputs
-        const dateInputs = this.page.locator('input[type="date"]');
-        await dateInputs.nth(0).fill(today);
-        await dateInputs.nth(1).fill(nextWeek);
+        const startStr = format(startDate, 'yyyy-MM-dd');
+        const endStr = format(endDate, 'yyyy-MM-dd');
+        
+        console.log(`>>> Setting Start Date: ${startStr}`);
+        // Native HTML date input requires special handling in Playwright
+        // Use fill() which works for type="date" in Chromium
+        const startInput = this.page.getByLabel(/게시 시작 시점/);
+        await startInput.fill(startStr);
+        
+        console.log(`>>> Setting End Date: ${endStr}`);
+        const endInput = this.page.getByLabel(/게시 종료 시점/);
+        await endInput.fill(endStr);
+
         
         // Coordinates (Mandatory)
         await this.page.getByLabel(/가로 좌표/).fill('0');
@@ -52,11 +62,16 @@ export class PromotionPage {
         console.log('>>> Submitting Popup Configuration');
         await this.modalSubmitButton.click();
         
-        // Wait for modal to close and list to update (App calls refetch internally)
+        // Wait for success toast
+        await expect(this.page.getByText(/등록되었습니다|수정되었습니다|성공/)).toBeVisible({ timeout: 15000 });
+        
+        // Wait for modal to close
         await expect(this.page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 20000 });
         
+        // Wait for list to update
+        await this.page.waitForTimeout(1000);
+        
         // Ensure the popup tab is active to see the new entry
-        // Use force click because of potential backdrop/toast overlays
         await this.tabPopup.click({ force: true });
         
         const row = this.page.locator('tr').filter({ hasText: title }).first();
@@ -67,8 +82,8 @@ export class PromotionPage {
         await this.tabBanner.click({ force: true });
         await this.page.getByRole('button', { name: /신규.*배너.*등록|신규.*등록/ }).click();
         
-        await this.page.getByLabel(/배너 타이틀|배너명/).fill(title);
-        await this.page.getByLabel(/링크.*URL|Link/).fill('https://egov.kr');
+        await this.page.getByLabel(/배너 타이틀|배너명|이름/).fill(title);
+        await this.page.getByLabel(/랜딩.*페이지|Target.*URL|URL/).fill('https://egov.kr');
         await this.page.getByLabel(/배너 설명/).fill('E2E Generated Banner');
         
         console.log('>>> Uploading banner image');
@@ -81,6 +96,9 @@ export class PromotionPage {
         await this.modalSubmitButton.click();
         
         await expect(this.page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 20000 });
+        
+        await this.page.waitForTimeout(1000);
+        
         const row = this.page.locator('tr').filter({ hasText: title }).first();
         await expect(row).toBeVisible({ timeout: 15000 });
     }
