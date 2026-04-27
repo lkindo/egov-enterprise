@@ -12,19 +12,19 @@ export interface AuditLog {
 }
 
 /**
- * 媛먯궗 로그 관리님쒕퉬님(Admin)
+ * 감사 로그 관리 서비스 (Admin)
  */
 class AuditAdminService extends AdminService {
   constructor() {
     super('/logs/system');
   }
 
- /**
- * 媛먯궗 로그 紐⑸줉 조회
- */
- async getAuditLogs(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<AuditLog>> {
- return this.get<PageResponse<AuditLog>>('', { ...config, params });
- }
+  /**
+   * 감사 로그 목록 조회
+   */
+  async getAuditLogs(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<AuditLog>> {
+    return this.get<PageResponse<AuditLog>>('', { ...config, params });
+  }
 }
 
 export const auditAdminService = new AuditAdminService();

@@ -1,6 +1,7 @@
 import { test, expect } from './fixtures/base-test';
 import { SurveyPage } from './pages/SurveyPage';
 import { PromotionPage } from './pages/PromotionPage';
+import { KnowledgePage } from './pages/KnowledgePage';
 
 /**
  * Tier 5: Public Engagement & Experience
@@ -89,35 +90,45 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
         });
     });
 
-    test('SEO and Knowledge Base Service', async ({ userPage }) => {
+    test('FAQ Lifecycle and Help Search', async ({ adminPage, userPage }) => {
+        const faqTitle = `E2E Security FAQ ${Date.now()}`;
+        const faqAnswer = 'A. 모든 데이터는 암호화되어 안전하게 관리됩니다.';
+        const knowledge = new KnowledgePage(adminPage);
+        
+        await test.step('Admin: Create FAQ Entry', async () => {
+            await knowledge.gotoFAQ();
+            await knowledge.createFAQ(faqTitle, faqAnswer);
+        });
+
+        await test.step('User: Verify FAQ Visibility', async () => {
+            await userPage.goto('/help');
+            // Select FAQ tab if needed
+            const faqTab = userPage.getByRole('button', { name: /고객지원|FAQ/i });
+            if (await faqTab.isVisible()) await faqTab.click();
+
+            const faqItem = userPage.locator('button', { hasText: faqTitle }).first();
+            await expect(faqItem).toBeVisible({ timeout: 15000 });
+            
+            await faqItem.click();
+            await expect(userPage.getByText(faqAnswer)).toBeVisible();
+        });
+
+        await test.step('Global Help Search', async () => {
+            const searchInput = userPage.locator('input[placeholder*="검색"]');
+            await searchInput.fill(faqTitle);
+            await userPage.keyboard.press('Enter');
+            await userPage.waitForTimeout(1000); 
+            
+            // Should show the created item in results
+            await expect(userPage.getByText(faqTitle).first()).toBeVisible();
+        });
+
         await test.step('SEO: Verify Dynamic Meta Tags', async () => {
             await userPage.goto('/help');
             await expect(userPage).toHaveTitle(/전자정부|표준프레임워크|포털/);
             
             const metaDescription = userPage.locator('meta[name="description"]');
             await expect(metaDescription).toHaveAttribute('content', /정부|혁신|공통|포털/);
-        });
-
-        await test.step('Help Center: FAQ Interaction', async () => {
-            const faqItem = userPage.locator('button', { hasText: /Q\./ }).first();
-            
-            if (await faqItem.isVisible()) {
-                console.log('>>> FAQ items found, testing expansion');
-                await faqItem.click();
-                await expect(userPage.locator('div', { hasText: /A\./ }).first()).toBeVisible();
-            } else {
-                console.log('>>> WARNING: No FAQ items found, checking empty state');
-                await expect(userPage.getByText(/등록된.*질문이.*없습니다/)).toBeVisible();
-            }
-        });
-
-        await test.step('Global Help Search', async () => {
-            const searchInput = userPage.locator('input[placeholder*="검색"]');
-            await searchInput.fill('보안');
-            await userPage.waitForTimeout(1000); 
-            // Should show either matching items or empty message
-            const resultsVisible = await userPage.getByText(/보안|검색 결과|질문이 없습니다/i).first().isVisible();
-            expect(resultsVisible).toBeTruthy();
         });
     });
 

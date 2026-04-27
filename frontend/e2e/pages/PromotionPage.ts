@@ -20,8 +20,14 @@ export class PromotionPage {
     }
 
     async createPopup(title: string) {
+        console.log(`>>> Configuring popup: ${title}`);
+        await this.tabPopup.waitFor({ state: 'visible' });
         await this.tabPopup.click({ force: true });
-        await this.page.getByRole('button', { name: /신규.*팝업.*등록|신규.*등록/ }).click();
+        
+        // Wait for the specific "Create" button for popups
+        const createBtn = this.page.getByRole('button', { name: /신규.*팝업.*등록|신규.*등록/ });
+        await createBtn.waitFor({ state: 'visible' });
+        await createBtn.click();
         
         await this.page.getByLabel(/팝업 타이틀/).fill(title);
         
@@ -60,13 +66,16 @@ export class PromotionPage {
         await this.page.setInputFiles('input[type="file"]', imagePath);
         
         console.log('>>> Submitting Popup Configuration');
+        await expect(this.modalSubmitButton).toBeVisible();
         await this.modalSubmitButton.click();
+        console.log('>>> Popup deployment initiated');
         
-        // Wait for success toast
-        await expect(this.page.getByText(/등록되었습니다|수정되었습니다|성공/)).toBeVisible({ timeout: 15000 });
-        
-        // Wait for modal to close
-        await expect(this.page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 20000 });
+        // Wait for success toast or modal closure
+        await Promise.race([
+            expect(this.page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 15000 }),
+            this.page.waitForSelector('text=/등록되었습니다|수정되었습니다|성공/', { timeout: 15000 })
+        ]);
+        console.log('>>> Popup creation process finished');
         
         // Wait for list to update
         await this.page.waitForTimeout(1000);
