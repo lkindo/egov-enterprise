@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -33,19 +33,19 @@ export default function RoughMapManagementClient() {
         <div className="space-y-3">
           <div className="flex items-center gap-3">
              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-             <span className="text-[10px] font-black tracking-[0.4em] text-primary uppercase leading-none">?꾩튂 怨듦컙 매트릭스 (Rough Map Engine)</span>
+             <span className="text-[10px] font-black tracking-[0.4em] text-primary uppercase leading-none">위치 공간 매트릭스 (Rough Map Engine)</span>
           </div>
           <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none flex items-center gap-3">
-            ?쎈룄 吏由관리<Navigation className="text-primary" />
+            약도 지리 관리 <Navigation className="text-primary" />
           </h2>
-          <p className="text-xs font-bold text-slate-400 tracking-tight mt-2 max-w-lg">?먭퀬釉님뷀꽣?꾨씪?댁쫰님?쒖꽕 및 嫄곗젏 ?뺣낫瑜吏媛媛ν븳 ?쒕뱶留덊겕濡관리ы븯님怨듦컙 인텔리전스?쇳꽣?낅땲님</p>
+          <p className="text-xs font-bold text-slate-400 tracking-tight mt-2 max-w-lg">eGov 엔터프라이즈 시설 및 거점 정보를 지능적으로 관리하는 공간 인텔리전스 센터입니다.</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
            <Button className="h-14 px-8 rounded-xl bg-white text-slate-900 font-black tracking-widest text-[10px] uppercase border-2 border-slate-900 hover:bg-slate-900 hover:text-white transition-all gap-3 shadow-xl shadow-slate-900/10">
-             <Globe size={18} /> 吏님?쒕퉬님?곕룞
+             <Globe size={18} /> 지도 서비스 연동
            </Button>
            <Button className="h-14 px-8 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
-             <Plus size={18} /> 嫄곗젏 신규 등록
+             <Plus size={18} /> 거점 신규 등록
            </Button>
         </div>
       </div>
@@ -64,7 +64,7 @@ export default function RoughMapManagementClient() {
                    value={keyword}
                    onChange={(e) => setKeyword(e.target.value)}
                    className="h-11 bg-white border-none shadow-sm rounded-xl pl-11 font-black text-xs ring-1 ring-slate-100 focus:ring-primary/20" 
-                   placeholder="嫄곗젏 寃님.." 
+                   placeholder="거점 검색.." 
                  />
               </div>
            </div>
@@ -157,7 +157,7 @@ export default function RoughMapManagementClient() {
               {/* Bottom Control */}
               <div className="absolute bottom-12 right-12 flex gap-4">
                  <Button className="h-14 w-14 rounded-xl bg-white/90 backdrop-blur-xl shadow-2xl border border-white text-slate-900 group-hover:scale-110 transition-all"><Layers size={20} /></Button>
-                 <Button className="h-14 px-10 rounded-xl bg-slate-900 text-white font-black tracking-[0.3em] text-[10px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:bg-primary transition-all uppercase italic">怨듦컙 ?쒕님덉씠님ㅽ뻾</Button>
+                 <Button className="h-14 px-10 rounded-xl bg-slate-900 text-white font-black tracking-[0.3em] text-[10px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:bg-primary transition-all uppercase italic">공간 시뮬레이션 실행</Button>
               </div>
            </Card>
         </div>
@@ -166,4 +166,3 @@ export default function RoughMapManagementClient() {
     </div>
   );
 }
-

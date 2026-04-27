@@ -53,6 +53,12 @@ export default defineConfig({
             dependencies: ['setup'],
         },
         {
+            name: 'tier-5-public',
+            testMatch: /05-public-experience\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
             name: 'full-suite',
             testMatch: /.*\.spec\.ts/,
             use: { ...devices['Desktop Chrome'] },

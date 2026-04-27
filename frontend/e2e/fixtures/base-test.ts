@@ -1,4 +1,4 @@
-import { test as base } from '@playwright/test';
+import { test as base, Page } from '@playwright/test';
 import { BBSPage } from '../pages/BBSPage';
 import { UserAdminPage } from '../pages/UserAdminPage';
 import { BoardMasterPage } from '../pages/BoardMasterPage';
@@ -9,6 +9,8 @@ type MyFixtures = {
   userAdminPage: UserAdminPage;
   boardMasterPage: BoardMasterPage;
   consoleGuard: ConsoleErrorGuard;
+  adminPage: Page;
+  userPage: Page;
 };
 
 export const test = base.extend<MyFixtures>({
@@ -29,6 +31,20 @@ export const test = base.extend<MyFixtures>({
   },
   boardMasterPage: async ({ page }, use) => {
     await use(new BoardMasterPage(page));
+  },
+
+  adminPage: async ({ browser }, use) => {
+    const context = await browser.newContext({ storageState: 'playwright/.auth/admin.json' });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
+  },
+
+  userPage: async ({ browser }, use) => {
+    const context = await browser.newContext({ storageState: 'playwright/.auth/user.json' });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
   },
 });
 

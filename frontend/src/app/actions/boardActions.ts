@@ -69,7 +69,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       });
     }
 
-    if (response) {
+    if (response !== undefined) { // Change from if (response) to handle null success data
       revalidatePath(`/admin/community/boards/selectBoardList`);
       const targetId = isEdit ? nttId : response as string;
       return {

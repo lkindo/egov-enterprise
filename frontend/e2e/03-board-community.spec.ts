@@ -40,27 +40,25 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
 
         for (const template of templates) {
             test(`CRUD Flow for ${template.name}`, async ({ page }) => {
+                // Capture browser console logs for debugging
+                page.on('console', msg => console.log(`[BROWSER] ${msg.type()}: ${msg.text()}`));
+                
                 console.log(`\n>>> Starting CRUD Flow for: ${template.name}`);
                 
+                const articleTitle = `General Article ${Date.now()}`;
                 console.log(`>>> Step 1: Navigating to ${template.name} (${template.id})`);
                 await page.goto(`/admin/community/boards/insertBoardArticle?bbsId=${template.id}`);
                 await expect(page.locator('h1, h2, .title').first()).toBeVisible({ timeout: 20000 });
                 
                 console.log('>>> Step 2: Creating Article');
-                await page.locator('input[name="nttSj"]').fill(template.title);
-                console.log('>>> Step 2.5: Filling Content in RichTextEditor');
+                await page.locator('input[name="nttSj"]').fill(articleTitle);
+                // Use fill() for Tiptap editor (contenteditable)
+                const editor = page.locator('.ProseMirror');
+                await editor.fill('Initial E2E test content.');
                 
-                // Use evaluate to set content directly to the Tiptap editor
-                await page.evaluate(() => {
-                    const editorElement = document.querySelector('.ProseMirror');
-                    if (editorElement && (editorElement as any).editor) {
-                        (editorElement as any).editor.commands.setContent('<p>Initial E2E test content.</p>');
-                    }
-                });
+                await page.locator('button:has-text("Commit Knowledge")').first().click();
                 
-                await page.locator('button:has-text("등록"), button:has-text("Commit Knowledge"), button[type="submit"]').first().click();
-                
-                await expect(page).toHaveURL(/\/admin\/community\/boards\/(selectBoardList|detail)/, { timeout: 20000 });
+                await expect(page).toHaveURL(/\/admin\/community\/boards(\/(selectBoardList|detail))?/, { timeout: 20000 });
 
                 console.log('>>> Step 3: Verifying in List and Opening Detail');
                 if (page.url().includes('detail')) {
@@ -69,54 +67,79 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 
                 await page.waitForSelector('.animate-pulse', { state: 'hidden' }).catch(() => {});
                 const searchInput = page.locator('#board-search-input, [data-testid="board-search-input"], input[placeholder*="찾으시나요"], input[placeholder*="검색"]').first();
-                await searchInput.fill(template.title);
+                await searchInput.fill(articleTitle);
                 await page.locator('button:has-text("조회"), button:has-text("Search")').first().click();
                 
-                await expect(page.getByText(template.title).first()).toBeVisible({ timeout: 15000 });
+                await expect(page.getByText(articleTitle).first()).toBeVisible({ timeout: 15000 });
 
                 console.log('>>> Step 3.5: Clicking Article Link');
-                await page.getByText(template.title).first().click({ timeout: 15000 });
+                await page.getByText(articleTitle).first().click({ timeout: 15000 });
 
                 console.log('\n>>> Step 4: Updating Article');
                 const editBtn = page.locator('button:has-text("수정"), button:has-text("Edit"), button:has-text("Entry")').first();
                 await editBtn.click();
-                await page.locator('input[name="nttSj"]').fill(`${template.title} [Updated]`);
                 
-                console.log('>>> Injecting content into Tiptap editor via Evaluate');
-                await page.evaluate(() => {
-                    const editorElement = document.querySelector('.ProseMirror');
-                    if (editorElement && (editorElement as any).editor) {
-                        (editorElement as any).editor.commands.setContent('<p>Updated content via Evaluate (Ralph Loop Final).</p>');
-                    }
-                });
+                // Wait for data to load
+                await expect(page.locator('input[name="nttSj"]')).toHaveValue(articleTitle, { timeout: 15000 });
+                
+                // Clear and fill title
+                const titleInput = page.locator('input[name="nttSj"]');
+                await titleInput.click();
+                await titleInput.clear();
+                await titleInput.fill(`${articleTitle} [Updated]`);
+                await page.keyboard.press('Tab'); 
+                
+                console.log('>>> Injecting content into Tiptap editor');
+                await editor.focus();
+                // Clear existing content via evaluate for reliability
+                await editor.evaluate(el => el.innerHTML = '<p></p>');
+                await page.keyboard.type('Updated content via Playwright type.');
+                await page.keyboard.press('Tab'); 
                 
                 await page.waitForTimeout(1000); 
 
-                const saveButton = page.locator('button:has-text("저장"), button:has-text("Update"), button:has-text("Commit")').first();
-                
-                const responsePromise = page.waitForResponse(resp => 
-                    resp.url().includes('saveBoardArticle') || resp.status() === 200, 
-                    { timeout: 20000 }
-                ).catch(() => null);
-
+                const saveButton = page.locator('button[type="submit"]').filter({ hasText: /Commit Knowledge|Saving Node/ }).first();
+                console.log('>>> Clicking Save Button (type="submit")');
                 await saveButton.click();
-                await responsePromise; 
                 
-                await expect(page).toHaveURL(/.*\/admin\/community\/boards\/selectBoardList.*/, { timeout: 30000 });
+                // Wait for success toast or navigation
+                await expect(page.getByText(/성공적으로 (수정|등록)되었습니다|저장되었습니다/)).toBeVisible({ timeout: 15000 });
+                console.log('>>> Save success toast detected');
                 
+                await expect(page).toHaveURL(/.*\/admin\/community\/boards(\/selectBoardList)?/, { timeout: 30000 });
+                console.log('>>> Redirected to List page');
+                
+                // Re-search to verify the update
+                const searchInputAfter = page.locator('#board-search-input, [placeholder*="정보"], [placeholder*="Search"]').first();
+                await searchInputAfter.fill(`${articleTitle} [Updated]`);
+                await page.locator('button:has-text("조회"), button:has-text("Search")').first().click();
+
+                // If not found immediately, try reloading the page once
+                const itemInList = page.getByText(`${articleTitle} [Updated]`).first();
+                const isFound = await itemInList.isVisible().catch(() => false);
+                
+                if (!isFound) {
+                    console.log('>>> Item not found in list immediately, reloading...');
+                    await page.reload();
+                    await searchInputAfter.fill(`${articleTitle} [Updated]`);
+                    await page.locator('button:has-text("조회"), button:has-text("Search")').first().click();
+                }
+
                 await page.waitForSelector('.animate-pulse', { state: 'hidden' }).catch(() => {});
-                await expect(page.getByText(`${template.title} [Updated]`).first()).toBeVisible({ timeout: 15000 });
+                await expect(itemInList).toBeVisible({ timeout: 30000 });
                 
                 console.log('>>> Step 4.5: Re-opening Detail for Verification & Deletion');
-                await page.getByText(`${template.title} [Updated]`).first().click();
-                await expect(page.getByText(`${template.title} [Updated]`)).toBeVisible();
+                await page.getByText(`${articleTitle} [Updated]`).first().click();
+                await expect(page.getByText(`${articleTitle} [Updated]`)).toBeVisible({ timeout: 15000 });
 
                 console.log('>>> Step 5: Deleting Article');
-                const deleteBtn = page.locator('button.text-rose-500, button:has-text("삭제"), button:has-text("Delete")').first();
-                page.once('dialog', dialog => dialog.accept());
+                // Target the button with Trash2 icon (lucide-trash-2) or rose-500 color
+                const deleteBtn = page.locator('button:has(.lucide-trash-2), button.text-rose-500').first();
                 await deleteBtn.click();
                 
-                await expect(page).toHaveURL(/\/admin\/community\/boards\/selectBoardList/);
+                await expect(page).toHaveURL(/\/admin\/community\/boards(\/selectBoardList)?/, { timeout: 20000 });
+                console.log('>>> Successfully deleted and returned to list');
+                
             });
         }
     });

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { Upload, X, FileIcon, HardDrive } from 'lucide-react';
@@ -41,8 +41,8 @@ export function StandardFileUploader({
  <label className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer bg-muted/5 hover:bg-muted/10 transition-colors border-muted-foreground/20">
  <div className="flex flex-col items-center justify-center pt-5 pb-6">
  <Upload className="w-8 h-8 mb-3 text-muted-foreground" />
- <p className="mb-1 text-sm text-foreground font-semibold">?대┃섍굅님?뚯씪님?쒕옒洹명븯?몄슂</p>
- <p className="text-sm text-muted-foreground">理쒕? {maxFiles}媛 ?뚯씪님{maxSizeMB}MB ?쒗븳</p>
+ <p className="mb-1 text-sm text-foreground font-semibold">클릭하거나 파일을 드래그하세요</p>
+ <p className="text-sm text-muted-foreground">최대 {maxFiles}개 파일, {maxSizeMB}MB 제한</p>
  </div>
  <input name={name} type="file" className="hidden" multiple onChange={handleFileChange} />
  </label>

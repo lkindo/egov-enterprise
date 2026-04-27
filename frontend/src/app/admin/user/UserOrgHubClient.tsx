@@ -182,7 +182,7 @@ export default function UserOrgHubClient({
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
-    if (activeTab === 'USERS' || activeTab === 'ABSENCES') return (users || []).find(u => u?.esntlId === selectedItemId);
+    if (activeTab === 'USERS' || activeTab === 'ABSENCES') return (users || []).find(u => u?.userId === selectedItemId);
     if (activeTab === 'DEPTS') return (departments || []).find(d => d?.orgnztId === selectedItemId);
     return null;
   }, [selectedItemId, activeTab, users, departments]);
@@ -361,7 +361,7 @@ export default function UserOrgHubClient({
                       onRowClick={(item) => {
                         const id = activeTab === 'DEPTS'
                           ? (item as Department).orgnztId
-                          : (item as UserManage).esntlId;
+                          : (item as UserManage).userId; // API uses userId (login ID) as path param
                         if (id) setSelectedItemId(id);
                       }}
                       keyField={(activeTab === 'DEPTS' ? 'orgnztId' : 'esntlId') as any}

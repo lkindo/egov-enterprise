@@ -1,7 +1,8 @@
-﻿import { MESSAGES } from '@/constants/messages';
+import { MESSAGES } from '@/constants/messages';
 
 /**
- * 硫붿떆吏 조회 님 * - 異뷀썑 i18n ?쇱씠釉뚮윭由next-intl 님 ?꾩엯 님님?낅쭔 ?섏젙?섎㈃ ?꾩뿭 諛섏쁺 媛님 */
+ * 메시지 조회 - 추후 i18n 라이브러리(next-intl 등) 도입 시 이곳만 수정하면 전역 반영 가능
+ */
 export function useMessage() {
   const t = (keyPath: string, params?: Record<string, string | number>): string => {
     const keys = keyPath.split('.');

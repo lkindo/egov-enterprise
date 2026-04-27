@@ -76,7 +76,7 @@ export default function InsertBoardArticlePage() {
         toast('데이터를 불러오는데 실패했습니다.', 'error');
       });
     }
-  }, [nttId, bbsId, toast]);
+  }, [nttId, bbsId]); // Removed toast from dependencies to prevent unwanted re-runs on toast state changes
 
   // 페이지 진입 시 임시저장 데이터 확인 및 복구 제안
   useEffect(() => {
