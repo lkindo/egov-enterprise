@@ -28,9 +28,11 @@ public class RateLimitFilter implements Filter {
 
     private Bucket createNewBucket() {
         // Default: 10000 requests per minute for stable E2E testing
+        // Can be overridden by system property for unit tests
+        int capacity = Integer.getInteger("ratelimit.capacity", 10000);
         Bandwidth limit = Bandwidth.builder()
-                .capacity(10000)
-                .refillGreedy(10000, Duration.ofMinutes(1))
+                .capacity(capacity)
+                .refillGreedy(capacity, Duration.ofMinutes(1))
                 .build();
         return Bucket.builder()
                 .addLimit(limit)

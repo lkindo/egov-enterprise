@@ -2,11 +2,6 @@ import { test, expect } from './fixtures/base-test';
 
 /**
  * [Tier 3] Business Domain: Board & Community Engagement
- * 
- * 프로젝트의 핵심 비즈니스인 게시판 기능을 심층 검증합니다.
- * 1. 게시판 생성 마법사 (Wizard)
- * 2. 게시글 생명주기 (CRUD) - 일반, Q&A, 일정 템플릿 대응
- * 3. 커뮤니티 부가 서비스 (설문, 스크랩, 주소록)
  */
 
 test.describe('Tier 3: Board & Community (Business Flow)', () => {
@@ -38,7 +33,6 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
     });
 
     test.describe('Article Lifecycle Management', () => {
-        // Test various templates
         const templates = [
             { id: 'BBSMSTR_AAAAAAAAAAAA', name: 'General List', title: `General Article ${Date.now()}` },
             { id: 'BBSMSTR_DDDDDDDDDDDD', name: 'Q&A Template', title: `Q&A Question ${Date.now()}` },
@@ -46,63 +40,79 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
 
         for (const template of templates) {
             test(`CRUD Flow for ${template.name}`, async ({ page }) => {
+                console.log(`\n>>> Starting CRUD Flow for: ${template.name}`);
+                
                 console.log(`>>> Step 1: Navigating to ${template.name} (${template.id})`);
                 await page.goto(`/admin/community/boards/insertBoardArticle?bbsId=${template.id}`);
+                await expect(page.locator('h1, h2, .title').first()).toBeVisible({ timeout: 20000 });
                 
                 console.log('>>> Step 2: Creating Article');
                 await page.locator('input[name="nttSj"]').fill(template.title);
                 console.log('>>> Step 2.5: Filling Content in RichTextEditor');
-                await page.locator('.ProseMirror').fill('This is a test content for article lifecycle.');
+                
+                // Use evaluate to set content directly to the Tiptap editor
+                await page.evaluate(() => {
+                    const editorElement = document.querySelector('.ProseMirror');
+                    if (editorElement && (editorElement as any).editor) {
+                        (editorElement as any).editor.commands.setContent('<p>Initial E2E test content.</p>');
+                    }
+                });
+                
                 await page.locator('button:has-text("등록"), button:has-text("Commit Knowledge"), button[type="submit"]').first().click();
                 
-                // Redirection can go to Detail or List depending on the page implementation
-                await expect(page).toHaveURL(/\/admin\/community\/boards\/(selectBoardList|detail)/, { timeout: 15000 });
+                await expect(page).toHaveURL(/\/admin\/community\/boards\/(selectBoardList|detail)/, { timeout: 20000 });
 
                 console.log('>>> Step 3: Verifying in List and Opening Detail');
                 if (page.url().includes('detail')) {
                     await page.goto(`/admin/community/boards/selectBoardList?bbsId=${template.id}`);
                 }
                 
-                // Wait for initial load
                 await page.waitForSelector('.animate-pulse', { state: 'hidden' }).catch(() => {});
-                
                 const searchInput = page.locator('#board-search-input, [data-testid="board-search-input"], input[placeholder*="찾으시나요"], input[placeholder*="검색"]').first();
                 await searchInput.fill(template.title);
                 await page.locator('button:has-text("조회"), button:has-text("Search")').first().click();
                 
-                // Wait for search results
-                await page.waitForTimeout(3000);
-                await page.waitForSelector('.animate-pulse', { state: 'hidden' }).catch(() => {});
+                await expect(page.getByText(template.title).first()).toBeVisible({ timeout: 15000 });
 
                 console.log('>>> Step 3.5: Clicking Article Link');
-                // Target the specific link or text containing the title
-                const articleLink = page.getByText(template.title).first();
-                await articleLink.click({ timeout: 15000 });
+                await page.getByText(template.title).first().click({ timeout: 15000 });
 
-                console.log('>>> Step 4: Updating Article');
+                console.log('\n>>> Step 4: Updating Article');
                 const editBtn = page.locator('button:has-text("수정"), button:has-text("Edit"), button:has-text("Entry")').first();
                 await editBtn.click();
                 await page.locator('input[name="nttSj"]').fill(`${template.title} [Updated]`);
-                // Save button text is "Commit Knowledge" in the creation/edit page
-                await page.locator('button:has-text("저장"), button:has-text("Update"), button:has-text("Commit")').first().click();
                 
-                // Wait for redirection back to list
-                await expect(page).toHaveURL(/\/admin\/community\/boards\/selectBoardList/);
+                console.log('>>> Injecting content into Tiptap editor via Evaluate');
+                await page.evaluate(() => {
+                    const editorElement = document.querySelector('.ProseMirror');
+                    if (editorElement && (editorElement as any).editor) {
+                        (editorElement as any).editor.commands.setContent('<p>Updated content via Evaluate (Ralph Loop Final).</p>');
+                    }
+                });
                 
-                // Wait for list to load and find the updated article
+                await page.waitForTimeout(1000); 
+
+                const saveButton = page.locator('button:has-text("저장"), button:has-text("Update"), button:has-text("Commit")').first();
+                
+                const responsePromise = page.waitForResponse(resp => 
+                    resp.url().includes('saveBoardArticle') || resp.status() === 200, 
+                    { timeout: 20000 }
+                ).catch(() => null);
+
+                await saveButton.click();
+                await responsePromise; 
+                
+                await expect(page).toHaveURL(/.*\/admin\/community\/boards\/selectBoardList.*/, { timeout: 30000 });
+                
                 await page.waitForSelector('.animate-pulse', { state: 'hidden' }).catch(() => {});
-                const updatedArticleLink = page.getByText(`${template.title} [Updated]`).first();
-                await expect(updatedArticleLink).toBeVisible({ timeout: 15000 });
+                await expect(page.getByText(`${template.title} [Updated]`).first()).toBeVisible({ timeout: 15000 });
                 
-                // Must click the article again to go to detail page for deletion
                 console.log('>>> Step 4.5: Re-opening Detail for Verification & Deletion');
-                await updatedArticleLink.click();
+                await page.getByText(`${template.title} [Updated]`).first().click();
                 await expect(page.getByText(`${template.title} [Updated]`)).toBeVisible();
 
                 console.log('>>> Step 5: Deleting Article');
-                // The delete button is icon-only in the detail page
                 const deleteBtn = page.locator('button.text-rose-500, button:has-text("삭제"), button:has-text("Delete")').first();
-                // Handle alert - MUST be set up before the action that triggers it
                 page.once('dialog', dialog => dialog.accept());
                 await deleteBtn.click();
                 

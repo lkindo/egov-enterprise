@@ -144,6 +144,28 @@ export default function UserOrgHubClient({
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!selectedItemId) return;
+    
+    const ok = await confirm({
+      title: '아이덴티티 삭제',
+      message: '해당 사용자의 모든 접근 권한과 아이덴티티 프로필을 시스템에서 영구히 말소하시겠습니까?',
+      variant: 'destructive',
+      confirmText: 'REVOKE_IDENTITY'
+    });
+
+    if (ok) {
+      try {
+        await userAdminService.deleteUser(selectedItemId as string);
+        toast('아이덴티티가 성공적으로 말소되었습니다.', 'success');
+        setSelectedItemId(null);
+        refetchUsers();
+      } catch (error) {
+        toast('말소 프로세스 중 오류가 발생했습니다.', 'error');
+      }
+    }
+  };
+
   // --- Resilience Monitoring: Global Error Feedback ---
   React.useEffect(() => {
     if (usersError) {
@@ -317,6 +339,7 @@ export default function UserOrgHubClient({
                   placeholder="Probing for identity..."
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
+                  suppressHydrationWarning
                 />
               </div>
 
@@ -447,7 +470,12 @@ export default function UserOrgHubClient({
                   </div>
 
                   <div className="flex gap-6 pt-12 mt-auto border-t border-slate-100 relative z-10">
-                    <Button className="flex-1 h-16 bg-slate-100 text-rose-500 rounded-xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white uppercase transition-all shadow-sm font-mono italic">REVOKE_ACCESS</Button>
+                    <Button 
+                      onClick={handleDeleteUser}
+                      className="flex-1 h-16 bg-slate-100 text-rose-500 rounded-xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white uppercase transition-all shadow-sm font-mono italic"
+                    >
+                      REVOKE_ACCESS
+                    </Button>
                     <Button className="flex-[2] h-16 bg-slate-900 text-white rounded-xl font-black tracking-[0.4em] text-[10px] shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 uppercase group font-mono italic">
                       <Zap size={18} className="text-primary group-hover:animate-pulse" /> COMMIT_SPECIFICATION_CHANGE
                     </Button>

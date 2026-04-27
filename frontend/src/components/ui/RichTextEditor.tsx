@@ -70,6 +70,13 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
     },
   });
 
+  // 외부에서 value가 변경되었을 때 에디터 내용 동기화 (초기 로딩 및 외부 초기화 대응)
+  React.useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value, false);
+    }
+  }, [value, editor]);
+
   if (!mounted || !editor) return null;
 
   return (

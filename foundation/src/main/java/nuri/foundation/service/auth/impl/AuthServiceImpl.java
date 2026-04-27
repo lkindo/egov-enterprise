@@ -15,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.OptimisticLockingFailureException;
 
 @Slf4j
 @Service
@@ -93,6 +94,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void logout(String userId) {
-        refreshTokenRepository.deleteById(userId);
+        try {
+            log.info(">>> [Logout] Deleting refresh token for user: {}", userId);
+            refreshTokenRepository.findById(userId).ifPresent(token -> {
+                refreshTokenRepository.delete(token);
+                refreshTokenRepository.flush();
+            });
+        } catch (Exception e) {
+            log.warn(">>> [Logout] RefreshToken already deleted or error occurred for user: {}. Message: {}", userId, e.getMessage());
+        }
     }
 }

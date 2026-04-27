@@ -1,14 +1,14 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface AuditLog {
- histId: string;
- sysNm: string;
- histSeCode: string;
- histCn: string;
- frstRegisterId: string;
- frstRegisterPnttm: string;
+  requstId: string;
+  srvcNm: string;
+  methodNm: string;
+  processSeCode: string;
+  rqesterId: string;
+  occrrncDe: string;
 }
 
 /**

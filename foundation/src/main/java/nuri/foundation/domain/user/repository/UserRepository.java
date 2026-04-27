@@ -41,6 +41,8 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
 
     Page<User> findByUserNmContainingIgnoreCase(String userNm, Pageable pageable);
 
+    Page<User> findByUserIdContainingIgnoreCaseOrUserNmContainingIgnoreCase(String userId, String userNm, Pageable pageable);
+
     List<User> findByUserNmContaining(String userNm);
 
     List<User> findByEmailAdresContaining(String emailAdres);

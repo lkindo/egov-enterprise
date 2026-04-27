@@ -59,7 +59,10 @@ describe('ProgramAdminClient Component', () => {
   it('opens registration modal', async () => {
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
     fireEvent.click(screen.getByText(/신규 등록/i));
-    expect(screen.getByTestId('standard-modal')).toBeInTheDocument();
-    expect(screen.getByText(/신규 프로그램 등록/i)).toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('standard-modal')).toBeInTheDocument();
+      expect(screen.getByText(/신규 프로그램 등록/i)).toBeInTheDocument();
+    });
   });
 });

@@ -86,7 +86,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         public Page<UserDto> getPagedUserList(String searchKeyword, @NonNull Pageable pageable) {
                 Page<User> userPage;
                 if (org.springframework.util.StringUtils.hasText(searchKeyword)) {
-                        userPage = userRepository.findByUserNmContainingIgnoreCase(searchKeyword, required(pageable));
+                        userPage = userRepository.findByUserIdContainingIgnoreCaseOrUserNmContainingIgnoreCase(searchKeyword, searchKeyword, required(pageable));
                 } else {
                         userPage = userRepository.findAll(required(pageable, "Pageable 은 null 일 수 없습니다"));
                 }

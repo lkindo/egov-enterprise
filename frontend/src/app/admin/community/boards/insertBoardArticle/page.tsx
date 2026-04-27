@@ -16,6 +16,7 @@ import { BoardPost } from '@/types/business/board';
 import { useAutoSaveDraft } from '@/hooks/use-auto-save-draft';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
 
 const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
   ssr: false,
@@ -28,10 +29,12 @@ export default function InsertBoardArticlePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const bbsId = searchParams.get('bbsId') || 'BBSMSTR_AAAAAAAAAAAA';
+  const nttId = searchParams.get('nttId') || undefined;
   const parntsId = searchParams.get('parntsId') || undefined;
 
-  const [form, setForm] = useState<Partial<BoardPost & { password?: string; replyAt?: string; parntsId?: string }>>({
+  const [form, setForm] = useState<Partial<BoardPost & { password?: string; replyAt?: string; parntsId?: string; nttId?: string }>>({
     bbsId: bbsId,
+    nttId: nttId,
     nttSj: '',
     nttCn: '',
     ntcrNm: '관리자',
@@ -55,15 +58,35 @@ export default function InsertBoardArticlePage() {
     }
   });
 
+  // 기존 데이터 로딩 (수정 모드)
+  useEffect(() => {
+    if (nttId && bbsId) {
+      knowledgeService.getArticle(bbsId, nttId).then(data => {
+        if (data) {
+          setForm(prev => ({
+            ...prev,
+            nttSj: data.knoNm || (data as any).nttSj,
+            nttCn: data.knoCn || (data as any).nttCn,
+            nttId: nttId,
+            atchFileId: data.atchFileId
+          }));
+        }
+      }).catch(err => {
+        console.error('Failed to fetch article:', err);
+        toast('데이터를 불러오는데 실패했습니다.', 'error');
+      });
+    }
+  }, [nttId, bbsId, toast]);
+
   // 페이지 진입 시 임시저장 데이터 확인 및 복구 제안
   useEffect(() => {
-    if (hasDraft && !form.nttSj && !form.nttCn) {
+    if (hasDraft && !form.nttSj && !form.nttCn && !nttId) {
       if (confirm('이전에 작성 중이던 임시저장 데이터가 있습니다. 복구하시겠습니까?')) {
         restoreDraft();
         toast('임시저장 데이터를 복구했습니다.', 'success');
       }
     }
-  }, [hasDraft, restoreDraft, toast]);
+  }, [hasDraft, restoreDraft, toast, form.nttSj, form.nttCn, nttId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,15 +106,17 @@ export default function InsertBoardArticlePage() {
       });
 
       const result = await saveBoardArticle(null, formData);
+      console.log('>>> Board Save Result:', result);
+      
       if (result.success) {
         // 캐시 무효화 및 임시저장 삭제
         queryClient.invalidateQueries({ queryKey: ['boardList'] });
         clearDraft();
         
-        toast('지식 자산이 성공적으로 등록되었습니다.', 'success');
+        toast(result.message || '저장되었습니다.', 'success');
         router.push(`/admin/community/boards/selectBoardList?bbsId=${bbsId}`);
       } else {
-        toast(result.message || '등록 실패', 'error');
+        toast(result.message || '저장 중 오류가 발생했습니다.', 'error');
       }
     } catch {
       toast('등록 중 오류가 발생했습니다.', 'error');

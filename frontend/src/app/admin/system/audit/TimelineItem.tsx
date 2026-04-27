@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -26,9 +26,9 @@ interface TimelineItemProps {
 }
 
 export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspect, isSelected }) => {
-  const content = String(log.histCn || (log as any).methodNm || '');
-  const isSecurity = content.includes('로그인') || content.includes('보안') || content.includes('login') || content.includes('security');
-  const isSystem = content.includes('시스템') || content.includes('배포') || content.includes('system') || content.includes('deploy');
+  const content = String(log.methodNm || log.srvcNm || '');
+  const isSecurity = content.includes('로그인') || content.includes('보안') || content.includes('login') || content.includes('security') || log.processSeCode === 'AUTH';
+  const isSystem = content.includes('시스템') || content.includes('배포') || content.includes('system') || content.includes('deploy') || log.processSeCode === 'SYS';
   const isError = content.includes('오류') || content.includes('실패') || content.includes('error') || content.includes('fail');
   
   const getIcon = () => {
@@ -93,15 +93,15 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4 relative z-10 text-left">
           <div className="space-y-1 text-left">
              <span className="text-[10px] font-black tracking-[0.3em] text-slate-400 uppercase leading-none italic block text-left">
-                {log.frstRegisterPnttm}
+                {log.occrrncDe?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') || 'N/A'}
              </span>
              <h4 className="text-lg font-black tracking-tighter text-slate-800 uppercase italic text-left">
-                {log.histCn || (log as any).methodNm || 'System Action'}
+                {log.methodNm || log.srvcNm || 'System Action'}
              </h4>
           </div>
           <div className="flex items-center gap-2">
              <div className="px-5 py-1.5 rounded-full bg-slate-900 text-white text-[9px] font-black tracking-widest uppercase">
-                {log.frstRegisterId}
+                {log.rqesterId}
              </div>
              {isError && (
                 <div className="px-5 py-1.5 rounded-full bg-rose-500 text-white text-[9px] font-black tracking-widest uppercase animate-pulse">
@@ -114,11 +114,11 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
         <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 border-t border-slate-50 pt-4 relative z-10">
            <div className="flex items-center gap-3">
               <Database size={12} className="opacity-40" />
-              <span className="tracking-widest uppercase opacity-60">SRV_INSTANCE: {log.sysNm}</span>
+              <span className="tracking-widest uppercase opacity-60">SRV_INSTANCE: {log.srvcNm}</span>
            </div>
            <div className="flex items-center gap-2 group-hover:text-primary transition-colors italic">
-              INS_CODE: {log.histSeCode}
-              <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              INS_CODE: {log.processSeCode}
+              <ArrowUpRight size={14} className="group-hover:translate-x-2 transition-transform" />
            </div>
         </div>
       </div>

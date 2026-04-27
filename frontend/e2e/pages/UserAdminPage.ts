@@ -12,10 +12,10 @@ export class UserAdminPage {
     this.page = page;
     // Flexible selectors for user management
     this.searchInput = page.getByPlaceholder(/Probing for identity|사용자명|고유 ID|Search|ID|Name/i).first();
-    this.addUserButton = page.getByRole('button', { name: /MEMBER_PROVISION|등록|추가|Add/i }).first();
+    this.addUserButton = page.getByRole('button', { name: /사용자 등록|신규 등록|MEMBER_PROVISION|등록|추가|Add/i }).first();
     this.dataTable = page.locator('.hub-card-section, table, [role="grid"], main').first();
     this.firstRow = page.locator('.hub-table-container, table tbody tr, .hub-card-item').first();
-    this.provisionButton = page.getByRole('button', { name: /신규 | 멤버 | 프로비저닝|Provision|New|Add/i }).first();
+    this.provisionButton = page.getByRole('button', { name: /사용자 등록|신규 등록|신규|멤버|프로비저닝|Provision|New|Add/i }).first();
   }
 
   async goto() {
@@ -63,9 +63,9 @@ export class UserAdminPage {
     console.log('>>> Standardized Identity Probe initiated.');
     await expect(this.dataTable).toBeVisible();
     
-    // Check if the table has data and if critical fields like Email (now emailAdres) are visible
+    // Check if the table has data and if critical fields like IDENTITY are visible
     const tableText = await this.dataTable.innerText();
-    if (tableText.includes('EMAIL') || tableText.includes('이메일')) {
+    if (tableText.includes('IDENTITY') || tableText.includes('사용자')) {
        // Verification passed if headers are present
     }
   }

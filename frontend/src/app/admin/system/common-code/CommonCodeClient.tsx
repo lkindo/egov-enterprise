@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -339,6 +339,7 @@ export default function CommonCodeClient({
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="h-10 pl-10 bg-white border-transparent rounded-xl text-xs font-bold shadow-inner"
+                                    suppressHydrationWarning
                                 />
                             </div>
                         </div>

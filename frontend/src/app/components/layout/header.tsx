@@ -255,7 +255,7 @@ export function Header({
                       <Link href="/admin/workspace/mypage" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
                         <span className="flex items-center gap-2"><User size={14} /> 개인정보수정</span>
                       </Link>
-                      <Link href="/admin/system/settings" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
+                      <Link href="/admin/system/menus" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
                         <span className="flex items-center gap-2"><Settings size={14} /> 환경설정</span>
                       </Link>
                       <div className="h-px bg-muted my-1" />

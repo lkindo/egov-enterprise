@@ -44,6 +44,9 @@ class AuthServiceTest {
     @Mock
     private UserAuthorityRepository userAuthorityRepository;
 
+    @Mock
+    private nuri.foundation.domain.auth.RefreshTokenRepository refreshTokenRepository;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -83,6 +86,13 @@ class AuthServiceTest {
         when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
         when(jwtTokenProvider.getUserId(refreshToken)).thenReturn("user");
         
+        nuri.foundation.domain.auth.RefreshToken rt = nuri.foundation.domain.auth.RefreshToken.builder()
+                .userId("user")
+                .token(refreshToken)
+                .expiryDate(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
+                .build();
+        when(refreshTokenRepository.findByToken(refreshToken)).thenReturn(java.util.Optional.of(rt));
+        
         when(jwtTokenProvider.createAccessToken(eq("user"), anyString())).thenReturn("new_access_token");
 
         // When
@@ -112,6 +122,13 @@ class AuthServiceTest {
         when(ua.getAuthorCode()).thenReturn("ROLE_ADMIN");
         when(userAuthorityRepository.findById(esntlId)).thenReturn(java.util.Optional.of(ua));
 
+        nuri.foundation.domain.auth.RefreshToken rt = nuri.foundation.domain.auth.RefreshToken.builder()
+                .userId(userId)
+                .token(refreshToken)
+                .expiryDate(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
+                .build();
+        when(refreshTokenRepository.findByToken(refreshToken)).thenReturn(java.util.Optional.of(rt));
+
         when(jwtTokenProvider.createAccessToken(eq(userId), eq("ROLE_ADMIN"))).thenReturn("new_access_token_admin");
 
         // When
@@ -140,6 +157,13 @@ class AuthServiceTest {
         when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
 
         when(userAuthorityRepository.findById(esntlId)).thenReturn(java.util.Optional.empty());
+
+        nuri.foundation.domain.auth.RefreshToken rt = nuri.foundation.domain.auth.RefreshToken.builder()
+                .userId(userId)
+                .token(refreshToken)
+                .expiryDate(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
+                .build();
+        when(refreshTokenRepository.findByToken(refreshToken)).thenReturn(java.util.Optional.of(rt));
 
         when(jwtTokenProvider.createAccessToken(eq(userId), eq("ROLE_USER"))).thenReturn("new_access_token_user");
 

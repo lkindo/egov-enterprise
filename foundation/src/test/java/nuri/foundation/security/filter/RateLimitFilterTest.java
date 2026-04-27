@@ -20,6 +20,7 @@ class RateLimitFilterTest {
 
     @BeforeEach
     void setUp() {
+        System.setProperty("ratelimit.capacity", "100");
         filter = new RateLimitFilter();
         filterChain = mock(FilterChain.class);
     }

@@ -162,9 +162,6 @@ export function StandardChartWrapper({
             </div>
         </div>
     );
-}</div>
-        </div>
-    );
 }
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: unknown[]; label?: string }) {
