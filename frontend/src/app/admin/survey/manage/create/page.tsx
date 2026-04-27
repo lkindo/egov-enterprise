@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -41,6 +41,11 @@ export default function CreatePollPage() {
   const handleSave = async () => {
     if (!formData.pollNm || !beginDate || !endDate) {
       alert('필수 항목을 입력해주세요.');
+      return;
+    }
+
+    if (beginDate && endDate && beginDate > endDate) {
+      alert('설문 시작일은 종료일보다 빨라야 합니다.');
       return;
     }
 

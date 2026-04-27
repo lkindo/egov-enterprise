@@ -18,17 +18,17 @@ export default function HelpCenterPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [qnas, setQnas] = useState<QNA[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   useEffect(() => {
-    async function loadHelpData() {
+    const timer = setTimeout(async () => {
       try {
         setLoading(true);
         if (tab === 'faq') {
-          const res = await helpUserService.getFaqs({});
+          const res = await helpUserService.getFaqs({ keyword: searchKeyword });
           setFaqs(res.list || []);
         } else {
-          const res = await helpUserService.getQnas({ page: 0, size: 10 });
+          const res = await helpUserService.getQnas({ page: 0, size: 10, keyword: searchKeyword });
           setQnas(res.list || []);
         }
       } catch {
@@ -36,9 +36,9 @@ export default function HelpCenterPage() {
       } finally {
         setLoading(false);
       }
-    }
-    loadHelpData();
-  }, [tab, toast]);
+    }, 300); // Debounce
+    return () => clearTimeout(timer);
+  }, [tab, searchKeyword, toast]);
 
   const qnaColumns = [
     {
@@ -61,6 +61,8 @@ export default function HelpCenterPage() {
     }
   ];
 
+  const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
+
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-24 p-8 animate-in fade-in duration-1000">
       <PageHeader
@@ -80,6 +82,8 @@ export default function HelpCenterPage() {
             <input
                 type="text"
                 placeholder="키워드로 신속하게 검색하세요..."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
                 className="w-full h-16 pl-16 pr-6 rounded-[0.1rem] bg-background/50 border-2 border-border focus:border-primary text-foreground text-lg font-bold outline-none focus:ring-8 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30"
             />
             </div>

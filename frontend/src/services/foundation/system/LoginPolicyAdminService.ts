@@ -8,6 +8,9 @@ export interface LoginPolicy {
   ipInfo: string;
   dplctPermAt: 'Y' | 'N';
   lmttAt: 'Y' | 'N';
+  startTime?: string;
+  endTime?: string;
+  otpEnabledAt?: 'Y' | 'N';
   regYn: 'Y' | 'N';
   lastUpdusrId?: string;
 }

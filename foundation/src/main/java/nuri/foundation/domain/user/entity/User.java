@@ -135,6 +135,9 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "CRTFC_DN_VALUE", length = 100)
     private String subDn;
 
+    @Column(name = "OTP_SECRET", length = 32)
+    private String otpSecret;
+
     public void update(String userNm, String passwordHint, String passwordCnsr,
             String emplNo, String ihidnum, String sexdstnCode, String brth,
             String areaNo, String homemiddleTelno, String homeendTelno,

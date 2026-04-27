@@ -23,6 +23,7 @@ export interface UserManage {
   emplNo?: string;
   sexdstnCode?: string;
   brth?: string; // Aligned with backend brth
+  otpSecret?: string;
 }
 
 export interface UserSearchParams {
@@ -45,4 +46,5 @@ export interface UserDto {
   createdDate?: string;
   emailAdres?: string;
   moblphonNo?: string;
+  otpSecret?: string;
 }

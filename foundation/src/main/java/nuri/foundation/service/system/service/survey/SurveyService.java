@@ -89,6 +89,7 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void insertSurvey(QestnrInfoDto dto) {
+        validateSurveyDates(dto.getQestnrBeginDe(), dto.getQestnrEndDe());
         String id = "QESTNR_" + System.currentTimeMillis();
         infoRepository.save(Objects.requireNonNull(QestnrInfo.builder()
                 .qestnrId(id)
@@ -105,6 +106,7 @@ public class SurveyService implements EgovSurveyService {
     @Override
     @Transactional
     public void updateSurvey(QestnrInfoDto dto) {
+        validateSurveyDates(dto.getQestnrBeginDe(), dto.getQestnrEndDe());
         QestnrInfo entity = infoRepository.findById(Objects.requireNonNull(dto.getQestnrId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getQestnrSj(), dto.getQestnrPurps(), dto.getQestnrWritngGuidanceCn(),
@@ -198,5 +200,15 @@ public class SurveyService implements EgovSurveyService {
     @Transactional
     public void deleteItem(String iemId) {
         iemRepository.deleteById(Objects.requireNonNull(iemId));
+    }
+    private void validateSurveyDates(String beginDe, String endDe) {
+        if (beginDe != null && endDe != null) {
+            // Remove dashes for comparison if present
+            String start = beginDe.replace("-", "");
+            String end = endDe.replace("-", "");
+            if (start.compareTo(end) > 0) {
+                throw new BusinessException("설문 시작일은 종료일보다 빨라야 합니다.", ErrorCode.INVALID_INPUT_VALUE);
+            }
+        }
     }
 }

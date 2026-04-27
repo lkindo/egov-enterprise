@@ -48,7 +48,9 @@ public class OnlinePollApiController {
     public ResponseEntity<ApiResponse<Void>> vote(
             @PathVariable String pollId,
             @RequestParam String pollIemId) {
-        onlinePollService.vote(pollId, pollIemId, null);
+        String userId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
+                .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException("로그인이 필요합니다.", nuri.foundation.core.exception.ErrorCode.UNAUTHORIZED));
+        onlinePollService.vote(pollId, pollIemId, userId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

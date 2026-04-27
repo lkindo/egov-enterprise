@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -26,7 +26,8 @@ import {
     Target,
     ChevronRight,
     MonitorCheck,
-    UserCheck
+    UserCheck,
+    Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -155,17 +156,38 @@ export default function OnlinePollAdminClient({
         },
         {
             header: '상태',
-            accessor: (item: OnlinePollDto) => (
-                <div className={cn(
-                    "flex items-center gap-2 px-4 py-1.5 rounded-full border w-fit shadow-sm transition-all",
-                    item.pollDsuseYn === 'N' 
-                        ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
-                        : "bg-slate-100 text-slate-400 border-border/50"
-                )}>
-                    {item.pollDsuseYn === 'N' ? <Zap size={14} className="animate-pulse" /> : <XCircle size={14} />}
-                    <span className="text-[9px] font-black tracking-[0.2em] uppercase ">{item.pollDsuseYn === 'N' ? 'Live' : '종료'}</span>
-                </div>
-            )
+            accessor: (item: OnlinePollDto) => {
+                const today = format(new Date(), 'yyyy-MM-dd');
+                let status = '종료';
+                let variant = 'closed';
+                
+                if (item.pollDsuseYn === 'N') {
+                    if (today < (item.pollBeginDe || '')) {
+                        status = '예정';
+                        variant = 'scheduled';
+                    } else if (today > (item.pollEndDe || '')) {
+                        status = '종료';
+                        variant = 'closed';
+                    } else {
+                        status = 'Live';
+                        variant = 'live';
+                    }
+                }
+
+                return (
+                    <div className={cn(
+                        "flex items-center gap-2 px-4 py-1.5 rounded-full border w-fit shadow-sm transition-all",
+                        variant === 'live' && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+                        variant === 'scheduled' && "bg-amber-500/10 text-amber-500 border-amber-500/20",
+                        variant === 'closed' && "bg-slate-100 text-slate-400 border-border/50"
+                    )}>
+                        {variant === 'live' && <Zap size={14} className="animate-pulse" />}
+                        {variant === 'scheduled' && <Clock size={14} />}
+                        {variant === 'closed' && <XCircle size={14} />}
+                        <span className="text-[9px] font-black tracking-[0.2em] uppercase ">{status}</span>
+                    </div>
+                );
+            }
         }
     ];
 

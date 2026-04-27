@@ -30,6 +30,9 @@ public enum ErrorCode {
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "A003", "Expired JWT Token"),
     AUTH_ERROR(HttpStatus.UNAUTHORIZED, "A004", "Authentication Failed"),
     LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "A005", "Login Failed"),
+    LOGIN_POLICY_LIMITED(HttpStatus.FORBIDDEN, "A006", "Login Policy Restricted (Account Blocked)"),
+    LOGIN_POLICY_IP_MISMATCH(HttpStatus.FORBIDDEN, "A007", "Login Policy Restricted (IP Mismatch)"),
+    LOGIN_POLICY_TIME_RESTRICTED(HttpStatus.FORBIDDEN, "A008", "Login Policy Restricted (Time Out of Range)"),
 
     // User (U)
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "User Not Found"),

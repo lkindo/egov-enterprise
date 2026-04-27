@@ -39,9 +39,21 @@ public class LoginPolicy extends BaseEntity {
     @Column(name = "LMTT_AT", length = 1)
     private String lmttAt;
 
-    public void update(String ipInfo, String dplctPermAt, String lmttAt) {
+    @Column(name = "STRT_TM", length = 5)
+    private String startTime; // HH:mm
+
+    @Column(name = "END_TM", length = 5)
+    private String endTime; // HH:mm
+
+    @Column(name = "OTP_ENABLED_AT", length = 1)
+    private String otpEnabledAt;
+
+    public void update(String ipInfo, String dplctPermAt, String lmttAt, String startTime, String endTime, String otpEnabledAt) {
         this.ipInfo = ipInfo;
         this.dplctPermAt = dplctPermAt;
         this.lmttAt = lmttAt;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.otpEnabledAt = otpEnabledAt;
     }
 }

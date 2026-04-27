@@ -58,6 +58,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void insertPoll(OnlinePollManageDto dto) {
+        validatePollDates(dto.getPollBeginDe(), dto.getPollEndDe());
         String pollId = "POLL_" + System.currentTimeMillis();
         
         List<OnlinePollItem> pollItems = new ArrayList<>();
@@ -88,6 +89,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void updatePoll(OnlinePollManageDto dto) {
+        validatePollDates(dto.getPollBeginDe(), dto.getPollEndDe());
         OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(dto.getPollId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         
@@ -154,6 +156,28 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void vote(String pollId, String pollIemId, String userId) {
+        OnlinePollManage poll = pollManageRepository.findById(pollId)
+                .orElseThrow(() -> new BusinessException("설문을 찾을 수 없습니다.", ErrorCode.RESOURCE_NOT_FOUND));
+
+        // 1. 폐기 여부 확인
+        if ("Y".equals(poll.getPollDsuseYn())) {
+            throw new BusinessException("종료되었거나 폐기된 설문입니다.", ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        // 2. 설문 기간 확인
+        String today = java.time.LocalDate.now().toString();
+        if (poll.getPollBeginDe().compareTo(today) > 0) {
+            throw new BusinessException("설문 시작 전입니다.", ErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (poll.getPollEndDe().compareTo(today) < 0) {
+            throw new BusinessException("이미 종료된 설문입니다.", ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        // 3. 중복 투표 확인 (1인 1투표)
+        if (pollResultRepository.countByPollIdAndFrstRegisterId(pollId, userId) > 0) {
+            throw new BusinessException("이미 참여하신 설문입니다.", ErrorCode.INVALID_INPUT_VALUE);
+        }
+
         String id = "POLRES_" + System.currentTimeMillis();
         pollResultRepository.save(Objects.requireNonNull(OnlinePollResult.builder()
                 .pollResultId(id)
@@ -161,5 +185,12 @@ public class OnlinePollService implements EgovOnlinePollService {
                 .pollIemId(pollIemId)
                 .createdBy(userId)
                 .build()));
+    }
+    private void validatePollDates(String beginDe, String endDe) {
+        if (beginDe != null && endDe != null) {
+            if (beginDe.compareTo(endDe) > 0) {
+                throw new BusinessException("설문 시작일은 종료일보다 빨라야 합니다.", ErrorCode.INVALID_INPUT_VALUE);
+            }
+        }
     }
 }

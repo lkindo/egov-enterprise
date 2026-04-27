@@ -17,4 +17,7 @@ public class LoginRequest {
 
     @Schema(description = "비밀번호", example = "admin123")
     private String password;
+
+    @Schema(description = "OTP 번호 (선택)", example = "123456")
+    private Integer otpCode;
 }

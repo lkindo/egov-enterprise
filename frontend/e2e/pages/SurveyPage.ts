@@ -43,14 +43,14 @@ export class SurveyPage {
         // Start Date
         console.log(`>>> Selecting Start Date: ${startDayStr}`);
         await datePickers.first().click();
-        await this.page.waitForSelector('[role="dialog"], .rdp', { timeout: 10000 });
-        await this.page.getByRole('button', { name: startDayStr, exact: true }).first().click({ force: true });
+        await this.page.waitForSelector('.rdp', { timeout: 10000 });
+        await this.page.locator('.e2e-day-button').filter({ hasText: new RegExp(`^${startDayStr}$`) }).first().click({ force: true });
         
         // End Date
         console.log(`>>> Selecting End Date: ${endDayStr}`);
         await datePickers.last().click();
-        await this.page.waitForSelector('[role="dialog"], .rdp', { timeout: 10000 });
-        await this.page.getByRole('button', { name: endDayStr, exact: true }).first().click({ force: true });
+        await this.page.waitForSelector('.rdp', { timeout: 10000 });
+        await this.page.locator('.e2e-day-button').filter({ hasText: new RegExp(`^${endDayStr}$`) }).last().click({ force: true });
         
         console.log('>>> Submitting Survey Form');
         await this.submitButton.click();
@@ -75,5 +75,22 @@ export class SurveyPage {
         await surveyCard.click();
         
         await expect(this.page.getByText(/참여|설문/i)).toBeVisible({ timeout: 15000 });
+    }
+
+    async checkResults(surveyTitle: string) {
+        console.log(`>>> Navigating to Survey Stats for: ${surveyTitle}`);
+        // First find the ID in admin manage list
+        await this.gotoManage();
+        await this.searchInput.fill(surveyTitle);
+        const row = this.page.locator('tr').filter({ hasText: surveyTitle }).first();
+        await expect(row).toBeVisible();
+        
+        // Extract ID (usually in a cell)
+        const pollId = await row.locator('td').first().textContent();
+        console.log(`>>> Extracted Poll ID: ${pollId}`);
+        
+        await this.page.goto(`/survey/stats?qestnrId=${pollId}`);
+        await expect(this.page.getByText('설문 결과 통계')).toBeVisible();
+        await expect(this.page.getByText(surveyTitle)).toBeVisible();
     }
 }

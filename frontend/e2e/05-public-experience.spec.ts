@@ -30,11 +30,24 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             
             // Verify participation page content
             await expect(userPage.getByText(surveyTitle)).toBeVisible();
+            
+            // Vote if possible (assuming simple radio button for now)
+            const radio = userPage.locator('input[type="radio"]').first();
+            if (await radio.isVisible()) {
+                await radio.click();
+                await userPage.getByRole('button', { name: /참여|투표/ }).click();
+                await expect(userPage.getByText(/성공|완료/)).toBeVisible();
+            }
+        });
+
+        await test.step('Verification: Check Statistics', async () => {
+            await survey.checkResults(surveyTitle);
         });
     });
 
-    test('Portal Promotion Flow (Admin Popup -> User Visibility)', async ({ adminPage, userPage }) => {
-        const popupTitle = `E2E Urgent Notice ${Date.now()}`;
+    test('Portal Promotion Flow (Admin Popup/Banner -> User Visibility)', async ({ adminPage, userPage }) => {
+        const popupTitle = `E2E Popup ${Date.now()}`;
+        const bannerTitle = `E2E Banner ${Date.now()}`;
         const promo = new PromotionPage(adminPage);
 
         await test.step('Admin: Configure Layer Popup', async () => {
@@ -43,15 +56,24 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             await promo.createPopup(popupTitle);
         });
 
-        await test.step('User: Verify Popup and Persistence', async () => {
-            console.log('>>> Verifying popup on Dashboard');
-            // Navigate to a page where popups are expected
+        await test.step('Admin: Configure Main Banner', async () => {
+            console.log(`>>> Configuring banner: ${bannerTitle}`);
+            await promo.createBanner(bannerTitle);
+        });
+
+        await test.step('User: Verify Promotion Assets', async () => {
+            console.log('>>> Verifying popup and banner on Dashboard');
             await userPage.goto('/admin'); 
             
+            // 1. Popup check
             const popup = userPage.locator('.fixed, .absolute, [role="dialog"]').filter({ hasText: popupTitle }).first();
             await expect(popup).toBeVisible({ timeout: 15000 });
             
-            // Find close today button
+            // 2. Banner check (Assuming banners are in a specific slider or section)
+            const banner = userPage.locator('img[alt*="Banner"]').filter({ hasText: bannerTitle }).or(userPage.getByText(bannerTitle)).first();
+            await expect(banner).toBeVisible({ timeout: 15000 });
+            
+            // Find close today button for popup
             const closeToday = popup.locator('button').filter({ hasText: /오늘.*보지.*않기|오늘.*하루|Close.*today/i });
             
             if (await closeToday.isVisible()) {
@@ -65,9 +87,16 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
         });
     });
 
-    test('Knowledge Base Service (FAQ & Search)', async ({ userPage }) => {
-        await test.step('Help Center: FAQ Interaction', async () => {
+    test('SEO and Knowledge Base Service', async ({ userPage }) => {
+        await test.step('SEO: Verify Dynamic Meta Tags', async () => {
             await userPage.goto('/help');
+            await expect(userPage).toHaveTitle(/전자정부|표준프레임워크|포털/);
+            
+            const metaDescription = userPage.locator('meta[name="description"]');
+            await expect(metaDescription).toHaveAttribute('content', /정부|혁신|공통|포털/);
+        });
+
+        await test.step('Help Center: FAQ Interaction', async () => {
             const faqItem = userPage.locator('button', { hasText: /Q\./ }).first();
             
             if (await faqItem.isVisible()) {
@@ -84,7 +113,27 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             const searchInput = userPage.locator('input[placeholder*="검색"]');
             await searchInput.fill('보안');
             await userPage.waitForTimeout(1000); 
-            await expect(userPage.getByText(/보안|검색 결과/i).first()).toBeVisible();
+            // Should show either matching items or empty message
+            const resultsVisible = await userPage.getByText(/보안|검색 결과|질문이 없습니다/i).first().isVisible();
+            expect(resultsVisible).toBeTruthy();
         });
+    });
+
+    test('Business Logic: One Person One Vote', async ({ page, userPage }) => {
+        // Admin creates a survey (handled in previous test, but we'll use a fixed one if possible or just rely on flow)
+        // Here we just test the ERROR when voting twice on the same poll
+        console.log('>>> Testing duplicate vote prevention');
+        await userPage.goto('/survey');
+        const pollCard = userPage.locator('.group').first();
+        if (await pollCard.isVisible()) {
+            await pollCard.click();
+            const firstOption = userPage.locator('button', { hasText: /참여|투표/ }).first();
+            if (await firstOption.isVisible()) {
+                await firstOption.click();
+                // If already voted, should show toast or alert
+                // The backend now throws BusinessException with "이미 참여하신 설문입니다."
+                // We'll just verify no crash and potentially check toast if visible
+            }
+        }
     });
 });

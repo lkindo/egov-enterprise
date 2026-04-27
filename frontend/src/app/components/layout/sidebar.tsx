@@ -122,12 +122,8 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ROLE_ADMIN' || user?.userSe === 'USR';
   
-  // 권한 체크: '관리', '보안', '설정' 키워드가 포함된 메뉴는 관리자만 활성
-  const isRestricted = !isAdmin && (
-    item.menuNm.includes('관리') || 
-    item.menuNm.includes('보안') || 
-    item.menuNm.includes('설정')
-  );
+  // Backend filters menus based on roles, so we don't need hardcoded keyword restrictions.
+  const isRestricted = false;
 
   const handleLinkClick = (e: React.MouseEvent) => {
     if (isRestricted) {

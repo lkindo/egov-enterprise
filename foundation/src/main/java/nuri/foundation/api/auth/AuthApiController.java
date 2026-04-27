@@ -8,6 +8,7 @@ import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.foundation.service.auth.AuthService;
 import nuri.foundation.service.auth.dto.LoginRequest;
 import nuri.foundation.service.auth.dto.TokenResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,9 +29,11 @@ public class AuthApiController {
 
     @PostMapping("/login")
     public ApiResponse<TokenResponse> login(@RequestBody LoginRequest loginRequest,
+            HttpServletRequest request,
             HttpServletResponse response) {
-        log.info(">>> [Login] Attempting login for userId: {}", loginRequest.getUserId());
-        TokenResponse tokenResponse = authService.login(loginRequest);
+        String clientIp = getClientIp(request);
+        log.info(">>> [Login] Attempting login for userId: {} from IP: {}", loginRequest.getUserId(), clientIp);
+        TokenResponse tokenResponse = authService.login(loginRequest, clientIp);
         jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.getRefreshToken());
         return ApiResponse.success(tokenResponse);
     }
@@ -76,5 +79,19 @@ public class AuthApiController {
             return ApiResponse.success(userData);
         }
         throw new BusinessException(ErrorCode.INVALID_TOKEN);
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return ip;
     }
 }

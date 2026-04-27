@@ -28,14 +28,40 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final UserAuthorityRepository userAuthorityRepository;
     private final nuri.foundation.domain.auth.RefreshTokenRepository refreshTokenRepository;
+    private final nuri.foundation.service.login.LoginPolicyManageService loginPolicyManageService;
+    private final nuri.foundation.domain.login.LoginPolicyRepository loginPolicyRepository;
+    private final nuri.foundation.service.auth.OtpService otpService;
 
     @Override
     @Transactional
-    public TokenResponse login(LoginRequest request) {
+    public TokenResponse login(LoginRequest request, String clientIp) {
+        // 1. 로그인 정책 검증 (인증 전 수행)
+        loginPolicyManageService.validateLoginPolicy(request.getUserId(), clientIp);
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUserId(), request.getPassword()));
         
         String userId = authentication.getName();
+
+        // 2. OTP 검증 (정책에 활성화된 경우)
+        loginPolicyRepository.findById(userId).ifPresent(policy -> {
+            if ("Y".equals(policy.getOtpEnabledAt())) {
+                if (request.getOtpCode() == null) {
+                    log.warn(">>> [Login] OTP Required for userId: {}", userId);
+                    throw new BusinessException(ErrorCode.AUTH_ERROR, "OTP 번호가 필요합니다.");
+                }
+                
+                nuri.foundation.domain.user.entity.User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+                
+                if (!otpService.verifyCode(user.getOtpSecret(), request.getOtpCode())) {
+                    log.warn(">>> [Login] Invalid OTP for userId: {}", userId);
+                    throw new BusinessException(ErrorCode.AUTH_ERROR, "OTP 번호가 일치하지 않습니다.");
+                }
+                log.info(">>> [Login] OTP Verification Success for userId: {}", userId);
+            }
+        });
+
         String role = authentication.getAuthorities().stream()
                 .map(auth -> auth.getAuthority())
                 .findFirst()
