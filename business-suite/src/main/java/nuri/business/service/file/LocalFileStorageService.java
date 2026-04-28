@@ -72,7 +72,7 @@ public class LocalFileStorageService implements FileStorageService {
                 Files.copy(inputStream, destinationDir.resolve(savedFilename), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+            throw new BusinessException("File storage failed: " + e.getMessage(), ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
         return savedFilename;

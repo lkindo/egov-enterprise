@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Image from 'next/image';
@@ -241,7 +241,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       const data = {
         ...values,
         isNotice: values.isNotice as "Y" | "N",
-        isStopView: values.isStopView as "Y" | "N"
+        isStopView: values.isStopView as "Y" | "N",
+        noticeBeginDate: values.noticeBeginDate && values.noticeBeginDate.includes('-') 
+          ? values.noticeBeginDate.replace(/-/g, '') + '0000' 
+          : values.noticeBeginDate,
+        noticeEndDate: values.noticeEndDate && values.noticeEndDate.includes('-') 
+          ? values.noticeEndDate.replace(/-/g, '') + '2359' 
+          : values.noticeEndDate
       } as any;
       if (formFiles.length > 0) {
         const uploadRes = await fileAdminService.uploadFiles(formFiles);

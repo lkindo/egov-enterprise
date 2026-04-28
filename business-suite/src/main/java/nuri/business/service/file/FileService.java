@@ -57,9 +57,8 @@ public class FileService extends BaseAbstractService implements EgovFileService 
     @Transactional
     public String uploadFiles(List<MultipartFile> files) throws IOException {
         String atchFileId = "FILE_" + UUID.randomUUID().toString().substring(0, 12);
-        FileMaster master = FileMaster.builder().atchFileId(atchFileId).build();
-        master = required(fileMasterRepository.save(required(master, "master 는 null 일 수 없습니다")),
-                "fileMasterRepository.save() 결과는 null 일 수 없습니다");
+        FileMaster master = new FileMaster(atchFileId);
+        master = fileMasterRepository.save(master);
 
         int fileSn = 1;
         for (MultipartFile file : files) {
@@ -83,7 +82,7 @@ public class FileService extends BaseAbstractService implements EgovFileService 
                     .fileMg(file.getSize())
                     .build();
 
-            fileDetailRepository.save(required(detail, "detail 는 null 일 수 없습니다"));
+            fileDetailRepository.save(detail);
         }
 
         return atchFileId;

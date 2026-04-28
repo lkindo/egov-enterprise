@@ -53,6 +53,12 @@ export default function CreatePollPage() {
       ...formData,
       pollBeginDe: format(beginDate, 'yyyy-MM-dd'),
       pollEndDe: format(endDate, 'yyyy-MM-dd'),
+      pollItems: [
+        { pollIemNm: '매우 만족 (Highly Satisfied)' },
+        { pollIemNm: '만족 (Satisfied)' },
+        { pollIemNm: '보통 (Neutral)' },
+        { pollIemNm: '불만족 (Unsatisfied)' }
+      ]
     };
 
     try {
