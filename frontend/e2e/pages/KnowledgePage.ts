@@ -10,12 +10,12 @@ export class KnowledgePage {
     async gotoFAQ() {
         await this.page.goto('/admin/community/boards/master');
         // Wait for the board list to load
-        await expect(this.page.getByText(/지식.*관리|지식.*마스터/i)).toBeVisible();
+        await expect(this.page.getByText(/게시판.*마스터|마스터.*콘솔/i).first()).toBeVisible();
         
-        // Find the FAQ board (BBSMSTR_BBBBBBBBBBBB) if there are multiple, 
+        // Find the FAQ board (BBSMSTR_AAAAAAAAAAAA) if there are multiple, 
         // but assuming we are on the master list, we might need to click it.
         // For now, let's assume we can navigate directly to the FAQ insert page if we know the ID
-        await this.page.goto('/admin/community/boards/insertBoardArticle?bbsId=BBSMSTR_BBBBBBBBBBBB');
+        await this.page.goto('/admin/community/boards/insertBoardArticle?bbsId=BBSMSTR_AAAAAAAAAAAA');
     }
 
     async createFAQ(question: string, answer: string) {
@@ -25,12 +25,15 @@ export class KnowledgePage {
         await this.page.locator('input[name="nttSj"]').waitFor({ state: 'visible' });
         await this.page.locator('input[name="nttSj"]').fill(question);
         
-        // Wait for RichTextEditor (Tiptap)
-        const editor = this.page.locator('.tiptap[contenteditable="true"]');
+        // Wait for RichTextEditor (Tiptap) or fallback textarea
+        const editor = this.page.locator('.tiptap[contenteditable="true"], .toastui-editor-contents[contenteditable="true"], .ProseMirror, [contenteditable="true"], textarea').last();
         await editor.waitFor({ state: 'visible', timeout: 15000 });
         
-        await editor.focus();
-        await editor.fill(answer);
+        await editor.click();
+        await this.page.keyboard.type(answer, { delay: 10 });
+        
+        // Blur to trigger onChange if necessary
+        await this.page.locator('input[name="nttSj"]').click();
         
         await this.page.getByRole('button', { name: /Commit Knowledge|등록|저장/i }).click();
         

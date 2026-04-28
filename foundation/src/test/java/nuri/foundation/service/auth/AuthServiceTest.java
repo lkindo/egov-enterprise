@@ -69,7 +69,7 @@ class AuthServiceTest {
         when(jwtTokenProvider.createRefreshToken(eq("user"))).thenReturn("refresh_token");
 
         // When
-        TokenResponse response = authService.login(request);
+        TokenResponse response = authService.login(request, "127.0.0.1");
 
         // Then
         assertNotNull(response);
@@ -186,7 +186,7 @@ class AuthServiceTest {
         when(authenticationManager.authenticate(any())).thenReturn(auth1);
         when(jwtTokenProvider.createAccessToken(any(), any())).thenReturn("token1");
 
-        TokenResponse resp1 = authService.login(request1);
+        TokenResponse resp1 = authService.login(request1, "127.0.0.1");
         assertEquals("ROLE_ADMIN", resp1.getRole());
 
         // Case 2: No ROLE_ prefix
@@ -197,7 +197,7 @@ class AuthServiceTest {
         when(authenticationManager.authenticate(any())).thenReturn(auth2);
         when(jwtTokenProvider.createAccessToken(any(), any())).thenReturn("token2");
 
-        TokenResponse resp2 = authService.login(request2);
+        TokenResponse resp2 = authService.login(request2, "127.0.0.1");
         assertEquals("ROLE_USER", resp2.getRole());
     }
 

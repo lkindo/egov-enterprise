@@ -25,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.Collections;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -70,7 +71,7 @@ class AuthApiControllerTest {
                 .role("ROLE_USER")
                 .build();
  
-        when(authService.login(any())).thenReturn(tokenResponse);
+        when(authService.login(any(), anyString())).thenReturn(tokenResponse);
  
         // When & Then
         mockMvc.perform(post("/api/v1/auth/login")
@@ -86,7 +87,7 @@ class AuthApiControllerTest {
     void testLoginFail() throws Exception {
         // Given
         LoginRequest request = LoginRequest.builder().userId("user01").password("wrong-password").build();
-        when(authService.login(any())).thenThrow(new RuntimeException("인증 실패"));
+        when(authService.login(any(), anyString())).thenThrow(new RuntimeException("인증 실패"));
  
         // When & Then
         mockMvc.perform(post("/api/v1/auth/login")

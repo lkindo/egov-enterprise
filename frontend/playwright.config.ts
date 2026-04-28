@@ -59,6 +59,18 @@ export default defineConfig({
             dependencies: ['setup'],
         },
         {
+            name: 'tier-6-ops',
+            testMatch: /06-ops-governance\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
+            name: 'tier-7-productivity',
+            testMatch: /07-productivity-suite\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
             name: 'full-suite',
             testMatch: /.*\.spec\.ts/,
             use: { ...devices['Desktop Chrome'] },

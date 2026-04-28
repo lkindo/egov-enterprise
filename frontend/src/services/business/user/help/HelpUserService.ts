@@ -31,26 +31,53 @@ class HelpUserService extends UserService {
     super('/boards');
   }
 
-  /** FAQ 목록 조회 (전용 ID: BBSMSTR_BBBBBBBBBBBB) */
+  /** FAQ 목록 조회 (전용 ID: BBSMSTR_AAAAAAAAAAAA) */
   async getFaqs(params: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig): Promise<PageResponse<FAQ>> {
-    return this.get<PageResponse<FAQ>>('/BBSMSTR_BBBBBBBBBBBB', { 
+    const response = await this.get<PageResponse<any>>('/BBSMSTR_AAAAAAAAAAAA', { 
       ...config, 
       params: {
         ...params,
         searchWrd: params.keyword
       }
     });
+
+    // Map unified board fields to FAQ interface
+    if (response && response.list) {
+      response.list = response.list.map((item: any) => ({
+        faqId: item.nttId,
+        qestnSj: item.nttSj,
+        qestnCn: item.nttSj,
+        answerCn: item.nttCn,
+        inqireCo: item.rdcnt || 0,
+        lastUpdusrPnttm: item.lastUpdusrPnttm || item.frstRegistPnttm
+      }));
+    }
+    return response as PageResponse<FAQ>;
   }
 
   /** Q&A 목록 조회 (페이징) */
   async getQnas(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<QNA>> {
-    return this.get<PageResponse<QNA>>('/BBSMSTR_DDDDDDDDDDDD', {
+    const response = await this.get<PageResponse<any>>('/BBSMSTR_DDDDDDDDDDDD', {
       ...config,
       params: {
         ...params,
         searchWrd: params?.keyword || ''
       }
     });
+
+    // Map unified board fields to QNA interface
+    if (response && response.list) {
+      response.list = response.list.map((item: any) => ({
+        qaId: item.nttId,
+        qestnSj: item.nttSj,
+        qestnCn: item.nttCn,
+        answerCn: item.answerCn || item.replyCn || '',
+        wrterNm: item.ntcrNm || item.frstRegisterNm,
+        writngDe: item.frstRegistPnttm,
+        qnaProcessSttusCode: item.replyLc && item.replyLc > 0 ? '3' : '1' 
+      }));
+    }
+    return response as PageResponse<QNA>;
   }
 
   /** Q&A 등록 */

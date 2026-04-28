@@ -46,7 +46,7 @@ class AuthApiControllerTest {
     void login_success() throws Exception {
         // Given
         TokenResponse mockResponse = new TokenResponse("mock-access-token", "mock-refresh-token", "ROLE_USER");
-        when(authService.login(any(LoginRequest.class))).thenReturn(mockResponse);
+        when(authService.login(any(LoginRequest.class), anyString())).thenReturn(mockResponse);
 
         Map<String, String> request = Map.of(
                 "userId", "loginUser",
@@ -66,7 +66,7 @@ class AuthApiControllerTest {
     @DisplayName("로그인 - 실패 (잘못된 비밀번호)")
     void login_fail() throws Exception {
         // Given
-        when(authService.login(any(LoginRequest.class)))
+        when(authService.login(any(LoginRequest.class), anyString()))
                 .thenThrow(new nuri.foundation.core.exception.BusinessException(
                         nuri.foundation.core.exception.ErrorCode.LOGIN_FAILED));
 
