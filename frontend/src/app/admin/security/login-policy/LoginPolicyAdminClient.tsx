@@ -54,7 +54,7 @@ export default function LoginPolicyAdminClient() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const form = useAppForm(loginPolicySchema, {
+  const form = useAppForm<typeof loginPolicySchema>(loginPolicySchema, {
     defaultValues: {
       ipInfo: '',
       lmttAt: 'N',
@@ -95,7 +95,7 @@ export default function LoginPolicyAdminClient() {
   const onFormSubmit = async (values: LoginPolicyFormValues) => {
     if (!selectedPolicy) return;
     try {
-      await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.emplyrId, values);
+      await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.emplyrId, values as Partial<LoginPolicy>);
       toast.success('로그인 정책이 성공적으로 업데이트되었습니다.');
       setIsEditModalOpen(false);
       fetchData();
@@ -144,7 +144,7 @@ export default function LoginPolicyAdminClient() {
       accessor: (item) => (
         <HubStatusBadge 
           label={item.lmttAt === 'Y' ? '제한됨' : '정상'} 
-          variant={item.lmttAt === 'Y' ? 'destructive' : 'success'} 
+          variant={item.lmttAt === 'Y' ? 'error' : 'success'} 
         />
       )
     },

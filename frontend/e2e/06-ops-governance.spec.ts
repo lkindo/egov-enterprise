@@ -94,4 +94,12 @@ test.describe('Tier 6: Ops Governance', () => {
             expect(status).toBe(507);
         });
     });
+
+    test.afterAll(async () => {
+        const testDir = path.join(__dirname, 'test-assets');
+        if (fs.existsSync(testDir)) {
+            console.log('>>> Cleaning up E2E local test assets...');
+            fs.rmSync(testDir, { recursive: true, force: true });
+        }
+    });
 });

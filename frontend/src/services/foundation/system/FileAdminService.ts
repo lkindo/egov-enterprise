@@ -1,25 +1,25 @@
-import { UserService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface FileDetail {
- atchFileId: string;
- fileSn: number;
- fileStrePath: string;
- orignlFileNm: string;
- streFileNm: string;
- fileExtsn: string;
- fileSize: number;
- createdDate: string;
+  atchFileId: string;
+  fileSn: number;
+  fileStrePath: string;
+  orignlFileNm: string;
+  streFileNm: string;
+  fileExtsn: string;
+  fileSize: number;
+  createdDate: string;
 }
 
 /**
- * 파일 관리 서비스 (User/Admin Common)
+ * 파일 관리 서비스 (Admin)
  */
-class FileAdminService extends UserService {
- constructor() {
- super('/files');
- }
+class FileAdminService extends AdminService {
+  constructor() {
+    super('/files', 'system');
+  }
 
  /**
  * 파일 목록 조회

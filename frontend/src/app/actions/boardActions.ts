@@ -69,7 +69,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       });
     }
 
-    if (response !== undefined) { // Change from if (response) to handle null success data
+    if (response) {
       revalidatePath(`/admin/community/boards/selectBoardList`);
       const targetId = isEdit ? nttId : response as string;
       return {
@@ -98,7 +98,7 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
 
     const response: unknown = await client.delete(`/bbs/${bbsId}/${nttId}`, axiosConfig);
 
-    if (response !== undefined) {
+    if (response) {
       revalidatePath(`/admin/community/boards/selectBoardList`);
       return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
     } else {
@@ -119,7 +119,7 @@ export async function likeBoardArticle(bbsId: string, nttId: string): Promise<{ 
 
     const response = await client.patch<number>(`/boards/${bbsId}/posts/${nttId}/like`, null, axiosConfig);
 
-    if (response !== undefined) {
+    if (response) {
       return { success: true, count: response };
     } else {
       return { success: false };

@@ -54,7 +54,10 @@ async function cleanup() {
     });
     
     const users = usersRes.data.data?.list || usersRes.data.data?.content || [];
-    const testUsers = users.filter((u: any) => u.userId.startsWith('user_'));
+    const testUsers = users.filter((u: any) => 
+      u.userId.startsWith('user_') || 
+      u.userId.startsWith('e2e_')
+    );
     
     for (const user of testUsers) {
       process.stdout.write(`  - Deleting User: ${user.userId}... `);
@@ -70,7 +73,11 @@ async function cleanup() {
     });
     
     const boards = boardsRes.data.data?.list || boardsRes.data.data?.content || [];
-    const testBoards = boards.filter((b: any) => b.bbsNm.startsWith('E2E Test Board'));
+    const testBoards = boards.filter((b: any) => 
+      b.bbsNm.startsWith('E2E Test Board') || 
+      b.bbsNm.startsWith('E2E_Wizard_') ||
+      b.bbsNm.startsWith('E2E ')
+    );
     
     for (const board of testBoards) {
       process.stdout.write(`  - Deleting Board: ${board.bbsNm} (${board.bbsId})... `);
@@ -91,7 +98,8 @@ async function cleanup() {
       const polls = pollsRes.data.data?.list || pollsRes.data.data?.content || [];
       const testPolls = polls.filter((p: any) => 
         p.pollNm?.startsWith('E2E Poll') || 
-        p.pollNm?.startsWith('E2E Duplicate Test')
+        p.pollNm?.startsWith('E2E Duplicate Test') ||
+        p.pollNm?.startsWith('Debug')
       );
       for (const poll of testPolls) {
         process.stdout.write(`  - Deleting Poll: ${poll.pollNm} (${poll.pollId})... `);
@@ -111,7 +119,7 @@ async function cleanup() {
         params: { searchWrd: 'E2E', size: 100 } 
       });
       const popups = popupsRes.data.data?.list || popupsRes.data.data?.content || [];
-      const testPopups = popups.filter((p: any) => p.popupTitleName?.startsWith('E2E Popup'));
+      const testPopups = popups.filter((p: any) => p.popupTitleName?.startsWith('E2E Popup') || p.popupTitleName?.startsWith('Debug'));
       for (const popup of testPopups) {
         process.stdout.write(`  - Deleting Popup: ${popup.popupTitleName} (${popup.popupId})... `);
         await axios.delete(`${API_BASE}/admin/content/popups/${popup.popupId}`, { headers });
@@ -130,7 +138,7 @@ async function cleanup() {
         params: { searchWrd: 'E2E', size: 100 } 
       });
       const banners = bannersRes.data.data?.list || bannersRes.data.data?.content || [];
-      const testBanners = banners.filter((b: any) => b.bannerNm?.startsWith('E2E Banner'));
+      const testBanners = banners.filter((b: any) => b.bannerNm?.startsWith('E2E Banner') || b.bannerNm?.startsWith('Debug'));
       for (const banner of testBanners) {
         process.stdout.write(`  - Deleting Banner: ${banner.bannerNm} (${banner.bannerId})... `);
         await axios.delete(`${API_BASE}/admin/content/banners/${banner.bannerId}`, { headers });
@@ -170,7 +178,11 @@ async function cleanup() {
     console.log('>>> Cleaning up test menus...');
     const menusRes = await axios.get(`${API_BASE}/admin/system/menus/all`, { headers });
     const menus = menusRes.data.data || [];
-    const testMenus = menus.filter((m: any) => m.menuNm.startsWith('Root_') || m.menuNm.startsWith('Menu E2E'));
+    const testMenus = menus.filter((m: any) => 
+      m.menuNm.startsWith('Root_') || 
+      m.menuNm.startsWith('Menu E2E') ||
+      m.menuNm.startsWith('Menu_E2E')
+    );
     
     testMenus.sort((a: any, b: any) => b.menuNo - a.menuNo);
 

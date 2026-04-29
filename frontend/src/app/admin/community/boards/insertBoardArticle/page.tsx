@@ -32,7 +32,7 @@ export default function InsertBoardArticlePage() {
   const nttId = searchParams.get('nttId') || undefined;
   const parntsId = searchParams.get('parntsId') || undefined;
 
-  const [form, setForm] = useState<Partial<BoardPost & { password?: string; replyAt?: string; parntsId?: string; nttId?: string }>>({
+  const [form, setForm] = useState<Partial<Omit<BoardPost, 'nttId'> & { password?: string; replyAt?: string; parntsId?: string; nttId?: string | number }>>({
     bbsId: bbsId,
     nttId: nttId,
     nttSj: '',

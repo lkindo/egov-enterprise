@@ -14,6 +14,7 @@ export interface OnlinePollItemVO {
   pollId: string;
   pollIemId?: string;
   pollIemNm: string;
+  pollIemCo?: number; // 투표 수 추가
   frstRegisterId?: string;
   createdDate?: string;
 }
@@ -26,6 +27,7 @@ export interface OnlinePollPartcptnVO {
 
 export interface PollSearchParams {
   page?: number;
+  size?: number;
   searchCondition?: string;
   searchKeyword?: string;
 }

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -56,8 +56,8 @@ export function AuditTimelineClient() {
     const validLogs = logs?.filter(Boolean) || [];
     return {
        total: totalItems || 0,
-       security: validLogs.filter(l => (String(l.histCn || (l as any).methodNm || '')).toLowerCase().includes('login') || (String(l.histCn || '')).includes('로그인')).length + 125,
-       system: validLogs.filter(l => (String(l.histCn || (l as any).methodNm || '')).toLowerCase().includes('system') || (String(l.histCn || '')).includes('시스템')).length + 42,
+       security: validLogs.filter(l => (String(l.methodNm || '')).toLowerCase().includes('login') || (String(l.methodNm || '')).includes('로그인')).length + 125,
+       system: validLogs.filter(l => (String(l.methodNm || '')).toLowerCase().includes('system') || (String(l.methodNm || '')).includes('시스템')).length + 42,
        recent: 8
     };
   }, [logs, totalItems]);
@@ -136,11 +136,11 @@ export function AuditTimelineClient() {
                 ) : logs.length > 0 ? (
                    logs.map((log, idx) => (
                       <TimelineItem 
-                         key={log.histId} 
+                         key={log.requstId} 
                          log={log} 
                          index={idx} 
                          onInspect={handleInspect}
-                         isSelected={selectedLog?.histId === log.histId}
+                         isSelected={selectedLog?.requstId === log.requstId}
                       />
                    ))
                 ) : (
@@ -162,7 +162,7 @@ export function AuditTimelineClient() {
            <AnimatePresence mode="wait">
               {selectedLog ? (
                  <motion.div
-                    key={selectedLog.histId}
+                    key={selectedLog.requstId}
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -20 }}
@@ -177,7 +177,7 @@ export function AuditTimelineClient() {
                           </div>
                           <h2 className="text-5xl font-black text-white tracking-tighter leading-none mb-6">행위 상세 <br /> 인스펙터</h2>
                           <p className="text-[10px] font-mono font-black text-primary/80 tracking-widest uppercase">
-                             HIST_ID: {selectedLog.histId}
+                             REQUEST_ID: {selectedLog.requstId}
                           </p>
                        </div>
 

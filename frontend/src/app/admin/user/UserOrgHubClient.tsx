@@ -54,6 +54,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { PagePagination } from '@/components/common/PagePagination';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
@@ -78,6 +79,7 @@ export default function UserOrgHubClient({
   const initialDepts = use(deptsPromise);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const confirm = useConfirm();
   const [isPending, startTransition] = React.useTransition();
   const [activeTab, setActiveTab] = useState<UserOrgTab>(defaultTab);
   const [searchKeyword, setSearchKeyword] = useState('');

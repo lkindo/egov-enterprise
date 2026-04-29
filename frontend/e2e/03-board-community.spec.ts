@@ -45,7 +45,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 
                 console.log(`\n>>> Starting CRUD Flow for: ${template.name}`);
                 
-                const articleTitle = `General Article ${Date.now()}`;
+                const articleTitle = `E2E Article ${Date.now()}`;
                 console.log(`>>> Step 1: Navigating to ${template.name} (${template.id})`);
                 await page.goto(`/admin/community/boards/insertBoardArticle?bbsId=${template.id}`);
                 await expect(page.locator('h1, h2, .title').first()).toBeVisible({ timeout: 20000 });

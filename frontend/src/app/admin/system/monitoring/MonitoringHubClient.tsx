@@ -157,7 +157,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     if (!selectedItemId) return null;
     if (activeTab === 'COMMENTS') return comments.find(c => c.commentNo === selectedItemId);
     const idStr = String(selectedItemId);
-    if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.histId) === idStr);
+    if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.requstId) === idStr);
     if (activeTab === 'SYSTEM') return systemLogs.find(l => String(l.requstId) === idStr);
     if (activeTab === 'LOGIN') return loginLogs.find(l => String(l.logId) === idStr);
     return null;
@@ -170,16 +170,16 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
             "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === log.histId ? "bg-white/10 text-white" : "bg-primary/5 text-primary"
+            selectedItemId === log.requstId ? "bg-white/10 text-white" : "bg-primary/5 text-primary"
           )}>
             <ShieldAlert size={20} />
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-[8px] font-black tracking-widest uppercase opacity-40", selectedItemId === log.histId ? "text-white" : "text-primary")}>{log.sysNm}</span>
+                <span className={cn("text-[8px] font-black tracking-widest uppercase opacity-40", selectedItemId === log.requstId ? "text-white" : "text-primary")}>{log.sysNm}</span>
                 <span className="text-[8px] font-bold opacity-20 italic">{log.frstRegisterPnttm}</span>
             </div>
-            <h4 className={cn("text-sm font-black tracking-tighter truncate max-w-[280px]", selectedItemId === log.histId ? "text-white" : "text-foreground")}>{log.histCn}</h4>
+            <h4 className={cn("text-sm font-black tracking-tighter truncate max-w-[280px]", selectedItemId === log.requstId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
           </div>
         </div>
       )
@@ -419,8 +419,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                         columns={(activeTab === 'SECURITY' ? auditColumns : activeTab === 'SYSTEM' ? systemLogColumns : activeTab === 'LOGIN' ? loginLogColumns : commentColumns) as any}
                         data={(activeTab === 'SECURITY' ? auditLogs : activeTab === 'SYSTEM' ? systemLogs : activeTab === 'LOGIN' ? loginLogs : comments) as any}
                         loading={activeTab === 'SECURITY' ? isAuditLoading : activeTab === 'SYSTEM' ? isSystemLoading : activeTab === 'LOGIN' ? isLoginLoading : isCommentLoading}
-                        onRowClick={(item) => setSelectedItemId(activeTab === 'SECURITY' ? item.histId : activeTab === 'SYSTEM' ? item.requstId : activeTab === 'LOGIN' ? item.logId : item.commentNo)}
-                        keyField={activeTab === 'SECURITY' ? 'histId' : activeTab === 'SYSTEM' ? 'requstId' : activeTab === 'LOGIN' ? 'logId' : 'commentNo'}
+                        onRowClick={(item) => setSelectedItemId(activeTab === 'SECURITY' ? item.requstId : activeTab === 'SYSTEM' ? item.requstId : activeTab === 'LOGIN' ? item.logId : item.commentNo)}
+                        keyField={activeTab === 'SECURITY' ? 'requstId' : activeTab === 'SYSTEM' ? 'requstId' : activeTab === 'LOGIN' ? 'logId' : 'commentNo'}
                         isPremium={false}
                         className="bg-transparent border-none shadow-none"
                         pagination={{

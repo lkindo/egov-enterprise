@@ -47,6 +47,15 @@ class AuthServiceTest {
     @Mock
     private nuri.foundation.domain.auth.RefreshTokenRepository refreshTokenRepository;
 
+    @Mock
+    private nuri.foundation.service.login.LoginPolicyManageService loginPolicyManageService;
+
+    @Mock
+    private nuri.foundation.domain.login.LoginPolicyRepository loginPolicyRepository;
+
+    @Mock
+    private nuri.foundation.service.auth.OtpService otpService;
+
     @InjectMocks
     private AuthServiceImpl authService;
 

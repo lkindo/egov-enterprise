@@ -46,7 +46,7 @@ class OnlinePollServiceTest {
     void getPollList() {
         Pageable pageable = PageRequest.of(0, 10);
         OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
-        given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
+        given(pollManageRepository.findAllOrderByIdDesc(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList(null, pageable);
 
@@ -122,6 +122,16 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 성공")
     void vote() {
+        String today = java.time.LocalDate.now().toString();
+        OnlinePollManage entity = OnlinePollManage.builder()
+                .pollId("P1")
+                .pollDsuseYn("N")
+                .pollBeginDe(today)
+                .pollEndDe(today)
+                .build();
+        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
+        given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
+
         onlinePollService.vote("P1", "I1", "user1");
         verify(pollResultRepository, times(1)).save(any(OnlinePollResult.class));
     }
