@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { use, useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -102,7 +102,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                         <div className="h-4 w-px bg-white/20 mx-1" />
                         <span className="text-2xl font-black">{totalCount}건</span>
                     </div>
-                    <Link href="/admin/collaboration/address-book/insertAddressBook">
+                    <Link href="/admin/collaboration/address-book/insert-address-book">
                         <Button size="lg" className="h-16 px-8 gap-3 bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/20 rounded-xl font-black transition-all active:scale-95 shrink-0">
                             <Plus className="w-5 h-5" /> 신규 연락처
                         </Button>
@@ -166,7 +166,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                                                 {(pageNo - 1) * 10 + idx + 1}
                                             </TableCell>
                                             <TableCell className="px-8 py-8">
-                                                <Link href={`/admin/collaboration/address-book/selectAddressBookDetail/${item.adbkId}`} className="flex items-center gap-5 group/item">
+                                                <Link href={`/admin/collaboration/address-book/select-address-book-detail/${item.adbkId}`} className="flex items-center gap-5 group/item">
                                                     <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-primary font-black text-xl shadow-xl ring-4 ring-slate-50 transition-all group-hover/item:scale-110">
                                                         {item.adbkNm?.charAt(0)}
                                                     </div>

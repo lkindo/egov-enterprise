@@ -294,7 +294,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                 <Send className="w-5 h-5 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform" /> Send Note
             </Button>
             <Button 
-                onClick={() => router.push('/admin/collaboration/address-book/insertAddressBook')}
+                onClick={() => router.push('/admin/collaboration/address-book/insert-address-book')}
                 className="h-16 px-10 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
             >
                 <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> New Identity

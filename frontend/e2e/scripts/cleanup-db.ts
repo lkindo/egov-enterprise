@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081/api/v1';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 const ADMIN_ID = 'webmaster';
 const ADMIN_PW = '1';
 
@@ -176,20 +176,43 @@ async function cleanup() {
 
     // 8. Cleanup Menus (Prefix: Root_ or Menu E2E)
     console.log('>>> Cleaning up test menus...');
-    const menusRes = await axios.get(`${API_BASE}/admin/system/menus/all`, { headers });
-    const menus = menusRes.data.data || [];
-    const testMenus = menus.filter((m: any) => 
-      m.menuNm.startsWith('Root_') || 
-      m.menuNm.startsWith('Menu E2E') ||
-      m.menuNm.startsWith('Menu_E2E')
-    );
-    
-    testMenus.sort((a: any, b: any) => b.menuNo - a.menuNo);
+    try {
+      const menusRes = await axios.get(`${API_BASE}/admin/system/menus/all`, { headers });
+      const menus = menusRes.data.data || [];
+      const testMenus = menus.filter((m: any) => 
+        m.menuNm.startsWith('Root_') || 
+        m.menuNm.startsWith('Menu E2E') ||
+        m.menuNm.startsWith('Menu_E2E')
+      );
+      
+      testMenus.sort((a: any, b: any) => b.menuNo - a.menuNo);
 
-    for (const menu of testMenus) {
-      process.stdout.write(`  - Deleting Menu: ${menu.menuNm} (${menu.menuNo})... `);
-      await axios.delete(`${API_BASE}/admin/system/menus/${menu.menuNo}`, { headers });
-      console.log('DONE');
+      for (const menu of testMenus) {
+        process.stdout.write(`  - Deleting Menu: ${menu.menuNm} (${menu.menuNo})... `);
+        await axios.delete(`${API_BASE}/admin/system/menus/${menu.menuNo}`, { headers });
+        console.log('DONE');
+      }
+    } catch (e: any) {
+      console.warn(`  => Menu cleanup skipped: ${e.response?.data?.message || e.message}`);
+    }
+
+    // 9. Cleanup Address Books (Prefix: Identity_)
+    console.log('>>> Cleaning up test address books...');
+    try {
+      const addressRes = await axios.get(`${API_BASE}/address-books`, { 
+        headers,
+        params: { searchWrd: 'Identity_', size: 100 } 
+      });
+      const addresses = addressRes.data.data?.list || addressRes.data.data?.content || [];
+      const testAddresses = addresses.filter((a: any) => a.adbkNm?.startsWith('Identity_'));
+      for (const address of testAddresses) {
+        process.stdout.write(`  - Deleting Address Book Entry: ${address.adbkNm} (${address.adbkId})... `);
+        await axios.delete(`${API_BASE}/address-books/${address.adbkId}`, { headers });
+        console.log('DONE');
+      }
+      console.log(`  => ${testAddresses.length} address book entry(ies) cleaned.`);
+    } catch (e: any) {
+      console.warn(`  => Address book cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
 
     console.log('>>> [DB Cleanup] All test data removed successfully!\n');
@@ -199,6 +222,7 @@ async function cleanup() {
     if (error.response?.data) {
         console.error('>>> [DEBUG] Response data:', JSON.stringify(error.response.data));
     }
+    console.error(error.stack);
   }
 }
 
@@ -206,7 +230,12 @@ export default async function globalTeardown() {
   await cleanup();
 }
 
-if (require.main === module) {
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+
+if (isMain) {
   cleanup()
     .then(() => {
       console.log('>>> [DB Cleanup] Script completed successfully.');

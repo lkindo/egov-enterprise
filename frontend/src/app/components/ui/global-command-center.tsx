@@ -117,7 +117,7 @@ export function GlobalCommandCenter() {
     { id: 'act-workflow', name: '프로세스 캔버스', url: '/admin/workflow', icon: <GitBranch size={16} />, category: '메뉴', description: '비즈니스 워크플로우 설계 및 모니터링' },
     { id: 'act-form', name: '스마트 서식 엔진', url: '/admin/sanctn/forms', icon: <FileText size={16} />, category: '메뉴', description: '행정 서식 설계 및 문서 자동화 관리' },
     { id: 'act-create-post', name: '새 게시글 작성', url: '/admin/community/boards/insertBoardArticle', icon: <FileText size={16} />, category: '액션', description: '공지사항 및 갤러리 게시글 신규 등록' },
-    { id: 'sys-1', name: '마이페이지', url: '/mypage', icon: <User size={16} />, category: '시스템' },
+    { id: 'sys-1', name: '마이페이지', url: '/admin/workspace/my-page', icon: <User size={16} />, category: '시스템' },
     { id: 'sys-settings', name: '환경 설정', url: '/admin/system/menus', icon: <Settings size={16} />, category: '시스템' },
     { id: 'sys-logout', name: '로그아웃', action: logout, icon: <LogOut size={16} />, category: '시스템' },
   ];

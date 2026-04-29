@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { User, Phone, Mail, MapPin, ArrowLeft, Send, Home, ChevronRight, Info } from "lucide-react";
 import Link from 'next/link';
 
-const InsertAddressBookPage = () => {
+const AddressBookDetailPage = () => {
     const router = useRouter();
     const [formData, setFormData] = useState({
         adbkNm: '',
@@ -31,7 +31,7 @@ const InsertAddressBookPage = () => {
         try {
             await addressbookUserService.createAddressBook(formData);
             alert('등록되었습니다.');
-            router.push('/admin/collaboration/address-book/selectAddressBookList');
+            router.push('/admin/collaboration/address-book/select-address-book-list');
         } catch (error: any) {
             alert(error.response?.data?.message || '등록에 실패했습니다.');
         } finally {
@@ -47,7 +47,7 @@ const InsertAddressBookPage = () => {
                     <Home className="w-4 h-4" /> 홈
                 </Link>
                 <ChevronRight className="w-4 h-4" />
-                <Link href="/admin/collaboration/address-book/selectAddressBookList" className="hover:text-foreground transition-colors font-medium">주소록 관리</Link>
+                <Link href="/admin/collaboration/address-book/select-address-book-list" className="hover:text-foreground transition-colors font-medium">주소록 관리</Link>
                 <ChevronRight className="w-4 h-4" />
                 <span className="text-foreground font-black">신규 등록</span>
             </div>
@@ -135,7 +135,7 @@ const InsertAddressBookPage = () => {
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col md:flex-row justify-center gap-6 py-12 border-t bg-slate-50/30 rounded-b-[2.5rem] mt-10">
-                        <Link href="/admin/collaboration/address-book/selectAddressBookList">
+                        <Link href="/admin/collaboration/address-book/select-address-book-list">
                             <Button type="button" variant="ghost" className="h-16 px-10 gap-2 font-black text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-xl transition-all rounded-xl border border-transparent hover:border-rose-50">
                                 <ArrowLeft className="w-5 h-5" /> 등록 취소
                             </Button>
@@ -156,4 +156,4 @@ const InsertAddressBookPage = () => {
     );
 };
 
-export default InsertAddressBookPage;
+export default AddressBookDetailPage;

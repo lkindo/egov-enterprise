@@ -252,7 +252,7 @@ export function Header({
                       <p className="text-sm text-muted-foreground truncate">{user.id}</p>
                     </div>
                     <div className="space-y-0.5">
-                      <Link href="/admin/workspace/mypage" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
+                      <Link href="/admin/workspace/my-page" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
                         <span className="flex items-center gap-2"><User size={14} /> 개인정보수정</span>
                       </Link>
                       <Link href="/admin/system/menus" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>

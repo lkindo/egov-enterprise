@@ -127,7 +127,9 @@ public class ApiSecurityConfig {
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf
                                                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                                                .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/uat/uia/actionLogin.do")))
+                                                .ignoringRequestMatchers(
+                                                AntPathRequestMatcher.antMatcher("/uat/uia/actionLogin.do"),
+                                                AntPathRequestMatcher.antMatcher("/ws/**")))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(
                                                                 AntPathRequestMatcher.antMatcher("/css/**"),

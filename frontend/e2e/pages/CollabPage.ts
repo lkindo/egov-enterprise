@@ -60,7 +60,7 @@ export class CollabPage {
     async createContact(name: string, email: string, tel: string = '010-0000-0000') {
         console.log(`>>> Creating Contact: ${name}`);
         await this.page.getByRole('button', { name: /New Identity/i }).click();
-        await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/insertAddressBook/);
+        await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/insert-address-book/);
         
         const nameInput = this.page.getByTestId('identity-name-input');
         const emailInput = this.page.getByTestId('identity-email-input');
