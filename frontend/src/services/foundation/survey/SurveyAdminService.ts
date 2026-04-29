@@ -14,7 +14,7 @@ class SurveyAdminService extends ApiService {
   /**
    * 설문 목록 조회
    */
-  async getSurveys(params: { page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<Survey>> {
+  async getSurveys(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<Survey>> {
     return this.get<PageResponse<Survey>>('', { ...config, params });
   }
 

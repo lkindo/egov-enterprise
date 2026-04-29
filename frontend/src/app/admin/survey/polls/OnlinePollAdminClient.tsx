@@ -265,6 +265,7 @@ export default function OnlinePollAdminClient({
                                 placeholder="설문 필터링..."
                                 value={searchKeyword}
                                 onChange={(e) => setSearchKeyword(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleRefresh()}
                                 className="h-14 pl-12 pr-6 w-full md:w-[320px] bg-muted/30 border-none rounded-xl text-[10px] font-black tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
                             />
                         </div>

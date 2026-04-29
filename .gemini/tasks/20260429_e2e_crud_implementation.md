@@ -1,12 +1,12 @@
 # Task Record: E2E Stabilization - Collaboration & Operations CRUD (2026-04-29)
 
 ## Status
-- [ ] Implement Delete Note in Collaboration Hub
-- [ ] Implement Event Creation Modal in Event Ops Center
-- [ ] Implement Delete Event in Event Ops Center
-- [ ] Update E2E Page Objects (CollabPage, OpsDetailPage)
-- [ ] Add E2E tests for new CRUD operations
-- [ ] Check Tier-1 User Portal coverage gaps
+- [x] Implement Delete Note in Collaboration Hub
+- [x] Implement Event Creation Modal in Event Ops Center
+- [x] Implement Delete Event in Event Ops Center
+- [x] Update E2E Page Objects (CollabPage, OpsDetailPage)
+- [x] Add E2E tests for new CRUD operations
+- [x] Check Tier-1 User Portal coverage gaps
 
 ## Plan
 1. **Frontend Implementation**:

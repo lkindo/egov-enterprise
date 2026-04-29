@@ -60,7 +60,7 @@ export class CollabPage {
     async createContact(name: string, email: string, tel: string = '010-0000-0000') {
         console.log(`>>> Creating Contact: ${name}`);
         await this.page.getByRole('button', { name: /New Identity/i }).click();
-        await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/new/);
+        await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/insertAddressBook/);
         
         const nameInput = this.page.getByTestId('identity-name-input');
         const emailInput = this.page.getByTestId('identity-email-input');
@@ -68,20 +68,14 @@ export class CollabPage {
         await expect(nameInput).toBeVisible();
         await this.page.waitForTimeout(1000);
         
-        await nameInput.evaluate((el: any, val) => {
-            el.value = val;
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-        }, name);
+        await nameInput.click();
+        await nameInput.fill(name);
         
-        await emailInput.evaluate((el: any, val) => {
-            el.value = val;
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-        }, email);
+        await emailInput.click();
+        await emailInput.fill(email);
         
-        await telInput.evaluate((el: any, val) => {
-            el.value = val;
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-        }, tel);
+        await telInput.click();
+        await telInput.fill(tel);
         
         await this.page.getByTestId('commit-identity-button').click();
         await expect(this.page.getByText(/성공|등록되었습니다/i)).toBeVisible({ timeout: 20000 });

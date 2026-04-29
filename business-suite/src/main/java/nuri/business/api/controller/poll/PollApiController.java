@@ -30,9 +30,9 @@ public class PollApiController {
     @Operation(summary = "설문 목록 조회", description = "온라인 설문 목록을 페이징하여 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<OnlinePollManageDto>>> getPolls(
-            @RequestParam(required = false) String searchWrd,
+            @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<OnlinePollManageDto> page = pollService.getPollList(searchWrd, pageable);
+        Page<OnlinePollManageDto> page = pollService.getPollList(keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 

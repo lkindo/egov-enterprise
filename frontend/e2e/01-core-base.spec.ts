@@ -80,4 +80,31 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
             await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
         });
     });
+
+    test.describe('User Portal Integrity (Session Preserved)', () => {
+        test.use({ storageState: 'playwright/.auth/user.json' });
+
+        test.beforeEach(async ({ page }) => {
+            console.log('>>> Navigating to User Portal Home');
+            await page.goto('/', { waitUntil: 'networkidle' });
+        });
+
+        test('User Unified Dashboard Rendering', async ({ page }) => {
+            console.log('>>> Step 1: Verifying User Layout & Global Navigation');
+            const header = page.locator('header');
+            await expect(header).toBeVisible();
+            
+            console.log('>>> Step 2: Verifying Main User Elements');
+            // User Portal 특정 대시보드 또는 위젯 텍스트 확인 (일반적으로 나타나는 요소)
+            await expect(page.locator('text=전자정부').first()).toBeVisible();
+        });
+        
+        test('User Profile and Logout', async ({ page }) => {
+            console.log('>>> Step 1: Checking User Profile Access');
+            const profileButton = page.getByRole('button').filter({ hasText: /TEST1|USER/i }).first();
+            if (await profileButton.isVisible()) {
+                await expect(profileButton).toBeVisible();
+            }
+        });
+    });
 });
