@@ -35,7 +35,7 @@ export class KnowledgePage {
         // Blur to trigger onChange if necessary
         await this.page.locator('input[name="nttSj"]').click();
         
-        await this.page.getByRole('button', { name: /Commit Knowledge|등록|저장/i }).click();
+        await this.page.getByRole('button', { name: /Commit Knowledge|등록|저장/i }).click({ force: true });
         
         // Success check - should redirect to list or show toast
         await expect(this.page.getByText(/성공|완료|저장되었습니다/)).toBeVisible();

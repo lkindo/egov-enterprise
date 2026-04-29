@@ -29,9 +29,9 @@ public class OnlinePollService implements EgovOnlinePollService {
         Objects.requireNonNull(pageable);
         Page<OnlinePollManage> entities;
         if (keyword == null || keyword.isEmpty()) {
-            entities = pollManageRepository.findAll(pageable);
+            entities = pollManageRepository.findAllOrderByIdDesc(pageable);
         } else {
-            entities = pollManageRepository.findByPollNmContaining(keyword, pageable);
+            entities = pollManageRepository.findByPollNmContainingIgnoreCaseOrderByPollIdDesc(keyword, pageable);
         }
         
         return entities.map(entity -> {
@@ -67,7 +67,7 @@ public class OnlinePollService implements EgovOnlinePollService {
             int index = 0;
             for (OnlinePollItemDto itemDto : dto.getPollItems()) {
                 pollItems.add(OnlinePollItem.builder()
-                        .pollIemId("POLIEM_" + timestamp + "_" + (index++))
+                        .pollIemId("PI" + timestamp + (index++))
                         .pollId(pollId)
                         .pollIemNm(itemDto.getPollIemNm())
                         .build());
@@ -103,7 +103,7 @@ public class OnlinePollService implements EgovOnlinePollService {
             int index = 0;
             for (OnlinePollItemDto itemDto : dto.getPollItems()) {
                 entity.getPollItems().add(OnlinePollItem.builder()
-                        .pollIemId("POLIEM_" + timestamp + "_" + (index++))
+                        .pollIemId("PI" + timestamp + (index++))
                         .pollId(entity.getPollId())
                         .pollIemNm(itemDto.getPollIemNm())
                         .build());
@@ -131,7 +131,7 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void insertPollItem(OnlinePollItemDto dto) {
-        String id = "POLIEM_" + System.currentTimeMillis();
+        String id = "PI" + System.currentTimeMillis();
         pollItemRepository.save(Objects.requireNonNull(OnlinePollItem.builder()
                 .pollIemId(id)
                 .pollId(dto.getPollId())

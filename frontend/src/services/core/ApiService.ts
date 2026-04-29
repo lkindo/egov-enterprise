@@ -32,6 +32,11 @@ export abstract class ApiService {
         params.recordCountPerPage = params.size;
         // Do NOT delete params.size to support Spring Data Pageable
       }
+      // pageSize -> recordCountPerPage & size 매핑 (Common DTO support)
+      if (params.pageSize !== undefined) {
+        if (params.recordCountPerPage === undefined) params.recordCountPerPage = params.pageSize;
+        if (params.size === undefined) params.size = params.pageSize;
+      }
       // page 번호 -> pageIndex (legacy support)
       if (params['page 번호'] !== undefined && params.pageIndex === undefined) {
         params.pageIndex = Number(params['page 번호']) || 1;

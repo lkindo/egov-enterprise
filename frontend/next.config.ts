@@ -57,6 +57,13 @@ const nextConfig = {
       },
     ]
   },
+  images: {
+    localPatterns: [
+      {
+        pathname: '/api/**',
+      },
+    ],
+  },
 };
 
 // Bundle Analyzer 적용 (ANALYZE=true 환경변수 설정 시 활성화)

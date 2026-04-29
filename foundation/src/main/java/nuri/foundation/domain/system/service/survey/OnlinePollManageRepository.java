@@ -10,5 +10,8 @@ import java.util.List;
 public interface OnlinePollManageRepository extends JpaRepository<OnlinePollManage, String> {
     List<OnlinePollManage> findByPollDsuseYnAndPollAutoDsuseYn(String dsuseYn, String autoDsuseYn);
 
-    Page<OnlinePollManage> findByPollNmContaining(String keyword, Pageable pageable);
+    Page<OnlinePollManage> findByPollNmContainingIgnoreCaseOrderByPollIdDesc(String keyword, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM OnlinePollManage p ORDER BY p.pollId DESC")
+    Page<OnlinePollManage> findAllOrderByIdDesc(Pageable pageable);
 }

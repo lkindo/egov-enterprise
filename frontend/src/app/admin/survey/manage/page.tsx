@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,6 +25,7 @@ export default function PollManagePage() {
   const router = useRouter();
   const [params, setParams] = useState<PollSearchParams>({
     page: 1,
+    pageSize: 100,
     searchKeyword: '',
   });
 
@@ -33,7 +34,7 @@ export default function PollManagePage() {
     queryFn: () => getPollList(params),
   });
 
-  const polls: OnlinePollManageVO[] = data?.list || [];
+  const polls: OnlinePollManageVO[] = data?.content || data?.list || [];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,9 +143,9 @@ export default function PollManagePage() {
       {data && (
         <div className="flex justify-center pt-10 pb-20">
           <PagePagination
-            total={data.total}
-            page={data.page}
-            size={data.size}
+            total={data.totalElements || data.total || 0}
+            page={(data.number !== undefined ? data.number + 1 : data.page) || 1}
+            size={data.size || 0}
             onPageChange={(page) => setParams(prev => ({ ...prev, page }))}
           />
         </div>

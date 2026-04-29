@@ -123,8 +123,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         log.error(">>> Internal Server Error: {}", e.getMessage(), e);
+        String debugMessage = "예기치 않은 서버 오류: " + e.getClass().getSimpleName() + " - " + e.getMessage();
         return new ResponseEntity<>(
-                ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, "예기치 않은 서버 오류가 발생했습니다."),
+                ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR, debugMessage),
                 HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
@@ -54,6 +54,9 @@ export function StandardModal({
         onClick={onClose}
       />
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         className={cn(
           "bg-card border border-border rounded-xl shadow-xl w-full flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 overflow-hidden relative z-50",
           maxWidthClasses[maxWidth]

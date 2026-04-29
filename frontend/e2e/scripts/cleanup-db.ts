@@ -81,7 +81,92 @@ async function cleanup() {
       console.log('DONE');
     }
 
-    // 4. Cleanup Menus (Prefix: Root_ or Menu E2E)
+    // 4. Cleanup Polls (Prefix: E2E Poll, E2E Duplicate Test)
+    console.log('>>> Cleaning up test polls (surveys)...');
+    try {
+      const pollsRes = await axios.get(`${API_BASE}/polls`, { 
+        headers,
+        params: { searchWrd: 'E2E', size: 100 } 
+      });
+      const polls = pollsRes.data.data?.list || pollsRes.data.data?.content || [];
+      const testPolls = polls.filter((p: any) => 
+        p.pollNm?.startsWith('E2E Poll') || 
+        p.pollNm?.startsWith('E2E Duplicate Test')
+      );
+      for (const poll of testPolls) {
+        process.stdout.write(`  - Deleting Poll: ${poll.pollNm} (${poll.pollId})... `);
+        await axios.delete(`${API_BASE}/polls/${poll.pollId}`, { headers });
+        console.log('DONE');
+      }
+      console.log(`  => ${testPolls.length} poll(s) cleaned.`);
+    } catch (e: any) {
+      console.warn(`  => Poll cleanup skipped: ${e.response?.data?.message || e.message}`);
+    }
+
+    // 5. Cleanup Popups (Prefix: E2E Popup)
+    console.log('>>> Cleaning up test popups...');
+    try {
+      const popupsRes = await axios.get(`${API_BASE}/admin/content/popups`, { 
+        headers,
+        params: { searchWrd: 'E2E', size: 100 } 
+      });
+      const popups = popupsRes.data.data?.list || popupsRes.data.data?.content || [];
+      const testPopups = popups.filter((p: any) => p.popupTitleName?.startsWith('E2E Popup'));
+      for (const popup of testPopups) {
+        process.stdout.write(`  - Deleting Popup: ${popup.popupTitleName} (${popup.popupId})... `);
+        await axios.delete(`${API_BASE}/admin/content/popups/${popup.popupId}`, { headers });
+        console.log('DONE');
+      }
+      console.log(`  => ${testPopups.length} popup(s) cleaned.`);
+    } catch (e: any) {
+      console.warn(`  => Popup cleanup skipped: ${e.response?.data?.message || e.message}`);
+    }
+
+    // 6. Cleanup Banners (Prefix: E2E Banner)
+    console.log('>>> Cleaning up test banners...');
+    try {
+      const bannersRes = await axios.get(`${API_BASE}/admin/content/banners`, { 
+        headers,
+        params: { searchWrd: 'E2E', size: 100 } 
+      });
+      const banners = bannersRes.data.data?.list || bannersRes.data.data?.content || [];
+      const testBanners = banners.filter((b: any) => b.bannerNm?.startsWith('E2E Banner'));
+      for (const banner of testBanners) {
+        process.stdout.write(`  - Deleting Banner: ${banner.bannerNm} (${banner.bannerId})... `);
+        await axios.delete(`${API_BASE}/admin/content/banners/${banner.bannerId}`, { headers });
+        console.log('DONE');
+      }
+      console.log(`  => ${testBanners.length} banner(s) cleaned.`);
+    } catch (e: any) {
+      console.warn(`  => Banner cleanup skipped: ${e.response?.data?.message || e.message}`);
+    }
+
+    // 7. Cleanup Board Posts (Prefix: E2E Security FAQ, E2E ...)
+    console.log('>>> Cleaning up E2E board posts...');
+    const targetBbsIds = ['BBSMSTR_AAAAAAAAAAAA', 'BBSMSTR_DDDDDDDDDDDD', 'BBSMSTR_EEEEEEEEEEEE'];
+    for (const bbsId of targetBbsIds) {
+      try {
+        const postsRes = await axios.get(`${API_BASE}/boards/${bbsId}`, { 
+          headers,
+          params: { searchCnd: '0', searchWrd: 'E2E', size: 100 }
+        });
+        const posts = postsRes.data.data?.list || postsRes.data.data?.content || [];
+        const testPosts = posts.filter((p: any) => 
+          p.nttSj?.startsWith('E2E') || p.title?.startsWith('E2E')
+        );
+        for (const post of testPosts) {
+          const postId = post.nttId || post.id;
+          process.stdout.write(`  - Deleting Post: ${post.nttSj || post.title} (${postId})... `);
+          await axios.delete(`${API_BASE}/boards/${bbsId}/posts/${postId}`, { headers });
+          console.log('DONE');
+        }
+        if (testPosts.length > 0) console.log(`  => ${testPosts.length} post(s) cleaned from ${bbsId}.`);
+      } catch (e: any) {
+        console.warn(`  => Board ${bbsId} cleanup skipped: ${e.response?.data?.message || e.message}`);
+      }
+    }
+
+    // 8. Cleanup Menus (Prefix: Root_ or Menu E2E)
     console.log('>>> Cleaning up test menus...');
     const menusRes = await axios.get(`${API_BASE}/admin/system/menus/all`, { headers });
     const menus = menusRes.data.data || [];
