@@ -86,10 +86,11 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             const revokeBtn = page.locator('button:has-text("REVOKE_ACCESS")').first();
             await expect(revokeBtn).toBeVisible({ timeout: 15000 });
 
-            // CRITICAL: handleDeleteUser calls native window.confirm (not ConfirmProvider)
-            // Playwright auto-dismisses dialogs → must register accept handler before clicking
-            page.once('dialog', dialog => dialog.accept());
+            // CRITICAL: handleDeleteUser calls custom useConfirm modal (REVOKE_IDENTITY button)
             await revokeBtn.click();
+            const confirmBtn = page.locator('button:has-text("REVOKE_IDENTITY")').first();
+            await expect(confirmBtn).toBeVisible({ timeout: 5000 });
+            await confirmBtn.click();
 
             // Deletion success toast (text: '아이덴티티가 성공적으로 말소되었습니다.')
             const deleteSuccessAlert = page.getByRole('alert').filter({ hasText: '말소' });
@@ -140,6 +141,68 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             // The active NavButton gets class "bg-slate-900"
             await expect(absenceTab).toHaveClass(/bg-slate-900/, { timeout: 15000 });
             console.log('>>> Section_03 (ABSENCES): PASS');
+        });
+    });
+
+    test.describe('Security & Authority Management', () => {
+        const suffix = Math.random().toString(36).substring(7);
+        const authCode = `ROLE_E2E_${suffix.toUpperCase()}`;
+        const groupId = `GROUP_E2E_${suffix.toUpperCase()}`;
+
+        test('Authority/Group/Role Comprehensive CRUD', async ({ securityAdminPage }) => {
+            console.log('\n>>> Starting Security & Authority CRUD Flow');
+
+            // 1. Authority Management
+            await securityAdminPage.gotoAuthorities();
+            await securityAdminPage.createAuthority(authCode, `E2E Auth ${suffix}`);
+
+            // 2. Group Management
+            await securityAdminPage.gotoGroups();
+            await securityAdminPage.createGroup(groupId, `E2E Group ${suffix}`);
+
+            // 3. Role Management
+            await securityAdminPage.gotoRoles();
+            await securityAdminPage.createRole(`URL_E2E_${suffix.toUpperCase()}`, `E2E Role ${suffix}`);
+
+            console.log('>>> Security & Authority CRUD Completed');
+        });
+    });
+
+    test.describe('Advanced Operations & Analytics', () => {
+        test('Collaboration Hub: Full Note Lifecycle', async ({ collabPage }) => {
+            const subject = `E2E Note ${Math.random().toString(36).substring(7)}`;
+            await collabPage.goto();
+            
+            // 1. Send Note
+            await collabPage.sendNote('webmaster', subject, 'This is an automated E2E test note payload.');
+            
+            // 2. Verify and Delete
+            await collabPage.deleteNote(subject);
+        });
+
+        test('Intelligence Dashboard: Data Visualization', async ({ statsPage }) => {
+            await statsPage.goto();
+            await statsPage.verifyChartsVisible();
+            await statsPage.refresh();
+        });
+
+        test('Event Operations: Full Event Lifecycle', async ({ opsDetailPage }) => {
+            const eventName = `E2E Event ${Math.random().toString(36).substring(7)}`;
+            await opsDetailPage.goto();
+            
+            // 1. Create Event
+            await opsDetailPage.createEvent({
+                name: eventName,
+                desc: 'Automated E2E Test Event Description',
+                capacity: 100,
+                startDate: '2026-05-01',
+                endDate: '2026-05-03',
+                recruitDate: '2026-04-29',
+                recruitEndDate: '2026-04-30'
+            });
+            
+            // 2. Search and Delete
+            await opsDetailPage.deleteEvent(eventName);
         });
     });
 });

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -78,6 +78,30 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
   const scraps = (scrapData as any)?.list || [];
 
   const isLoading = notesLoading || addressLoading || scrapsLoading;
+  
+  // --- Mutations ---
+  const deleteNoteMutation = useMutation({
+    mutationFn: (noteId: string) => noteService.deleteNote(noteId, { type: 'RECV' }), // Assuming RECV for now
+    onSuccess: () => {
+      toast('쪽지가 성공적으로 삭제되었습니다.', 'success');
+      queryClient.invalidateQueries({ queryKey: ['collab-notes'] });
+      setSelectedItemId(null);
+    },
+    onError: () => {
+      toast('쪽지 삭제에 실패했습니다.', 'error');
+    }
+  });
+
+  const handleDelete = () => {
+    if (!selectedItemId) return;
+    if (activeTab === 'MESSAGES') {
+      if (confirm('정말 이 쪽지를 삭제하시겠습니까?')) {
+        deleteNoteMutation.mutate(selectedItemId);
+      }
+    } else {
+        toast('현재 탭의 삭제 기능은 준비 중입니다.', 'info');
+    }
+  };
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
@@ -382,8 +406,13 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                     <Button className="flex-1 h-16 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase shadow-2xl hover:scale-[1.02] active:scale-95 transition-all gap-3">
                         <ArrowUpRight size={18} /> Execute Action
                     </Button>
-                    <Button variant="outline" className="h-16 w-16 rounded-xl border-2 border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-500/20 hover:bg-rose-50 transition-all shadow-xl">
-                        <Trash2 size={24} />
+                    <Button 
+                        variant="outline" 
+                        onClick={handleDelete}
+                        disabled={deleteNoteMutation.isPending}
+                        className="h-16 w-16 rounded-xl border-2 border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-500/20 hover:bg-rose-50 transition-all shadow-xl"
+                    >
+                        {deleteNoteMutation.isPending ? <Loader2 className="animate-spin" /> : <Trash2 size={24} />}
                     </Button>
                   </div>
                 </div>

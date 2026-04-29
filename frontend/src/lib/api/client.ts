@@ -23,7 +23,7 @@ const axiosInstance = axios.create({
   withCredentials: true,
   xsrfCookieName: 'XSRF-TOKEN',
   xsrfHeaderName: 'X-XSRF-TOKEN',
-  timeout: 30000,
+  timeout: 60000,
 });
 
 // Request interceptor: Access Token 첨부

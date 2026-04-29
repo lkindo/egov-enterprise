@@ -73,8 +73,8 @@ class AddressbookUserService extends UserService {
   /**
    * 사용자 검색 (주소록 대상자 검색)
    */
-  async searchUsers(searchWrd: string, config?: AxiosRequestConfig): Promise<NameCard[]> {
-    return this.get<NameCard[]>('/search-users', { ...config, params: { searchWrd } });
+  async searchUsers(searchWrd: string, config?: AxiosRequestConfig): Promise<PageResponse<NameCard>> {
+    return this.get<PageResponse<NameCard>>('/search-users', { ...config, params: { searchWrd } });
   }
 }
 

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { Download } from 'lucide-react';
@@ -48,7 +48,7 @@ export function DataExportExcel({ data, headers, filename = "export_data", class
  className={className || "flex items-center gap-2 px-3 py-2 text-sm font-semibold border rounded-md hover:bg-accent transition-colors"}
  >
  <Download size={16} />
- ?대낫?닿린
+ 엑셀 내보내기
  </button>
  );
 }

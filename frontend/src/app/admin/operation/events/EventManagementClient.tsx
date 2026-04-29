@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +18,10 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { PagePagination } from '@/components/common/PagePagination';
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter 
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 export default function EventManagementClient() {
   const { toast } = useToast();
@@ -25,6 +29,16 @@ export default function EventManagementClient() {
   const [searchWrd, setSearchWrd] = useState('');
   const [page, setPage] = useState(1);
   const size = 10;
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [form, setForm] = useState<Partial<EventInfo>>({
+    eventNm: '',
+    eventCn: '',
+    eventBeginDe: '',
+    eventEndDe: '',
+    psncpa: 0,
+    rceptBeginDe: '',
+    rceptEndDe: ''
+  });
 
   // --- Data Fetching ---
   const { data: eventsData, isLoading } = useQuery({
@@ -35,6 +49,50 @@ export default function EventManagementClient() {
   const displayItems = (eventsData?.list || []) as EventInfo[];
   const totalItems = eventsData?.total || 0;
   const totalPages = Math.ceil(totalItems / size);
+
+  // --- Mutations ---
+  const createMutation = useMutation({
+    mutationFn: (data: Partial<EventInfo>) => eventService.createEvent(data),
+    onSuccess: () => {
+      toast('행사가 성공적으로 생성되었습니다.', 'success');
+      queryClient.invalidateQueries({ queryKey: ['events-list'] });
+      setIsCreateModalOpen(false);
+      setForm({
+        eventNm: '',
+        eventCn: '',
+        eventBeginDe: '',
+        eventEndDe: '',
+        psncpa: 0,
+        rceptBeginDe: '',
+        rceptEndDe: ''
+      });
+    },
+    onError: () => {
+      toast('행사 생성에 실패했습니다.', 'error');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (eventId: string) => eventService.deleteEvent(eventId),
+    onSuccess: () => {
+      toast('행사가 성공적으로 삭제되었습니다.', 'success');
+      queryClient.invalidateQueries({ queryKey: ['events-list'] });
+    },
+    onError: () => {
+      toast('행사 삭제에 실패했습니다.', 'error');
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMutation.mutate(form);
+  };
+
+  const handleDelete = (eventId: string) => {
+    if (confirm('정말 이 행사를 삭제하시겠습니까?')) {
+      deleteMutation.mutate(eventId);
+    }
+  };
 
   // --- DataTable Configuration ---
   const eventColumns: Column<EventInfo>[] = [
@@ -65,7 +123,12 @@ export default function EventManagementClient() {
         className: 'text-right w-24',
         accessor: (event) => (
             <div className="flex items-center justify-end pr-4">
-                <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl group-hover:bg-rose-50 group-hover:text-rose-500 transition-colors">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => handleDelete(event.eventId)}
+                    className="w-10 h-10 rounded-xl group-hover:bg-rose-50 group-hover:text-rose-500 transition-colors"
+                >
                     <Trash2 size={16} />
                 </Button>
             </div>
@@ -85,9 +148,12 @@ export default function EventManagementClient() {
              <Button className="h-14 px-8 rounded-xl bg-slate-100 text-slate-400 font-black tracking-widest text-[10px] uppercase hover:bg-slate-200 transition-all gap-3 border shadow-sm">
                <History size={18} /> 아카이브 보기
              </Button>
-             <Button className="h-14 px-8 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20">
-               <Plus size={18} /> 행사 신규 생성
-             </Button>
+             <Button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="h-14 px-8 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 shadow-slate-900/20"
+              >
+                <Plus size={18} /> 행사 신규 생성
+              </Button>
           </div>
         }
       />
@@ -177,7 +243,98 @@ export default function EventManagementClient() {
          <InsightCard label="Schedule Matrix" value="Q2 STABLE" desc="분기별 계획 정상 동작" trend="OK" type="emerald" />
          <InsightCard label="Network Assets" value="2.4k" desc="연동된 내부 정보 유닛" trend="+20" type="amber" />
       </div>
-
+      
+      {/* Creation Modal */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="max-w-2xl bg-white rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
+            <div className="bg-slate-900 p-8 text-white">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl font-black tracking-tighter italic uppercase">Dispatch New Event</DialogTitle>
+                    <DialogDescription className="text-white/40 text-[10px] font-bold tracking-[0.2em] uppercase">Enterprise Event Protocol v1.0</DialogDescription>
+                </DialogHeader>
+            </div>
+            <form onSubmit={handleSubmit} className="p-8 space-y-8">
+                <div className="grid grid-cols-2 gap-8">
+                    <div className="col-span-2 space-y-2">
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Event_Name</Label>
+                        <Input 
+                            value={form.eventNm}
+                            onChange={(e) => setForm({...form, eventNm: e.target.value})}
+                            placeholder="행사 명칭을 입력하십시오"
+                            className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
+                            required
+                        />
+                    </div>
+                    <div className="col-span-2 space-y-2">
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detailed_Description</Label>
+                        <Input 
+                            value={form.eventCn}
+                            onChange={(e) => setForm({...form, eventCn: e.target.value})}
+                            placeholder="상세 내용을 입력하십시오"
+                            className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Start_Date</Label>
+                        <Input 
+                            type="date"
+                            value={form.eventBeginDe}
+                            onChange={(e) => setForm({...form, eventBeginDe: e.target.value})}
+                            className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">End_Date</Label>
+                        <Input 
+                            type="date"
+                            value={form.eventEndDe}
+                            onChange={(e) => setForm({...form, eventEndDe: e.target.value})}
+                            className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Capacity (PSNCPA)</Label>
+                        <Input 
+                            type="number"
+                            value={form.psncpa}
+                            onChange={(e) => setForm({...form, psncpa: parseInt(e.target.value)})}
+                            className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recruitment_Start</Label>
+                        <Input 
+                            type="date"
+                            value={form.rceptBeginDe}
+                            onChange={(e) => setForm({...form, rceptBeginDe: e.target.value})}
+                            className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recruitment_End</Label>
+                        <Input 
+                            type="date"
+                            value={form.rceptEndDe}
+                            onChange={(e) => setForm({...form, rceptEndDe: e.target.value})}
+                            className="h-14 bg-slate-50 border-none rounded-xl font-black text-sm"
+                            required
+                        />
+                    </div>
+                </div>
+                <DialogFooter className="pt-8 border-t border-slate-50">
+                    <Button type="button" variant="ghost" onClick={() => setIsCreateModalOpen(false)} className="h-14 px-8 font-black text-[10px] uppercase tracking-widest">Abort</Button>
+                    <Button type="submit" disabled={createMutation.isPending} className="h-14 px-10 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 gap-3">
+                        {createMutation.isPending ? 'Syncing...' : <><Zap size={16} /> Deploy Protocol</>}
+                    </Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

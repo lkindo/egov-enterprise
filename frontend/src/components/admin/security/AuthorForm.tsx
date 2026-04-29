@@ -68,6 +68,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
                   <FormControl>
                     <Input
                       {...field}
+                      id="authorCode"
                       disabled={mode === 'edit'}
                       className={cn(
                         "h-16 rounded-xl border-2 text-md font-black italic tracking-widest uppercase shadow-inner pl-16 pt-0",
@@ -94,6 +95,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
                   <FormControl>
                     <Input
                       {...field}
+                      id="authorNm"
                       className="h-16 pl-16 rounded-xl border-2 text-md font-black tracking-tight shadow-inner"
                       placeholder="역할 명칭 입력 (MAX_60)"
                     />
@@ -118,6 +120,7 @@ export function AuthorForm({ initialData, mode, onSubmit, onCancel }: AuthorForm
                 <FormControl>
                   <textarea
                     {...field}
+                    id="authorDc"
                     className="min-h-[160px] w-full pl-16 p-8 rounded-xl border-2 bg-slate-50/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
                     placeholder="상세 명세 입력... (최대 200자)"
                   />

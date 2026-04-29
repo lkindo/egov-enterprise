@@ -49,8 +49,8 @@ export default function NoteSendHubClient() {
 
     setIsSearching(true);
     try {
-      const results = await addressbookUserService.searchUsers(val);
-      setSearchResults(results || []);
+      const response = await addressbookUserService.searchUsers(val);
+      setSearchResults(response?.list || []);
     } catch (error) {
       console.error('User search failed', error);
     } finally {
@@ -154,6 +154,7 @@ export default function NoteSendHubClient() {
                 ) : (
                     <div className="space-y-4">
                         <Input
+                            data-testid="note-recipient-input"
                             placeholder="성명 또는 ID로 수신자를 검색하십시오..."
                             className="h-16 text-xl font-black italic tracking-tight bg-slate-50 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-slate-300"
                             value={recipientSearch}
@@ -171,8 +172,9 @@ export default function NoteSendHubClient() {
                                         <button
                                             key={user.userId || user.adbkId}
                                             type="button"
+                                            data-testid="recipient-item"
                                             onClick={() => {
-                                                setSelectedRecipient({ id: user.userId || user.adbkId, name: user.userNm || user.adbkNm });
+                                                setSelectedRecipient({ id: user.emplyrId || user.userId || user.adbkId, name: user.nm || user.userNm || user.adbkNm });
                                                 setSearchResults([]);
                                                 setRecipientSearch('');
                                             }}
@@ -180,11 +182,15 @@ export default function NoteSendHubClient() {
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center font-black text-slate-300 group-hover:bg-primary group-hover:text-white transition-all">
-                                                    {(user.userNm || user.adbkNm)?.charAt(0)}
+                                                    {(user.nm || user.userNm || user.adbkNm)?.charAt(0)}
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-black text-slate-900">{user.userNm || user.adbkNm}</p>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{user.userId || user.adbkId}</p>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-slate-900 group-hover:text-primary transition-colors">
+                                                        {user.nm || user.userNm || user.adbkNm}
+                                                    </span>
+                                                    <span className="text-sm text-slate-500">
+                                                        {user.emplyrId || user.userId || user.adbkId}
+                                                    </span>
                                                 </div>
                                             </div>
                                             <Plus size={16} className="text-slate-200 group-hover:text-primary transition-colors" />

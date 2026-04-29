@@ -68,6 +68,12 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
 
                 List<AddressBookUserSearchResult> combinedResults = new ArrayList<>();
 
+                BooleanExpression internalPredicate = null;
+                if (StringUtils.hasText(searchKeyword)) {
+                    internalPredicate = user.userNm.contains(searchKeyword)
+                                .or(user.userId.contains(searchKeyword));
+                }
+
                 // 1. Internal Users
                 combinedResults.addAll(queryFactory
                                 .select(Projections.fields(AddressBookUserSearchResult.class,
@@ -76,8 +82,14 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                                                 user.emailAdres,
                                                 user.moblphonNo))
                                 .from(user)
-                                .where(user.userNm.contains(searchKeyword))
+                                .where(internalPredicate)
                                 .fetch());
+
+                BooleanExpression enterprisePredicate = null;
+                if (StringUtils.hasText(searchKeyword)) {
+                    enterprisePredicate = enterpriseUser.cmpnyNm.contains(searchKeyword)
+                                .or(enterpriseUser.entrprsmberId.contains(searchKeyword));
+                }
 
                 // 2. Enterprise Users
                 combinedResults.addAll(queryFactory
@@ -86,7 +98,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                                                 enterpriseUser.cmpnyNm.as("nm"),
                                                 enterpriseUser.applcntEmailAdres.as("emailAdres")))
                                 .from(enterpriseUser)
-                                .where(enterpriseUser.cmpnyNm.contains(searchKeyword))
+                                .where(enterprisePredicate)
                                 .fetch());
 
                 // Note: Real implementation would handle proper offset/limit across 3 queries

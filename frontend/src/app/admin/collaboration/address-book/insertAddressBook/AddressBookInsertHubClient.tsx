@@ -34,7 +34,9 @@ export default function AddressBookInsertHubClient() {
     adbkNm: '',
     telNo: '',
     email: '',
-    adres: ''
+    adres: '',
+    othbcScope: 'G', // [FIX] Required field for backend integrity
+    wrterId: 'webmaster' // [FIX] Required field for backend integrity
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,8 +47,21 @@ export default function AddressBookInsertHubClient() {
     }
 
     setIsSubmitting(true);
+    const payload = {
+      adbkNm: form.adbkNm,
+      othbcScope: form.othbcScope,
+      wrterId: form.wrterId,
+      adbkMan: [
+        {
+          nm: form.adbkNm,
+          emailAdres: form.email,
+          moblphonNo: form.telNo
+        }
+      ]
+    };
+
     try {
-      await addressbookUserService.createAddressBook(form);
+      await addressbookUserService.createAddressBook(payload as any);
       toast('ID 노드가 성공적으로 네트워크에 등록되었습니다.', 'success');
       router.push('/admin/collaboration?tab=ADDRESS_BOOK');
     } catch (error) {
@@ -96,6 +111,8 @@ export default function AddressBookInsertHubClient() {
               onChange={(e) => setForm({ ...form, adbkNm: e.target.value })}
               className="h-20 bg-transparent border-none text-slate-900 text-3xl font-black placeholder:text-slate-900/10 focus-visible:ring-0 p-0 tracking-tight italic"
               placeholder="성명을 입력하십시오..."
+              aria-label="주소록 명칭"
+              data-testid="identity-name-input"
               required
               autoFocus
             />
@@ -115,6 +132,8 @@ export default function AddressBookInsertHubClient() {
                     onChange={(e) => setForm({ ...form, telNo: e.target.value })}
                     className="h-14 bg-white border-2 border-slate-100 rounded-xl font-mono text-lg shadow-inner focus:border-primary/20 transition-all"
                     placeholder="010-0000-0000"
+                    aria-label="전화번호"
+                    data-testid="identity-tel-input"
                 />
             </div>
             <div className="hub-card-premium p-8 bg-slate-50 border-none shadow-xl rounded-2xl space-y-6">
@@ -128,6 +147,8 @@ export default function AddressBookInsertHubClient() {
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     className="h-14 bg-white border-2 border-slate-100 rounded-xl text-lg shadow-inner focus:border-primary/20 transition-all"
                     placeholder="example@egov.com"
+                    aria-label="이메일"
+                    data-testid="identity-email-input"
                 />
             </div>
         </div>
@@ -168,6 +189,7 @@ export default function AddressBookInsertHubClient() {
             <Button
               type="button"
               variant="outline"
+              data-testid="abort-identity-button"
               onClick={() => router.back()}
               className="h-16 flex-1 sm:flex-none px-10 rounded-xl border-2 font-black tracking-widest text-[11px] uppercase hover:bg-slate-50 transition-all bg-white"
             >
@@ -176,6 +198,7 @@ export default function AddressBookInsertHubClient() {
             <Button
               type="submit"
               disabled={isSubmitting}
+              data-testid="commit-identity-button"
               className="h-16 flex-1 sm:flex-none px-12 rounded-xl bg-slate-900 text-white font-black tracking-widest text-[11px] uppercase hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
             >
               {isSubmitting ? (

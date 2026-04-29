@@ -2,12 +2,20 @@ import { test as base, Page } from '@playwright/test';
 import { BBSPage } from '../pages/BBSPage';
 import { UserAdminPage } from '../pages/UserAdminPage';
 import { BoardMasterPage } from '../pages/BoardMasterPage';
+import { SecurityAdminPage } from '../pages/SecurityAdminPage';
+import { CollabPage } from '../pages/CollabPage';
+import { StatsPage } from '../pages/StatsPage';
+import { OpsDetailPage } from '../pages/OpsDetailPage';
 import { ConsoleErrorGuard } from './error-detector';
 
 type MyFixtures = {
   bbsPage: BBSPage;
   userAdminPage: UserAdminPage;
   boardMasterPage: BoardMasterPage;
+  securityAdminPage: SecurityAdminPage;
+  collabPage: CollabPage;
+  statsPage: StatsPage;
+  opsDetailPage: OpsDetailPage;
   consoleGuard: ConsoleErrorGuard;
   adminPage: Page;
   userPage: Page;
@@ -31,6 +39,18 @@ export const test = base.extend<MyFixtures>({
   },
   boardMasterPage: async ({ page }, use) => {
     await use(new BoardMasterPage(page));
+  },
+  securityAdminPage: async ({ page }, use) => {
+    await use(new SecurityAdminPage(page));
+  },
+  collabPage: async ({ page }, use) => {
+    await use(new CollabPage(page));
+  },
+  statsPage: async ({ page }, use) => {
+    await use(new StatsPage(page));
+  },
+  opsDetailPage: async ({ page }, use) => {
+    await use(new OpsDetailPage(page));
   },
 
   adminPage: async ({ browser }, use) => {
