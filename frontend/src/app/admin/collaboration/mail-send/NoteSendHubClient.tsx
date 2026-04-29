@@ -35,6 +35,16 @@ export default function NoteSendHubClient() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  const [currentTime, setCurrentTime] = useState<string>('');
+
+  React.useEffect(() => {
+    setCurrentTime(new Date().toLocaleTimeString());
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const [form, setForm] = useState({
     noteSj: '',
     noteCn: ''
@@ -50,6 +60,7 @@ export default function NoteSendHubClient() {
     setIsSearching(true);
     try {
       const response = await addressbookUserService.searchUsers(val);
+      console.log('>>> Search Results:', JSON.stringify(response?.list || [], null, 2));
       setSearchResults(response?.list || []);
     } catch (error) {
       console.error('User search failed', error);
@@ -69,12 +80,17 @@ export default function NoteSendHubClient() {
       return;
     }
 
+    console.log('>>> Sending Note to:', selectedRecipient);
     setIsSubmitting(true);
     try {
       await noteService.sendNote({
-        rcverId: selectedRecipient.id,
+        rcverId: selectedRecipient.emplyrId,
         noteSj: form.noteSj,
-        noteCn: form.noteCn
+        noteCn: form.noteCn,
+        recipients: [{
+          rcverId: selectedRecipient.emplyrId,
+          recptnSe: '1'
+        }]
       });
       toast('쪽지가 성공적으로 발송되었습니다.', 'success');
       router.push('/admin/collaboration?tab=MESSAGES');
@@ -163,7 +179,7 @@ export default function NoteSendHubClient() {
                         <AnimatePresence>
                             {searchResults.length > 0 && (
                                 <motion.div 
-                                    initial={{ opacity: 0, y: -10 }}
+                                    initial={{ opacity: 1, y: 0 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -10 }}
                                     className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-100 rounded-xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] overflow-hidden divide-y divide-slate-50"
@@ -262,7 +278,7 @@ export default function NoteSendHubClient() {
             <div className="flex flex-col">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Dispatch_Clock</span>
               <span className="text-xs font-black text-slate-800 mt-1 uppercase italic flex items-center gap-1.5">
-                  <Clock size={12} /> {new Date().toLocaleTimeString()}
+                  <Clock size={12} /> {currentTime || '--:--:--'}
               </span>
             </div>
           </div>

@@ -7,10 +7,13 @@ export const metadata: Metadata = {
   description: '조직 내 지식 공유 및 커뮤니케이션을 위한 통합 협업 허브',
 };
 
-export default function CollaborationHubPage() {
+export default function CollaborationHubPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const resolvedSearchParams = React.use(searchParams);
+  const tab = resolvedSearchParams.tab?.toUpperCase() as any;
+  
   return (
     <div className="space-y-6">
-      <CollaborationHubClient />
+      <CollaborationHubClient defaultTab={tab || 'MESSAGES'} />
     </div>
   );
 }

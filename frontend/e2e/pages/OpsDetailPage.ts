@@ -12,8 +12,13 @@ export class OpsDetailPage {
     async searchEvents(keyword: string) {
         console.log(`>>> Searching events with keyword: ${keyword}`);
         const searchInput = this.page.getByPlaceholder(/행사 태그 검색/i);
-        await searchInput.fill(keyword);
+        await searchInput.click();
+        await this.page.keyboard.press('Control+A');
+        await this.page.keyboard.press('Backspace');
+        await searchInput.pressSequentially(keyword, { delay: 100 });
+        await this.page.keyboard.press('Enter');
         await this.page.waitForLoadState('networkidle');
+        await this.page.waitForTimeout(1000);
     }
 
     async createEvent(data: { name: string, desc: string, capacity: number, startDate: string, endDate: string, recruitDate: string, recruitEndDate: string }) {
@@ -41,15 +46,20 @@ export class OpsDetailPage {
         await this.searchEvents(name);
         
         const eventRow = this.page.locator('tr').filter({ hasText: name }).first();
-        await expect(eventRow).toBeVisible({ timeout: 10000 });
+        await expect(eventRow).toBeVisible({ timeout: 15000 });
         
-        const deleteBtn = eventRow.locator('button').filter({ has: this.page.locator('svg') });
+        const deleteBtn = eventRow.getByTestId('delete-event-btn');
+        await expect(deleteBtn).toBeVisible({ timeout: 15000 });
+        
+        // Confirm dialog - MUST be registered BEFORE the action that triggers it
+        this.page.once('dialog', dialog => {
+            console.log(`>>> Accepting dialog: ${dialog.message()}`);
+            dialog.accept();
+        });
+        
         await deleteBtn.click();
         
-        // Confirm dialog
-        this.page.once('dialog', dialog => dialog.accept());
-        
-        await expect(this.page.getByText(/성공|삭제되었습니다/i)).toBeVisible();
+        await expect(this.page.getByText(/성공|삭제되었습니다/i)).toBeVisible({ timeout: 20000 });
     }
 
     async verifyEventListVisible() {

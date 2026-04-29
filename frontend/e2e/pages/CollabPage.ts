@@ -9,11 +9,11 @@ export class CollabPage {
         await expect(this.page.getByRole('heading', { name: /Connect Matrix/i })).toBeVisible();
     }
 
-    async switchTab(tabName: 'MESSAGES' | 'NETWORK' | 'SCRAPS') {
-        const roleName = tabName === 'NETWORK' ? 'Network Index' : 
-                         tabName === 'MESSAGES' ? 'Messenger Hub' : 'Knowledge Scraps';
-        await this.page.getByRole('button', { name: new RegExp(roleName, 'i') }).click();
-        await this.page.waitForTimeout(500);
+    async switchTab(tab: 'MESSAGES' | 'CONTACTS' | 'CALENDAR') {
+        const testId = tab === 'MESSAGES' ? 'tab-messages' : tab === 'CONTACTS' ? 'tab-contacts' : 'tab-calendar';
+        await this.page.getByTestId(testId).click();
+        await this.page.waitForLoadState('networkidle');
+        await this.page.waitForTimeout(1000);
     }
 
     async sendNote(recipient: string = 'webmaster', subject: string, content: string) {
@@ -50,6 +50,11 @@ export class CollabPage {
         
         await this.page.getByRole('button', { name: /Dispatch Protocol/i }).click();
         await expect(this.page.getByText(/성공|발송되었습니다/i)).toBeVisible({ timeout: 15000 });
+        
+        // Wait for redirect and click reload to ensure data is fresh
+        await expect(this.page).toHaveURL(/\/admin\/collaboration/);
+        await this.page.getByRole('button', { name: /RELOAD/i }).click();
+        await this.page.waitForTimeout(1000);
     }
 
     async createContact(name: string, email: string, tel: string = '010-0000-0000') {
@@ -108,5 +113,34 @@ export class CollabPage {
         
         console.log('>>> Verifying Excel Export capability');
         await expect(this.page.getByRole('button', { name: /엑셀 내보내기/i })).toBeVisible();
+    }
+
+    async deleteNote(subject: string) {
+        console.log(`>>> Deleting Note with subject: ${subject}`);
+        await this.switchTab('MESSAGES');
+        
+        // Wait for list to have content
+        await this.page.waitForSelector('[data-testid="note-item"]', { timeout: 15000 }).catch(() => {
+            console.log('>>> WARNING: No note-items found after 15s wait.');
+        });
+        
+        // Debug: Log all visible subjects
+        const subjects = await this.page.getByTestId('note-item').locator('h4').allTextContents();
+        console.log(`>>> Visible Note Subjects: [${subjects.join(', ')}]`);
+        
+        const noteItem = this.page.getByTestId('note-item').filter({ hasText: subject }).first();
+        await expect(noteItem).toBeVisible({ timeout: 15000 });
+        await noteItem.click();
+        
+        const deleteBtn = this.page.getByTestId('delete-note-btn');
+        await expect(deleteBtn).toBeVisible({ timeout: 15000 });
+        
+        this.page.once('dialog', dialog => {
+            console.log(`>>> Accepting dialog: ${dialog.message()}`);
+            dialog.accept();
+        });
+        await deleteBtn.click();
+        
+        await expect(this.page.getByText(/성공|삭제되었습니다/i)).toBeVisible({ timeout: 15000 });
     }
 }

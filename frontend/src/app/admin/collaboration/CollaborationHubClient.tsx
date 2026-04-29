@@ -117,6 +117,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
       {notes.map((note: any) => (
         <motion.div
           key={note.noteId}
+          data-testid="note-item"
           layout
           onClick={() => setSelectedItemId(note.noteId)}
           className={cn(
@@ -307,9 +308,9 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
         {/* Sidebar Navigation */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
           <div className="hub-glass-premium p-4 rounded-2xl border-2 border-slate-100/50 shadow-2xl space-y-2">
-            <NavButton icon={<MessageSquare size={20} />} label="Messenger Hub" active={activeTab === 'MESSAGES'} count={notes.length} onClick={() => { setActiveTab('MESSAGES'); setSelectedItemId(null); }} />
-            <NavButton icon={<Users size={20} />} label="Network Index" active={activeTab === 'ADDRESS_BOOK'} count={addresses.length} onClick={() => { setActiveTab('ADDRESS_BOOK'); setSelectedItemId(null); }} />
-            <NavButton icon={<Bookmark size={20} />} label="Knowledge Scraps" active={activeTab === 'SCRAPS'} count={scraps.length} onClick={() => { setActiveTab('SCRAPS'); setSelectedItemId(null); }} />
+            <NavButton dataTestId="tab-messages" icon={<MessageSquare size={20} />} label="Messenger Hub" active={activeTab === 'MESSAGES'} count={notes.length} onClick={() => { setActiveTab('MESSAGES'); setSelectedItemId(null); }} />
+            <NavButton dataTestId="tab-contacts" icon={<Users size={20} />} label="Network Index" active={activeTab === 'ADDRESS_BOOK'} count={addresses.length} onClick={() => { setActiveTab('ADDRESS_BOOK'); setSelectedItemId(null); }} />
+            <NavButton dataTestId="tab-scraps" icon={<Bookmark size={20} />} label="Knowledge Scraps" active={activeTab === 'SCRAPS'} count={scraps.length} onClick={() => { setActiveTab('SCRAPS'); setSelectedItemId(null); }} />
           </div>
 
           <div className="hub-card-premium p-10 bg-gradient-to-br from-primary/20 to-transparent border-primary/20 relative overflow-hidden group">
@@ -408,8 +409,9 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                     </Button>
                     <Button 
                         variant="outline" 
-                        onClick={handleDelete}
+                        onClick={() => handleDelete(selectedItemId)}
                         disabled={deleteNoteMutation.isPending}
+                        data-testid="delete-note-btn"
                         className="h-16 w-16 rounded-xl border-2 border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-500/20 hover:bg-rose-50 transition-all shadow-xl"
                     >
                         {deleteNoteMutation.isPending ? <Loader2 className="animate-spin" /> : <Trash2 size={24} />}
@@ -439,10 +441,11 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
 
 // --- Sub-Components ---
 
-function NavButton({ icon, label, active, count, onClick }: { icon: any, label: string, active: boolean, count: number, onClick: () => void }) {
+function NavButton({ icon, label, active, count, onClick, dataTestId }: { icon: any, label: string, active: boolean, count: number, onClick: () => void, dataTestId?: string }) {
   return (
     <button
       onClick={onClick}
+      data-testid={dataTestId}
       className={cn(
         "w-full group p-5 rounded-xl border-2 transition-all flex items-center justify-between",
         active

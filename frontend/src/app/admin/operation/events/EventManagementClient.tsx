@@ -126,6 +126,7 @@ export default function EventManagementClient() {
                 <Button 
                     variant="ghost" 
                     size="icon" 
+                    data-testid="delete-event-btn"
                     onClick={() => handleDelete(event.eventId)}
                     className="w-10 h-10 rounded-xl group-hover:bg-rose-50 group-hover:text-rose-500 transition-colors"
                 >
