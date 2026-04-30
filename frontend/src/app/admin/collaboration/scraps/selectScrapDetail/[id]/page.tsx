@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -29,10 +29,8 @@ const SelectScrapDetailPage = () => {
     if (id) {
       const fetchDetail = async () => {
         try {
-          const response = (await axios.get(`/scrap/${id}`)) as any;
-          if (response.data.success) {
-            setFormData(response.data.result);
-          }
+          const response = (await axios.get(`/scraps/${id}`)) as any;
+          setFormData(response);
         } catch (error) {
           console.error('Failed to fetch scrap detail', error);
         } finally {
@@ -57,11 +55,9 @@ const SelectScrapDetailPage = () => {
 
     setLoading(true);
     try {
-      const response = (await axios.put(`/scrap/${id}`, formData)) as any;
-      if (response.data.success) {
-        alert(response.data.message || '수정되었습니다.');
-        router.push('/admin/collaboration/scraps/selectScrapList');
-      }
+      await axios.put(`/scraps/${id}`, formData);
+      alert('수정되었습니다.');
+      router.push('/admin/collaboration/scraps/selectScrapList');
     } catch (error: any) {
       alert(error.response?.data?.message || '수정에 실패했습니다.');
     } finally {
@@ -74,11 +70,9 @@ const SelectScrapDetailPage = () => {
     
     setLoading(true);
     try {
-      const response = (await axios.delete(`/scrap/${id}`)) as any;
-      if (response.data.success) {
-        alert(response.data.message || '삭제되었습니다.');
-        router.push('/admin/collaboration/scraps/selectScrapList');
-      }
+      await axios.delete(`/scraps/${id}`);
+      alert('삭제되었습니다.');
+      router.push('/admin/collaboration/scraps/selectScrapList');
     } catch (error: any) {
       alert(error.response?.data?.message || '삭제에 실패했습니다.');
     } finally {

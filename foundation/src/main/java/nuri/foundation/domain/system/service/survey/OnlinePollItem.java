@@ -7,6 +7,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -27,8 +28,9 @@ public class OnlinePollItem extends BaseEntity {
     @Column(name = "POLL_IEM_ID", length = 20)
     private String pollIemId;
 
-    @Column(name = "POLL_ID", length = 20, nullable = false)
-    private String pollId;
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
+    @jakarta.persistence.JoinColumn(name = "POLL_ID")
+    private OnlinePollManage pollManage;
 
     @Column(name = "POLL_IEM_NM", length = 255, nullable = false)
     private String pollIemNm;

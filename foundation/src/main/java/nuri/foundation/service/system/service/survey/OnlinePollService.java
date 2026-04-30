@@ -34,8 +34,17 @@ public class OnlinePollService implements EgovOnlinePollService {
         Objects.requireNonNull(pageable);
         Page<OnlinePollManage> entities;
         String searchKeyword = (keyword == null) ? "" : keyword;
-        entities = pollManageRepository.findByPollNmContaining(searchKeyword, pageable);
-        
+        if (searchKeyword.isEmpty()) {
+            entities = pollManageRepository.findAll(pageable);
+        } else {
+            entities = pollManageRepository.findByPollNmContaining(searchKeyword, pageable);
+        }
+
+        System.out.println(">>> [DEBUG] getPollList found " + entities.getContent().size() + " entities");
+        entities.getContent().forEach(e -> 
+            System.out.println(">>> [DEBUG] Poll: " + e.getPollNm() + ", Items count: " + (e.getPollItems() != null ? e.getPollItems().size() : "null"))
+        );
+
         return entities.map(entity -> {
             OnlinePollManageDto dto = OnlinePollManageDto.from(entity);
             // Optionally populate vote counts for the list view if needed by summary components
@@ -60,32 +69,37 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void insertPoll(OnlinePollManageDto dto) {
+        System.out.println(">>> [DEBUG] insertPoll received beginDe: " + dto.getPollBeginDe() + ", endDe: " + dto.getPollEndDe());
         validatePollDates(dto.getPollBeginDe(), dto.getPollEndDe());
-        String pollId = "POLL_" + System.currentTimeMillis();
-        
-        List<OnlinePollItem> pollItems = new ArrayList<>();
-        if (dto.getPollItems() != null) {
-            long timestamp = System.currentTimeMillis();
-            int index = 0;
-            for (OnlinePollItemDto itemDto : dto.getPollItems()) {
-                pollItems.add(OnlinePollItem.builder()
-                        .pollIemId("PI" + timestamp + (index++))
-                        .pollId(pollId)
-                        .pollIemNm(itemDto.getPollIemNm())
-                        .build());
-            }
+        if (dto.getPollId() == null || dto.getPollId().isEmpty()) {
+            dto.setPollId("P" + System.currentTimeMillis());
         }
-
-        pollManageRepository.save(OnlinePollManage.builder()
-                .pollId(pollId)
+        
+        OnlinePollManage pollManage = OnlinePollManage.builder()
+                .pollId(dto.getPollId())
                 .pollNm(dto.getPollNm())
                 .pollBeginDe(dto.getPollBeginDe())
                 .pollEndDe(dto.getPollEndDe())
                 .pollKindCode(dto.getPollKindCode())
                 .pollDsuseYn(dto.getPollDsuseYn() != null ? dto.getPollDsuseYn() : "N")
                 .pollAutoDsuseYn(dto.getPollAutoDsuseYn() != null ? dto.getPollAutoDsuseYn() : "N")
-                .pollItems(pollItems)
-                .build());
+                .pollItems(new ArrayList<>())
+                .build();
+
+        if (dto.getPollItems() != null) {
+            long timestamp = System.currentTimeMillis();
+            int index = 0;
+            for (OnlinePollItemDto itemDto : dto.getPollItems()) {
+                OnlinePollItem item = OnlinePollItem.builder()
+                        .pollIemId("PI" + timestamp + (index++))
+                        .pollManage(pollManage)
+                        .pollIemNm(itemDto.getPollIemNm())
+                        .build();
+                pollManage.getPollItems().add(item);
+            }
+        }
+
+        pollManageRepository.save(pollManage);
     }
 
     @Override
@@ -104,11 +118,12 @@ public class OnlinePollService implements EgovOnlinePollService {
             long timestamp = System.currentTimeMillis();
             int index = 0;
             for (OnlinePollItemDto itemDto : dto.getPollItems()) {
-                entity.getPollItems().add(OnlinePollItem.builder()
+                OnlinePollItem item = OnlinePollItem.builder()
                         .pollIemId("PI" + timestamp + (index++))
-                        .pollId(entity.getPollId())
+                        .pollManage(entity)
                         .pollIemNm(itemDto.getPollIemNm())
-                        .build());
+                        .build();
+                entity.getPollItems().add(item);
             }
         }
     }
@@ -121,7 +136,7 @@ public class OnlinePollService implements EgovOnlinePollService {
 
     @Override
     public List<OnlinePollItemDto> getPollItemList(String pollId) {
-        return pollItemRepository.findByPollId(Objects.requireNonNull(pollId)).stream()
+        return pollItemRepository.findByPollManagePollId(Objects.requireNonNull(pollId)).stream()
                 .map(item -> {
                     OnlinePollItemDto dto = OnlinePollItemDto.from(item);
                     dto.setPollIemCo(pollResultRepository.countByPollIemId(item.getPollIemId()));
@@ -133,10 +148,13 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void insertPollItem(OnlinePollItemDto dto) {
+        OnlinePollManage pollManage = pollManageRepository.findById(dto.getPollId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        
         String id = "PI" + System.currentTimeMillis();
         pollItemRepository.save(Objects.requireNonNull(OnlinePollItem.builder()
                 .pollIemId(id)
-                .pollId(dto.getPollId())
+                .pollManage(pollManage)
                 .pollIemNm(dto.getPollIemNm())
                 .build()));
     }

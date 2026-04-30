@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -36,10 +36,10 @@ const ScrapListPage = () => {
         setLoading(true);
         try {
             const params = { pageIndex: pageNo, pageUnit: 10 };
-            const response = (await axios.get('/scrap', { params })) as any;
-            setList(response.data.list || []);
-            setTotalCount(response.data.total || 0);
-            setTotalPages(response.data.totalPage || 0);
+            const response = (await axios.get('/scraps', { params })) as any;
+            setList(response.list || []);
+            setTotalCount(response.total || 0);
+            setTotalPages(response.totalPage || 0);
         } catch (error) {
             console.error('Failed to fetch scraps', error);
         } finally {
@@ -54,7 +54,7 @@ const ScrapListPage = () => {
     const handleDelete = async (id: string) => {
         if (!confirm('삭제하시겠습니까?')) return;
         try {
-            await axios.delete(`/scrap/${id}`);
+            await axios.delete(`/scraps/${id}`);
             fetchList();
         } catch (error) {
             alert('삭제에 실패했습니다.');

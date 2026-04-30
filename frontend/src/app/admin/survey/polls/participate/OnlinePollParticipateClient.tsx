@@ -32,8 +32,11 @@ export default function OnlinePollParticipateClient() {
     const [loading, setLoading] = useState(true);
     const [isVoting, setIsVoting] = useState(false);
     const [viewMode, setViewMode] = useState<'list' | 'vote' | 'result'>('list');
+    const [todayStr, setTodayStr] = useState<string>('');
+
 
     useEffect(() => {
+        setTodayStr(format(new Date(), 'yyyy-MM-dd'));
         fetchPolls();
     }, []);
 
@@ -41,6 +44,7 @@ export default function OnlinePollParticipateClient() {
         setLoading(true);
         try {
             const res = await pollUserService.getPollList({ page: 0, size: 100 });
+            console.log('>>> [DEBUG] fetchPolls res:', JSON.stringify(res, null, 2));
             // Support both Spring Data JPA Page (content) and legacy list format
             setPolls(res.list || []);
         } catch (error) {
@@ -51,20 +55,24 @@ export default function OnlinePollParticipateClient() {
     };
 
     const handleSelectPoll = async (poll: OnlinePollManageVO) => {
+        console.log(`>>> [DEBUG] handleSelectPoll: pollId=${poll.pollId}, today=${todayStr}, begin=${poll.pollBeginDe}, end=${poll.pollEndDe}`);
         setLoading(true);
         try {
             const items = await pollUserService.getPollItemList(poll.pollId!);
-            setPollItems(items);
+            console.log(`>>> [DEBUG] fetched items: count=${items?.length || 0}`);
+            setPollItems(items || []);
             setSelectedPoll(poll);
             setSelectedItemId(null);
             
-            const today = format(new Date(), 'yyyy-MM-dd');
-            if (today > (poll.pollEndDe || '')) {
+            if (todayStr > (poll.pollEndDe || '9999-12-31')) {
+                console.log('>>> [DEBUG] setting viewMode: result');
                 setViewMode('result');
             } else {
+                console.log('>>> [DEBUG] setting viewMode: vote');
                 setViewMode('vote');
             }
         } catch (error) {
+            console.error('>>> [ERROR] handleSelectPoll failed:', error);
             toast.error('설문 상세 정보를 불러오지 못했습니다.');
         } finally {
             setLoading(false);
@@ -72,6 +80,8 @@ export default function OnlinePollParticipateClient() {
     };
 
     const handleVote = async () => {
+        // if (!poll.pollItems || poll.pollItems.length === 0) return null;
+
         if (!selectedPoll || !selectedItemId) return;
 
         setIsVoting(true);
@@ -106,22 +116,16 @@ export default function OnlinePollParticipateClient() {
     }
 
     return (
-        <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+        <div className="space-y-12 pb-24">
             <PageHeader
                 title="여론조사 센터"
                 breadcrumbs={[{ label: '커뮤니티' }, { label: '여론조사 참여' }]}
             />
 
-            <AnimatePresence mode="wait">
+            <div className="space-y-8">
                 {viewMode === 'list' && (
-                    <motion.div 
-                        key="list"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-8"
-                    >
-                        {polls.length === 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {(polls || []).length === 0 ? (
                             <div className="col-span-full p-20 text-center bg-white rounded-xl border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
                                 <div className="w-20 h-20 bg-slate-50 rounded-xl flex items-center justify-center text-slate-300">
                                     <Target size={40} />
@@ -132,21 +136,15 @@ export default function OnlinePollParticipateClient() {
                                 </div>
                             </div>
                         ) : (
-                            polls.map((poll) => (
-                                <PollCard key={poll.pollId} poll={poll} onSelect={() => handleSelectPoll(poll)} />
+                            (polls || []).map((poll) => (
+                                <PollCard key={poll.pollId} poll={poll} todayStr={todayStr} onSelect={() => handleSelectPoll(poll)} />
                             ))
                         )}
-                    </motion.div>
+                    </div>
                 )}
 
                 {(viewMode === 'vote' || viewMode === 'result') && selectedPoll && (
-                    <motion.div
-                        key="detail"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="max-w-3xl mx-auto"
-                    >
+                    <div className="max-w-3xl mx-auto">
                         <div className="bg-white rounded-3xl overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-slate-100">
                             <div className="bg-slate-900 p-12 text-white relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
@@ -175,6 +173,7 @@ export default function OnlinePollParticipateClient() {
                                     </label>
                                     
                                     <div className="space-y-4">
+                                        {console.log('>>> [DEBUG] rendering pollItems, count:', pollItems.length)}
                                         {pollItems.map((item, idx) => (
                                             <PollItem 
                                                 key={item.pollIemId} 
@@ -184,6 +183,7 @@ export default function OnlinePollParticipateClient() {
                                                 onSelect={() => viewMode === 'vote' && setSelectedItemId(item.pollIemId!)}
                                                 mode={viewMode}
                                                 index={idx}
+                                                testId={`poll-item-${idx}`}
                                             />
                                         ))}
                                     </div>
@@ -210,20 +210,19 @@ export default function OnlinePollParticipateClient() {
                                 </div>
                             </div>
                         </div>
-                    </motion.div>
+                    </div>
                 )}
-            </AnimatePresence>
+            </div>
         </div>
     );
 }
 
-function PollCard({ poll, onSelect }: { poll: OnlinePollManageVO, onSelect: () => void }) {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const isClosed = today > (poll.pollEndDe || '');
+function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, todayStr: string, onSelect: () => void }) {
+    const isClosed = todayStr > (poll.pollEndDe || '9999-12-31');
+
     
     return (
-        <motion.div 
-            whileHover={{ y: -8 }}
+        <div 
             onClick={onSelect}
             className="group cursor-pointer bg-white rounded-3xl p-10 border border-slate-100 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden"
         >
@@ -258,19 +257,17 @@ function PollCard({ poll, onSelect }: { poll: OnlinePollManageVO, onSelect: () =
             <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.02] group-hover:scale-110 transition-all duration-700 grayscale">
                 <Vote size={200} />
             </div>
-        </motion.div>
+        </div>
     );
 }
 
-function PollItem({ item, totalVotes, isSelected, onSelect, mode, index }: any) {
+function PollItem({ item, totalVotes, isSelected, onSelect, mode, index, testId }: any) {
     const percentage = totalVotes > 0 ? Math.round((item.pollIemCo || 0) / totalVotes * 100) : 0;
     
     return (
-        <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
+        <div 
             onClick={onSelect}
+            data-testid={testId}
             className={cn(
                 "relative p-8 rounded-2xl border-2 transition-all group overflow-hidden cursor-pointer",
                 isSelected ? "border-primary bg-primary/5 shadow-lg" : "border-slate-50 bg-slate-50/50 hover:border-slate-200",
@@ -300,11 +297,9 @@ function PollItem({ item, totalVotes, isSelected, onSelect, mode, index }: any) 
 
             {mode === 'result' && (
                 <div className="mt-6 h-2 bg-slate-50 rounded-full overflow-hidden">
-                    <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${percentage}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full"
+                    <div 
+                        style={{ width: `${percentage}%` }}
+                        className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full transition-all duration-1000"
                     />
                 </div>
             )}
@@ -314,6 +309,6 @@ function PollItem({ item, totalVotes, isSelected, onSelect, mode, index }: any) 
                     <Trophy size={48} className="text-primary" />
                 </div>
             )}
-        </motion.div>
+        </div>
     );
 }

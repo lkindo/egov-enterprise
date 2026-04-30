@@ -33,6 +33,12 @@ public class Scrap extends BaseEntity {
     @Column(name = "SCRAP_NM", length = 100)
     private String scrapNm;
 
+    @Column(name = "SCRAP_URL", length = 1000)
+    private String scrapUrl;
+
+    @Column(name = "SCRAP_DC", length = 2000)
+    private String scrapDc;
+
     @Column(name = "USE_AT", length = 1)
     private String useAt;
 
@@ -40,8 +46,10 @@ public class Scrap extends BaseEntity {
         return getFrstRegisterId();
     }
 
-    public void update(String scrapNm, String useAt) {
+    public void update(String scrapNm, String scrapUrl, String scrapDc, String useAt) {
         this.scrapNm = scrapNm;
+        this.scrapUrl = scrapUrl;
+        this.scrapDc = scrapDc;
         this.useAt = useAt;
     }
 }

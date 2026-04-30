@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -32,11 +32,13 @@ interface AppNotificationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   notifications: Notification[];
+  onMarkRead: (id: string) => void;
+  onMarkAllRead: () => void;
 }
 
 type FilterType = 'ALL' | 'SECURITY' | 'SYSTEM' | 'ACTIVITY';
 
-export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNotificationDrawerProps) {
+export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead }: AppNotificationDrawerProps) {
   const [mounted, setMounted] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
 
@@ -88,14 +90,27 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                     </div>
                     Alert Sentinel
                   </h2>
-                  <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">실시간쒖뒪님무결성피드</p>
+                  <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">실시간 시스템 무결성 피드</p>
                 </div>
-                <button 
-                   onClick={onClose} 
-                   className="p-3 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all hover:rotate-90 group"
-                >
-                  <X size={24} className="group-hover:text-primary transition-colors" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {notifications.some(n => !n.isRead) && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={onMarkAllRead}
+                      className="text-[10px] font-black tracking-widest uppercase hover:text-primary h-8 px-2"
+                    >
+                      READ_ALL
+                    </Button>
+                  )}
+                  <button 
+                    onClick={onClose} 
+                    data-testid="e2e-drawer-close"
+                    className="p-3 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all hover:rotate-90 group"
+                  >
+                    <X size={24} className="group-hover:text-primary transition-colors" />
+                  </button>
+                </div>
               </div>
 
               {/* Advanced Filter Matrix */}
@@ -147,6 +162,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications }: AppNot
                             : "bg-white border-slate-100 shadow-xl hover:shadow-primary/5 hover:border-primary/20",
                           !notif.isRead && notif.type === 'SECURITY' && "border-rose-100 bg-rose-50/20"
                         )}
+                        onClick={() => !notif.isRead && onMarkRead(notif.id)}
                       >
                         <div className="flex justify-between items-start gap-4 relative z-10">
                           <div className={cn(

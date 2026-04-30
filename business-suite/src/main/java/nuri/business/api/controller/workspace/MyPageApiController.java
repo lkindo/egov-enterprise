@@ -18,7 +18,7 @@ import java.util.List;
 @Tag(name = "My Page Admin", description = "마이페이지 콘텐츠 관리 API (Admin)")
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/admin/workspace/mypage/contents")
+@RequestMapping("/api/v1/admin/system/workspace/mypage/contents")
 @RequiredArgsConstructor
 public class MyPageApiController {
 

@@ -38,7 +38,7 @@ public class OnlinePollItemDto {
             return null;
         return OnlinePollItemDto.builder()
                 .pollIemId(entity.getPollIemId())
-                .pollId(entity.getPollId())
+                .pollId(entity.getPollManage() != null ? entity.getPollManage().getPollId() : null)
                 .pollIemNm(entity.getPollIemNm())
                 .createdBy(entity.getCreatedBy())
                 .createdDate(entity.getCreatedDate())

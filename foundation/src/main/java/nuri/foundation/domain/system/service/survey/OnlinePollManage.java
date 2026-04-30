@@ -52,7 +52,7 @@ public class OnlinePollManage extends BaseEntity {
     @Builder.Default
     private String pollAutoDsuseYn = "N";
 
-    @OneToMany(mappedBy = "pollId", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "pollManage", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OnlinePollItem> pollItems = new ArrayList<>();
 

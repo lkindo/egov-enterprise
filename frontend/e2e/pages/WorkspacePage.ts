@@ -18,7 +18,7 @@ export class WorkspacePage {
         // Wait for loading to finish
         await this.page.waitForSelector('.animate-pulse', { state: 'detached' });
         
-        const toggleButtons = this.page.locator('button').filter({ has: this.page.locator('svg') });
+        const toggleButtons = this.page.locator('main button').filter({ has: this.page.locator('svg') });
         const count = await toggleButtons.count();
         if (count > 0) {
             const button = toggleButtons.nth(index);

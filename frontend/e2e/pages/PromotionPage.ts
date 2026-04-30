@@ -59,9 +59,12 @@ export class PromotionPage {
                 mimeType: 'image/png',
                 buffer: buffer
             });
-            await this.page.waitForTimeout(1000); // Wait for upload state to update
+            await this.page.waitForTimeout(2000); // Increased wait for upload processing
+            console.log(`>>> [Promotion] Image uploaded successfully.`);
         } else {
-            console.warn(`>>> [Promotion] No file input found for upload.`);
+            const html = await this.modal.innerHTML();
+            console.error(`>>> [Promotion] CRITICAL: No file input found! HTML snippet: ${html.substring(0, 200)}`);
+            throw new Error('Promotion Image Upload Failed: File input not found in modal');
         }
     }
 
@@ -116,19 +119,26 @@ export class PromotionPage {
 
         // Fill Dates (type="date" uses yyyy-MM-dd)
         const today = new Date();
-        const nextMonth = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1); // Ensure it started
+        
+        const nextMonth = new Date(today);
         nextMonth.setMonth(today.getMonth() + 1);
         const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
         const beginInput = this.modal.locator('input[name="noticeBeginDate"]');
-        await beginInput.fill(formatDate(today));
+        await beginInput.fill(formatDate(yesterday));
         await beginInput.dispatchEvent('change');
-        await beginInput.press('Tab');
 
         const endInput = this.modal.locator('input[name="noticeEndDate"]');
         await endInput.fill(formatDate(nextMonth));
         await endInput.dispatchEvent('change');
-        await endInput.press('Tab');
+
+        // Ensure "Use Y/N" is checked and Status is "Active"
+        const useYn = this.modal.locator('input[type="checkbox"][name*="use"], input[type="checkbox"][name*="At"]');
+        if (await useYn.count() > 0 && !(await useYn.first().isChecked())) {
+            await useYn.first().check();
+        }
 
         // Coordinates & Size (if not filled, Zod might complain)
         await this.modal.locator('input[name="popupWidthLocation"]').fill('100');
@@ -149,7 +159,13 @@ export class PromotionPage {
         const nameInput = this.modal.locator('input[name="bannerNm"]');
         await nameInput.fill(title);
 
-        await this.modal.locator('input[name="sortOrdr"]').fill('1');
+        const linkInput = this.modal.locator('input[name="linkUrl"]');
+        if (await linkInput.count() > 0) await linkInput.fill('http://localhost:3001');
+
+        const dcInput = this.modal.locator('input[name="bannerDc"]');
+        if (await dcInput.count() > 0) await dcInput.fill('E2E Test Banner Description');
+
+        await this.modal.locator('input[name="sortOrdr"]').fill('0');
 
         await this.uploadDummyImage();
         await this.clickSubmitAndWait();

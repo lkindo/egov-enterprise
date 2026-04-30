@@ -25,7 +25,7 @@ public class ScrapService implements EgovScrapService {
     @Override
     public Page<ScrapDto> getMyScrapList(String userId, Pageable pageable) {
         return scrapRepository
-                .findByUniqIdAndUseAt(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
+                .findByCreatedByAndUseAt(Objects.requireNonNull(userId), "Y", Objects.requireNonNull(pageable))
                 .map(ScrapDto::from);
     }
 
@@ -47,6 +47,8 @@ public class ScrapService implements EgovScrapService {
                 .bbsId(dto.getBbsId())
                 .nttId(dto.getNttId())
                 .scrapNm(dto.getScrapNm())
+                .scrapUrl(dto.getScrapUrl())
+                .scrapDc(dto.getScrapDc())
                 .useAt("Y")
                 .build();
 
@@ -60,7 +62,7 @@ public class ScrapService implements EgovScrapService {
         Scrap scrap = scrapRepository.findById(Objects.requireNonNull(scrapId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        scrap.update(dto.getScrapNm(), dto.getUseAt());
+        scrap.update(dto.getScrapNm(), dto.getScrapUrl(), dto.getScrapDc(), dto.getUseAt());
     }
 
     @Override

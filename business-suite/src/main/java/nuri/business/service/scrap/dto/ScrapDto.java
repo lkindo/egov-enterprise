@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 /**
- * ??겕??DTO
+ * 스크랩 DTO
  */
 @Getter
 @Builder
@@ -15,6 +15,8 @@ public class ScrapDto {
     private String bbsId;
     private Long nttId;
     private String scrapNm;
+    private String scrapUrl;
+    private String scrapDc;
     private String useAt;
     private String uniqId;
     private String frstRegisterId;
@@ -30,6 +32,8 @@ public class ScrapDto {
                 .bbsId(entity.getBbsId())
                 .nttId(entity.getNttId())
                 .scrapNm(entity.getScrapNm())
+                .scrapUrl(entity.getScrapUrl())
+                .scrapDc(entity.getScrapDc())
                 .useAt(entity.getUseAt())
                 .uniqId(entity.getUniqId())
                 .frstRegisterId(entity.getFrstRegisterId())

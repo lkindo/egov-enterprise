@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import NoteSendHubClient from './NoteSendHubClient';
+import MailSendHubClient from './MailSendHubClient';
 
 export default function MailSendPage() {
-  return <NoteSendHubClient />;
+  return <MailSendHubClient />;
 }

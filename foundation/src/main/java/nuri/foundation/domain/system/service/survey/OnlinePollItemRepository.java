@@ -7,5 +7,5 @@ import java.util.List;
  * ㅼ뵬紐Repository
  */
 public interface OnlinePollItemRepository extends JpaRepository<OnlinePollItem, String> {
-    List<OnlinePollItem> findByPollId(String pollId);
+    List<OnlinePollItem> findByPollManagePollId(String pollId);
 }

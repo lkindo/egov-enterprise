@@ -36,7 +36,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
   const getInitialCategory = () => {
     const bbsId = searchParams.get('bbsId');
     if (bbsId === 'BBSMSTR_CCCCCCCCCCCC') return 'COMMUNITY';
-    if (bbsId === 'BBSMSTR_BBBBBBBBBBBB') return 'FAQ';
+    if (bbsId === 'BBSMSTR_AAAAAAAAAAAA') return 'FAQ';
     if (bbsId === 'BBSMSTR_DDDDDDDDDDDD') return 'QNA';
     if (bbsId === 'BBSMSTR_EEEEEEEEEEEE') return 'WIKI';
     return defaultTab || 'WIKI';
@@ -46,10 +46,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
   const currentBbsId = React.useMemo(() => {
     if (activeCategory === 'COMMUNITY') return 'BBSMSTR_CCCCCCCCCCCC';
-    if (activeCategory === 'FAQ') return 'BBSMSTR_BBBBBBBBBBBB';
+    if (activeCategory === 'FAQ') return 'BBSMSTR_AAAAAAAAAAAA';
     if (activeCategory === 'QNA') return 'BBSMSTR_DDDDDDDDDDDD';
     if (activeCategory === 'WIKI') return 'BBSMSTR_EEEEEEEEEEEE';
-    return 'BBSMSTR_AAAAAAAAAAAA'; // NOTICE
+    return 'BBSMSTR_NNNNNNNNNNNN'; // DEFAULT/NOTICE
   }, [activeCategory]);
 
   const isAccessRestricted = !isAdmin && (activeCategory === 'WIKI' || activeCategory === 'FAQ');

@@ -34,7 +34,14 @@ export function useNotifications() {
       const list = listResult as Notification[] | { list: Notification[] };
       const countData = countResult as number | { count: number };
 
-      const actualList = Array.isArray(list) ? list : (list?.list || []);
+      const actualList = (Array.isArray(list) ? list : (list?.list || [])).map((n: any) => ({
+        ntfcId: n.ntfcId || n.ntfcNo,
+        ntfcSj: n.ntfcSj,
+        ntfcCn: n.ntfcCn,
+        ntfcPnttm: n.ntfcPnttm || n.ntfcTime || n.createdDate,
+        readYn: n.readYn || n.isRead || 'N',
+        type: n.type
+      }));
       setNotifications(actualList);
       setUnreadCount(typeof countData === 'number' ? countData : (countData?.count || 0));
     } catch (error) {
@@ -46,7 +53,18 @@ export function useNotifications() {
   }, [toast]);
 
   const handleNewNotification = useCallback((message: IMessage) => {
-    const newNotif: Notification = JSON.parse(message.body);
+    const rawNotif: any = JSON.parse(message.body);
+    
+    // Normalize notification object to match frontend expectations
+    const newNotif: Notification = {
+      ntfcId: rawNotif.ntfcId || rawNotif.ntfcNo,
+      ntfcSj: rawNotif.ntfcSj,
+      ntfcCn: rawNotif.ntfcCn,
+      ntfcPnttm: rawNotif.ntfcPnttm || rawNotif.ntfcTime || new Date().toISOString(),
+      readYn: rawNotif.readYn || rawNotif.isRead || 'N',
+      type: rawNotif.type
+    };
+
     setNotifications(prev => [newNotif, ...prev]);
     setUnreadCount(prev => prev + 1);
 
@@ -86,12 +104,29 @@ export function useNotifications() {
   const markAsRead = async (id: string) => {
     try {
       await client.post(`/notifications/${id}/read`);
-      fetchNotifications();
+      // Update local state immediately for better UX
+      setNotifications(prev => prev.map(n => n.ntfcId === id ? { ...n, readYn: 'Y' } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
       toast('알림 읽음 처리에 실패했습니다.', 'error');
     }
   };
 
-  return { notifications, unreadCount, markAsRead, refresh: fetchNotifications };
+  const markAllAsRead = async () => {
+    const unreadIds = notifications.filter(n => n.readYn === 'N').map(n => n.ntfcId);
+    if (unreadIds.length === 0) return;
+
+    try {
+      await Promise.all(unreadIds.map(id => client.post(`/notifications/${id}/read`)));
+      setNotifications(prev => prev.map(n => ({ ...n, readYn: 'Y' })));
+      setUnreadCount(0);
+      toast('모든 알림을 읽음 처리했습니다.', 'success');
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+      fetchNotifications(); // Sync with server on failure
+    }
+  };
+
+  return { notifications, unreadCount, markAsRead, markAllAsRead, refresh: fetchNotifications };
 }

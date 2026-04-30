@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -40,11 +40,9 @@ const InsertScrapPage = () => {
 
     setLoading(true);
     try {
-      const response = (await axios.post('/scrap', formData)) as any;
-      if (response.data.success) {
-        alert(response.data.message || '등록되었습니다.');
-        router.push('/admin/collaboration/scraps/selectScrapList');
-      }
+      await axios.post('/scraps', formData);
+      alert('등록되었습니다.');
+      router.push('/admin/collaboration/scraps/selectScrapList');
     } catch (error: any) {
       alert(error.response?.data?.message || '등록에 실패했습니다.');
     } finally {

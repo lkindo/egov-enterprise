@@ -35,9 +35,9 @@ async function authenticate(request: any, id: string, password: string, authFile
     const domain = new URL(webUrl).hostname;
     const storageState = {
         cookies: [
-            { name: 'accessToken', value: token, domain: domain, path: '/', expires: -1, httpOnly: false },
-            { name: 'refreshToken', value: refreshToken, domain: domain, path: '/', expires: -1, httpOnly: true },
-            { name: 'userRole', value: role, domain: domain, path: '/', expires: -1, httpOnly: false }
+            { name: 'accessToken', value: token, domain: domain, path: '/', expires: -1, httpOnly: false, secure: false, sameSite: 'Lax' },
+            { name: 'refreshToken', value: refreshToken, domain: domain, path: '/', expires: -1, httpOnly: true, secure: false, sameSite: 'Lax' },
+            { name: 'userRole', value: role, domain: domain, path: '/', expires: -1, httpOnly: false, secure: false, sameSite: 'Lax' }
         ],
         origins: [
             {

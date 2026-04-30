@@ -5,13 +5,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * ??쎄쾿??Repository
+ * 스크랩 Repository
  */
 public interface ScrapRepository extends JpaRepository<Scrap, String> {
 
-    Page<Scrap> findByUniqId(String uniqId, Pageable pageable);
+    Page<Scrap> findByCreatedBy(String createdBy, Pageable pageable);
 
     Page<Scrap> findByBbsId(String bbsId, Pageable pageable);
 
-    Page<Scrap> findByUniqIdAndUseAt(String uniqId, String useAt, Pageable pageable);
+    Page<Scrap> findByCreatedByAndUseAt(String createdBy, String useAt, Pageable pageable);
 }

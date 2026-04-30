@@ -118,7 +118,7 @@ export function Header({
   const { setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
-  const { notifications, unreadCount } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [menus, setMenus] = useState<MenuInfo[]>(resolvedMenus);
   const [mounted, setMounted] = useState(false);
@@ -282,6 +282,8 @@ export function Header({
       <AppNotificationDrawer
         isOpen={isNotifOpen}
         onClose={() => setIsNotifOpen(false)}
+        onMarkRead={markAsRead}
+        onMarkAllRead={markAllAsRead}
         notifications={(notifications || []).filter(Boolean).map((n, i) => ({
           id: n.ntfcId || `notif-${i}`,
           title: n.ntfcSj,
