@@ -31,7 +31,7 @@ async function cleanup() {
       }
     }
 
-    const headers = { 
+    const headers: Record<string, string> = { 
         'Authorization': `Bearer ${token}`,
         'Cookie': cookieList.join('; '),
         'X-Requested-With': 'XMLHttpRequest'
@@ -54,7 +54,7 @@ async function cleanup() {
     });
     
     const users = usersRes.data.data?.list || usersRes.data.data?.content || [];
-    const testUsers = users.filter((u) => 
+    const testUsers = users.filter((u: any) => 
       u.userId.startsWith('user_') || 
       u.userId.startsWith('e2e_')
     );
@@ -73,7 +73,7 @@ async function cleanup() {
     });
     
     const boards = boardsRes.data.data?.list || boardsRes.data.data?.content || [];
-    const testBoards = boards.filter((b) => 
+    const testBoards = boards.filter((b: any) => 
       b.bbsNm.startsWith('E2E Test Board') || 
       b.bbsNm.startsWith('E2E_Wizard_') ||
       b.bbsNm.startsWith('E2E ')
@@ -96,7 +96,7 @@ async function cleanup() {
         params: { keyword: 'E2E', size: 100 } 
       });
       const polls = pollsRes.data.data?.list || pollsRes.data.data?.content || [];
-      const testPolls = polls.filter((p) => 
+      const testPolls = polls.filter((p: any) => 
         p.pollNm?.startsWith('E2E Poll') || 
         p.pollNm?.startsWith('E2E Duplicate Test') ||
         p.pollNm?.startsWith('Debug')
@@ -107,7 +107,7 @@ async function cleanup() {
         console.log('DONE');
       }
       console.log(`  => ${testPolls.length} poll(s) cleaned.`);
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`  => Poll cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
     
@@ -119,14 +119,14 @@ async function cleanup() {
         params: { searchWrd: 'E2E', size: 100 } 
       });
       const popups = popupsRes.data.data?.list || popupsRes.data.data?.content || [];
-      const testPopups = popups.filter((p) => p.popupTitleName?.startsWith('E2E Popup') || p.popupTitleName?.startsWith('Debug'));
+      const testPopups = popups.filter((p: any) => p.popupTitleName?.startsWith('E2E Popup') || p.popupTitleName?.startsWith('Debug'));
       for (const popup of testPopups) {
         process.stdout.write(`  - Deleting Popup: ${popup.popupTitleName} (${popup.popupId})... `);
         await axios.delete(`${API_BASE}/admin/system/popups/${popup.popupId}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testPopups.length} popup(s) cleaned.`);
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`  => Popup cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
 
@@ -138,14 +138,14 @@ async function cleanup() {
         params: { keyword: 'E2E', size: 100 } 
       });
       const banners = bannersRes.data.data?.list || bannersRes.data.data?.content || [];
-      const testBanners = banners.filter((b) => b.bannerNm?.startsWith('E2E Banner') || b.bannerNm?.startsWith('Debug'));
+      const testBanners = banners.filter((b: any) => b.bannerNm?.startsWith('E2E Banner') || b.bannerNm?.startsWith('Debug'));
       for (const banner of testBanners) {
         process.stdout.write(`  - Deleting Banner: ${banner.bannerNm} (${banner.bannerId})... `);
         await axios.delete(`${API_BASE}/admin/system/banners/${banner.bannerId}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testBanners.length} banner(s) cleaned.`);
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`  => Banner cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
 
@@ -159,7 +159,7 @@ async function cleanup() {
           params: { searchCnd: '0', searchWrd: 'E2E', size: 100 }
         });
         const posts = postsRes.data.data?.list || postsRes.data.data?.content || [];
-        const testPosts = posts.filter((p) => 
+        const testPosts = posts.filter((p: any) => 
           p.nttSj?.startsWith('E2E') || p.title?.startsWith('E2E')
         );
         for (const post of testPosts) {
@@ -169,7 +169,7 @@ async function cleanup() {
           console.log('DONE');
         }
         if (testPosts.length > 0) console.log(`  => ${testPosts.length} post(s) cleaned from ${bbsId}.`);
-      } catch (e) {
+      } catch (e: any) {
         console.warn(`  => Board ${bbsId} cleanup skipped: ${e.response?.data?.message || e.message}`);
       }
     }
@@ -179,20 +179,20 @@ async function cleanup() {
     try {
       const menusRes = await axios.get(`${API_BASE}/admin/system/menus/all`, { headers });
       const menus = menusRes.data.data || [];
-      const testMenus = menus.filter((m) => 
+      const testMenus = menus.filter((m: any) => 
         m.menuNm.startsWith('Root_') || 
         m.menuNm.startsWith('Menu E2E') ||
         m.menuNm.startsWith('Menu_E2E')
       );
       
-      testMenus.sort((a, b) => b.menuNo - a.menuNo);
+      testMenus.sort((a: any, b: any) => b.menuNo - a.menuNo);
 
       for (const menu of testMenus) {
         process.stdout.write(`  - Deleting Menu: ${menu.menuNm} (${menu.menuNo})... `);
         await axios.delete(`${API_BASE}/admin/system/menus/${menu.menuNo}`, { headers });
         console.log('DONE');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`  => Menu cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
 
@@ -204,19 +204,19 @@ async function cleanup() {
         params: { searchWrd: 'Identity_', size: 100 } 
       });
       const addresses = addressRes.data.data?.list || addressRes.data.data?.content || [];
-      const testAddresses = addresses.filter((a) => a.adbkNm?.startsWith('Identity_'));
+      const testAddresses = addresses.filter((a: any) => a.adbkNm?.startsWith('Identity_'));
       for (const address of testAddresses) {
         process.stdout.write(`  - Deleting Address Book Entry: ${address.adbkNm} (${address.adbkId})... `);
         await axios.delete(`${API_BASE}/address-books/${address.adbkId}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testAddresses.length} address book entry(ies) cleaned.`);
-    } catch (e) {
+    } catch (e: any) {
       console.warn(`  => Address book cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
 
     console.log('>>> [DB Cleanup] All test data removed successfully!\n');
-  } catch (error) {
+  } catch (error: any) {
     const errorMsg = error.response?.data?.message || error.message;
     console.error('>>> [DB Cleanup] ERROR occurred during cleanup:', errorMsg);
     if (error.response?.data) {

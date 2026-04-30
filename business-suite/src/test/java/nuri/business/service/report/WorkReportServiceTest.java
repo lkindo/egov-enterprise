@@ -101,9 +101,9 @@ class WorkReportServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<WorkReport> page = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
-        when(workReportRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).thenReturn(page);
 
-        Page<WorkReportDto> result = workReportService.getWorkReportList("user01", pageable);
+        Page<WorkReportDto> result = workReportService.getWorkReportList("user01", "", pageable);
 
         assertNotNull(result);
         assertEquals(0, result.getTotalElements());

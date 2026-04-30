@@ -26,7 +26,7 @@ class MailService extends ApiService {
     page?: number;
     size?: number;
   }) {
-    const response = await this.get<PageResponse<SentMail>>('', params);
+    const response = await this.get<PageResponse<SentMail>>('', { params });
     return response;
   }
 

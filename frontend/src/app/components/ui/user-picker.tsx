@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
@@ -33,7 +33,7 @@ export function UserPicker({
  try {
  setLoading(true);
  const res = await addressbookUserService.searchUsers(keyword);
- setResults(res || []);
+ setResults(res.list || []);
  } catch (error) {
  console.error('Search failed', error);
  } finally {

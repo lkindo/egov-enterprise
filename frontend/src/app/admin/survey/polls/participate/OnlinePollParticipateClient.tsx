@@ -173,7 +173,6 @@ export default function OnlinePollParticipateClient() {
                                     </label>
                                     
                                     <div className="space-y-4">
-                                        {console.log('>>> [DEBUG] rendering pollItems, count:', pollItems.length)}
                                         {pollItems.map((item, idx) => (
                                             <PollItem 
                                                 key={item.pollIemId} 

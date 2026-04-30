@@ -46,7 +46,7 @@ class OnlinePollServiceTest {
     void getPollList() {
         Pageable pageable = PageRequest.of(0, 10);
         OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
-        given(pollManageRepository.findAllOrderByIdDesc(pageable)).willReturn(new PageImpl<>(List.of(entity)));
+        given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList(null, pageable);
 
@@ -60,8 +60,8 @@ class OnlinePollServiceTest {
         OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
         given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
         
-        OnlinePollItem item = OnlinePollItem.builder().pollIemId("I1").pollId("P1").pollIemNm("Item 1").build();
-        given(pollItemRepository.findByPollId("P1")).willReturn(List.of(item));
+        OnlinePollItem item = OnlinePollItem.builder().pollIemId("I1").pollManage(entity).pollIemNm("Item 1").build();
+        given(pollItemRepository.findByPollManagePollId("P1")).willReturn(List.of(item));
 
         OnlinePollManageDto result = onlinePollService.getPoll("P1");
 
@@ -139,6 +139,9 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 항목 등록")
     void insertPollItem() {
+        OnlinePollManage poll = OnlinePollManage.builder().pollId("P1").build();
+        given(pollManageRepository.findById("P1")).willReturn(Optional.of(poll));
+        
         OnlinePollItemDto dto = OnlinePollItemDto.builder().pollId("P1").pollIemNm("Item").build();
         onlinePollService.insertPollItem(dto);
         verify(pollItemRepository, times(1)).save(any(OnlinePollItem.class));

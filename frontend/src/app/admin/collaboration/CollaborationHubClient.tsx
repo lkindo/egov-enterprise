@@ -409,7 +409,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: Coll
                     </Button>
                     <Button 
                         variant="outline" 
-                        onClick={() => handleDelete(selectedItemId)}
+                        onClick={() => handleDelete()}
                         disabled={deleteNoteMutation.isPending}
                         data-testid="delete-note-btn"
                         className="h-16 w-16 rounded-xl border-2 border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-500/20 hover:bg-rose-50 transition-all shadow-xl"

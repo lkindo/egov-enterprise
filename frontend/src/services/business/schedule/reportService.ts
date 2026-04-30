@@ -26,7 +26,7 @@ class WorkReportService extends ApiService {
      * @param params 페이징 및 검색 파라미터
      */
     async getWorkReports(params?: any) {
-        return this.get<PageResponse<WorkReportDto>>('', params);
+        return this.get<PageResponse<WorkReportDto>>('', { params });
     }
 
     /**

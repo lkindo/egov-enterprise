@@ -84,13 +84,9 @@ export default function NoteSendHubClient() {
     setIsSubmitting(true);
     try {
       await noteService.sendNote({
-        rcverId: selectedRecipient.emplyrId,
+        rcverId: selectedRecipient.id,
         noteSj: form.noteSj,
-        noteCn: form.noteCn,
-        recipients: [{
-          rcverId: selectedRecipient.emplyrId,
-          recptnSe: '1'
-        }]
+        noteCn: form.noteCn
       });
       toast('쪽지가 성공적으로 발송되었습니다.', 'success');
       router.push('/admin/collaboration?tab=MESSAGES');
