@@ -42,9 +42,11 @@ export class KnowledgePage {
     }
 
     async searchFAQ(keyword: string) {
-        const searchInput = this.page.locator('input[placeholder*="검색"]');
+        console.log(`>>> Searching FAQ for: ${keyword}`);
+        const searchInput = this.page.locator('input[data-testid="board-search-input"], input[placeholder*="검색"], input[placeholder*="찾으시나요"]').first();
+        await searchInput.waitFor({ state: 'visible', timeout: 15000 });
         await searchInput.fill(keyword);
         await this.page.keyboard.press('Enter');
-        await this.page.waitForTimeout(1000);
+        await this.page.waitForTimeout(2000); // Wait for results to filter
     }
 }

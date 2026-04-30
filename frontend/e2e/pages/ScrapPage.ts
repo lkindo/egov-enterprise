@@ -6,7 +6,8 @@ export class ScrapPage {
     async goto() {
         console.log('[E2E] Navigating to Scrap Management...');
         await this.page.goto('/admin/collaboration/scraps/selectScrapList', { waitUntil: 'load' });
-        await expect(this.page.locator('h2, .title').filter({ hasText: /스크랩|Scrap/i }).first()).toBeVisible({ timeout: 15000 });
+        // Simplified but robust check for the page heading
+        await expect(this.page.getByText(/스크랩 목록|Scrap List/i).first()).toBeVisible({ timeout: 15000 });
     }
 
     async searchScrap(keyword: string) {

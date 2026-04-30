@@ -27,9 +27,13 @@ export class ObservabilityPage {
         if (await loading.isVisible()) {
             await loading.waitFor({ state: 'hidden', timeout: 30000 });
         }
-        // Verify topology content (usually canvas or svg)
-        const topology = this.page.locator('.recharts-responsive-container, canvas, svg').first();
+        // Verify topology content
+        const topology = this.page.locator('div').filter({ hasText: /System Map/i }).first();
         await expect(topology).toBeVisible({ timeout: 15000 });
+        
+        // Also verify at least one node is present
+        const node = this.page.getByText(/Global Traffic|Edge Network|Gateway/i).first();
+        await expect(node).toBeVisible({ timeout: 10000 });
     }
 
     async refresh() {

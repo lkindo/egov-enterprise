@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures/base-test';
-import { credentials } from './test-credentials';
+import { TEST_CREDENTIALS } from './test-credentials';
 
 /**
  * [Tier 1] Core Base: Authentication & Dashboard Hub
@@ -18,8 +18,8 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         await expect(page.locator('input[name="id"], input[name="userId"]')).toBeVisible();
         
         console.log('>>> Step 2: Login Action');
-        await page.locator('input[name="id"], input[name="userId"]').fill(credentials.admin.id);
-        await page.locator('input[name="password"]').fill(credentials.admin.password);
+        await page.locator('input[name="id"], input[name="userId"]').fill(TEST_CREDENTIALS.admin.id);
+        await page.locator('input[name="password"]').fill(TEST_CREDENTIALS.admin.password);
         await page.locator('button[type="submit"]').click();
         
         console.log('>>> Step 3: Redirection to Admin Hub');

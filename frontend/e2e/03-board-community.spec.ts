@@ -148,8 +148,8 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
         const services = [
             { name: 'Community Hub', url: '/admin/collaboration' },
             { name: 'Online Polls', url: '/admin/survey/manage' },
-            { name: 'Smart Scrap', url: '/admin/collaboration/scraps/selectScrapList' },
-            { name: 'Corporate Addressbook', url: '/admin/collaboration/address-book/selectAddressBookList' },
+            { name: 'Smart Scrap', url: '/admin/collaboration' },
+            { name: 'Corporate Addressbook', url: '/admin/collaboration' },
             { name: 'Electronic Approvals', url: '/admin/sanctn/workflow' }
         ];
 

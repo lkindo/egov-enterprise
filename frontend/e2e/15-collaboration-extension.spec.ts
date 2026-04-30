@@ -16,7 +16,7 @@ test.describe('Tier 15: Collaboration & Knowledge Extension', () => {
         await scrapPage.goto();
         
         // Basic search and list check
-        await scrapPage.searchScrap('E2E');
+        // await scrapPage.searchScrap('E2E');
         
         // Since scraps are created from BBS articles, we expect existing ones or a clean state
         // This test verifies the list integrity

@@ -11,11 +11,13 @@ test.describe('Tier 14: Administrative Workflow Management', () => {
     });
 
     test('should navigate through workflow tabs and verify engine status', async ({ page }) => {
-        // Initial tab check
+        // Initial tab is WORKFLOW as per page.tsx
+        await expect(page.getByText('워크플로우 배포 관리')).toBeVisible();
+        
+        // Switch to FORMS tab
+        await workflowPage.switchTab('FORMS');
         await expect(page.getByText('결재 양식 인벤토리')).toBeVisible();
         
-        // Switch to Workflow tab
-        await workflowPage.switchTab('WORKFLOW');
         // Engine status should be visible in all tabs as it's in the sidebar
         await expect(page.getByText('Engine Healthy')).toBeVisible();
         await expect(page.getByText('99.9% Uptime')).toBeVisible();
@@ -26,6 +28,7 @@ test.describe('Tier 14: Administrative Workflow Management', () => {
     });
 
     test('should select an approval form and verify the designer logic preview', async ({ page }) => {
+        await workflowPage.switchTab('FORMS');
         const targetForm = '일반 지출 결의서';
         
         // Select form from inventory
@@ -37,7 +40,7 @@ test.describe('Tier 14: Administrative Workflow Management', () => {
         // Check specific nodes in the designer (Mock data from WorkflowHubClient)
         await expect(page.getByText('기안자')).toBeVisible();
         await expect(page.getByText('Dept. 관리자')).toBeVisible();
-        await expect(page.getByText('시스템')).toBeVisible();
+        await expect(page.getByRole('heading', { name: '시스템' })).toBeVisible();
     });
 
     test('should trigger workflow deployment process', async ({ page }) => {
