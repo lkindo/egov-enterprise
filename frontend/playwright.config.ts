@@ -3,7 +3,7 @@ import path from 'path';
 
 export default defineConfig({
     testDir: './e2e',
-    globalTeardown: require.resolve('./e2e/scripts/cleanup-db.ts'),
+    globalTeardown: './e2e/scripts/cleanup-db.ts',
     timeout: 120000, // 2 minutes for CI stability
     expect: {
         timeout: 30000,

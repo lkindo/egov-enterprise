@@ -22,6 +22,7 @@ export class ConsoleErrorGuard {
     /value/i,
     /controlled/i,
     /XSRF-TOKEN/i,
+    /Failed to load resource/i, // Skip resource loading logs in console (handled by response listener)
   ];
 
   constructor(page: Page) {

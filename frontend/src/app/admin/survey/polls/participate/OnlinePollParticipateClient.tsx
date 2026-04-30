@@ -40,7 +40,7 @@ export default function OnlinePollParticipateClient() {
     const fetchPolls = async () => {
         setLoading(true);
         try {
-            const res = await pollUserService.getPollList({ page: 1, size: 100 });
+            const res = await pollUserService.getPollList({ page: 0, size: 100 });
             // Support both Spring Data JPA Page (content) and legacy list format
             setPolls(res.list || []);
         } catch (error) {

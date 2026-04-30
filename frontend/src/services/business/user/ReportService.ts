@@ -22,7 +22,7 @@ export interface WorkReport {
  */
 class ReportService extends ApiService {
   constructor() {
-    super('/reports');
+    super('/work-reports');
   }
 
   /**

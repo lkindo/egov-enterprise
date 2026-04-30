@@ -8,7 +8,7 @@ import { DeptSchedule, ScheduleSearchParams } from '@/types/business/schedule';
  */
 class DeptScheduleService extends ApiService {
   constructor() {
-    super('/schedule');
+    super('/schedules');
   }
 
   /**
@@ -17,7 +17,7 @@ class DeptScheduleService extends ApiService {
    * @returns 일정 페이지 결과
    */
   public async getDeptScheduleList(params: ScheduleSearchParams = {}): Promise<PageResponse<DeptSchedule>> {
-    return this.get<PageResponse<DeptSchedule>>('', { params });
+    return this.get<PageResponse<DeptSchedule>>('/dept', { params });
   }
 
   /**

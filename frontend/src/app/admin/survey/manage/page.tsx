@@ -24,8 +24,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function PollManagePage() {
   const router = useRouter();
   const [params, setParams] = useState<PollSearchParams>({
-    page: 1,
-    size: 100,
+    page: 0,
+    size: 10,
     searchKeyword: '',
   });
 
@@ -38,7 +38,7 @@ export default function PollManagePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setParams(prev => ({ ...prev, page: 1 }));
+    setParams(prev => ({ ...prev, page: 0 }));
   };
 
   const getStatusBadge = (endDate: string) => {
@@ -110,7 +110,7 @@ export default function PollManagePage() {
                     onClick={() => router.push(`/admin/survey/manage/${poll.pollId}`)}
                   >
                     <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
-                      {index + 1 + ((params.page || 1) - 1) * 10}
+                      {index + 1 + (params.page || 0) * (params.size || 10)}
                     </TableCell>
                     <TableCell className="px-4 py-6">
                       <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ export default function PollManagePage() {
             total={data.total || 0}
             page={data.page || 1}
             size={data.size || 0}
-            onPageChange={(page) => setParams(prev => ({ ...prev, page }))}
+            onPageChange={(page) => setParams(prev => ({ ...prev, page: page - 1 }))}
           />
         </div>
       )}

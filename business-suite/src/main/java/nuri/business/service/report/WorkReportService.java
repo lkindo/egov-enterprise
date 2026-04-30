@@ -68,9 +68,9 @@ public class WorkReportService implements EgovWorkReportService {
     }
 
     @Override
-    public Page<WorkReportDto> getWorkReportList(String writerId, Pageable pageable) {
+    public Page<WorkReportDto> getWorkReportList(String writerId, String searchWrd, Pageable pageable) {
         Objects.requireNonNull(pageable);
-        return workReportRepository.findAll(pageable)
+        return workReportRepository.searchWorkReports(null, null, null, null, "0", searchWrd, null, null, pageable)
                 .map(r -> Objects.requireNonNull(WorkReportDto.builder()
                         .reportId(r.getReportId())
                         .reportSubject(r.getReportSubject())

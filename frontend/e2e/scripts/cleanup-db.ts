@@ -1,4 +1,4 @@
-import axios from 'axios';
+const axios = require('axios');
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 const ADMIN_ID = 'webmaster';
@@ -21,7 +21,7 @@ async function cleanup() {
     // Extract XSRF-TOKEN from set-cookie header (from /users/me response instead of login, since login is CSRF bypassed)
     const rawCookies = meRes.headers['set-cookie'] || loginRes.headers['set-cookie'] || [];
     let xsrfToken = '';
-    const cookieList: string[] = [];
+    const cookieList = [];
 
     for (const cookie of rawCookies) {
       const parts = cookie.split(';')[0];
@@ -31,7 +31,7 @@ async function cleanup() {
       }
     }
 
-    const headers: any = { 
+    const headers = { 
         'Authorization': `Bearer ${token}`,
         'Cookie': cookieList.join('; '),
         'X-Requested-With': 'XMLHttpRequest'
@@ -54,7 +54,7 @@ async function cleanup() {
     });
     
     const users = usersRes.data.data?.list || usersRes.data.data?.content || [];
-    const testUsers = users.filter((u: any) => 
+    const testUsers = users.filter((u) => 
       u.userId.startsWith('user_') || 
       u.userId.startsWith('e2e_')
     );
@@ -73,7 +73,7 @@ async function cleanup() {
     });
     
     const boards = boardsRes.data.data?.list || boardsRes.data.data?.content || [];
-    const testBoards = boards.filter((b: any) => 
+    const testBoards = boards.filter((b) => 
       b.bbsNm.startsWith('E2E Test Board') || 
       b.bbsNm.startsWith('E2E_Wizard_') ||
       b.bbsNm.startsWith('E2E ')
@@ -93,10 +93,10 @@ async function cleanup() {
     try {
       const pollsRes = await axios.get(`${API_BASE}/polls`, { 
         headers,
-        params: { searchWrd: 'E2E', size: 100 } 
+        params: { keyword: 'E2E', size: 100 } 
       });
       const polls = pollsRes.data.data?.list || pollsRes.data.data?.content || [];
-      const testPolls = polls.filter((p: any) => 
+      const testPolls = polls.filter((p) => 
         p.pollNm?.startsWith('E2E Poll') || 
         p.pollNm?.startsWith('E2E Duplicate Test') ||
         p.pollNm?.startsWith('Debug')
@@ -107,45 +107,45 @@ async function cleanup() {
         console.log('DONE');
       }
       console.log(`  => ${testPolls.length} poll(s) cleaned.`);
-    } catch (e: any) {
+    } catch (e) {
       console.warn(`  => Poll cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
-
+    
     // 5. Cleanup Popups (Prefix: E2E Popup)
     console.log('>>> Cleaning up test popups...');
     try {
-      const popupsRes = await axios.get(`${API_BASE}/admin/content/popups`, { 
+      const popupsRes = await axios.get(`${API_BASE}/admin/system/popups`, { 
         headers,
         params: { searchWrd: 'E2E', size: 100 } 
       });
       const popups = popupsRes.data.data?.list || popupsRes.data.data?.content || [];
-      const testPopups = popups.filter((p: any) => p.popupTitleName?.startsWith('E2E Popup') || p.popupTitleName?.startsWith('Debug'));
+      const testPopups = popups.filter((p) => p.popupTitleName?.startsWith('E2E Popup') || p.popupTitleName?.startsWith('Debug'));
       for (const popup of testPopups) {
         process.stdout.write(`  - Deleting Popup: ${popup.popupTitleName} (${popup.popupId})... `);
-        await axios.delete(`${API_BASE}/admin/content/popups/${popup.popupId}`, { headers });
+        await axios.delete(`${API_BASE}/admin/system/popups/${popup.popupId}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testPopups.length} popup(s) cleaned.`);
-    } catch (e: any) {
+    } catch (e) {
       console.warn(`  => Popup cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
 
     // 6. Cleanup Banners (Prefix: E2E Banner)
     console.log('>>> Cleaning up test banners...');
     try {
-      const bannersRes = await axios.get(`${API_BASE}/admin/content/banners`, { 
+      const bannersRes = await axios.get(`${API_BASE}/admin/system/banners`, { 
         headers,
-        params: { searchWrd: 'E2E', size: 100 } 
+        params: { keyword: 'E2E', size: 100 } 
       });
       const banners = bannersRes.data.data?.list || bannersRes.data.data?.content || [];
-      const testBanners = banners.filter((b: any) => b.bannerNm?.startsWith('E2E Banner') || b.bannerNm?.startsWith('Debug'));
+      const testBanners = banners.filter((b) => b.bannerNm?.startsWith('E2E Banner') || b.bannerNm?.startsWith('Debug'));
       for (const banner of testBanners) {
         process.stdout.write(`  - Deleting Banner: ${banner.bannerNm} (${banner.bannerId})... `);
-        await axios.delete(`${API_BASE}/admin/content/banners/${banner.bannerId}`, { headers });
+        await axios.delete(`${API_BASE}/admin/system/banners/${banner.bannerId}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testBanners.length} banner(s) cleaned.`);
-    } catch (e: any) {
+    } catch (e) {
       console.warn(`  => Banner cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
 
@@ -159,7 +159,7 @@ async function cleanup() {
           params: { searchCnd: '0', searchWrd: 'E2E', size: 100 }
         });
         const posts = postsRes.data.data?.list || postsRes.data.data?.content || [];
-        const testPosts = posts.filter((p: any) => 
+        const testPosts = posts.filter((p) => 
           p.nttSj?.startsWith('E2E') || p.title?.startsWith('E2E')
         );
         for (const post of testPosts) {
@@ -169,7 +169,7 @@ async function cleanup() {
           console.log('DONE');
         }
         if (testPosts.length > 0) console.log(`  => ${testPosts.length} post(s) cleaned from ${bbsId}.`);
-      } catch (e: any) {
+      } catch (e) {
         console.warn(`  => Board ${bbsId} cleanup skipped: ${e.response?.data?.message || e.message}`);
       }
     }
@@ -179,20 +179,20 @@ async function cleanup() {
     try {
       const menusRes = await axios.get(`${API_BASE}/admin/system/menus/all`, { headers });
       const menus = menusRes.data.data || [];
-      const testMenus = menus.filter((m: any) => 
+      const testMenus = menus.filter((m) => 
         m.menuNm.startsWith('Root_') || 
         m.menuNm.startsWith('Menu E2E') ||
         m.menuNm.startsWith('Menu_E2E')
       );
       
-      testMenus.sort((a: any, b: any) => b.menuNo - a.menuNo);
+      testMenus.sort((a, b) => b.menuNo - a.menuNo);
 
       for (const menu of testMenus) {
         process.stdout.write(`  - Deleting Menu: ${menu.menuNm} (${menu.menuNo})... `);
         await axios.delete(`${API_BASE}/admin/system/menus/${menu.menuNo}`, { headers });
         console.log('DONE');
       }
-    } catch (e: any) {
+    } catch (e) {
       console.warn(`  => Menu cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
 
@@ -204,19 +204,19 @@ async function cleanup() {
         params: { searchWrd: 'Identity_', size: 100 } 
       });
       const addresses = addressRes.data.data?.list || addressRes.data.data?.content || [];
-      const testAddresses = addresses.filter((a: any) => a.adbkNm?.startsWith('Identity_'));
+      const testAddresses = addresses.filter((a) => a.adbkNm?.startsWith('Identity_'));
       for (const address of testAddresses) {
         process.stdout.write(`  - Deleting Address Book Entry: ${address.adbkNm} (${address.adbkId})... `);
         await axios.delete(`${API_BASE}/address-books/${address.adbkId}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testAddresses.length} address book entry(ies) cleaned.`);
-    } catch (e: any) {
+    } catch (e) {
       console.warn(`  => Address book cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
 
     console.log('>>> [DB Cleanup] All test data removed successfully!\n');
-  } catch (error: any) {
+  } catch (error) {
     const errorMsg = error.response?.data?.message || error.message;
     console.error('>>> [DB Cleanup] ERROR occurred during cleanup:', errorMsg);
     if (error.response?.data) {
@@ -226,23 +226,6 @@ async function cleanup() {
   }
 }
 
-export default async function globalTeardown() {
+module.exports = async function globalTeardown() {
   await cleanup();
-}
-
-import { fileURLToPath } from 'url';
-import path from 'path';
-
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
-
-if (isMain) {
-  cleanup()
-    .then(() => {
-      console.log('>>> [DB Cleanup] Script completed successfully.');
-      process.exit(0);
-    })
-    .catch((err) => {
-      console.error('>>> [DB Cleanup] Script failed with error:', err);
-      process.exit(1);
-    });
-}
+};

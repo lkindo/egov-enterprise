@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -24,7 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function SurveyStatsPage() {
   const router = useRouter();
   const [params, setParams] = useState<PollSearchParams>({
-    page: 1, 
+    page: 0, 
     searchKeyword: '',
   });
 
@@ -38,7 +38,7 @@ export default function SurveyStatsPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setParams(prev => ({ ...prev, page: 1 }));
+    setParams(prev => ({ ...prev, page: 0 }));
   };
 
   return (
@@ -126,7 +126,7 @@ export default function SurveyStatsPage() {
                 polls.map((poll, index) => (
                   <TableRow key={poll.pollId} className="hover:bg-amber-50/30 transition-all border-b last:border-0 group border-slate-50">
                     <TableCell className="text-center font-mono text-sm text-slate-400 py-6">
-                        {index + 1 + ((params.page || 1) - 1) * 10}
+                        {index + 1 + (params.page || 0) * 10}
                     </TableCell>
                     <TableCell className="px-4 py-6 text-left">
                         <span className="text-[17px] font-black text-slate-800 group-hover:text-amber-600 transition-colors uppercase text-left">{poll.pollNm}</span>
@@ -161,7 +161,7 @@ export default function SurveyStatsPage() {
                 total={data.total}
                 page={data.page}
                 size={data.size}
-                onPageChange={(page) => setParams(prev => ({ ...prev, page }))}
+                onPageChange={(page) => setParams(prev => ({ ...prev, page: page - 1 }))}
             />
         </div>
       )}

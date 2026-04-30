@@ -11,19 +11,19 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@Schema(description = "SMS 수신 정보 DTO")
 public class SmsRecptnDto {
 
     @Schema(description = "SMS ID")
     private String smsId;
 
-    @Schema(description = "Description")
+    @Schema(description = "수신 번호")
     private String recptnTelno;
 
-    @Schema(description = "Description")
+    @Schema(description = "결과 코드 (P:대기, S:성공, F:실패)")
     private String resultCode;
 
-    @Schema(description = "Description")
+    @Schema(description = "결과 메시지")
     private String resultMssage;
 
     public static SmsRecptnDto from(SmsRecptn entity) {

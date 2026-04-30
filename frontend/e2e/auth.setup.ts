@@ -1,11 +1,12 @@
 import { test as setup } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
+import { TEST_CREDENTIALS } from './test-credentials';
 
 const adminFile = path.resolve('playwright/.auth/admin.json');
 const userFile = path.resolve('playwright/.auth/user.json');
 
-async function authenticate(request: any, id: string, authFilePath: string) {
+async function authenticate(request: any, id: string, password: string, authFilePath: string) {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080/api/v1/';
     const url = `${apiUrl.endsWith('/') ? apiUrl : apiUrl + '/'}auth/login`;
 
@@ -15,7 +16,7 @@ async function authenticate(request: any, id: string, authFilePath: string) {
 
     try {
         const response = await request.post(url, {
-            data: { userId: id, password: '1' }
+            data: { userId: id, password: password }
         });
 
         if (response.ok()) {
@@ -31,11 +32,12 @@ async function authenticate(request: any, id: string, authFilePath: string) {
     }
 
     const webUrl = process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001';
+    const domain = new URL(webUrl).hostname;
     const storageState = {
         cookies: [
-            { name: 'accessToken', value: token, domain: 'localhost', path: '/', expires: -1, httpOnly: false },
-            { name: 'refreshToken', value: refreshToken, domain: 'localhost', path: '/', expires: -1, httpOnly: true },
-            { name: 'userRole', value: role, domain: 'localhost', path: '/', expires: -1, httpOnly: false }
+            { name: 'accessToken', value: token, domain: domain, path: '/', expires: -1, httpOnly: false },
+            { name: 'refreshToken', value: refreshToken, domain: domain, path: '/', expires: -1, httpOnly: true },
+            { name: 'userRole', value: role, domain: domain, path: '/', expires: -1, httpOnly: false }
         ],
         origins: [
             {
@@ -54,9 +56,9 @@ async function authenticate(request: any, id: string, authFilePath: string) {
 }
 
 setup('authenticate-admin', async ({ request }) => {
-    await authenticate(request, 'webmaster', adminFile);
+    await authenticate(request, TEST_CREDENTIALS.admin.id, TEST_CREDENTIALS.admin.password, adminFile);
 });
 
 setup('authenticate-user', async ({ request }) => {
-    await authenticate(request, 'TEST1', userFile);
+    await authenticate(request, TEST_CREDENTIALS.user.id, TEST_CREDENTIALS.user.password, userFile);
 });

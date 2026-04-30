@@ -13,5 +13,5 @@ public interface EgovWorkReportService {
 
     WorkReportDto getWorkReport(String reportId);
 
-    Page<WorkReportDto> getWorkReportList(String writerId, Pageable pageable);
+    Page<WorkReportDto> getWorkReportList(String writerId, String searchWrd, Pageable pageable);
 }

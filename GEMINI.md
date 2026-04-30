@@ -92,8 +92,17 @@ graph TD
 | `npm run analyze` | `frontend/` | Next.js 번들 사이즈 분석 |
 | `pnpm run storybook` | `frontend/` | UI 컴포넌트 격리 개발 환경 |
 | `make coverage` | Root | 백엔드 테스트 커버리지 리포트 생성 |
+| `npm run e2e` | `frontend/` | E2E 테스트 전체 실행 |
 
-## 8. 안티패턴 (하지 말 것)
+## 8. E2E 테스트 계정 관리 (E2E Credential Management)
+
+- **단일 소스 원칙**: 모든 E2E 테스트 계정 정보는 `frontend/e2e/test-credentials.ts`에서 관리한다.
+- **추정 금지**: 테스트 코드나 `auth.setup.ts`에 계정 정보를 하드코딩하지 않으며, 반드시 위 설정 파일을 참조한다.
+- **계정 정보**:
+    - `admin`: `webmaster` / `1` (기본 관리자)
+    - `user`: `TEST1` / `1` (일반 사용자)
+
+## 9. 안티패턴 (하지 말 것)
 
 | 안티패턴 | 올바른 방향 |
 |---------|-----------|

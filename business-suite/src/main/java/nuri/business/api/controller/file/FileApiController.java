@@ -20,7 +20,7 @@ import java.util.List;
  */
 @Tag(name = "File", description = "파일 관리 API")
 @RestController
-@RequestMapping("/api/v1/files")
+@RequestMapping({"/api/v1/files", "/api/v1/admin/system/files", "/api/v1/admin/content/files", "/api/v1/admin/operation/files"})
 @RequiredArgsConstructor
 public class FileApiController {
 

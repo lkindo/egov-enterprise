@@ -1,5 +1,6 @@
 package nuri.business.service.sms.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import nuri.business.domain.sms.Sms;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -13,28 +14,32 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Description")
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(description = "SMS 데이터 전송 객체")
 public class SmsDto {
 
     @Schema(description = "SMS ID")
     private String smsId;
 
-    @Schema(description = "Description")
+    @Schema(description = "발신 번호")
     private String trnsmitTelno;
 
-    @Schema(description = "Description")
+    @Schema(description = "발신 내용")
     private String trnsmitCn;
 
-    @Schema(description = "Description")
+    @Schema(description = "수신 번호 (호환성용)")
+    private String recptnTelno;
+
+    @Schema(description = "수신자 수")
     private Integer recptnCnt;
 
-    @Schema(description = "Description")
+    @Schema(description = "최초 등록자")
     private String createdBy;
 
-    @Schema(description = "Description")
+    @Schema(description = "최초 등록 일시")
     private LocalDateTime createdDate;
 
-    @Schema(description = "Description")
+    @Schema(description = "고유 식별자")
     private String uniqId;
 
     public String getFrstRegisterId() {
@@ -48,14 +53,14 @@ public class SmsDto {
     public LocalDateTime getTrnsmitPnttm() { return createdDate; }
     public LocalDateTime getFrstRegistPnttm() { return createdDate; }
 
-    @Schema(description = "Description")
+    @Schema(description = "수신자 목록")
     @Builder.Default
     private List<SmsRecptnDto> recipients = new java.util.ArrayList<>();
 
-    @Schema(description = "Description")
+    @Schema(description = "검색 조건")
     private String searchCondition;
 
-    @Schema(description = "Description")
+    @Schema(description = "검색어")
     private String searchWrd;
 
     public static SmsDto from(Sms entity) {

@@ -28,9 +28,10 @@ public class WorkReportApiController {
     @Operation(summary = "업무보고 목록 조회", description = "업무보고 목록을 페이징하여 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<WorkReportDto>>> getWorkReportList(
+            @RequestParam(required = false) String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
         String userId = getCurrentUserId();
-        Page<WorkReportDto> result = workReportService.getWorkReportList(userId, pageable);
+        Page<WorkReportDto> result = workReportService.getWorkReportList(userId, searchWrd, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 

@@ -2,7 +2,12 @@ package nuri.foundation.service.system.service.survey;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
-import nuri.foundation.domain.system.service.survey.*;
+import nuri.foundation.domain.system.service.survey.OnlinePollManage;
+import nuri.foundation.domain.system.service.survey.OnlinePollItem;
+import nuri.foundation.domain.system.service.survey.OnlinePollResult;
+import nuri.foundation.domain.system.service.survey.OnlinePollManageRepository;
+import nuri.foundation.domain.system.service.survey.OnlinePollItemRepository;
+import nuri.foundation.domain.system.service.survey.OnlinePollResultRepository;
 import nuri.foundation.service.system.service.survey.dto.OnlinePollItemDto;
 import nuri.foundation.service.system.service.survey.dto.OnlinePollManageDto;
 import lombok.RequiredArgsConstructor;
@@ -28,11 +33,8 @@ public class OnlinePollService implements EgovOnlinePollService {
     public Page<OnlinePollManageDto> getPollList(String keyword, Pageable pageable) {
         Objects.requireNonNull(pageable);
         Page<OnlinePollManage> entities;
-        if (keyword == null || keyword.isEmpty()) {
-            entities = pollManageRepository.findAllOrderByIdDesc(pageable);
-        } else {
-            entities = pollManageRepository.findByPollNmContainingIgnoreCaseOrderByPollIdDesc(keyword, pageable);
-        }
+        String searchKeyword = (keyword == null) ? "" : keyword;
+        entities = pollManageRepository.findByPollNmContaining(searchKeyword, pageable);
         
         return entities.map(entity -> {
             OnlinePollManageDto dto = OnlinePollManageDto.from(entity);

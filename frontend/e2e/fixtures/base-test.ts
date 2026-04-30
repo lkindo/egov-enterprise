@@ -6,6 +6,7 @@ import { SecurityAdminPage } from '../pages/SecurityAdminPage';
 import { CollabPage } from '../pages/CollabPage';
 import { StatsPage } from '../pages/StatsPage';
 import { OpsDetailPage } from '../pages/OpsDetailPage';
+import { OperationalExtensionPage } from '../pages/OperationalExtensionPage';
 import { ConsoleErrorGuard } from './error-detector';
 
 type MyFixtures = {
@@ -16,6 +17,7 @@ type MyFixtures = {
   collabPage: CollabPage;
   statsPage: StatsPage;
   opsDetailPage: OpsDetailPage;
+  operationalPage: OperationalExtensionPage;
   consoleGuard: ConsoleErrorGuard;
   adminPage: Page;
   userPage: Page;
@@ -51,6 +53,9 @@ export const test = base.extend<MyFixtures>({
   },
   opsDetailPage: async ({ page }, use) => {
     await use(new OpsDetailPage(page));
+  },
+  operationalPage: async ({ page }, use) => {
+    await use(new OperationalExtensionPage(page));
   },
 
   adminPage: async ({ browser }, use) => {

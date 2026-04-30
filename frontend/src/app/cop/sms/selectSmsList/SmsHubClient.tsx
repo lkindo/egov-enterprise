@@ -35,6 +35,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
+  DialogDescription,
   DialogFooter, 
   DialogTrigger 
 } from '@/components/ui/dialog';
@@ -64,7 +65,15 @@ export default function SmsHubClient({
   });
 
   const sendMutation = useMutation({
-    mutationFn: (sms: SmsDto) => smsAdminService.sendSms(sms),
+    mutationFn: (sms: SmsDto) => {
+      // 백엔드 DTO에 정의되지 않은 recptnTelno 필드를 제거하고 recipients로 변환
+      const { recptnTelno, ...rest } = sms;
+      const payload = {
+        ...rest,
+        recipients: recptnTelno ? [{ recptnTelno }] : (sms.recipients || [])
+      };
+      return smsAdminService.sendSms(payload as any);
+    },
     onSuccess: () => {
       toast('SMS가 성공적으로 전송되었습니다.', 'success');
       setIsDialogOpen(false);
@@ -161,9 +170,14 @@ export default function SmsHubClient({
                         </div>
                         <div className="relative z-10 space-y-2">
                             <span className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono italic">Protocol_Transmission</span>
-                            <h2 className="text-3xl font-black tracking-tighter uppercase font-mono italic flex items-center gap-4">
-                                <MessageSquare className="text-primary" /> Send_Message
-                            </h2>
+                            <DialogHeader>
+                                <DialogTitle className="text-3xl font-black tracking-tighter uppercase font-mono italic flex items-center gap-4 text-white">
+                                    <MessageSquare className="text-primary" /> Send_Message
+                                </DialogTitle>
+                                <DialogDescription className="text-slate-400 text-xs font-bold italic mt-2">
+                                    새로운 문자 메시지를 발송하기 위한 파라미터를 입력하십시오.
+                                </DialogDescription>
+                            </DialogHeader>
                         </div>
                     </div>
                     <div className="p-10 space-y-10">

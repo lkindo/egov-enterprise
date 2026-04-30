@@ -18,7 +18,7 @@ export class PollUserService extends ApiService {
       ...config, 
       params: {
         ...params,
-        keyword: params.searchKeyword 
+        keyword: params.searchKeyword || '' 
       }
     });
   }

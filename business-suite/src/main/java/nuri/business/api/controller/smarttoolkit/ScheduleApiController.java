@@ -37,6 +37,18 @@ public class ScheduleApiController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }
 
+    @Operation(summary = "부서 일정 목록 조회", description = "부서의 일정 목록을 페이징하여 조회합니다.")
+    @GetMapping("/dept")
+    public ResponseEntity<ApiResponse<PageResponse<ScheduleDto>>> getDeptScheduleList(
+            @RequestParam(defaultValue = "1") int pageIndex,
+            @RequestParam(defaultValue = "10") int pageUnit) {
+        String userId = getCurrentUserId();
+        PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
+        // schdulSe = "1" is Dept in eGov
+        Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList("1", userId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
+    }
+
     @Operation(summary = "월별 일정 조회", description = "사용자의 월별 일정 목록을 조회합니다.")
     @GetMapping("/monthly")
     public ResponseEntity<ApiResponse<List<ScheduleDto>>> getMonthlySchedule(
