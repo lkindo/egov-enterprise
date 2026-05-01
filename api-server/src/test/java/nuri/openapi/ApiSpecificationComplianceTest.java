@@ -6,7 +6,6 @@ import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.service.user.UserService;
 import nuri.foundation.service.user.dto.UserDto;
 import nuri.foundation.service.user.dto.UserResponse;
-import nuri.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,7 +41,8 @@ class ApiSpecificationComplianceTest {
         .build();
 
     when(userService.getUserById(anyString())).thenReturn(mockUser);
-    when(userService.signup(any())).thenReturn(new UserResponse("testUser", "Test User", Role.USER));
+    when(userService.signup(any())).thenReturn(new UserResponse("testUser", "Test User", "USER"));
+
 
     mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
         .addInterceptors(operationalAuditInterceptor)

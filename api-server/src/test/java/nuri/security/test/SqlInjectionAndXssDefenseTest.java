@@ -3,7 +3,6 @@ package nuri.security.test;
 import nuri.foundation.service.user.dto.UserDto;
 import nuri.foundation.service.user.dto.UserResponse;
 import nuri.foundation.service.user.dto.UserSignupRequest;
-import nuri.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -86,7 +85,8 @@ class SqlInjectionAndXssDefenseTest extends BaseSecurityTest {
             """.formatted(maliciousUserName);
 
         when(userService.signup(any(UserSignupRequest.class)))
-                .thenReturn(new UserResponse("xssUser", "Sanitized Name", Role.USER));
+                .thenReturn(new UserResponse("xssUser", "Sanitized Name", "USER"));
+
 
         // When & Then
         mockMvc.perform(post("/api/v1/users/signup")

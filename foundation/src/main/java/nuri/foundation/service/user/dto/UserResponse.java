@@ -4,8 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import nuri.foundation.domain.user.entity.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 
 @Getter
 @Builder
@@ -20,5 +20,6 @@ public class UserResponse {
     private String userNm;
 
     @Schema(description = "사용자 역할")
-    private Role role;
+    private String role;
 }
+

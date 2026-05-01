@@ -8,7 +8,6 @@ import nuri.foundation.service.user.UserService;
 import nuri.foundation.service.user.dto.UserDto;
 import nuri.foundation.service.user.dto.UserSignupRequest;
 import nuri.foundation.service.user.dto.UserResponse;
-import nuri.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -91,7 +90,8 @@ public class FaultRecoveryFunctionTest {
         when(userService.signup(any(UserSignupRequest.class)))
                 .thenThrow(new RuntimeException("Service temporarily unavailable"))
                 .thenThrow(new RuntimeException("Service still unavailable"))
-                .thenReturn(new UserResponse("successfulUser", "Success User", Role.USER));
+                .thenReturn(new UserResponse("successfulUser", "Success User", "USER"));
+
 
         String requestBody = """
                 {
@@ -203,7 +203,8 @@ public class FaultRecoveryFunctionTest {
     void transactionCleanup_afterFailure() throws Exception {
         when(userService.signup(any(UserSignupRequest.class)))
                 .thenThrow(new RuntimeException("Transaction failed"))
-                .thenReturn(new UserResponse("successfulTransactionUser", "Success", Role.USER));
+                .thenReturn(new UserResponse("successfulTransactionUser", "Success", "USER"));
+
 
         String requestBody = """
                 {

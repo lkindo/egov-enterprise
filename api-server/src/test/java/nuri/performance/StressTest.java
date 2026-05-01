@@ -4,7 +4,6 @@ import nuri.foundation.service.user.UserService;
 import nuri.foundation.service.user.dto.UserDto;
 import nuri.foundation.service.user.dto.UserResponse;
 import nuri.foundation.service.user.dto.UserSignupRequest;
-import nuri.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -67,7 +66,8 @@ class StressTest {
     doReturn(List.of(defaultUser)).when(userService).getUserList();
     doReturn(new PageImpl<>(List.of(defaultUser))).when(userService).getPagedUserList(any(String.class), any(Pageable.class));
     doReturn(defaultUser).when(userService).getUserById(any(String.class));
-    doReturn(new UserResponse("newUser", "신규사용자", Role.USER)).when(userService).signup(any(UserSignupRequest.class));
+    doReturn(new UserResponse("newUser", "신규사용자", "USER")).when(userService).signup(any(UserSignupRequest.class));
+
 
     BoardDto defaultBoard = BoardDto.builder()
         .id(1L)

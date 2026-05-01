@@ -13,7 +13,6 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import nuri.api.controller.UserApiController;
-import nuri.foundation.domain.user.entity.Role;
 import nuri.foundation.service.user.UserService;
 import nuri.foundation.service.user.dto.UserDto;
 import nuri.foundation.service.user.dto.UserResponse;
@@ -70,7 +69,7 @@ class UserApiControllerTest extends BaseControllerTest {
                 .userNm("testNm")
                 .password("password123!") // Add password
                 .esntlId("esntl-123")
-                .role(Role.USER.name())
+                .role("USER")
                 .build();
     }
 
@@ -101,7 +100,8 @@ class UserApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("사용자 회원가입 - 성공")
     void signup_success() throws Exception {
-        UserResponse mockResponse = new UserResponse("newUser", "테스트사용자", Role.USER);
+        UserResponse mockResponse = new UserResponse("newUser", "테스트사용자", "USER");
+
         when(userService.signup(any(UserSignupRequest.class))).thenReturn(mockResponse);
 
         Map<String, Object> request = Map.of(

@@ -36,6 +36,8 @@ public class AuthenticationControllerIntegrationTest {
                 .password(egovPasswordEncoder.encode("password", "testuser"))
                 .userNm("테스트")
                 .role(Role.USER)
+
+
                 .build();
         userRepository.save(user);
     }

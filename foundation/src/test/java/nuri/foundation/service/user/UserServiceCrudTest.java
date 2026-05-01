@@ -3,7 +3,6 @@ package nuri.foundation.service.user;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.domain.auth.UserAuthority;
 import nuri.foundation.domain.auth.UserAuthorityRepository;
-import nuri.foundation.domain.user.entity.Role;
 import nuri.foundation.service.user.dto.UserResponse;
 import nuri.foundation.service.user.dto.UserSignupRequest;
 import nuri.foundation.domain.user.entity.User;
@@ -20,7 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 import java.util.Optional;
@@ -76,7 +74,7 @@ class UserServiceCrudTest {
     when(passwordEncoder.encode(any())).thenReturn("encoded");
     when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-    String result = userService.registerUser("user", "pw", "name", "h", "c", Role.USER);
+    String result = userService.registerUser("user", "pw", "name", "h", "c", "USER");
 
     assertThat(result).isEqualTo("user");
   }
@@ -84,7 +82,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 생성 실패 - null 값 포함")
   void createUser_fail_withNullValues() {
-    assertThatThrownBy(() -> userService.registerUser(null, "pw", "name", "h", "c", Role.USER))
+    assertThatThrownBy(() -> userService.registerUser(null, "pw", "name", "h", "c", "USER"))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -129,17 +127,15 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("페이지별 사용자 목록 조회 성공")
   void getPagedUserList_success() {
-    Page<User> page = new PageImpl<>(List.of(mockUser));
-    when(userRepository.findAll(any(Pageable.class))).thenReturn(page);
-    when(userAuthorityRepository.findByUniqIdIn(any())).thenReturn(List.of(
-        UserAuthority.builder().uniqId("USR_1234567890123456").authorCode("ROLE_USER").build()));
-    when(userMapper.toDtoWithAuthority(any(), any()))
-        .thenReturn(new UserDto("testUser", "테스트사용자", "USR_1234567890123456", null, null, null, null));
+    UserDto userDto = new UserDto("testUser", "테스트사용자", "USR_1234567890123456", null, null, null, null);
+    Page<UserDto> page = new PageImpl<>(List.of(userDto));
+    when(userRepository.getPagedUserList(any(), any())).thenReturn(page);
 
     Page<UserDto> result = userService.getUserPage(PageRequest.of(0, 10));
 
     assertThat(result).isNotNull().hasSize(1);
     assertThat(result.getContent().get(0).getUserId()).isEqualTo("testUser");
+    verify(userRepository).getPagedUserList(any(), any());
   }
 
   @Test
@@ -148,7 +144,8 @@ class UserServiceCrudTest {
     when(userRepository.existsById(any())).thenReturn(false);
     when(passwordEncoder.encode(any())).thenReturn("encoded");
     when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-    when(userMapper.toResponse(any())).thenReturn(UserResponse.builder().userId("newUser").userNm("name").role(Role.USER).build());
+    when(userMapper.toResponse(any())).thenReturn(UserResponse.builder().userId("newUser").userNm("name").role("USER").build());
+
 
     UserResponse result = userService.signup(signupRequest);
 

@@ -48,7 +48,8 @@ public interface EgovUserService {
      */
     String registerUser(@NonNull String userId, @NonNull String password, @NonNull String userNm,
             String passwordHint, String passwordCnsr,
-            nuri.foundation.domain.user.entity.Role role);
+            String roleName);
+
 
     /**
      * 사용자 회원가입

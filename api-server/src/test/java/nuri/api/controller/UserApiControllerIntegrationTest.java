@@ -29,7 +29,8 @@ class UserApiControllerIntegrationTest extends BaseControllerTest {
         UserResponse response = UserResponse.builder()
                 .userId("newUser")
                 .userNm("새로운사용자")
-                .role(nuri.foundation.domain.user.entity.Role.USER)
+                .role("USER")
+
                 .build();
 
         when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);

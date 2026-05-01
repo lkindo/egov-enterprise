@@ -46,7 +46,8 @@ class EventInfoServiceTest {
         given(eventInfoRepository.findAll(pageable)).willReturn(page);
 
         // when
-        Page<EventInfoDto> result = eventInfoService.getEventList(pageable);
+        Page<EventInfoDto> result = eventInfoService.getEventList(null, pageable);
+
 
         // then
         assertThat(result).isNotNull();

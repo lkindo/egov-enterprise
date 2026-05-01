@@ -55,13 +55,18 @@ class BoardServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @org.mockito.Spy
+    private nuri.business.service.board.mapper.BoardMapper boardMapper = org.mapstruct.factory.Mappers.getMapper(nuri.business.service.board.mapper.BoardMapper.class);
+
     private BoardService boardService;
+
 
     @BeforeEach
     void setUp() {
         boardService = new BoardService(boardRepository, boardMasterRepository, userService, fileService,
-                eventPublisher, meterRegistry);
+                eventPublisher, meterRegistry, boardMapper);
     }
+
 
     @Test
     @DisplayName("게시글 목록 조회 테스트")

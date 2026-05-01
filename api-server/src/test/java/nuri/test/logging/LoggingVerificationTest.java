@@ -7,7 +7,6 @@ import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.service.user.UserService;
 import nuri.foundation.service.user.dto.UserResponse;
 import nuri.foundation.service.user.dto.UserSignupRequest;
-import nuri.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,6 @@ public class LoggingVerificationTest {
 
     private MockMvc mockMvc;
     private UserService userService;
-
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
@@ -68,7 +66,8 @@ public class LoggingVerificationTest {
     @DisplayName("정상 요청 시 성공 응답 반환")
     void normalRequest_returnsSuccessResponse() throws Exception {
         when(userService.signup(any(UserSignupRequest.class)))
-                .thenReturn(new UserResponse("newUser", "신규사용자", Role.USER));
+                .thenReturn(new UserResponse("newUser", "신규사용자", "USER"));
+
 
         String requestBody = """
                 {

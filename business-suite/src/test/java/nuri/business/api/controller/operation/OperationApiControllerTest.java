@@ -78,7 +78,8 @@ class OperationApiControllerTest {
     @Test
     @DisplayName("행사 목록 조회 - 성공")
     void getEventList_success() throws Exception {
-        when(eventService.getEventList(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(eventService.getEventList(any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+
         eventMockMvc.perform(get("/api/v1/admin/operation/events")).andExpect(status().isOk());
     }
 

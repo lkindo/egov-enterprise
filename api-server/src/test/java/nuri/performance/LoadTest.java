@@ -9,7 +9,6 @@ import nuri.foundation.service.user.dto.UserResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import nuri.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -64,7 +63,8 @@ class LoadTest {
         List.of(defaultUser), PageRequest.of(0, 10), 1
     );
     when(userService.getPagedUserList(any(), any())).thenReturn(page);
-    when(userService.signup(any())).thenReturn(new UserResponse("newUser", "신규사용자", Role.USER));
+    when(userService.signup(any())).thenReturn(new UserResponse("newUser", "신규사용자", "USER"));
+
   }
 
   @AfterEach

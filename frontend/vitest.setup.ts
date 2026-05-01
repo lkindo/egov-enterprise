@@ -155,7 +155,8 @@ vi.mock('lucide-react', () => {
         'ShieldAlert', 'Settings2', 'Filter', 'Pencil', 'MoreHorizontal', 'XCircle',
         'CheckCircle2', 'Info', 'AlertTriangle', 'ArrowUpDown', 'Eye', 'EyeOff',
         'Copy', 'RefreshCw', 'CheckCircle', 'RefreshCcw', 'BarChart3', 'ArrowUpRight', 'Sparkles', 'Save',
-        'FileCode', 'Type', 'Link', 'FolderOpen', 'Settings2', 'MessageSquare', 'Globe', 'Box', 'Terminal'
+        'FileCode', 'Type', 'Link', 'FolderOpen', 'Settings2', 'MessageSquare', 'Globe', 'Box', 'Terminal',
+        'CloudLightning', 'ZapOff', 'Server', 'ShieldCheck', 'Database', 'BarChart', 'Layout', 'Clock', 'Zap', 'TrendingUp', 'MousePointer2', 'FileText', 'Target'
     ];
 
     const exports: any = {
@@ -177,3 +178,42 @@ if (typeof window !== 'undefined') {
   window.Element.prototype.hasPointerCapture = vi.fn();
   window.Element.prototype.releasePointerCapture = vi.fn();
 }
+
+// Global D3 Mock to prevent ReferenceError in visualization components
+(global as any).d3 = {
+  select: vi.fn().mockReturnThis(),
+  selectAll: vi.fn().mockReturnThis(),
+  attr: vi.fn().mockReturnThis(),
+  style: vi.fn().mockReturnThis(),
+  append: vi.fn().mockReturnThis(),
+  on: vi.fn().mockReturnThis(),
+  data: vi.fn().mockReturnThis(),
+  enter: vi.fn().mockReturnThis(),
+  exit: vi.fn().mockReturnThis(),
+  transition: vi.fn().mockReturnThis(),
+  duration: vi.fn().mockReturnThis(),
+  scaleLinear: vi.fn().mockReturnValue({
+    domain: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
+    copy: vi.fn().mockReturnThis(),
+  }),
+  scaleTime: vi.fn().mockReturnValue({
+    domain: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
+    copy: vi.fn().mockReturnThis(),
+  }),
+  scaleOrdinal: vi.fn().mockReturnValue({
+    domain: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
+    copy: vi.fn().mockReturnThis(),
+  }),
+  axisBottom: vi.fn().mockReturnThis(),
+  axisLeft: vi.fn().mockReturnThis(),
+  line: vi.fn().mockReturnThis(),
+  area: vi.fn().mockReturnThis(),
+  arc: vi.fn().mockReturnThis(),
+  pie: vi.fn().mockReturnThis(),
+  hierarchy: vi.fn().mockReturnThis(),
+  tree: vi.fn().mockReturnThis(),
+  forceSimulation: vi.fn().mockReturnThis(),
+};

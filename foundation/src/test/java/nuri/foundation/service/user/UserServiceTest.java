@@ -3,7 +3,6 @@ package nuri.foundation.service.user;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.domain.auth.UserAuthority;
 import nuri.foundation.domain.auth.UserAuthorityRepository;
-import nuri.foundation.domain.user.entity.Role;
 import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.domain.user.repository.UserRepository;
 import nuri.foundation.service.user.dto.UserDto;
@@ -76,14 +75,13 @@ class UserServiceTest {
     @Test
     @DisplayName("페이징된 사용자 목록 조회")
     void getPagedUserList() {
-        User user = createTestUser();
-        given(userRepository.findAll(any(PageRequest.class))).willReturn(new PageImpl<>(List.of(user)));
-        given(userAuthorityRepository.findByUniqIdIn(anyList())).willReturn(Collections.emptyList());
-        given(userMapper.toDtoWithAuthority(any(), any())).willReturn(new UserDto());
+        UserDto userDto = new UserDto();
+        given(userRepository.getPagedUserList(any(), any())).willReturn(new PageImpl<>(List.of(userDto)));
 
         Page<UserDto> result = userService.getUserPage(PageRequest.of(0, 10));
 
         assertThat(result).isNotNull();
+        verify(userRepository).getPagedUserList(any(), any());
     }
 
     @Test
@@ -104,7 +102,7 @@ class UserServiceTest {
     void registerUser() {
         given(passwordEncoder.encode(anyString())).willReturn("encoded");
         
-        String userId = userService.registerUser("user1", "Pass1234!", "TestUser", "Hint", "Answer", Role.USER);
+        String userId = userService.registerUser("user1", "Pass1234!", "TestUser", "Hint", "Answer", "USER");
 
         assertThat(userId).isEqualTo("user1");
         verify(userRepository).save(any(User.class));
@@ -168,7 +166,8 @@ class UserServiceTest {
                 .build();
         given(userRepository.existsById("user1")).willReturn(false);
         given(passwordEncoder.encode(anyString())).willReturn("enc");
-        given(userMapper.toResponse(any())).willReturn(UserResponse.builder().userId("user1").userNm("TestUser").role(Role.USER).build());
+        given(userMapper.toResponse(any())).willReturn(UserResponse.builder().userId("user1").userNm("TestUser").role("USER").build());
+
 
         UserResponse resp = userService.signup(req);
 

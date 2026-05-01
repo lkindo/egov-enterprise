@@ -30,14 +30,17 @@ public class UserDto {
 
     @NonNull
     @NotBlank(message = "사용자명은 필수입니다")
-    @Size(min = 2, max = 50, message = "사용자명은 2-50 자입니다")
+    @Pattern(regexp = "^[a-zA-Z0-9가-힣\\s]{2,50}$", message = "사용자명은 2~50자의 영문, 숫자, 한글만 가능합니다")
     private String userNm;
+
 
     private String esntlId;
 
     @NotBlank(message = "비밀번호는 필수입니다")
     @Size(min = 8, max = 100, message = "비밀번호는 8-100 자입니다")
+    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다")
     private String password;
+
 
     private String passwordHint;
     private String passwordCnsr;

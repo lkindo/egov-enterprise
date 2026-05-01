@@ -2,6 +2,7 @@ package nuri.foundation.service.menu;
 
 import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.domain.auth.MenuAuthority;
+import nuri.foundation.domain.auth.MenuAuthorityProjection;
 import nuri.foundation.domain.auth.MenuAuthorityRepository;
 import nuri.foundation.domain.menu.Menu;
 import nuri.foundation.domain.menu.MenuRepository;
@@ -219,13 +220,22 @@ public class MenuService {
     }
 
     public List<MenuCreateDto> selectMenuCreatList(@NonNull MenuCreateDto vo) {
-        return menuAuthorityRepository.selectMenuCreatList(vo.getAuthorCode()).stream()
-                .map(proj -> MenuCreateDto.builder()
-                        .menuNo(proj.getMenuNo().intValue())
+        log.info(">>> [MenuService] selectMenuCreatList called for authorCode: {}", vo.getAuthorCode());
+        List<MenuAuthorityProjection> projections = menuAuthorityRepository.selectMenuCreatList(vo.getAuthorCode());
+        log.info(">>> [MenuService] selectMenuCreatList found {} projections", projections.size());
+        
+        return projections.stream()
+                .map(proj -> {
+                    if (proj.getMenuNo() == null) {
+                        log.error(">>> [MenuService] Found projection with NULL menuNo for authorCode: {}", vo.getAuthorCode());
+                    }
+                    return MenuCreateDto.builder()
+                        .menuNo(proj.getMenuNo() != null ? proj.getMenuNo().intValue() : 0)
                         .authorCode(proj.getAuthorCode())
                         .authorNm(proj.getMenuNm())
                         .chkYeoBu("Y".equals(proj.getRegYn()) ? 1 : 0)
-                        .build())
+                        .build();
+                })
                 .collect(Collectors.toList());
     }
 

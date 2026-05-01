@@ -5,10 +5,9 @@ import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.service.user.UserService;
-import nuri.foundation.service.user.dto.UserDto;
-import nuri.foundation.service.user.dto.UserResponse;
-import nuri.foundation.service.user.dto.UserSignupRequest;
+import nuri.foundation.service.user.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
+
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -56,13 +55,14 @@ public class UserApiController {
     @PutMapping("/users/me/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @LoginUser CustomUserDetails userDetails,
-            @RequestBody java.util.Map<String, String> request) {
+            @RequestBody @Valid PasswordChangeRequest request) {
         userService.changePassword(
                 userDetails.getUserId(),
-                request.get("oldPassword"),
-                request.get("newPassword"));
+                request.getOldPassword(),
+                request.getNewPassword());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
 
     @Operation(summary = "회원가입", description = "새로운 사용자 계정을 생성합니다.")
     @PostMapping("/users/signup")
@@ -100,27 +100,28 @@ public class UserApiController {
     @Operation(summary = "사용자 등록", description = "새로운 시스템 사용자를 등록합니다. (관리자 권한)")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/system/users")
-    public ResponseEntity<ApiResponse<String>> insertUser(@RequestBody UserDto dto) {
+    public ResponseEntity<ApiResponse<String>> insertUser(@RequestBody @Valid UserDto dto) {
         String resultId = userService.registerUser(
                 dto.getUserId(),
                 dto.getPassword(),
                 dto.getUserNm(),
                 dto.getPasswordHint(),
                 dto.getPasswordCnsr(),
-                dto.getRole() != null ? nuri.foundation.domain.user.entity.Role.valueOf(dto.getRole())
-                        : null);
+                dto.getRole());
         return ResponseEntity.ok(ApiResponse.success(resultId));
     }
+
 
     @Operation(summary = "사용자 정보 수정", description = "기존 시스템 사용자의 정보를 수정합니다. (관리자 권한)")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/admin/system/users/{userId}")
     public ResponseEntity<ApiResponse<Void>> updateUser(
             @PathVariable String userId,
-            @RequestBody UserDto dto) {
+            @RequestBody @Valid UserDto dto) {
         userService.updateUser(userId, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
 
     @Operation(summary = "사용자 삭제", description = "시스템에서 사용자를 삭제합니다. (관리자 권한)")
     @PreAuthorize("hasRole('ADMIN')")
@@ -144,8 +145,9 @@ public class UserApiController {
     @PatchMapping("/admin/system/users/{userId}/password")
     public ResponseEntity<ApiResponse<Void>> updatePasswordByAdmin(
             @PathVariable String userId,
-            @RequestBody java.util.Map<String, String> request) {
-        userService.updatePasswordByAdmin(userId, request.get("newPassword"));
+            @RequestBody @Valid AdminPasswordChangeRequest request) {
+        userService.updatePasswordByAdmin(userId, request.newPassword());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
 }

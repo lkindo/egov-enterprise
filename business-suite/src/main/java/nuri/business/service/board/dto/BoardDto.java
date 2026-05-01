@@ -1,12 +1,10 @@
 package nuri.business.service.board.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import nuri.business.domain.board.Board;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * 게시판 정보 전송 객체 (DTO)
@@ -131,140 +129,8 @@ public class BoardDto {
     @Schema(description = "행사 일시 (문자열)")
     private final String eventDateStr;
 
-    public static BoardDto from(Board entity) {
-        String eventDateStr = entity.getEventDate() != null
-                ? entity.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                : "";
-        return BoardDto.builder()
-                .id(entity.getNttId())
-                .knoId(String.valueOf(entity.getNttId()))
-                .knoNm(entity.getNttSj())
-                .knoCn(entity.getNttCn())
-                .statusCd(entity.getQnaStatus())
-                .categoryCd(entity.getQnaCategory())
-                .bbsId(entity.getBbsId())
-                .nttSj(entity.getNttSj())
-                .nttCn(entity.getNttCn())
-                .ntcrNm(entity.getNtcrNm())
-                .inqireCo(entity.getInqireCo())
-                .likeCo(entity.getLikeCo())
-                .frstRegisterPnttm(entity.getCreatedDate())
-                .atchFileId(entity.getAtchFileId())
-                .nttNo(entity.getNttNo())
-                .sortOrdr(entity.getSortOrdr())
-                .parnts(String.valueOf(entity.getParnts()))
-                .replyAt(entity.getReplyAt())
-                .replyLc(entity.getReplyLc())
-                .ntceBgnde(entity.getNtceBgnde())
-                .ntceEndde(entity.getNtceEndde())
-                .useAt(entity.getUseAt())
-                .isExpired(getExpiredFlag(entity.getNtceEndde()))
-                .frstRegisterPnttmStr(entity.getCreatedDate() != null
-                        ? entity.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        : "")
-                .ntcrId(entity.getNtcrId())
-                .frstRegisterId(entity.getCreatedBy())
-                .lastUpdtPnttm(entity.getLastModifiedDate())
-                .password(entity.getPassword())
-                .secretAt(entity.getSecretAt())
-                .blogAt(entity.getBlogId() != null ? "Y" : "N")
-                .commentCo(0)
-                .eventDate(entity.getEventDate())
-                .qnaStatus(entity.getQnaStatus())
-                .qnaCategory(entity.getQnaCategory())
-                .eventDateStr(eventDateStr)
-                .noticeAt(entity.getNoticeAt())
-                .build();
-    }
-
-    public static BoardDto from(nuri.business.domain.board.BoardSearchResult result) {
-        return BoardDto.builder()
-                .id(result.getNttId())
-                .knoId(String.valueOf(result.getNttId()))
-                .knoNm(result.getNttSj())
-                .statusCd(result.getQnaStatus())
-                .categoryCd(result.getQnaCategory())
-                .bbsId(result.getBbsId())
-                .nttSj(result.getNttSj())
-                .ntcrNm(result.getFrstRegisterNm())
-                .inqireCo(result.getInqireCo())
-                .likeCo(result.getLikeCo())
-                .frstRegisterPnttm(result.getCreatedDate())
-                .atchFileId(result.getAtchFileId())
-                .parnts(String.valueOf(result.getParnts()))
-                .replyAt(result.getReplyAt())
-                .replyLc(result.getReplyLc())
-                .ntceBgnde(result.getNtceBgnde())
-                .ntceEndde(result.getNtceEndde())
-                .useAt(result.getUseAt())
-                .isExpired(getExpiredFlag(result.getNtceEndde()))
-                .frstRegisterPnttmStr(result.getCreatedDate() != null
-                        ? result.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        : "")
-                .frstRegisterId(result.getFrstRegisterId())
-                .secretAt(result.getSecretAt())
-                .commentCo(result.getCommentCo())
-                .eventDate(result.getEventDate())
-                .qnaStatus(result.getQnaStatus())
-                .qnaCategory(result.getQnaCategory())
-                .eventDateStr(result.getEventDate() != null
-                        ? result.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                        : "")
-                .noticeAt(result.getNoticeAt())
-                .build();
-    }
-
-    public static BoardDto from(nuri.business.domain.board.BoardDetailResult detail) {
-        return BoardDto.builder()
-                .id(detail.getNttId())
-                .knoId(String.valueOf(detail.getNttId()))
-                .knoNm(detail.getNttSj())
-                .knoCn(detail.getNttCn())
-                .statusCd(detail.getQnaStatus())
-                .categoryCd(detail.getQnaCategory())
-                .bbsId(detail.getBbsId())
-                .nttSj(detail.getNttSj())
-                .nttCn(detail.getNttCn())
-                .ntcrNm(detail.getFrstRegisterNm())
-                .inqireCo(detail.getInqireCo())
-                .likeCo(detail.getLikeCo())
-                .frstRegisterPnttm(detail.getCreatedDate())
-                .atchFileId(detail.getAtchFileId())
-                .nttNo(detail.getNttNo())
-                .sortOrdr(detail.getSortOrdr())
-                .parnts(String.valueOf(detail.getParnts()))
-                .replyAt(detail.getReplyAt())
-                .replyLc(detail.getReplyLc())
-                .ntceBgnde(detail.getNtceBgnde())
-                .ntceEndde(detail.getNtceEndde())
-                .useAt(detail.getUseAt())
-                .isExpired(getExpiredFlag(detail.getNtceEndde()))
-                .frstRegisterPnttmStr(detail.getCreatedDate() != null
-                        ? detail.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        : "")
-                .ntcrId(detail.getNtcrId())
-                .frstRegisterId(detail.getFrstRegisterId())
-                .password(detail.getPassword())
-                .secretAt(detail.getSecretAt())
-                .bbsNm(detail.getBbsNm())
-                .eventDate(detail.getEventDate())
-                .qnaStatus(detail.getQnaStatus())
-                .qnaCategory(detail.getQnaCategory())
-                .eventDateStr(detail.getEventDate() != null
-                        ? detail.getEventDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-                        : "")
-                .noticeAt(detail.getNoticeAt())
-                .build();
-    }
-
-    private static String getExpiredFlag(String ntceEndde) {
-        if (ntceEndde == null || ntceEndde.isEmpty())
-            return "N";
-        String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        return ntceEndde.compareTo(today) < 0 ? "Y" : "N";
-    }
-
     // Compatibility getters for legacy JSP
+
     public Long getNttId() {
         return id;
     }

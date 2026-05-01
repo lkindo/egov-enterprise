@@ -45,20 +45,24 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
         private final EgovFileService fileService;
         private final ApplicationEventPublisher eventPublisher;
         private final MeterRegistry meterRegistry;
+        private final nuri.business.service.board.mapper.BoardMapper boardMapper;
 
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
                         EgovUserService userService,
                         EgovFileService fileService,
                         ApplicationEventPublisher eventPublisher,
-                        MeterRegistry meterRegistry) {
+                        MeterRegistry meterRegistry,
+                        nuri.business.service.board.mapper.BoardMapper boardMapper) {
                 this.boardRepository = required(boardRepository, "boardRepository 는 null 일 수 없습니다");
                 this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
                 this.userService = required(userService, "userService 는 null 일 수 없습니다");
                 this.fileService = required(fileService, "fileService 는 null 일 수 없습니다");
                 this.eventPublisher = required(eventPublisher, "eventPublisher 는 null 일 수 없습니다");
                 this.meterRegistry = required(meterRegistry, "meterRegistry 는 null 일 수 없습니다");
+                this.boardMapper = required(boardMapper, "boardMapper 는 null 일 수 없습니다");
         }
+
 
         @Override
         @Transactional(readOnly = true)
@@ -108,7 +112,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 }
 
                 return boardRepository.searchArticles(condition, required(pageable, "pageable 는 null 일 수 없습니다"))
-                                .map(BoardDto::from);
+                                .map(boardMapper::toDto);
+
         }
 
         @Override
@@ -155,39 +160,11 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                         Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;
 
-                        java.time.LocalDateTime eventDate = null;
-                        if (StringUtils.hasText(request.eventDate())) {
-                                try {
-                                        eventDate = java.time.LocalDateTime.parse(request.eventDate());
-                                } catch (Exception e) {
-                                        log.warn("Failed to parse eventDate: {}", request.eventDate());
-                                }
-                        }
+                        String ntcrId = request.ntcrId() != null ? request.ntcrId() : userId;
+                        String ntcrNm = request.ntcrNm() != null ? request.ntcrNm() : (author != null ? author.getUserNm() : "익명");
 
-                        Board board = Board.builder()
-                                        .bbsId(required(master.getBbsId(), "master.getBbsId() 는 null 일 수 없습니다"))
-                                        .nttSj(request.nttSj())
-                                        .nttCn(request.nttCn())
-                                        .ntceBgnde(request.ntceBgnde())
-                                        .ntceEndde(request.ntceEndde())
-                                        .ntcrId(userId)
-                                        .ntcrNm(author != null ? author.getUserNm() : "익명")
-                                        .atchFileId(request.atchFileId())
-                                        .nttNo(1L)
-                                        .sortOrdr(sortOrdr)
-                                        .parnts(0L)
-                                        .replyAt("N")
-                                        .replyLc(0)
-                                        .noticeAt(request.noticeAt())
-                                        .eventDate(eventDate)
-                                        .qnaStatus(request.qnaStatus() != null ? request.qnaStatus() : "OPEN")
-                                        .qnaCategory(request.qnaCategory())
-                                        .secretAt(request.secretAt())
-                                        .useAt(request.useAt() != null ? request.useAt() : "Y")
-                                        .ntcrId(request.ntcrId() != null ? request.ntcrId() : userId)
-                                        .ntcrNm(request.ntcrNm() != null ? request.ntcrNm() : (author != null ? author.getUserNm() : "익명"))
-                                        .password(request.password())
-                                        .build();
+                        Board board = boardMapper.toEntity(request, master.getBbsId(), ntcrId, ntcrNm, sortOrdr);
+
 
                         Long nttId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                         "boardRepository.save() 결과는 null 일 수 없습니다")
@@ -248,25 +225,11 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 Long nttNo = boardRepository.findMaxNttNo(master.getBbsId(), parent.getSortOrdr()) + 1;
 
-                Board board = Board.builder()
-                                .bbsId(required(master.getBbsId(), "master.getBbsId() 는 null 일 수 없습니다"))
-                                .nttSj(request.nttSj())
-                                .nttCn(request.nttCn())
-                                .ntceBgnde(request.ntceBgnde())
-                                .ntceEndde(request.ntceEndde())
-                                .ntcrId(userId)
-                                .ntcrNm(author != null ? author.getUserNm() : "익명")
-                                .atchFileId(request.atchFileId())
-                                .parnts(parentId)
-                                .nttNo(nttNo)
-                                .sortOrdr(parent.getSortOrdr())
-                                .replyAt("Y")
-                                .replyLc(parent.getReplyLc() + 1)
-                                .noticeAt(request.noticeAt())
-                                .secretAt(request.secretAt())
-                                .useAt(request.useAt() != null ? request.useAt() : "Y")
-                                .password(request.password())
-                                .build();
+                String ntcrId = userId;
+                String ntcrNm = author != null ? author.getUserNm() : "익명";
+
+                Board board = boardMapper.toReplyEntity(request, master.getBbsId(), ntcrId, ntcrNm, parent.getSortOrdr(), nttNo, parentId, parent.getReplyLc() + 1);
+
 
                 Long nttId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                 "boardRepository.save() 결과는 null 일 수 없습니다")
@@ -304,7 +267,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 boardRepository.findById(required(nttId, "nttId 는 null 일 수 없습니다")).ifPresent(Board::increaseInqireCo);
 
-                return BoardDto.from(detail);
+                return boardMapper.toDto(detail);
+
         }
 
         @Override

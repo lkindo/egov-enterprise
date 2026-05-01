@@ -3,7 +3,9 @@ package nuri.business.service.board.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.lang.NonNull;
+
 
 @Schema(description = "Board Post Save Request")
 public record BoardSaveRequest(
@@ -19,7 +21,8 @@ public record BoardSaveRequest(
 
                 @Schema(description = "Attached File ID") String atchFileId,
 
-                @Schema(description = "Notice Flag (Y/N)") String noticeAt,
+                @Schema(description = "Notice Flag (Y/N)") @Pattern(regexp = "^[YN]$") String noticeAt,
+
 
                 @Schema(description = "Event Date (ISO-8601)") String eventDate,
 
@@ -27,9 +30,11 @@ public record BoardSaveRequest(
 
                 @Schema(description = "Q&A Category") String qnaCategory,
                 
-                @Schema(description = "Secret Flag (Y/N)") String secretAt,
+                @Schema(description = "Secret Flag (Y/N)") @Pattern(regexp = "^[YN]$") String secretAt,
 
-                @Schema(description = "Use Flag (Y/N)") String useAt,
+
+                @Schema(description = "Use Flag (Y/N)") @Pattern(regexp = "^[YN]$") String useAt,
+
 
                 @Schema(description = "Author ID") String ntcrId,
 

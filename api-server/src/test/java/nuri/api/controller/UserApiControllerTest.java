@@ -5,7 +5,6 @@ import nuri.foundation.test.BaseControllerTest;
 import nuri.foundation.service.user.UserService;
 import nuri.foundation.service.user.dto.UserResponse;
 import nuri.foundation.service.user.dto.UserSignupRequest;
-import nuri.foundation.domain.user.entity.Role;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
@@ -59,7 +58,8 @@ public class UserApiControllerTest extends BaseControllerTest {
         UserResponse response = UserResponse.builder()
                 .userId("validUser")
                 .userNm("Valid Name")
-                .role(Role.USER)
+                .role("USER")
+
                 .build();
 
         when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);

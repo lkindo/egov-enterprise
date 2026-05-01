@@ -72,17 +72,18 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
     const files = formData.getAll('files') as File[];
     files.forEach(file => { if (file && file.size > 0) apiFormData.append('file', file); });
 
-    let response: unknown;
-    if (isEdit) {
-      response = await client.put(`/bbs/${bbsId}/${nttId}`, apiFormData, {
-        ...axiosConfig,
-        headers: { ...axiosConfig?.headers, 'Content-Type': 'multipart/form-data' }
-      });
-    } else {
-      response = await client.post(`/bbs/${bbsId}`, apiFormData, {
-        ...axiosConfig,
-        headers: { ...axiosConfig?.headers, 'Content-Type': 'multipart/form-data' }
-      });
+    const response = isEdit 
+      ? await client.put(`/bbs/${bbsId}/${nttId}`, apiFormData, {
+          ...axiosConfig,
+          headers: { ...axiosConfig?.headers, 'Content-Type': 'multipart/form-data' }
+        })
+      : await client.post(`/bbs/${bbsId}`, apiFormData, {
+          ...axiosConfig,
+          headers: { ...axiosConfig?.headers, 'Content-Type': 'multipart/form-data' }
+        });
+
+    if (!response && !isEdit) {
+      throw new Error('저장에 실패했습니다.');
     }
 
     revalidatePath(`/admin/community/boards/selectBoardList`);
@@ -109,7 +110,11 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/bbs/${bbsId}/${nttId}`, axiosConfig);
+    const response = await client.delete(`/bbs/${bbsId}/${nttId}`, axiosConfig);
+    
+    if (response === null || response === undefined) {
+      throw new Error('삭제에 실패했습니다.');
+    }
 
     revalidatePath(`/admin/community/boards/selectBoardList`);
     return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };

@@ -19,7 +19,6 @@ import nuri.foundation.service.user.UserService;
 import nuri.foundation.service.user.dto.UserDto;
 import nuri.foundation.service.user.dto.UserResponse;
 import nuri.foundation.service.user.dto.UserSignupRequest;
-import nuri.foundation.domain.user.entity.Role;
 import java.util.List;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -70,7 +69,8 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
                 .role("USER")
                 .build();
 
-        testUserResponse = new UserResponse("testUser", "테스트사용자이름", Role.USER);
+        testUserResponse = new UserResponse("testUser", "테스트사용자이름", "USER");
+
     }
 
     @Test

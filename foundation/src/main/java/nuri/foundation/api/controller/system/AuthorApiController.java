@@ -32,6 +32,7 @@ public class AuthorApiController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuthorManageDto>>> getAuthors(
             @ModelAttribute BaseSearchDto searchDto) {
+        log.info(">>> [AuthorApiController] getAuthors called with params: {}", searchDto);
 
         List<AuthorManageDto> list = authorManageService.selectAuthorList(searchDto);
         int total = authorManageService.selectAuthorListTotCnt(searchDto);
@@ -71,6 +72,7 @@ public class AuthorApiController {
     @GetMapping("/{authorCode}/menus")
     public ResponseEntity<ApiResponse<List<MenuCreateDto>>> getAuthorMenus(
             @PathVariable String authorCode) {
+        log.info(">>> [AuthorApiController] getAuthorMenus called for code: {}", authorCode);
 
         MenuCreateDto vo = new MenuCreateDto();
         vo.setAuthorCode(authorCode);

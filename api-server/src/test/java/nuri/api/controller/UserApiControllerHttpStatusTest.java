@@ -44,7 +44,8 @@ class UserApiControllerHttpStatusTest {
         UserResponse response = new UserResponse(
                 "newUser",
                 "New User",
-                nuri.foundation.domain.user.entity.Role.USER);
+                "USER");
+
 
         when(userService.signup(any(UserSignupRequest.class))).thenReturn(response);
 

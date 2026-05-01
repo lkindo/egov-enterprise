@@ -13,10 +13,10 @@ import nuri.foundation.service.user.dto.UserDto;
 import nuri.foundation.service.user.dto.UserResponse;
 import nuri.foundation.service.user.dto.UserSignupRequest;
 import nuri.foundation.service.user.mapper.UserMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,9 +32,11 @@ import java.util.stream.Collectors;
  * - 전자정부 표준프레임워크 5.0 호환성 인증 요건 충족
  * - BaseAbstractService 상속으로 중복 코드 제거
  */
+@Slf4j
 @Service("egovUserService")
 @Transactional(readOnly = true)
 public class UserService extends BaseAbstractService implements EgovUserService {
+
 
         private final UserRepository userRepository;
         private final UserAuthorityRepository userAuthorityRepository;
@@ -84,35 +86,9 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Override
         @Cacheable(value = "users", key = "'pagedUserList:' + (#searchKeyword ?: '') + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
         public Page<UserDto> getPagedUserList(String searchKeyword, @NonNull Pageable pageable) {
-                Page<User> userPage;
-                if (org.springframework.util.StringUtils.hasText(searchKeyword)) {
-                        userPage = userRepository.findByUserIdContainingIgnoreCaseOrUserNmContainingIgnoreCase(searchKeyword, searchKeyword, required(pageable));
-                } else {
-                        userPage = userRepository.findAll(required(pageable, "Pageable 은 null 일 수 없습니다"));
-                }
-
-                List<String> userIds = userPage.getContent().stream()
-                                .map(User::getEsntlId)
-                                .collect(Collectors.toList());
-
-                if (userIds.isEmpty()) {
-                        return new PageImpl<>(java.util.Collections.emptyList(), pageable, userPage.getTotalElements());
-                }
-
-                List<UserAuthority> authorities = userAuthorityRepository
-                                .findByUniqIdIn(required(userIds, "사용자 ID 목록은 null 일 수 없습니다"));
-
-                Map<String, UserAuthority> authorityMap = authorities.stream()
-                                .collect(Collectors.toMap(
-                                                authority -> required(authority.getUniqId(), "권한 ID 는 null 일 수 없습니다"),
-                                                authority -> authority));
-
-                List<UserDto> userDtos = userPage.getContent().stream()
-                                .map(user -> userMapper.toDtoWithAuthority(user, authorityMap.get(user.getEsntlId())))
-                                .collect(Collectors.toList());
-
-                return new PageImpl<>(userDtos, userPage.getPageable(), userPage.getTotalElements());
+                return userRepository.getPagedUserList(searchKeyword, required(pageable, "Pageable 은 null 일 수 없습니다"));
         }
+
 
         /**
          * 사용자 목록 페이지 조회 (검색어 없음)
@@ -159,10 +135,19 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Transactional
         @CacheEvict(value = { Constants.Cache.USERS_CACHE }, allEntries = true)
         public String registerUser(@NonNull String userId, @NonNull String password, @NonNull String userNm,
-                        String passwordHint, String passwordCnsr, Role role) {
+                        String passwordHint, String passwordCnsr, String roleName) {
                 String esntlId = Constants.User.USER_PREFIX
                                 + UUID.randomUUID().toString().substring(0, Constants.User.UUID_LENGTH);
                 String encodedPassword = passwordEncoder.encode(password);
+
+                Role role = Role.USER;
+                if (org.springframework.util.StringUtils.hasText(roleName)) {
+                        try {
+                                role = Role.valueOf(roleName);
+                        } catch (IllegalArgumentException e) {
+                                log.warn("Invalid role name: {}, defaulting to ROLE_USER", roleName);
+                        }
+                }
 
                 User user = User.builder()
                                 .userId(notBlank(userId, "User ID 는 null 이거나 빈 값일 수 없습니다"))
@@ -171,8 +156,9 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                                 .esntlId(esntlId)
                                 .passwordHint(passwordHint)
                                 .passwordCnsr(passwordCnsr)
-                                .role(role != null ? role : Role.USER)
+                                .role(role)
                                 .build();
+
 
                 userRepository.save(required(user));
 
@@ -230,6 +216,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 User user = userRepository.findById(required(userId, "사용자 ID 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+
                 if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
                         throw new BusinessException(ErrorCode.INVALID_PASSWORD);
                 }
@@ -257,7 +244,8 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public UserResponse signup(UserSignupRequest request) {
-                UserValidator.validateUserSignupRequest(required(request, "회원가입 요청은 null 일 수 없습니다"));
+                required(request, "회원가입 요청은 null 일 수 없습니다");
+
 
                 if (userRepository.existsById(required(request.getUserId(), "사용자 ID 는 null 일 수 없습니다"))) {
                         throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);

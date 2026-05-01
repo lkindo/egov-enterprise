@@ -23,12 +23,15 @@ public class UserSignupRequest {
 
     @NotBlank(message = "비밀번호는 필수입니다")
     @Size(min = 8, max = 20, message = "비밀번호는 8~20자여야 합니다")
+    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다")
     @Schema(description = "비밀번호", example = "password123!")
     private String password;
-
+ 
     @NotBlank(message = "사용자명은 필수입니다")
+    @Pattern(regexp = "^[a-zA-Z0-9가-힣\\s]{2,50}$", message = "사용자명은 2~50자의 영문, 숫자, 한글만 가능합니다")
     @Schema(description = "사용자 이름", example = "홍길동")
     private String userNm;
+
 
     @Schema(description = "비밀번호 힌트")
     private String passwordHint;

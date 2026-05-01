@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Objects;
+import com.querydsl.core.types.Projections;
+import nuri.foundation.service.user.dto.UserDto;
 import static nuri.foundation.domain.user.entity.QEnterpriseUser.enterpriseUser;
 import static nuri.foundation.domain.user.entity.QGeneralUser.generalUser;
 import static nuri.foundation.domain.user.entity.QUser.user;
@@ -20,7 +22,44 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
+    public Page<UserDto> getPagedUserList(String searchKeyword, Pageable pageable) {
+        BooleanExpression condition = null;
+        if (StringUtils.hasText(searchKeyword)) {
+            condition = user.userId.containsIgnoreCase(searchKeyword)
+                    .or(user.userNm.containsIgnoreCase(searchKeyword));
+        }
+
+        List<UserDto> content = queryFactory
+                .select(Projections.fields(UserDto.class,
+                        user.userId,
+                        user.userNm,
+                        user.esntlId,
+                        user.role.stringValue().as("role"),
+                        user.emplNo,
+                        user.offmTelno,
+                        user.moblphonNo,
+                        user.emailAdres,
+                        user.ofcpsNm,
+                        user.createdDate))
+                .from(user)
+                .where(condition)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(user.userId.asc())
+                .fetch();
+
+        long total = queryFactory
+                .select(user.count())
+                .from(user)
+                .where(condition)
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total);
+    }
+
+    @Override
     public Page<User> searchUsers(String sbscrbSttus, String searchCondition, String searchKeyword, Pageable pageable) {
+
         List<User> content = queryFactory
                 .selectFrom(user)
                 .where(

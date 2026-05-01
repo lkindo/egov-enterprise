@@ -3,6 +3,7 @@ package nuri.foundation.domain.auth;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class MenuAuthorityRepositoryImpl implements MenuAuthorityRepositoryCusto
                                                 menu.id.as("menuNo"),
                                                 menu.menuNm.as("menuNm"),
                                                 menu.upperMenuNo.as("upperMenuNo"),
+                                                Expressions.asString(authorCode).as("authorCode"),
                                                 new CaseBuilder()
                                                                 .when(menuAuthority.id.authorCode.isNotNull()).then("Y")
                                                                 .otherwise("N").as("regYn")))

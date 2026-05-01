@@ -3,7 +3,6 @@ package nuri.foundation.service.user;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.foundation.domain.auth.UserAuthorityRepository;
-import nuri.foundation.domain.user.entity.Role;
 import nuri.foundation.service.user.dto.UserSignupRequest;
 import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.domain.user.repository.UserRepository;
@@ -120,7 +119,7 @@ class UserServiceBusinessLogicExceptionTest {
                 // When & Then
                 assertThatThrownBy(
                                 () -> userService.registerUser("newUser", "password123!", "테스트사용자", "hint", "answer",
-                                                Role.USER))
+                                                "USER"))
                                 .isInstanceOf(RuntimeException.class)
                                 .hasMessage("Database save failed");
         }
@@ -143,7 +142,7 @@ class UserServiceBusinessLogicExceptionTest {
         void registerUser_fail_withNullUserId() {
                 // When & Then
                 assertThatThrownBy(() -> userService.registerUser(null, "password123!", "테스트사용자", "hint", "answer",
-                                Role.USER))
+                                "USER"))
                                 .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -152,7 +151,7 @@ class UserServiceBusinessLogicExceptionTest {
         void registerUser_fail_withNullUserNm() {
                 // When & Then
                 assertThatThrownBy(() -> userService.registerUser("newUser", "password123!", null, "hint", "answer",
-                                Role.USER))
+                                "USER"))
                                 .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -166,7 +165,7 @@ class UserServiceBusinessLogicExceptionTest {
                 // When & Then
                 assertThatThrownBy(
                                 () -> userService.registerUser("newUser", "password123!", "테스트사용자", "hint", "answer",
-                                                Role.USER))
+                                                "USER"))
                                 .isInstanceOf(RuntimeException.class)
                                 .hasMessage("Password encoding failed");
         }
@@ -188,7 +187,7 @@ class UserServiceBusinessLogicExceptionTest {
         void getPagedUserList_fail_withDatabaseConnectionError() {
                 // Given
                 PageRequest pageable = PageRequest.of(0, 10);
-                when(userRepository.findAll(pageable)).thenThrow(new RuntimeException("Database connection error"));
+                when(userRepository.getPagedUserList(any(), eq(pageable))).thenThrow(new RuntimeException("Database connection error"));
 
                 // When & Then
                 assertThatThrownBy(() -> userService.getUserPage(pageable))

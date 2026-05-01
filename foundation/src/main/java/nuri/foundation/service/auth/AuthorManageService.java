@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,7 @@ public class AuthorManageService {
     public List<AuthorManageDto> selectAuthorList(BaseSearchDto searchVO) {
         int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
         int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-        Pageable pageable = PageRequest.of(pageIndex, pageUnit);
+        Pageable pageable = PageRequest.of(pageIndex, pageUnit, Sort.by("authorCode").ascending());
 
         Page<Authority> page = authorityRepository.findAll(Objects.requireNonNull(pageable));
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
