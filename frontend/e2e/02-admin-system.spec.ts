@@ -109,7 +109,7 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
         test('Menu Hierarchy Management UI', async ({ page }) => {
             console.log('\n>>> Navigating to Menu Management');
             await page.goto('/admin/system/menus');
-            await expect(page.getByText('🏢 워크스페이스').first()).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText(/워크스페이스/i).first()).toBeVisible({ timeout: 30000 });
         });
     });
 

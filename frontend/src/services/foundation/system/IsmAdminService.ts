@@ -1,4 +1,4 @@
-import { AdminService } from '@/services/core/ApiService';
+import { ApiService, AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -20,19 +20,19 @@ export interface InfrmlSanctn {
 /**
  * 약식결재(Informal Sanction) 관리 서비스(Admin)
  */
-class IsmAdminService extends AdminService {
- constructor() {
- super('/approvals'); // /api/v1/admin/system/ism
- }
+class IsmAdminService extends ApiService {
+  constructor() {
+    super('admin/system/ism');
+  }
 
   /** 대기 신청 목록 조회 */
   async getPendingList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<InfrmlSanctn>> {
-    return this.get<PageResponse<InfrmlSanctn>>('/pending', { ...config, params });
+    return this.get<PageResponse<InfrmlSanctn>>('', { ...config, params: { ...params, type: 'received' } });
   }
 
   /** 신청 내역 목록 조회 */
   async getHistoryList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<InfrmlSanctn>> {
-    return this.get<PageResponse<InfrmlSanctn>>('/my', { ...config, params });
+    return this.get<PageResponse<InfrmlSanctn>>('', { ...config, params });
   }
 
  /** 신청 상세 조회 */
@@ -50,10 +50,16 @@ class IsmAdminService extends AdminService {
  return this.put(`/${id}`, data, config);
  }
 
- /** 신청 승인/반려 */
- async confirmInfrmlSanctn(id: string, status: string, reason?: string, config?: AxiosRequestConfig): Promise<void> {
- return this.put(`/${id}/confirm`, { status, reason }, config);
- }
+  /** 신청 승인/반려 */
+  async confirmInfrmlSanctn(id: string, status: string, reason?: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.patch(`/${id}/confirm`, null, { 
+      ...config, 
+      params: { 
+        confmAt: status === 'C' ? 'Y' : 'R', // Controller expects 'Y' or 'R'
+        returnResn: reason 
+      } 
+    });
+  }
 
  /** 신청 삭제 */
  async deleteInfrmlSanctn(id: string, config?: AxiosRequestConfig): Promise<void> {

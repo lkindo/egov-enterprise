@@ -6,24 +6,48 @@ export class SupportPage {
     async gotoManuals() {
         console.log('>>> [Support] Navigating to Online Manuals');
         await this.page.goto('/admin/uss/olh/online-manual');
-        await expect(this.page.getByRole('heading', { name: /온라인 도움말 관리/i })).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', { name: /온라인 가이드 아키텍처|온라인 매뉴얼/i })).toBeVisible({ timeout: 15000 });
+    }
+
+    async gotoFAQ() {
+        console.log('>>> [Support] Navigating to FAQ Hub');
+        await this.page.goto('/admin/help/faq');
+        await expect(this.page.getByText(/지식 매트릭스|Knowledge Hub/i).first()).toBeVisible({ timeout: 15000 });
+    }
+
+    async gotoQna() {
+        console.log('>>> [Support] Navigating to Q&A Hub');
+        await this.page.goto('/admin/help/qna');
+        await expect(this.page.getByText(/지식 매트릭스|Knowledge Hub/i).first()).toBeVisible({ timeout: 15000 });
     }
 
     async createManual(title: string, content: string) {
         console.log(`>>> [Support] Creating manual: ${title}`);
-        await this.page.getByRole('button', { name: /신규 등록/i }).click();
+        await this.page.getByRole('button', { name: /새 매뉴얼 등록/i }).click();
         
-        await this.page.getByPlaceholder(/도움말 명칭/i).fill(title);
-        // Assuming Tiptap editor
-        const editor = this.page.locator('.ProseMirror');
-        if (await editor.isVisible()) {
-            await editor.fill(content);
-        } else {
-            await this.page.getByPlaceholder(/도움말 내용/i).fill(content);
-        }
+        await this.page.getByPlaceholder(/매뉴얼 명을 입력하세요/i).fill(title);
+        await this.page.getByPlaceholder(/매뉴얼 설명을 입력하세요/i).fill(content);
+        await this.page.getByPlaceholder(/\/src\/docs\/manuals/i).fill('/e2e/test/path');
+        
+        await this.page.getByRole('button', { name: /등록 완료/i }).click();
+        await expect(this.page.getByText(/새 매뉴얼을 등록했습니다/i)).toBeVisible();
+    }
 
-        await this.page.getByRole('button', { name: /저장/i }).click();
-        await expect(this.page.getByRole('alert').filter({ hasText: /성공|저장/i })).toBeVisible({ timeout: 20000 });
+    async updateManual(oldTitle: string, newTitle: string) {
+        const row = this.page.locator('tr').filter({ hasText: oldTitle });
+        await row.getByRole('button').filter({ has: this.page.locator('svg') }).first().click(); // Edit button has Edit2 icon
+        
+        await this.page.getByPlaceholder(/매뉴얼 명을 입력하세요/i).fill(newTitle);
+        await this.page.getByRole('button', { name: /수정 완료/i }).click();
+        await expect(this.page.getByText(/매뉴얼 정보를 수정했습니다/i)).toBeVisible();
+    }
+
+    async deleteManual(title: string) {
+        this.page.once('dialog', dialog => dialog.accept());
+        const row = this.page.locator('tr').filter({ hasText: title });
+        await row.getByRole('button').filter({ has: this.page.locator('svg') }).last().click(); // Trash icon is usually last
+        
+        await expect(this.page.getByText(/매뉴얼을 삭제했습니다/i)).toBeVisible();
     }
 
     async searchManual(keyword: string) {
@@ -31,5 +55,21 @@ export class SupportPage {
         await searchInput.fill(keyword);
         await this.page.keyboard.press('Enter');
         await this.page.waitForTimeout(2000);
+    }
+
+    async createKnowledgeEntry(title: string, content: string) {
+        console.log(`>>> [Support] Creating Knowledge Entry: ${title}`);
+        await this.page.getByRole('button', { name: /신규 등록/i }).click();
+        
+        await this.page.locator('input[name="nttSj"]').waitFor({ state: 'visible' });
+        await this.page.locator('input[name="nttSj"]').fill(title);
+        
+        const editor = this.page.locator('.tiptap[contenteditable="true"], .ProseMirror, [contenteditable="true"], textarea').last();
+        await editor.waitFor({ state: 'visible' });
+        await editor.click();
+        await this.page.keyboard.type(content);
+        
+        await this.page.getByRole('button', { name: /등록 완료|저장|Commit/i }).click();
+        await expect(this.page.getByText(/성공|완료|등록되었습니다/i)).toBeVisible();
     }
 }

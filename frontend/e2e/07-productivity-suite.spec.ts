@@ -128,4 +128,21 @@ test.describe('Tier 7: Productivity Suite (Business Tools)', () => {
             expect(status).toBe(409);
         });
     });
+
+    test('Smart Toolkit: Business Extensions (Dept Job & Work Report)', async ({ adminPage }) => {
+        const prodPage = new ProductivitySuitePage(adminPage);
+
+        await test.step('Admin: Navigate and Verify Departmental Jobs', async () => {
+            await prodPage.gotoDeptJob();
+            await expect(adminPage.locator('table')).toBeVisible();
+            await expect(adminPage.getByRole('button', { name: /조회/i })).toBeVisible();
+        });
+
+        await test.step('Admin: Navigate and Verify Work Reports', async () => {
+            await prodPage.gotoWorkReport();
+            // Check tabs: 일일보고, 주간보고
+            await expect(adminPage.getByRole('button', { name: /일일보고/i })).toBeVisible();
+            await expect(adminPage.getByRole('button', { name: /주간보고/i })).toBeVisible();
+        });
+    });
 });

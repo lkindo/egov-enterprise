@@ -52,4 +52,18 @@ export class ProductivitySuitePage {
         console.log(`>>> Verifying Calendar Module`);
         await expect(this.page.getByRole('heading', { name: /워크플로우 허브|Works & Intelligence/i }).first()).toBeVisible({ timeout: 15000 });
     }
+
+    // 부서 업무 (Dept Job)
+    async gotoDeptJob() {
+        console.log(`>>> Navigating to Departmental Jobs`);
+        await this.page.goto('/smart-toolkit/dept-job');
+        await expect(this.page.getByRole('heading', { name: /부서 업무 관리/i })).toBeVisible({ timeout: 15000 });
+    }
+
+    // 업무 보고 (Work Report)
+    async gotoWorkReport() {
+        console.log(`>>> Navigating to Work Reports`);
+        await this.page.goto('/smart-toolkit/work-report');
+        await expect(this.page.getByRole('heading', { name: /업무 보고/i })).toBeVisible({ timeout: 15000 });
+    }
 }

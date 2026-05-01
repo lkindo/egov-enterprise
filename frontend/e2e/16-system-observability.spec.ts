@@ -34,4 +34,14 @@ test.describe('Tier 16: System Observability & Intelligence', () => {
         const page = obsPage['page'];
         await expect(page.getByText(/Observability Engine v5.0.0/)).toBeVisible();
     });
+
+    test('should verify advanced analytics: visitor and word statistics', async ({ page }) => {
+        console.log('>>> [Observability] Navigating to Visitor Stats');
+        await page.goto('/admin/stats/user');
+        await expect(page.getByText(/사용자 통계 분석/i)).toBeVisible({ timeout: 15000 });
+        
+        console.log('>>> [Observability] Navigating to Content Stats');
+        await page.goto('/admin/stats/board');
+        await expect(page.getByText(/콘텐츠 지표 분석/i)).toBeVisible({ timeout: 15000 });
+    });
 });

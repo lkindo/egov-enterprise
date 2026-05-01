@@ -211,4 +211,18 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             console.log(`>>> Successfully verified duplicate vote protection`);
         });
     });
+
+    test('User Journey: Public Portal Accessibility (Survey & Approvals)', async ({ userPage }) => {
+        await test.step('User: Access Public Survey List', async () => {
+            console.log('>>> [User] Navigating to Public Survey portal');
+            await userPage.goto('/survey');
+            await expect(userPage.getByRole('heading', { name: /설문조사|Poll/i })).toBeVisible({ timeout: 15000 });
+        });
+
+        await test.step('User: Access Personal Approval Inbox', async () => {
+            console.log('>>> [User] Navigating to Personal Approvals');
+            await userPage.goto('/approvals');
+            await expect(userPage.getByRole('heading', { name: /결재.*함|My Approvals/i })).toBeVisible({ timeout: 15000 });
+        });
+    });
 });

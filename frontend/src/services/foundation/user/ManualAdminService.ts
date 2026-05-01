@@ -10,7 +10,7 @@ export interface ManualDto {
   onlineMnlId?: string; // 온라인매뉴얼ID
   onlineMnlNm: string; // 온라인매뉴얼명
   onlineMnlDc: string; // 온라인매뉴얼설명
-  onlineMnlCours: string; // 온라인매뉴얼경로
+  onlineMnlDf: string; // 온라인매뉴얼경로 (백엔드 필드명: onlineMnlDf)
   frstRegisterId?: string; // 최초등록자ID
   createdDate?: string; // 생성일시
 }

@@ -84,15 +84,20 @@ public class HelpService implements EgovHelpService {
     @Override
     @Transactional
     public String createOnlineManual(String userId, OnlineManualDto dto) {
-        String id = "MNL_" + System.currentTimeMillis();
+        if (dto == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        
+        String id = "MNL_" + java.util.UUID.randomUUID().toString().substring(0, 8);
         OnlineManual entity = OnlineManual.builder()
                 .onlineMnlId(id)
-                .onlineMnlNm(dto.getOnlineMnlNm())
-                .onlineMnlSeCode(dto.getOnlineMnlSeCode())
-                .onlineMnlDf(dto.getOnlineMnlDf())
-                .onlineMnlDc(dto.getOnlineMnlDc())
+                .onlineMnlNm(dto.getOnlineMnlNm() != null ? dto.getOnlineMnlNm() : "Untitled")
+                .onlineMnlSeCode(dto.getOnlineMnlSeCode() != null ? dto.getOnlineMnlSeCode() : "GNR")
+                .onlineMnlDf(dto.getOnlineMnlDf() != null ? dto.getOnlineMnlDf() : "")
+                .onlineMnlDc(dto.getOnlineMnlDc() != null ? dto.getOnlineMnlDc() : "")
                 .build();
-        onlineManualRepository.save(Objects.requireNonNull(entity));
+        
+        onlineManualRepository.save(entity);
         return id;
     }
 

@@ -64,7 +64,7 @@ export default function ManualAdminClient({
       onlineMnlId: '',
       onlineMnlNm: '',
       onlineMnlDc: '',
-      onlineMnlCours: ''
+      onlineMnlDf: ''
     }
   });
 
@@ -83,7 +83,7 @@ export default function ManualAdminClient({
 
   const handleOpenAdd = () => {
     setMode('create');
-    form.reset({ onlineMnlId: '', onlineMnlNm: '', onlineMnlDc: '', onlineMnlCours: '' });
+    form.reset({ onlineMnlId: '', onlineMnlNm: '', onlineMnlDc: '', onlineMnlDf: '' });
     setIsFormOpen(true);
   };
 
@@ -93,7 +93,7 @@ export default function ManualAdminClient({
       onlineMnlId: manual.onlineMnlId || '',
       onlineMnlNm: manual.onlineMnlNm || '', 
       onlineMnlDc: manual.onlineMnlDc || '', 
-      onlineMnlCours: manual.onlineMnlCours || '' 
+      onlineMnlDf: manual.onlineMnlDf || '' 
     });
     setIsFormOpen(true);
   };
@@ -162,7 +162,7 @@ export default function ManualAdminClient({
       accessor: (item: ManualDto) => (
         <div className="flex items-center gap-2 font-mono text-xs text-primary/70 bg-primary/5 px-3 py-1 rounded-lg border border-primary/10 w-fit">
           <ExternalLink size={12} />
-          {item.onlineMnlCours}
+          {item.onlineMnlDf}
         </div>
       )
     },
@@ -306,7 +306,7 @@ export default function ManualAdminClient({
 
                 <FormField
                   control={form.control}
-                  name="onlineMnlCours"
+                  name="onlineMnlDf"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
                       <FormLabel className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase ml-2">리소스 경로</FormLabel>

@@ -36,12 +36,6 @@ export class ConsoleErrorGuard {
       const text = msg.text();
 
       if (type === 'error' || type === 'warning') {
-        const lowerText = text.toLowerCase();
-        // [URGENT] Nuclear ignore for React controlled/uncontrolled warnings
-        if (lowerText.includes('value') || lowerText.includes('controlled') || lowerText.includes('uncontrolled') || lowerText.includes('xsrf')) {
-          return;
-        }
-
         const isIgnored = this.ignorePatterns.some(pattern => 
           typeof pattern === 'string' ? text.includes(pattern) : pattern.test(text)
         );

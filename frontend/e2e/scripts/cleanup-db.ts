@@ -215,6 +215,25 @@ async function cleanup() {
       console.warn(`  => Address book cleanup skipped: ${e.response?.data?.message || e.message}`);
     }
 
+    // 10. Cleanup Online Manuals (Prefix: E2E Manual)
+    console.log('>>> Cleaning up test online manuals...');
+    try {
+      const manualRes = await axios.get(`${API_BASE}/help/manuals`, { 
+        headers,
+        params: { keyword: 'E2E Manual', size: 100 } 
+      });
+      const manuals = manualRes.data.data?.list || manualRes.data.data?.content || [];
+      const testManuals = manuals.filter((m: any) => m.onlineMnlNm?.startsWith('E2E Manual'));
+      for (const manual of testManuals) {
+        process.stdout.write(`  - Deleting Manual: ${manual.onlineMnlNm} (${manual.onlineMnlId})... `);
+        await axios.delete(`${API_BASE}/help/manuals/${manual.onlineMnlId}`, { headers });
+        console.log('DONE');
+      }
+      console.log(`  => ${testManuals.length} manual(s) cleaned.`);
+    } catch (e: any) {
+      console.warn(`  => Manual cleanup skipped: ${e.response?.data?.message || e.message}`);
+    }
+
     console.log('>>> [DB Cleanup] All test data removed successfully!\n');
   } catch (error: any) {
     const errorMsg = error.response?.data?.message || error.message;

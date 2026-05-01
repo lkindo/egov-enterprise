@@ -145,6 +145,23 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
         }
     });
 
+    test('Community of Practice (COP) Matrix Verification', async ({ page }) => {
+        const communityPage = new CommunityPage(page);
+        
+        await test.step('Admin: Navigate to Community Matrix', async () => {
+            await communityPage.goto();
+        });
+
+        await test.step('Admin: Switch Categories and Verify Persistence', async () => {
+            await communityPage.selectCategory('COMMUNITY');
+            await communityPage.verifyCOPList();
+        });
+
+        await test.step('Admin: Access Master Console from Matrix', async () => {
+            await communityPage.gotoMaster();
+        });
+    });
+
     test.describe('Community Supplementary Services Smoke Check', () => {
         const services = [
             { name: 'Community Hub', url: '/admin/collaboration' },

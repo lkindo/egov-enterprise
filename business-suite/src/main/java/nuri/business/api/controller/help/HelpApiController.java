@@ -13,6 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Help", description = "도움말(안내문, 온라인 매뉴얼) API")
@@ -84,8 +86,11 @@ public class HelpApiController {
 
     @Operation(summary = "온라인 매뉴얼 등록", description = "새로운 온라인 매뉴얼을 등록합니다.")
     @PostMapping("/manuals")
-    public ResponseEntity<ApiResponse<String>> insertManual(@RequestBody OnlineManualDto dto) {
-        String id = helpService.createOnlineManual("ADMIN", dto);
+    public ResponseEntity<ApiResponse<String>> createManual(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody OnlineManualDto dto) {
+        String username = (userDetails != null) ? userDetails.getUsername() : "anonymous";
+        String id = helpService.createOnlineManual(username, dto);
         return ResponseEntity.ok(ApiResponse.success(id));
     }
 

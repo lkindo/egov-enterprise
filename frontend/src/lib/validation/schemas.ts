@@ -84,7 +84,7 @@ export const manualSchema = z.object({
   onlineMnlId: z.string().optional(),
   onlineMnlNm: z.string().min(1, '매뉴얼 명칭은 필수입니다.'),
   onlineMnlDc: z.string().min(1, '매뉴얼 설명은 필수입니다.'),
-  onlineMnlDt: z.string().optional(),
+  onlineMnlDf: z.string().min(1, '매뉴얼 경로는 필수입니다.'),
 });
 
 // --- 사용자 관리 스키마 (Contract Testing용) ---
