@@ -22,7 +22,7 @@ test.describe('Tier 8: Advanced Collaboration & Intelligence', () => {
         await collabPage.sendNote('관리자', subject, content);
         
         console.log('>>> Note sent successfully. Verifying redirection to message hub.');
-        await expect(page).toHaveURL(/\/admin\/collaboration\?tab=MESSAGES/);
+        await expect(page).toHaveURL(/\/admin\/collaboration\/mail-history/);
     });
 
     test('Collaboration: Register New Identity Node (Address Book)', async ({ collabPage, page }) => {

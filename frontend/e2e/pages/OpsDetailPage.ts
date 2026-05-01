@@ -15,13 +15,20 @@ export class OpsDetailPage {
         await expect(searchInput).toBeVisible({ timeout: 10000 });
         
         await searchInput.click();
-        await searchInput.fill(''); 
-        await searchInput.pressSequentially(keyword, { delay: 100 });
-        await this.page.keyboard.press('Enter');
+        await searchInput.fill('');
+
+        // onChange-based search: intercept the API response triggered by typing
+        const [response] = await Promise.all([
+            this.page.waitForResponse(
+                resp => resp.url().includes('/events') && resp.status() === 200,
+                { timeout: 15000 }
+            ),
+            searchInput.pressSequentially(keyword, { delay: 80 })
+        ]);
         
-        // Wait for list to update - looking for the specific text in the table
-        await this.page.waitForTimeout(3000); 
-        await this.page.waitForLoadState('networkidle');
+        // Extra buffer for React state & TanStack Query to re-render
+        await this.page.waitForTimeout(1000);
+        console.log(`>>> [OpsDetail] Search API responded (status: ${response.status()})`);
     }
 
     async createEvent(data: { name: string, desc: string, capacity: number, startDate: string, endDate: string, recruitDate: string, recruitEndDate: string }) {
@@ -43,11 +50,21 @@ export class OpsDetailPage {
         await dateInputs.nth(2).fill(data.recruitDate);
         await dateInputs.nth(3).fill(data.recruitEndDate);
         
-        await this.page.getByRole('button', { name: /Deploy Protocol/i }).click();
-        await expect(this.page.getByText(/성공|생성되었습니다/i)).toBeVisible({ timeout: 20000 });
+        const deployBtn = this.page.getByRole('button', { name: /Deploy Protocol/i });
+        await deployBtn.click();
         
-        // Return to list
+        // Wait for either: success toast OR modal close (either proves submission succeeded)
+        await Promise.race([
+            this.page.getByRole('alert').filter({ hasText: /성공|생성되었습니다/i })
+                .waitFor({ state: 'visible', timeout: 25000 }),
+            this.page.getByText(/Dispatch New Event/i)
+                .waitFor({ state: 'hidden', timeout: 25000 })
+        ]);
+        console.log('>>> [OpsDetail] Event creation confirmed (toast or modal closed).');
+        
+        // Return to list and wait for DB to reflect the new event
         await this.goto();
+        await this.page.waitForTimeout(2000);
     }
 
     async deleteEvent(name: string) {

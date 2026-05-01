@@ -70,6 +70,7 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         test('Logout Redirection and Session Cleanup', async ({ page }) => {
             console.log('>>> Step 1: Triggering User Menu');
             const profileTrigger = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
+            await expect(profileTrigger).toBeVisible({ timeout: 15000 });
             await profileTrigger.click();
             
             console.log('>>> Step 2: Logout Action');

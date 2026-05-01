@@ -1,5 +1,7 @@
 import { test, expect } from './fixtures/base-test';
 import { format } from 'date-fns';
+import path from 'path';
+import fs from 'fs';
 
 test.use({ viewport: { width: 1920, height: 1080 } });
 
@@ -19,7 +21,10 @@ test('Debug Popup Creation', async ({ adminPage }) => {
     await adminPage.getByLabel(/가로 폭/).fill('500');
     await adminPage.getByLabel(/세로 높이/).fill('500');
     
-    const imagePath = 'e2e/test-assets/dummy_promotion.png';
+    const imagePath = path.join(process.cwd(), 'e2e-dummy-popup.png');
+    if (!fs.existsSync(imagePath)) {
+        fs.writeFileSync(imagePath, 'fake image content for e2e test');
+    }
     await adminPage.setInputFiles('input[type="file"]', imagePath);
     
     // 제출 전 캡처
