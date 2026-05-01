@@ -111,6 +111,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 
                 // Re-search to verify the update
                 const searchInputAfter = page.locator('#board-search-input, [placeholder*="정보"], [placeholder*="Search"]').first();
+                await searchInputAfter.waitFor({ state: 'visible', timeout: 30000 });
                 await searchInputAfter.fill(`${articleTitle} [Updated]`);
                 await page.locator('button:has-text("조회"), button:has-text("Search")').first().click();
 

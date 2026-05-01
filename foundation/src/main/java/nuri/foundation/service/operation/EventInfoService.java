@@ -21,9 +21,12 @@ public class EventInfoService {
 
     private final EventInfoRepository eventInfoRepository;
 
-    public Page<EventInfoDto> getEventList(Pageable pageable) {
-        log.debug("Fetching event list");
-        return eventInfoRepository.findAll(Objects.requireNonNull(pageable)).map(EventInfoDto::from);
+    public Page<EventInfoDto> getEventList(String searchWrd, Pageable pageable) {
+        log.debug("Fetching event list with search: {}", searchWrd);
+        if (searchWrd == null || searchWrd.trim().isEmpty()) {
+            return eventInfoRepository.findAll(Objects.requireNonNull(pageable)).map(EventInfoDto::from);
+        }
+        return eventInfoRepository.findBySearchWrd(searchWrd, pageable).map(EventInfoDto::from);
     }
 
     public EventInfoDto getEvent(String eventId) {

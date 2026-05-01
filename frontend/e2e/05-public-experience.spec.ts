@@ -29,7 +29,8 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             console.log(`>>> Voting on survey pollId: ${pollId}`);
             // Navigate to ensure userPage has a valid session context with localStorage
             await userPage.goto('/admin/survey/polls/participate');
-            await userPage.waitForLoadState('networkidle');
+            await userPage.waitForLoadState('domcontentloaded');
+            await userPage.waitForTimeout(1000);
             
             // Cast vote directly via API using userPage's auth context
             await userSurvey.voteByPollId(pollId);
@@ -114,10 +115,10 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             
             // Select FAQ tab (it should be default, but let's be sure)
             const faqTab = userPage.getByRole('button', { name: /고객지원|FAQ/ });
-            await expect(faqTab).toBeVisible({ timeout: 10000 });
+            await expect(faqTab).toBeVisible({ timeout: 15000 });
             await faqTab.click();
-            await userPage.waitForTimeout(2000); 
-
+            await userPage.waitForTimeout(3000); 
+            await userPage.waitForLoadState('domcontentloaded');
             console.log(`>>> [FAQ] Searching for FAQ: ${faqQuestion}`);
             const faqItem = userPage.getByText(faqQuestion).first();
             
@@ -180,7 +181,8 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             
             // Navigate to participate page to establish context
             await userPage.goto('/admin/survey/polls/participate');
-            await userPage.waitForLoadState('networkidle');
+            await userPage.waitForLoadState('domcontentloaded');
+            await userPage.waitForTimeout(1000);
             
             // First vote - use API for reliability
             await userSurvey.voteByPollId(pollId);

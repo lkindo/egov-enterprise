@@ -27,8 +27,9 @@ public class EventApiController {
     @Operation(summary = "행사 목록 조회", description = "기능별 행사 정보를 페이징하여 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<EventInfoDto>>> getEventList(
+            @RequestParam(required = false) String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<EventInfoDto> result = eventInfoService.getEventList(pageable);
+        Page<EventInfoDto> result = eventInfoService.getEventList(searchWrd, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 

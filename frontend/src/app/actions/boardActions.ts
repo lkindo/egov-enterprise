@@ -20,6 +20,9 @@ interface BoardArticle {
   eventDate?: string;
   qnaStatus?: string;
   qnaCategory?: string;
+  password?: string;
+  ntcrNm?: string;
+  ntcrId?: string;
 }
 
 export async function saveBoardArticle(prevState: unknown, formData: FormData): Promise<ActionResponse> {
@@ -37,13 +40,26 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
   const eventDate = formData.get('eventDate') as string;
   const qnaStatus = formData.get('qnaStatus') as string;
   const qnaCategory = formData.get('qnaCategory') as string;
+  const password = formData.get('password') as string;
+  const ntcrNm = formData.get('ntcrNm') as string;
+  const ntcrId = formData.get('ntcrId') as string;
 
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const articleData: BoardArticle = { nttSj, nttCn, bbsId, eventDate, qnaStatus, qnaCategory };
+    const articleData: BoardArticle = { 
+      nttSj, 
+      nttCn, 
+      bbsId, 
+      eventDate: eventDate || undefined, 
+      qnaStatus: qnaStatus || (bbsId === 'BBSMSTR_DDDDDDDDDDDD' ? 'QA01' : undefined), 
+      qnaCategory: qnaCategory || (bbsId === 'BBSMSTR_DDDDDDDDDDDD' ? 'CAT01' : undefined),
+      password: password || '1',
+      ntcrNm: ntcrNm || undefined,
+      ntcrId: ntcrId || undefined
+    };
     if (isReply) {
       articleData.replyAt = 'Y';
       articleData.parntsId = parntsId;
@@ -69,17 +85,14 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       });
     }
 
-    if (response) {
-      revalidatePath(`/admin/community/boards/selectBoardList`);
-      const targetId = isEdit ? nttId : response as string;
-      return {
-        success: true,
-        message: isEdit ? '게시글이 성공적으로 수정되었습니다.' : '게시글이 성공적으로 등록되었습니다.',
-        redirect: `/admin/community/boards/detail?bbsId=${bbsId}&nttId=${targetId}`
-      };
-    } else {
-      return { success: false, message: '저장에 실패했습니다.' };
-    }
+    revalidatePath(`/admin/community/boards/selectBoardList`);
+    const targetId = isEdit ? nttId : response as string;
+    
+    return {
+      success: true,
+      message: isEdit ? '게시글이 성공적으로 수정되었습니다.' : '게시글이 성공적으로 등록되었습니다.',
+      redirect: `/admin/community/boards/detail?bbsId=${bbsId}&nttId=${targetId}`
+    };
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error.message || '알 수 없는 오류가 발생했습니다.';
     console.error('Save Action Error:', error);
@@ -96,14 +109,10 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const response: unknown = await client.delete(`/bbs/${bbsId}/${nttId}`, axiosConfig);
+    await client.delete(`/bbs/${bbsId}/${nttId}`, axiosConfig);
 
-    if (response) {
-      revalidatePath(`/admin/community/boards/selectBoardList`);
-      return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
-    } else {
-      return { success: false, message: '삭제에 실패했습니다.' };
-    }
+    revalidatePath(`/admin/community/boards/selectBoardList`);
+    return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error.message || '삭제 중 오류가 발생했습니다.';
     console.error('Delete Action Error:', error);

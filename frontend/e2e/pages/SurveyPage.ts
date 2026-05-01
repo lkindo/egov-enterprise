@@ -110,7 +110,8 @@ export class SurveyPage {
 
         // Navigate first to ensure localStorage is populated with accessToken
         await this.page.goto('/admin/survey/manage');
-        await this.page.waitForLoadState('networkidle');
+        await this.page.waitForLoadState('domcontentloaded');
+        await this.page.waitForTimeout(1000); // Small buffer for script execution
 
         // Extract JWT access token from localStorage (set by auth.setup.ts)
         const accessToken = await this.page.evaluate(() => {
