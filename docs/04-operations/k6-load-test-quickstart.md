@@ -148,10 +148,9 @@ k6 run test/load-tests/scenarios/dashboard-test.js
 
 ## 참고 문서
 
-- [LOAD_TEST_GUIDE.md](./docs/LOAD_TEST_GUIDE.md) - 상세 가이드
-- [load-test-report-1.md](./docs/reports/load-test-report-1.md) - 종합 리포트
-- [performance-issues-draft.md](./docs/issues/performance-issues-draft.md) - 예상 병목 지점
+- [load-test-guide.md](./load-test-guide.md) - 상세 가이드
+- [performance-optimization-guide.md](./performance-optimization-guide.md) - 성능 최적화 가이드
 
 ---
 
-**마지막 업데이트**: 2026-04-01
+**마지막 업데이트**: 2026-05-01 (Updated via Antigravity)

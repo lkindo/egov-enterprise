@@ -14,15 +14,15 @@
 
 ## 핵심 목표 (Key Goals)
 
-1. **모더니제이션**: Next.js 14 + Spring Boot 3.3 기반의 현대적 아키텍처 전환
+1. **모더니제이션**: Next.js 16 + Spring Boot 3.4 기반의 현대적 아키텍처 전환
 2. **성능 최적화**: N+1 쿼리 해결, 캐싱, 빌드 시간 단축
 3. **개발자 경험 향상**: TypeScript Strict 모드, TDD, CI/CD 자동화
-4. **신뢰성 강화**: E2E 테스트, 보안 스캔, 성능 테스트
+4. **신뢰성 강화**: E2E 테스트(16 Tiers), 보안 스캔, 성능 테스트
 
-## 현재 진행 상황
+---
 
-- **Phase 1~7**: ✅ 완료 (100%)
-- **Phase 8: 고도화**: 🔄 진행중 (88%)
-  - E2E 테스트 고도화
-  - CI/CD 자동화
-  - 성능 부하 테스트
+> [!TIP]
+> 프로젝트의 실시간 진행률 및 마일스톤은 [Conductor Dashboard](../../conductor/index.md)에서 확인할 수 있습니다.
+
+---
+*Last Updated: 2026-05-01 (Updated via Antigravity)*

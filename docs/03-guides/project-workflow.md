@@ -53,9 +53,10 @@ chore: 빌드/설정 관련
 
 1. ✅ 타입 체크 (`tsc --noEmit`)
 2. ✅ 빌드 성공 (`next build`, `./gradlew build`)
-3. ✅ 단위 테스트 통과
-4. ✅ E2E 테스트 통과 (해당 시)
-5. ✅ ESLint/Prettier 검사
+3. ✅ 단위 테스트 통과 (`vitest run`)
+4. ✅ E2E 테스트 통과 (`npm run test:e2e:full`)
+5. ✅ ESLint/Prettier 검사 (`npm run lint`)
+6. ✅ 관련 문서 현행화 (`conductor/index.md` 링크 업데이트)
 
 ## Task Lifecycle
 
@@ -67,5 +68,8 @@ chore: 빌드/설정 관련
 
 - 모든 acceptance criteria 충족
 - 관련 테스트 통과
-- 문서 업데이트 (필요 시)
+- 문서 업데이트 (필요 시, `GEMINI.md` Section 11 준수)
 - 코드 리뷰 완료
+
+---
+*Last Updated: 2026-05-01 (Updated via Antigravity)*

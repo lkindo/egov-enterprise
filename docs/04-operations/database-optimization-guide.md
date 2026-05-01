@@ -37,8 +37,10 @@ egov:
 ### 분석 스크립트 실행
 
 ```bash
-# PostgreSQL 연결
-psql -h localhost -p 5433 -U egov -d egovdb
+# PostgreSQL 연결 (OCI PostgreSQL 17 / Supabase)
+# 로컬: psql -h localhost -p 5432 -U egov -d egovdb
+# 원격(Supabase pooler): port 6543
+psql -h <supabase-pooler-host> -p 6543 -U postgres -d postgres
 
 # 분석 스크립트 실행
 \i config/db/performance-analysis.sql
@@ -288,4 +290,4 @@ Prometheus 엔드포인트: `http://localhost:8080/actuator/prometheus`
 
 ---
 
-*Last Updated: 2026-03-31*
+*Last Updated: 2026-05-01 (Updated via Antigravity — DB connection info synchronized)*

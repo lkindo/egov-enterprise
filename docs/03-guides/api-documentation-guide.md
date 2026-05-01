@@ -95,13 +95,32 @@ Swagger UI 에서:
 
 | 그룹명 | 경로 | 설명 |
 |--------|------|------|
-| `all` | `/api/v1/**` | 전체 API |
-| `admin` | `/api/v1/admin/**` | 관리자 API |
-| `common-code` | `/api/v1/common-codes/**` | 공통코드 API |
-| `user` | `/api/v1/users/**` | 사용자 API |
-| `board` | `/api/v1/boards/**` | 게시판 API |
+| `all` | `/api/v1/**` | 전체 API (버전 1) |
+| `1-foundation` | `/api/v1/auth/**`, `/api/v1/users/**`, `/api/v1/codes/**` | 시스템 기반 API (인증, 계정, 기초코드) |
+| `2-business-suite` | `/api/v1/**` (foundation 제외) | 업무 포털 API (게시판, 협업, 운영지원 등) |
+| `admin` | `/api/v1/admin/**` | 관리자 전용 설정 및 모니터링 API |
+| `common-code` | `/api/v1/common-codes/**` | 공통코드 및 하위 코드 관리 |
+| `user` | `/api/v1/users/**` | 사용자 프로필 및 권한 관리 |
+| `board` | `/api/v1/boards/**` | 게시판 마스터 및 게시글 관리 |
 
 Swagger UI 에서 그룹별 필터링 가능.
+
+---
+
+## 🔗 프론트엔드 연동 (Codegen)
+
+백엔드 API 명세가 변경되면 프론트엔드에서 다음 명령을 실행하여 TypeScript 타입을 최신화합니다.
+
+### 1. API 타입 생성
+백엔드 서버가 실행 중인 상태에서 프론트엔드 폴더(`frontend/`)에서 실행:
+
+```bash
+# OpenAPI Spec 기반 TS 타입 생성
+npm run codegen:ts
+```
+
+### 2. 생성된 파일 확인
+`frontend/src/types/generated-api.d.ts` 파일이 갱신되었는지 확인합니다. 이 파일은 모든 서비스 레이어(`ApiService`)에서 타입 정의로 활용됩니다.
 
 ---
 

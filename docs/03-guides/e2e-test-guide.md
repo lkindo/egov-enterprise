@@ -31,31 +31,72 @@ taskkill /F /IM node.exe /T; taskkill /F /IM chrome.exe /T
 
 ### 2. 서버 포트 및 타임아웃
 - 프론트엔드: `http://localhost:3001` / 백엔드: `http://localhost:8080` (API Proxy)
-- **Timeout**: CI 환경을 고려하여 120s 이상으로 설정되어 있습니다. (`playwright.config.ts` 참조)
+- **Timeout**: CI 환경을 고려하여 120s로 설정되어 있습니다. (`playwright.config.ts` 참조)
+
+### 3. CI 설정 (`playwright.config.ts`)
+
+| 항목 | 로컬 | CI 환경 |
+|------|------|---------|
+| **Retries** | 1 | 3 (플레이키 테스트 안정화) |
+| **Workers** | 자동 (CPU 기반) | 2 |
+| **Timeout** | 120,000ms | 120,000ms |
+| **Expect Timeout** | 30,000ms | 30,000ms |
 
 ---
 
 ## 📊 계층형 테스트 구조 (Tiered Architecture)
 
-본 프로젝트는 중복을 제거하고 검증력을 높이기 위해 테스트를 4개 계층으로 운영합니다.
+본 프로젝트는 중복을 제거하고 검증력을 높이기 위해 테스트를 총 **18개 계층(Tier)**으로 세분화하여 운영합니다.
 
-1.  **Tier 1: Core Base (`01-core-base.spec.ts`)**: 인증, 대시보드 위젯, 전역 레이아웃 무결성.
-2.  **Tier 2: Admin System (`02-admin-system.spec.ts`)**: 사용자 CRUD, 메뉴 계층, 공통코드 관리.
-3.  **Tier 3: Business Domain (`03-board-community.spec.ts`)**: 게시판 생성 마법사, 게시글 생명주기(다중 템플릿).
-4.  **Tier 4: Quality & Resilience (`04-quality-resilience.spec.ts`)**: 보안(RBAC/CSRF), UX(자동저장), 접근성(A11y), 시각적 회귀.
+### Core & Admin (Tier 1~2)
+- **Tier 1: Core Base**: 인증, 대시보드 위젯, 전역 레이아웃 무결성.
+- **Tier 2: Admin System**: 사용자 CRUD, 메뉴 계층, 공통코드 관리.
+
+### Business & Experience (Tier 3~5)
+- **Tier 3: Business Domain**: 게시판 생성 마법사, 게시글 생명주기(다중 템플릿).
+- **Tier 4: Quality & Resilience**: 보안(RBAC/CSRF), UX(자동저장), 접근성(A11y), 시각적 회귀.
+- **Tier 5: Public Experience**: 대국민 포털 연동 및 사용자 경험 검증.
+
+### Ops & Productivity (Tier 6~10)
+- **Tier 6: Ops Governance**: 감사 로그, 시스템 모니터링 관리.
+- **Tier 7: Productivity Suite**: 개인 일정, 스크랩, 부서 업무함 등 도구 모음.
+- **Tier 8~10**: 협업 고도화, 관리자 관측성, 운영 확장 모듈.
+
+### Enterprise Workflow (Tier 11~18)
+- **Tier 11: Enterprise Workflow**: 결재 프로세스 및 워크플로우 엔진.
+- **Tier 12~13**: 알림 센터, 메일 연동 모듈.
+- **Tier 14~16**: 관리자 업무 자동화, 협업 확장, 시스템 가시성 강화.
+- **Tier 17: Support & Service Governance**: 온라인 매뉴얼, FAQ 생명주기 관리.
+- **Tier 18: Business Extensions**: 비정형 결재(ISM), 간부 일정(LSM), 헬프 콘텐츠(HPCM) 등 확장 비즈니스 모듈.
 
 ---
 
 ## 💻 주요 명령어
+
 ```bash
-# 전체 테스트 실행 (계층 순차 실행)
+# 1. 기본 실행 (전체 16 Tier 순차 실행)
 npm run test:e2e
 
-# 특정 계층만 실행
-npx playwright test e2e/01-core-base.spec.ts --project=tier-1-core
+# 2. 전체 실행 (클린업 포함: 실행 전/후 가비지 데이터 제거)
+npm run test:e2e:full
 
-# UI 모드에서 디버깅
+# 3. 특정 계층(Tier)만 실행
+npx playwright test --project=tier-1-core
+npx playwright test --project=tier-5-public
+npx playwright test --project=tier-17-support
+npx playwright test --project=tier-18-business
+
+# 4. 특정 파일만 실행
+npx playwright test e2e/01-core-base.spec.ts
+
+# 5. UI 모드에서 대화형 디버깅
 npm run test:e2e:ui
+
+# 6. 스텝별 디버그 모드
+npm run test:e2e:debug
+
+# 7. 수동 DB 클린업 (테스트 데이터 강제 삭제)
+npm run test:cleanup
 ```
 
 ---
@@ -66,4 +107,4 @@ npm run test:e2e:ui
 - **에러 감시**: `ConsoleErrorGuard`가 모든 테스트에서 자동으로 동작하며, 하이드레이션 오류나 런타임 예외 발생 시 테스트를 즉시 실패 처리합니다.
 
 ---
-*Last Updated: 2026-04-26 (Tiered E2E Migration Completed)*
+*Last Updated: 2026-05-01 (Updated via Antigravity — Commands & CI Config Synchronized)*

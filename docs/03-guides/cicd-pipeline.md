@@ -142,6 +142,11 @@ strategy:
 
 ### 리포트 병합
 
+- **16-Tier 아키텍처**: 01-Core부터 16-System까지 계층별로 테스트가 정의되어 있으며, 각 티어는 독립적으로 또는 병합되어 실행됩니다.
+- **Sharding (병렬 실행)**: CI 환경에서 전체 테스트 스위트를 3개의 Shard로 분할하여 병렬로 실행함으로써 전체 테스트 시간을 단축합니다.
+
+#### 병합 리포트 생성 (`ci.yml`)
+
 ```yaml
 - name: Merge reports
   run: |
@@ -172,20 +177,20 @@ dependencyCheck {
 
 #### Suppression 규칙
 
-테스트 전용 의존성 제외:
+테스트 전용 의존성 및 알려진 오탐 제외:
 
 ```xml
-<!-- H2 데이터베이스 -->
-<suppress>
-    <notes>H2 is only used for testing</notes>
-    <packageUrl regex="true">^pkg:maven/com\.h2database/h2@.*$</packageUrl>
-    <vulnerabilityName>.*</vulnerabilityName>
-</suppress>
-
-<!-- Testcontainers -->
+<!-- PostgreSQL (Testcontainers) -->
 <suppress>
     <notes>Testcontainers is only used for integration testing</notes>
     <packageUrl regex="true">^pkg:maven/org\.testcontainers/.*$</packageUrl>
+    <vulnerabilityName>.*</vulnerabilityName>
+</suppress>
+
+<!-- H2 (Unit Testing) -->
+<suppress>
+    <notes>H2 is only used for local unit testing</notes>
+    <packageUrl regex="true">^pkg:maven/com\.h2database/h2@.*$</packageUrl>
     <vulnerabilityName>.*</vulnerabilityName>
 </suppress>
 ```

@@ -125,6 +125,18 @@ export default defineConfig({
             dependencies: ['setup'],
         },
         {
+            name: 'tier-17-support',
+            testMatch: /17-support-governance\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
+            name: 'tier-18-business',
+            testMatch: /18-business-extension\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
             name: 'full-suite',
             testMatch: /.*\.spec\.ts/,
             use: { ...devices['Desktop Chrome'] },

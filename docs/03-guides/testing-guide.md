@@ -124,26 +124,50 @@ class MenuServiceIntegrationTest {
 
 ## E2E 테스트 (Playwright)
 
-### 계층형 아키텍처 (Tiered Architecture)
+### 계층형 아키텍처 (18-Tier Architecture)
 
-본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별로 체계적인 검증을 수행하기 위해 테스트를 4개 계층으로 관리합니다.
+본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **18개 계층(Tier)**으로 테스트를 관리합니다.
 
-1.  **Tier 1: Core Base (`01-core-base.spec.ts`)**: 인증(로그인/로그아웃), 대시보드 위젯 및 차트 렌더링, 전역 레이아웃 무결성.
-2.  **Tier 2: Admin System (`02-admin-system.spec.ts`)**: 사용자 CRUD, 메뉴 계층 관리, 공통코드 관리 등 시스템 설정의 무결성.
-3.  **Tier 3: Business Domain (`03-board-community.spec.ts`)**: 게시판 생성 마법사(Wizard), 게시글 생명주기(일반/Q&A/일정), 커뮤니티 부가 서비스.
-4.  **Tier 4: Quality & Resilience (`04-quality-resilience.spec.ts`)**: 보안(RBAC/CSRF/XSS), UX(낙관적 업데이트/자동저장), 웹 접근성(A11y), 시각적 회귀(Visual Regression).
+| 그룹 | Tier | 파일 | 검증 범위 |
+|------|------|------|-----------|
+| **Core** | 1 | `01-core-base.spec.ts` | 인증, 대시보드, 전역 레이아웃 |
+| | 2 | `02-admin-system.spec.ts` | 사용자 CRUD, 메뉴, 공통코드 |
+| **Business** | 3 | `03-board-community.spec.ts` | 게시판 생명주기 |
+| | 4 | `04-quality-resilience.spec.ts` | RBAC/CSRF, A11y, 시각적 회귀 |
+| | 5 | `05-public-experience.spec.ts` | 대국민 포털 연동 |
+| **Ops** | 6 | `06-ops-governance.spec.ts` | 감사 로그, 모니터링 |
+| | 7 | `07-productivity-suite.spec.ts` | 개인 일정, 스크랩 |
+| | 8 | `08-advanced-collaboration.spec.ts` | 협업 고도화 |
+| | 9 | `09-admin-observability-workspace.spec.ts` | 관리자 관측성 |
+| | 10 | `10-operational-extension.spec.ts` | 운영 확장 |
+| **Enterprise** | 11 | `11-enterprise-workflow.spec.ts` | 결재 프로세스 |
+| | 12 | `12-notification.spec.ts` | 알림 센터 |
+| | 13 | `13-mail.spec.ts` | 메일 연동 |
+| | 14 | `14-admin-workflow.spec.ts` | 관리자 업무 자동화 |
+| | 15 | `15-collaboration-extension.spec.ts` | 협업 확장 |
+| | 16 | `16-system-observability.spec.ts` | 시스템 가시성 |
+| | 17 | `17-support-governance.spec.ts` | 온라인 매뉴얼, FAQ 생명주기 |
+| | 18 | `18-business-extension.spec.ts` | ISM(비정형결재), LSM(간부일정), HPCM |
 
 ### 실행 명령어
 
 ```bash
-# 전체 E2E 테스트 실행 (모든 계층 순차 실행)
+# 전체 E2E 실행
 npm run test:e2e
 
-# 특정 계층만 실행
-npx playwright test e2e/01-core-base.spec.ts --project=tier-1-core
+# 클린업 포함 전체 실행 (권장)
+npm run test:e2e:full
 
-# UI 모드 (인터랙티브 디버깅)
+# 특정 Tier만 실행
+npx playwright test --project=tier-1-core
+npx playwright test --project=tier-17-support
+npx playwright test --project=tier-18-business
+
+# UI 모드 (대화형 디버깅)
 npm run test:e2e:ui
+
+# 수동 DB 클린업
+npm run test:cleanup
 ```
 
 ---
@@ -390,8 +414,9 @@ npx playwright install --with-deps chromium
 
 ---
 
-## 관련 문서
+- [CI/CD 파이프라인 가이드](./cicd-pipeline.md)
+- [E2E 테스트 가이드 (상세)](./e2e-test-guide.md)
+- [성능 최적화 가이드](../04-operations/performance-optimization-guide.md)
 
-- [CI/CD 파이프라인 가이드](./CICD_PIPELINE.md)
-- [성능 최적화 가이드](./PERFORMANCE_OPTIMIZATION_GUIDE.md)
-- [Contributing Guide](../CONTRIBUTING.md)
+---
+*Last Updated: 2026-05-01 (Updated via Antigravity — 16-Tier E2E Architecture Synchronized)*

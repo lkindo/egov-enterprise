@@ -366,7 +366,7 @@ k6 run e2e/scripts/load-test.js
 
 ## 관련 문서
 
-- [성능 최적화 리포트](./PERFORMANCE_OPTIMIZATION_REPORT.md)
-- [CI/CD 파이프라인 가이드](./CICD_PIPELINE.md)
-- [테스트 가이드](./TESTING_GUIDE.md)
-- [데이터베이스 최적화 가이드](./DATABASE_OPTIMIZATION_GUIDE.md)
+- [테스트 가이드](../03-guides/testing-guide.md)
+- [데이터베이스 최적화 가이드](./database-optimization-guide.md)
+- [부하 테스트 가이드](./load-test-guide.md)
+- [CI/CD 파이프라인 가이드](../03-guides/cicd-pipeline.md)
