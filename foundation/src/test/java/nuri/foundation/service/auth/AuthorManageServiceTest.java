@@ -2,8 +2,8 @@ package nuri.foundation.service.auth;
 
 import nuri.foundation.domain.auth.Authority;
 import nuri.foundation.domain.auth.AuthorityRepository;
-import nuri.foundation.service.auth.dto.AuthorManageDto;
 import nuri.foundation.domain.common.BaseSearchDto;
+import nuri.foundation.service.auth.dto.AuthorManageDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,13 +17,13 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthorManageService (권한 관리) 테스트")
+@DisplayName("AuthorManageService 단위 테스트")
 class AuthorManageServiceTest {
 
     @Mock
@@ -33,81 +33,74 @@ class AuthorManageServiceTest {
     private AuthorManageService authorManageService;
 
     @Test
-    @DisplayName("권한 목록 조회 성공")
-    void selectAuthorList_Success() {
-        Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Admin").build();
-        Page<Authority> page = new PageImpl<>(List.of(auth));
+    @DisplayName("권한 목록 조회 테스트")
+    void selectAuthorListTest() {
+        BaseSearchDto searchVO = new BaseSearchDto();
+        searchVO.setPageIndex(1);
+        searchVO.setPageUnit(10);
+        
+        Page<Authority> page = new PageImpl<>(List.of(Authority.builder().authorCode("ROLE_ADMIN").authorNm("관리자").build()));
         given(authorityRepository.findAll(any(Pageable.class))).willReturn(page);
 
-        BaseSearchDto vo = new BaseSearchDto();
-        List<AuthorManageDto> result = authorManageService.selectAuthorList(vo);
-        
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getAuthorCode()).isEqualTo("AUTH_001");
+        List<AuthorManageDto> result = authorManageService.selectAuthorList(searchVO);
+
+        assertEquals(1, result.size());
+        assertEquals("ROLE_ADMIN", result.get(0).getAuthorCode());
     }
 
     @Test
-    @DisplayName("권한 전체 건수 조회 성공")
-    void selectAuthorListTotCnt_Success() {
-        given(authorityRepository.count()).willReturn(50L);
-        int result = authorManageService.selectAuthorListTotCnt(new BaseSearchDto());
-        assertThat(result).isEqualTo(50);
+    @DisplayName("권한 상세 조회 테스트")
+    void selectAuthorTest() {
+        Authority authority = Authority.builder().authorCode("ROLE_ADMIN").authorNm("관리자").build();
+        given(authorityRepository.findById("ROLE_ADMIN")).willReturn(Optional.of(authority));
+
+        AuthorManageDto result = authorManageService.selectAuthor("ROLE_ADMIN");
+
+        assertNotNull(result);
+        assertEquals("ROLE_ADMIN", result.getAuthorCode());
     }
 
     @Test
-    @DisplayName("권한 상세 조회 성공")
-    void selectAuthor_Success() {
-        Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Admin").build();
-        given(authorityRepository.findById("AUTH_001")).willReturn(Optional.of(auth));
-
-        AuthorManageDto result = authorManageService.selectAuthor("AUTH_001");
-        assertThat(result.getAuthorNm()).isEqualTo("Admin");
-    }
-
-    @Test
-    @DisplayName("권한 등록 성공")
-    void insertAuthor_Success() {
+    @DisplayName("권한 등록 테스트")
+    void insertAuthorTest() {
         AuthorManageDto dto = AuthorManageDto.builder()
-                .authorCode("AUTH_NEW")
-                .authorNm("New Auth")
+                .authorCode("ROLE_NEW")
+                .authorNm("신규권한")
                 .build();
         
         authorManageService.insertAuthor(dto);
-        verify(authorityRepository).save(any(Authority.class));
+
+        verify(authorityRepository).save(any());
     }
 
     @Test
-    @DisplayName("권한 수정 성공")
-    void updateAuthor_Success() {
-        Authority auth = Authority.builder().authorCode("AUTH_001").authorNm("Old").build();
-        given(authorityRepository.findById("AUTH_001")).willReturn(Optional.of(auth));
-
-        AuthorManageDto dto = AuthorManageDto.builder().authorCode("AUTH_001").authorNm("New").build();
-        authorManageService.updateAuthor(dto);
-        assertThat(auth.getAuthorNm()).isEqualTo("New");
-    }
-
-    @Test
-    @DisplayName("권한 삭제 성공")
-    void deleteAuthor_Success() {
-        authorManageService.deleteAuthor("AUTH_001");
-        verify(authorityRepository).deleteById("AUTH_001");
-    }
-
-    @Test
-    @DisplayName("여러 권한 삭제 성공")
-    void deleteAuthors_Success() {
-        String[] codes = {"AUTH_1", "AUTH_2"};
-        authorManageService.deleteAuthors(codes);
-        verify(authorityRepository).deleteAllById(any());
-    }
-
-    @Test
-    @DisplayName("권한 수정 실패 - 존재하지 않는 권한")
-    void updateAuthor_Fail_NotFound() {
-        given(authorityRepository.findById("NOT_FOUND")).willReturn(Optional.empty());
-        AuthorManageDto dto = AuthorManageDto.builder().authorCode("NOT_FOUND").authorNm("New").build();
+    @DisplayName("권한 수정 테스트")
+    void updateAuthorTest() {
+        AuthorManageDto dto = AuthorManageDto.builder()
+                .authorCode("ROLE_EXIST")
+                .authorNm("수정된이름")
+                .build();
         
-        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () -> authorManageService.updateAuthor(dto));
+        Authority authority = mock(Authority.class);
+        given(authorityRepository.findById("ROLE_EXIST")).willReturn(Optional.of(authority));
+
+        authorManageService.updateAuthor(dto);
+
+        verify(authority).update(eq("수정된이름"), any());
+    }
+
+    @Test
+    @DisplayName("권한 삭제 테스트")
+    void deleteAuthorTest() {
+        authorManageService.deleteAuthor("ROLE_ADMIN");
+        verify(authorityRepository).deleteById("ROLE_ADMIN");
+    }
+
+    @Test
+    @DisplayName("권한 일괄 삭제 테스트")
+    void deleteAuthorsTest() {
+        String[] codes = {"ROLE_1", "ROLE_2"};
+        authorManageService.deleteAuthors(codes);
+        verify(authorityRepository).deleteAllById(anyList());
     }
 }

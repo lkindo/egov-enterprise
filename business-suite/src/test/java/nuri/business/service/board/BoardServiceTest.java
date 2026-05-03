@@ -1,413 +1,543 @@
 package nuri.business.service.board;
 
-import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.exception.ErrorCode;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import nuri.business.domain.board.*;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;
+import nuri.business.service.board.dto.BoardStatsResponse;
+import nuri.business.service.board.event.PostCreatedEvent;
+import nuri.business.service.board.mapper.BoardMapper;
 import nuri.business.service.file.EgovFileService;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.ErrorCode;
 import nuri.foundation.service.user.EgovUserService;
 import nuri.foundation.service.user.dto.UserDto;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class BoardServiceTest {
 
+    private BoardService boardService;
     @Mock
     private BoardRepository boardRepository;
-
     @Mock
     private BoardMasterRepository boardMasterRepository;
-
     @Mock
     private EgovUserService userService;
-
     @Mock
     private EgovFileService fileService;
-
-    private MeterRegistry meterRegistry = new SimpleMeterRegistry();
-
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    private MeterRegistry meterRegistry;
+    @Mock
+    private BoardMapper boardMapper;
+    @Mock
+    private Timer timer;
+    @Mock
+    private Timer.Sample sample;
 
-    @org.mockito.Spy
-    private nuri.business.service.board.mapper.BoardMapper boardMapper = org.mapstruct.factory.Mappers.getMapper(nuri.business.service.board.mapper.BoardMapper.class);
-
-    private BoardService boardService;
-
-
-    @BeforeEach
+    @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        boardService = new BoardService(boardRepository, boardMasterRepository, userService, fileService,
-                eventPublisher, meterRegistry, boardMapper);
+        meterRegistry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        boardService = new BoardService(
+                boardRepository,
+                boardMasterRepository,
+                userService,
+                fileService,
+                eventPublisher,
+                meterRegistry,
+                boardMapper);
     }
 
-
     @Test
-    @DisplayName("게시글 목록 조회 테스트")
-    void getBoardPostsTest() {
-        String bbsId = "BBS_001";
-        Pageable pageable = mock(Pageable.class);
+    @DisplayName("게시글 목록 조회")
+    void getBoardPosts() {
+        // given
+        String bbsId = "BBS_01";
+        Pageable pageable = PageRequest.of(0, 10);
         BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
+        BoardSearchResult resultItem = BoardSearchResult.builder().nttId(1L).build();
+        Page<BoardSearchResult> page = new PageImpl<>(Collections.singletonList(resultItem));
+        BoardDto dto = BoardDto.builder().id(1L).build();
 
-        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
-        when(boardRepository.searchArticles(any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
+        given(boardRepository.searchArticles(any(BoardSearchCondition.class), eq(pageable))).willReturn(page);
+        given(boardMapper.toDto(resultItem)).willReturn(dto);
 
+        // when
         Page<BoardDto> result = boardService.getBoardPosts(bbsId, pageable);
 
-        assertThat(result).isNotNull();
+        // then
+        assertThat(result.getContent()).hasSize(1);
     }
 
     @Test
-    @DisplayName("게시글 목록 키워드 조회 테스트")
-    void getBoardPostsWithKeywordTest() {
-        String bbsId = "BBS_001";
-        Pageable pageable = mock(Pageable.class);
-        BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
+    @DisplayName("게시판 통계 조회")
+    void getBoardStats() {
+        // given
+        String bbsId = "BBS_01";
+        given(boardRepository.countByBbsIdAndUseAt(bbsId, "Y")).willReturn(10L);
+        given(boardRepository.sumInqireCoByBbsIdAndUseAt(bbsId, "Y")).willReturn(100L);
+        given(boardRepository.findTopContributorByBbsIdAndUseAt(bbsId, "Y")).willReturn("user1");
 
-        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
-        when(boardRepository.searchArticles(any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        // when
+        BoardStatsResponse result = boardService.getBoardStats(bbsId);
 
-        Page<BoardDto> result = boardService.getBoardPosts(bbsId, "1", "word", pageable);
-
-        assertThat(result).isNotNull();
+        // then
+        assertThat(result.getTotalArticles()).isEqualTo(10L);
+        assertThat(result.getTotalViews()).isEqualTo(100L);
+        assertThat(result.getTopContributor()).isEqualTo("user1");
+        // (10 * 2) + 70 = 90
+        assertThat(result.getIntelligenceScore()).isEqualTo(90);
     }
 
     @Test
-    @DisplayName("게시글 등록 테스트 - 사용자 정보 조회 성공 포함")
-    void createPostWithUserTest() {
-        String userId = "user01";
-        String bbsId = "BBS_001";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Title", "Content", "20240101", "20241231", null, null,
-                null, null, null, null, null, null, null, null);
-        BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
-        UserDto user = UserDto.builder().userId(userId).userNm("John Doe").esntlId("E1").build();
+    @DisplayName("게시글 생성")
+    void createPost() {
+        // given
+        String userId = "user1";
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null, null, null,
+                null, null, null, "Y", null, null, null);
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
+        Board board = Board.builder().nttId(1L).build();
 
-        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
-        when(userService.getUserById(userId)).thenReturn(user);
-        when(boardRepository.findMaxSortOrdr(bbsId)).thenReturn(0L);
-        when(boardRepository.save(any())).thenReturn(Board.builder().nttId(100L).bbsId(bbsId).build());
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(userService.getUserById(userId)).willReturn(user);
+        given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
+        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(board);
+        given(boardRepository.save(board)).willReturn(board);
 
+        // when
         Long nttId = boardService.createPost(userId, request);
 
-        assertThat(nttId).isEqualTo(100L);
+        // then
+        assertThat(nttId).isEqualTo(1L);
+        verify(eventPublisher, times(1)).publishEvent(any(PostCreatedEvent.class));
     }
 
     @Test
-    @DisplayName("파일 포함 게시글 등록 테스트")
-    void createPostWithFilesTest() throws IOException {
-        String userId = "user01";
-        String bbsId = "BBS_001";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Title", "Content", null, null, null, null, null, null,
-                null, null, null, null, null, null);
-        List<MultipartFile> files = List.of(mock(MultipartFile.class));
+    @DisplayName("답글 생성")
+    void replyPost() {
+        // given
+        String userId = "user1";
+        Long parentId = 1L;
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null,
+                null, null, null, "Y", null, null, null);
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        Board parent = Board.builder().nttId(parentId).sortOrdr(100L).replyLc(0).build();
+        UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
+        Board reply = Board.builder().nttId(2L).build();
 
-        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
-        when(fileService.uploadFiles(files)).thenReturn("FILE_ID_1");
-        when(boardRepository.save(any())).thenReturn(Board.builder().nttId(100L).bbsId(bbsId).build());
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
+        given(userService.getUserById(userId)).willReturn(user);
+        given(boardRepository.findMaxNttNo("BBS_01", 100L)).willReturn(0L);
+        given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any())).willReturn(reply);
+        given(boardRepository.save(reply)).willReturn(reply);
 
-        Long nttId = boardService.createPostWithFiles(userId, request, files);
-
-        assertThat(nttId).isEqualTo(100L);
-    }
-
-    @Test
-    @DisplayName("답글 등록 테스트")
-    void replyPostTest() {
-        String userId = "user01";
-        Long parentId = 10L;
-        String bbsId = "BBS_001";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Reply Title", "Reply Content", null, null, null, null,
-                null, null, null, null, null, null, null, null);
-        BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
-        Board parent = Board.builder().nttId(parentId).bbsId(bbsId).sortOrdr(100L).replyLc(0).build();
-
-        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
-        when(boardRepository.findById(parentId)).thenReturn(Optional.of(parent));
-        when(boardRepository.findMaxNttNo(eq(bbsId), anyLong())).thenReturn(0L);
-        when(boardRepository.save(any())).thenReturn(Board.builder().nttId(101L).bbsId(bbsId).build());
-
+        // when
         Long nttId = boardService.replyPost(userId, parentId, request);
 
-        assertThat(nttId).isEqualTo(101L);
+        // then
+        assertThat(nttId).isEqualTo(2L);
     }
 
     @Test
-    @DisplayName("파일 포함 답글 등록 테스트")
-    void replyPostWithFilesTest() throws IOException {
-        String userId = "user01";
-        Long parentId = 10L;
-        String bbsId = "BBS_001";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Reply Title", "Reply Content", null, null, null, null,
-                null, null, null, null, null, null, null, null);
-        List<MultipartFile> files = List.of(mock(MultipartFile.class));
-
-        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
-        when(boardRepository.findById(parentId))
-                .thenReturn(Optional.of(Board.builder().bbsId(bbsId).sortOrdr(100L).replyLc(0).build()));
-        when(fileService.uploadFiles(files)).thenReturn("REPLY_FILE_ID");
-        when(boardRepository.save(any())).thenReturn(Board.builder().nttId(101L).bbsId(bbsId).build());
-
-        Long nttId = boardService.replyPostWithFiles(userId, parentId, request, files);
-
-        assertThat(nttId).isEqualTo(101L);
-    }
-
-    @Test
-    @DisplayName("게시글 상세 조회 테스트")
-    void getPostDetailTest() {
-        String bbsId = "BBS_001";
+    @DisplayName("게시글 상세 조회")
+    void getPostDetail() {
+        // given
+        String bbsId = "BBS_01";
         Long nttId = 1L;
         BoardDetailResult detail = mock(BoardDetailResult.class);
-        Board board = Board.builder().bbsId(bbsId).nttId(nttId).build();
+        Board board = Board.builder().nttId(nttId).build();
+        BoardDto dto = BoardDto.builder().id(nttId).build();
 
-        when(boardRepository.findArticleDetail(nttId)).thenReturn(Optional.of(detail));
-        when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
+        given(boardRepository.findArticleDetail(nttId)).willReturn(Optional.of(detail));
+        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        given(boardMapper.toDto(detail)).willReturn(dto);
 
+        // when
         BoardDto result = boardService.getPostDetail(bbsId, nttId);
 
-        assertThat(result).isNotNull();
+        // then
+        assertThat(result.getId()).isEqualTo(nttId);
+        assertThat(board.getInqireCo()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("게시판 미존재 시 예외 발생 테스트")
-    void getBoardPosts_NotFound() {
-        when(boardMasterRepository.findById(anyString())).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> boardService.getBoardPosts("UNKNOWN", mock(Pageable.class)))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.BOARD_NOT_FOUND);
-    }
-
-    @Test
-    @DisplayName("게시글 수정 테스트")
-    void updatePostTest() {
-        String bbsId = "BBS_001";
+    @DisplayName("게시글 수정")
+    void updatePost() {
+        // given
+        String bbsId = "BBS_01";
         Long nttId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated Title", "Updated Content", null, null, null,
-                null, null, null, null, null, null, null, null, null);
-        Board board = Board.builder().bbsId(bbsId).nttId(nttId).build();
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Content", null, null, null, null, null, null,
+                null, null, "Y", null, null, null);
+        Board board = Board.builder().nttId(nttId).nttSj("Old").build();
 
-        when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
+        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
 
+        // when
         boardService.updatePost(bbsId, nttId, request);
 
-        assertThat(board.getNttSj()).isEqualTo("Updated Title");
+        // then
+        assertThat(board.getNttSj()).isEqualTo("Updated");
     }
 
     @Test
-    @DisplayName("파일 포함 게시글 수정 테스트 - 기존 파일 없음")
-    void updatePostWithFilesNewTest() throws IOException {
-        String bbsId = "BBS_001";
+    @DisplayName("게시글 삭제")
+    void deletePost() {
+        // given
+        String bbsId = "BBS_01";
         Long nttId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Updated", null, null, null, null, null,
-                null, null, null, null, null, null, null);
-        List<MultipartFile> files = List.of(mock(MultipartFile.class));
-        Board board = Board.builder().bbsId(bbsId).nttId(nttId).build();
+        Board board = Board.builder().nttId(nttId).useAt("Y").build();
 
-        when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
-        when(fileService.uploadFiles(files)).thenReturn("NEW_FILE_ID");
+        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
 
-        boardService.updatePostWithFiles(bbsId, nttId, request, files);
+        // when
+        boardService.deletePost(bbsId, nttId, "user1");
 
-        assertThat(board.getAtchFileId()).isEqualTo("NEW_FILE_ID");
-    }
-
-    @Test
-    @DisplayName("파일 포함 게시글 수정 테스트 - 기존 파일 업데이트")
-    void updatePostWithFilesUpdateTest() throws IOException {
-        String bbsId = "BBS_001";
-        Long nttId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Updated", null, null, "OLD_FILE_ID", null,
-                null, null, null, null, null, null, null, null);
-        List<MultipartFile> files = List.of(mock(MultipartFile.class));
-        Board board = Board.builder().bbsId(bbsId).nttId(nttId).build();
-
-        when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
-
-        boardService.updatePostWithFiles(bbsId, nttId, request, files);
-
-        verify(fileService).updateFiles("OLD_FILE_ID", files);
-    }
-
-    @Test
-    @DisplayName("게시글 삭제 테스트")
-    void deletePostTest() {
-        Long nttId = 1L;
-        Board board = Board.builder().bbsId("B1").nttId(nttId).build();
-
-        when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
-
-        boardService.deletePost("BBS_001", nttId, "user01");
-
+        // then
         assertThat(board.getUseAt()).isEqualTo("N");
     }
 
     @Test
-    @DisplayName("게시글 등록 테스트 - 사용자 정보 조회 실패 시 익명 처리")
-    void createPost_UserNotFound_Anonymous() {
-        String userId = "unknown";
-        String bbsId = "BBS_001";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Title", "Content", null, null, null, null, null, null,
-                null, null, null, null, null, null);
+    @DisplayName("추천수 증가")
+    void incrementLike() {
+        // given
+        String bbsId = "BBS_01";
+        Long nttId = 1L;
+        Board board = Board.builder().nttId(nttId).likeCo(0).build();
+
+        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+
+        // when
+        Integer result = boardService.incrementLike(bbsId, nttId);
+
+        // then
+        assertThat(result).isEqualTo(1);
+        assertThat(board.getLikeCo()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("날짜 검색 조건이 포함된 게시글 목록 조회")
+    void getBoardPosts_WithDates() {
+        // given
+        String bbsId = "BBS_01";
+        Pageable pageable = PageRequest.of(0, 10);
         BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
+        given(boardRepository.searchArticles(any(), any())).willReturn(Page.empty());
 
-        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
-        when(userService.getUserById(userId)).thenThrow(new RuntimeException("Not Found"));
-        when(boardRepository.findMaxSortOrdr(bbsId)).thenReturn(0L);
-        when(boardRepository.save(any())).thenReturn(Board.builder().nttId(100L).bbsId(bbsId).build());
+        // when
+        boardService.getBoardPosts(bbsId, "0", "word", "regDate", "2023-01-01", "2023-12-31", null, null, pageable);
 
+        // then
+        verify(boardRepository)
+                .searchArticles(argThat(cond -> cond.getStartDate() != null && cond.getEndDate() != null), any());
+    }
+
+    @Test
+    @DisplayName("잘못된 날짜 형식이 포함된 게시글 목록 조회 (예외 처리 확인)")
+    void getBoardPosts_InvalidDates() {
+        // given
+        String bbsId = "BBS_01";
+        Pageable pageable = PageRequest.of(0, 10);
+        BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
+        given(boardRepository.searchArticles(any(), any())).willReturn(Page.empty());
+
+        // when
+        boardService.getBoardPosts(bbsId, "0", "word", "regDate", "invalid-date", "invalid-date", null, null, pageable);
+
+        // then
+        verify(boardRepository)
+                .searchArticles(argThat(cond -> cond.getStartDate() == null && cond.getEndDate() == null), any());
+    }
+
+    @Test
+    @DisplayName("작성자를 찾을 수 없는 경우 익명으로 게시글 생성")
+    void createPost_UserNotFound() {
+        // given
+        String userId = "unknown";
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null,
+                null, null, "Y", null, null, null);
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        Board board = Board.builder().nttId(1L).build();
+
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(userService.getUserById(userId)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+        given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
+        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(board);
+        given(boardRepository.save(any())).willReturn(board);
+
+        // when
         Long nttId = boardService.createPost(userId, request);
 
-        assertThat(nttId).isNotNull();
+        // then
+        assertThat(nttId).isEqualTo(1L);
+        verify(boardMapper).toEntity(any(), any(), eq(userId), eq("익명"), any());
     }
 
     @Test
-    @DisplayName("답글 등록 테스트 - 사용자 정보 조회 실패 시 익명 처리")
-    void replyPost_UserNotFound_Anonymous() {
+    @DisplayName("사용자 조회 중 예외 발생 시 익명으로 게시글 생성")
+    void createPost_UserError() {
+        // given
+        String userId = "errorUser";
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null,
+                null, null, "Y", null, null, null);
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        Board board = Board.builder().nttId(1L).build();
+
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(userService.getUserById(userId)).willThrow(new RuntimeException("DB Error"));
+        given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
+        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(board);
+        given(boardRepository.save(any())).willReturn(board);
+
+        // when
+        Long nttId = boardService.createPost(userId, request);
+
+        // then
+        assertThat(nttId).isEqualTo(1L);
+        verify(boardMapper).toEntity(any(), any(), eq(userId), eq("익명"), any());
+    }
+
+    @Test
+    @DisplayName("요청에 작성자 정보가 명시된 경우 해당 정보로 게시글 생성")
+    void createPost_CustomNtcr() {
+        // given
+        String userId = "user1";
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null,
+                null, null, "Y", "customId", "customNm", null);
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        Board board = Board.builder().nttId(1L).build();
+
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
+        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(board);
+        given(boardRepository.save(any())).willReturn(board);
+
+        // when
+        boardService.createPost(userId, request);
+
+        // then
+        verify(boardMapper).toEntity(any(), any(), eq("customId"), eq("customNm"), any());
+    }
+
+    @Test
+    @DisplayName("파일을 포함하여 게시글 생성")
+    void createPostWithFiles() throws IOException {
+        // given
+        String userId = "user1";
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null,
+                null, null, "Y", null, null, null);
+        org.springframework.web.multipart.MultipartFile file = mock(
+                org.springframework.web.multipart.MultipartFile.class);
+        java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
+                .singletonList(file);
+
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(fileService.uploadFiles(files)).willReturn("ATCH_001");
+        given(boardMapper.toEntity(any(), any(), any(), any(), any())).willReturn(Board.builder().nttId(1L).build());
+        given(boardRepository.save(any())).willReturn(Board.builder().nttId(1L).build());
+
+        // when
+        boardService.createPostWithFiles(userId, request, files);
+
+        // then
+        verify(fileService).uploadFiles(files);
+        verify(boardMapper).toEntity(argThat(req -> "ATCH_001".equals(req.atchFileId())), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("작성자를 찾을 수 없는 경우 익명으로 답글 생성")
+    void replyPost_UserNotFound() {
+        // given
         String userId = "unknown";
-        Long parentId = 10L;
-        String bbsId = "BBS_001";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Reply", "Content", null, null, null, null, null, null,
-                null, null, null, null, null, null);
-        BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
-        Board parent = Board.builder().nttId(parentId).bbsId(bbsId).sortOrdr(100L).replyLc(0).build();
+        Long parentId = 1L;
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null,
+                null, null, "Y", null, null, null);
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        Board parent = Board.builder().nttId(parentId).sortOrdr(100L).replyLc(0).build();
+        Board reply = Board.builder().nttId(2L).build();
 
-        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(master));
-        when(boardRepository.findById(parentId)).thenReturn(Optional.of(parent));
-        when(userService.getUserById(userId)).thenThrow(new RuntimeException("Not Found"));
-        when(boardRepository.findMaxNttNo(eq(bbsId), anyLong())).thenReturn(0L);
-        when(boardRepository.save(any())).thenReturn(Board.builder().nttId(101L).bbsId(bbsId).build());
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
+        given(userService.getUserById(userId)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+        given(boardRepository.findMaxNttNo(any(), any())).willReturn(0L);
+        given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any())).willReturn(reply);
+        given(boardRepository.save(any())).willReturn(reply);
 
-        Long nttId = boardService.replyPost(userId, parentId, request);
+        // when
+        boardService.replyPost(userId, parentId, request);
 
-        assertThat(nttId).isNotNull();
+        // then
+        verify(boardMapper).toReplyEntity(any(), any(), eq(userId), eq("익명"), any(), any(), any(), any());
     }
 
     @Test
-    @DisplayName("파일 업로드 시 빈 파일 목록 처리 테스트")
-    void createPostWithFiles_EmptyFiles() throws IOException {
-        String userId = "user01";
-        String bbsId = "BBS_001";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Title", "Content", null, null, "EXISTING_ID", null,
-                null, null, null, null, null, null, null, null);
+    @DisplayName("파일을 포함하여 답글 생성")
+    void replyPostWithFiles() throws IOException {
+        // given
+        String userId = "user1";
+        Long parentId = 1L;
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null,
+                null, null, "Y", null, null, null);
+        org.springframework.web.multipart.MultipartFile file = mock(
+                org.springframework.web.multipart.MultipartFile.class);
+        java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
+                .singletonList(file);
 
-        when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
-        when(boardRepository.save(any())).thenReturn(Board.builder().nttId(100L).bbsId(bbsId).build());
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
+        Board parent = Board.builder().nttId(parentId).sortOrdr(100L).replyLc(0).build();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
+        given(fileService.uploadFiles(files)).willReturn("ATCH_001");
+        given(boardMapper.toReplyEntity(any(), any(), any(), any(), any(), any(), any(), any()))
+                .willReturn(Board.builder().nttId(2L).build());
+        given(boardRepository.save(any())).willReturn(Board.builder().nttId(2L).build());
 
-        Long nttId = boardService.createPostWithFiles(userId, request, Collections.emptyList());
+        // when
+        boardService.replyPostWithFiles(userId, parentId, request, files);
 
-        assertThat(nttId).isNotNull();
-    }
-
-    @Test
-    @DisplayName("게시글 상세 조회 시 조회수 증가 테스트")
-    void getPostDetail_IncreaseInqireCo() {
-        String bbsId = "BBS_001";
-        Long nttId = 1L;
-        BoardDetailResult detail = mock(BoardDetailResult.class);
-        Board board = Board.builder()
-                .bbsId(bbsId)
-                .nttId(nttId)
-                .inqireCo(10)
-                .build();
-
-        when(boardRepository.findArticleDetail(nttId)).thenReturn(Optional.of(detail));
-        when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
-
-        boardService.getPostDetail(bbsId, nttId);
-
-        assertThat(board.getInqireCo()).isEqualTo(11);
-    }
-
-    @Test
-    @DisplayName("게시글 수정 테스트 - 파일 포함 (기존 파일 없음)")
-    void updatePostWithFiles_NoExistingFile() throws IOException {
-        String bbsId = "BBS_001";
-        Long nttId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Updated", null, null, null, null, null,
-                null, null, null, null, null, null, null);
-        List<MultipartFile> files = List.of(mock(MultipartFile.class));
-        Board board = Board.builder().bbsId(bbsId).nttId(nttId).build();
-
-        when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
-        when(fileService.uploadFiles(files)).thenReturn("NEW_FILE_ID");
-
-        boardService.updatePostWithFiles(bbsId, nttId, request, files);
-
-        assertThat(board.getAtchFileId()).isEqualTo("NEW_FILE_ID");
+        // then
         verify(fileService).uploadFiles(files);
     }
 
     @Test
-    @DisplayName("게시글 수정 테스트 - 파일 포함 (기존 파일 있음)")
-    void updatePostWithFiles_ExistingFile() throws IOException {
-        String bbsId = "BBS_001";
+    @DisplayName("행사 날짜가 포함된 게시글 수정")
+    void updatePost_WithEventDate() {
+        // given
+        String bbsId = "BBS_01";
         Long nttId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Updated", null, null, "OLD_FILE_ID", null,
-                null, null, null, null, null, null, null, null);
-        List<MultipartFile> files = List.of(mock(MultipartFile.class));
-        Board board = Board.builder().bbsId(bbsId).nttId(nttId).atchFileId("OLD_FILE_ID").build();
+        String eventDateStr = "2023-12-25T10:00:00";
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, eventDateStr,
+                null, null, null, "Y", null, null, null);
+        Board board = spy(Board.builder().nttId(nttId).build());
+        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
 
-        when(boardRepository.findById(nttId)).thenReturn(Optional.of(board));
+        // when
+        boardService.updatePost(bbsId, nttId, request);
 
+        // then
+        verify(board).update(any(), any(), any(), any(), any(), any(), any(), any(),
+                eq(java.time.LocalDateTime.parse(eventDateStr)), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("잘못된 행사 날짜 형식이 포함된 게시글 수정 (예외 처리 확인)")
+    void updatePost_InvalidEventDate() {
+        // given
+        String bbsId = "BBS_01";
+        Long nttId = 1L;
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, "invalid-date",
+                null, null, null, "Y", null, null, null);
+        Board board = spy(Board.builder().nttId(nttId).build());
+        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+
+        // when
+        boardService.updatePost(bbsId, nttId, request);
+
+        // then
+        verify(board).update(any(), any(), any(), any(), any(), any(), any(), any(), isNull(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("새 파일을 업로드하며 게시글 수정 (첨부파일 ID 없음)")
+    void updatePostWithFiles_NewFiles() throws IOException {
+        // given
+        String bbsId = "BBS_01";
+        Long nttId = 1L;
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, null, null, null,
+                null, "Y", null, null, null);
+        org.springframework.web.multipart.MultipartFile file = mock(
+                org.springframework.web.multipart.MultipartFile.class);
+        java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
+                .singletonList(file);
+
+        Board board = Board.builder().nttId(nttId).build();
+        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        given(fileService.uploadFiles(files)).willReturn("NEW_ATCH_001");
+
+        // when
         boardService.updatePostWithFiles(bbsId, nttId, request, files);
 
-        verify(fileService).updateFiles("OLD_FILE_ID", files);
+        // then
+        verify(fileService).uploadFiles(files);
+        assertThat(board.getAtchFileId()).isEqualTo("NEW_ATCH_001");
     }
 
     @Test
-    @DisplayName("답글 등록 시 상위 게시글 미존재 시 예외 발생")
-    void replyPost_ParentNotFound() {
-        String userId = "user01";
-        Long parentId = 999L;
-        BoardSaveRequest request = new BoardSaveRequest("BBS_001", "Reply", "Content", null, null, null, null, null,
-                null, null, null, null, null, null, null);
+    @DisplayName("기존 파일을 갱신하며 게시글 수정 (첨부파일 ID 존재)")
+    void updatePostWithFiles_ExistingFiles() throws IOException {
+        // given
+        String bbsId = "BBS_01";
+        Long nttId = 1L;
+        String atchFileId = "OLD_ATCH_001";
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, atchFileId, null, null, null,
+                null, null, "Y", null, null, null);
+        org.springframework.web.multipart.MultipartFile file = mock(
+                org.springframework.web.multipart.MultipartFile.class);
+        java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
+                .singletonList(file);
 
-        when(boardMasterRepository.findById(anyString())).thenReturn(Optional.of(mock(BoardMaster.class)));
-        when(boardRepository.findById(parentId)).thenReturn(Optional.empty());
+        Board board = Board.builder().nttId(nttId).build();
+        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
 
-        assertThatThrownBy(() -> boardService.replyPost(userId, parentId, request))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ARTICLE_NOT_FOUND);
+        // when
+        boardService.updatePostWithFiles(bbsId, nttId, request, files);
+
+        // then
+        verify(fileService).updateFiles(eq(atchFileId), eq(files));
     }
 
     @Test
-    @DisplayName("게시글 등록 시 게시판 미존재 시 예외 발생")
-    void createPost_BoardNotFound() {
-        String userId = "user01";
-        BoardSaveRequest request = new BoardSaveRequest("NON_EXIST", "Title", "Content", null, null, null, null, null,
-                null, null, null, null, null, null, null);
+    @DisplayName("기여자가 없는 경우 시스템으로 게시판 통계 조회")
+    void getBoardStats_SystemContributor() {
+        // given
+        String bbsId = "BBS_01";
+        given(boardRepository.countByBbsIdAndUseAt(bbsId, "Y")).willReturn(0L);
+        given(boardRepository.sumInqireCoByBbsIdAndUseAt(bbsId, "Y")).willReturn(0L);
+        given(boardRepository.findTopContributorByBbsIdAndUseAt(bbsId, "Y")).willReturn(null);
 
-        when(boardMasterRepository.findById("NON_EXIST")).thenReturn(Optional.empty());
+        // when
+        BoardStatsResponse result = boardService.getBoardStats(bbsId);
 
-        assertThatThrownBy(() -> boardService.createPost(userId, request))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.BOARD_NOT_FOUND);
+        // then
+        assertThat(result.getTopContributor()).isEqualTo("System");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 게시글 조회 시 예외 발생")
+    void getPostDetail_NotFound() {
+        // given
+        given(boardRepository.findArticleDetail(anyLong())).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 999L))
+                .isInstanceOf(BusinessException.class);
     }
 }

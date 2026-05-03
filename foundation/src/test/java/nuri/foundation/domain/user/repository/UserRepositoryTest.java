@@ -119,4 +119,51 @@ class UserRepositoryTest extends PersistenceTestSupport {
         List<Object[]> result = userRepository.findAllWithAuthorities();
         assertThat(result).isNotEmpty();
     }
+
+    @Test
+    @DisplayName("getPagedUserList - 키워드 없음")
+    void getPagedUserList_NoKeyword() {
+        var result = userRepository.getPagedUserList(null, PageRequest.of(0, 10));
+        assertThat(result.getContent()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("getPagedUserList - 키워드 있음")
+    void getPagedUserList_WithKeyword() {
+        var result = userRepository.getPagedUserList("testUser", PageRequest.of(0, 10));
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getUserId()).isEqualTo("testUser");
+    }
+
+    @Test
+    @DisplayName("searchUsers - 그 외 다양한 조건 분기")
+    void searchUsers_VariousConditions() {
+        // 0 상태
+        var result = userRepository.searchUsers("0", null, null, PageRequest.of(0, 10));
+        assertThat(result).isNotNull();
+
+        // 잘못된 Role
+        result = userRepository.searchUsers("INVALID_ROLE", null, null, PageRequest.of(0, 10));
+        assertThat(result).isNotNull();
+
+        // 조건 0 (ID)
+        result = userRepository.searchUsers(null, "0", "test", PageRequest.of(0, 10));
+        assertThat(result.getContent()).isNotEmpty();
+
+        // 조건 EMPLYR_ID
+        result = userRepository.searchUsers(null, "EMPLYR_ID", "test", PageRequest.of(0, 10));
+        assertThat(result.getContent()).isNotEmpty();
+
+        // 조건 OFFM_TELNO
+        testUser.setOffmTelno("010-1234-5678");
+        userRepository.save(testUser);
+        em.flush();
+        em.clear();
+        result = userRepository.searchUsers(null, "OFFM_TELNO", "1234", PageRequest.of(0, 10));
+        assertThat(result.getContent()).isNotEmpty();
+
+        // 조건 알 수 없음
+        result = userRepository.searchUsers(null, "99", "test", PageRequest.of(0, 10));
+        assertThat(result.getContent()).isNotEmpty();
+    }
 }

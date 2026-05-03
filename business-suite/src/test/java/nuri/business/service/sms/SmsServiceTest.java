@@ -124,4 +124,44 @@ class SmsServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getRecptnTelno()).isEqualTo("01033334444");
     }
+
+    @Test
+    @DisplayName("SMS 발송 - 수신자 없음")
+    void sendSms_NoRecipients() {
+        SmsDto dto = SmsDto.builder()
+                .trnsmitTelno("01011112222")
+                .trnsmitCn("No Recipient")
+                .recipients(null)
+                .build();
+
+        String smsId = smsService.sendSms("user01", dto);
+
+        assertThat(smsId).startsWith("SMS_");
+        verify(smsRepository).save(any(Sms.class));
+        verify(smsRecptnRepository, never()).save(any());
+        verify(smsAsyncProcessor, never()).processSending(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("SMS 목록 조회 - 조건부 검색")
+    void getSmsList_WithCondition() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(smsRepository.searchSms(anyString(), anyString(), any())).thenReturn(Page.empty());
+
+        smsService.getSmsList("2", "key", pageable);
+
+        verify(smsRepository).searchSms(eq("2"), eq("key"), eq(pageable));
+    }
+
+    @Test
+    @DisplayName("SmsDto - null 엔티티 변환")
+    void smsDto_FromNull() {
+        assertThat(SmsDto.from(null)).isNull();
+    }
+
+    @Test
+    @DisplayName("SmsRecptnDto - null 엔티티 변환")
+    void smsRecptnDto_FromNull() {
+        assertThat(SmsRecptnDto.from(null)).isNull();
+    }
 }

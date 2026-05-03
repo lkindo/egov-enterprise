@@ -105,4 +105,32 @@ class SatisfactionServiceTest {
         assertThat(satisfactionService.checkPassword(10L, "pwd123")).isTrue();
         assertThat(satisfactionService.checkPassword(10L, "wrong")).isFalse();
     }
+
+    @Test
+    @DisplayName("존재하지 않는 만족도 수정 시 아무 일도 일어나지 않음")
+    void updateSatisfaction_NotFound() {
+        given(satisfactionRepository.findById(any())).willReturn(Optional.empty());
+        SatisfactionDto dto = SatisfactionDto.builder().satisfactionId(99L).build();
+
+        satisfactionService.updateSatisfaction(dto);
+
+        verify(satisfactionRepository).findById(99L);
+    }
+
+    @Test
+    @DisplayName("비밀번호가 설정되지 않은 만족도 비밀번호 확인 시 false 반환")
+    void checkPassword_NoPassword() {
+        Satisfaction satisfaction = Satisfaction.builder().id(10L).password(null).build();
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(satisfaction));
+
+        assertThat(satisfactionService.checkPassword(10L, "any")).isFalse();
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 만족도 비밀번호 확인 시 예외 발생")
+    void checkPassword_NotFound() {
+        given(satisfactionRepository.findById(any())).willReturn(Optional.empty());
+
+        assertThrows(BusinessException.class, () -> satisfactionService.checkPassword(99L, "any"));
+    }
 }

@@ -98,4 +98,70 @@ class MailServiceTest {
 
         verify(sentMailRepository).delete(mail);
     }
+
+    @Test
+    @DisplayName("보낸 메일 목록 조회 - 키워드 포함")
+    void getSentMailList_WithKeyword() {
+        Pageable pageable = PageRequest.of(0, 10);
+        given(sentMailRepository.findBySjContaining(eq("key"), eq(pageable))).willReturn(Page.empty());
+
+        mailService.getSentMailList("key", pageable);
+
+        verify(sentMailRepository).findBySjContaining(eq("key"), eq(pageable));
+    }
+
+    @Test
+    @DisplayName("보낸 메일 목록 조회 - 검색 조건 포함")
+    void getSentMailList_WithCondition() {
+        Pageable pageable = PageRequest.of(0, 10);
+        given(sentMailRepository.searchSentMails(anyString(), anyString(), eq(pageable))).willReturn(Page.empty());
+
+        mailService.getSentMailList("sj", "key", pageable);
+
+        verify(sentMailRepository).searchSentMails(anyString(), anyString(), eq(pageable));
+    }
+
+    @Test
+    @DisplayName("보낸 메일 상세 조회 - 데이터 없음")
+    void getSentMail_NotFound() {
+        given(sentMailRepository.findById(anyString())).willReturn(Optional.empty());
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> mailService.getSentMail("MISSING"))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
+    }
+
+    @Test
+    @DisplayName("보낸 메일 목록 조회 - 빈 키워드")
+    void getSentMailList_EmptyKeyword() {
+        Pageable pageable = PageRequest.of(0, 10);
+        SentMail mail = SentMail.builder().mssageId("M1").sj("Subject").build();
+        given(sentMailRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(mail)));
+
+        Page<SentMailDto> result = mailService.getSentMailList("", pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(sentMailRepository).findAll(pageable);
+    }
+
+    @Test
+    @DisplayName("SentMailDto - null 엔티티 변환")
+    void sentMailDto_FromNull() {
+        SentMailDto result = SentMailDto.from(null);
+        assertThat(result).isNull();
+    }
+
+    @Test
+    @DisplayName("메일 결과 업데이트 - 데이터 없음")
+    void updateMailResult_NotFound() {
+        given(sentMailRepository.findById(anyString())).willReturn(Optional.empty());
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> mailService.updateMailResult("MISSING", "F"))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
+    }
+
+    @Test
+    @DisplayName("메일 삭제 - 데이터 없음")
+    void deleteMail_NotFound() {
+        given(sentMailRepository.findById(anyString())).willReturn(Optional.empty());
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> mailService.deleteMail("MISSING"))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
+    }
 }

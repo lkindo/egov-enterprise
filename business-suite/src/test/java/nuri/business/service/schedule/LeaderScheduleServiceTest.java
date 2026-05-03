@@ -46,6 +46,20 @@ class LeaderScheduleServiceTest {
     }
 
     @Test
+    @DisplayName("키워드가 null인 경우 전체 간부 일정 목록 조회")
+    void getLeaderScheduleList_NullKeyword() {
+        // Given
+        Page<LeaderSchedule> page = new PageImpl<>(List.of(LeaderSchedule.builder().build()));
+        given(leaderScheduleRepository.findByScheduleNmContaining(eq(""), any(Pageable.class))).willReturn(page);
+
+        // When
+        leaderScheduleService.getLeaderScheduleList(null, Pageable.unpaged());
+
+        // Then
+        verify(leaderScheduleRepository).findByScheduleNmContaining(eq(""), any());
+    }
+
+    @Test
     @DisplayName("간부 일정 상세 조회 성공")
     void getLeaderSchedule_Success() {
         // Given
@@ -57,6 +71,15 @@ class LeaderScheduleServiceTest {
 
         // Then
         assertThat(result.getScheduleNm()).isEqualTo("Title");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 간부 일정 조회 시 예외 발생")
+    void getLeaderSchedule_NotFound() {
+        given(leaderScheduleRepository.findById(anyString())).willReturn(Optional.empty());
+        
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> leaderScheduleService.getLeaderSchedule("invalid"))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
     }
 
     @Test
@@ -74,6 +97,31 @@ class LeaderScheduleServiceTest {
     }
 
     @Test
+    @DisplayName("간부 일정 수정 성공")
+    void updateLeaderSchedule_Success() {
+        // Given
+        LeaderSchedule entity = LeaderSchedule.builder().scheduleId("LSCH_1").build();
+        given(leaderScheduleRepository.findById("LSCH_1")).willReturn(Optional.of(entity));
+        LeaderScheduleDto dto = LeaderScheduleDto.builder().scheduleNm("Updated").build();
+
+        // When
+        leaderScheduleService.updateLeaderSchedule("LSCH_1", "user", dto);
+
+        // Then
+        assertThat(entity.getScheduleNm()).isEqualTo("Updated");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 간부 일정 수정 시 예외 발생")
+    void updateLeaderSchedule_NotFound() {
+        given(leaderScheduleRepository.findById(anyString())).willReturn(Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
+            leaderScheduleService.updateLeaderSchedule("invalid", "user", LeaderScheduleDto.builder().build())
+        ).isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
+    }
+
+    @Test
     @DisplayName("간부 일정 삭제 성공")
     void deleteLeaderSchedule_Success() {
         // When
@@ -81,5 +129,24 @@ class LeaderScheduleServiceTest {
 
         // Then
         verify(leaderScheduleRepository).deleteById("LSCH_1");
+    }
+
+    @Test
+    @DisplayName("간부 현황 목록 조회 (Mock)")
+    void getLeaderStatusList() {
+        assertThat(leaderScheduleService.getLeaderStatusList(null, Pageable.unpaged())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("간부 현황 조회 (Mock)")
+    void getLeaderStatus() {
+        assertThat(leaderScheduleService.getLeaderStatus("leader1")).isNull();
+    }
+
+    @Test
+    @DisplayName("간부 현황 수정 (Mock)")
+    void updateLeaderStatus() {
+        // Should not throw any exception
+        leaderScheduleService.updateLeaderStatus(null);
     }
 }

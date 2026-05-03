@@ -2,6 +2,7 @@ package nuri.foundation.service.menu;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.domain.auth.MenuAuthorityRepository;
+import nuri.foundation.domain.auth.MenuAuthorityProjection;
 import nuri.foundation.domain.menu.Menu;
 import nuri.foundation.domain.menu.MenuRepository;
 import nuri.foundation.domain.program.Program;
@@ -321,5 +322,124 @@ class MenuServiceTest {
         given(menuRepository.count()).willReturn(10L);
         int cnt = menuService.selectMenuManageListTotCnt(new BaseSearchDto());
         assertThat(cnt).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("메뉴 계층 구조 조회 - 익명 사용자")
+    void getMenuHierarchy_Anonymous() {
+        given(securityContext.getAuthentication()).willReturn(null);
+        given(menuRepository.findAllWithAuthorities()).willReturn(new ArrayList<>());
+        given(programRepository.findAll()).willReturn(new ArrayList<>());
+
+        List<MenuDto> hierarchy = menuService.getMenuHierarchy();
+        assertThat(hierarchy).isEmpty();
+    }
+
+    @Test
+    @DisplayName("메뉴 계층 구조 조회 - Principal이 anonymousUser인 경우")
+    void getMenuHierarchy_PrincipalAnonymous() {
+        given(securityContext.getAuthentication()).willReturn(authentication);
+        given(authentication.isAuthenticated()).willReturn(true);
+        given(authentication.getPrincipal()).willReturn("anonymousUser");
+        given(menuRepository.findAllWithAuthorities()).willReturn(new ArrayList<>());
+        given(programRepository.findAll()).willReturn(new ArrayList<>());
+
+        List<MenuDto> hierarchy = menuService.getMenuHierarchy();
+        assertThat(hierarchy).isEmpty();
+    }
+
+    @Test
+    @DisplayName("메뉴 생성 목록 조회 - menuNo가 null인 경우 로그 출력 확인")
+    void selectMenuCreatList_NullMenuNo() {
+        MenuCreateDto dto = MenuCreateDto.builder().authorCode("ROLE_USER").build();
+        MenuAuthorityProjection proj = mock(MenuAuthorityProjection.class);
+        given(proj.getMenuNo()).willReturn(null);
+        given(menuAuthorityRepository.selectMenuCreatList("ROLE_USER")).willReturn(List.of(proj));
+
+        List<MenuCreateDto> list = menuService.selectMenuCreatList(dto);
+
+        assertThat(list).hasSize(1);
+        assertThat(list.get(0).getMenuNo()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("메뉴 관리 목록 삭제 - 빈 입력값 처리")
+    void deleteMenuManageList_Empty() {
+        menuService.deleteMenuManageList(null);
+        menuService.deleteMenuManageList("");
+        menuService.deleteMenuManageList(",,");
+        verify(menuRepository, never()).deleteAllById(any());
+    }
+
+    @Test
+    @DisplayName("URL 계산 - 레거시 .do 아닌 경우 및 기타 분기")
+    void calculateUrl_MoreScenarios() {
+        // 1. progrmFileNm이 "/"인 경우
+        Menu m1 = Menu.builder().id(1L).progrmFileNm("/").build();
+        given(menuRepository.findById(1L)).willReturn(Optional.of(m1));
+        assertThat(menuService.selectMenuManage(1L).getChkURL()).isEqualTo("#");
+
+        // 2. program.getUrl()이 "/"인 경우
+        Menu m2 = Menu.builder().id(2L).progrmFileNm("Home").build();
+        Program p2 = Program.builder().progrmFileNm("Home").url("/").build();
+        given(menuRepository.findById(2L)).willReturn(Optional.of(m2));
+        given(programRepository.findById("Home")).willReturn(Optional.of(p2));
+        assertThat(menuService.selectMenuManage(2L).getChkURL()).isEqualTo("#");
+
+        // 3. program.getUrl()이 .do 아니고 "/"도 아닌 일반 경로인 경우
+        Menu m3 = Menu.builder().id(3L).progrmFileNm("Simple").build();
+        Program p3 = Program.builder().progrmFileNm("Simple").url("/simple/path").build();
+        given(menuRepository.findById(3L)).willReturn(Optional.of(m3));
+        given(programRepository.findById("Simple")).willReturn(Optional.of(p3));
+        assertThat(menuService.selectMenuManage(3L).getChkURL()).isEqualTo("/simple/path");
+        
+        // 4. inferModernRoute - 다양한 매핑 확인
+        String[] progs = {"BBSMaster", "CmmCode", "GroupList", "RoleList", "AuthorGroup", "QustnrManage", "QustnrTmplat", "AdbkList", "FaqList", "CnsltList", "MainImage", "FileMng", "ProgramList", "MenuCreat", "MenuList"};
+        for (String p : progs) {
+            Menu m = Menu.builder().id(100L).progrmFileNm(p).build();
+            given(menuRepository.findById(100L)).willReturn(Optional.of(m));
+            assertThat(menuService.selectMenuManage(100L).getChkURL()).isNotEqualTo("#");
+        }
+
+        // 5. inferFromLegacyUrl - 다양한 매핑 확인
+        String[][] legacyUrls = {
+            {"/uss/olh/faq/", "/admin/help/faq"},
+            {"/sec/gmt/", "/admin/security/group"},
+            {"/sec/ram/", "/admin/security/role"},
+            {"/sym/ccm/", "/admin/system/common-code"},
+            {"/uss/olp/qtm/", "/admin/survey/templates"},
+            {"/uss/olp/qmc/", "/admin/survey/manage"}
+        };
+        for (String[] pair : legacyUrls) {
+            Menu m = Menu.builder().id(200L).progrmFileNm("Legacy").build();
+            Program p = Program.builder().progrmFileNm("Legacy").url(pair[0] + "index.do").build();
+            given(menuRepository.findById(200L)).willReturn(Optional.of(m));
+            given(programRepository.findById("Legacy")).willReturn(Optional.of(p));
+            assertThat(menuService.selectMenuManage(200L).getChkURL()).isEqualTo(pair[1]);
+        }
+    }
+
+    @Test
+    @DisplayName("계층형 메뉴 트리 빌드 - ID 필터링 확인")
+    void buildMenuTree_IdFilter() {
+        // ID > 9999999 인 메뉴는 필터링되어야 함
+        Menu normal = Menu.builder().id(1L).menuNm("Normal").upperMenuNo(0L).build();
+        Menu largeId = Menu.builder().id(10000000L).menuNm("Large").upperMenuNo(0L).build();
+        
+        given(securityContext.getAuthentication()).willReturn(authentication);
+        given(authentication.isAuthenticated()).willReturn(true);
+        doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+        given(authentication.getPrincipal()).willReturn("admin");
+
+        given(menuRepository.findAllWithAuthorities()).willReturn(List.of(
+            new Object[]{normal, null},
+            new Object[]{largeId, null}
+        ));
+        given(programRepository.findAll()).willReturn(new ArrayList<>());
+
+        List<MenuDto> hierarchy = menuService.getMenuHierarchy();
+
+        assertThat(hierarchy).hasSize(1);
+        assertThat(hierarchy.get(0).getMenuNm()).isEqualTo("Normal");
     }
 }

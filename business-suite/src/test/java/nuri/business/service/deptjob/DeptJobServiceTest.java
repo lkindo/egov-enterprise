@@ -1,15 +1,17 @@
 package nuri.business.service.deptjob;
 
-
+import com.querydsl.core.types.Predicate;
 import nuri.business.domain.deptjob.DeptJob;
-import nuri.business.domain.deptjob.DeptJobRepository;
-import nuri.business.domain.deptjob.DeptJobBoxRepository;
 import nuri.business.domain.deptjob.DeptJobBox;
-import nuri.business.domain.organization.OrganizationManageRepository;
+import nuri.business.domain.deptjob.DeptJobBoxRepository;
+import nuri.business.domain.deptjob.DeptJobRepository;
 import nuri.business.domain.organization.OrganizationManage;
-import nuri.foundation.domain.user.repository.UserRepository;
-import nuri.foundation.domain.user.entity.User;
+import nuri.business.domain.organization.OrganizationManageRepository;
 import nuri.business.service.deptjob.dto.DeptJobDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.domain.user.entity.User;
+import nuri.foundation.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,24 +20,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import com.querydsl.core.types.Predicate;
+import org.springframework.data.domain.PageRequest;
 
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("DeptJobService 단위 테스트")
 class DeptJobServiceTest {
-
-    @InjectMocks
-    private DeptJobService deptJobService;
 
     @Mock
     private DeptJobRepository deptJobRepository;
@@ -49,75 +46,144 @@ class DeptJobServiceTest {
     @Mock
     private OrganizationManageRepository organizationManageRepository;
 
-    @Test
-    @DisplayName("부서 업무 목록 조회 성공")
-    void getDeptJobList_Success() {
-        // given
-        Page<DeptJob> page = new PageImpl<>(List.of(DeptJob.builder().deptJobId("JOB_01").deptJobbxId("BOX_01").chargerId("USER_01").build()));
-        given(deptJobRepository.findAll(any(Predicate.class), any(Pageable.class))).willReturn(page);
-        given(deptJobBoxRepository.findById("BOX_01")).willReturn(Optional.of(DeptJobBox.builder().deptId("DEPT_01").build()));
-        given(organizationManageRepository.findById("DEPT_01")).willReturn(Optional.of(OrganizationManage.builder().orgnztNm("DeptName").build()));
-        given(userRepository.findByEsntlId("USER_01")).willReturn(Optional.of(User.builder().userId("USER_01").esntlId("USER_01").userNm("UserName").password("pass").build()));
+    @InjectMocks
+    private DeptJobService deptJobService;
 
-        // when
-        Page<DeptJobDto> result = deptJobService.getDeptJobList(null, "BOX_01", null, null, Pageable.unpaged());
+    private DeptJob deptJob;
+    private DeptJobBox deptJobBox;
 
-        // then
-        assertThat(result.getContent()).hasSize(1);
+    @BeforeEach
+    void setUp() {
+        deptJobBox = DeptJobBox.builder()
+                .deptJobbxId("BOX1")
+                .deptJobbxNm("Test Box")
+                .deptId("DEPT1")
+                .build();
+
+        deptJob = DeptJob.builder()
+                .deptJobId("JOB1")
+                .deptJobbxId("BOX1")
+                .deptJobNm("Test Job")
+                .deptJobCn("Content")
+                .chargerId("USER1")
+                .priort("1")
+                .atchFileId("FILE1")
+                .build();
+    }
+
+    private void mockToDtoDependencies() {
+        when(deptJobBoxRepository.findById("BOX1")).thenReturn(Optional.of(deptJobBox));
+        
+        OrganizationManage org = OrganizationManage.builder()
+                .orgnztId("DEPT1")
+                .orgnztNm("Test Dept")
+                .build();
+        when(organizationManageRepository.findById("DEPT1")).thenReturn(Optional.of(org));
+
+        User user = User.builder()
+                .userId("TEST")
+                .password("TEST")
+                .esntlId("USER1")
+                .userNm("Test User")
+                .build();
+        when(userRepository.findByEsntlId("USER1")).thenReturn(Optional.of(user));
     }
 
     @Test
-    @DisplayName("부서 업무 상세 조회 성공")
-    void getDeptJob_Success() {
-        // given
-        DeptJob entity = DeptJob.builder().deptJobId("JOB_01").deptJobbxId("BOX_01").chargerId("USER_01").build();
-        given(deptJobRepository.findById("JOB_01")).willReturn(Optional.of(entity));
-        given(deptJobBoxRepository.findById("BOX_01")).willReturn(Optional.of(DeptJobBox.builder().deptId("DEPT_01").build()));
-        given(organizationManageRepository.findById("DEPT_01")).willReturn(Optional.of(OrganizationManage.builder().orgnztNm("DeptName").build()));
-        given(userRepository.findByEsntlId("USER_01")).willReturn(Optional.of(User.builder().userId("USER_01").esntlId("USER_01").userNm("UserName").password("pass").build()));
+    @DisplayName("부서업무 목록 조회 - boxId 있음, 조건 0")
+    void getDeptJobList_withBoxIdAndCondition0() {
+        Page<DeptJob> page = new PageImpl<>(Collections.singletonList(deptJob), PageRequest.of(0, 10), 1);
+        when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
+        mockToDtoDependencies();
 
-        // when
-        DeptJobDto result = deptJobService.getDeptJob("JOB_01");
+        Page<DeptJobDto> result = deptJobService.getDeptJobList(null, "BOX1", "0", "keyword", PageRequest.of(0, 10));
 
-        // then
-        assertThat(result.getDeptJobId()).isEqualTo("JOB_01");
+        assertEquals(1, result.getTotalElements());
     }
 
     @Test
-    @DisplayName("부서 업무 생성 성공")
-    void createDeptJob_Success() {
-        // given
-        DeptJobDto dto = DeptJobDto.builder().deptJobId("JOB_01").build();
+    @DisplayName("부서업무 목록 조회 - deptId 있고 박스 있음, 조건 1")
+    void getDeptJobList_withDeptIdWithBoxesAndCondition1() {
+        when(deptJobBoxRepository.findByDeptId("DEPT1")).thenReturn(Collections.singletonList(deptJobBox));
+        Page<DeptJob> page = new PageImpl<>(Collections.singletonList(deptJob), PageRequest.of(0, 10), 1);
+        when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
+        mockToDtoDependencies();
 
-        // when
-        deptJobService.createDeptJob(dto);
+        Page<DeptJobDto> result = deptJobService.getDeptJobList("DEPT1", null, "1", "keyword", PageRequest.of(0, 10));
 
-        // then
-        verify(deptJobRepository).save(any());
+        assertEquals(1, result.getTotalElements());
     }
 
     @Test
-    @DisplayName("부서 업무 수정 성공")
-    void updateDeptJob_Success() {
-        // given
-        DeptJob entity = DeptJob.builder().deptJobId("JOB_01").build();
-        given(deptJobRepository.findById("JOB_01")).willReturn(Optional.of(entity));
-        DeptJobDto dto = DeptJobDto.builder().deptJobNm("New Name").build();
+    @DisplayName("부서업무 목록 조회 - deptId 있지만 박스 없음, 조건 2")
+    void getDeptJobList_withDeptIdNoBoxesAndCondition2() {
+        when(deptJobBoxRepository.findByDeptId("DEPT2")).thenReturn(Collections.emptyList());
+        Page<DeptJob> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
+        when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
 
-        // when
-        deptJobService.updateDeptJob("JOB_01", dto);
+        Page<DeptJobDto> result = deptJobService.getDeptJobList("DEPT2", null, "2", "keyword", PageRequest.of(0, 10));
 
-        // then
-        verify(deptJobRepository).findById("JOB_01");
+        assertEquals(0, result.getTotalElements());
     }
 
     @Test
-    @DisplayName("부서 업무 삭제 성공")
-    void deleteDeptJob_Success() {
-        // when
-        deptJobService.deleteDeptJob("JOB_01");
+    @DisplayName("부서업무 상세 조회")
+    void getDeptJob() {
+        when(deptJobRepository.findById("JOB1")).thenReturn(Optional.of(deptJob));
+        mockToDtoDependencies();
 
-        // then
-        verify(deptJobRepository).deleteById("JOB_01");
+        DeptJobDto result = deptJobService.getDeptJob("JOB1");
+
+        assertNotNull(result);
+        assertEquals("JOB1", result.getDeptJobId());
+        assertEquals("Test Dept", result.getDeptNm());
+        assertEquals("Test User", result.getChargerNm());
+    }
+
+    @Test
+    @DisplayName("부서업무 상세 조회 실패 - 존재하지 않음")
+    void getDeptJob_NotFound() {
+        when(deptJobRepository.findById("JOB99")).thenReturn(Optional.empty());
+
+        assertThrows(BusinessException.class, () -> deptJobService.getDeptJob("JOB99"));
+    }
+
+    @Test
+    @DisplayName("부서업무 생성")
+    void createDeptJob() {
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptJobId("JOB1");
+        dto.setDeptJobbxId("BOX1");
+        dto.setDeptJobNm("Test Job");
+        
+        when(deptJobRepository.save(any(DeptJob.class))).thenReturn(deptJob);
+
+        String result = deptJobService.createDeptJob(dto);
+
+        assertNotNull(result);
+        verify(deptJobRepository, times(1)).save(any(DeptJob.class));
+    }
+
+    @Test
+    @DisplayName("부서업무 수정")
+    void updateDeptJob() {
+        when(deptJobRepository.findById("JOB1")).thenReturn(Optional.of(deptJob));
+        
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptJobNm("Updated Job");
+
+        deptJobService.updateDeptJob("JOB1", dto);
+
+        assertEquals("Updated Job", deptJob.getDeptJobNm());
+    }
+
+    @Test
+    @DisplayName("부서업무 삭제")
+    void deleteDeptJob() {
+        doNothing().when(deptJobRepository).deleteById("JOB1");
+
+        deptJobService.deleteDeptJob("JOB1");
+
+        verify(deptJobRepository, times(1)).deleteById("JOB1");
     }
 }

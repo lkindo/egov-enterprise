@@ -97,4 +97,19 @@ class MemoTodoServiceTest {
         // Then
         verify(memoTodoRepository).deleteById("T1");
     }
+    @Test
+    @DisplayName("메모 할일 상세 조회 - 존재하지 않음")
+    void getMemoTodo_NotFound() {
+        given(memoTodoRepository.findById("INVALID")).willReturn(Optional.empty());
+        assertThat(memoTodoService.getMemoTodo("INVALID")).isNull();
+    }
+
+    @Test
+    @DisplayName("메모 할일 수정 - 존재하지 않음")
+    void updateMemoTodo_NotFound() {
+        given(memoTodoRepository.findById("INVALID")).willReturn(Optional.empty());
+        memoTodoService.updateMemoTodo(MemoTodoDto.builder().todoId("INVALID").build());
+        verify(memoTodoRepository).findById("INVALID");
+        // No exception should occur, just do nothing
+    }
 }

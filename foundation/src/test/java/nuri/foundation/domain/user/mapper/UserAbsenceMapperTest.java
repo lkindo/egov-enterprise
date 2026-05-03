@@ -47,4 +47,11 @@ class UserAbsenceMapperTest {
         assertThat(entity.getEmplyrId()).isEqualTo("user02");
         assertThat(entity.getUserAbsnceAt()).isEqualTo("N");
     }
+
+    @Test
+    @DisplayName("Null 변환 테스트")
+    void nullTests() {
+        assertThat(mapper.toDto(null)).isNull();
+        assertThat(mapper.toEntity(null)).isNull();
+    }
 }

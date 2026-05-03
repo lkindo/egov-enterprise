@@ -104,4 +104,54 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
         assertThat(result.getContent().get(0).getDeptCode()).isEqualTo("DEPT_001");
         assertThat(result.getContent().get(0).getUserId()).isEqualTo("testUser");
     }
+
+    @Test
+    @DisplayName("권한 그룹 검색 - 페이지네이션 없음")
+    void searchAuthorGroups_Unpaged() {
+        // When - unpaged
+        Page<AuthorGroupProjection> result = userAuthorityRepository.searchAuthorGroups("1", "testUser", org.springframework.data.domain.Pageable.unpaged());
+
+        // Then
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("부서별 권한 검색 - 페이지네이션 없음")
+    void searchDeptAuthors_Unpaged() {
+        // Given
+        DeptManage dept = DeptManage.builder()
+                .orgnztId("DEPT_001")
+                .orgnztNm("테스트부서")
+                .build();
+        em.persist(dept);
+        testUser.setOrgnztId("DEPT_001");
+        userRepository.save(testUser);
+        em.flush();
+
+        // When
+        Page<DeptAuthorProjection> result = userAuthorityRepository.searchDeptAuthors("DEPT_001", org.springframework.data.domain.Pageable.unpaged());
+
+        // Then
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("권한 그룹 검색 - 알 수 없는 조건")
+    void searchAuthorGroups_UnknownCondition() {
+        // When - 알 수 없는 조건은 조건 필터링 무시
+        Page<AuthorGroupProjection> result = userAuthorityRepository.searchAuthorGroups("99", "keyword", PageRequest.of(0, 10));
+
+        // Then
+        assertThat(result.getContent()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("권한 그룹 검색 - 검색어 없음")
+    void searchAuthorGroups_NoKeyword() {
+        // When - 검색어 없음
+        Page<AuthorGroupProjection> result = userAuthorityRepository.searchAuthorGroups("1", "", PageRequest.of(0, 10));
+
+        // Then
+        assertThat(result.getContent()).isNotEmpty();
+    }
 }

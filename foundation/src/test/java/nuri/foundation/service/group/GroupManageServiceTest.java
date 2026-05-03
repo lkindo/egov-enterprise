@@ -91,4 +91,107 @@ class GroupManageServiceTest {
         // Then
         assertThat(entity.getGroupNm()).isEqualTo("Updated Name");
     }
+
+    @Test
+    @DisplayName("그룹 목록 조회 - 키워드 검색")
+    void selectGroupList_WithKeyword() {
+        // Given
+        BaseSearchDto searchVO = new BaseSearchDto();
+        searchVO.setPageIndex(1);
+        searchVO.setPageUnit(0); // Test pageUnit <= 0 fallback to 10
+        searchVO.setSearchKeyword("test");
+        GroupManage entity = GroupManage.builder().groupId("G1").groupNm("Group1").build();
+        given(groupManageRepository.searchByKeyword(any(), any(Pageable.class))).willReturn(new PageImpl<>(List.of(entity)));
+
+        // When
+        List<GroupManageDto> result = groupManageService.selectGroupList(searchVO);
+
+        // Then
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("그룹 총 건수 조회 - 키워드 없음")
+    void selectGroupListTotCnt_NoKeyword() {
+        // Given
+        BaseSearchDto searchVO = new BaseSearchDto();
+        given(groupManageRepository.count()).willReturn(5L);
+
+        // When
+        int result = groupManageService.selectGroupListTotCnt(searchVO);
+
+        // Then
+        assertThat(result).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("그룹 총 건수 조회 - 키워드 있음")
+    void selectGroupListTotCnt_WithKeyword() {
+        // Given
+        BaseSearchDto searchVO = new BaseSearchDto();
+        searchVO.setSearchKeyword("test");
+        GroupManage entity = GroupManage.builder().groupId("G1").groupNm("Group1").build();
+        given(groupManageRepository.searchByKeyword(any(), any(Pageable.class))).willReturn(new PageImpl<>(List.of(entity)));
+
+        // When
+        int result = groupManageService.selectGroupListTotCnt(searchVO);
+
+        // Then
+        assertThat(result).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("그룹 상세 조회 실패 - 존재하지 않음")
+    void selectGroup_NotFound() {
+        // Given
+        given(groupManageRepository.findById("G1")).willReturn(Optional.empty());
+
+        // When & Then
+        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () -> groupManageService.selectGroup("G1"));
+    }
+
+    @Test
+    @DisplayName("그룹 등록 성공 - ID 직접 지정")
+    void insertGroup_WithId() {
+        // Given
+        GroupManageDto dto = GroupManageDto.builder().groupId("CUSTOM_ID").groupNm("New Group").build();
+
+        // When
+        String groupId = groupManageService.insertGroup(dto);
+
+        // Then
+        assertThat(groupId).isEqualTo("CUSTOM_ID");
+        verify(groupManageRepository).save(any(GroupManage.class));
+    }
+
+    @Test
+    @DisplayName("그룹 수정 실패 - 존재하지 않음")
+    void updateGroup_NotFound() {
+        // Given
+        given(groupManageRepository.findById("G1")).willReturn(Optional.empty());
+        GroupManageDto dto = GroupManageDto.builder().groupId("G1").groupNm("Updated Name").build();
+
+        // When & Then
+        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () -> groupManageService.updateGroup(dto));
+    }
+
+    @Test
+    @DisplayName("그룹 삭제")
+    void deleteGroup() {
+        // When
+        groupManageService.deleteGroup("G1");
+
+        // Then
+        verify(groupManageRepository).deleteById("G1");
+    }
+
+    @Test
+    @DisplayName("그룹 다중 삭제")
+    void deleteGroups() {
+        // When
+        groupManageService.deleteGroups(new String[]{"G1", "G2"});
+
+        // Then
+        verify(groupManageRepository).deleteAllById(any());
+    }
 }

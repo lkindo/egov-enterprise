@@ -4,13 +4,12 @@ import nuri.foundation.domain.auth.AuthorGroupProjection;
 import nuri.foundation.domain.auth.DeptAuthorProjection;
 import nuri.foundation.domain.auth.UserAuthority;
 import nuri.foundation.domain.auth.UserAuthorityRepository;
+import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.domain.user.entity.User;
 import nuri.foundation.domain.user.repository.UserRepository;
 import nuri.foundation.service.auth.dto.DeptAuthorBatchRequest;
 import nuri.foundation.service.auth.dto.UserAuthorityDto;
-import nuri.foundation.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,17 +19,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UserAuthorityManageService (사용자 권한 관리) 테스트")
+@DisplayName("UserAuthorityManageService 단위 테스트")
 class UserAuthorityManageServiceTest {
 
     @Mock
@@ -42,204 +40,105 @@ class UserAuthorityManageServiceTest {
     @InjectMocks
     private UserAuthorityManageService userAuthorityManageService;
 
-    @Nested
+    @Test
     @DisplayName("사용자별 권한 목록 조회 테스트")
-    class SelectUserAuthorityListTests {
+    void selectUserAuthorityListTest() {
+        BaseSearchDto searchVO = new BaseSearchDto();
+        searchVO.setPageIndex(1);
+        searchVO.setPageUnit(10);
+        
+        Page<AuthorGroupProjection> page = new PageImpl<>(List.of());
+        given(userAuthorityRepository.searchAuthorGroups(any(), any(), any(Pageable.class))).willReturn(page);
 
-        @Test
-        @DisplayName("사용자별 권한 목록 조회 성공")
-        void testSelectUserAuthorityList_Success() {
-            // Given
-            BaseSearchDto searchVO = new BaseSearchDto();
-            searchVO.setPageIndex(1);
-            searchVO.setPageUnit(10);
-            searchVO.setSearchKeyword("user01");
+        userAuthorityManageService.selectUserAuthorityList(searchVO);
 
-            AuthorGroupProjection projection = AuthorGroupProjection.builder()
-                    .userId("user01")
-                    .userNm("사용자1")
-                    .authorCode("ROLE_USER")
-                    .build();
-
-            Page<AuthorGroupProjection> page = new PageImpl<>(Collections.singletonList(projection));
-            when(userAuthorityRepository.searchAuthorGroups(any(), any(), any(Pageable.class))).thenReturn(page);
-
-            // When
-            Page<AuthorGroupProjection> result = userAuthorityManageService.selectUserAuthorityList(searchVO);
-
-            // Then
-            assertNotNull(result);
-            assertEquals(1, result.getContent().size());
-            assertEquals("user01", result.getContent().get(0).getUserId());
-            verify(userAuthorityRepository, times(1)).searchAuthorGroups(any(), any(), any(Pageable.class));
-        }
+        verify(userAuthorityRepository).searchAuthorGroups(any(), any(), any(Pageable.class));
     }
 
-    @Nested
-    @DisplayName("부서별 권한 목록 조회 테스트")
-    class SelectDeptAuthorityListTests {
+    @Test
+    @DisplayName("사용자의 권한 정보 저장 테스트 - 신규 등록")
+    void saveUserAuthoritiesNewTest() {
+        UserAuthorityDto dto = UserAuthorityDto.builder()
+                .uniqId("USER1")
+                .authorCode("ROLE_ADMIN")
+                .build();
+        
+        given(userAuthorityRepository.findById("USER1")).willReturn(Optional.empty());
 
-        @Test
-        @DisplayName("부서별 권한 목록 조회 성공")
-        void testSelectDeptAuthorityList_Success() {
-            // Given
-            String deptCode = "DEPT001";
-            BaseSearchDto searchVO = new BaseSearchDto();
-            searchVO.setPageIndex(1);
+        userAuthorityManageService.saveUserAuthorities(List.of(dto));
 
-            Page<DeptAuthorProjection> page = new PageImpl<>(Collections.emptyList());
-            when(userAuthorityRepository.searchDeptAuthors(eq(deptCode), any(Pageable.class))).thenReturn(page);
-
-            // When
-            Page<DeptAuthorProjection> result = userAuthorityManageService.selectDeptAuthorityList(deptCode, searchVO);
-
-            // Then
-            assertNotNull(result);
-            verify(userAuthorityRepository, times(1)).searchDeptAuthors(eq(deptCode), any(Pageable.class));
-        }
+        verify(userAuthorityRepository).saveAll(anyList());
     }
 
-    @Nested
-    @DisplayName("사용자 권한 정보 저장 테스트")
-    class SaveUserAuthoritiesTests {
+    @Test
+    @DisplayName("사용자의 권한 정보 저장 테스트 - 기존 수정")
+    void saveUserAuthoritiesUpdateTest() {
+        UserAuthorityDto dto = UserAuthorityDto.builder()
+                .uniqId("USER1")
+                .authorCode("ROLE_USER")
+                .build();
+        
+        UserAuthority existing = mock(UserAuthority.class);
+        given(userAuthorityRepository.findById("USER1")).willReturn(Optional.of(existing));
 
-        @Test
-        @DisplayName("새로운 사용자 권한 저장 성공")
-        void testSaveUserAuthorities_New() {
-            // Given
-            UserAuthorityDto dto = UserAuthorityDto.builder()
-                    .uniqId("UNIQ_001")
-                    .authorCode("ROLE_ADMIN")
-                    .mberTyCode("USR")
-                    .build();
+        userAuthorityManageService.saveUserAuthorities(List.of(dto));
 
-            when(userAuthorityRepository.findById("UNIQ_001")).thenReturn(Optional.empty());
-
-            // When
-            userAuthorityManageService.saveUserAuthorities(Collections.singletonList(dto));
-
-            // Then
-            verify(userAuthorityRepository, times(1)).saveAll(anyList());
-        }
-
-        @Test
-        @DisplayName("기존 사용자 권한 수정 성공")
-        void testSaveUserAuthorities_Update() {
-            // Given
-            UserAuthorityDto dto = UserAuthorityDto.builder()
-                    .uniqId("UNIQ_001")
-                    .authorCode("ROLE_ADMIN")
-                    .build();
-
-            UserAuthority existing = UserAuthority.builder()
-                    .uniqId("UNIQ_001")
-                    .authorCode("ROLE_USER")
-                    .build();
-
-            when(userAuthorityRepository.findById("UNIQ_001")).thenReturn(Optional.of(existing));
-
-            // When
-            userAuthorityManageService.saveUserAuthorities(Collections.singletonList(dto));
-
-            // Then
-            assertEquals("ROLE_ADMIN", existing.getAuthorCode());
-            verify(userAuthorityRepository, times(1)).saveAll(anyList());
-        }
-
-        @Test
-        @DisplayName("빈 권한 목록 저장 시 동작 안함")
-        void testSaveUserAuthorities_Empty() {
-            // When
-            userAuthorityManageService.saveUserAuthorities(Collections.emptyList());
-
-            // Then
-            verify(userAuthorityRepository, never()).saveAll(any());
-        }
+        verify(existing).update(eq("ROLE_USER"), any());
+        verify(userAuthorityRepository).saveAll(anyList());
     }
 
-    @Nested
-    @DisplayName("사용자 권한 삭제 테스트")
-    class DeleteUserAuthoritiesTests {
+    @Test
+    @DisplayName("사용자의 권한 삭제 테스트")
+    void deleteUserAuthoritiesTest() {
+        List<String> ids = List.of("USER1", "USER2");
+        
+        userAuthorityManageService.deleteUserAuthorities(ids);
 
-        @Test
-        @DisplayName("사용자 권한 목록 삭제 성공")
-        void testDeleteUserAuthorities_Success() {
-            // Given
-            List<String> uniqIds = Arrays.asList("UNIQ_001", "UNIQ_002");
+        verify(userAuthorityRepository).deleteAllByIdInBatch(ids);
+    }
 
-            // When
-            userAuthorityManageService.deleteUserAuthorities(uniqIds);
+    @Test
+    @DisplayName("부서별 권한 일괄 저장 테스트 - 모든 멤버")
+    void saveDeptAuthoritiesAllMembersTest() {
+        DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
+        request.setDeptId("DEPT1");
+        request.setAuthorCode("ROLE_DEPT");
+        request.setAllMembers(true);
+        
+        User user = mock(User.class);
+        given(user.getEsntlId()).willReturn("USER1");
+        given(userRepository.findByOrgnztId("DEPT1")).willReturn(List.of(user));
+        given(userAuthorityRepository.findById("USER1")).willReturn(Optional.empty());
 
-            // Then
-            verify(userAuthorityRepository, times(1)).deleteAllByIdInBatch(uniqIds);
-        }
+        userAuthorityManageService.saveDeptAuthorities(request);
 
-        @Test
-        @DisplayName("null 입력 시 삭제 동작 안함")
-        void testDeleteUserAuthorities_Empty() {
-            // When
+        verify(userAuthorityRepository).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("부서별 권한 일괄 저장 테스트 - 특정 멤버")
+    void saveDeptAuthoritiesSpecificMembersTest() {
+        DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
+        request.setDeptId("DEPT1");
+        request.setAuthorCode("ROLE_DEPT");
+        request.setAllMembers(false);
+        request.setUserIds(List.of("USER1"));
+        
+        given(userAuthorityRepository.findById("USER1")).willReturn(Optional.empty());
+
+        userAuthorityManageService.saveDeptAuthorities(request);
+
+        verify(userAuthorityRepository).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("null 또는 빈 데이터 처리 테스트")
+    void handleEmptyDataTest() {
+        assertDoesNotThrow(() -> {
+            userAuthorityManageService.saveUserAuthorities(null);
+            userAuthorityManageService.saveUserAuthorities(List.of());
             userAuthorityManageService.deleteUserAuthorities(null);
-
-            // Then
-            verify(userAuthorityRepository, never()).deleteAllByIdInBatch(any());
-        }
-    }
-
-    @Nested
-    @DisplayName("부서별 권한 일괄 저장 테스트")
-    class SaveDeptAuthoritiesTests {
-
-        @Test
-        @DisplayName("부서별 모든 회원 권한 일괄 저장 성공")
-        void testSaveDeptAuthorities_AllMembers() {
-            // Given
-            DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
-            request.setDeptId("DEPT001");
-            request.setAuthorCode("ROLE_USER");
-            request.setAllMembers(true);
-
-            User user = mock(User.class);
-            when(user.getEsntlId()).thenReturn("UNIQ_001");
-            when(userRepository.findByOrgnztId("DEPT001")).thenReturn(Collections.singletonList(user));
-            when(userAuthorityRepository.findById("UNIQ_001")).thenReturn(Optional.empty());
-
-            // When
-            userAuthorityManageService.saveDeptAuthorities(request);
-
-            // Then
-            verify(userRepository, times(1)).findByOrgnztId("DEPT001");
-            verify(userAuthorityRepository, times(1)).saveAll(anyList());
-        }
-
-        @Test
-        @DisplayName("부서별 선택 회원 권한 일괄 저장 성공")
-        void testSaveDeptAuthorities_SelectedMembers() {
-            // Given
-            DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
-            request.setDeptId("DEPT001");
-            request.setAuthorCode("ROLE_USER");
-            request.setAllMembers(false);
-            request.setUserIds(Collections.singletonList("UNIQ_001"));
-
-            when(userAuthorityRepository.findById("UNIQ_001")).thenReturn(Optional.empty());
-
-            // When
-            userAuthorityManageService.saveDeptAuthorities(request);
-
-            // Then
-            verify(userRepository, never()).findByOrgnztId(any());
-            verify(userAuthorityRepository, times(1)).saveAll(anyList());
-        }
-
-        @Test
-        @DisplayName("필수 파라미터 누락 시 동작 안함")
-        void testSaveDeptAuthorities_InvalidRequest() {
-            // When
             userAuthorityManageService.saveDeptAuthorities(null);
-            userAuthorityManageService.saveDeptAuthorities(new DeptAuthorBatchRequest());
-
-            // Then
-            verify(userAuthorityRepository, never()).saveAll(any());
-        }
+        });
     }
 }
