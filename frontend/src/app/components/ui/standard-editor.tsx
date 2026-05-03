@@ -1,4 +1,4 @@
-﻿
+
 import React, { useRef } from 'react';
 import {
   Bold, Italic, List, ListOrdered, Link,
@@ -17,7 +17,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const applyStyle = (tag: string) => {
-    // ㅼ젣 ?먮뵒님?쇱씠釉뚮윭由TipTap 님 ?곕룞 님 ?쒓컖님?쇨님깆쓣 ?꾪븳 Placeholder 濡쒖쭅
+    // 실제 에디터 라이브러리(TipTap 등) 연동 및 시각화 구성을 위한 Placeholder 로직
     console.log(`Applying style: ${tag}`);
   };
 
@@ -44,14 +44,14 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
  ref={textareaRef}
  value={value}
  onChange={(e) => onChange(e.target.value)}
- placeholder={placeholder || "이용님입력하세요.."}
+ placeholder={placeholder || "내용을 입력하세요..."}
  style={{ minHeight }}
  className="w-full p-4 resize-none outline-none bg-transparent text-sm leading-relaxed"
  />
 
  {/* Word Count / Info */}
  <div className="px-4 py-2 border-t bg-muted/5 text-[10px] text-muted-foreground flex justify-end">
- {value.length} 님?낅젰님 </div>
+ {value.length} 자 입력됨 </div>
  </div>
  );
 }

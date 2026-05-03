@@ -4,8 +4,8 @@ import { Button } from './button';
 
 /**
  * Button 而댄룷?뚰듃 ㅽ넗由 * 
- * ㅼ뼇님variant, size, ?곹깭님Button 님확인님님있습니다.
- * Shadcn/UI 湲곕컲님?묎렐님?덈뒗 踰꾪듉 而댄룷?뚰듃?낅땲님
+ * ㅼ뼇님variant, size, ?곹깭님Button 님확인...있습니다.
+ * Shadcn/UI 湲곕컲님?묎렐님있는 踰꾪듉 而댄룷?뚰듃?낅땲님
  */
 
 const meta = {
@@ -133,7 +133,7 @@ export const Disabled: Story = {
   },
 };
 
-// 紐⑤뱺 Variant ?쒕늿님蹂닿린
+// 모든 Variant ?쒕늿님蹂닿린
 export const AllVariants: Story = {
   render: () => (
     <div className="flex flex-wrap gap-4">
@@ -147,7 +147,7 @@ export const AllVariants: Story = {
   ),
 };
 
-// 紐⑤뱺 Size ?쒕늿님蹂닿린
+// 모든 Size ?쒕늿님蹂닿린
 export const AllSizes: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-4">

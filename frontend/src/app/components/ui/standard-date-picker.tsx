@@ -1,4 +1,4 @@
-﻿
+
 import * as React from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -28,7 +28,7 @@ export function StandardDatePicker({ date, onDateChange, placeholder, className 
  >
  <div className="flex items-center gap-2">
  <CalendarIcon size={16} />
- {date ? format(date, 'yyyy-MM-dd') : <span>{placeholder || '�짜 �택'}</span>}
+ {date ? format(date, 'yyyy-MM-dd') : <span>{placeholder || '날짜 선택'}</span>}
  </div>
  </button>
 

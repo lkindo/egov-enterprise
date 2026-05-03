@@ -2,7 +2,7 @@
 import { AdminService } from '@/services/core/ApiService';
 
 /**
- * ?뺤콉 ?뺣낫 DTO
+ * 정책 정보 DTO
  */
 export interface PolicyDto {
   type: string;
@@ -15,12 +15,12 @@ class PolicyAdminService extends AdminService {
     super('/policies');
   }
 
-  /** ?뺤콉 이용 조회 */
+  /** 정책 이용 조회 */
   async getPolicy(type: 'privacy' | 'copyright', config?: AxiosRequestConfig) {
     return this.get<PolicyDto>(`/${type}`, config);
   }
 
-  /** ?뺤콉 이용 ?섏젙 */
+  /** 정책 이용 ?섏젙 */
   async updatePolicy(type: 'privacy' | 'copyright', dto: Partial<PolicyDto>, config?: AxiosRequestConfig) {
     return this.put<void>(`/${type}`, dto, config);
   }

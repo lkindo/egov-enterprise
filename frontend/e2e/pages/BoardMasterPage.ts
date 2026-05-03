@@ -111,11 +111,16 @@ export class BoardMasterPage {
   }
 
   async verifySuccess(menuName: string) {
+    // Wait for either the MISSION COMPLETE text or the success badge
+    await this.page.waitForSelector('text=MISSION COMPLETE, text=성공, .bg-green-500', { timeout: 30000 }).catch(() => {});
+    
     const pageContent = await this.page.content();
     if (pageContent.includes('MISSION COMPLETE') || pageContent.includes('성공') || pageContent.includes(menuName)) {
       console.log('>>> Board creation successful');
     } else {
-      console.log('>>> Board creation attempted');
+      console.log('>>> Board creation attempted but success indicators not found');
+      // Take a screenshot for debugging if needed
+      await this.page.screenshot({ path: `test-results/board-creation-failed-${Date.now()}.png` }).catch(() => {});
     }
   }
 }

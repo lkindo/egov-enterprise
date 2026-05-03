@@ -38,7 +38,7 @@ class LogAdminService extends AdminService {
  super('/logs');
  }
 
- /** 로그인로그 紐⑸줉 조회 */
+ /** 로그인로그 목록 조회 */
  async getLoginLogList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginLog>> {
  return this.get<PageResponse<LoginLog>>('/login', { ...config, params });
  }
@@ -48,7 +48,7 @@ class LogAdminService extends AdminService {
  return this.get<LoginLog>(`/login/${id}`, config);
  }
 
- /** 시스템로그 紐⑸줉 조회 */
+ /** 시스템로그 목록 조회 */
  async getSystemLogList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SystemLog>> {
  return this.get<PageResponse<SystemLog>>('/system', { ...config, params });
  }

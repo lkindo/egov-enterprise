@@ -11,7 +11,7 @@ class CnsltAdminService extends AdminService {
     super('/cnslt');
   }
 
-  /** ?곷떞 紐⑸줉 조회 */
+  /** ?곷떞 목록 조회 */
   async getConsultationList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PaginationResponse<Consult>> {
     return this.get<PaginationResponse<Consult>>('', { ...config, params });
   }

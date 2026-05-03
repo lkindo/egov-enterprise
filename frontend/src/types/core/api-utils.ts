@@ -30,6 +30,6 @@ export type ApiRequestBody<
  : never;
 
 /**
- * ㅽ궎留而댄룷?뚰듃(DTO)瑜吏곸젒 李몄“합니다
+ * ㅽ궎留而댄룷?뚰듃(DTO)瑜직접 李몄“합니다
  */
 export type SchemaDTO<Name extends keyof components['schemas']> = components['schemas'][Name];

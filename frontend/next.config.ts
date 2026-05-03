@@ -21,7 +21,9 @@ const nextConfig = {
       'framer-motion',
     ],
   },
-  turbopack: {},
+  turbopack: {
+    root: '..',
+  },
   async headers() {
     return [
       {

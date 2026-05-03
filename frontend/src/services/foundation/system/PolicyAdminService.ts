@@ -9,24 +9,24 @@ export interface SystemPolicy {
 }
 
 /**
- * 시스템?뺤콉 관리님쒕퉬님(Admin)
+ * 시스템정책 관리님쒕퉬님(Admin)
  */
 class PolicyAdminService extends AdminService {
   constructor() {
     super('/policies');
   }
 
-  /** ?뺤콉 紐⑸줉 조회 */
+  /** 정책 목록 조회 */
   async getPolicies(config?: AxiosRequestConfig): Promise<SystemPolicy[]> {
     return this.get<SystemPolicy[]>('', config);
   }
 
-  /** ?뺤콉 상세 조회 */
+  /** 정책 상세 조회 */
   async getPolicy(type: string, config?: AxiosRequestConfig): Promise<SystemPolicy> {
     return this.get<SystemPolicy>(`/${type}`, config);
   }
 
-  /** ?뺤콉 ?섏젙 */
+  /** 정책 ?섏젙 */
   async updatePolicy(type: string, data: Partial<SystemPolicy>, config?: AxiosRequestConfig): Promise<void> {
     return this.put(`/${type}`, data, config);
   }

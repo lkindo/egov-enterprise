@@ -2,7 +2,7 @@
 import { AdminService } from '@/services/core/ApiService';
 
 /**
- * ?쒗뵆由님뺣낫 ?명꽣?섏씠님 */
+ * 템플릿님뺣낫 ?명꽣?섏씠님 */
 export interface TmplatInfo {
   tmplatId?: string;
   tmplatNm: string;
@@ -18,17 +18,17 @@ class TemplateAdminService extends AdminService {
     super('/templates');
   }
 
-  /** ?쒗뵆由紐⑸줉 조회 */
+  /** 템플릿목록 조회 */
   async getTemplateList(config?: AxiosRequestConfig) {
     return this.get<TmplatInfo[]>('', config);
   }
 
-  /** ?쒗뵆由님곸꽭 조회 */
+  /** 템플릿님곸꽭 조회 */
   async getTemplate(tmplatId: string, config?: AxiosRequestConfig) {
     return this.get<TmplatInfo>(`/${tmplatId}`, config);
   }
 
-  /** ?쒗뵆由등록 */
+  /** 템플릿등록 */
   async createTemplate(tmplatInfo: TmplatInfo, config?: AxiosRequestConfig) {
     return this.post<void>('', tmplatInfo, config);
   }

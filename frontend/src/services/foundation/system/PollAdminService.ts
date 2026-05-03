@@ -11,7 +11,7 @@ class PollAdminService extends AdminService {
     super('/polls');
   }
 
-  /** 설문 紐⑸줉 조회 */
+  /** 설문 목록 조회 */
   async getPollList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<OnlinePoll>> {
     return this.get<PageResponse<OnlinePoll>>('', { ...config, params });
   }

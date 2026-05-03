@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, use } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
@@ -709,7 +709,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                         <div className="h-4 w-px bg-slate-200" />
                         <div className="flex items-center gap-2 text-slate-600 font-black text-xs">
                           <MessageSquare size={14} className="text-amber-400" />
-                          <span>{Math.floor(Math.random() * 5)} Answers</span>
+                          <span>{item.commentCo || 0} Answers</span>
                         </div>
                         <div className="h-4 w-px bg-slate-200" />
                         <button 

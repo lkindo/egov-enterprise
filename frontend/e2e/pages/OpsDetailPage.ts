@@ -40,8 +40,9 @@ export class OpsDetailPage {
         await this.page.getByPlaceholder(/행사 명칭을 입력하십시오/i).fill(data.name);
         await this.page.getByPlaceholder(/상세 내용을 입력하십시오/i).fill(data.desc);
         
-        // Date inputs - using fill might be flaky for some date pickers, but let's try
         const dateInputs = this.page.locator('input[type="date"]');
+        await expect(dateInputs.first()).toBeVisible({ timeout: 10000 });
+
         await dateInputs.nth(0).fill(data.startDate);
         await dateInputs.nth(1).fill(data.endDate);
         
@@ -51,7 +52,16 @@ export class OpsDetailPage {
         await dateInputs.nth(3).fill(data.recruitEndDate);
         
         const deployBtn = this.page.getByRole('button', { name: /Deploy Protocol/i });
-        await deployBtn.click();
+        
+        const [response] = await Promise.all([
+            this.page.waitForResponse(resp => resp.url().includes('/events') && resp.request().method() === 'POST', { timeout: 15000 }),
+            deployBtn.click()
+        ]);
+        
+        console.log(`>>> [OpsDetail] Create API responded (status: ${response.status()})`);
+        if (response.status() !== 200) {
+            console.log(`>>> [OpsDetail] Create API Error Body: ${await response.text()}`);
+        }
         
         // Wait for either: success toast OR modal close (either proves submission succeeded)
         await Promise.race([
@@ -86,8 +96,7 @@ export class OpsDetailPage {
         }
 
         if (!found) {
-            console.log(`>>> [OpsDetail] WARNING: Event "${name}" not found after retries. Skipping delete.`);
-            return;
+            throw new Error(`[OpsDetail] CRITICAL: Event "${name}" not found after retries. Deletion impossible.`);
         }
         
         const eventRow = this.page.locator('tr').filter({ hasText: name }).first();

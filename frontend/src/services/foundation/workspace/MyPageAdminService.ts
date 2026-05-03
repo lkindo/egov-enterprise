@@ -18,7 +18,7 @@ class MyPageAdminService extends AdminService {
  super('/workspace/mypage/contents');
  }
 
- /** 留덉씠?섏씠吏 肄섑뀗痢紐⑸줉 조회 */
+ /** 留덉씠?섏씠吏 肄섑뀗痢목록 조회 */
  async getContents(params?: { all?: boolean }, config?: AxiosRequestConfig): Promise<MyPageContent[]> {
  return this.get<MyPageContent[]>('', { ...config, params });
  }

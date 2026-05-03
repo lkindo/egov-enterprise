@@ -46,9 +46,6 @@ public class EventInfoDto {
     private LocalDateTime lastUpdtPnttm;
 
     // Aliases for Frontend Compatibility
-    @JsonProperty("eventNm")
-    public String getEventNm() { return this.eventCn != null && this.eventCn.length() > 20 ? this.eventCn.substring(0, 20) : this.eventCn; }
-
     @JsonProperty("rceptBeginDe")
     public String getRceptBeginDe() { return this.eventSvcBgnde; }
 

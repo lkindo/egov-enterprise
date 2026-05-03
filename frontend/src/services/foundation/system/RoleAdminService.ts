@@ -13,7 +13,7 @@ class RoleAdminService extends AdminService {
  super('/roles');
  }
 
- /** 濡紐⑸줉 조회 */
+ /** 濡목록 조회 */
  async getRoleList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<RoleInfo>> {
  return this.get<PageResponse<RoleInfo>>('', { ...config, params });
  }

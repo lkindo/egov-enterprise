@@ -6,39 +6,39 @@ import { GroupManage } from '@/types/foundation/security';
 export type GroupInfo = GroupManage;
 
 /**
- * 洹몃９ 관리님쒕퉬님(Admin)
+ * 그룹 관리님쒕퉬님(Admin)
  */
 class GroupAdminService extends AdminService {
  constructor() {
  super('/groups');
  }
 
- /** 洹몃９ 紐⑸줉 조회 */
+ /** 그룹 목록 조회 */
  async getGroupList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<GroupInfo>> {
  return this.get<PageResponse<GroupInfo>>('', { ...config, params });
  }
 
- /** 洹몃９ 상세 조회 */
+ /** 그룹 상세 조회 */
  async getGroup(groupId: string, config?: AxiosRequestConfig): Promise<GroupInfo> {
  return this.get<GroupInfo>(`/${groupId}`, config);
  }
 
- /** 洹몃９ 등록 */
+ /** 그룹 등록 */
  async createGroup(data: Partial<GroupInfo>, config?: AxiosRequestConfig): Promise<void> {
  return this.post<void>('', data, config);
  }
 
- /** 洹몃９ ?섏젙 */
+ /** 그룹 ?섏젙 */
  async updateGroup(groupId: string, data: Partial<GroupInfo>, config?: AxiosRequestConfig): Promise<void> {
  return this.put<void>(`/${groupId}`, data, config);
  }
 
- /** 洹몃９ 님젣 */
+ /** 그룹 님젣 */
  async deleteGroup(groupId: string, config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>(`/${groupId}`, config);
  }
 
- /** 洹몃９ ㅼ쨷 님젣 */
+ /** 그룹 ㅼ쨷 님젣 */
  async deleteGroups(groupIds: string[], config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>('', { ...config, data: groupIds });
  }

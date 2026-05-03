@@ -99,35 +99,40 @@ export class CollabPage {
 
     async deleteNote(subject?: string) {
         console.log('>>> [Collab] Deleting note from history...');
-        // If we are not on mail-history page, go there
-        if (!this.page.url().includes('mail-history')) {
-            await this.page.goto('/admin/collaboration/mail-history');
-        }
-        await this.page.waitForLoadState('domcontentloaded');
         
-        if (subject) {
-            console.log(`>>> [Collab] Searching for mail with subject: ${subject}`);
-            const searchInput = this.page.getByPlaceholder(/메일 제목 또는 수신자 검색/i);
-            await searchInput.click();
-            await searchInput.fill(subject);
-            await this.page.waitForTimeout(2000);
+        let found = false;
+        for (let i = 0; i < 3; i++) {
+            if (!this.page.url().includes('mail-history')) {
+                await this.page.goto('/admin/collaboration/mail-history');
+            } else if (i > 0) {
+                await this.page.reload();
+            }
+            await this.page.waitForLoadState('networkidle');
+            
+            if (subject) {
+                console.log(`>>> [Collab] Searching for mail with subject: ${subject} (Attempt ${i+1})`);
+                const searchInput = this.page.getByPlaceholder(/메일 제목 또는 수신자 검색/i);
+                await searchInput.click();
+                await searchInput.fill('');
+                await searchInput.pressSequentially(subject, { delay: 50 });
+                await this.page.waitForTimeout(2000);
+            }
+
+            const mailItems = this.page.locator('[data-testid="mail-item"]');
+            const targetItem = subject ? mailItems.filter({ hasText: subject }).first() : mailItems.first();
+            
+            if (await targetItem.isVisible()) {
+                await targetItem.click();
+                console.log('>>> [Collab] Item selected for deletion');
+                found = true;
+                break;
+            }
+            console.log(`>>> [Collab] Mail item not found, retrying... (${i+1}/3)`);
+            await this.page.waitForTimeout(3000);
         }
 
-        const mailItems = this.page.locator('[data-testid="mail-item"]');
-        let targetItem;
-        if (subject) {
-            targetItem = mailItems.filter({ hasText: subject }).first();
-        } else {
-            targetItem = mailItems.first();
-        }
-
-        try {
-            await targetItem.waitFor({ state: 'visible', timeout: 10000 });
-            await targetItem.click();
-            console.log('>>> [Collab] Item selected for deletion');
-        } catch (e) {
-            console.log('>>> [Collab] No mail items found to delete, skipping.');
-            return;
+        if (!found) {
+            throw new Error(`[Collab] CRITICAL: No mail items found with subject "${subject}" to delete after retries.`);
         }
 
         // Delete button in the detail pane

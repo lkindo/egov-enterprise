@@ -21,7 +21,7 @@ class NetworkAdminService extends AdminService {
  super('/ntwrksvc-monitoring');
  }
 
- /** ㅽ듃?뚰겕 紐⑸줉 조회 */
+ /** ㅽ듃?뚰겕 목록 조회 */
  async getNetworks(params?: SearchParams, config?: AxiosRequestConfig): Promise<Network[]> {
  return this.get<Network[]>('', { ...config, params });
  }

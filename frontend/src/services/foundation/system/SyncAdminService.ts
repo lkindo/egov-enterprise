@@ -17,7 +17,7 @@ class SyncAdminService extends AdminService {
  super('/sync');
  }
 
- /** 동기화?쒕쾭 紐⑸줉 조회 */
+ /** 동기화?쒕쾭 목록 조회 */
  async getSyncServers(config?: AxiosRequestConfig): Promise<SyncServer[]> {
  return this.get<SyncServer[]>('', config);
  }

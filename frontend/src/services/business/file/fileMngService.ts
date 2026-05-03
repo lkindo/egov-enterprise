@@ -19,7 +19,7 @@ export interface SharedFileDetail {
 const BASE_URL = '/files';
 
 export const fileMngService = {
- /** ?뚯씪 紐⑸줉 조회 (Admin ?꾩슜) */
+ /** ?뚯씪 목록 조회 (Admin ?꾩슜) */
  getFiles: async (params?: Record<string, unknown>): Promise<PageResponse<SharedFileDetail>> => {
  return client.get<PageResponse<SharedFileDetail>>(BASE_URL, { params });
  },
@@ -34,7 +34,7 @@ export const fileMngService = {
  });
  },
 
- /** 泥⑤님뚯씪 紐⑸줉 조회 */
+ /** 泥⑤님뚯씪 목록 조회 */
  getFileList: async (atchFileId: string): Promise<SharedFileDetail[]> => {
  return client.get<SharedFileDetail[]>(`${BASE_URL}/${atchFileId}`);
  },

@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 
 /**
  * Card 而댄룷?뚰듃 ㅽ넗由 * 
- * 而⑦뀒?대꼫님移대뱶 而댄룷?뚰듃님ㅼ뼇님?쒖슜 ?덉떆瑜님뺤씤님님있습니다.
+ * 而⑦뀒?대꼫님移대뱶 而댄룷?뚰듃님ㅼ뼇님?쒖슜 ?덉떆瑜님뺤씤...있습니다.
  */
 
 const meta = {

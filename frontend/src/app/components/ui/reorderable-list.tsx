@@ -24,7 +24,7 @@ export function ReorderableList<T>({
  const onDragStart = (e: React.DragEvent, index: number) => {
  setDragged踰덊샇(index);
  e.dataTransfer.effectAllowed = 'move';
- // ?쒕옒洹님怨좎뒪님?대吏 ㅽ님쇱쓣 ?꾪빐 щ챸님議곗젅 ?깆쓣 님님있습니다.
+ // ?쒕옒洹님怨좎뒪님?대吏 ㅽ님쇱쓣 ?꾪빐 щ챸님議곗젅 ?깆쓣 ...있습니다.
  };
 
  const onDragOver = (e: React.DragEvent, index: number) => {

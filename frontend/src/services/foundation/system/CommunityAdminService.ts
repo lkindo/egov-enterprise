@@ -20,7 +20,7 @@ class CommunityAdminService extends AdminService {
     super('/community', 'content');
   }
 
-  /** 而ㅻ님덊떚 紐⑸줉 조회 */
+  /** 而ㅻ님덊떚 목록 조회 */
   async getCommunityList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Community>> {
     return this.get<PageResponse<Community>>('', {
       ...config,
@@ -42,7 +42,7 @@ class CommunityAdminService extends AdminService {
     return this.post<Community>('', data, config);
   }
 
-  /** 而ㅻ님덊떚 ?뺣낫 ?섏젙 */
+  /** 而ㅻ님덊떚 정보 ?섏젙 */
   async updateCommunity(cmmntyId: string, data: Partial<Community>, config?: AxiosRequestConfig): Promise<void> {
     return this.put(`/${cmmntyId}`, data, config);
   }
@@ -52,7 +52,7 @@ class CommunityAdminService extends AdminService {
     return this.delete(`/${cmmntyId}`, config);
   }
 
-  /** ы由우슜 紐⑸줉 조회 */
+  /** ы由우슜 목록 조회 */
   async getCommunityPortlet(config?: AxiosRequestConfig): Promise<Community[]> {
     return this.get<Community[]>('/portlet', config);
   }

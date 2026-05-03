@@ -3,7 +3,7 @@ import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * ⑤씪님Poll ?뺣낫 ?명꽣?섏씠님 */
+ * ⑤씪님Poll 정보 ?명꽣?섏씠님 */
 export interface OnlinePollDto {
   pollId?: string;
   pollNm: string;
@@ -30,7 +30,7 @@ class OnlinePollAdminService extends AdminService {
     super('/polls');
   }
 
-  /** ⑤씪님Poll 紐⑸줉 ?섏씠吏조회 */
+  /** ⑤씪님Poll 목록 ?섏씠吏조회 */
   async getPollList(params?: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig) {
     return this.get<PageResponse<OnlinePollDto>>('', { ...config, params });
   }

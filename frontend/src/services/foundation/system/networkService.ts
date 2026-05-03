@@ -27,7 +27,7 @@ export interface NetworkStatusDetailed {
 const BASE_URL = '/admin/system/networks';
 
 export const networkService = {
- /** ㅽ듃?뚰겕 紐⑸줉 조회 */
+ /** ㅽ듃?뚰겕 목록 조회 */
  getNetworks: async (params?: SearchParams): Promise<PageResponse<NetworkInfo>> => {
  return client.get<PageResponse<NetworkInfo>>(BASE_URL, { params });
  },
@@ -37,22 +37,22 @@ export const networkService = {
  return client.get<NetworkInfo>(`${BASE_URL}/${ntwrkId}`);
  },
 
- /** ㅽ듃?뚰겕 湲곗큹 ?뺣낫 등록 */
+ /** ㅽ듃?뚰겕 湲곗큹 정보 등록 */
  createNetwork: async (data: Partial<NetworkInfo>): Promise<string> => {
  return client.post<string>(BASE_URL, data);
  },
 
- /** ㅽ듃?뚰겕 ?뺣낫 ?섏젙 */
+ /** ㅽ듃?뚰겕 정보 ?섏젙 */
  updateNetwork: async (ntwrkId: string, data: Partial<NetworkInfo>): Promise<void> => {
  return client.put<void>(`${BASE_URL}/${ntwrkId}`, data);
  },
 
- /** ㅽ듃?뚰겕 ?뺣낫 님젣 */
+ /** ㅽ듃?뚰겕 정보 님젣 */
  deleteNetwork: async (ntwrkId: string): Promise<void> => {
  return client.delete<void>(`${BASE_URL}/${ntwrkId}`);
  },
 
- /** (紐⑤땲?곕쭅) ㅽ듃?뚰겕 ?쒕퉬님?곹깭 紐⑸줉 조회 */
+ /** (紐⑤땲?곕쭅) ㅽ듃?뚰겕 ?쒕퉬님?곹깭 목록 조회 */
  getStatus: async (params?: SearchParams): Promise<PageResponse<NetworkStatusDetailed>> => {
  return client.get<PageResponse<NetworkStatusDetailed>>('/admin/system/ntwrksvc-monitoring', { params });
  },

@@ -2,7 +2,7 @@
 import { SearchParams, PageResponse } from '@/types/foundation/system';
 
 /**
- * 沅뚰븳/濡관리님쒕퉬님(Admin)
+ * 권한/濡관리님쒕퉬님(Admin)
  * ?곌껐: com.company.project.api.controller.system.RoleController
  */
 export interface RoleManageInfo {
@@ -18,7 +18,7 @@ export interface RoleManageInfo {
 const BASE_URL = '/admin/system/roles';
 
 export const roleService = {
- /** 濡紐⑸줉 조회 */
+ /** 濡목록 조회 */
  getRoles: async (params?: SearchParams): Promise<PageResponse<RoleManageInfo>> => {
  return client.get<PageResponse<RoleManageInfo>>(BASE_URL, { params });
  },
@@ -43,7 +43,7 @@ export const roleService = {
  return client.delete<void>(`${BASE_URL}/${roleCode}`);
  },
 
- /** 沅뚰븳 紐⑸줉 조회 (Alias) */
+ /** 권한 목록 조회 (Alias) */
  getAuthors: async (params?: SearchParams): Promise<PageResponse<RoleManageInfo>> => {
  return client.get<PageResponse<RoleManageInfo>>(BASE_URL, { params });
  },

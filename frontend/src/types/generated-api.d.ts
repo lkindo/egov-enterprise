@@ -3809,8 +3809,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * ?꾩껜 ?볤? 紐⑸줉 議고쉶
-         * @description ?쒖뒪???댁쓽 紐⑤뱺 ?볤? 紐⑸줉議고쉶⑸땲??
+         * 전체 댓글 목록 조회
+         * @description ?시스템??댁쓽 모든 댓글 목록조회⑸땲??
          */
         get: operations["getComments_1"];
         put?: never;
@@ -4040,8 +4040,8 @@ export interface paths {
         put?: never;
         post?: never;
         /**
-         * ?볤? ??젣
-         * @description ?뱀젙 ?볤?????젣(鍮꾪솢?깊솕) 泥섎━⑸땲??
+         * 댓글 삭제
+         * @description ?뱀젙 댓글??삭제(비활성화) 처리합니다
          */
         delete: operations["deleteComment_1"];
         options?: never;

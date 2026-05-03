@@ -11,7 +11,7 @@ class SurveyAdminService extends AdminService {
     super('/surveys');
   }
 
-  /** 설문 紐⑸줉 조회 */
+  /** 설문 목록 조회 */
   async getSurveyList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SurveyInfo>> {
     return this.get<PageResponse<SurveyInfo>>('', {
       ...config,
@@ -42,7 +42,7 @@ class SurveyAdminService extends AdminService {
     return this.delete(`/${qestnrId}`, config);
   }
 
-  /** 설문 ?쒗뵆由紐⑸줉 조회 */
+  /** 설문 템플릿목록 조회 */
   async getTemplateList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SurveyTemplate>> {
     return this.get<PageResponse<SurveyTemplate>>('/templates', {
       ...config,

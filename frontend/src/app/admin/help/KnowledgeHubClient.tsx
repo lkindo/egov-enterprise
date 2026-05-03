@@ -28,7 +28,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const isAdmin = user?.role === 'ADMIN'; 
+  const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('latest'); 
   const [isScanning, setIsScanning] = useState(false);

@@ -11,7 +11,7 @@ interface DataExportExcelProps {
 }
 
 /**
- * ?뚯씠釉님곗씠?곕? CSV 정적?쇰줈 異붿텧?섏뿬 ?묒님먯꽌 님님?덈룄濡님섎뒗 而댄룷?뚰듃
+ * ?뚯씠釉님곗씠?곕? CSV 정적?쇰줈 異붿텧?섏뿬 ?묒님먯꽌 ...?덈룄濡님섎뒗 而댄룷?뚰듃
  */
 export function DataExportExcel({ data, headers, filename = "export_data", className }: DataExportExcelProps) {
  const downloadExcel = () => {

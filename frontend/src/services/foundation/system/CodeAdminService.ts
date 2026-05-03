@@ -50,14 +50,14 @@ export interface InstitutionCodeRecptn {
 }
 
 /**
- * 肄붾뱶 관리님쒕퉬님(Admin)
+ * 코드 관리님쒕퉬님(Admin)
  */
 class CodeAdminService extends AdminService {
     constructor() {
         super('/codes');
     }
 
-    // --- 遺꾨쪟肄붾뱶 (Classification Code) ---
+    // --- 분류코드 (Classification Code) ---
     async getClCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CmmnClCode>> {
         return this.get<PageResponse<CmmnClCode>>('/cl', { ...config, params });
     }
@@ -78,7 +78,7 @@ class CodeAdminService extends AdminService {
         return this.delete(`/cl/${clCode}`, config);
     }
 
-    // --- 怨듯넻肄붾뱶 (Common Code) ---
+    // --- 공통코드 (Common Code) ---
     async getCmmnCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CmmnCode>> {
         return this.get<PageResponse<CmmnCode>>('/cmmn', { ...config, params });
     }
@@ -99,7 +99,7 @@ class CodeAdminService extends AdminService {
         return this.delete(`/cmmn/${codeId}`, config);
     }
 
-    // --- 상세肄붾뱶 (Detail Code) ---
+    // --- 상세코드 (Detail Code) ---
     async getDetailCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CmmnDetailCode>> {
         return this.get<PageResponse<CmmnDetailCode>>('/detail', { ...config, params });
     }
@@ -120,7 +120,7 @@ class CodeAdminService extends AdminService {
         return this.delete(`/detail/${codeId}/${code}`, config);
     }
 
-    // --- ?됱젙肄붾뱶 (Administrative Code) ---
+    // --- 행정코드 (Administrative Code) ---
     async getAdministCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<AdministCode>> {
         return this.get<PageResponse<AdministCode>>('/administ', { ...config, params });
     }
@@ -141,17 +141,17 @@ class CodeAdminService extends AdminService {
         return this.delete(`/administ/${administZoneCode}`, config);
     }
 
-    // --- 湲곌肄붾뱶 (Institution Code) ---
+    // --- 湲곌코드 (Institution Code) ---
     async getInstitutionCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<InstitutionCode>> {
         return this.get<PageResponse<InstitutionCode>>('/institution', { ...config, params });
     }
 
-    /** 湲곌肄붾뱶 ?섏떊 ?댁뿭 조회 */
+    /** 湲곌코드 수신 ?댁뿭 조회 */
     async getInstitutionCodeRecptnList(params?: SearchParams & { processSe?: string }, config?: AxiosRequestConfig): Promise<PageResponse<InstitutionCodeRecptn>> {
         return this.get<PageResponse<InstitutionCodeRecptn>>('/institution/receptions', { ...config, params });
     }
 
-    /** 湲곌肄붾뱶 ?섏떊 泥섎━ */
+    /** 湲곌코드 수신 泥섎━ */
     async processInstitutionCodeRecptn(params: { occrrncDe: string, insttCode: string, opertSn: number }, config?: AxiosRequestConfig): Promise<void> {
         return this.post('/institution/receptions/process', null, { ...config, params });
     }

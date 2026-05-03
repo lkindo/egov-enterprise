@@ -71,22 +71,27 @@ export default function UnifiedDashboardClient({
   const [notiList] = useState<DashboardTask[]>(initialNotiList);
   const [taskList] = useState<DashboardTask[]>(initialTaskList);
   const [pendingCount] = useState<number>(pendingApprovalCount);
+  const [isMounted, setIsMounted] = useState(false);
 
   // 접속 통계 데이터 조회 (최근 7일)
   const { data: connectStats = [] } = useQuery<StatsDto[]>({
     queryKey: ['dashboard', 'stats', 'connect'],
     queryFn: () => statsAdminService.getConnectStats({ statsKind: 'SERVICE' }),
-    enabled: !!user
+    enabled: !!user && isMounted
   });
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && isMounted) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isMounted]);
 
-  if (loading || !user) {
+  if (!isMounted || loading || !user) {
     return <DashboardSkeleton />;
   }
 

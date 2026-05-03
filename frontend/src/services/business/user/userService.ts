@@ -7,14 +7,14 @@ class UserService extends ApiService {
  }
 
  /**
- * 님?뺣낫 조회
+ * 님정보 조회
  */
  async getMe(): Promise<UserDto> {
  return this.get<UserDto>('');
  }
 
  /**
- * 님?뺣낫 ?섏젙
+ * 님정보 ?섏젙
  */
  async updateMe(data: Partial<UserDto>): Promise<void> {
  return this.put<void>('', data);

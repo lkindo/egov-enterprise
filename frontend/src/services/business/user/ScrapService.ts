@@ -15,7 +15,7 @@ class ScrapService extends ApiService {
  }
 
  /**
- * ?섏쓽 스크랩紐⑸줉 조회
+ * ?섏쓽 스크랩목록 조회
  */
  async getMyScraps(params: { page?: number; size?: number }): Promise<PageResponse<Scrap>> {
  return this.get<PageResponse<Scrap>>('', { params });

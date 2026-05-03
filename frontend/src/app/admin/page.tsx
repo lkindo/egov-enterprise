@@ -46,8 +46,8 @@ import {
 } from "@/components/ui/tooltip";
 
 const MOCK_METRICS = {
-  cpu: Array.from({ length: 20 }, (_, i) => ({ time: i, value: 10 + Math.random() * 20 })),
-  memory: Array.from({ length: 20 }, (_, i) => ({ time: i, value: 40 + Math.random() * 10 })),
+  cpu: Array.from({ length: 20 }, (_, i) => ({ time: i, value: 10 + (Math.sin(i) + 1) * 10 })),
+  memory: Array.from({ length: 20 }, (_, i) => ({ time: i, value: 40 + (Math.cos(i) + 1) * 5 })),
 };
 
 const MOCK_ACTIVITY_DATA = [

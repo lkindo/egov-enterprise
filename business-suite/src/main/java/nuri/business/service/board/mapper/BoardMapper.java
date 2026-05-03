@@ -12,7 +12,7 @@ import org.mapstruct.Named;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = org.mapstruct.ReportingPolicy.IGNORE)
 public interface BoardMapper {
 
     @Mapping(target = "id", source = "nttId")

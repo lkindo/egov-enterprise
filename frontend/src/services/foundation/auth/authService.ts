@@ -33,7 +33,7 @@ export const authService = {
  return client.post<{ accessToken: string }>(`${BASE_URL}/reissue`);
  },
 
- /** 현재 사용자?뺣낫 조회 */
+ /** 현재 사용자정보 조회 */
  getCurrentUser: async (): Promise<UserInfo> => {
  return client.get<UserInfo>(`${BASE_URL}/me`);
  },

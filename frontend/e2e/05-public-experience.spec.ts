@@ -222,7 +222,7 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
         await test.step('User: Access Personal Approval Inbox', async () => {
             console.log('>>> [User] Navigating to Personal Approvals');
             await userPage.goto('/approvals');
-            await expect(userPage.locator('h1, h2, h3, .title').filter({ hasText: /결재.*함|My Approvals/i }).first()).toBeVisible({ timeout: 15000 });
+            await expect(userPage.locator('h1, h2, h3, .title').filter({ hasText: /Approval Hub|결재.*함|My Approvals/i }).first()).toBeVisible({ timeout: 15000 });
         });
     });
 });

@@ -18,34 +18,34 @@ export interface AuthorGroupProjection {
 }
 
 /**
- * 사용자沅뚰븳 관리님쒕퉬님(Admin)
+ * 사용자권한 관리님쒕퉬님(Admin)
  */
 class UserAuthorityAdminService extends AdminService {
   constructor() {
     super('/user-authorities');
   }
 
-  /** ъ슜?먮퀎 沅뚰븳 紐⑸줉 조회 (沅뚰븳 ?좊떦 여부 ы븿) */
+  /** ъ슜?먮퀎 권한 목록 조회 (권한 ?좊떦 여부 ы븿) */
   async getUserAuthorityList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<AuthorGroupProjection>> {
     return this.get<PageResponse<AuthorGroupProjection>>('', { ...config, params });
   }
 
-  /** ъ슜?먯쓽 沅뚰븳 ?뺣낫 조회 */
+  /** 사용자의 권한 정보 조회 */
   async getUserAuthority(uniqId: string, config?: AxiosRequestConfig): Promise<UserAuthorityDto | null> {
     return this.get<UserAuthorityDto | null>(`/${uniqId}`, config);
   }
 
-  /** 사용자沅뚰븳 님?낅뜲?댄듃 (④굔/ㅺ굔) */
+  /** 사용자권한 님?낅뜲?댄듃 (④굔/ㅺ굔) */
   async saveUserAuthorities(data: UserAuthorityDto[], config?: AxiosRequestConfig): Promise<void> {
     return this.post<void>('', data, config);
   }
 
-  /** 사용자沅뚰븳 ④굔 님*/
+  /** 사용자권한 ④굔 님*/
   async saveUserAuthority(data: UserAuthorityDto, config?: AxiosRequestConfig): Promise<void> {
     return this.post<void>('', [data], config);
   }
 
-  /** 사용자沅뚰븳 님젣 */
+  /** 사용자권한 님젣 */
   async deleteUserAuthorities(uniqIds: string[], config?: AxiosRequestConfig): Promise<void> {
     return this.delete<void>('', { ...config, data: uniqIds });
   }

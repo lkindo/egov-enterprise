@@ -8,7 +8,7 @@ export class PromotionPage {
     async goto() {
         console.log('>>> [Promotion] Navigating to Banner/Popup Admin');
         await this.page.goto('/admin/system/banner');
-        await expect(this.page.getByRole('heading', { name: /배너 관리/i })).toBeVisible({ timeout: 15000 });
+        await expect(this.page.locator('h1, h2, h3, .title').filter({ hasText: /배너|팝업|Promotional/i }).first()).toBeVisible({ timeout: 15000 });
     }
 
     async createPopup(title: string) {

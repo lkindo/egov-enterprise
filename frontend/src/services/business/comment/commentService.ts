@@ -4,13 +4,13 @@ import { AxiosRequestConfig } from 'axios';
 import { PageResponse } from '@/types/foundation/system';
 
 /**
- * ?볤? ?쒕퉬님 */
+ * 댓글 ?쒕퉬님 */
 class CommentService extends ApiService {
  constructor() {
  super('/v1/comments');
  }
 
-  /** ?볤? 紐⑸줉 조회 */
+  /** 댓글 목록 조회 */
   async getComments(params: CommentSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CommentVO>> {
     const response = await this.get<any>('', { ...config, params });
     // Handle both legacy and new structures if necessary, but here we assume normalization
@@ -23,17 +23,17 @@ class CommentService extends ApiService {
     };
   }
 
- /** ?볤? 등록 */
+ /** 댓글 등록 */
  async createComment(data: CommentSaveRequest, config?: AxiosRequestConfig): Promise<number> {
  return this.post<number>('', data, config);
  }
 
- /** ?볤? ?섏젙 */
+ /** 댓글 ?섏젙 */
  async updateComment(id: number, data: CommentSaveRequest, config?: AxiosRequestConfig): Promise<void> {
  return this.put<void>(`/${id}`, data, config);
  }
 
- /** ?볤? 님젣 */
+ /** 댓글 님젣 */
  async deleteComment(id: number, config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>(`/${id}`, config);
  }
