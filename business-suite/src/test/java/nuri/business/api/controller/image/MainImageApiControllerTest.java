@@ -2,8 +2,6 @@ package nuri.business.api.controller.image;
 
 import nuri.business.service.image.EgovMainImageService;
 import nuri.business.service.image.dto.MainImageDto;
-import nuri.foundation.core.response.ApiResponse;
-import nuri.foundation.core.response.PageResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

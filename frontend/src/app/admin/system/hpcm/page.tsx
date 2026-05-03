@@ -1,9 +1,9 @@
 import React from 'react';
 import HpcmClient from './HpcmClient';
-import { hpcmAdminService } from '@/services/foundation/system/HpcmAdminService';
+import { hpcmAdminService, Hpcm } from '@/services/foundation/system/HpcmAdminService';
 
 export default async function HpcmPage() {
-    let list = [];
+    let list: Hpcm[] = [];
 
     try {
         const res = await hpcmAdminService.getHpcmList();

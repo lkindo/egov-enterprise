@@ -1,4 +1,5 @@
 package nuri.foundation.domain.common;
+// Force re-scan
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;

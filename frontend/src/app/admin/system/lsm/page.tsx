@@ -1,10 +1,10 @@
 import React from 'react';
 import LsmClient from './LsmClient';
-import { leaderScheduleAdminService } from '@/services/foundation/system/LeaderScheduleAdminService';
+import { leaderScheduleAdminService, LeaderSchedule, LeaderStatus } from '@/services/foundation/system/LeaderScheduleAdminService';
 
 export default async function LsmPage() {
-    let schedules = [];
-    let statuses = [];
+    let schedules: LeaderSchedule[] = [];
+    let statuses: LeaderStatus[] = [];
 
     try {
         const scheduleRes = await leaderScheduleAdminService.getLeaderScheduleList();

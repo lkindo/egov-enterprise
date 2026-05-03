@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures/base-test';
+import { CommunityPage } from './pages/CommunityPage';
 
 /**
  * [Tier 3] Business Domain: Board & Community Engagement

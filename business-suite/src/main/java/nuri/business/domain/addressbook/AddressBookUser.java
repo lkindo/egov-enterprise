@@ -2,6 +2,7 @@ package nuri.business.domain.addressbook;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.AllArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import jakarta.persistence.*;
@@ -11,14 +12,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 雅뚯눘?쇗에??닌딄쉐??JPA Entity
- * ??뉕탢?????뵠?? COMTNADBK
+ * 주소록 구성원 정보를 관리하는 JPA Entity
+ * 테이블명: COMTNADBK (레거시), NADBK (신규)
  */
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "NADBK")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @SuperBuilder
 public class AddressBookUser extends BaseEntity {
 
@@ -49,17 +51,4 @@ public class AddressBookUser extends BaseEntity {
 
     @Column(name = "fxnum", length = 20)
     private String fxnum;
-
-    public AddressBookUser(String adbkUserId, String adbkId, String emplyrId, String nm,
-            String emailAdres, String homeTelno, String moblphonNo, String offmTelno, String fxnum) {
-        this.adbkUserId = adbkUserId;
-        this.adbkId = adbkId;
-        this.emplyrId = emplyrId;
-        this.nm = nm;
-        this.emailAdres = emailAdres;
-        this.homeTelno = homeTelno;
-        this.moblphonNo = moblphonNo;
-        this.offmTelno = offmTelno;
-        this.fxnum = fxnum;
-    }
 }

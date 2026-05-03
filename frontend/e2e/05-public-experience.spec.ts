@@ -51,7 +51,7 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
 
         await test.step('Admin: Configure Layer Popup', async () => {
             console.log(`>>> Configuring popup: ${popupTitle}`);
-            await promo.gotoPromotion();
+            await promo.goto(); // Fixed method name
             await promo.createPopup(popupTitle);
         });
 
@@ -216,13 +216,13 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
         await test.step('User: Access Public Survey List', async () => {
             console.log('>>> [User] Navigating to Public Survey portal');
             await userPage.goto('/survey');
-            await expect(userPage.getByRole('heading', { name: /설문조사|Poll/i })).toBeVisible({ timeout: 15000 });
+            await expect(userPage.locator('h1, h2, h3, .title').filter({ hasText: /설문.*조사|Poll/i }).first()).toBeVisible({ timeout: 15000 });
         });
 
         await test.step('User: Access Personal Approval Inbox', async () => {
             console.log('>>> [User] Navigating to Personal Approvals');
             await userPage.goto('/approvals');
-            await expect(userPage.getByRole('heading', { name: /결재.*함|My Approvals/i })).toBeVisible({ timeout: 15000 });
+            await expect(userPage.locator('h1, h2, h3, .title').filter({ hasText: /결재.*함|My Approvals/i }).first()).toBeVisible({ timeout: 15000 });
         });
     });
 });

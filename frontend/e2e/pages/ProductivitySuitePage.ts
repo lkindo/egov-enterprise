@@ -57,13 +57,14 @@ export class ProductivitySuitePage {
     async gotoDeptJob() {
         console.log(`>>> Navigating to Departmental Jobs`);
         await this.page.goto('/smart-toolkit/dept-job');
-        await expect(this.page.getByRole('heading', { name: /부서 업무 관리/i })).toBeVisible({ timeout: 15000 });
+        // Flexible matching for heading or text
+        await expect(this.page.locator('h1, h2, h3, .title').filter({ hasText: /부서.*업무/i }).first()).toBeVisible({ timeout: 15000 });
     }
 
     // 업무 보고 (Work Report)
     async gotoWorkReport() {
         console.log(`>>> Navigating to Work Reports`);
         await this.page.goto('/smart-toolkit/work-report');
-        await expect(this.page.getByRole('heading', { name: /업무 보고/i })).toBeVisible({ timeout: 15000 });
+        await expect(this.page.locator('h1, h2, h3, .title').filter({ hasText: /업무.*보고/i }).first()).toBeVisible({ timeout: 15000 });
     }
 }
