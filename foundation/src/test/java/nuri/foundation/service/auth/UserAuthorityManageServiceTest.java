@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserAuthorityManageService 단위 테스트")
@@ -139,6 +140,54 @@ class UserAuthorityManageServiceTest {
             userAuthorityManageService.saveUserAuthorities(List.of());
             userAuthorityManageService.deleteUserAuthorities(null);
             userAuthorityManageService.saveDeptAuthorities(null);
+            userAuthorityManageService.saveDeptAuthorities(new DeptAuthorBatchRequest());
         });
+    }
+
+    @Test
+    @DisplayName("사용자의 권한 정보 저장 테스트 - 필터링")
+    void saveUserAuthoritiesFilterTest() {
+        UserAuthorityDto dto1 = mock(UserAuthorityDto.class);
+        lenient().when(dto1.getUniqId()).thenReturn(null);
+        lenient().when(dto1.getAuthorCode()).thenReturn("ROLE_USER");
+
+        UserAuthorityDto dto2 = mock(UserAuthorityDto.class);
+        lenient().when(dto2.getUniqId()).thenReturn("USER1");
+        lenient().when(dto2.getAuthorCode()).thenReturn(null);
+        
+        userAuthorityManageService.saveUserAuthorities(List.of(dto1, dto2));
+
+        verify(userAuthorityRepository).saveAll(argThat(l -> l != null && !l.iterator().hasNext()));
+    }
+
+    @Test
+    @DisplayName("부서별 권한 일괄 저장 테스트 - 빈 사용자 목록")
+    void saveDeptAuthoritiesEmptyUsersTest() {
+        DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
+        request.setDeptId("DEPT1");
+        request.setAuthorCode("ROLE_DEPT");
+        request.setAllMembers(false);
+        request.setUserIds(List.of());
+
+        userAuthorityManageService.saveDeptAuthorities(request);
+
+        verify(userAuthorityRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("부서별 권한 일괄 저장 테스트 - 기존 수정")
+    void saveDeptAuthoritiesUpdateTest() {
+        DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
+        request.setDeptId("DEPT1");
+        request.setAuthorCode("ROLE_DEPT");
+        request.setUserIds(List.of("USER1"));
+        
+        UserAuthority existing = mock(UserAuthority.class);
+        given(userAuthorityRepository.findById("USER1")).willReturn(Optional.of(existing));
+
+        userAuthorityManageService.saveDeptAuthorities(request);
+
+        verify(existing).update(eq("ROLE_DEPT"), isNull());
+        verify(userAuthorityRepository).saveAll(anyList());
     }
 }

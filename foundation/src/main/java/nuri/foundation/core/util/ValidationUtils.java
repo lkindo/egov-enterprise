@@ -207,7 +207,7 @@ public final class ValidationUtils {
      * @throws IllegalArgumentException 숫자가 0 이하인 경우
      */
     public static void isPositive(Number value, String message) {
-        if (value == null || value.longValue() <= 0) {
+        if (value == null || value.doubleValue() <= 0) {
             throw new IllegalArgumentException(message);
         }
     }

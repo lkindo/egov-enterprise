@@ -221,4 +221,88 @@ class AuthServiceTest {
         BusinessException exception = assertThrows(BusinessException.class, () -> authService.reissue(refreshToken));
         assertEquals(ErrorCode.INVALID_TOKEN, exception.getErrorCode());
     }
+
+    @Test
+    @DisplayName("로그인 - OTP 활성화 시 OTP 누락 실패")
+    void testLoginOtpRequired() {
+        // Given
+        LoginRequest request = LoginRequest.builder().userId("otpUser").password("pass").build();
+        Authentication auth = mock(Authentication.class);
+        when(auth.getName()).thenReturn("otpUser");
+        when(authenticationManager.authenticate(any())).thenReturn(auth);
+
+        nuri.foundation.domain.login.LoginPolicy policy = mock(nuri.foundation.domain.login.LoginPolicy.class);
+        when(policy.getOtpEnabledAt()).thenReturn("Y");
+        when(loginPolicyRepository.findById("otpUser")).thenReturn(java.util.Optional.of(policy));
+
+        // When & Then
+        BusinessException ex = assertThrows(BusinessException.class, () -> authService.login(request, "127.0.0.1"));
+        assertTrue(ex.getMessage().contains("OTP"));
+    }
+
+    @Test
+    @DisplayName("로그인 - OTP 활성화 시 잘못된 OTP 실패")
+    void testLoginOtpInvalid() {
+        // Given
+        LoginRequest request = LoginRequest.builder().userId("otpUser").password("pass").otpCode(123456).build();
+        Authentication auth = mock(Authentication.class);
+        when(auth.getName()).thenReturn("otpUser");
+        when(authenticationManager.authenticate(any())).thenReturn(auth);
+
+        nuri.foundation.domain.login.LoginPolicy policy = mock(nuri.foundation.domain.login.LoginPolicy.class);
+        when(policy.getOtpEnabledAt()).thenReturn("Y");
+        when(loginPolicyRepository.findById("otpUser")).thenReturn(java.util.Optional.of(policy));
+
+        User user = mock(User.class);
+        when(user.getOtpSecret()).thenReturn("SECRET");
+        when(userRepository.findById("otpUser")).thenReturn(java.util.Optional.of(user));
+        when(otpService.verifyCode("SECRET", 123456)).thenReturn(false);
+
+        // When & Then
+        BusinessException ex = assertThrows(BusinessException.class, () -> authService.login(request, "127.0.0.1"));
+        assertTrue(ex.getMessage().contains("일치하지 않습니다"));
+    }
+
+    @Test
+    @DisplayName("토큰 재발급 - 만료된 토큰 실패")
+    void testReissueExpired() {
+        // Given
+        String refreshToken = "expired_token";
+        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
+        
+        nuri.foundation.domain.auth.RefreshToken rt = mock(nuri.foundation.domain.auth.RefreshToken.class);
+        when(rt.getExpiryDate()).thenReturn(java.time.Instant.now().minusSeconds(10));
+        when(refreshTokenRepository.findByToken(refreshToken)).thenReturn(java.util.Optional.of(rt));
+
+        // When & Then
+        BusinessException ex = assertThrows(BusinessException.class, () -> authService.reissue(refreshToken));
+        assertEquals(ErrorCode.INVALID_TOKEN, ex.getErrorCode());
+        verify(refreshTokenRepository).delete(rt);
+    }
+
+    @Test
+    @DisplayName("로그아웃 성공")
+    void testLogoutSuccess() {
+        // Given
+        String userId = "user1";
+        nuri.foundation.domain.auth.RefreshToken rt = mock(nuri.foundation.domain.auth.RefreshToken.class);
+        when(refreshTokenRepository.findById(userId)).thenReturn(java.util.Optional.of(rt));
+
+        // When
+        authService.logout(userId);
+
+        // Then
+        verify(refreshTokenRepository).delete(rt);
+    }
+
+    @Test
+    @DisplayName("로그아웃 예외 처리")
+    void testLogoutException() {
+        // Given
+        String userId = "user1";
+        when(refreshTokenRepository.findById(userId)).thenThrow(new RuntimeException("DB Error"));
+
+        // When
+        assertDoesNotThrow(() -> authService.logout(userId));
+    }
 }

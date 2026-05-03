@@ -13,7 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
@@ -36,16 +36,16 @@ class CodeApiControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private CommonCodeService commonCodeService;
 
-    @MockBean
+    @MockitoBean
     private AdministCodeService administCodeService;
 
-    @MockBean
+    @MockitoBean
     private InstitutionCodeService institutionCodeService;
 
-    @MockBean
+    @MockitoBean
     private JPAQueryFactory jpaQueryFactory;
 
     @Test

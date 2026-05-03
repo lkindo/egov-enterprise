@@ -20,8 +20,14 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import java.util.Collections;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 @WebMvcTest(BbsApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -80,5 +86,74 @@ class BbsApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value(1));
+    }
+
+    @Test
+    @DisplayName("게시판 목록 조회 성공 (검색어 포함)")
+    void getBoardList_WithSearch_Success() throws Exception {
+        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().id(1L).build()));
+        given(boardService.getBoardPosts(anyString(), anyString(), anyString(), any(PageRequest.class))).willReturn(page);
+
+        mockMvc.perform(get("/api/v1/bbs/BBSMSTR_1")
+                .param("searchWrd", "test")
+                .param("searchCnd", "0")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("게시글 등록 성공 (파일 포함)")
+    void createBoard_WithFiles_Success() throws Exception {
+        given(boardService.createPostWithFiles(anyString(), any(BoardSaveRequest.class), anyList())).willReturn(1L);
+
+        MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"nttSj\":\"S\", \"nttCn\":\"C\"}".getBytes());
+        MockMultipartFile filePart = new MockMultipartFile("file", "test.txt", "text/plain", "content".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/bbs/BBSMSTR_1")
+                .file(boardPart)
+                .file(filePart)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("게시글 수정 성공")
+    void updateBoard_Success() throws Exception {
+        MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"nttSj\":\"S\", \"nttCn\":\"C\"}".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/bbs/BBSMSTR_1/1")
+                .file(boardPart)
+                .with(request -> { request.setMethod("PUT"); return request; })
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("게시글 삭제 성공")
+    void deleteBoard_Success() throws Exception {
+        mockMvc.perform(delete("/api/v1/bbs/BBSMSTR_1/1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+        
+        verify(boardService).deletePost(eq("BBSMSTR_1"), eq(1L), anyString());
+    }
+
+    @Test
+    @DisplayName("인증된 사용자의 게시글 등록")
+    void createBoard_WithAuth_Success() throws Exception {
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                "user01", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        given(boardService.createPost(eq("user01"), any(BoardSaveRequest.class))).willReturn(1L);
+
+        MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"nttSj\":\"S\", \"nttCn\":\"C\"}".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/bbs/BBSMSTR_1")
+                .file(boardPart)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+        
+        SecurityContextHolder.clearContext();
     }
 }

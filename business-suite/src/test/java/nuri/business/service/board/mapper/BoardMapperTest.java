@@ -1,7 +1,6 @@
 package nuri.business.service.board.mapper;
 
 import nuri.business.domain.board.Board;
-import nuri.business.domain.board.BoardSearchResult;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import org.junit.jupiter.api.DisplayName;
@@ -10,92 +9,110 @@ import org.mapstruct.factory.Mappers;
 
 import java.time.LocalDateTime;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("BoardMapper 단위 테스트")
 class BoardMapperTest {
 
-    private final BoardMapper boardMapper = Mappers.getMapper(BoardMapper.class);
+    private final BoardMapper mapper = Mappers.getMapper(BoardMapper.class);
 
     @Test
-    @DisplayName("Board 엔티티에서 BoardDto로 변환 테스트")
-    void toDtoFromEntityTest() {
-        Board entity = Board.builder()
+    @DisplayName("Entity -> DTO 변환 테스트")
+    void toDtoTest() {
+        Board board = Board.builder()
                 .nttId(1L)
-                .bbsId("BBS_001")
-                .nttSj("Test Subject")
-                .nttCn("Test Content")
-                .ntcrNm("Tester")
-                .inqireCo(10)
-                .atchFileId("FILE_001")
-                .nttNo(1L)
-                .sortOrdr(1L)
-                .parnts(0L)
-                .replyAt("N")
-                .replyLc(0)
-                .ntceBgnde("20240101")
-                .ntceEndde("20241231")
-                .useAt("Y")
-                .ntcrId("user01")
-                .password("password")
+                .nttSj("제목")
+                .createdDate(LocalDateTime.of(2026, 5, 3, 10, 0))
+                .blogId("BLOG1")
                 .build();
+
+        BoardDto dto = mapper.toDto(board);
+
+        assertNotNull(dto);
+        assertEquals(1L, dto.getId());
+        assertEquals("1", dto.getKnoId());
+        assertEquals("제목", dto.getKnoNm());
+        assertEquals("2026-05-03", dto.getFrstRegisterPnttmStr());
+        assertEquals("Y", dto.getBlogAt());
+    }
+
+    @Test
+    @DisplayName("디폴트 메서드 테스트 - longToString")
+    void longToStringTest() {
+        assertEquals("123", mapper.longToString(123L));
+        assertNull(mapper.longToString(null));
+    }
+
+    @Test
+    @DisplayName("디폴트 메서드 테스트 - formatDate")
+    void formatDateTest() {
+        LocalDateTime date = LocalDateTime.of(2026, 5, 3, 15, 30);
+        assertEquals("2026-05-03", mapper.formatDate(date));
+        assertEquals("", mapper.formatDate(null));
+    }
+
+    @Test
+    @DisplayName("디폴트 메서드 테스트 - formatDateTime")
+    void formatDateTimeTest() {
+        LocalDateTime dateTime = LocalDateTime.of(2026, 5, 3, 15, 30);
+        assertEquals("2026-05-03 15:30", mapper.formatDateTime(dateTime));
+        assertEquals("", mapper.formatDateTime(null));
+    }
+
+    @Test
+    @DisplayName("디폴트 메서드 테스트 - blogIdToYn")
+    void blogIdToYnTest() {
+        assertEquals("Y", mapper.blogIdToYn("some-id"));
+        assertEquals("N", mapper.blogIdToYn(null));
+    }
+
+    @Test
+    @DisplayName("디폴트 메서드 테스트 - calculateExpired")
+    void calculateExpiredTest() {
+        assertEquals("N", mapper.calculateExpired(null));
+        assertEquals("N", mapper.calculateExpired(""));
         
-        BoardDto dto = boardMapper.toDto(entity);
-
-        assertThat(dto.getId()).isEqualTo(1L);
-        assertThat(dto.getBbsId()).isEqualTo("BBS_001");
-        assertThat(dto.getNttSj()).isEqualTo("Test Subject");
-        assertThat(dto.getNtcrNm()).isEqualTo("Tester");
+        // Past date
+        assertEquals("Y", mapper.calculateExpired("20000101"));
+        
+        // Future date
+        assertEquals("N", mapper.calculateExpired("20991231"));
     }
 
     @Test
-    @DisplayName("BoardSearchResult에서 BoardDto로 변환 테스트")
-    void toDtoFromSearchResultTest() {
-        LocalDateTime now = LocalDateTime.of(2024, 3, 14, 12, 0);
-        BoardSearchResult result = BoardSearchResult.builder()
-                .nttId(1L)
-                .bbsId("BBS_001")
-                .nttSj("Search Result")
-                .frstRegisterNm("Writer")
-                .inqireCo(5)
-                .createdDate(now)
-                .atchFileId("FILE_002")
-                .parnts(0L)
-                .replyAt("N")
-                .replyLc(0)
-                .ntceBgnde("20240101")
-                .ntceEndde("20241231")
-                .useAt("Y")
-                .secretAt("N")
-                .commentCo(3)
-                .build();
-
-        BoardDto dto = boardMapper.toDto(result);
-
-        assertThat(dto.getId()).isEqualTo(1L);
-        assertThat(dto.getBbsId()).isEqualTo("BBS_001");
-        assertThat(dto.getNttSj()).isEqualTo("Search Result");
-        assertThat(dto.getCommentCo()).isEqualTo(3);
+    @DisplayName("디폴트 메서드 테스트 - parseDateTime")
+    void parseDateTimeTest() {
+        assertNull(mapper.parseDateTime(null));
+        assertNull(mapper.parseDateTime(""));
+        
+        // ISO Date
+        LocalDateTime date = mapper.parseDateTime("2026-05-03");
+        assertNotNull(date);
+        assertEquals(2026, date.getYear());
+        assertEquals(5, date.getMonthValue());
+        assertEquals(3, date.getDayOfMonth());
+        
+        // ISO DateTime
+        LocalDateTime dateTime = mapper.parseDateTime("2026-05-03T15:30:00");
+        assertNotNull(dateTime);
+        assertEquals(15, dateTime.getHour());
+        
+        // Invalid Format
+        assertNull(mapper.parseDateTime("invalid-date"));
     }
 
     @Test
-    @DisplayName("BoardSaveRequest에서 Board 엔티티로 변환 테스트")
-    void toEntityTest() {
+    @DisplayName("Request -> Entity 변환 테스트 (Default Values)")
+    void toEntityDefaultTest() {
         BoardSaveRequest request = new BoardSaveRequest(
-                "BBS_001", "New Subject", "New Content",
-                "20240101", "20241231", "FILE_001",
-                "N", "2024-03-14T12:00:00", "OPEN", "TECH",
-                "N", "Y", "user01", "Tester", "pass123"
+                "BBS1", "제목", "내용", null, null, null, "N", null, null, null, "N", "Y", "USER1", "Name1", null
         );
-
-        Board entity = boardMapper.toEntity(request, "BBS_001", "user01", "Tester", 100L);
-
-        assertThat(entity.getBbsId()).isEqualTo("BBS_001");
-        assertThat(entity.getNttSj()).isEqualTo("New Subject");
-        assertThat(entity.getNtcrId()).isEqualTo("user01");
-        assertThat(entity.getNtcrNm()).isEqualTo("Tester");
-        assertThat(entity.getSortOrdr()).isEqualTo(100L);
-        assertThat(entity.getReplyAt()).isEqualTo("N");
-        assertThat(entity.getEventDate()).isNotNull();
+        
+        Board entity = mapper.toEntity(request, "BBS1", "USER1", "Name1", 10L);
+        
+        assertNotNull(entity);
+        assertEquals("Y", entity.getUseAt());
+        assertEquals("OPEN", entity.getQnaStatus());
+        assertNull(entity.getEventDate());
     }
 }

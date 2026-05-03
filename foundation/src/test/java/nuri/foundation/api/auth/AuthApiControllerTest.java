@@ -26,7 +26,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.Collections;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -188,5 +190,44 @@ class AuthApiControllerTest {
                 .andExpect(jsonPath("$.data.id").value("user01"));
         
         SecurityContextHolder.clearContext();
+    }
+ 
+    @Test
+    @DisplayName("getClientIp - X-Forwarded-For 헤더 사용")
+    void testGetClientIp_XForwardedFor() throws Exception {
+        LoginRequest request = LoginRequest.builder().userId("user01").password("password").build();
+        when(authService.login(any(), eq("10.0.0.1"))).thenReturn(TokenResponse.builder().build());
+ 
+        mockMvc.perform(post("/api/v1/auth/login")
+                .header("X-Forwarded-For", "10.0.0.1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+ 
+    @Test
+    @DisplayName("getClientIp - Proxy-Client-IP 헤더 사용")
+    void testGetClientIp_ProxyClientIp() throws Exception {
+        LoginRequest request = LoginRequest.builder().userId("user01").password("password").build();
+        when(authService.login(any(), eq("10.0.0.2"))).thenReturn(TokenResponse.builder().build());
+ 
+        mockMvc.perform(post("/api/v1/auth/login")
+                .header("Proxy-Client-IP", "10.0.0.2")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+ 
+    @Test
+    @DisplayName("getClientIp - WL-Proxy-Client-IP 헤더 사용")
+    void testGetClientIp_WlProxyClientIp() throws Exception {
+        LoginRequest request = LoginRequest.builder().userId("user01").password("password").build();
+        when(authService.login(any(), eq("10.0.0.3"))).thenReturn(TokenResponse.builder().build());
+ 
+        mockMvc.perform(post("/api/v1/auth/login")
+                .header("WL-Proxy-Client-IP", "10.0.0.3")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
     }
 }
