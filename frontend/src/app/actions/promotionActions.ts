@@ -75,11 +75,11 @@ export async function savePopupAction(prevState: unknown, { mode, data, id }: Sa
 
         if (mode === 'create') {
             fs.appendFileSync(logPath, `Calling POST /admin/system/popups...\n`);
-            const res = await client.post('/admin/system/popups', data, axiosConfig);
+            const res: any = await client.post('/admin/system/popups', data, axiosConfig);
             fs.appendFileSync(logPath, `POST Success: ${JSON.stringify(res.data || res)}\n`);
         } else {
             fs.appendFileSync(logPath, `Calling PUT /admin/system/popups/${id}...\n`);
-            const res = await client.put(`/admin/system/popups/${id}`, data, axiosConfig);
+            const res: any = await client.put(`/admin/system/popups/${id}`, data, axiosConfig);
             fs.appendFileSync(logPath, `PUT Success: ${JSON.stringify(res.data || res)}\n`);
         }
 
