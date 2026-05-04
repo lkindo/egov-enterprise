@@ -76,10 +76,16 @@ const popupSchema = z.object({
   popupHeightSize: z.coerce.number().min(100),
   isNotice: z.enum(['Y', 'N']),
   isStopView: z.enum(['Y', 'N']),
-}).refine(data => new Date(data.noticeEndDate) >= new Date(data.noticeBeginDate), {
-  message: '종료일은 시작일보다 빠를 수 없습니다.',
-  path: ['noticeEndDate']
-});
+}).refine(data => {
+    if (!data.noticeBeginDate || !data.noticeEndDate) return true;
+    const start = data.noticeBeginDate.replace(/\D/g, '');
+    const end = data.noticeEndDate.replace(/\D/g, '');
+    if (start.length !== 8 || end.length !== 8) return true; // Let min(1) or other rules handle empty
+    return parseInt(end) >= parseInt(start);
+  }, {
+    message: '종료일은 시작일보다 빠를 수 없습니다.',
+    path: ['noticeEndDate']
+  });
 
 type BannerFormValues = z.infer<typeof bannerSchema>;
 type PopupFormValues = z.infer<typeof popupSchema>;
@@ -254,13 +260,22 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
         isNotice: values.isNotice as "Y" | "N",
         isStopView: values.isStopView as "Y" | "N",
         noticeBeginDate: formatDate(values.noticeBeginDate, '0000'),
-        noticeEndDate: formatDate(values.noticeEndDate, '2359')
+        noticeEndDate: formatDate(values.noticeEndDate, '2359'),
+        // Explicitly convert to string for Backend DTO
+        popupWidthLocation: String(values.popupWidthLocation),
+        popupHeightLocation: String(values.popupHeightLocation),
+        popupWidthSize: String(values.popupWidthSize),
+        popupHeightSize: String(values.popupHeightSize)
       } as any;
+
       if (formFiles.length > 0) {
         const uploadRes = await fileAdminService.uploadFiles(formFiles);
-        const uploadedFileId = (uploadRes as any)?.data?.data || (uploadRes as any)?.data || uploadRes;
+        // FileAdminService.uploadFiles returns a string (atchFileId)
+        const uploadedFileId = typeof uploadRes === 'string' ? uploadRes : (uploadRes as any)?.data?.data || (uploadRes as any)?.data;
+        
         if (uploadedFileId) {
           data.fileUrl = `/api/v1/files/download?fileId=${uploadedFileId}`;
+          console.log('>>> [Frontend] Setting fileUrl with atchFileId:', uploadedFileId);
         }
       } else if (editingItem) {
         data.fileUrl = (editingItem as Popup).fileUrl;

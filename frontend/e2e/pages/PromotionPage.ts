@@ -69,7 +69,8 @@ export class PromotionPage {
 
     private async uploadImage() {
         console.log('>>> [Promotion] Uploading 1x1 PNG asset...');
-        const dummyPath = path.join(process.cwd(), 'e2e-dummy.png');
+        const os = require('os');
+        const dummyPath = path.join(os.tmpdir(), 'e2e-dummy.png');
         
         // Create a valid 1x1 transparent PNG
         const base64Png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
