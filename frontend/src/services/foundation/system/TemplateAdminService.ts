@@ -2,7 +2,7 @@
 import { AdminService } from '@/services/core/ApiService';
 
 /**
- * 템플릿님뺣낫 ?명꽣?섏씠님 */
+ * 템플릿님정보 ?명꽣?섏씠님 */
 export interface TmplatInfo {
   tmplatId?: string;
   tmplatNm: string;

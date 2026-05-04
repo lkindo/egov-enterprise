@@ -28,7 +28,7 @@ class GroupAdminService extends AdminService {
  return this.post<void>('', data, config);
  }
 
- /** 그룹 ?섏젙 */
+ /** 그룹 수정 */
  async updateGroup(groupId: string, data: Partial<GroupInfo>, config?: AxiosRequestConfig): Promise<void> {
  return this.put<void>(`/${groupId}`, data, config);
  }

@@ -22,7 +22,7 @@ class BannerAdminService extends AdminService {
  });
  }
 
- /** 배너 전체 ?몃━님조회 */
+ /** 배너 전체 트리님조회 */
  async getReflectedBanners(config?: AxiosRequestConfig): Promise<Banner[]> {
  return this.get<Banner[]>('/reflected', config);
  }
@@ -37,7 +37,7 @@ class BannerAdminService extends AdminService {
  return this.post('', data, config);
  }
 
- /** 배너 ?섏젙 */
+ /** 배너 수정 */
  async updateBanner(id: string, data: Partial<Banner>, config?: AxiosRequestConfig): Promise<void> {
  return this.put(`/${id}`, data, config);
  }

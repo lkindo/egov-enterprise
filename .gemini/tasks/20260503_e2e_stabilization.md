@@ -27,6 +27,19 @@
     - [x] Tier 03: Passed (Fixed `isAdmin` role check for Master Console button)
     - [x] Tier 04: Passed (Fixed Next.js hydration mismatch on UnifiedDashboardClient)
     - [ ] Tier 05: Pending
+    - [x] Tier 06: Passed (Verified Login Policy & ACL)
+    - [x] Tier 07: Passed (Updated for Workflow Hub UI integration)
+    - [x] Tier 08: Passed (Verified Collab Note & Stats Dashboard)
+    - [x] Tier 09: Passed (Fixed Observability Map loading flakiness)
+    - [x] Tier 10: Passed (Verified Reward, HR, Memo, Map, SMS)
+    - [x] Tier 11: Passed (Verified Approval, Schedule, Work Report)
+    - [x] Tier 12: Passed (Verified Real-time Notification & API sync)
+    - [x] Tier 13: Passed (Verified Mail Send/History/Delete)
+    - [x] Tier 14: Passed (Verified Workflow Admin & Designer)
+    - [x] Tier 15: Passed (Verified Scraps & Knowledge FAQ/Q&A)
+    - [x] Tier 16: Passed (Verified System Observability & Metrics)
+    - [x] Tier 17: Passed (Verified Support Governance & Manuals)
+    - [x] Tier 18: Passed (Verified Business Extensions: ISM, LSM, HPCM)
 
 ## 발견된 이슈
 - 행사 생성 모달의 날짜 필드가 `input[type="date"]`가 아닌 커스텀 마스크가 적용된 `input[type="text"]`임. -> `pressSequentially` 및 숫자 전용 입력으로 대응.

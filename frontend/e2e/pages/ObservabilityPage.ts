@@ -23,16 +23,23 @@ export class ObservabilityPage {
 
     async verifyTopology() {
         // The component is dynamic with ssr: false
+        // We wait for the loading indicator to disappear if it shows up
         const loading = this.page.getByText('Initializing Map...');
-        if (await loading.isVisible()) {
+        try {
+            // Use a short wait first to see if it even appears, then wait for it to hide
+            await loading.waitFor({ state: 'visible', timeout: 2000 });
             await loading.waitFor({ state: 'hidden', timeout: 30000 });
+        } catch (e) {
+            // If it never appeared within 2s, it's likely already loaded
+            console.log('>>> Loading indicator not detected or already hidden.');
         }
+
         // Verify topology content
         const topology = this.page.locator('div').filter({ hasText: /System Map/i }).first();
         await expect(topology).toBeVisible({ timeout: 15000 });
         
         // Also verify at least one node is present
-        const node = this.page.getByText(/Global Traffic|Edge Network|Gateway/i).first();
+        const node = this.page.getByText(/Global Traffic|Edge Network|Gateway|App Nodes|Primary DB/i).first();
         await expect(node).toBeVisible({ timeout: 10000 });
     }
 

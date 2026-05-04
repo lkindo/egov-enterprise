@@ -1,5 +1,5 @@
 ﻿/**
- * ?대씪?댁뼵님而댄룷?뚰듃濡님꾨떖?섍린 님?쒕쾭 ?곗씠?곕? ?꾩슂님?꾨뱶留님④린怨님뺣━합니다
+ * ?대씪?댁뼵님컴포넌트濡님꾨떖?섍린 님?쒕쾭 ?곗씠?곕? ?꾩슂님?꾨뱶留님④린怨님뺣━합니다
  * (Server Serialization Optimization)
  */
 export function selectFields<T extends object, K extends keyof T>(

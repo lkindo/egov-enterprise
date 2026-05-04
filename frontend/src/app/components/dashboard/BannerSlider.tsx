@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
@@ -13,16 +13,21 @@ export function BannerSlider() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchBanners() {
+    const fetchBanners = async () => {
       try {
-        const res = await bannerAdminService.getReflectedBanners();
-        setBanners(res || []);
-      } catch (error) {
-        console.error('Failed to fetch banners:', error);
+        const data = await bannerAdminService.getReflectedBanners();
+        setBanners(data || []);
+      } catch (error: any) {
+        if (error?.response?.status === 403) {
+          console.warn('>>> [BannerSlider] Access denied (403). Banners will not be displayed for this user.');
+        } else {
+          console.error('>>> [BannerSlider] Failed to fetch banners:', error);
+        }
+        setBanners([]);
       } finally {
         setLoading(false);
       }
-    }
+    };
     fetchBanners();
   }, []);
 
@@ -51,7 +56,7 @@ export function BannerSlider() {
   }
 
   const currentBanner = banners[currentIndex];
-  const imageUrl = currentBanner.bannerImage.startsWith('http')
+  const imageUrl = (currentBanner.bannerImage && currentBanner.bannerImage.startsWith('http'))
     ? currentBanner.bannerImage
     : `/api/v1/files/download?fileId=${currentBanner.bannerImageFile || currentBanner.bannerImage}`;
 

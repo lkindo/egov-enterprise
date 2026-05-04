@@ -14,14 +14,14 @@ class UserService extends ApiService {
  }
 
  /**
- * 님정보 ?섏젙
+ * 님정보 수정
  */
  async updateMe(data: Partial<UserDto>): Promise<void> {
  return this.put<void>('', data);
  }
 
  /**
- * 鍮꾨踰덊샇 蹂寃 */
+ * 비밀번호 蹂寃 */
  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
  return this.put<void>('/password', { oldPassword, newPassword });
  }

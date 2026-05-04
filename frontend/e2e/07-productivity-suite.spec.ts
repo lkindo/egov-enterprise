@@ -134,15 +134,16 @@ test.describe('Tier 7: Productivity Suite (Business Tools)', () => {
 
         await test.step('Admin: Navigate and Verify Departmental Jobs', async () => {
             await prodPage.gotoDeptJob();
-            await expect(adminPage.locator('table')).toBeVisible();
-            await expect(adminPage.getByRole('button', { name: /조회/i })).toBeVisible();
+            await prodPage.verifyWorkflowHubTabs();
+            // In Workflow Hub, the job list is visible by default for Dept Job
+            await expect(adminPage.getByText(/등록된 업무가 없습니다|부서: /i)).toBeVisible();
         });
 
         await test.step('Admin: Navigate and Verify Work Reports', async () => {
             await prodPage.gotoWorkReport();
-            // Check tabs: 일일보고, 주간보고
-            await expect(adminPage.getByRole('button', { name: /일일보고/i })).toBeVisible();
-            await expect(adminPage.getByRole('button', { name: /주간보고/i })).toBeVisible();
+            await prodPage.verifyWorkflowHubTabs();
+            // In Workflow Hub, the report list is visible by default for Work Report
+            await expect(adminPage.getByText(/등록된 보고서가 없습니다|작성자: /i)).toBeVisible();
         });
     });
 });

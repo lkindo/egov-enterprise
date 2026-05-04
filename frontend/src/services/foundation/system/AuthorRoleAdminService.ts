@@ -15,7 +15,7 @@ class AuthorRoleAdminService extends AdminService {
  super('/author-roles');
  }
 
- /** ?뱀젙 권한님?좊떦님濡목록 조회 */
+ /** 특정 권한님?좊떦님濡목록 조회 */
  async getAuthorRoles(authorCode: string, config?: AxiosRequestConfig): Promise<AuthorRoleDto[]> {
  return this.get<AuthorRoleDto[]>(`/${authorCode}`, config);
  }

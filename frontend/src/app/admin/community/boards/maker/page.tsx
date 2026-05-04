@@ -4,7 +4,7 @@ import React from 'react';
 import { BoardMakerWizard } from './components/BoardMakerWizard';
 
 /**
- * 게시님鍮뚮뜑 留덈쾿님?섏씠吏 (Admin)
+ * 게시님鍮뚮뜑 留덈쾿님페이지 (Admin)
  * /admin/community/boards/maker
  */
 export default function BoardMakerPage() {

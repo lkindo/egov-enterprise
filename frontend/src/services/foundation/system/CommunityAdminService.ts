@@ -42,7 +42,7 @@ class CommunityAdminService extends AdminService {
     return this.post<Community>('', data, config);
   }
 
-  /** 而ㅻ님덊떚 정보 ?섏젙 */
+  /** 而ㅻ님덊떚 정보 수정 */
   async updateCommunity(cmmntyId: string, data: Partial<Community>, config?: AxiosRequestConfig): Promise<void> {
     return this.put(`/${cmmntyId}`, data, config);
   }

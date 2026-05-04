@@ -33,7 +33,7 @@ class RoleAdminService extends AdminService {
  return this.put<void>(`/${roleCode}`, data, config);
  }
 
- /** 濡님?젣 */
+ /** 濡님삭제 */
  async deleteRole(roleCode: string, config?: AxiosRequestConfig): Promise<void> {
  return this.delete<void>(`/${roleCode}`, config);
  }

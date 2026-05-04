@@ -10,7 +10,7 @@ interface AccessControlProps {
 }
 
 /**
- * 사용자권한님?곕씪 하위 ?붿냼瑜님④린嫄곕굹 蹂댁뿬二쇰뒗 而댄룷?뚰듃
+ * 사용자권한님?곕씪 하위 ?붿냼를④린嫄곕굹 蹂댁뿬二쇰뒗 컴포넌트
  */
 export function AccessControl({
  children,
@@ -22,7 +22,7 @@ export function AccessControl({
  // 로그?명븯吏 ?딆? 寃쎌슦
  if (!user) return fallback;
 
- // ?뱀젙 님븷님?꾩슂님寃쎌슦 泥댄겕 (사용자의 role ?꾨뱶 議
+ // 특정 님븷님?꾩슂님寃쎌슦 泥댄겕 (사용자의 role ?꾨뱶 議
  if (allowedRoles.length > 0) {
  const hasRole = allowedRoles.some(role => user.role === role);
  if (!hasRole) return fallback;

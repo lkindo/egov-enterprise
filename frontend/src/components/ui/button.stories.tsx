@@ -3,9 +3,9 @@ import { fn } from '@storybook/test';
 import { Button } from './button';
 
 /**
- * Button 而댄룷?뚰듃 ㅽ넗由 * 
+ * Button 컴포넌트 ㅽ넗由 * 
  * ㅼ뼇님variant, size, ?곹깭님Button 님확인...있습니다.
- * Shadcn/UI 湲곕컲님?묎렐님있는 踰꾪듉 而댄룷?뚰듃?낅땲님
+ * Shadcn/UI 湲곕컲님?묎렐님있는 踰꾪듉 컴포넌트?낅땲님
  */
 
 const meta = {

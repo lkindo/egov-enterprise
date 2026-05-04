@@ -57,14 +57,23 @@ export class ProductivitySuitePage {
     async gotoDeptJob() {
         console.log(`>>> Navigating to Departmental Jobs`);
         await this.page.goto('/smart-toolkit/dept-job');
-        // Flexible matching for heading or text
-        await expect(this.page.locator('h1, h2, h3, .title').filter({ hasText: /부서.*업무/i }).first()).toBeVisible({ timeout: 15000 });
+        // Both Dept Job and Work Report now use Workflow Hub layout
+        await expect(this.page.getByText('워크플로우 허브').first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByText('전사 부서별 업무 처리 및 비즈니스 데이터 자산 통합 관리 센터')).toBeVisible();
     }
 
     // 업무 보고 (Work Report)
     async gotoWorkReport() {
         console.log(`>>> Navigating to Work Reports`);
         await this.page.goto('/smart-toolkit/work-report');
-        await expect(this.page.locator('h1, h2, h3, .title').filter({ hasText: /업무.*보고/i }).first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByText('워크플로우 허브').first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByText('비즈니스 데이터 자산 통합 관리 센터')).toBeVisible();
+    }
+
+    async verifyWorkflowHubTabs() {
+        console.log(`>>> Verifying Workflow Hub Tabs`);
+        await expect(this.page.getByRole('button', { name: 'WORKFLOW' })).toBeVisible();
+        await expect(this.page.getByRole('button', { name: 'ASSETS' })).toBeVisible();
+        await expect(this.page.getByRole('button', { name: 'CALENDAR' })).toBeVisible();
     }
 }

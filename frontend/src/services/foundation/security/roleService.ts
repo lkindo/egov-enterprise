@@ -33,12 +33,12 @@ export const roleService = {
  return client.post<void>(BASE_URL, data);
  },
 
- /** 濡님뺣낫 ?섏젙 */
+ /** 濡님정보 수정 */
  updateRole: async (roleCode: string, data: Partial<RoleManageInfo>): Promise<void> => {
  return client.put<void>(`${BASE_URL}/${roleCode}`, data);
  },
 
- /** 濡님?젣 */
+ /** 濡님삭제 */
  deleteRole: async (roleCode: string): Promise<void> => {
  return client.delete<void>(`${BASE_URL}/${roleCode}`);
  },

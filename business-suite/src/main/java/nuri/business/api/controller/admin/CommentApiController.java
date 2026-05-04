@@ -43,7 +43,7 @@ public class CommentApiController {
                 PageResponse.of(page.getContent(), pageIndex, 10, (int) page.getTotalElements())));
     }
 
-    @Operation(summary = "댓글 삭제", description = "?뱀젙 댓글??삭제(비활성화) 처리합니다")
+    @Operation(summary = "댓글 삭제", description = "특정 댓글??삭제(비활성화) 처리합니다")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable("id") Long id) {
         // 愿由ъ옄 권한?쇰줈 삭제?섎濡userId瑜蹂꾨룄濡寃利앺븯吏 ?딆쓬 (?쒖뒪怨꾩젙 ?깆쑝濡吏 媛

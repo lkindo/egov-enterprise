@@ -4041,7 +4041,7 @@ export interface paths {
         post?: never;
         /**
          * 댓글 삭제
-         * @description ?뱀젙 댓글??삭제(비활성화) 처리합니다
+         * @description 특정 댓글??삭제(비활성화) 처리합니다
          */
         delete: operations["deleteComment_1"];
         options?: never;

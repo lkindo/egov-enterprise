@@ -90,19 +90,11 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
     test('FAQ Lifecycle and Help Search', async ({ adminPage, userPage }) => {
         const faqQuestion = `E2E Security FAQ ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const faqAnswer = 'E2E FAQ Answer: Data is encrypted and managed safely.';
+        const knowledge = new KnowledgePage(adminPage);
 
         await test.step('Admin: Create FAQ', async () => {
-            // Correct path for FAQ (BBSMSTR_AAAAAAAAAAAA)
-            console.log(`>>> Creating FAQ in board: BBSMSTR_AAAAAAAAAAAA`);
-            await adminPage.goto('/admin/community/boards/insertBoardArticle?bbsId=BBSMSTR_AAAAAAAAAAAA');
-            await adminPage.getByPlaceholder(/제목을 입력하십시오|Title/).fill(faqQuestion);
-            
-            // Rich Text Editor interaction
-            const editor = adminPage.locator('[data-testid="rich-text-editor"] [contenteditable="true"]');
-            await editor.fill(faqAnswer);
-            
-            await adminPage.getByRole('button', { name: /Commit Knowledge|등록|저장/ }).click();
-            await adminPage.waitForSelector('text=/성공|완료|저장되었습니다/');
+            await knowledge.gotoFAQ();
+            await knowledge.createFAQ(faqQuestion, faqAnswer);
             
             // Verify in admin list (Help Center FAQ list)
             await adminPage.goto('/admin/help/faq');
@@ -114,45 +106,32 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             await userPage.goto('/help');
             
             // Select FAQ tab (it should be default, but let's be sure)
-            const faqTab = userPage.getByRole('button', { name: /고객지원|FAQ/ });
+            const faqTab = userPage.getByRole('button', { name: /고객지원|FAQ/ }).first();
             await expect(faqTab).toBeVisible({ timeout: 15000 });
             await faqTab.click();
             await userPage.waitForTimeout(3000); 
             await userPage.waitForLoadState('domcontentloaded');
-            console.log(`>>> [FAQ] Searching for FAQ: ${faqQuestion}`);
+            
+            console.log(`>>> [FAQ] Checking visibility for: ${faqQuestion}`);
             const faqItem = userPage.getByText(faqQuestion).first();
             
-            try {
-                // Initial check
-                await expect(faqItem).toBeVisible({ timeout: 5000 });
-            } catch (e) {
-                console.log('>>> [FAQ] Not found initially, trying search and reload...');
-                const searchInput = userPage.getByPlaceholder(/키워드로 신속하게 검색하세요/);
-                if (await searchInput.isVisible()) {
-                    await searchInput.fill(faqQuestion);
-                    await userPage.keyboard.press('Enter');
-                    await userPage.waitForTimeout(3000);
-                } else {
-                    await userPage.reload();
-                    await userPage.waitForTimeout(3000);
-                }
-            }
-
-            try {
-                await expect(userPage.getByText(faqQuestion).first()).toBeVisible({ timeout: 15000 });
-                console.log('>>> [FAQ] Found created FAQ in Portal list');
-            } catch (e) {
-                console.log('>>> [FAQ] Still not found. Trying final search...');
-                await userPage.goto('/help');
+            // Eventual consistency retry loop
+            for (let i = 0; i < 5; i++) {
+                if (await faqItem.isVisible({ timeout: 2000 }).catch(() => false)) break;
+                
+                console.log(`>>> [FAQ] Not found (attempt ${i+1}), searching/reloading...`);
                 const searchInput = userPage.getByPlaceholder(/검색|Search|키워드/i);
                 if (await searchInput.isVisible()) {
                     await searchInput.fill(faqQuestion);
                     await searchInput.press('Enter');
-                    await userPage.waitForTimeout(2000);
+                } else {
+                    await userPage.reload();
                 }
-                await expect(userPage.getByText(faqQuestion).first()).toBeVisible({ timeout: 10000 });
-                console.log('>>> [FAQ] Found created FAQ in Portal list after final search');
+                await userPage.waitForTimeout(2000);
             }
+
+            await expect(faqItem).toBeVisible({ timeout: 10000 });
+            console.log('>>> [FAQ] Found created FAQ in Portal list');
         });
 
         await test.step('User: Search Help Center', async () => {

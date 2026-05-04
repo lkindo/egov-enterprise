@@ -11,7 +11,7 @@ export function useDashboardConnection() {
   useEffect(() => {
     if (!client || !isConnected) return;
 
-    // 접속 ?뚮┝ 諛쒖넚
+    // 접속 ?뚮┝ 발송
     client.publish({
       destination: '/app/user.connect',
       body: JSON.stringify({ timestamp: new Date().toISOString() })

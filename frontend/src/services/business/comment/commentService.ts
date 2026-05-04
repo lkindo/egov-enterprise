@@ -28,7 +28,7 @@ class CommentService extends ApiService {
  return this.post<number>('', data, config);
  }
 
- /** 댓글 ?섏젙 */
+ /** 댓글 수정 */
  async updateComment(id: number, data: CommentSaveRequest, config?: AxiosRequestConfig): Promise<void> {
  return this.put<void>(`/${id}`, data, config);
  }

@@ -27,7 +27,7 @@ class SyncAdminService extends AdminService {
  return this.post('', data, config);
  }
 
- /** 동기화?쒕쾭 ?섏젙 */
+ /** 동기화?쒕쾭 수정 */
  async updateSyncServer(id: string, data: Partial<SyncServer>, config?: AxiosRequestConfig): Promise<void> {
  return this.put(`/${id}`, data, config);
  }

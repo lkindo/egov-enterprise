@@ -2,8 +2,8 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './card';
 
 /**
- * Card 而댄룷?뚰듃 ㅽ넗由 * 
- * 而⑦뀒?대꼫님移대뱶 而댄룷?뚰듃님ㅼ뼇님?쒖슜 ?덉떆瑜님뺤씤...있습니다.
+ * Card 컴포넌트 ㅽ넗由 * 
+ * 而⑦뀒?대꼫님移대뱶 컴포넌트님ㅼ뼇님?쒖슜 ?덉떆를뺤씤...있습니다.
  */
 
 const meta = {

@@ -20,7 +20,7 @@ class PolicyAdminService extends AdminService {
     return this.get<PolicyDto>(`/${type}`, config);
   }
 
-  /** 정책 이용 ?섏젙 */
+  /** 정책 이용 수정 */
   async updatePolicy(type: 'privacy' | 'copyright', dto: Partial<PolicyDto>, config?: AxiosRequestConfig) {
     return this.put<void>(`/${type}`, dto, config);
   }

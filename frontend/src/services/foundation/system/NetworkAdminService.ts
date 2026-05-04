@@ -31,7 +31,7 @@ class NetworkAdminService extends AdminService {
  return this.post('', data, config);
  }
 
- /** ㅽ듃?뚰겕 ?섏젙 */
+ /** ㅽ듃?뚰겕 수정 */
  async updateNetwork(id: string, data: Partial<Network>, config?: AxiosRequestConfig): Promise<void> {
  return this.put(`/${id}`, data, config);
  }

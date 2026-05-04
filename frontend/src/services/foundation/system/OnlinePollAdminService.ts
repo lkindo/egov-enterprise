@@ -30,7 +30,7 @@ class OnlinePollAdminService extends AdminService {
     super('/polls');
   }
 
-  /** ⑤씪님Poll 목록 ?섏씠吏조회 */
+  /** ⑤씪님Poll 목록 페이지조회 */
   async getPollList(params?: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig) {
     return this.get<PageResponse<OnlinePollDto>>('', { ...config, params });
   }

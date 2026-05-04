@@ -238,16 +238,23 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
   const onPopupSubmit = async (values: any) => {
     try {
+      const formatDate = (dateStr: string, timeSuffix: string) => {
+        if (!dateStr) return '';
+        // Remove all non-numeric characters
+        const cleanDate = dateStr.replace(/\D/g, '');
+        // If we have at least 8 digits, take the first 8 (yyyyMMdd)
+        if (cleanDate.length >= 8) {
+          return cleanDate.substring(0, 8) + timeSuffix;
+        }
+        return dateStr; // Fallback
+      };
+
       const data = {
         ...values,
         isNotice: values.isNotice as "Y" | "N",
         isStopView: values.isStopView as "Y" | "N",
-        noticeBeginDate: values.noticeBeginDate && values.noticeBeginDate.includes('-') 
-          ? values.noticeBeginDate.replace(/-/g, '') + '0000' 
-          : values.noticeBeginDate,
-        noticeEndDate: values.noticeEndDate && values.noticeEndDate.includes('-') 
-          ? values.noticeEndDate.replace(/-/g, '') + '2359' 
-          : values.noticeEndDate
+        noticeBeginDate: formatDate(values.noticeBeginDate, '0000'),
+        noticeEndDate: formatDate(values.noticeEndDate, '2359')
       } as any;
       if (formFiles.length > 0) {
         const uploadRes = await fileAdminService.uploadFiles(formFiles);
@@ -671,7 +678,24 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                           <FormItem className="space-y-1.5 p-0.5">
                             <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 시작 시점 (T-0) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
                             <FormControl>
-                              <Input {...field} type="date" className="h-14 rounded-xl text-xs font-black shadow-sm" />
+                              <Input 
+                                {...field} 
+                                type="text" 
+                                placeholder="YYYY-MM-DD"
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/\D/g, '');
+                                  if (value.length <= 8) {
+                                    let formatted = value;
+                                    if (value.length > 4 && value.length <= 6) {
+                                      formatted = `${value.slice(0, 4)}-${value.slice(4)}`;
+                                    } else if (value.length > 6) {
+                                      formatted = `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6)}`;
+                                    }
+                                    field.onChange(formatted);
+                                  }
+                                }}
+                                className="h-14 rounded-xl text-xs font-black shadow-sm" 
+                              />
                             </FormControl>
                             <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
                           </FormItem>
@@ -684,7 +708,24 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
                           <FormItem className="space-y-1.5 p-0.5">
                             <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 종료 시점 (T-End) <span className="text-rose-500 font-extrabold text-[10px]">*</span></FormLabel>
                             <FormControl>
-                              <Input {...field} type="date" className="h-14 rounded-xl text-xs font-black shadow-sm" />
+                              <Input 
+                                {...field} 
+                                type="text" 
+                                placeholder="YYYY-MM-DD"
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/\D/g, '');
+                                  if (value.length <= 8) {
+                                    let formatted = value;
+                                    if (value.length > 4 && value.length <= 6) {
+                                      formatted = `${value.slice(0, 4)}-${value.slice(4)}`;
+                                    } else if (value.length > 6) {
+                                      formatted = `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6)}`;
+                                    }
+                                    field.onChange(formatted);
+                                  }
+                                }}
+                                className="h-14 rounded-xl text-xs font-black shadow-sm" 
+                              />
                             </FormControl>
                             <FormMessage className="text-[10px] font-bold text-rose-600 px-1 mt-1" />
                           </FormItem>

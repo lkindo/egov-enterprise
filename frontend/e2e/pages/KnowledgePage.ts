@@ -35,10 +35,14 @@ export class KnowledgePage {
         // Blur to trigger onChange if necessary
         await this.page.locator('input[name="nttSj"]').click();
         
-        await this.page.getByRole('button', { name: /Commit Knowledge|등록|저장/i }).click({ force: true });
+        const submitBtn = this.page.getByRole('button', { name: /Commit Knowledge|등록|저장/i }).last();
+        await submitBtn.scrollIntoViewIfNeeded();
+        await submitBtn.click({ force: true });
+        console.log('>>> [Knowledge] Clicked submit button, waiting for response...');
         
         // Success check - should redirect to list or show toast
-        await expect(this.page.getByText(/성공|완료|저장되었습니다/)).toBeVisible();
+        await this.page.waitForTimeout(3000); // Give it some time
+        await expect(this.page.getByText(/성공|완료|저장되었습니다|Success|Completed|Saved/i).first()).toBeVisible({ timeout: 15000 });
     }
 
     async searchFAQ(keyword: string) {

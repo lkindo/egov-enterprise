@@ -26,12 +26,12 @@ class DeptAuthorityAdminService extends AdminService {
     super('/dept-authorities');
   }
 
-  /** ?뱀젙 遺쒖쓽 ъ슜?먮퀎 권한 목록 조회 */
+  /** 특정 遺쒖쓽 ъ슜?먮퀎 권한 목록 조회 */
   async getDeptAuthorities(deptId: string, config?: AxiosRequestConfig): Promise<DeptAuthorProjection[]> {
     return this.get<DeptAuthorProjection[]>(`/${deptId}`, config);
   }
 
-  /** 遺님권한 ?쇨큵 ㅼ젙 */
+  /** 遺님권한 일괄 ㅼ젙 */
   async updateDeptAuthorities(data: DeptAuthorBatchRequest, config?: AxiosRequestConfig): Promise<void> {
     return this.post<void>('/batch', data, config);
   }

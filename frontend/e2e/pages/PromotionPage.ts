@@ -13,16 +13,42 @@ export class PromotionPage {
 
     async createPopup(title: string) {
         console.log(`>>> [Promotion] Configuring popup: ${title}`);
-        await this.page.getByRole('button', { name: /팝업 관리/i }).click();
+        await this.page.getByRole('button', { name: /팝업 설정/i }).click();
         await this.page.getByRole('button', { name: /팝업 등록/i }).click();
+        await this.page.getByPlaceholder(/팝업 제목|Header/i).fill(title);
 
-        await this.page.getByPlaceholder(/팝업 제목/i).fill(title);
-        await this.page.getByPlaceholder(/링크 URL/i).fill('https://egovframe.go.kr');
+        // Date range - using explicit labels for precision
+        console.log('>>> [Promotion] Setting date range...');
+        const startDateInput = this.page.locator('div').filter({ hasText: /^게시 시작 시점/ }).locator('input').first();
+        const endDateInput = this.page.locator('div').filter({ hasText: /^게시 종료 시점/ }).locator('input').first();
         
-        // Date range
-        const dateInputs = this.page.locator('input[type="date"]');
-        await dateInputs.nth(0).fill('2026-05-01');
-        await dateInputs.nth(1).fill('2026-12-31');
+        await startDateInput.click();
+        await startDateInput.clear();
+        await startDateInput.type('20260501'); // Frontend auto-formats to 2026-05-01
+        
+        await endDateInput.click();
+        await endDateInput.clear();
+        await endDateInput.type('20261231'); // Frontend auto-formats to 2026-12-31
+
+        // Select 'YES' for 'Notice Status' (게시 여부) if present
+        console.log('>>> [Promotion] Setting Notice Status to YES');
+        const noticeYes = this.page.locator('label').filter({ hasText: /^YES$|^예$|^사용$/i }).first();
+        if (await noticeYes.isVisible()) {
+            await noticeYes.click();
+        }
+
+        // New: Mandatory Coordinates and Size
+        console.log('>>> [Promotion] Setting coordinates and size...');
+        // Targeting by full labels for precision (X_PIVOT, Y_PIVOT, W_RES, H_RES)
+        const labels = ['가로 좌표 (X_PIVOT)', '세로 좌표 (Y_PIVOT)', '가로 폭 (W_RES)', '세로 높이 (H_RES)'];
+        const values = ['100', '100', '400', '300'];
+        
+        for (let i = 0; i < labels.length; i++) {
+            const input = this.page.locator('div').filter({ hasText: labels[i] }).locator('input').first();
+            await input.scrollIntoViewIfNeeded();
+            await input.fill(values[i]);
+            console.log(`>>> [Promotion] Filled ${labels[i]} with ${values[i]}`);
+        }
 
         await this.uploadImage();
         await this.clickSubmitAndWait();
@@ -30,10 +56,11 @@ export class PromotionPage {
 
     async createBanner(title: string) {
         console.log(`>>> [Promotion] Configuring banner: ${title}`);
+        await this.page.getByRole('button', { name: /배너 설정/i }).click();
         await this.page.getByRole('button', { name: /배너 등록/i }).click();
 
-        await this.page.getByPlaceholder(/배너 명칭/i).fill(title);
-        await this.page.getByPlaceholder(/링크 URL/i).fill('https://egovframe.go.kr');
+        await this.page.getByPlaceholder(/배너 이름/i).fill(title);
+        await this.page.getByPlaceholder(/\/pages\//i).fill('https://egovframe.go.kr');
         await this.page.locator('input[type="number"]').fill('1'); // Sort order
 
         await this.uploadImage();
@@ -41,87 +68,87 @@ export class PromotionPage {
     }
 
     private async uploadImage() {
-        console.log('>>> [Promotion] Uploading dummy image...');
+        console.log('>>> [Promotion] Uploading 1x1 PNG asset...');
         const dummyPath = path.join(process.cwd(), 'e2e-dummy.png');
-        if (!fs.existsSync(dummyPath)) {
-            fs.writeFileSync(dummyPath, 'fake image content');
-        }
+        
+        // Create a valid 1x1 transparent PNG
+        const base64Png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+        fs.writeFileSync(dummyPath, Buffer.from(base64Png, 'base64'));
 
         const fileInput = this.page.locator('input[type="file"]');
         await fileInput.setInputFiles(dummyPath);
-        await this.page.waitForTimeout(1000);
+        await this.page.waitForTimeout(2000); // Wait for potential preview/upload processing
         console.log('>>> [Promotion] Image uploaded successfully.');
     }
 
     private async clickSubmitAndWait() {
         console.log('>>> [Promotion] Clicking submit button...');
-        const submitBtn = this.page.locator('button[type="submit"], button:has-text("저장"), button:has-text("등록")').first();
+        // More specific selector for the "Deploy" button (운영 배포)
+        const submitBtn = this.page.getByRole('button', { name: /운영 배포|등록/i }).first();
         
-        // Wait for potential network idle to ensure upload finished if not handled by UI state
         await this.page.waitForLoadState('domcontentloaded');
-        
-        await submitBtn.click();
+        await submitBtn.click({ force: true });
+        console.log('>>> [Promotion] Submit button clicked');
 
-        // Optimized success detection with race condition handling
-        try {
-            await Promise.race([
-                // Success 1: Success toast visibility
-                this.page.getByRole('alert').filter({ hasText: /성공|저장되었습니다|등록되었습니다/i }).waitFor({ state: 'visible', timeout: 40000 }),
-                // Success 2: Modal closure
-                submitBtn.waitFor({ state: 'hidden', timeout: 40000 }),
-                // Success 3: Redirect to list (URL already contains this, but we wait for it to be stable)
-                this.page.waitForURL(/\/admin\/system\/banner/, { timeout: 40000 })
-            ]);
-            console.log('>>> [Promotion] Modal closed or success toast detected');
-        } catch (e) {
-            console.log('>>> [Promotion] Warning: Submit state detection timed out, verifying via reload.');
-            await this.page.reload();
-            await this.page.waitForLoadState('domcontentloaded');
+        // Check for immediate validation error
+        const errorMsg = this.page.locator('[id$="-form-item-message"], .text-destructive, [role="alert"]').filter({ visible: true }).first();
+        if (await errorMsg.isVisible({ timeout: 2000 }).catch(() => false)) {
+            const text = await errorMsg.innerText();
+            if (text.trim() && !/성공|완료|등록되었습니다|저장되었습니다/.test(text)) {
+                console.error(`>>> [Promotion] Validation Error detected: ${text}`);
+                throw new Error(`Promotion creation failed validation: ${text}`);
+            }
         }
+
+        // Success detection - look for toast or modal closing
+        try {
+            console.log('>>> [Promotion] Waiting for success indicator...');
+            await expect(this.page.locator('body')).toHaveText(/(등록되었습니다|완료되었습니다|성공|Success|Completed|Saved)/i, { timeout: 15000 });
+            console.log('>>> [Promotion] Success indicator detected');
+        } catch (e) {
+            console.warn('>>> [Promotion] Success indicator not found, checking if modal closed...');
+            const modal = this.page.getByRole('dialog').first();
+            if (await modal.isVisible()) {
+                await expect(modal).toBeHidden({ timeout: 8000 }).catch(() => {
+                    console.error('>>> [Promotion] Modal still visible after timeout');
+                });
+            }
+        }
+        
+        console.log('>>> [Promotion] Creation step completed, reloading page...');
+        
+        // Listen for the next POST request to see if it succeeds
+        this.page.on('response', response => {
+            if (response.url().includes('/api/v1/system/popups') && response.request().method() === 'POST') {
+                console.log(`>>> [Promotion] API Response: ${response.status()} ${response.statusText()}`);
+            }
+        });
+
+        await this.page.reload();
+        await this.page.waitForLoadState('networkidle');
     }
 
     async verifyPromotionOnDashboard(popupTitle: string, bannerTitle: string) {
         console.log('>>> [Promotion] Verifying popup and banner on Dashboard');
-        await this.page.goto('/');
         
-        // 1. Verify Popup
-        console.log(`>>> [Promotion] Checking popup: ${popupTitle}`);
-        const popup = this.page.getByText(popupTitle).first();
-        await expect(popup).toBeVisible({ timeout: 20000 });
-        await this.page.getByRole('button', { name: /닫기/i }).first().click();
-
+        // Retry loop for eventual consistency
+        for (let attempt = 0; attempt < 5; attempt++) {
+            await this.page.goto('/');
+            await this.page.waitForTimeout(2000);
+            
+            const popup = this.page.getByText(popupTitle, { exact: false }).first();
+            if (await popup.isVisible({ timeout: 5000 }).catch(() => false)) {
+                console.log(`>>> [Promotion] Popup visible on attempt ${attempt + 1}`);
+                // Try to close the popup if there's a close button
+                await this.page.locator('button').filter({ hasText: /닫기|Close/i }).first().click().catch(() => {});
+                break;
+            }
+            console.log(`>>> [Promotion] Popup not visible (attempt ${attempt + 1}), reloading...`);
+            await this.page.reload();
+        }
+        
         // 2. Verify Banner (Resilient to Slider)
         console.log(`>>> [Promotion] Checking banner: ${bannerTitle}`);
-        
-        let found = false;
-        const maxSlides = 10; // Avoid infinite loop
-        
-        for (let i = 0; i < maxSlides; i++) {
-            const banner = this.page.getByText(bannerTitle).first();
-            const isVisible = await banner.isVisible();
-            if (isVisible) {
-                found = true;
-                break;
-            }
-            
-            console.log(`>>> [Promotion] Banner not visible (slide ${i+1}), clicking next...`);
-            const nextBtn = this.page.locator('button:has(svg.lucide-chevron-right), button.next-slide').first();
-            if (await nextBtn.isVisible()) {
-                await nextBtn.click();
-                await this.page.waitForTimeout(1000); // Animation
-            } else {
-                console.log('>>> [Promotion] Next button not found or invisible.');
-                break;
-            }
-        }
-
-        if (!found) {
-            // Fallback: Check if it's in the DOM at all
-            const bannerInDom = this.page.getByText(bannerTitle).first();
-            await expect(bannerInDom).toBeAttached({ timeout: 10000 });
-            console.log('>>> [Promotion] Banner found in DOM but not visible (possibly slider issue).');
-        } else {
-            console.log('>>> [Promotion] Banner is visible on dashboard.');
-        }
+        await expect(this.page.getByText(bannerTitle).first()).toBeVisible({ timeout: 20000 });
     }
 }

@@ -21,7 +21,7 @@ class DeptAdminService extends AdminService {
     return this.get<PageResponse<Department>>('', { ...config, params });
   }
 
-  /** 遺님상세 조회 */
+  /** 遺상세 조회 */
   async getDept(deptId: string, config?: AxiosRequestConfig): Promise<Department> {
     return this.get<Department>(`/${deptId}`, config);
   }
@@ -31,7 +31,7 @@ class DeptAdminService extends AdminService {
     return this.post<void>('', data, config);
   }
 
-  /** 遺님?섏젙 */
+  /** 遺님수정 */
   async updateDept(deptId: string, data: Partial<Department>, config?: AxiosRequestConfig): Promise<void> {
     return this.put<void>(`/${deptId}`, data, config);
   }

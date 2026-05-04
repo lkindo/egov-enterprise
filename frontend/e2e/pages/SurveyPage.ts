@@ -243,24 +243,29 @@ export class SurveyPage {
     }
 
     async searchAndWait(keyword: string, expectedText?: string) {
-        await this.searchInput.fill(keyword);
-        await this.searchInput.press('Enter');
-        await this.page.waitForTimeout(2000);
+        console.log(`>>> [Survey] Searching for: ${keyword}`);
+        
+        for (let i = 0; i < 3; i++) {
+            await this.searchInput.fill(keyword);
+            await this.searchInput.press('Enter');
+            await this.page.waitForTimeout(3000);
+            
+            if (expectedText) {
+                const expectedLoc = this.page.getByText(new RegExp(expectedText, 'i')).first();
+                if (await expectedLoc.isVisible({ timeout: 5000 }).catch(() => false)) {
+                    console.log(`>>> [Survey] Found expected text: ${expectedText}`);
+                    return;
+                }
+                console.log(`>>> [Survey] Attempt ${i+1}: "${expectedText}" not found, reloading...`);
+                await this.page.reload();
+                await this.page.waitForLoadState('domcontentloaded');
+            } else {
+                return;
+            }
+        }
         
         if (expectedText) {
-            const expectedLoc = this.page.getByText(new RegExp(expectedText, 'i')).first();
-            if (await expectedLoc.isHidden()) {
-                // Diagnostic logging
-                const allTexts = await this.page.locator('tr').allInnerTexts();
-                console.log(`>>> [Survey] "${expectedText}" not found. Visible table rows:`, 
-                    allTexts.map(t => t.replace(/\s+/g, ' ').trim()).filter(t => t.length > 0));
-                
-                console.log(`>>> [Survey] Retrying search with reload...`);
-                await this.page.reload();
-                await this.searchInput.fill(keyword);
-                await this.searchInput.press('Enter');
-                await this.page.waitForTimeout(3000);
-            }
+            throw new Error(`Survey search failed: "${expectedText}" not found after retries.`);
         }
     }
 }

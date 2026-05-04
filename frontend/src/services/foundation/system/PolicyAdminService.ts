@@ -26,7 +26,7 @@ class PolicyAdminService extends AdminService {
     return this.get<SystemPolicy>(`/${type}`, config);
   }
 
-  /** 정책 ?섏젙 */
+  /** 정책 수정 */
   async updatePolicy(type: string, data: Partial<SystemPolicy>, config?: AxiosRequestConfig): Promise<void> {
     return this.put(`/${type}`, data, config);
   }

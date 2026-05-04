@@ -32,7 +32,7 @@ class SurveyAdminService extends AdminService {
     return this.post<SurveyInfo>('', data, config);
   }
 
-  /** 설문 ?섏젙 */
+  /** 설문 수정 */
   async updateSurvey(qestnrId: string, data: Partial<SurveyInfo>, config?: AxiosRequestConfig): Promise<void> {
     return this.put(`/${qestnrId}`, data, config);
   }

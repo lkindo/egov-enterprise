@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 public interface EgovFaqService {
 
     /**
-     * FAQ 紐⑸議고??     */
+     * FAQ 명⑸議고??     */
     Page<FaqDto> getFaqList(String keyword, Pageable pageable);
 
     /**

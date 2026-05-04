@@ -26,7 +26,7 @@ class PollAdminService extends AdminService {
     return this.post<OnlinePoll>('', data, config);
   }
 
-  /** 설문 ?섏젙 */
+  /** 설문 수정 */
   async updatePoll(pollId: string, data: Partial<OnlinePoll>, config?: AxiosRequestConfig): Promise<void> {
     return this.put(`/${pollId}`, data, config);
   }

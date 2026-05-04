@@ -2,7 +2,7 @@
 import { SearchParams, PageResponse } from '@/types/foundation/system';
 
 /**
- * ㅽ듃?뚰겕 관리및 紐⑤땲?곕쭅 ?쒕퉬님(Admin)
+ * ㅽ듃?뚰겕 관리및 명⑤땲?곕쭅 ?쒕퉬님(Admin)
  * ?곌껐: com.company.project.api.controller.system.NtwrkController
  */
 export interface NetworkInfo {
@@ -42,7 +42,7 @@ export const networkService = {
  return client.post<string>(BASE_URL, data);
  },
 
- /** ㅽ듃?뚰겕 정보 ?섏젙 */
+ /** ㅽ듃?뚰겕 정보 수정 */
  updateNetwork: async (ntwrkId: string, data: Partial<NetworkInfo>): Promise<void> => {
  return client.put<void>(`${BASE_URL}/${ntwrkId}`, data);
  },
@@ -52,7 +52,7 @@ export const networkService = {
  return client.delete<void>(`${BASE_URL}/${ntwrkId}`);
  },
 
- /** (紐⑤땲?곕쭅) ㅽ듃?뚰겕 ?쒕퉬님?곹깭 목록 조회 */
+ /** (명⑤땲?곕쭅) ㅽ듃?뚰겕 ?쒕퉬님?곹깭 목록 조회 */
  getStatus: async (params?: SearchParams): Promise<PageResponse<NetworkStatusDetailed>> => {
  return client.get<PageResponse<NetworkStatusDetailed>>('/admin/system/ntwrksvc-monitoring', { params });
  },
