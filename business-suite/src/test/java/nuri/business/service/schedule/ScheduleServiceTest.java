@@ -180,7 +180,7 @@ class ScheduleServiceTest {
         given(scheduleRepository.findAll(any(Pageable.class))).willReturn(Page.empty());
 
         // when
-        Page<ScheduleDto> result = scheduleService.getScheduleList(null, pageable);
+        scheduleService.getScheduleList(null, pageable);
 
         // then
         verify(scheduleRepository).findAll(pageable);

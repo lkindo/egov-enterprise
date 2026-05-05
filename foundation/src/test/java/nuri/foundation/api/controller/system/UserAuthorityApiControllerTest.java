@@ -2,7 +2,6 @@ package nuri.foundation.api.controller.system;
 
 import nuri.foundation.domain.auth.AuthorGroupProjection;
 import nuri.foundation.service.auth.UserAuthorityManageService;
-import nuri.foundation.service.auth.dto.UserAuthorityDto;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

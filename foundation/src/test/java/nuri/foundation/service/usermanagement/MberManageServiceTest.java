@@ -1,6 +1,5 @@
 package nuri.foundation.service.usermanagement;
 
-import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.domain.user.entity.GeneralUser;
 import nuri.foundation.domain.user.repository.GeneralUserRepository;
 import nuri.foundation.service.usermanagement.dto.GeneralUserDto;

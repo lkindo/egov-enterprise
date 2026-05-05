@@ -1,12 +1,10 @@
 package nuri.foundation.api.controller.code;
 
 import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.foundation.domain.common.BaseSearchDto;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.service.code.InstitutionCodeService;
 import nuri.foundation.service.code.dto.InstitutionCodeDto;
 import nuri.foundation.service.code.dto.InstitutionCodeRecptnDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

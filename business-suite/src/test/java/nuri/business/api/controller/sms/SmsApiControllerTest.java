@@ -1,6 +1,6 @@
 package nuri.business.api.controller.sms;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import nuri.business.service.sms.EgovSmsService;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;

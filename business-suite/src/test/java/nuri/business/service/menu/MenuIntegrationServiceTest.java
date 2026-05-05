@@ -34,8 +34,6 @@ class MenuIntegrationServiceTest {
         // given
         String uri = "/selectBoardList.do";
         String queryString = "bbsId=BBSMSTR_AAAAAAAAAAAA";
-        String contextPath = "/context";
-        
         List<MenuDto> menuHierarchy = new ArrayList<>();
         menuHierarchy.add(MenuDto.builder().menuNo(1L).menuNm("Root").children(new ArrayList<>()).build());
         

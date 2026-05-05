@@ -11,6 +11,7 @@ Navigation hub for project context.
 ### 02. Architecture & Tech
 - [Tech Stack](../docs/02-architecture/tech-stack.md)
 - [Frontend Architecture](../docs/02-architecture/frontend-architecture.md)
+- [Design System](../docs/02-architecture/design.md)
 - [Legacy Design (Archived)](../docs/archived/LLD.MD)
 
 ### 03. Development Guides

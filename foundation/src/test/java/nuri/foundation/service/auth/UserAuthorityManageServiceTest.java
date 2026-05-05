@@ -1,7 +1,6 @@
 package nuri.foundation.service.auth;
 
 import nuri.foundation.domain.auth.AuthorGroupProjection;
-import nuri.foundation.domain.auth.DeptAuthorProjection;
 import nuri.foundation.domain.auth.UserAuthority;
 import nuri.foundation.domain.auth.UserAuthorityRepository;
 import nuri.foundation.domain.common.BaseSearchDto;
