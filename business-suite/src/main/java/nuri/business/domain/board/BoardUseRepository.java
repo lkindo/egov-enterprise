@@ -14,4 +14,6 @@ public interface BoardUseRepository extends JpaRepository<BoardUse, BoardUseId> 
 
     @Query("SELECT bu FROM BoardUse bu WHERE bu.useAt = 'Y'")
     Page<BoardUse> findAllActive(Pageable pageable);
+
+    void deleteByBbsId(String bbsId);
 }

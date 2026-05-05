@@ -3,6 +3,7 @@ package nuri.business.domain.board;
 import java.time.LocalDateTime;
 import jakarta.persistence.EntityListeners;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.DynamicUpdate;
 
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.*;
@@ -21,6 +22,7 @@ import lombok.Builder;
 @Table(name = "NBBSMASTER")
 @SecondaryTable(name = "NBBSMASTEROPTN", pkJoinColumns = @PrimaryKeyJoinColumn(name = "BBS_ID", referencedColumnName = "BBS_ID"))
 @SuperBuilder
+@DynamicUpdate
 public class BoardMaster extends BaseEntity {
 
     @Id
@@ -124,6 +126,17 @@ public class BoardMaster extends BaseEntity {
         this.commentAt = commentAt;
         this.stsfdgAt = stsfdgAt;
     }
+
+    public void updateBbsNm(String bbsNm) { this.bbsNm = bbsNm; }
+    public void updateBbsIntrcn(String bbsIntrcn) { this.bbsIntrcn = bbsIntrcn; }
+    public void updateReplyPosblAt(String replyPosblAt) { this.replyPosblAt = replyPosblAt; }
+    public void updateFileAtchPosblAt(String fileAtchPosblAt) { this.fileAtchPosblAt = fileAtchPosblAt; }
+    public void updateAtchPosblFileNumber(Integer atchPosblFileNumber) { this.atchPosblFileNumber = atchPosblFileNumber; }
+    public void updateAtchPosblFileSize(Long atchPosblFileSize) { this.atchPosblFileSize = atchPosblFileSize; }
+    public void updateTmplatId(String tmplatId) { this.tmplatId = tmplatId; }
+    public void updateUseAt(String useAt) { this.useAt = useAt; }
+    public void updateCommentAt(String commentAt) { this.commentAt = commentAt; }
+    public void updateStsfdgAt(String stsfdgAt) { this.stsfdgAt = stsfdgAt; }
 
     public void delete() {
         this.useAt = "N";

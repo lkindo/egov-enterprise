@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.ErrorCode;
 import nuri.foundation.core.service.BaseAbstractService;
 import nuri.business.domain.board.*;
+import lombok.extern.slf4j.Slf4j;
 import nuri.business.service.board.dto.BlogDto;
 import nuri.business.service.board.dto.BoardMasterDto;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
@@ -18,21 +19,25 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service("egovBoardMasterService")
 public class BoardMasterService extends BaseAbstractService implements EgovBoardMasterService {
 
     private final BoardMasterRepository boardMasterRepository;
     private final BlogRepository blogRepository;
     private final BlogUserRepository blogUserRepository;
+    private final BoardUseRepository boardUseRepository;
     private final EgovIdGnrService idgenService;
 
     public BoardMasterService(BoardMasterRepository boardMasterRepository,
             BlogRepository blogRepository,
             BlogUserRepository blogUserRepository,
+            BoardUseRepository boardUseRepository,
             @Qualifier("egovBBSMstrIdGnrService") EgovIdGnrService idgenService) {
         this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
         this.blogRepository = required(blogRepository, "blogRepository 는 null 일 수 없습니다");
         this.blogUserRepository = required(blogUserRepository, "blogUserRepository 는 null 일 수 없습니다");
+        this.boardUseRepository = required(boardUseRepository, "boardUseRepository 는 null 일 수 없습니다");
         this.idgenService = required(idgenService, "idgenService 는 null 일 수 없습니다");
     }
 
@@ -111,17 +116,16 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
         BoardMaster entity = boardMasterRepository.findById(required(dto.getBbsId(), "dto.getBbsId() 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        entity.update(
-                dto.getBbsNm(),
-                dto.getBbsIntrcn(),
-                dto.getReplyPosblAt(),
-                dto.getFileAtchPosblAt(),
-                dto.getAtchPosblFileNumber(),
-                dto.getAtchPosblFileSize(),
-                dto.getTmplatId(),
-                dto.getUseAt(),
-                dto.getCommentAt(),
-                dto.getStsfdgAt());
+        if (dto.getBbsNm() != null) entity.updateBbsNm(dto.getBbsNm());
+        if (dto.getBbsIntrcn() != null) entity.updateBbsIntrcn(dto.getBbsIntrcn());
+        if (dto.getReplyPosblAt() != null) entity.updateReplyPosblAt(dto.getReplyPosblAt());
+        if (dto.getFileAtchPosblAt() != null) entity.updateFileAtchPosblAt(dto.getFileAtchPosblAt());
+        if (dto.getAtchPosblFileNumber() != null) entity.updateAtchPosblFileNumber(dto.getAtchPosblFileNumber());
+        if (dto.getAtchPosblFileSize() != null) entity.updateAtchPosblFileSize(dto.getAtchPosblFileSize());
+        if (dto.getTmplatId() != null) entity.updateTmplatId(dto.getTmplatId());
+        if (dto.getUseAt() != null) entity.updateUseAt(dto.getUseAt());
+        if (dto.getCommentAt() != null) entity.updateCommentAt(dto.getCommentAt());
+        if (dto.getStsfdgAt() != null) entity.updateStsfdgAt(dto.getStsfdgAt());
     }
 
     @Override
@@ -130,7 +134,15 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
         BoardMaster entity = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        entity.delete();
+        // 1. 게시판 사용 정보 삭제 (물리 삭제)
+        boardUseRepository.deleteByBbsId(bbsId);
+        
+        // 2. 게시판 마스터 정보 삭제 (물리 삭제)
+        // 기존 entity.delete()는 useAt='N'만 수행하므로 목록에 계속 남음.
+        // 사용자가 "완전 삭제"를 원하므로 repository.delete() 호출
+        boardMasterRepository.delete(entity);
+        
+        log.info("BoardMaster deleted: {} by user: {}", bbsId, userId);
     }
 
     @Override

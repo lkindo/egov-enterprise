@@ -16,16 +16,31 @@ import {
   Zap,
   ShieldCheck,
   MoreVertical,
-  FileText
+  FileText,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { boardAdminService, BoardMaster } from '@/services/foundation/system/BoardAdminService';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { PageHeader } from '@/app/components/layout/page-header';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useToast } from '@/app/components/ui/toast';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogHeader, 
+    DialogTitle, 
+    DialogDescription,
+    DialogFooter 
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { LucideIcon } from 'lucide-react';
 
 const container = {
@@ -53,14 +68,63 @@ interface InsightCardProps {
 
 export default function BoardMasterListPage() {
   const router = useRouter();
+  const confirm = useConfirm();
+  const { toast } = useToast();
   const [searchWrd, setSearchWrd] = useState('');
+  
+  // Settings Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState<BoardMaster | null>(null);
+  const [editData, setEditData] = useState<Partial<BoardMaster>>({});
 
-  const { data: boardData, isLoading } = useQuery({
+  const { data: boardData, isLoading, refetch } = useQuery({
     queryKey: ['boardMasters', searchWrd],
     queryFn: () => boardAdminService.getBoardMasterList({ searchWrd })
   });
 
   const boardList = (boardData?.list || []) as BoardMaster[];
+
+  const handleEdit = (board: BoardMaster) => {
+    setSelectedBoard(board);
+    setEditData({
+      bbsNm: board.bbsNm,
+      bbsIntrcn: board.bbsIntrcn,
+      useAt: board.useAt
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!selectedBoard || !selectedBoard.bbsId) return;
+    try {
+      await boardAdminService.updateBoardMaster(selectedBoard.bbsId, editData);
+      toast('게시판 설정이 업데이트되었습니다.', 'success');
+      setIsModalOpen(false);
+      refetch();
+    } catch (error) {
+      toast('업데이트 중 오류가 발생했습니다.', 'error');
+    }
+  };
+
+  const handleDelete = async (board: BoardMaster) => {
+    const isConfirmed = await confirm({
+      title: '게시판 완전 삭제',
+      message: `[${board.bbsNm}] 게시판을 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+      confirmText: '삭제',
+      variant: 'destructive'
+    });
+
+    if (isConfirmed && board.bbsId) {
+      try {
+        // userId는 현재 로그인한 사용자 정보를 사용해야 하나, 여기선 임시로 'admin' 사용
+        await boardAdminService.deleteBoardMaster(board.bbsId, 'admin');
+        toast('게시판이 삭제되었습니다.', 'success');
+        refetch();
+      } catch (error) {
+        toast('삭제 중 오류가 발생했습니다.', 'error');
+      }
+    }
+  };
 
   const columns: Column<BoardMaster>[] = [
     {
@@ -121,8 +185,21 @@ export default function BoardMasterListPage() {
       header: '작업 컨트롤',
       accessor: (board: BoardMaster) => (
         <div className="flex items-center justify-end gap-3 pr-6">
-           <Button size="icon" variant="ghost" className="w-12 h-12 rounded-xl text-muted-foreground hover:bg-primary hover:text-white transition-all shadow-sm">
+           <Button 
+              onClick={() => handleEdit(board)}
+              size="icon" 
+              variant="ghost" 
+              className="w-12 h-12 rounded-xl text-muted-foreground hover:bg-primary hover:text-white transition-all shadow-sm"
+           >
               <Settings2 size={20} />
+           </Button>
+           <Button 
+              onClick={() => handleDelete(board)}
+              size="icon" 
+              variant="ghost" 
+              className="w-12 h-12 rounded-xl text-muted-foreground hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+           >
+              <Trash2 size={20} />
            </Button>
            <Button 
               onClick={() => router.push(`/admin/community/boards/selectBoardList?bbsId=${board.bbsId}`)}
@@ -201,6 +278,74 @@ export default function BoardMasterListPage() {
            </Button>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[600px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-slate-900 p-10 text-white relative">
+             <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">
+                <Settings2 size={120} />
+             </div>
+             <DialogHeader className="relative z-10">
+                <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase">Board Configuration</DialogTitle>
+                <DialogDescription className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                   게시판 마스터 설정 매트릭스
+                </DialogDescription>
+             </DialogHeader>
+          </div>
+          
+          <div className="p-10 space-y-8 bg-white dark:bg-slate-950 transition-colors">
+             <div className="space-y-3">
+                <Label className="text-xs font-black text-slate-400 uppercase tracking-widest">게시판 명칭</Label>
+                <Input 
+                   id="modal-bbs-name"
+                   value={editData.bbsNm || ''} 
+                   onChange={(e) => setEditData({...editData, bbsNm: e.target.value})}
+                   className="h-14 rounded-xl border-2 font-bold text-lg focus:ring-4 focus:ring-primary/10 transition-all"
+                />
+             </div>
+
+             <div className="space-y-3">
+                <Label className="text-xs font-black text-slate-400 uppercase tracking-widest">게시판 소개</Label>
+                <Input 
+                   id="modal-bbs-description"
+                   value={editData.bbsIntrcn || ''} 
+                   onChange={(e) => setEditData({...editData, bbsIntrcn: e.target.value})}
+                   className="h-14 rounded-xl border-2 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
+                />
+             </div>
+
+             <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 transition-colors">
+                <div className="space-y-1">
+                   <p className="font-black text-slate-900 dark:text-white transition-colors">서비스 활성화 상태</p>
+                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter transition-colors text-left">활성화 시 모든 연결된 메뉴에서 서비스가 재개됩니다.</p>
+                </div>
+                <Switch 
+                   id="modal-bbs-use-at"
+                   checked={editData.useAt === 'Y'} 
+                   onCheckedChange={(checked) => setEditData({...editData, useAt: checked ? 'Y' : 'N'})}
+                   className="scale-125"
+                />
+             </div>
+
+             <div className="p-6 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-100 dark:border-rose-900/50 flex items-start gap-4 transition-colors">
+                <AlertTriangle className="text-rose-500 shrink-0 mt-1" size={20} />
+                <div className="space-y-1">
+                   <p className="font-black text-rose-900 dark:text-rose-100 text-sm transition-colors text-left">주의사항</p>
+                   <p className="text-[11px] text-rose-600/70 dark:text-rose-400 font-medium leading-relaxed transition-colors text-left">
+                      게시판을 비활성화(대기)하면 기존 링크를 통한 접근이 차단됩니다. 
+                      영구 삭제를 원하시면 목록의 삭제(휴지통) 아이콘을 사용하십시오.
+                   </p>
+                </div>
+             </div>
+          </div>
+
+          <DialogFooter className="p-8 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 transition-colors">
+             <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="h-14 px-8 rounded-xl font-bold">취소</Button>
+             <Button onClick={handleSave} className="h-14 px-10 rounded-xl bg-primary text-white font-black italic tracking-tighter hover:scale-105 transition-all shadow-xl shadow-primary/20">설정 적용하기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
