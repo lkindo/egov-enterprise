@@ -109,3 +109,21 @@ export const userListResponseSchema = z.object({
     totalPageCount: z.number(),
   }),
 });
+// --- 공통 코드 (Group) 스키마 ---
+export const codeSchema = z.object({
+  clCode: z.string().min(1, '분류 코드는 필수입니다.'),
+  codeId: z.string().min(1, '코드 ID는 필수입니다.'),
+  codeIdNm: z.string().min(1, '코드 명칭은 필수입니다.'),
+  codeIdDc: z.string().optional(),
+  useAt: z.enum(['Y', 'N']).default('Y'),
+});
+
+// --- 상세 코드 스키마 ---
+export const codeDetailSchema = z.object({
+  codeId: z.string().min(1, '코드 ID는 필수입니다.'),
+  code: z.string().min(1, '코드 값은 필수입니다.'),
+  codeNm: z.string().min(1, '코드 명칭은 필수입니다.'),
+  codeDc: z.string().optional(),
+  useAt: z.enum(['Y', 'N']).default('Y'),
+  ordr: z.coerce.number().optional().default(0),
+});

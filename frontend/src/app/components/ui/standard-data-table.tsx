@@ -1,9 +1,10 @@
-﻿import React, { useState, useMemo, memo, useCallback } from 'react';
+import React, { useState, useMemo, memo, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { List, Search, RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { motion, AnimatePresence } from "framer-motion";
 
 export interface Column<T> {
   header: string;
@@ -40,6 +41,7 @@ export interface StandardDataTableProps<T> {
     placeholder?: string;
     onSearch: (keyword: string) => void;
   };
+  stickyHeader?: boolean;
 }
 
 const DataRow = memo(function DataRow({
@@ -149,7 +151,6 @@ const MobileCard = memo(function MobileCard({
     </div>
   );
 });
-
 export function StandardDataTable<T extends { [key: string]: any }>({
   columns,
   data,
@@ -164,10 +165,12 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   error = null,
   onRetry,
   pagination,
-  search
+  search,
+  stickyHeader = true
 }: StandardDataTableProps<T>) {
+
   const [selectedIds, setSelectedIds] = useState<Set<any>>(new Set());
-  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   const selectedItems = useMemo(() =>
     (data || []).filter(item => item && selectedIds.has(item?.[keyField])),
@@ -212,53 +215,70 @@ export function StandardDataTable<T extends { [key: string]: any }>({
         </form>
       )}
 
-      {/* Bulk Action Toolbar - High Tech Style */}
-      {enableSelection && selectedIds.size > 0 && (
-        <div
-          className="flex items-center justify-between p-4 bg-primary text-white rounded-xl shadow-xl animate-in fade-in zoom-in-95"
-          role="toolbar"
-        >
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black opacity-60 tracking-widest uppercase">선택 모드</span>
-              <span className="text-sm font-black">{selectedIds.size}개의 항목 선택됨</span>
-            </div>
-            <div className="h-8 w-px bg-white/20" />
-            <div className="flex gap-2">
-              {bulkActions.map((action, idx) => (
-                <Button
-                  key={`bulk-action-${idx}`}
-                  size="sm"
-                  variant="secondary"
-                  className="h-9 px-4 rounded-xl font-black text-[10px] tracking-tight gap-2 shadow-lg"
-                  onClick={() => action.onClick(selectedItems)}
-                >
-                  {action.icon}
-                  {action.label.toUpperCase()}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSelectedIds(new Set())}
-            className="text-xs font-black h-9 px-4 hover:bg-white/10 text-white/80"
+      {/* Floating Bulk Action Bar - Enterprise Premium Style */}
+      <AnimatePresence>
+        {enableSelection && selectedIds.size > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 100, opacity: 0, scale: 0.95 }}
+            className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] flex items-center justify-between min-w-[500px] max-w-[90vw] p-2 bg-slate-900/90 dark:bg-slate-900/95 backdrop-blur-2xl text-white rounded-[var(--radius-hub-section)] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden"
+            role="toolbar"
           >
-            선택 해제
-          </Button>
-        </div>
-      )}
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-30 pointer-events-none" />
+            <div className="flex items-center gap-6 px-6 relative z-10">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-black opacity-40 tracking-[0.3em] uppercase italic">Selection_Active</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-black italic text-primary">{selectedIds.size}</span>
+                  <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest">items selected</span>
+                </div>
+              </div>
+              
+              <div className="h-10 w-px bg-white/10" />
+              
+              <div className="flex gap-2 p-1">
+                {bulkActions.map((action, idx) => (
+                  <Button
+                    key={`bulk-action-${idx}`}
+                    size="sm"
+                    className="h-12 px-6 rounded-[var(--radius-hub-item)] font-black text-[10px] tracking-widest gap-2 bg-white/10 hover:bg-white text-white hover:text-slate-900 transition-all border border-white/5 hover:border-white shadow-xl group"
+                    onClick={() => action.onClick(selectedItems)}
+                  >
+                    {action.icon && <span className="group-hover:scale-110 transition-transform">{action.icon}</span>}
+                    {action.label.toUpperCase()}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="pr-2 relative z-10">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedIds(new Set())}
+                className="h-12 px-6 rounded-[var(--radius-hub-item)] text-[10px] font-black tracking-widest uppercase hover:bg-white/5 text-white/40 hover:text-white transition-colors"
+              >
+                Clear All
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 1. Desktop View - Glass Style Table */}
       <div className={cn(
-        "hidden md:block w-full overflow-hidden border-2 border-border/60 bg-card shadow-sm transition-all",
-        isPremium ? "rounded-xl" : "rounded-xl"
+        "hidden md:block w-full border-2 border-border/60 bg-card shadow-sm transition-all relative",
+        isPremium ? "rounded-[var(--radius-hub-section)]" : "rounded-xl",
+        stickyHeader ? "max-h-[700px] overflow-auto" : "overflow-hidden"
       )}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left border-collapse">
-            <thead>
-              <tr className="bg-muted/40 border-b-2 border-border/80">
+        <div className="w-full">
+          <table className={cn(
+            "w-full text-sm text-left border-collapse",
+            stickyHeader && "table-sticky-header"
+          )}>
+            <thead className="relative z-20">
+              <tr className="bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xl border-b-2 border-border/80">
                 {enableSelection && (
                   <th className="px-6 py-5 w-16 text-center" scope="col">
                     <Checkbox
@@ -270,10 +290,13 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 )}
                 {columns.map((column, idx) => (
                   <th key={`header-${idx}`} className={cn(
-                    "px-6 py-5 font-black text-slate-800 text-[10px] uppercase tracking-[0.2em] whitespace-nowrap",
+                    "px-6 py-5 font-black text-slate-900 dark:text-slate-100 text-[10px] uppercase tracking-[0.25em] whitespace-nowrap",
                     column.className
                   )} scope="col">
-                    {column.header}
+                    <div className="flex items-center gap-2">
+                      {column.header}
+                      <div className="w-1 h-1 bg-primary/30 rounded-full" />
+                    </div>
                   </th>
                 ))}
               </tr>

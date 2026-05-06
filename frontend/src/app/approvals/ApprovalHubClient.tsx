@@ -96,6 +96,15 @@ export default function ApprovalHubClient() {
     ];
   }, [selectedItem]);
 
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const handleQuickAction = async (e: React.MouseEvent, item: Approval, status: 'Y' | 'N') => {
+    e.stopPropagation(); // Prevents selection of the item
+    setProcessingId(item.approvalId);
+    await handleAction(item, status);
+    setProcessingId(null);
+  };
+
   const renderApprovalList = () => (
     <div className="space-y-3">
       {list.length === 0 ? (
@@ -116,6 +125,40 @@ export default function ApprovalHubClient() {
                 : "bg-white border-slate-50 hover:border-primary/20 shadow-sm"
             )}
           >
+            {/* Quick Action Overlay (Only for Pending) */}
+            <AnimatePresence>
+              {activeTab === 'PENDING' && item.status === 'R' && processingId !== item.approvalId && (
+                <motion.div 
+                  initial={{ opacity: 0, x: 20 }}
+                  whileHover={{ opacity: 1, x: 0 }}
+                  className="absolute inset-y-0 right-0 px-6 bg-gradient-to-l from-white via-white/95 to-transparent dark:from-slate-800 dark:via-slate-800/95 flex items-center gap-2 opacity-0 transition-opacity z-20"
+                >
+                  <Button 
+                    size="sm"
+                    onClick={(e) => handleQuickAction(e, item, 'Y')}
+                    className="h-9 px-4 rounded-xl bg-emerald-500 text-white font-black text-[10px] shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 border-none"
+                  >
+                    <Check size={14} className="mr-1" /> APPROVE
+                  </Button>
+                  <Button 
+                    size="sm"
+                    variant="destructive"
+                    onClick={(e) => handleQuickAction(e, item, 'N')}
+                    className="h-9 px-4 rounded-xl font-black text-[10px] shadow-lg shadow-rose-500/20 border-none"
+                  >
+                    <X size={14} className="mr-1" /> REJECT
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Processing Loader */}
+            {processingId === item.approvalId && (
+              <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center z-30">
+                <Loader2 size={24} className="text-primary animate-spin" />
+              </div>
+            )}
+
             <div className="flex items-center gap-5 relative z-10">
               <div className={cn(
                 "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all",

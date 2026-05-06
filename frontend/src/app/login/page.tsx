@@ -71,12 +71,15 @@ function LoginContent() {
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" />
 
             <motion.div 
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
+                transition={{ 
+                    duration: 0.8, 
+                    ease: [0.16, 1, 0.3, 1] 
+                }}
                 className="w-full max-w-md relative z-10 px-4"
             >
-                <Card className="relative overflow-hidden border-0 shadow-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl">
+                <Card className="relative overflow-hidden border-0 shadow-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[var(--radius-hub-section)]">
                     
                     {/* Advanced Loading Overlay (Functionality Ported) */}
                     <AnimatePresence>
@@ -112,9 +115,14 @@ function LoginContent() {
                     </AnimatePresence>
 
                     <CardHeader className="space-y-2 text-center pt-10">
-                        <div className="w-12 h-12 bg-primary/10 rounded-xl mx-auto flex items-center justify-center mb-2">
+                        <motion.div 
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.3, duration: 0.5 }}
+                            className="w-12 h-12 bg-primary/10 rounded-[var(--radius-hub-item)] mx-auto flex items-center justify-center mb-2"
+                        >
                             <Zap className="text-primary w-6 h-6 fill-primary" />
-                        </div>
+                        </motion.div>
                         <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                             엔터프라이즈
                         </CardTitle>
@@ -125,26 +133,36 @@ function LoginContent() {
 
                     <form onSubmit={handleSubmit}>
                         <CardContent className="space-y-5 px-8">
-                            <div className="space-y-2">
-                                <Label htmlFor="id" className="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">사용자 아이디</Label>
+                            <motion.div 
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.4 }}
+                                className="space-y-2"
+                            >
+                                <Label htmlFor="id" className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono italic ml-1">Identity_Protocol</Label>
                                 <div className="relative group">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="id"
                                         name="id"
-                                        placeholder="시스템 아이디를 입력하세요"
+                                        placeholder="Enter Node ID..."
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
-                                        className="h-12 pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all shadow-sm"
+                                        className="h-14 pl-12 rounded-[var(--radius-hub-item)] border-slate-100 bg-slate-50/50 focus:bg-white transition-all shadow-inner font-mono text-sm"
                                         autoComplete="username"
                                     />
                                 </div>
-                            </div>
+                            </motion.div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="password" className="text-xs font-semibold text-slate-600 dark:text-slate-400 ml-1">액세스 키</Label>
+                            <motion.div 
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.5 }}
+                                className="space-y-2"
+                            >
+                                <Label htmlFor="password" className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono italic ml-1">Access_Sequence</Label>
                                 <div className="relative group">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="password"
                                         name="password"
@@ -152,7 +170,7 @@ function LoginContent() {
                                         placeholder="············"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="h-12 pl-10 pr-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all shadow-sm"
+                                        className="h-14 pl-12 pr-12 rounded-[var(--radius-hub-item)] border-slate-100 bg-slate-50/50 focus:bg-white transition-all shadow-inner font-mono"
                                         autoComplete="current-password"
                                     />
                                     <Button
@@ -160,44 +178,55 @@ function LoginContent() {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 text-slate-400 hover:text-slate-900 rounded-lg"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-slate-300 hover:text-slate-900 rounded-lg"
                                     >
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </Button>
                                 </div>
-                            </div>
+                            </motion.div>
 
-                            <div className="flex items-center justify-between px-1">
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.6 }}
+                                className="flex items-center justify-between px-1"
+                            >
                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="remember" className="rounded-md border-slate-300" />
-                                    <Label htmlFor="remember" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
-                                        로그인 상태 유지
+                                    <Label htmlFor="remember" className="text-[10px] font-black text-slate-500 tracking-widest uppercase font-mono italic cursor-pointer select-none">
+                                        Keep_Session
                                     </Label>
                                 </div>
-                                <Button variant="link" className="text-xs font-semibold text-primary p-0 h-auto">비밀번호 찾기</Button>
-                            </div>
+                                <Button variant="link" className="text-[10px] font-black text-primary tracking-widest uppercase font-mono italic p-0 h-auto">Forgot_Key?</Button>
+                            </motion.div>
 
                             {error && (
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    data-testid="login-error"
-                                    className="text-xs font-bold text-rose-500 text-center bg-rose-50 p-3 rounded-xl border border-rose-100"
+                                    className="text-[10px] font-black text-rose-500 text-center bg-rose-50 p-4 rounded-[var(--radius-hub-item)] border border-rose-100 animate-shake uppercase font-mono italic"
                                 >
-                                    {error}
+                                    Error: {error}
                                 </motion.div>
                             )}
                         </CardContent>
 
                         <CardFooter className="px-8 pb-10 pt-2">
-                            <Button 
-                                className="w-full h-12 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-sm shadow-lg transition-all active:scale-[0.98] flex items-center gap-2" 
-                                type="submit" 
-                                disabled={isSubmitting}
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.7 }}
+                                className="w-full"
                             >
-                                <LogIn className="h-4 w-4" /> 
-                                시스템 접속하기
-                            </Button>
+                                <Button 
+                                    className="w-full h-14 rounded-[var(--radius-hub-item)] bg-slate-900 hover:bg-primary text-white font-black text-[11px] tracking-[0.2em] uppercase shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 group" 
+                                    type="submit" 
+                                    disabled={isSubmitting}
+                                >
+                                    <LogIn className="h-4 w-4 group-hover:translate-x-1 transition-transform" /> 
+                                    Initialize_System_Link
+                                </Button>
+                            </motion.div>
                         </CardFooter>
                     </form>
                 </Card>

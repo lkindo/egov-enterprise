@@ -3,6 +3,7 @@ package nuri.foundation.service.user;
 import nuri.foundation.service.user.dto.UserDto;
 import nuri.foundation.service.user.dto.UserResponse;
 import nuri.foundation.service.user.dto.UserSignupRequest;
+import nuri.foundation.domain.user.entity.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
@@ -44,6 +45,11 @@ public interface EgovUserService {
     UserDto getUserById(@NonNull String userId);
 
     /**
+     * 아이디 중복 여부 확인
+     */
+    boolean checkIdDplct(@NonNull String userId);
+
+    /**
      * 사용자 등록
      */
     String registerUser(@NonNull String userId, @NonNull String password, @NonNull String userNm,
@@ -62,6 +68,11 @@ public interface EgovUserService {
     boolean verifyPassword(@NonNull String rawPassword, @NonNull String encodedPassword);
 
     /**
+     * 비밀번호 변경
+     */
+    void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword);
+
+    /**
      * 사용자 정보 수정
      */
     void updateUser(@NonNull String userId, @NonNull UserDto userDto);
@@ -70,4 +81,29 @@ public interface EgovUserService {
      * 사용자 삭제
      */
     void deleteUser(@NonNull String userId);
+
+    /**
+     * 여러 사용자 삭제
+     */
+    void deleteUserList(@NonNull List<String> userIds);
+
+    /**
+     * 여러 사용자의 상태를 한꺼번에 변경합니다.
+     */
+    void updateUsersStatus(@NonNull List<String> userIds, @NonNull String status);
+
+    /**
+     * 여러 사용자의 소속 부서를 한꺼번에 변경합니다.
+     */
+    void moveUsersToDept(@NonNull List<String> userIds, @NonNull String orgnztId);
+
+    /**
+     * 여러 사용자의 권한을 한꺼번에 변경합니다.
+     */
+    void updateUsersRole(@NonNull List<String> userIds, @NonNull Role role);
+
+    /**
+     * 관리자 권한으로 비밀번호를 변경합니다.
+     */
+    void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword);
 }

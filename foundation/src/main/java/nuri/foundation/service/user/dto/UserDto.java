@@ -80,6 +80,7 @@ public class UserDto {
     private String ofcpsNm;
     private String subDn;
     private String userSe;
+    private String userSttusCode;
     private LocalDateTime createdDate;
 
     // 레거시 테스트 호환용 생성자
@@ -120,6 +121,7 @@ public class UserDto {
                 .emailAdres(user.getEmailAdres())
                 .ofcpsNm(user.getOfcpsNm())
                 .subDn(user.getSubDn())
+                .userSttusCode(user.getEmpStatus())
                 .createdDate(user.getCreatedDate())
                 .build();
     }

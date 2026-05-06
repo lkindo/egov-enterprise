@@ -18,7 +18,8 @@ import {
   MoreVertical,
   FileText,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Lock
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -256,6 +257,26 @@ export default function BoardMasterListPage() {
           columns={columns}
           data={boardList}
           loading={isLoading}
+          isPremium={true}
+          enableSelection={true}
+          bulkActions={[
+            {
+              label: '일괄 활성화',
+              icon: <Zap size={16} />,
+              onClick: (items) => toast(`${items.length}개의 게시판이 즉시 활성화됩니다.`, 'success')
+            },
+            {
+              label: '일괄 비활성',
+              icon: <Lock size={16} />,
+              onClick: (items) => toast(`${items.length}개의 게시판이 대기 상태로 전환됩니다.`, 'info')
+            },
+            {
+              label: '완전 말소',
+              icon: <Trash2 size={16} />,
+              variant: 'destructive',
+              onClick: (items) => toast(`${items.length}개의 마스터 데이터 말소 프로세스 가동.`, 'error')
+            }
+          ]}
           search={{
             placeholder: '게시판 명칭, 시스템 ID 검색..',
             onSearch: (keyword) => setSearchWrd(keyword)

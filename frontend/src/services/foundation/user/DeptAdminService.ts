@@ -40,6 +40,11 @@ class DeptAdminService extends AdminService {
   async deleteDept(deptId: string, config?: AxiosRequestConfig) {
     return this.delete<void>(`/${deptId}`, config);
   }
+
+  /** 부서 계층 및 순서 일괄 수정 (현대화 트리 대응) */
+  async updateDeptHierarchy(data: any[], config?: AxiosRequestConfig) {
+    return this.put<void>('/batch-hierarchy', data, { ...config, timeout: 60000 });
+  }
 }
 
 export const deptAdminService = new DeptAdminService();

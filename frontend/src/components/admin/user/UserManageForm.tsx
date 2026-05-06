@@ -17,6 +17,7 @@ import { UserManage } from '@/types/foundation/user';
 import { Department } from '@/services/foundation/system/DeptAdminService';
 import { cn } from '@/lib/utils';
 import { Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const userSchema = z.object({
   userId: z.string().min(1, '아이디는 필수입니다.').max(20, '아이디는 20자 이내여야 합니다.'),
@@ -58,42 +59,56 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
           <FormField
             control={form.control}
             name="userId"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                  사용자 아이디 (Identity_ID) <span className="text-rose-500 font-extrabold text-[10px]">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    readOnly={mode === 'edit'}
-                    className={cn(
-                      "h-14 rounded-xl text-xs font-mono font-black tracking-widest uppercase shadow-inner",
-                      mode === 'edit' && "bg-muted/50 border-none"
-                    )}
-                    placeholder="ID (MIN_1)"
-                  />
-                </FormControl>
-                <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+                <motion.div
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  transition={{ duration: 0.4 }}
+                >
+                  <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                    사용자 아이디 (Identity_ID) <span className="text-rose-500 font-extrabold text-[10px]">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      readOnly={mode === 'edit'}
+                      className={cn(
+                        "h-14 rounded-xl text-xs font-mono font-black tracking-widest uppercase shadow-inner transition-all",
+                        mode === 'edit' ? "bg-muted/50 border-none" : "focus:ring-4 focus:ring-primary/10",
+                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                      )}
+                      placeholder="ID (MIN_1)"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+                </motion.div>
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
             name="userNm"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                  사용자 성함 <span className="text-rose-500 font-extrabold text-[10px]">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    className="h-14 rounded-xl text-sm font-black tracking-tight"
-                    placeholder="NAME"
-                  />
-                </FormControl>
-                <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+                <motion.div
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  transition={{ duration: 0.4 }}
+                >
+                  <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                    사용자 성함 <span className="text-rose-500 font-extrabold text-[10px]">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      className={cn(
+                        "h-14 rounded-xl text-sm font-black tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
+                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                      )}
+                      placeholder="NAME"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+                </motion.div>
               </FormItem>
             )}
           />
@@ -103,38 +118,54 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
           <FormField
             control={form.control}
             name="emailAdres"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                  이메일 주소
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    className="h-14 rounded-xl text-xs font-medium border-slate-100 shadow-sm"
-                    placeholder="example@nuri.com"
-                  />
-                </FormControl>
-                <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+                <motion.div
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  transition={{ duration: 0.4 }}
+                >
+                  <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                    이메일 주소
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      className={cn(
+                        "h-14 rounded-xl text-xs font-medium border-slate-100 shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                      )}
+                      placeholder="example@nuri.com"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+                </motion.div>
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
             name="moblphonNo"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                  연락처
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    className="h-14 rounded-xl text-xs font-medium border-slate-100 shadow-sm"
-                    placeholder="010-0000-0000"
-                  />
-                </FormControl>
-                <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+                <motion.div
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  transition={{ duration: 0.4 }}
+                >
+                  <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                    연락처
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      className={cn(
+                        "h-14 rounded-xl text-xs font-medium border-slate-100 shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                      )}
+                      placeholder="010-0000-0000"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+                </motion.div>
               </FormItem>
             )}
           />
@@ -144,20 +175,28 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
           <FormField
             control={form.control}
             name="password"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                  초기 비밀번호 <span className="text-rose-500 font-extrabold text-[10px]">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="password"
-                    className="h-14 rounded-xl text-xs border-slate-100 shadow-sm"
-                    placeholder="PASSWORD (MIN_8)"
-                  />
-                </FormControl>
-                <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+                <motion.div
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  transition={{ duration: 0.4 }}
+                >
+                  <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                    초기 비밀번호 <span className="text-rose-500 font-extrabold text-[10px]">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="password"
+                      className={cn(
+                        "h-14 rounded-xl text-xs border-slate-100 shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                      )}
+                      placeholder="PASSWORD (MIN_8)"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+                </motion.div>
               </FormItem>
             )}
           />
@@ -166,23 +205,31 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
         <FormField
           control={form.control}
           name="orgnztId"
-          render={({ field }) => (
+          render={({ field, fieldState }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                소속 부서
-              </FormLabel>
-              <FormControl>
-                <select
-                  {...field}
-                  className="w-full h-14 px-6 rounded-xl border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none shadow-inner"
-                >
-                  <option value="">소속 없음 / GLOBAL</option>
-                  {(departments || []).filter(Boolean).map((d: any) => (
-                    <option key={d.orgnztId} value={d.orgnztId}>{d.orgnztNm}</option>
-                  ))}
-                </select>
-              </FormControl>
-              <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+              <motion.div
+                  animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                  transition={{ duration: 0.4 }}
+              >
+                <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  소속 부서
+                </FormLabel>
+                <FormControl>
+                  <select
+                    {...field}
+                    className={cn(
+                        "w-full h-14 px-6 rounded-xl border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none shadow-inner transition-all",
+                        fieldState.error ? "border-rose-500 ring-rose-500/10 ring-4" : "focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
+                    )}
+                  >
+                    <option value="">소속 없음 / GLOBAL</option>
+                    {(departments || []).filter(Boolean).map((d: any) => (
+                      <option key={d.orgnztId} value={d.orgnztId}>{d.orgnztNm}</option>
+                    ))}
+                  </select>
+                </FormControl>
+                <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+              </motion.div>
             </FormItem>
           )}
         />

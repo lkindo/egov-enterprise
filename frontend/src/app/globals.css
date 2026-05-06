@@ -52,6 +52,14 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  /* Custom Animations */
+  --animate-shake: shake 0.2s ease-in-out;
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
 }
 
 @layer base {
@@ -59,8 +67,8 @@
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
-    /* Hub Accent Colors */
-    --hub-blue: 221.2 83.2% 45%;
+    /* Hub Accent Colors (Updated to #0055FF) */
+    --hub-blue: 219 100% 50%;
     --hub-orange: 24.6 95% 45%;
     --hub-purple: 262.1 83.3% 50%;
     --hub-emerald: 142.1 70.6% 35%;
@@ -112,6 +120,10 @@
     --radius-hub-section: 3.5rem;       /* Hub main section cards */
     --radius-hub-widget: 2rem;          /* Hub mini widgets */
     --radius-hub-item: 1.5rem;          /* Hub list items / Summaries */
+
+    --gap-base: 1rem;
+    --gap-hub-section: 3rem;            /* Spacing between major sections (48px) */
+    --gap-hub-widget: 1.5rem;           /* Spacing between widgets (24px) */
     
     --shadow-hub-premium: 0 32px 64px -16px rgba(0, 0, 0, 0.08);
     --color-premium-slate: 222.2 47.4% 11.2%; /* slate-900 equivalent */
@@ -300,5 +312,31 @@
     color: rgba(255, 255, 255, 0.01) !important; /* Near transparent but technically visible */
     pointer-events: none !important;
     z-index: 9999 !important;
+  }
+
+  /* --- Enterprise Table Utilities --- */
+  .table-sticky-header thead {
+    @apply sticky top-0 z-10 bg-background/95 backdrop-blur-sm shadow-sm;
+  }
+
+  .table-resizing {
+    @apply cursor-col-resize select-none;
+  }
+
+  /* --- Phase 6: Performance & A11y Fallbacks --- */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  @supports not (backdrop-filter: blur(1px)) {
+    .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .standard-glass, .hub-card-section {
+      @apply bg-background/95 dark:bg-slate-900/95;
+      backdrop-filter: none !important;
+    }
   }
 }

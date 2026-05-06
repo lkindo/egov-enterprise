@@ -1,73 +1,196 @@
-'use client';
-
-import React, { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { StandardModal } from '@/app/components/ui/standard-modal';
-import { FormField } from '@/app/components/ui/standard-form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-    Plus,
-    Settings,
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragOverlay,
+    defaultDropAnimationSideEffects,
+    DragStartEvent,
+    DragOverEvent,
+    DragEndEvent,
+    MeasuringStrategy,
+    DropAnimation,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { createPortal } from 'react-dom';
+import { flattenCodeTree, rebuildCodeTree, getCodeProjection, FlattenedCodeNode } from './treeUtils';
+import { cn } from '@/lib/utils';
+import { 
+    Layers, 
+    Tag, 
+    Database, 
+    Search, 
+    SearchSlash, 
+    Plus, 
+    RefreshCcw, 
+    Settings, 
     Trash2,
-    Search,
-    Database,
     LayoutGrid,
     Fingerprint,
-    Tag,
-    Cpu,
-    Layers,
-    Box,
-    Hash,
-    Maximize2,
-    ChevronRight,
-    SearchSlash,
-    RefreshCcw
+    Save
 } from 'lucide-react';
-import { DomainCluster, GroupCode, CodeDetail } from '@/types/foundation/code';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { cn } from '@/lib/utils';
-import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
-import {
-    saveCmmnCode as saveGroupCodeAction,
-    deleteCmmnCode as deleteGroupCodeAction,
-    saveCodeDetail as saveCodeDetailAction,
-    deleteCodeDetail as deleteCodeDetailAction
-} from '@/app/actions/codeActions';
-import { CmmnClCode, CmmnCode } from '@/types/foundation/system';
-import { z } from 'zod';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import React from 'react';
 import { useAppForm } from '@/hooks/useAppForm';
-import {
-    Form,
-    FormControl,
-    FormField as ShadcnFormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+import { codeDetailSchema } from '@/lib/validation/schemas';
+import { 
+    Form, 
+    FormControl, 
+    FormField as ShadcnFormField, 
+    FormItem, 
+    FormLabel, 
+    FormMessage 
 } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
+import { StandardModal } from '@/app/components/ui/standard-modal';
+import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
+import { 
+    saveCodeDetail, 
+    deleteCodeDetail,
+    saveCmmnCodeHierarchyAction
+} from '@/app/actions/codeActions';
+import { 
+    CmmnClCode, 
+    CmmnCode, 
+    CmmnDetailCode 
+} from '@/types/foundation/system';
+import { DomainCluster, GroupCode } from '@/types/foundation/code';
 
-const codeDetailSchema = z.object({
-    code: z.string().min(1, '코드는 필수 입력 사항입니다.'),
-    codeNm: z.string().min(1, '코드 명칭은 필수 입력 사항입니다.'),
-    useAt: z.enum(['Y', 'N']),
-    codeDc: z.string().optional()
-});
+const INDENTATION_WIDTH = 24;
 
-type CodeDetailFormValues = z.infer<typeof codeDetailSchema>;
+const dropAnimation: DropAnimation = {
+    sideEffects: defaultDropAnimationSideEffects({
+        styles: {
+            active: {
+                opacity: '0.5',
+            },
+        },
+    }),
+};
+
+interface SortableCodeNodeProps {
+    node: FlattenedCodeNode;
+    isSelected: boolean;
+    onClick: () => void;
+    isOverlay?: boolean;
+}
+
+const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: SortableCodeNodeProps) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: node.id });
+
+    const style = {
+        transform: isOverlay ? undefined : CSS.Translate.toString(transform),
+        transition: isOverlay ? undefined : transition,
+        paddingLeft: isOverlay ? 0 : `${node.depth * INDENTATION_WIDTH}px`,
+    };
+
+    const isCluster = node.type === 'cluster';
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={cn(
+                "group relative mb-1 outline-none",
+                isDragging && !isOverlay && "opacity-30",
+                isOverlay && "z-[9999] pointer-events-none"
+            )}
+        >
+            {/* Hierarchy Line for Groups */}
+            {!isCluster && !isOverlay && (
+                <div className="absolute left-[11px] top-[-10px] bottom-1/2 w-px bg-slate-200" />
+            )}
+            {!isCluster && !isOverlay && (
+                <div className="absolute left-[11px] top-1/2 w-3 h-px bg-slate-200" />
+            )}
+
+            <button
+                type="button"
+                {...attributes}
+                {...listeners}
+                onClick={onClick}
+                className={cn(
+                    "w-full flex items-center justify-between p-3 rounded-xl transition-all relative overflow-hidden",
+                    isCluster 
+                        ? "bg-slate-50/50 hover:bg-slate-100/50 border border-transparent" 
+                        : "hover:bg-slate-50 border border-transparent",
+                    isSelected && isCluster && "bg-slate-900 text-white shadow-xl border-slate-800",
+                    isSelected && !isCluster && "bg-primary text-white shadow-lg shadow-primary/20 border-primary/20",
+                    isOverlay && "bg-white shadow-2xl border-primary ring-4 ring-primary/5 scale-105"
+                )}
+            >
+                <div className="flex items-center gap-3 truncate relative z-10 w-full">
+                    <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0",
+                        isCluster 
+                            ? (isSelected ? "bg-primary/20 text-primary" : "bg-white text-slate-400 border border-slate-100 shadow-sm")
+                            : (isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500 group-hover:text-primary")
+                    )}>
+                        {isCluster ? <Layers size={14} /> : <Tag size={14} />}
+                    </div>
+                    <div className="flex flex-col truncate items-start">
+                        <span className={cn(
+                            "text-[11px] font-black truncate leading-tight uppercase tracking-tight",
+                            isSelected ? "text-white" : "text-slate-900"
+                        )}>
+                            {node.name}
+                        </span>
+                        <span className={cn(
+                            "text-[9px] font-mono font-bold tracking-tighter opacity-60",
+                            isSelected ? "text-white" : "text-slate-500"
+                        )}>
+                            {node.id}
+                        </span>
+                    </div>
+                    {isSelected && (
+                        <div className="ml-auto">
+                            <div className={cn(
+                                "w-1.5 h-1.5 rounded-full",
+                                isCluster ? "bg-primary animate-pulse" : "bg-white animate-pulse"
+                            )} />
+                        </div>
+                    )}
+                </div>
+                
+                {/* Background decorative elements for selected cluster */}
+                {isSelected && isCluster && (
+                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                        <Layers size={40} />
+                    </div>
+                )}
+            </button>
+        </div>
+    );
+};
 
 interface CommonCodeClientProps {
     clCodes: CmmnClCode[];
     groups: CmmnCode[];
-    details: CodeDetail[];
-    selectedGroupId: string | null;
+    details: CmmnDetailCode[];
+    selectedGroupId?: string | null;
 }
 
 export default function CommonCodeClient({
@@ -83,7 +206,13 @@ export default function CommonCodeClient({
     // --- State ---
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsOpen] = useState(false);
-    const [editingDetail, setEditingDetail] = useState<CodeDetail | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [editingDetail, setEditingDetail] = useState<CmmnDetailCode | null>(null);
+    
+    // D&D States
+    const [flattenedNodes, setFlattenedNodes] = useState<FlattenedCodeNode[]>([]);
+    const [activeId, setActiveId] = useState<string | null>(null);
+    const [hasExplorerChanges, setHasExplorerChanges] = useState(false);
 
     const form = useAppForm(codeDetailSchema, {
         defaultValues: {
@@ -114,38 +243,90 @@ export default function CommonCodeClient({
         }
     }, [isModalOpen, editingDetail, form]);
 
-    const initialClusters: DomainCluster[] = React.useMemo(() => {
+    const initialClusters = React.useMemo(() => {
         const safeClCodes = Array.isArray(clCodes) ? clCodes.filter(Boolean) : [];
         const safeGroups = Array.isArray(groups) ? groups.filter(Boolean) : [];
         const safeDetails = Array.isArray(details) ? details.filter(Boolean) : [];
 
         return safeClCodes.map(cl => ({
-            ...(cl as CmmnClCode),
-            id: cl.clCode,
-            name: cl.clCodeNm,
-            icon: Layers,
+            ...cl,
+            id: cl.clCode || '',
+            name: cl.clCodeNm || '',
             groups: safeGroups
                 .filter(g => g.clCode === cl.clCode)
                 .map(g => ({
-                    ...(g as CmmnCode),
-                    id: g.codeId,
-                    codeId: g.codeId,
-                    name: g.codeIdNm,
-                    icon: LayoutGrid,
-                    description: g.codeIdDc,
+                    ...g,
                     details: g.codeId === selectedGroupId ? safeDetails : []
-                }))
-        }));
+                })) as GroupCode[]
+        })) as DomainCluster[];
     }, [clCodes, groups, details, selectedGroupId]);
 
-    const [selectedCluster, setSelectedCluster] = useState<DomainCluster>(
-        initialClusters[0] || {
-            id: '', name: '전체', groups: [],
-            clCode: '', clCodeNm: '', clCodeDc: '', useAt: 'N'
-        }
-    );
+    useEffect(() => {
+        setFlattenedNodes(flattenCodeTree(initialClusters));
+    }, [initialClusters]);
+
+    const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
     const [selectedGroup, setSelectedGroup] = useState<GroupCode | null>(null);
     const [detailsLoading, setDetailsLoading] = useState(false);
+
+    // D&D Handlers
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
+
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveId(event.active.id as string);
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        
+        if (over && active.id !== over.id) {
+            setFlattenedNodes((items) => {
+                const oldIndex = items.findIndex(n => n.id === active.id);
+                const newIndex = items.findIndex(n => n.id === over.id);
+                
+                const newItems = arrayMove(items, oldIndex, newIndex);
+                const activeItem = items[oldIndex];
+                
+                // If it's a group, ensure it has a parent cluster
+                if (activeItem.type === 'group') {
+                    // Re-calculate projection to find parent
+                    const proj = getCodeProjection(newItems, active.id as string, over.id as string, 0, INDENTATION_WIDTH);
+                    if (proj) {
+                        const idx = newItems.findIndex(n => n.id === active.id);
+                        newItems[idx] = { ...newItems[idx], parentId: proj.parentId };
+                    }
+                }
+                
+                return newItems;
+            });
+            setHasExplorerChanges(true);
+            toast('코드 도메인 구조가 재구성되었습니다.', 'info');
+        }
+
+        setActiveId(null);
+    };
+
+    const handleSaveExplorerChanges = async () => {
+        setIsSaving(true);
+        try {
+            const res = await saveCmmnCodeHierarchyAction(flattenedNodes);
+            if (res.success) {
+                toast(res.message, 'success');
+                setHasExplorerChanges(false);
+                router.refresh();
+            } else {
+                toast(res.message, 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            toast('계층 구조 저장 중 오류 발생', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     // Fetch Details on the client side to avoid full page reloads
     const loadGroupDetails = async (group: GroupCode) => {
@@ -162,13 +343,13 @@ export default function CommonCodeClient({
 
             // Failsafe: Filter details on client side just in case backend returns all items
             const fetchedDetails = (res.list || []).filter(item =>
-                item && (item as CodeDetail).codeId === group.codeId
+                item && (item as CmmnDetailCode).codeId === group.codeId
             );
 
             // 2. Update state directly
             setSelectedGroup({
                 ...group,
-                details: fetchedDetails as CodeDetail[]
+                details: fetchedDetails as CmmnDetailCode[]
             });
         } catch (error) {
             toast('상세 코드를 불러오는 중 오류가 발생했습니다.', 'error');
@@ -185,31 +366,32 @@ export default function CommonCodeClient({
                 if (cluster) {
                     const group = (cluster.groups || []).find(g => g?.codeId === selectedGroupId);
                     if (group) {
-                        setSelectedCluster(cluster);
-                        setSelectedGroup({ ...group, details: (details || []) as CodeDetail[] });
+                        setSelectedClusterId(cluster.id);
+                        setSelectedGroup({ ...group, details: (details || []) as CmmnDetailCode[] });
                     }
                 }
             }
         }
     }, [selectedGroupId, details, initialClusters, selectedGroup]);
 
-    // Filtered Tree Data
-    const filteredClusters = React.useMemo(() => {
-        if (!searchQuery) return initialClusters || [];
+    // Filtered Nodes
+    const visibleNodes = React.useMemo(() => {
+        if (!searchQuery) return flattenedNodes;
         const lowerQuery = searchQuery.toLowerCase();
-        return (initialClusters || []).map(c => ({
-            ...c,
-            groups: (c.groups || []).filter(g =>
-                String(g?.codeIdNm || '').toLowerCase().includes(lowerQuery) ||
-                String(g?.codeId || '').toLowerCase().includes(lowerQuery)
-            )
-        })).filter(c =>
-            String(c?.name || '').toLowerCase().includes(lowerQuery) ||
-            (c.groups || []).length > 0
-        );
-    }, [initialClusters, searchQuery]);
+        
+        // Find matching nodes and their parents
+        const matches = new Set<string>();
+        flattenedNodes.forEach(node => {
+            if (node.name.toLowerCase().includes(lowerQuery) || node.id.toLowerCase().includes(lowerQuery)) {
+                matches.add(node.id);
+                if (node.parentId) matches.add(node.parentId);
+            }
+        });
 
-    const handleEditDetail = (detail: CodeDetail) => {
+        return flattenedNodes.filter(node => matches.has(node.id));
+    }, [flattenedNodes, searchQuery]);
+
+    const handleEditDetail = (detail: CmmnDetailCode) => {
         setEditingDetail(detail);
         setIsOpen(true);
     };
@@ -226,7 +408,7 @@ export default function CommonCodeClient({
 
         if (ok) {
             try {
-                const res = await deleteCodeDetailAction(null, { codeId: selectedGroup.codeId, code });
+                const res = await deleteCodeDetail(null, { codeId: selectedGroup.codeId, code });
                 if (res.success) {
                     toast(res.message, 'success');
                 } else {
@@ -249,7 +431,7 @@ export default function CommonCodeClient({
 
     const onSubmit = async (values: any) => {
         try {
-            const res = await saveCodeDetailAction(null, {
+            const res = await saveCodeDetail(null, {
                 ...values,
                 useAt: values.useAt as 'Y' | 'N',
                 codeId: selectedGroup?.codeId || '',
@@ -267,47 +449,45 @@ export default function CommonCodeClient({
         }
     };
 
-    const columns: Column<CodeDetail>[] = [
+    const columns: Column<CmmnDetailCode>[] = [
         {
             header: '코드',
-            accessor: (item: CodeDetail) => <span className="font-mono font-bold text-slate-700">{item.code}</span>,
+            accessor: (item: CmmnDetailCode) => <span className="font-mono font-black text-slate-700 tracking-tight">{item.code}</span>,
             className: 'w-24'
         },
         {
             header: '코드 명칭',
-            accessor: (item: CodeDetail) => (
+            accessor: (item: CmmnDetailCode) => (
                 <div className="flex flex-col">
-                    <span className="font-semibold text-slate-900">{item.codeNm}</span>
-                    <span className="text-[11px] text-slate-600 line-clamp-1">{item.codeDc}</span>
+                    <span className="font-black text-slate-900 tracking-tight">{item.codeNm}</span>
+                    <span className="text-[10px] font-bold text-slate-500 line-clamp-1 italic">{item.codeDc || 'No description available'}</span>
                 </div>
             )
         },
         {
-            header: '사용 여부',
-            accessor: (item: CodeDetail) => <HubStatusBadge status={item.useAt === 'Y' ? '사용 중' : '미사용'} />,
-            className: 'w-24'
+            header: '상태 프로토콜',
+            accessor: (item: CmmnDetailCode) => <HubStatusBadge status={item.useAt === 'Y' ? '사용 중' : '미사용'} />,
+            className: 'w-32'
         },
         {
-            header: '관리',
+            header: '관리 도구',
             className: 'text-right w-28',
-            accessor: (item: CodeDetail) => (
-                <div className="flex justify-end gap-1">
+            accessor: (item: CmmnDetailCode) => (
+                <div className="flex justify-end gap-2">
                     <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        aria-label={`${item.codeNm} 수정`}
-                        className="h-8 w-8 hover:bg-slate-100 rounded-lg"
+                        className="h-9 w-9 hover:bg-slate-100 rounded-xl"
                         onClick={(e) => { e.preventDefault(); handleEditDetail(item); }}
                     >
-                        <Settings size={14} />
+                        <Settings size={14} className="text-slate-600" />
                     </Button>
                     <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        aria-label={`${item.codeNm} 삭제`}
-                        className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-lg"
+                        className="h-9 w-9 text-rose-500 hover:bg-rose-50 rounded-xl"
                         onClick={(e) => { e.preventDefault(); handleDeleteDetail(item.code); }}
                     >
                         <Trash2 size={14} />
@@ -317,88 +497,100 @@ export default function CommonCodeClient({
         }
     ];
 
+    const activeNode = activeId ? flattenedNodes.find(n => n.id === activeId) : null;
+
     return (
-        <div className="space-y-8">
-            <div className="flex flex-col lg:flex-row gap-8 min-h-[700px]">
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col lg:flex-row gap-10 min-h-[750px]">
                 {/* --- Left Sidebar: Code Tree --- */}
-                <aside className="w-full lg:w-96 flex flex-col gap-4">
-                    <div className="bg-white/95 backdrop-blur-xl rounded-xl border border-slate-200/50 shadow-sm overflow-hidden flex flex-col h-full ring-1 ring-slate-100/50">
-                        <div className="p-5 border-b border-slate-100 bg-slate-50/50 space-y-4">
+                <aside className="w-full lg:w-[400px] flex flex-col gap-6">
+                    <div className="bg-white/95 backdrop-blur-3xl rounded-3xl border border-slate-200/60 shadow-2xl overflow-hidden flex flex-col h-full ring-1 ring-slate-100/50">
+                        <div className="p-7 border-b border-slate-100 bg-slate-50/50 space-y-5">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-xs font-black tracking-widest text-slate-900 flex items-center gap-2">
-                                    <Database size={14} className="text-primary" />
-                                    CODE EXPLORER
-                                </h3>
-                                <span className="text-[10px] font-bold text-slate-700">{filteredClusters.length} Domains</span>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                                        <Database size={18} />
+                                    </div>
+                                    <h3 className="text-[11px] font-black tracking-[0.2em] text-slate-900 uppercase">
+                                        Explorer
+                                    </h3>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {hasExplorerChanges && (
+                                        <button 
+                                            onClick={handleSaveExplorerChanges}
+                                            className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors flex items-center gap-1.5"
+                                        >
+                                            <Save size={12} /> Save
+                                        </button>
+                                    )}
+                                    <span className="px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 text-[9px] font-black tracking-widest">
+                                        {clCodes.length} Domains
+                                    </span>
+                                </div>
                             </div>
                             <div className="relative group">
-                                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-primary transition-colors" aria-hidden="true" />
+                                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
                                 <Input
-                                    placeholder="그룹/이름 검색.."
-                                    aria-label="코드 그룹 및 이름 검색"
+                                    placeholder="도메인 또는 그룹 검색.."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="h-10 pl-10 bg-white border-transparent rounded-xl text-xs font-bold shadow-inner"
-                                    suppressHydrationWarning
+                                    className="h-12 pl-12 pr-6 bg-white border-2 border-slate-100 rounded-2xl text-[11px] font-black tracking-tight shadow-inner focus:border-primary/30 transition-all placeholder:text-slate-300"
                                 />
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-2 custom-scrollbar max-h-[600px]">
-                            {filteredClusters.length === 0 ? (
-                                <div className="p-8 text-center space-y-4">
-                                     <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mx-auto text-slate-400">
-                                        <SearchSlash size={24} />
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar max-h-[650px]">
+                            {visibleNodes.length === 0 ? (
+                                <div className="py-20 text-center space-y-4">
+                                     <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-inner">
+                                        <SearchSlash size={32} />
                                     </div>
-                                    <p className="text-[10px] font-black tracking-widest uppercase">결과 없음</p>
+                                    <p className="text-[10px] font-black tracking-[0.3em] uppercase text-slate-400">결과를 찾을 수 없음</p>
                                 </div>
                             ) : (
-                                filteredClusters.map((cluster) => (
-                                    <div key={cluster.id} className="mb-2">
-                                        <div className="px-3 py-2 text-[10px] font-black text-slate-600 tracking-widest uppercase flex items-center justify-between group">
-                                            <span>{cluster.name}</span>
-                                        </div>
-                                        <div className="space-y-0.5 mt-1">
-                                            {cluster.groups.map(group => (
-                                                <button
-                                                    key={group.codeId}
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setSelectedCluster(cluster);
-                                                        loadGroupDetails(group);
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+                                    onDragStart={handleDragStart}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <SortableContext items={visibleNodes.map(n => n.id)} strategy={verticalListSortingStrategy}>
+                                        <div className="space-y-1">
+                                            {visibleNodes.map((node) => (
+                                                <SortableCodeNode
+                                                    key={node.id}
+                                                    node={node}
+                                                    isSelected={node.type === 'cluster' ? selectedClusterId === node.id : selectedGroup?.codeId === node.id}
+                                                    onClick={() => {
+                                                        if (node.type === 'cluster') {
+                                                            setSelectedClusterId(node.id);
+                                                            setSelectedGroup(null);
+                                                        } else {
+                                                            setSelectedClusterId(node.parentId);
+                                                            loadGroupDetails(node.data);
+                                                        }
                                                     }}
-                                                    className={cn(
-                                                        'w-full flex items-center justify-between p-3 rounded-xl transition-all group/item',
-                                                        selectedGroup?.codeId === group.codeId
-                                                            ? 'bg-slate-900 text-white shadow-lg scale-[1.02]'
-                                                            : 'hover:bg-slate-50 text-slate-600'
-                                                    )}
-                                                >
-                                                    <div className="flex items-center gap-3 truncate">
-                                                        <div className={cn(
-                                                            "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
-                                                            selectedGroup?.codeId === group.codeId ? "bg-primary/20 text-primary" : "bg-white text-slate-500 group-hover/item:text-primary shadow-sm"
-                                                        )}>
-                                                            <Tag size={12} />
-                                                        </div>
-                                                        <div className="flex flex-col truncate items-start">
-                                                            <span className="text-[11px] font-bold truncate leading-tight">{group.codeIdNm}</span>
-                                                            <span className={cn(
-                                                                'text-[9px] font-mono font-bold tracking-tighter',
-                                                                selectedGroup?.codeId === group.codeId ? "text-white" : 'text-slate-600'
-                                                            )}>{group.codeId}</span>
-                                                        </div>
-                                                    </div>
-                                                    {selectedGroup?.codeId === group.codeId && (
-                                                        <ChevronRight size={14} className="text-primary/50" />
-                                                    )}
-                                                </button>
+                                                />
                                             ))}
                                         </div>
-                                    </div>
-                                ))
+                                    </SortableContext>
+
+                                    {typeof document !== 'undefined' && createPortal(
+                                        <DragOverlay dropAnimation={dropAnimation}>
+                                            {activeId && activeNode ? (
+                                                <SortableCodeNode
+                                                    node={activeNode}
+                                                    isSelected={false}
+                                                    onClick={() => {}}
+                                                    isOverlay
+                                                />
+                                            ) : null}
+                                        </DragOverlay>,
+                                        document.body
+                                    )}
+                                </DndContext>
                             )}
                         </div>
                     </div>
@@ -461,7 +653,7 @@ export default function CommonCodeClient({
                                     </div>
                                 </div>
                                 <div className="p-4">
-                                    <StandardDataTable<CodeDetail>
+                                    <StandardDataTable<CmmnDetailCode>
                                         columns={columns}
                                         data={selectedGroup.details || []}
                                         emptyMessage="선택된 그룹에 상세 코드가 존재하지 않습니다."

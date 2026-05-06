@@ -57,7 +57,7 @@ export default function CommunityHubClient({
       header: 'COMMUNITY_ID',
       accessor: (item) => (
         <div className="flex items-center gap-6 py-2">
-          <div className="w-14 h-14 rounded-xl bg-slate-900 flex items-center justify-center text-primary font-black text-xs shadow-lg group-hover:rotate-6 transition-transform">
+          <div className="w-14 h-14 rounded-[var(--radius-hub-item)] bg-slate-900 flex items-center justify-center text-primary font-black text-xs shadow-lg group-hover:rotate-6 transition-transform">
             CM
           </div>
           <div className="space-y-1">
@@ -82,7 +82,7 @@ export default function CommunityHubClient({
     {
       header: 'GOVERNANCE',
       accessor: (item) => (
-        <div className="inline-flex items-center gap-3 px-5 py-2 bg-slate-50 border border-slate-100 rounded-xl text-slate-600 font-black text-[10px] tracking-widest uppercase">
+        <div className="inline-flex items-center gap-3 px-5 py-2 bg-slate-50 border border-slate-100 rounded-[var(--radius-hub-item)] text-slate-600 font-black text-[10px] tracking-widest uppercase">
           <ShieldCheck size={14} className="text-primary" /> {item.frstRegisterNm}
         </div>
       )
@@ -99,7 +99,7 @@ export default function CommunityHubClient({
       header: 'ACTION',
       accessor: (item) => (
         <Link href={`/cop/cmy/selectCommunityDetail/${item.cmmntyId}`}>
-          <Button variant="ghost" size="sm" className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-900 hover:text-white transition-all group">
+          <Button variant="ghost" size="sm" className="h-10 w-10 rounded-[var(--radius-hub-item)] bg-slate-50 border border-slate-100 hover:bg-slate-900 hover:text-white transition-all group">
             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Button>
         </Link>
@@ -109,7 +109,7 @@ export default function CommunityHubClient({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+      <div className="space-y-[var(--gap-hub-section)] pb-24 animate-in fade-in duration-1000">
         <PageHeader
           title="커뮤니티 익스피리언스"
           breadcrumbs={[{ label: '협업 서비스' }, { label: '커뮤니티 공간' }]}
@@ -124,18 +124,18 @@ export default function CommunityHubClient({
             <div className="flex gap-4 p-2 items-center">
                <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="lg" className="h-14 w-14 rounded-xl bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
+                  <Button variant="ghost" size="lg" className="h-14 w-14 rounded-[var(--radius-hub-item)] bg-white border-2 border-slate-100 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
                     <Sparkles size={22} className="group-hover:rotate-12 transition-transform" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                <TooltipContent side="bottom" className="bg-slate-900 text-white border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
                   AI 추천 커뮤니티 탐색
                 </TooltipContent>
               </Tooltip>
 
               <Button 
                 size="lg" 
-                className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                className="h-14 px-10 rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
               >
                 <Plus size={20} />
                 커뮤니티 개설 신청
@@ -145,10 +145,10 @@ export default function CommunityHubClient({
           }
         />
 
-        <div className="grid grid-cols-12 gap-12">
+        <div className="grid grid-cols-12 gap-[var(--gap-hub-section)]">
           {/* Left Metrics / Filters */}
           <div className="col-span-12 lg:col-span-3 space-y-8">
-            <div className="hub-glass-premium rounded-xl p-8 space-y-8 border-2 border-slate-100/50 shadow-2xl relative overflow-hidden group">
+            <div className="hub-glass-premium rounded-[var(--radius-hub-section)] p-8 space-y-8 border-2 border-slate-100/50 shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                 <MessageSquare size={120} className="text-primary" />
               </div>
@@ -163,7 +163,7 @@ export default function CommunityHubClient({
               </div>
             </div>
 
-            <div className="rounded-xl bg-white border-2 border-slate-100 shadow-xl p-4 flex flex-col gap-4">
+            <div className="rounded-[var(--radius-hub-widget)] bg-white border-2 border-slate-100 shadow-xl p-4 flex flex-col gap-4">
                <NavButton icon={<LayoutGrid size={22} />} label="전체 목록" active={true} onClick={() => {}} />
                <NavButton icon={<Users size={22} />} label="내 가입 커뮤니티" active={false} onClick={() => {}} />
                <NavButton icon={<ShieldCheck size={22} />} label="관리 중인 공간" active={false} onClick={() => {}} />
@@ -182,7 +182,7 @@ export default function CommunityHubClient({
                   <div className="relative w-full sm:w-96 group/search">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-60 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                     <Input
-                      className="pl-16 h-16 bg-slate-50/50 border-none rounded-xl text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500 uppercase font-mono italic"
+                      className="pl-16 h-16 bg-slate-50/50 border-none rounded-[var(--radius-hub-item)] text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500 uppercase font-mono italic"
                       placeholder="Search for space..."
                       value={searchKeyword}
                       onChange={(e) => setSearchKeyword(e.target.value)}
@@ -195,13 +195,13 @@ export default function CommunityHubClient({
                         variant="ghost" 
                         size="sm" 
                         onClick={() => queryClient.invalidateQueries({ queryKey: ['communities'] })}
-                        className="h-12 rounded-xl px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm font-mono italic"
+                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm font-mono italic"
                       >
                         <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isLoading ? "animate-spin" : "group-hover:rotate-180")} /> 
                         SYNCHRONIZE
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                    <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
                       실시간 데이터 동기화
                     </TooltipContent>
                   </Tooltip>
@@ -258,14 +258,14 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
     <button
       onClick={onClick}
       className={cn(
-        "w-full group p-6 rounded-xl border-2 transition-all flex items-center gap-5 relative overflow-hidden",
+        "w-full group p-6 rounded-[var(--radius-hub-item)] border-2 transition-all flex items-center gap-5 relative overflow-hidden",
         active
           ? "bg-slate-900 border-slate-900 text-white shadow-2xl scale-[1.02] z-10"
           : "bg-transparent border-transparent hover:bg-slate-50 text-slate-500 hover:text-slate-900"
       )}
     >
       <div className={cn(
-        "w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-lg relative z-10",
+        "w-12 h-12 rounded-[var(--radius-hub-item)] flex items-center justify-center transition-all shadow-lg relative z-10",
         active ? "bg-white/10 text-white" : "bg-white text-slate-300 group-hover:bg-primary/10 group-hover:text-primary"
       )}>
         {icon}

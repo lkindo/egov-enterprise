@@ -116,3 +116,28 @@ export async function deleteCmmnCode(prevState: unknown, codeId: string) {
     return { success: false, message };
   }
 }
+
+export async function saveCmmnCodeHierarchyAction(flattenedNodes: any[]): Promise<{ success: boolean; message: string }> {
+  try {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('accessToken')?.value;
+    const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
+
+    // CmmnCode의 clCode 업데이트를 위한 데이터 매핑
+    const submitData = flattenedNodes
+      .filter(node => node.type === 'group')
+      .map((node, index) => ({
+        codeId: node.id,
+        clCode: node.parentId,
+        ordr: index + 1 // 순서 필드가 있다면 반영
+      }));
+
+    await codeAdminService.updateCmmnCodeHierarchy(submitData, config);
+
+    revalidatePath('/admin/system/common-code');
+    return { success: true, message: '공통코드 도메인 구조가 동기화되었습니다.' };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : '계층 구조 저장 중 오류 발생';
+    return { success: false, message };
+  }
+}

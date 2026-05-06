@@ -143,15 +143,15 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
 
   const navContent = (
     <div className={cn(
-      "flex items-center justify-between gap-3 px-3 py-2 text-sm font-semibold tracking-tight rounded-xl transition-all duration-300 w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary relative hover:translate-x-1",
+      "flex items-center justify-between gap-3 px-3 py-2.5 text-[13px] font-black tracking-widest uppercase font-mono italic rounded-[var(--radius-hub-item)] transition-all duration-300 w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary relative hover:translate-x-1 hover:bg-slate-900 hover:text-white",
       isActive
-        ? "bg-primary/5 text-primary"
-        : "text-slate-600 hover:bg-accent hover:text-foreground",
+        ? "bg-slate-900 text-white shadow-xl"
+        : "text-slate-500 hover:bg-slate-900 hover:text-white",
       isRestricted && "opacity-40 cursor-not-allowed grayscale",
       depth === 1 && "pl-10",
       depth === 2 && "pl-14",
       depth >= 3 && "pl-16",
-      depth > 0 && "font-medium"
+      depth > 0 && "font-black"
     )}>
       <div className="flex items-center gap-3">
         {Icon && depth === 0 && (
@@ -248,10 +248,10 @@ const MobileDomainNode = ({
       <button
         onClick={onSelect}
         className={cn(
-          "flex items-center justify-between w-full px-4 py-3.5 rounded-xl transition-all duration-300 border text-sm font-semibold tracking-tight",
+          "flex items-center justify-between w-full px-4 py-3.5 rounded-[var(--radius-hub-item)] transition-all duration-300 border text-[11px] font-black tracking-[0.2em] uppercase font-mono italic",
           isActive
-            ? "bg-primary text-primary-foreground border-primary shadow-lg"
-            : "bg-muted/30 text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+            ? "bg-slate-900 text-white border-slate-900 shadow-xl"
+            : "bg-slate-50 text-slate-500 border-transparent hover:bg-slate-100 hover:text-slate-900"
         )}
       >
         <div className="flex items-center gap-3.5">
@@ -279,7 +279,7 @@ const MobileDomainNode = ({
             {loading ? (
               <div className="space-y-3 py-2 animate-pulse pl-4">
                 {[1, 2, 3].map(i => (
-                  <div key={`domain-loading-${i}`} className="h-10 bg-muted/20 rounded-xl w-full" />
+                  <div key={`domain-loading-${i}`} className="h-10 bg-muted/20 rounded-[var(--radius-hub-item)] w-full" />
                 ))}
               </div>
             ) : menus.length === 0 ? (
@@ -368,8 +368,8 @@ export function Sidebar({
           {/* Mobile Header in Sidebar */}
           <div className="flex items-center justify-between mb-10 px-2 lg:hidden">
             <Link href="/" className="flex items-center gap-3.5" onClick={() => setSidebarOpen(false)}>
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-primary-foreground font-bold text-lg">eG</span>
+              <div className="w-10 h-10 bg-slate-900 rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
+                <span className="text-primary font-black text-lg">EG</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-base font-bold tracking-tight leading-none text-foreground">엔터프라이즈</span>
@@ -442,15 +442,18 @@ export function Sidebar({
 
           {/* Sidebar Footer */}
           <div className="mt-auto pt-8 px-2 pb-10">
-            <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles size={14} className="text-primary" />
-                <span className="text-[10px] font-bold text-primary tracking-tight">eGovFrame 5.0</span>
+            <div className="p-5 rounded-[var(--radius-hub-item)] bg-slate-900 text-white border-none shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                <Sparkles size={40} className="text-primary" />
               </div>
-              <p className="text-[9px] font-semibold text-slate-600 leading-relaxed">
-                현대화된 엔터프라이즈 UI 키트
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles size={14} className="text-primary" />
+                <span className="text-[10px] font-black text-primary tracking-[0.3em] uppercase font-mono italic">HUB_NODE_v5.0</span>
+              </div>
+              <p className="text-[9px] font-bold text-slate-400 leading-relaxed uppercase font-mono italic">
+                Advanced_Enterprise_Core
                 <br />
-                최종 버전 1.0.2
+                Build_Ref: 1.0.2_STABLE
               </p>
             </div>
           </div>

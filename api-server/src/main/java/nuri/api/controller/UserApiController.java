@@ -4,8 +4,10 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
+import nuri.foundation.service.user.EgovUserService;
 import nuri.foundation.service.user.UserService;
 import nuri.foundation.service.user.dto.*;
+import nuri.foundation.domain.user.entity.Role;
 import io.swagger.v3.oas.annotations.Operation;
 
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,7 +34,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserApiController {
 
-    private final UserService userService;
+    private final EgovUserService userService;
 
     // --- [일반 사용자 기능] /api/v1/users ---
 
@@ -147,6 +149,33 @@ public class UserApiController {
             @PathVariable String userId,
             @RequestBody @Valid AdminPasswordChangeRequest request) {
         userService.updatePasswordByAdmin(userId, request.newPassword());
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "사용자 상태 일괄 변경", description = "여러 명의 사용자 상태를 한꺼번에 변경합니다. (관리자 권한)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/admin/system/users/status")
+    public ResponseEntity<ApiResponse<Void>> updateUsersStatus(
+            @RequestBody @Valid BulkStatusRequest request) {
+        userService.updateUsersStatus(request.getUserIds(), request.getStatus());
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "사용자 부서 일괄 이동", description = "여러 명의 사용자 소속 부서를 한꺼번에 변경합니다. (관리자 권한)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/admin/system/users/dept")
+    public ResponseEntity<ApiResponse<Void>> moveUsersToDept(
+            @RequestBody @Valid BulkDeptMoveRequest request) {
+        userService.moveUsersToDept(request.getUserIds(), request.getOrgnztId());
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "사용자 권한 일괄 변경", description = "여러 명의 사용자 권한을 한꺼번에 변경합니다. (관리자 권한)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/admin/system/users/role")
+    public ResponseEntity<ApiResponse<Void>> updateUsersRole(
+            @RequestBody @Valid BulkRoleRequest request) {
+        userService.updateUsersRole(request.getUserIds(), request.getRole());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

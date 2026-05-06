@@ -211,6 +211,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 비밀번호 변경
          */
+        @Override
         @Transactional
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
                 User user = userRepository.findById(required(userId, "사용자 ID 는 null 일 수 없습니다"))
@@ -288,6 +289,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 여러 사용자를 한꺼번에 삭제합니다.
          */
+        @Override
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUserList(@NonNull List<String> userIds) {
@@ -297,6 +299,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 아이디 중복 여부를 확인합니다.
          */
+        @Override
         public boolean checkIdDplct(@NonNull String userId) {
                 return userRepository.existsById(required(userId, "사용자 ID 는 null 일 수 없습니다"));
         }
@@ -304,11 +307,63 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         /**
          * 관리자 권한으로 비밀번호를 변경합니다. (기존 비밀번호 확인 없음)
          */
+        @Override
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword) {
                 User user = userRepository.findById(required(userId, "사용자 ID 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
                 user.updatePassword(passwordEncoder.encode(newPassword));
+        }
+
+        /**
+         * 여러 사용자의 상태를 한꺼번에 변경합니다.
+         */
+        @Override
+        @Transactional
+        @CacheEvict(value = { "users" }, allEntries = true)
+        public void updateUsersStatus(@NonNull List<String> userIds, @NonNull String status) {
+                List<User> users = userRepository.findAllById(required(userIds));
+                users.forEach(user -> user.updateStatus(status));
+                userRepository.saveAll(users);
+        }
+
+        /**
+         * 여러 사용자의 소속 부서를 한꺼번에 변경합니다.
+         */
+        @Override
+        @Transactional
+        @CacheEvict(value = { "users" }, allEntries = true)
+        public void moveUsersToDept(@NonNull List<String> userIds, @NonNull String orgnztId) {
+                List<User> users = userRepository.findAllById(required(userIds));
+                users.forEach(user -> user.updateOrgnztId(orgnztId));
+                userRepository.saveAll(users);
+        }
+
+        /**
+         * 여러 사용자의 권한을 한꺼번에 변경합니다.
+         */
+        @Override
+        @Transactional
+        @CacheEvict(value = { "users" }, allEntries = true)
+        public void updateUsersRole(@NonNull List<String> userIds, @NonNull Role role) {
+                List<User> users = userRepository.findAllById(required(userIds));
+                String authorCode = "ROLE_" + role.name();
+
+                users.forEach(user -> {
+                        user.setAuthorCode(authorCode);
+
+                        userAuthorityRepository.findById(user.getEsntlId())
+                                .ifPresentOrElse(
+                                        auth -> auth.update(authorCode, auth.getMberTyCode()),
+                                        () -> userAuthorityRepository.save(UserAuthority.builder()
+                                                .uniqId(user.getEsntlId())
+                                                .authorCode(authorCode)
+                                                .mberTyCode("USR")
+                                                .build())
+                                );
+                });
+
+                userRepository.saveAll(users);
         }
 }

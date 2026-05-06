@@ -102,7 +102,7 @@ export default function SmsHubClient({
       header: 'RECIPIENT',
       accessor: (item) => (
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform">
+          <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-slate-900 flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform">
             <Phone size={16} />
           </div>
           <span className="text-sm font-black text-slate-900 tracking-tighter font-mono italic">
@@ -139,7 +139,7 @@ export default function SmsHubClient({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+      <div className="space-y-[var(--gap-hub-section)] pb-24 animate-in fade-in duration-1000">
         <PageHeader
           title="커뮤니케이션 매트릭스"
           breadcrumbs={[{ label: '운영 관리' }, { label: 'SMS 서비스' }]}
@@ -156,7 +156,7 @@ export default function SmsHubClient({
                 <DialogTrigger asChild>
                   <Button 
                     size="lg" 
-                    className="h-14 px-10 rounded-xl bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                    className="h-14 px-10 rounded-[var(--radius-hub-item)] bg-slate-900 border-none text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
                   >
                     <Plus size={20} />
                     신규 문자 발송
@@ -188,7 +188,7 @@ export default function SmsHubClient({
                                     <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={20} />
                                     <Input
                                         placeholder="010-0000-0000"
-                                        className="pl-16 h-16 bg-slate-50 border-2 border-slate-100 rounded-xl text-lg font-black tracking-widest focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 font-mono italic"
+                                        className="pl-16 h-16 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-item)] text-lg font-black tracking-widest focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 font-mono italic"
                                         value={newSms.recptnTelno}
                                         onChange={(e) => setNewSms({ ...newSms, recptnTelno: e.target.value })}
                                     />
@@ -199,7 +199,7 @@ export default function SmsHubClient({
                                 <div className="relative group">
                                     <Textarea
                                         placeholder="전달할 메시지 내용을 입력하세요..."
-                                        className="min-h-[200px] p-8 bg-slate-50 border-2 border-slate-100 rounded-xl text-lg font-black tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 leading-relaxed font-mono italic"
+                                        className="min-h-[200px] p-8 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-item)] text-lg font-black tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 leading-relaxed font-mono italic"
                                         value={newSms.trnsmitCn}
                                         onChange={(e) => setNewSms({ ...newSms, trnsmitCn: e.target.value })}
                                     />
@@ -213,14 +213,14 @@ export default function SmsHubClient({
                             <Button 
                                 variant="ghost" 
                                 onClick={() => setIsDialogOpen(false)}
-                                className="h-16 px-10 rounded-xl font-black text-[11px] tracking-widest uppercase font-mono italic hover:bg-slate-50"
+                                className="h-16 px-10 rounded-[var(--radius-hub-item)] font-black text-[11px] tracking-widest uppercase font-mono italic hover:bg-slate-50"
                             >
                                 ABORT_OPERATION
                             </Button>
                             <Button 
                                 disabled={sendMutation.isPending}
                                 onClick={() => sendMutation.mutate(newSms)}
-                                className="flex-1 h-16 rounded-xl bg-slate-900 text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all gap-4 group"
+                                className="flex-1 h-16 rounded-[var(--radius-hub-item)] bg-slate-900 text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all gap-4 group"
                             >
                                 {sendMutation.isPending ? 'PROCESSING...' : (
                                     <>
@@ -237,10 +237,10 @@ export default function SmsHubClient({
           }
         />
 
-        <div className="grid grid-cols-12 gap-12">
+        <div className="grid grid-cols-12 gap-[var(--gap-hub-section)]">
           {/* Left Metrics */}
           <div className="col-span-12 lg:col-span-3 space-y-8">
-            <div className="hub-glass-premium rounded-xl p-8 space-y-8 border-2 border-slate-100/50 shadow-2xl relative overflow-hidden group">
+            <div className="hub-glass-premium rounded-[var(--radius-hub-section)] p-8 space-y-8 border-2 border-slate-100/50 shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                 <Zap size={120} className="text-primary" />
               </div>
@@ -255,13 +255,13 @@ export default function SmsHubClient({
               </div>
             </div>
 
-            <div className="rounded-xl bg-slate-900 p-8 text-white space-y-6 shadow-2xl relative overflow-hidden">
+            <div className="rounded-[var(--radius-hub-section)] bg-slate-900 p-8 text-white space-y-6 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
                 <h5 className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono italic">Security_Audit</h5>
                 <p className="text-xs font-bold text-white/60 leading-relaxed italic">
                     모든 메시지 전송은 정보통신망법에 의거하여 로깅 및 감사가 수행됩니다.
                 </p>
-                <div className="flex items-center gap-3 p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="flex items-center gap-3 p-4 bg-white/5 rounded-[var(--radius-hub-item)] border border-white/5">
                     <ShieldCheck size={18} className="text-primary" />
                     <span className="text-[9px] font-black tracking-widest uppercase font-mono">TLS_ENCRYPTED_NODE</span>
                 </div>
@@ -276,11 +276,11 @@ export default function SmsHubClient({
               icon={Clock}
             >
               <div className="space-y-8">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 px-2 pt-2 border-b border-slate-100 pb-8">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-[var(--gap-hub-widget)] px-2 pt-2 border-b border-slate-100 pb-8">
                   <div className="relative w-full sm:w-96 group/search">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-60 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                     <Input
-                      className="pl-16 h-16 bg-slate-50/50 border-none rounded-xl text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500 uppercase font-mono italic"
+                      className="pl-16 h-16 bg-slate-50/50 border-none rounded-[var(--radius-hub-item)] text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500 uppercase font-mono italic"
                       placeholder="Search packets..."
                       value={searchKeyword}
                       onChange={(e) => setSearchKeyword(e.target.value)}
@@ -293,13 +293,13 @@ export default function SmsHubClient({
                         variant="ghost" 
                         size="sm" 
                         onClick={() => refetch()}
-                        className="h-12 rounded-xl px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm font-mono italic"
+                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm font-mono italic"
                       >
                         <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isLoading ? "animate-spin" : "group-hover:rotate-180")} /> 
                         SYNCHRONIZE
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-xl px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+                    <TooltipContent side="left" className="bg-slate-900 text-white border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
                       실시간 데이터 동기화
                     </TooltipContent>
                   </Tooltip>

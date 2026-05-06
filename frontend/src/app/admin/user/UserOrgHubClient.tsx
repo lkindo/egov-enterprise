@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, use } from 'react';
+import React, { useState, useMemo, use, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -38,7 +38,11 @@ import {
   Database,
   ArrowUpRight,
   CloudLightning,
-  Contact2
+  Contact2,
+  Layers,
+  Tag,
+  SearchSlash,
+  Save
 } from 'lucide-react';
 import {
   Tooltip,
@@ -55,6 +59,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { PagePagination } from '@/components/common/PagePagination';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useRouter } from 'next/navigation';
+import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
+import { 
+  bulkUpdateUserStatusAction, 
+  bulkMoveUserDeptAction, 
+  bulkDeleteUsersAction,
+  bulkUpdateUserRoleAction
+} from '@/app/actions/userActions';
 
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
@@ -63,6 +75,129 @@ import { FormField } from '@/app/components/ui/standard-form';
 
 import { UserManageForm, UserFormValues } from '@/components/admin/user/UserManageForm';
 import { DepartmentForm, DeptFormValues } from '@/components/admin/user/DepartmentForm';
+
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragOverlay,
+    defaultDropAnimationSideEffects,
+    DragStartEvent,
+    DragOverEvent,
+    DragEndEvent,
+    MeasuringStrategy,
+    DropAnimation,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { createPortal } from 'react-dom';
+import { flattenDeptTree, listToDeptTree, getDeptProjection, FlattenedDept } from './departments/treeUtils';
+
+const INDENTATION_WIDTH = 24;
+
+const dropAnimation: DropAnimation = {
+    sideEffects: defaultDropAnimationSideEffects({
+        styles: {
+            active: {
+                opacity: '0.5',
+            },
+        },
+    }),
+};
+
+interface SortableDeptNodeProps {
+    node: FlattenedDept;
+    isSelected: boolean;
+    onClick: () => void;
+    isOverlay?: boolean;
+}
+
+const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: SortableDeptNodeProps) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: node.orgnztId || '' });
+
+    const style = {
+        transform: isOverlay ? undefined : CSS.Translate.toString(transform),
+        transition: isOverlay ? undefined : transition,
+        paddingLeft: isOverlay ? 0 : `${node.depth * INDENTATION_WIDTH}px`,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={cn(
+                "group relative mb-1 outline-none",
+                isDragging && !isOverlay && "opacity-30",
+                isOverlay && "z-[9999] pointer-events-none"
+            )}
+        >
+            {/* Hierarchy Line */}
+            {node.depth > 0 && !isOverlay && (
+                <>
+                    <div className="absolute left-[11px] top-[-10px] bottom-1/2 w-px bg-slate-200" />
+                    <div className="absolute left-[11px] top-1/2 w-3 h-px bg-slate-200" />
+                </>
+            )}
+
+            <button
+                type="button"
+                {...attributes}
+                {...listeners}
+                onClick={onClick}
+                className={cn(
+                    "w-full flex items-center justify-between p-3 rounded-xl transition-all relative overflow-hidden",
+                    "hover:bg-slate-50 border border-transparent",
+                    isSelected && "bg-primary text-white shadow-lg shadow-primary/20 border-primary/20",
+                    isOverlay && "bg-white shadow-2xl border-primary ring-4 ring-primary/5 scale-105"
+                )}
+            >
+                <div className="flex items-center gap-3 truncate relative z-10 w-full">
+                    <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0",
+                        isSelected ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-500 group-hover:bg-primary/10 group-hover:text-primary"
+                    )}>
+                        <Building2 size={14} />
+                    </div>
+                    <div className="flex flex-col truncate items-start">
+                        <span className={cn(
+                            "text-[11px] font-black truncate leading-tight uppercase tracking-tight",
+                            isSelected ? "text-white" : "text-slate-900"
+                        )}>
+                            {node.orgnztNm}
+                        </span>
+                        <span className={cn(
+                            "text-[9px] font-mono font-bold tracking-tighter opacity-60",
+                            isSelected ? "text-white" : "text-slate-500"
+                        )}>
+                            {node.orgnztId}
+                        </span>
+                    </div>
+                    {isSelected && (
+                        <div className="ml-auto">
+                            <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        </div>
+                    )}
+                </div>
+            </button>
+        </div>
+    );
+};
 
 type UserOrgTab = 'USERS' | 'DEPTS' | 'ABSENCES' | 'POLICIES';
 
@@ -82,6 +217,8 @@ export default function UserOrgHubClient({
   const confirm = useConfirm();
   const [isPending, startTransition] = React.useTransition();
   const [activeTab, setActiveTab] = useState<UserOrgTab>(defaultTab);
+  const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
 
@@ -91,6 +228,15 @@ export default function UserOrgHubClient({
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+
+  // Bulk Actions State
+  const [selectedBulkItems, setSelectedBulkItems] = useState<UserManage[]>([]);
+  const [isBulkStatusModalOpen, setIsBulkStatusModalOpen] = useState(false);
+  const [isBulkMoveModalOpen, setIsBulkMoveModalOpen] = useState(false);
+  const [isBulkRoleModalOpen, setIsBulkRoleModalOpen] = useState(false);
+  const [targetStatus, setTargetStatus] = useState('P');
+  const [targetDeptId, setTargetDeptId] = useState('');
+  const [targetRole, setTargetRole] = useState('USER');
 
   const { data: usersData, isLoading: isUsersLoading, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', searchKeyword, userPage],
@@ -109,10 +255,29 @@ export default function UserOrgHubClient({
     enabled: activeTab === 'DEPTS',
     initialData: (deptPage === 1 && !searchKeyword) ? initialDepts : undefined
   });
+
+  // D&D States for Depts
+  const [flattenedDepts, setFlattenedDepts] = useState<FlattenedDept[]>([]);
+  const [activeDeptId, setActiveDeptId] = useState<string | null>(null);
+  const [hasDeptChanges, setHasDeptChanges] = useState(false);
+
   const departments = useMemo(() => {
     const list = deptsData?.list;
     return (Array.isArray(list) ? list.filter(Boolean) : []) as Department[];
   }, [deptsData]);
+
+  useEffect(() => {
+    if (activeTab === 'DEPTS' && departments.length > 0) {
+        // Build tree and flatten it for D&D
+        const tree = listToDeptTree(departments as any);
+        setFlattenedDepts(flattenDeptTree(tree));
+    }
+  }, [departments, activeTab]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const onUserSubmit = async (values: UserFormValues) => {
     try {
@@ -167,6 +332,58 @@ export default function UserOrgHubClient({
       }
     }
   };
+
+  const handleBulkDelete = async (items: (UserManage | Department)[]) => {
+    const userItems = items as UserManage[];
+    const ok = await confirm({
+      title: '일괄 신원 말소',
+      message: `${userItems.length}명의 사용자를 시스템에서 영구히 삭제하시겠습니까?`,
+      variant: 'destructive',
+      confirmText: 'BULK_REVOKE'
+    });
+    if (ok) {
+      const res = await bulkDeleteUsersAction(userItems.map(u => u.userId));
+      if (res.success) {
+        toast(res.message, 'success');
+        refetchUsers();
+      } else {
+        toast(res.message, 'error');
+      }
+    }
+  };
+
+  const userBulkActions = [
+    {
+      label: '상태 변경',
+      icon: <Activity size={16} />,
+      onClick: (items: (UserManage | Department)[]) => {
+        setSelectedBulkItems(items as UserManage[]);
+        setIsBulkStatusModalOpen(true);
+      }
+    },
+    {
+      label: '부서 이동',
+      icon: <Network size={16} />,
+      onClick: (items: (UserManage | Department)[]) => {
+        setSelectedBulkItems(items as UserManage[]);
+        setIsBulkMoveModalOpen(true);
+      }
+    },
+    {
+      label: '권한 변경',
+      icon: <ShieldCheck size={16} />,
+      onClick: (items: (UserManage | Department)[]) => {
+        setSelectedBulkItems(items as UserManage[]);
+        setIsBulkRoleModalOpen(true);
+      }
+    },
+    {
+      label: '일괄 삭제',
+      icon: <UserMinus size={16} />,
+      variant: 'destructive' as const,
+      onClick: handleBulkDelete
+    }
+  ];
 
   // --- Resilience Monitoring: Global Error Feedback ---
   React.useEffect(() => {
@@ -353,29 +570,123 @@ export default function UserOrgHubClient({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.5 }}
+                    className="h-full"
                   >
-                    <StandardDataTable<UserManage | Department>
-                      columns={(activeTab === 'DEPTS' ? deptColumns : userColumns) as Column<UserManage | Department>[]}
-                      data={(activeTab === 'DEPTS' ? departments : users) as (UserManage | Department)[]}
-                      loading={activeTab === 'DEPTS' ? isDeptsLoading : isUsersLoading}
-                      error={(activeTab === 'DEPTS' ? deptsError : usersError) as Error | null}
-                      onRetry={() => activeTab === 'DEPTS' ? refetchDepts() : refetchUsers()}
-                      onRowClick={(item) => {
-                        const id = activeTab === 'DEPTS'
-                          ? (item as Department).orgnztId
-                          : (item as UserManage).userId; // API uses userId (login ID) as path param
-                        if (id) setSelectedItemId(id);
-                      }}
-                      keyField={(activeTab === 'DEPTS' ? 'orgnztId' : 'esntlId') as any}
-                      emptyMessage="검색된 객체가 존재하지 않습니다."
-                      isPremium={false}
-                      className="border-none shadow-none bg-transparent"
-                      pagination={{
-                        currentPage: activeTab === 'DEPTS' ? deptPage : userPage,
-                        totalPages: activeTab === 'DEPTS' ? (deptsData?.totalPage || 1) : (usersData?.totalPage || 1),
-                        onPageChange: (p) => activeTab === 'DEPTS' ? setDeptPage(p) : setUserPage(p)
-                      }}
-                    />
+                    {activeTab === 'DEPTS' ? (
+                        <div className="space-y-1">
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+                                onDragStart={(e) => setActiveDeptId(e.active.id as string)}
+                                onDragEnd={(event) => {
+                                    const { active, over } = event;
+                                    if (over && active.id !== over.id) {
+                                        setFlattenedDepts((items) => {
+                                            const oldIndex = items.findIndex(n => n.orgnztId === active.id);
+                                            const newIndex = items.findIndex(n => n.orgnztId === over.id);
+                                            const newItems = arrayMove(items, oldIndex, newIndex);
+                                            
+                                            const proj = getDeptProjection(items, active.id as string, over.id as string, 0, INDENTATION_WIDTH);
+                                            if (proj) {
+                                                const idx = newItems.findIndex(n => n.orgnztId === active.id);
+                                                newItems[idx] = { ...newItems[idx], parentId: proj.parentId, depth: proj.depth };
+                                            }
+                                            return newItems;
+                                        });
+                                        setHasDeptChanges(true);
+                                    }
+                                    setActiveDeptId(null);
+                                }}
+                            >
+                                <SortableContext items={flattenedDepts.map(n => n.orgnztId || '')} strategy={verticalListSortingStrategy}>
+                                    <div className="space-y-1">
+                                        {flattenedDepts.map((node) => (
+                                            <SortableDeptNode
+                                                key={node.orgnztId}
+                                                node={node}
+                                                isSelected={selectedItemId === node.orgnztId}
+                                                onClick={() => setSelectedItemId(node.orgnztId || null)}
+                                            />
+                                        ))}
+                                    </div>
+                                </SortableContext>
+
+                                {typeof document !== 'undefined' && createPortal(
+                                    <DragOverlay dropAnimation={dropAnimation}>
+                                        {activeDeptId ? (
+                                            <SortableDeptNode
+                                                node={flattenedDepts.find(n => n.orgnztId === activeDeptId)!}
+                                                isSelected={false}
+                                                onClick={() => {}}
+                                                isOverlay
+                                            />
+                                        ) : null}
+                                    </DragOverlay>,
+                                    document.body
+                                )}
+                            </DndContext>
+                            {hasDeptChanges && (
+                              <div className="py-4">
+                                <Button
+                                  onClick={async () => {
+                                    setIsSaving(true);
+                                    try {
+                                      const res = await saveDeptHierarchyAction(flattenedDepts);
+                                      if (res.success) {
+                                        toast(res.message, 'success');
+                                        setHasDeptChanges(false);
+                                        router.refresh();
+                                      } else {
+                                        toast(res.message, 'error');
+                                      }
+                                    } catch (err) {
+                                      console.error(err);
+                                      toast('구조 저장 중 오류 발생', 'error');
+                                    } finally {
+                                      setIsSaving(false);
+                                    }
+                                  }}
+                                  disabled={isSaving}
+                                  className="w-full h-12 rounded-xl bg-emerald-500 text-white font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-emerald-600 transition-all gap-2"
+                                >
+                                  {isSaving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />} 
+                                  Save_Topology_Structure
+                                </Button>
+                              </div>
+                            )}
+                            {flattenedDepts.length === 0 && !isDeptsLoading && (
+                                <div className="py-20 text-center space-y-4">
+                                    <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center mx-auto text-slate-200 border border-slate-100 shadow-inner">
+                                        <SearchSlash size={32} />
+                                    </div>
+                                    <p className="text-[10px] font-black tracking-[0.3em] uppercase text-slate-400">조직 노드를 찾을 수 없음</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <StandardDataTable<UserManage>
+                            columns={userColumns as Column<UserManage>[]}
+                            data={users}
+                            loading={isUsersLoading}
+                            error={usersError as Error | null}
+                            onRetry={() => refetchUsers()}
+                            onRowClick={(item) => {
+                                if (item.userId) setSelectedItemId(item.userId);
+                            }}
+                            keyField="userId"
+                            emptyMessage="검색된 객체가 존재하지 않습니다."
+                            isPremium={true}
+                            enableSelection={true}
+                            bulkActions={userBulkActions}
+                            className="border-none shadow-none bg-transparent"
+                            pagination={{
+                                currentPage: userPage,
+                                totalPages: usersData?.totalPage || 1,
+                                onPageChange: (p) => setUserPage(p)
+                            }}
+                        />
+                    )}
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -529,6 +840,232 @@ export default function UserOrgHubClient({
           onSubmit={onDeptSubmit}
           onCancel={() => setIsDeptModalOpen(false)}
         />
+      </StandardModal>
+
+      {/* Bulk Status Modal */}
+      <StandardModal
+        isOpen={isBulkStatusModalOpen}
+        onClose={() => setIsBulkStatusModalOpen(false)}
+        title="사용자 상태 일괄 변경"
+        maxWidth="sm"
+      >
+        <div className="space-y-8 p-4">
+          <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
+            <div className="flex flex-wrap gap-2">
+              {selectedBulkItems.slice(0, 5).map(u => (
+                <span key={u.userId} className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700">{u.userNm}</span>
+              ))}
+              {selectedBulkItems.length > 5 && <span className="text-[10px] font-bold text-slate-400">외 {selectedBulkItems.length - 5}명</span>}
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <label className="text-[11px] font-black text-slate-900 uppercase tracking-widest">변경할 상태 선택</label>
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                { code: 'P', label: '정상 (Active)', color: 'bg-emerald-500' },
+                { code: 'A', label: '승인 대기 (Pending)', color: 'bg-amber-500' },
+                { code: 'D', label: '비활성 (Disabled)', color: 'bg-slate-400' }
+              ].map(s => (
+                <button
+                  key={s.code}
+                  onClick={() => setTargetStatus(s.code)}
+                  className={cn(
+                    "w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all",
+                    targetStatus === s.code ? "border-primary bg-primary/5 shadow-lg" : "border-slate-100 hover:border-slate-200 bg-white"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-2 h-2 rounded-full", s.color)} />
+                    <span className="text-sm font-black tracking-tight text-slate-900">{s.label}</span>
+                  </div>
+                  {targetStatus === s.code && <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-white"><ChevronRight size={10} /></div>}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <Button variant="ghost" onClick={() => setIsBulkStatusModalOpen(false)} className="flex-1 h-14 rounded-xl font-black text-[11px] tracking-widest uppercase">CANCEL</Button>
+            <Button 
+              onClick={async () => {
+                setIsSaving(true);
+                try {
+                  const res = await bulkUpdateUserStatusAction(selectedBulkItems.map(u => u.userId), targetStatus);
+                  if (res.success) {
+                    toast(res.message, 'success');
+                    refetchUsers();
+                    setIsBulkStatusModalOpen(false);
+                  } else {
+                    toast(res.message, 'error');
+                  }
+                } catch (err) {
+                  toast('상태 변경 중 오류 발생', 'error');
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              disabled={isSaving}
+              className="flex-[2] h-14 rounded-xl bg-slate-900 text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all"
+            >
+              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : 'COMMIT_CHANGES'}
+            </Button>
+          </div>
+        </div>
+      </StandardModal>
+
+      {/* Bulk Move Modal */}
+      <StandardModal
+        isOpen={isBulkMoveModalOpen}
+        onClose={() => setIsBulkMoveModalOpen(false)}
+        title="부서 일괄 이동"
+        maxWidth="md"
+      >
+        <div className="space-y-8 p-4">
+          <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
+            <div className="flex flex-wrap gap-2">
+              {selectedBulkItems.slice(0, 5).map(u => (
+                <span key={u.userId} className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700">{u.userNm}</span>
+              ))}
+              {selectedBulkItems.length > 5 && <span className="text-[10px] font-bold text-slate-400">외 {selectedBulkItems.length - 5}명</span>}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <label className="text-[11px] font-black text-slate-900 uppercase tracking-widest">이동할 대상 부서 선택</label>
+            <div className="max-h-[400px] overflow-y-auto border-2 border-slate-100 rounded-xl p-4 custom-scrollbar bg-slate-50/30">
+              {flattenedDepts.map((node) => (
+                <div
+                  key={node.orgnztId}
+                  style={{ paddingLeft: `${node.depth * 20}px` }}
+                  className="mb-1"
+                >
+                  <button
+                    onClick={() => setTargetDeptId(node.orgnztId || '')}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left",
+                      targetDeptId === node.orgnztId ? "bg-primary text-white shadow-lg" : "hover:bg-white hover:shadow-sm text-slate-700"
+                    )}
+                  >
+                    <Building2 size={14} className={targetDeptId === node.orgnztId ? "text-white" : "text-slate-400"} />
+                    <span className="text-[11px] font-black uppercase tracking-tight">{node.orgnztNm}</span>
+                    <span className="text-[9px] font-mono opacity-50 ml-auto">ID_{node.orgnztId}</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <Button variant="ghost" onClick={() => setIsBulkMoveModalOpen(false)} className="flex-1 h-14 rounded-xl font-black text-[11px] tracking-widest uppercase">CANCEL</Button>
+            <Button 
+              onClick={async () => {
+                if (!targetDeptId) {
+                  toast('이동할 부서를 선택해주세요.', 'error');
+                  return;
+                }
+                setIsSaving(true);
+                try {
+                  const res = await bulkMoveUserDeptAction(selectedBulkItems.map(u => u.userId), targetDeptId);
+                  if (res.success) {
+                    toast(res.message, 'success');
+                    refetchUsers();
+                    setIsBulkMoveModalOpen(false);
+                  } else {
+                    toast(res.message, 'error');
+                  }
+                } catch (err) {
+                  toast('부서 이동 중 오류 발생', 'error');
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              disabled={isSaving}
+              className="flex-[2] h-14 rounded-xl bg-slate-900 text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all"
+            >
+              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : 'EXECUTE_MIGRATION'}
+            </Button>
+          </div>
+        </div>
+      </StandardModal>
+
+      {/* Bulk Role Modal */}
+      <StandardModal
+        isOpen={isBulkRoleModalOpen}
+        onClose={() => setIsBulkRoleModalOpen(false)}
+        title="사용자 권한 일괄 변경"
+        maxWidth="sm"
+      >
+        <div className="space-y-8 p-4">
+          <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
+            <div className="flex flex-wrap gap-2">
+              {selectedBulkItems.slice(0, 5).map(u => (
+                <span key={u.userId} className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700">{u.userNm}</span>
+              ))}
+              {selectedBulkItems.length > 5 && <span className="text-[10px] font-bold text-slate-400">외 {selectedBulkItems.length - 5}명</span>}
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <label className="text-[11px] font-black text-slate-900 uppercase tracking-widest">변경할 권한 선택</label>
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                { code: 'USER', label: '일반 사용자 (USER)', icon: <Users size={18} /> },
+                { code: 'ADMIN', label: '시스템 관리자 (ADMIN)', icon: <ShieldCheck size={18} /> }
+              ].map(r => (
+                <button
+                  key={r.code}
+                  onClick={() => setTargetRole(r.code)}
+                  className={cn(
+                    "w-full flex items-center justify-between p-5 rounded-xl border-2 transition-all",
+                    targetRole === r.code ? "border-primary bg-primary/5 shadow-lg" : "border-slate-100 hover:border-slate-200 bg-white"
+                  )}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                      targetRole === r.code ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
+                    )}>
+                      {r.icon}
+                    </div>
+                    <span className="text-sm font-black tracking-tight text-slate-900">{r.label}</span>
+                  </div>
+                  {targetRole === r.code && <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-white shadow-lg"><ChevronRight size={12} /></div>}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <Button variant="ghost" onClick={() => setIsBulkRoleModalOpen(false)} className="flex-1 h-14 rounded-xl font-black text-[11px] tracking-widest uppercase">CANCEL</Button>
+            <Button 
+              onClick={async () => {
+                setIsSaving(true);
+                try {
+                  const res = await bulkUpdateUserRoleAction(selectedBulkItems.map(u => u.userId), targetRole);
+                  if (res.success) {
+                    toast(res.message, 'success');
+                    refetchUsers();
+                    setIsBulkRoleModalOpen(false);
+                  } else {
+                    toast(res.message, 'error');
+                  }
+                } catch (err) {
+                  toast('권한 변경 중 오류 발생', 'error');
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              disabled={isSaving}
+              className="flex-[2] h-14 rounded-xl bg-slate-900 text-white font-black text-[11px] tracking-widest uppercase shadow-2xl hover:bg-primary transition-all"
+            >
+              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : 'UPDATE_AUTHORITY'}
+            </Button>
+          </div>
+        </div>
       </StandardModal>
 
     </div>

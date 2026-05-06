@@ -50,6 +50,21 @@ class UserAdminService extends AdminService {
   async checkIdDuplicate(userId: string, config?: AxiosRequestConfig): Promise<{ available: boolean }> {
     return this.get<{ available: boolean }>(`/check-id`, { ...config, params: { userId } });
   }
+
+  /** 사용자 상태 일괄 변경 */
+  async updateUsersStatus(userIds: string[], status: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.patch<void>(`/status`, { userIds, status }, config);
+  }
+
+  /** 사용자 부서 일괄 이동 */
+  async moveUsersToDept(userIds: string[], orgnztId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.patch<void>(`/dept`, { userIds, orgnztId }, config);
+  }
+
+  /** 사용자 권한 일괄 변경 */
+  async updateUsersRole(userIds: string[], role: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.patch<void>(`/role`, { userIds, role }, config);
+  }
 }
 
 export const userAdminService = new UserAdminService();

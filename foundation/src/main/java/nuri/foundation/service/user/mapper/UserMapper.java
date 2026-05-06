@@ -17,6 +17,7 @@ public interface UserMapper {
     @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().name() : null)")
     @Mapping(target = "userSe", ignore = true)
     @Mapping(target = "mberTyCode", ignore = true)
+    @Mapping(target = "userSttusCode", source = "empStatus")
     UserDto toDto(User user);
 
     @Mapping(target = "userId", source = "user.userId")
@@ -24,6 +25,7 @@ public interface UserMapper {
     @Mapping(target = "esntlId", source = "user.esntlId")
     @Mapping(target = "role", expression = "java(authority != null ? authority.getAuthorCode() : (user != null && user.getRole() != null ? \"ROLE_\" + user.getRole().name() : \"ROLE_USER\"))")
     @Mapping(target = "userSe", expression = "java(authority != null ? authority.getMberTyCode() : \"USR\")")
+    @Mapping(target = "userSttusCode", source = "user.empStatus")
     @Mapping(target = "createdDate", source = "user.createdDate")
     UserDto toDtoWithAuthority(User user, UserAuthority authority);
 

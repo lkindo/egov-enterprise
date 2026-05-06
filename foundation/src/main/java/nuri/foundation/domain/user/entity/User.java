@@ -204,4 +204,12 @@ public class User extends BaseEntity implements Serializable {
             this.lockCount++;
         }
     }
+
+    public void updateStatus(String status) {
+        this.empStatus = status;
+    }
+
+    public void updateOrgnztId(String orgnztId) {
+        this.orgnztId = orgnztId;
+    }
 }

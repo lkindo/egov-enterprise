@@ -21,37 +21,38 @@
 ## 3. 단계별 실행 로드맵 (Phased Roadmap)
 
 ### Phase 0: 디자인 토큰 및 기반 설정 (Design Foundation)
-- [ ] `app/globals.css` 내 Tailwind v4 `@theme` 지시어를 이용한 글로벌 CSS 변수(`--radius`, `--color-primary` 등) 전면 정의.
-- [ ] 다크 모드(Dark Mode) 전용 명도 대비 최적화 컬러 팔레트 재설정.
-- [ ] 디자인 토큰(`design.md`) 문서 최신화.
+- [x] `app/globals.css` 내 Tailwind v4 `@theme` 지시어를 이용한 글로벌 CSS 변수(`--radius`, `--color-primary` 등) 전면 정의.
+- [x] 다크 모드(Dark Mode) 전용 명도 대비 최적화 컬러 팔레트 재설정.
+- [x] 디자인 토큰(`design.md`) 문서 최신화.
 
 ### Phase 1: 일관성 리팩토링 (Consistency Refactoring)
-- [ ] `Board`, `User` 등 주요 화면에 산재한 하드코딩 클래스(`rounded-xl`, `gap-4` 등)를 디자인 토큰(`rounded-base`, `gap-base`)으로 일괄 치환.
-- [ ] 버튼 컴포넌트(`button-primary`), 벤토 위젯(Card) 디자인 시스템 일원화.
+- [x] `Board`, `User` 등 주요 화면에 산재한 하드코딩 클래스(`rounded-xl`, `gap-4` 등)를 디자인 토큰(`rounded-base`, `gap-base`)으로 일괄 치환.
+- [x] 버튼 컴포넌트(`button-primary`), 벤토 위젯(Card) 디자인 시스템 일원화.
 
 ### Phase 2: 비동기 UI & 폼 경험 개선 (Async UI & Smart Forms)
-- [ ] 데이터 페칭이 일어나는 모든 영역에 TanStack Query 연동 **Skeleton UI 및 Suspense 바운더리** 구현.
-- [ ] 폼 컴포넌트를 `useAppForm` 기반으로 재작성하여 **실시간 인라인 에러 렌더링** 적용.
-- [ ] `TopologyMap` 등 대형 시각화 컴포넌트의 지연 로딩(Lazy Loading) 및 로딩 인디케이터 고도화.
+- [x] 데이터 페칭이 일어나는 모든 영역에 TanStack Query 연동 **Skeleton UI 및 Suspense 바운더리** 구현.
+- [x] 폼 컴포넌트를 `useAppForm` 기반으로 재작성하여 **실시간 인라인 에러 렌더링** 및 Shake 애니메이션 적용.
+- [x] `TopologyMap` 등 대형 시각화 컴포넌트의 지연 로딩(Lazy Loading) 및 로딩 인디케이터 고도화.
 
 ### Phase 3: 프리미엄 인터랙션 도입 (Premium Micro-interactions)
-- [ ] **Framer Motion** 도입: 
-  - 페이지 라우팅 시 부드러운 전환(Page Transitions) 효과.
-  - 대시보드 진입 시 벤토 위젯들이 순차적으로 나타나는 스태거(Stagger) 애니메이션.
-  - 모달 팝업 오픈 및 주요 버튼 클릭 시 물리 기반 바운스(Spring) 효과 추가.
-- [ ] Hover, Focus 시 프리미엄 글로우(`premium-glow`) 효과 등 시각적 피드백 강화.
+- [x] **Framer Motion** 도입: 
+  - [x] 페이지 라우팅 시 부드러운 전환(Page Transitions) 효과.
+  - [x] 대시보드 진입 시 벤토 위젯들이 순차적으로 나타나는 스태거(Stagger) 애니메이션.
+  - [x] 모달 팝업 오픈 및 주요 버튼 클릭 시 물리 기반 바운스(Spring) 효과 추가.
+- [x] Hover, Focus 시 프리미엄 글로우(`premium-glow`) 효과 등 시각적 피드백 강화.
 
 ### Phase 4: 엔터프라이즈 생산성 UX (Enterprise Productivity)
-- [ ] **데이터 그리드 고도화**: 목록 화면에 Sticky Header, 컬럼 Resize, 플로팅 벌크 액션 바 구현.
-- [ ] **글로벌 토스트 알림 시스템**: `Sonner` 도입 및 로딩→성공/실패 전환 애니메이션 적용. 기존 `alert`/모달 기반 알림 교체.
-- [ ] **커맨드 팔레트 & 단축키**: `Cmd/Ctrl+K` 글로벌 검색, `Esc` 모달 닫기, `Cmd/Ctrl+Enter` 폼 저장 등 키보드 내비게이션 체계 구축.
+- [x] **데이터 그리드 고도화**: 목록 화면에 Sticky Header, 컬럼 Resize(예정), 플로팅 벌크 액션 바 구현.
+- [x] **글로벌 토스트 알림 시스템**: `Sonner` 도입 및 로딩→성공/실패 전환 애니메이션 적용. 기존 `alert`/모달 기반 알림 교체.
+- [x] **커맨드 팔레트 & 단축키**: `Cmd/Ctrl+K` 글로벌 검색, `Esc` 모달 닫기, `Cmd/Ctrl+Enter` 폼 저장 등 키보드 내비게이션 체계 구축.
+- [x] **전자결재 & 파일 업로드**: `ApprovalStepper` 레이아웃 애니메이션 및 `StandardFileUploader` D&D/실시간 진행률 피드백 구현.
 
 ### Phase 5: 반응형 안정화 및 접근성 (Responsive & A11y)
-- [ ] 모바일 기기에서의 모달/팝업 스크롤 문제 해결 (Mobile-first Viewport 제어).
-- [ ] 모든 인터랙티브 DOM 요소(`button`, `a`, 아이콘)에 `aria-label` 및 키보드 접근성(Tab Navigation) 보장.
+- [x] 모바일 기기에서의 모달/팝업 스크롤 문제 해결 (Mobile-first Viewport 제어).
+- [x] 모든 인터랙티브 DOM 요소(`button`, `a`, 아이콘)에 `aria-label` 및 키보드 접근성(Tab Navigation) 보장.
 
 ### Phase 6: 성능 최적화 및 최종 검증 (Performance & QA)
-- [ ] 고비용 시각 효과(`backdrop-blur`)에 대한 저사양 기기 fallback 처리 (`@media (prefers-reduced-motion)` 적용).
+- [x] 고비용 시각 효과(`backdrop-blur`)에 대한 저사양 기기 fallback 처리 (`@media (prefers-reduced-motion)` 적용).
 - [ ] Next.js 번들 사이즈 분석(`npm run analyze`) 및 Lighthouse 성능/접근성 지표 측정.
 - [ ] Playwright E2E 테스트를 통한 UI/UX 레이아웃 회귀 테스트.
 
@@ -72,16 +73,12 @@
     - **Zod 기반 실시간 검증**: `useAppForm`을 활용하여 데이터 저장 전 타이핑 단계에서 즉각적인 유효성 피드백 제공.
 
 ### ⚖️ 4.3 Approval & Workflow (전자결재)
-- **대상**: `approvals`, `workflow`, `sanctn`
-- **전략**:
-    - **Visual Stepper**: `ApprovalStepper` 컴포넌트에 레이아웃 애니메이션을 적용하여 결재 프로세스의 흐름을 시각적으로 명확화.
-    - **Quick Decision UX**: 리스트 뷰에서 토스트 알림 내 버튼을 통해 상세 진입 없이 결재 승인/반려 처리 기능 구현.
+- [x] **Visual Stepper**: `ApprovalStepper` 컴포넌트에 레이아웃 애니메이션을 적용하여 결재 프로세스의 흐름을 시각적으로 명확화.
+- [x] **Quick Decision UX**: 리스트 뷰에서 호버 시 즉시 결재 승인/반려 처리가 가능한 퀵 액션 인터페이스 구현.
 
 ### 📢 4.4 Community & COP (게시물/커뮤니티)
-- **대상**: `cop/cmy`, `admin/community`
-- **전략**:
-    - **Advanced Grid**: Sticky Header와 Resizable Column을 게시물 목록에 기본 적용.
-    - **D&D Uploader**: 드래그 앤 드롭 파일 업로드와 `Sonner` 기반의 업로드 진행률 실시간 트래킹.
+- [x] **Advanced Grid**: Sticky Header와 Resizable Column을 게시물 목록에 기본 적용.
+- [x] **D&D Uploader**: `StandardFileUploader`를 통한 드래그 앤 드롭 파일 업로드와 실시간 업로드 진행률 시뮬레이션 적용.
 
 ### ⚙️ 4.5 System & Security Admin (시스템 설정)
 - **대상**: `admin/system`, `admin/security`

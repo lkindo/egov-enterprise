@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Department } from '@/services/foundation/system/DeptAdminService';
 import { Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export const deptSchema = z.object({
   orgnztNm: z.string().min(1, '부서명은 필수입니다.').max(20, '부서명은 20자 이내여야 합니다.'),
@@ -46,19 +48,27 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
         <FormField
           control={form.control}
           name="orgnztNm"
-          render={({ field }) => (
+          render={({ field, fieldState }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                부서 명칭 <span className="text-rose-500 font-extrabold text-[10px]">*</span>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  className="h-14 rounded-xl text-sm font-black tracking-tight"
-                  placeholder="DEPT_NAME"
-                />
-              </FormControl>
-              <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+              <motion.div
+                animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  부서 명칭 <span className="text-rose-500 font-extrabold text-[10px]">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    className={cn(
+                        "h-14 rounded-xl text-sm font-black tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
+                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                    )}
+                    placeholder="DEPT_NAME"
+                  />
+                </FormControl>
+                <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+              </motion.div>
             </FormItem>
           )}
         />
@@ -66,19 +76,27 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
         <FormField
           control={form.control}
           name="orgnztDc"
-          render={({ field }) => (
+          render={({ field, fieldState }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                부서 설명명세
-              </FormLabel>
-              <FormControl>
-                <textarea
-                  {...field}
-                  className="w-full min-h-[120px] p-6 rounded-xl border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none resize-none shadow-inner"
-                  placeholder="부서의 역할 및 책임 정의..."
-                />
-              </FormControl>
-              <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+              <motion.div
+                animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <FormLabel className="text-[11px] font-black text-slate-800 flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  부서 설명명세
+                </FormLabel>
+                <FormControl>
+                  <textarea
+                    {...field}
+                    className={cn(
+                        "w-full min-h-[120px] p-6 rounded-xl border-2 border-slate-100 bg-slate-50 text-xs font-bold outline-none resize-none shadow-inner transition-all focus:ring-4 focus:ring-primary/10",
+                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                    )}
+                    placeholder="부서의 역할 및 책임 정의..."
+                  />
+                </FormControl>
+                <FormMessage className="text-[10px] font-bold text-rose-500 mt-2 ml-2" />
+              </motion.div>
             </FormItem>
           )}
         />

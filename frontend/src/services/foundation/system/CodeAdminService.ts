@@ -1,4 +1,4 @@
-﻿import { AdminService } from '@/services/core/ApiService';
+import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams, CmmnClCode, CmmnCode, CmmnDetailCode } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
@@ -97,6 +97,12 @@ class CodeAdminService extends AdminService {
 
     async deleteCmmnCode(codeId: string, config?: AxiosRequestConfig): Promise<void> {
         return this.delete(`/cmmn/${codeId}`, config);
+    }
+
+    /** 공통코드 계층 및 순서 일괄 수정 (현대화 트리 대응) */
+    async updateCmmnCodeHierarchy(data: any[], config?: AxiosRequestConfig): Promise<void> {
+        // 백엔드 배치 엔드포인트가 없을 경우 시뮬레이션하거나 전용 엔드포인트 호출
+        return this.put('/cmmn/batch-hierarchy', data, { ...config, timeout: 60000 });
     }
 
     // --- 상세코드 (Detail Code) ---
