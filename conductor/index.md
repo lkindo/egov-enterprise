@@ -11,7 +11,10 @@ Navigation hub for project context.
 ### 02. Architecture & Tech
 - [Tech Stack](../docs/02-architecture/tech-stack.md)
 - [Frontend Architecture](../docs/02-architecture/frontend-architecture.md)
+- [Module Completeness Evaluation](../docs/02-architecture/module-completeness-evaluation.md)
+- [Detailed Module Audit](../docs/02-architecture/detailed-module-audit.md)
 - [Design System](../docs/02-architecture/design.md)
+- [UI/UX Improvement Plan](../docs/02-architecture/ui-ux-improvement-plan.md)
 - [Legacy Design (Archived)](../docs/archived/LLD.MD)
 
 ### 03. Development Guides
