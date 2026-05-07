@@ -20,16 +20,17 @@ export class MailPage {
 
         for (const recipient of recipientList) {
             await recipientInput.click();
-            await recipientInput.clear(); // Clear previous selection search text
+            await recipientInput.clear();
             await recipientInput.fill(recipient);
             
-            // Wait for search results to appear and stabilize
-            const firstResult = this.page.getByTestId('recipient-item').filter({ hasText: recipient }).first();
-            await expect(firstResult).toBeVisible({ timeout: 10000 });
+            // Wait for search results
+            const resultItem = this.page.getByTestId('recipient-item').filter({ hasText: recipient }).first();
+            await resultItem.waitFor({ state: 'visible', timeout: 10000 });
+            await resultItem.click({ force: true });
             
-            await firstResult.click({ force: true });
-            // Wait for dropdown to potentially close or stabilize
-            await this.page.waitForTimeout(500);
+            // Verify recipient badge appears (Enterprise UI feedback)
+            const badge = this.page.getByTestId('selected-recipient-badge').filter({ hasText: recipient }).first();
+            await badge.waitFor({ state: 'visible', timeout: 7000 });
             console.log(`>>> Selected recipient: ${recipient}`);
         }
 
@@ -44,20 +45,24 @@ export class MailPage {
         
         // Should redirect to history
         await this.page.waitForURL(/\/mail-history/, { timeout: 15000 });
-        await this.page.waitForLoadState('load');
+        await this.page.locator('[data-testid="mail-item"]').first().waitFor({ state: 'visible', timeout: 15000 });
     }
 
     async verifyMailInHistory(subject: string) {
         console.log(`[E2E] Verifying mail in history: ${subject}`);
-        // Ensure we are on history page and items are loaded
         await expect(this.page).toHaveURL(/\/mail-history/);
-        await this.page.waitForSelector('[data-testid="mail-item"]', { timeout: 15000 });
+        
+        // Wait for list to load
+        const listItems = this.page.getByTestId('mail-item');
+        await listItems.first().waitFor({ state: 'visible', timeout: 15000 });
 
-        // Search first if needed (though history usually shows latest)
+        // Search specifically for this subject to isolate
         const searchInput = this.page.locator('input[placeholder*="검색"]');
         if (await searchInput.isVisible()) {
+            await searchInput.clear();
             await searchInput.fill(subject);
-            await this.page.waitForTimeout(1500); // Wait for filter
+            // Wait for filtered result
+            await this.page.getByTestId('mail-item').filter({ hasText: subject }).first().waitFor({ state: 'visible', timeout: 10000 });
         }
 
         const mailItem = this.page.getByTestId('mail-item').filter({ hasText: subject }).first();
@@ -66,30 +71,27 @@ export class MailPage {
         console.log('[E2E] Clicking mail item...');
         await mailItem.click({ force: true });
         
-        // Verify detail - The detail view has a header with the subject
-        console.log('[E2E] Verifying detail subject...');
-        const detailSubject = this.page.locator('h3').filter({ hasText: subject });
+        // Verify detail
+        const detailSubject = this.page.locator('h3').filter({ hasText: subject }).first();
         await expect(detailSubject).toBeVisible({ timeout: 15000 });
     }
 
     async deleteMail(subject: string) {
         console.log(`[E2E] Deleting mail: ${subject}`);
         const mailItem = this.page.getByTestId('mail-item').filter({ hasText: subject }).first();
-        await expect(mailItem).toBeVisible({ timeout: 15000 });
+        await mailItem.waitFor({ state: 'visible', timeout: 10000 });
         await mailItem.click({ force: true });
         
-        // Register dialog handler BEFORE clicking delete
+        // Register dialog handler
         this.page.once('dialog', async dialog => {
-            console.log(`[E2E] Dialog appeared: ${dialog.message()}`);
             await dialog.accept();
         });
 
         const deleteBtn = this.page.getByTestId('delete-mail-btn');
-        await expect(deleteBtn).toBeVisible({ timeout: 5000 });
+        await deleteBtn.waitFor({ state: 'visible', timeout: 5000 });
         await deleteBtn.click({ force: true });
         
         // Verify deletion
-        console.log('[E2E] Verifying deletion in list...');
         await expect(mailItem).not.toBeVisible({ timeout: 15000 });
     }
 }

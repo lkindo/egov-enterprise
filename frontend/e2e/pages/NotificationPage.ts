@@ -7,6 +7,8 @@ export class NotificationPage {
         const bellButton = this.page.locator('#e2e-bell-button');
         await bellButton.click();
         await expect(this.page.locator('h2')).toContainText(/Alert Sentinel/i);
+        // Wait for at least one notification item or the "No active alerts" message
+        await this.page.locator('div.group, span:has-text("No active alerts")').first().waitFor({ state: 'visible', timeout: 10000 });
     }
 
     async closeNotificationDrawer() {
@@ -27,21 +29,23 @@ export class NotificationPage {
     }
 
     async verifyNotificationExists(title: string) {
-        const notificationItem = this.page.locator('h3').filter({ hasText: title });
-        await expect(notificationItem).toBeVisible();
+        const notificationItem = this.page.locator('div.group h3').filter({ hasText: title }).first();
+        await expect(notificationItem).toBeVisible({ timeout: 10000 });
     }
 
     async markNotificationAsRead(title: string) {
-        const notificationItem = this.page.locator('div.group').filter({ has: this.page.locator('h3', { hasText: title }) });
+        const notificationItem = this.page.locator('div.group').filter({ has: this.page.locator('h3', { hasText: title }) }).first();
         await notificationItem.click();
         // Give some time for state update and animation
         await this.page.waitForTimeout(1000);
-        // After clicking, it should be marked as read (opacity-60 class added)
+        // After clicking, it should have opacity-60
         await expect(notificationItem).toHaveClass(/opacity-60/);
     }
 
     async readAllNotifications() {
-        const readAllButton = this.page.getByRole('button', { name: /READ_ALL_BROADCASTS/i });
+        // Use data-testid for stable targeting (bottom sticky button)
+        const readAllButton = this.page.getByTestId('read-all-broadcasts-btn');
+        await readAllButton.waitFor({ state: 'visible', timeout: 5000 });
         await readAllButton.click();
     }
 }

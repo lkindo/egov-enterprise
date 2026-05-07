@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -144,7 +144,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                        className="flex flex-col items-center justify-center h-full text-slate-200"
                     >
                       <Zap size={100} className="mb-8 opacity-20" />
-                      <p className="text-sm font-black tracking-widest uppercase text-slate-400">_ CLEAN_STATE: NO_ALERTS</p>
+                      <span className="text-sm font-black tracking-widest uppercase text-slate-400">No active alerts</span>
                     </motion.div>
                   ) : (
                     filteredNotifications.map((notif, idx) => (
@@ -205,7 +205,11 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
 
               {/* Bottom Sticky Control */}
               <div className="p-8 border-t bg-white dark:bg-slate-950">
-                 <Button className="w-full h-14 rounded-xl bg-slate-900 text-white font-black tracking-[0.3em] uppercase text-[10px] shadow-2xl hover:bg-primary transition-all">
+                 <Button
+                   data-testid="read-all-broadcasts-btn"
+                   onClick={onMarkAllRead}
+                   className="w-full h-14 rounded-xl bg-slate-900 text-white font-black tracking-[0.3em] uppercase text-[10px] shadow-2xl hover:bg-primary transition-all"
+                 >
                     READ_ALL_BROADCASTS
                  </Button>
               </div>

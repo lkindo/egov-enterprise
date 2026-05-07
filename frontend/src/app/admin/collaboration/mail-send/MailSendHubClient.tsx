@@ -153,6 +153,7 @@ export default function MailSendHubClient() {
                           initial={{ scale: 0.8, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0.8, opacity: 0 }}
+                          data-testid="selected-recipient-badge"
                           className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/10 transition-colors group"
                         >
                           <span className="text-xs font-bold">{recipient.name}</span>
@@ -198,9 +199,9 @@ export default function MailSendHubClient() {
                               data-testid="recipient-item"
                               onClick={() => {
                                 const newRecipient = { 
-                                  id: user.emplyrId || user.userId || user.adbkId, 
-                                  name: user.nm || user.userNm || user.adbkNm,
-                                  email: user.email || user.emailAdres || ''
+                                  id: user.emplyrId || user.userId || user.adbkId || user.ncrdId || user.id, 
+                                  name: user.userNm || user.adbkNm || user.ncrdNm || user.nm || user.name,
+                                  email: user.emailAdres || user.email || ''
                                 };
                                 if (!selectedRecipients.find(r => r.id === newRecipient.id)) {
                                   setSelectedRecipients(prev => [...prev, newRecipient]);

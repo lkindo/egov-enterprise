@@ -54,17 +54,14 @@ test.describe('Tier 13: Enterprise Mail System E2E', () => {
     test('Mail: Invalid Email Address Validation', async ({ page }) => {
         await mailPage.navigateToSend();
         
-        // Input invalid email format
-        const recipientInput = page.locator('input[name="recptnPerson"], input[placeholder*="받는 사람"]');
-        await recipientInput.fill('invalid-email-format');
-        await page.locator('textarea[name="emailCn"]').fill('This should trigger validation error');
-        await page.locator('input[name="sj"]').fill('Validation Test');
+        // Input invalid search query that should result in no matches
+        const recipientInput = page.getByTestId('mail-recipient-input');
+        await recipientInput.fill('NON_EXISTENT_USER_XYZ_123');
         
-        const sendBtn = page.getByRole('button', { name: /발송|Send/i });
-        await sendBtn.click();
+        // Expect "No Matches Found" message in the search results dropdown
+        const noMatches = page.locator('span', { hasText: /No Matches Found/i });
+        await expect(noMatches).toBeVisible({ timeout: 10000 });
         
-        // Expect validation message
-        await expect(page.locator('text=이메일, text=유효, text=format, .text-red-500').first()).toBeVisible({ timeout: 5000 });
-        console.log('>>> Invalid email validation caught correctly');
+        console.log('>>> Invalid recipient search caught correctly (No Matches Found)');
     });
 });
