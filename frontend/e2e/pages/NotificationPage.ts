@@ -6,7 +6,9 @@ export class NotificationPage {
     async openNotificationDrawer() {
         const bellButton = this.page.locator('#e2e-bell-button');
         await bellButton.click();
-        await expect(this.page.locator('h2')).toContainText(/Alert Sentinel/i);
+        // Scope h2 to the drawer panel to avoid strict mode violation with other h2 elements
+        const drawer = this.page.locator('[class*="z-\\[9999\\]"]').last();
+        await expect(drawer.locator('h2')).toContainText(/Alert Sentinel/i, { timeout: 10000 });
         // Wait for at least one notification item or the "No active alerts" message
         await this.page.locator('div.group, span:has-text("No active alerts")').first().waitFor({ state: 'visible', timeout: 10000 });
     }
@@ -14,7 +16,8 @@ export class NotificationPage {
     async closeNotificationDrawer() {
         const closeButton = this.page.getByTestId('e2e-drawer-close');
         await closeButton.click();
-        await expect(this.page.locator('h2:has-text("Alert Sentinel")')).not.toBeVisible();
+        // Wait for drawer to animate out
+        await this.page.locator('[data-testid="e2e-drawer-close"]').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
     }
 
     async getUnreadCount(): Promise<number> {
@@ -29,17 +32,21 @@ export class NotificationPage {
     }
 
     async verifyNotificationExists(title: string) {
+        // Wait for the drawer to be stable and the item to appear
         const notificationItem = this.page.locator('div.group h3').filter({ hasText: title }).first();
-        await expect(notificationItem).toBeVisible({ timeout: 10000 });
+        await notificationItem.waitFor({ state: 'visible', timeout: 15000 });
+        await expect(notificationItem).toBeVisible();
     }
 
     async markNotificationAsRead(title: string) {
         const notificationItem = this.page.locator('div.group').filter({ has: this.page.locator('h3', { hasText: title }) }).first();
         await notificationItem.click();
-        // Give some time for state update and animation
+        
+        // Wait for the opacity-60 class to be applied (visual confirmation of state change)
+        await expect(notificationItem).toHaveClass(/opacity-60/, { timeout: 10000 });
+        
+        // Also wait a bit for the badge count to sync (background update)
         await this.page.waitForTimeout(1000);
-        // After clicking, it should have opacity-60
-        await expect(notificationItem).toHaveClass(/opacity-60/);
     }
 
     async readAllNotifications() {

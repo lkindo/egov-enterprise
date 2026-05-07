@@ -54,12 +54,12 @@ export function UserPicker({
  <User size={16} />
  </div>
  <div>
- <p className="text-sm font-bold text-foreground">{user.ncrdNm}</p>
- <p className="text-[10px] text-muted-foreground">{user.deptNm} / {user.cmpnyNm}</p>
+ <p className="text-sm font-bold text-foreground">{user.nm}</p>
+ <p className="text-[10px] text-muted-foreground">{user.emailAdres}</p>
  </div>
  </div>
  <div className="text-sm font-mono text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
- ID: {user.ncrdId}
+ ID: {user.emplyrId || user.adbkUserId}
  </div>
  </div>
  );

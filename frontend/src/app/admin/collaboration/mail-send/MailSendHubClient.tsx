@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { NameCard } from '@/types/business/addressbook';
 import { 
   Send, 
   ArrowLeft, 
@@ -33,7 +34,7 @@ export default function MailSendHubClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recipientSearch, setRecipientSearch] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<{ id: string; name: string; email: string }[]>([]);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<NameCard[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -213,14 +214,14 @@ export default function MailSendHubClient() {
                             >
                               <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center font-black text-slate-300 group-hover:bg-primary group-hover:text-white transition-all">
-                                  {(user.nm || user.userNm || user.adbkNm)?.charAt(0)}
+                                  {(user.nm || user.userNm || user.adbkNm || user.ncrdNm)?.charAt(0)}
                                 </div>
                                 <div className="flex flex-col">
                                   <span className="font-bold text-slate-900 group-hover:text-primary transition-colors">
-                                    {user.nm || user.userNm || user.adbkNm}
+                                    {user.nm || user.userNm || user.adbkNm || user.ncrdNm}
                                   </span>
                                   <span className="text-[10px] text-slate-500">
-                                    {user.email || user.emailAdres || user.emplyrId || user.userId || user.adbkId}
+                                    {user.email || user.emailAdres || user.emplyrId || user.userId || user.adbkId || user.ncrdId}
                                   </span>
                                 </div>
                               </div>

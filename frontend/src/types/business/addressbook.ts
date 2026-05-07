@@ -5,14 +5,17 @@ export interface AddressBook {
  frstRegisterId: string;
 }
 
+/** AddressBookUserDto (백엔드 business-suite) 필드와 1:1 매핑 */
 export interface NameCard {
- ncrdId: string;
- ncrdNm: string;
- cmpnyNm: string;
- deptNm: string;
- telNo: string;
- moblphonNo: string; // Aligned with backend moblphonNo
+ adbkUserId: string;
+ adbkId: string;
+ emplyrId: string;  // 직원 ID (표시용)
+ nm: string;        // 이름
  emailAdres: string;
+ homeTelno?: string;
+ moblphonNo?: string;
+ offmTelno?: string;
+ fxnum?: string;
 }
 
 export interface AddressBookUser {
