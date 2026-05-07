@@ -1,8 +1,8 @@
-
 import React, { useRef } from 'react';
 import {
   Bold, Italic, List, ListOrdered, Link,
-  Image as ImageIcon, AlignLeft, AlignCenter, AlignRight
+  Image as ImageIcon, AlignLeft, AlignCenter, AlignRight,
+  Zap, Code, Maximize2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -17,41 +17,88 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const applyStyle = (tag: string) => {
-    // 실제 에디터 라이브러리(TipTap 등) 연동 및 시각화 구성을 위한 Placeholder 로직
     console.log(`Applying style: ${tag}`);
   };
 
   return (
-    <div className="border rounded-xl overflow-hidden bg-card focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-sm">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/20">
-        <button type="button" onClick={() => applyStyle('bold')} className="p-2 hover:bg-accent rounded-md"><Bold size={18} /></button>
-        <button type="button" onClick={() => applyStyle('italic')} className="p-2 hover:bg-accent rounded-md"><Italic size={18} /></button>
- <div className="w-px h-6 bg-border mx-1" />
- <button type="button" onClick={() => applyStyle('bullet')} className="p-2 hover:bg-accent rounded-md"><List size={18} /></button>
- <button type="button" onClick={() => applyStyle('number')} className="p-2 hover:bg-accent rounded-md"><ListOrdered size={18} /></button>
- <div className="w-px h-6 bg-border mx-1" />
- <button type="button" onClick={() => applyStyle('link')} className="p-2 hover:bg-accent rounded-md"><Link size={18} /></button>
- <button type="button" onClick={() => applyStyle('image')} className="p-2 hover:bg-accent rounded-md"><ImageIcon size={18} /></button>
- <div className="flex-1" />
- <button type="button" onClick={() => applyStyle('left')} className="p-2 hover:bg-accent rounded-md"><AlignLeft size={18} /></button>
- <button type="button" onClick={() => applyStyle('center')} className="p-2 hover:bg-accent rounded-md"><AlignCenter size={18} /></button>
- <button type="button" onClick={() => applyStyle('right')} className="p-2 hover:bg-accent rounded-md"><AlignRight size={18} /></button>
- </div>
+    <div className="hub-glass-premium rounded-[var(--radius-hub-section)] overflow-hidden bg-card/50 focus-within:ring-4 focus-within:ring-primary/5 transition-all shadow-2xl border-2 border-border/40">
+      {/* Premium Toolbar */}
+      <div className="flex flex-wrap items-center gap-1 p-4 border-b bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-md">
+        <div className="flex items-center gap-1 bg-white/50 dark:bg-black/20 p-1 rounded-xl border border-border/40">
+            <EditorButton onClick={() => applyStyle('bold')} icon={<Bold size={16} />} label="Bold" />
+            <EditorButton onClick={() => applyStyle('italic')} icon={<Italic size={16} />} label="Italic" />
+            <EditorButton onClick={() => applyStyle('code')} icon={<Code size={16} />} label="Code" />
+        </div>
+        
+        <div className="w-px h-6 bg-border/60 mx-2" />
+        
+        <div className="flex items-center gap-1">
+            <EditorButton onClick={() => applyStyle('bullet')} icon={<List size={16} />} />
+            <EditorButton onClick={() => applyStyle('number')} icon={<ListOrdered size={16} />} />
+        </div>
+        
+        <div className="w-px h-6 bg-border/60 mx-2" />
+        
+        <div className="flex items-center gap-1">
+            <EditorButton onClick={() => applyStyle('link')} icon={<Link size={16} />} />
+            <EditorButton onClick={() => applyStyle('image')} icon={<ImageIcon size={16} />} />
+        </div>
+        
+        <div className="flex-1" />
+        
+        <div className="flex items-center gap-1 bg-white/50 dark:bg-black/20 p-1 rounded-xl border border-border/40">
+            <EditorButton onClick={() => applyStyle('left')} icon={<AlignLeft size={16} />} />
+            <EditorButton onClick={() => applyStyle('center')} icon={<AlignCenter size={16} />} />
+            <EditorButton onClick={() => applyStyle('right')} icon={<AlignRight size={16} />} />
+        </div>
+        
+        <div className="w-px h-6 bg-border/60 mx-2" />
+        <EditorButton onClick={() => applyStyle('full')} icon={<Maximize2 size={16} />} className="text-primary" />
+      </div>
 
- {/* Content Area */}
- <textarea
- ref={textareaRef}
- value={value}
- onChange={(e) => onChange(e.target.value)}
- placeholder={placeholder || "내용을 입력하세요..."}
- style={{ minHeight }}
- className="w-full p-4 resize-none outline-none bg-transparent text-sm leading-relaxed"
- />
+      {/* Content Area */}
+      <div className="relative group">
+          <div className="absolute top-4 left-4 pointer-events-none opacity-20 group-focus-within:opacity-0 transition-opacity">
+              <Zap size={40} className="text-primary/20" />
+          </div>
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder || "엔터프라이즈 인사이트를 입력하십시오..."}
+            style={{ minHeight }}
+            className="w-full p-8 resize-none outline-none bg-transparent text-sm font-bold leading-relaxed text-foreground/80 placeholder:text-muted-foreground/30 font-mono tracking-tight"
+          />
+      </div>
 
- {/* Word Count / Info */}
- <div className="px-4 py-2 border-t bg-muted/5 text-[10px] text-muted-foreground flex justify-end">
- {value.length} 자 입력됨 </div>
- </div>
- );
+      {/* Status Footer */}
+      <div className="px-6 py-3 border-t bg-slate-50/30 dark:bg-slate-900/30 flex justify-between items-center">
+          <div className="flex items-center gap-4">
+              <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase">_ Editor_Core_v1.0</span>
+              <span className="text-[9px] font-black text-emerald-500 tracking-[0.2em] uppercase flex items-center gap-1">
+                  <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" /> Live_Sync_Active
+              </span>
+          </div>
+          <div className="text-[10px] font-black text-slate-500 tracking-widest uppercase">
+            {value.length} _ CHARACTERS_LOGGED
+          </div>
+      </div>
+    </div>
+  );
+}
+
+function EditorButton({ onClick, icon, label, className }: any) {
+    return (
+        <button 
+            type="button" 
+            onClick={onClick} 
+            title={label}
+            className={cn(
+                "p-2.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all hover:shadow-md hover:scale-110 active:scale-95 text-slate-600 hover:text-primary border border-transparent hover:border-border/40",
+                className
+            )}
+        >
+            {icon}
+        </button>
+    );
 }

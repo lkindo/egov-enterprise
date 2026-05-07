@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -24,7 +24,7 @@ function LoginContent() {
     const { login, user, loading } = useAuth();
     const router = useRouter();
 
-    // ?대? 濡쒓렇?몃맂 ?곹깭?쇰㈃ ??쒕낫?쒕줈 ?먮룞 ?대룞
+    // 이미 로그인된 상태라면 워크스페이스로 자동 이동
     React.useEffect(() => {
         if (!loading && user) {
             router.replace('/admin/work-hub');
@@ -48,10 +48,10 @@ function LoginContent() {
         try {
             await login({ id, password });
             
-            // ?꾨━誘몄뾼 泥닿컧???꾪븳 ?④퀎蹂??쒓컖???쇰뱶諛?            setTimeout(() => setAuthStep(2), 400);
+            // 프리미엄 체감을 위한 단계별 시각적 피드백
             
             await new Promise(resolve => setTimeout(resolve, 800));
-            toast.success("?몄쬆 ?깃났: 蹂댁븞 ?몄뀡???깃났?곸쑝濡??섎┰?섏뿀?듬땲??");
+            toast.success("인증 성공: 보안 세션이 성공적으로 수립되었습니다.");
             
             setTimeout(() => {
                 window.location.href = redirectUrl;
@@ -103,10 +103,10 @@ function LoginContent() {
                                 
                                 <div className="space-y-2">
                                     <h3 className="text-xl font-bold text-white">
-                                        {authStep === 1 ? "濡쒓렇???몄쬆 以? : "?몄쬆 ?꾨즺"}
+                                        {authStep === 1 ? "로그인 인증 중" : "인증 완료"}
                                     </h3>
                                     <p className="text-slate-400 text-sm">
-                                        {authStep === 1 ? "蹂댁븞 ?몃뱶???묒냽 ?쒕룄 以?.." : "?ъ슜???낅Т ?섍꼍 ?숆린??以?.."}
+                                        {authStep === 1 ? "보안 노드에 접속 시도 중..." : "사용자 업무 환경 동기화 중..."}
                                     </p>
                                 </div>
                             </motion.div>
@@ -123,10 +123,10 @@ function LoginContent() {
                             <Zap className="text-primary w-6 h-6 fill-primary" />
                         </motion.div>
                         <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                            ?뷀꽣?꾨씪?댁쫰
+                            엔터프라이즈
                         </CardTitle>
                         <CardDescription className="text-slate-600 font-bold text-xs uppercase tracking-wider">
-                            湲濡쒕쾶 ?듯빀 愿由?肄섏넄
+                            글로벌 통합 관리 콘솔
                         </CardDescription>
                     </CardHeader>
 
@@ -231,7 +231,7 @@ function LoginContent() {
                     </form>
                 </Card>
                 <p className="mt-8 text-center text-[11px] font-bold text-slate-700 tracking-tight">
-                    &copy; 2026 愿由??듯빀 ?쒖뒪?? 蹂댁븞 ?몃뱶 01.
+                    &copy; 2026 관리 통합 시스템. 보안 노드 01.
                 </p>
             </motion.div>
         </div>
@@ -240,8 +240,9 @@ function LoginContent() {
 
 export default function LoginPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-100">濡쒕뵫 以?..</div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-100">로딩 중...</div>}>
             <LoginContent />
         </Suspense>
     );
 }
+

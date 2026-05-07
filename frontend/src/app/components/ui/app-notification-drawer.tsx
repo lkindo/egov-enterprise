@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -90,7 +90,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                     </div>
                     _ Alert Sentinel
                   </h2>
-                  <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">?ㅼ떆媛??쒖뒪??臾닿껐???쇰뱶</p>
+                  <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">실시간 시스템 무결성 피드</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {notifications.some(n => !n.isRead) && (
@@ -217,3 +217,4 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
     document.body
   );
 }
+

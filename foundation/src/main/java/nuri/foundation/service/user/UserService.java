@@ -135,6 +135,10 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @CacheEvict(value = { Constants.Cache.USERS_CACHE }, allEntries = true)
         public String registerUser(@NonNull String userId, @NonNull String password, @NonNull String userNm,
                         String passwordHint, String passwordCnsr, String roleName) {
+                required(userId, "사용자 ID 는 null 일 수 없습니다");
+                required(password, "비밀번호 는 null 일 수 없습니다");
+                required(userNm, "사용자 이름 은 null 일 수 없습니다");
+
                 // [보안] 관리자 권한 확인
                 if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
                         throw new BusinessException(ErrorCode.ACCESS_DENIED);
@@ -265,6 +269,11 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public UserResponse signup(UserSignupRequest request) {
+                required(request, "회원가입 요청 정보는 null 일 수 없습니다");
+                required(request.getUserId(), "사용자 ID 는 null 일 수 없습니다");
+                required(request.getPassword(), "비밀번호 는 null 일 수 없습니다");
+                required(request.getUserNm(), "사용자 이름 은 null 일 수 없습니다");
+
                 if (userRepository.existsById(request.getUserId())) {
                         throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);
                 }

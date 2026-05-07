@@ -17,7 +17,7 @@ export class NotificationPage {
 
     async getUnreadCount(): Promise<number> {
         // More robust badge check: any dot or number inside the bell button container
-        const badge = this.page.locator('#e2e-bell-button').locator('.notification-badge, [data-slot="badge"], .bg-red-500, .bg-destructive').first();
+        const badge = this.page.locator('#e2e-bell-button').locator('.notification-badge, [data-slot="badge"], .bg-red-500, .bg-rose-500, .bg-destructive').first();
         if (await badge.isVisible()) {
             const text = await badge.innerText();
             if (!text || text.trim() === '') return 1; // It's a dot

@@ -234,7 +234,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
           {/* Header */}
           <div className="flex items-center justify-between relative z-10">
             <div className="space-y-1">
-                {currentDate.toLocaleString('default', { month: 'long' })} <span className="text-primary underline decoration-4 decoration-primary/20 underline-offset-4">{currentDate.getFullYear()}</span>
+                <h3 className="text-3xl font-black tracking-tighter uppercase font-mono">
+                  {currentDate.toLocaleString('default', { month: 'long' })} <span className="text-primary underline decoration-4 decoration-primary/20 underline-offset-4">{currentDate.getFullYear()}</span>
               </h3>
               <p className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase opacity-40">_ Intelligence_Calendar_Hub</p>
             </div>
@@ -610,3 +611,4 @@ function SummaryBlock({ title, value, icon, status, color }: any) {
     </div>
   );
 }
+

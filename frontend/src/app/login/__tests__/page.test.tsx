@@ -81,8 +81,8 @@ describe('LoginPage Component', () => {
   it('renders login page correctly', () => {
     render(<LoginPage />);
     expect(screen.getByText('엔터프라이즈')).toBeInTheDocument();
-    expect(screen.getByLabelText('Identity_Protocol')).toBeInTheDocument();
-    expect(screen.getByLabelText('Access_Sequence')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Identity_Protocol/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Access_Sequence/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Initialize_System_Link/i })).toBeInTheDocument();
   });
 
@@ -90,8 +90,8 @@ describe('LoginPage Component', () => {
     mockLogin.mockResolvedValueOnce({});
     render(<LoginPage />);
     
-    const idInput = screen.getByLabelText('Identity_Protocol');
-    const pwInput = screen.getByLabelText('Access_Sequence');
+    const idInput = screen.getByLabelText(/Identity_Protocol/i);
+    const pwInput = screen.getByLabelText(/Access_Sequence/i);
     const submitButton = screen.getByRole('button', { name: /Initialize_System_Link/i });
 
     fireEvent.change(idInput, { target: { value: 'testuser' } });
@@ -110,8 +110,8 @@ describe('LoginPage Component', () => {
     
     render(<LoginPage />);
     
-    const idInput = screen.getByLabelText('Identity_Protocol');
-    const pwInput = screen.getByLabelText('Access_Sequence');
+    const idInput = screen.getByLabelText(/Identity_Protocol/i);
+    const pwInput = screen.getByLabelText(/Access_Sequence/i);
     const submitButton = screen.getByRole('button', { name: /Initialize_System_Link/i });
 
     fireEvent.change(idInput, { target: { value: 'baduser' } });
