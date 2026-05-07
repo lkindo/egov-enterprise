@@ -1,5 +1,7 @@
 package nuri.business.domain.informalsanction;
 
+import nuri.business.domain.informalsanction.SanctionStatus;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +24,7 @@ class InformalSanctionTest {
         assertThat(sanction.getInformalSanctionId()).isEqualTo("IS_001");
         assertThat(sanction.getJobSeCode()).isEqualTo("001");
         assertThat(sanction.getApplicantId()).isEqualTo("user01");
-        assertThat(sanction.getConfmAt()).isEqualTo("N");
+        assertThat(sanction.getConfmAt()).isNull();
     }
 
     @Test
@@ -30,6 +32,7 @@ class InformalSanctionTest {
     void updateTest() {
         InformalSanction sanction = InformalSanction.builder()
                 .jobSeCode("001")
+                .confmAt(SanctionStatus.REQUESTED.getCode())
                 .build();
 
         sanction.update("002", "20240201", "admin2");
@@ -40,13 +43,26 @@ class InformalSanctionTest {
     }
 
     @Test
-    @DisplayName("InformalSanction 승인 테스트")
-    void confirmTest() {
-        InformalSanction sanction = InformalSanction.builder().build();
-        sanction.confirm("Y", "Approved");
+    @DisplayName("InformalSanction 승인 및 반려 테스트")
+    void sanctionActionTest() {
+        // given
+        InformalSanction sanction = InformalSanction.builder()
+                .confmAt(SanctionStatus.REQUESTED.getCode())
+                .build();
 
-        assertThat(sanction.getConfmAt()).isEqualTo("Y");
-        assertThat(sanction.getReturnResn()).isEqualTo("Approved");
+        // when (approve)
+        sanction.approve();
+        assertThat(sanction.getConfmAt()).isEqualTo(SanctionStatus.APPROVED.getCode());
         assertThat(sanction.getSanctionDt()).isNotNull();
+
+        // given (reset for reject test)
+        InformalSanction sanction2 = InformalSanction.builder()
+                .confmAt(SanctionStatus.REQUESTED.getCode())
+                .build();
+
+        // when (reject)
+        sanction2.reject("Invalid request");
+        assertThat(sanction2.getConfmAt()).isEqualTo(SanctionStatus.REJECTED.getCode());
+        assertThat(sanction2.getReturnResn()).isEqualTo("Invalid request");
     }
 }

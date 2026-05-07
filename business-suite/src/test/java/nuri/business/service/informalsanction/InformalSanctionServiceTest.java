@@ -16,14 +16,22 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import org.mockito.MockedStatic;
+import org.springframework.context.ApplicationEventPublisher;
+
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
+import nuri.business.domain.informalsanction.SanctionStatus;
+import nuri.foundation.security.util.SecurityUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("InformalSanctionService 테스트")
@@ -35,8 +43,23 @@ class InformalSanctionServiceTest {
     @Mock
     private EgovCommonCodeService commonCodeService;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private InformalSanctionServiceImpl informalSanctionService;
+
+    private MockedStatic<SecurityUtil> securityUtilMock;
+
+    @BeforeEach
+    void setUp() {
+        securityUtilMock = mockStatic(SecurityUtil.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        securityUtilMock.close();
+    }
 
     @Test
     @DisplayName("신청 목록 조회 테스트")
@@ -99,13 +122,21 @@ class InformalSanctionServiceTest {
     @DisplayName("결재 승인 처리 테스트")
     void confirmInformalSanctionTest() {
         // Given
-        InformalSanction sanction = InformalSanction.builder().informalSanctionId("IS1").build();
+        String sanctionerId = "admin";
+        InformalSanction sanction = InformalSanction.builder()
+                .informalSanctionId("IS1")
+                .applicantId("user1")
+                .sanctionerId(sanctionerId)
+                .confmAt(SanctionStatus.REQUESTED.getCode())
+                .build();
         given(informalSanctionRepository.findById("IS1")).willReturn(Optional.of(sanction));
+        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of(sanctionerId));
 
         // When
-        informalSanctionService.confirmInformalSanction("IS1", "Y", "Reason");
+        informalSanctionService.confirmInformalSanction("IS1", SanctionStatus.APPROVED.getCode(), "Reason");
 
         // Then
-        assertThat(sanction.getConfmAt()).isEqualTo("Y");
+        assertThat(sanction.getConfmAt()).isEqualTo(SanctionStatus.APPROVED.getCode());
+        verify(eventPublisher, times(1)).publishEvent(any(Object.class));
     }
 }

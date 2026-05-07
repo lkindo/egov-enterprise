@@ -86,3 +86,6 @@ testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql",
 testcontainers-jdbc = { group = "org.testcontainers", name = "jdbc", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { group = "org.testcontainers", name = "junit-jupiter", version.ref = "testcontainers" }
 
+spring-retry = { group = "org.springframework.retry", name = "spring-retry" }
+spring-boot-starter-aop = { group = "org.springframework.boot", name = "spring-boot-starter-aop" }
+

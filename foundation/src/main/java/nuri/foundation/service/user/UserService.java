@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -136,8 +135,17 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @CacheEvict(value = { Constants.Cache.USERS_CACHE }, allEntries = true)
         public String registerUser(@NonNull String userId, @NonNull String password, @NonNull String userNm,
                         String passwordHint, String passwordCnsr, String roleName) {
-                String esntlId = Constants.User.USER_PREFIX
-                                + UUID.randomUUID().toString().substring(0, Constants.User.UUID_LENGTH);
+                // [보안] 관리자 권한 확인
+                if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+                        throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
+
+                // [안정성] ID 중복 체크
+                if (userRepository.existsById(userId)) {
+                        throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);
+                }
+
+                String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateUserId();
                 String encodedPassword = passwordEncoder.encode(password);
 
                 Role role = Role.USER;
@@ -181,6 +189,13 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         public void updateUser(@NonNull String userId, @NonNull UserDto userDto) {
                 User user = userRepository.findById(required(userId, "사용자 ID 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+                // [보안] 본인 또는 관리자만 수정 가능
+                String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
+                                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+                if (!currentUserId.equals(userId) && !nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+                        throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
 
                 user.update(
                                 userDto.getUserNm(),
@@ -232,6 +247,11 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUser(@NonNull String userId) {
+                // [보안] 관리자 권한 확인
+                if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+                        throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
+
                 if (!userRepository.existsById(required(userId, "사용자 ID 는 null 일 수 없습니다"))) {
                         throw new BusinessException(ErrorCode.USER_NOT_FOUND);
                 }
@@ -252,7 +272,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                         throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);
                 }
 
-                String esntlId = "USR_" + UUID.randomUUID().toString().substring(0, 16);
+                String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateUserId();
                 String encodedPassword = passwordEncoder.encode(request.getPassword());
 
                 User user = User.builder()
@@ -293,6 +313,10 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUserList(@NonNull List<String> userIds) {
+                // [보안] 관리자 권한 확인
+                if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+                        throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
                 userRepository.deleteAllByIdInBatch(required(userIds, "사용자 ID 목록은 null 일 수 없습니다"));
         }
 
@@ -311,6 +335,11 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword) {
+                // [보안] 관리자 권한 확인
+                if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+                        throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
+
                 User user = userRepository.findById(required(userId, "사용자 ID 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
                 user.updatePassword(passwordEncoder.encode(newPassword));
@@ -323,6 +352,10 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUsersStatus(@NonNull List<String> userIds, @NonNull String status) {
+                // [보안] 관리자 권한 확인
+                if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+                        throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
                 List<User> users = userRepository.findAllById(required(userIds));
                 users.forEach(user -> user.updateStatus(status));
                 userRepository.saveAll(users);
@@ -335,6 +368,10 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void moveUsersToDept(@NonNull List<String> userIds, @NonNull String orgnztId) {
+                // [보안] 관리자 권한 확인
+                if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+                        throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
                 List<User> users = userRepository.findAllById(required(userIds));
                 users.forEach(user -> user.updateOrgnztId(orgnztId));
                 userRepository.saveAll(users);
@@ -347,6 +384,10 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUsersRole(@NonNull List<String> userIds, @NonNull Role role) {
+                // [보안] 관리자 권한 확인
+                if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+                        throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
                 List<User> users = userRepository.findAllById(required(userIds));
                 String authorCode = "ROLE_" + role.name();
 

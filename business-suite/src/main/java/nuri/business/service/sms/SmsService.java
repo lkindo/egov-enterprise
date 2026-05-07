@@ -55,7 +55,7 @@ public class SmsService implements EgovSmsService {
     @Transactional
     public String sendSms(String userId, SmsDto dto) {
         log.info("Sending SMS requested by user: {}, sender: {}", userId, dto.getTrnsmitTelno());
-        String smsId = "SMS_" + System.currentTimeMillis();
+        String smsId = nuri.foundation.core.util.IdGenerationUtil.generateSmsId();
 
         Sms sms = Sms.builder()
                 .smsId(smsId)

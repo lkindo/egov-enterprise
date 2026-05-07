@@ -17,6 +17,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -52,12 +54,18 @@ class BoardServiceTest {
     @Mock
     private BoardMapper boardMapper;
     @Mock
+    private BoardViewCountService viewCountService;
+    @Mock
     private Timer timer;
     @Mock
     private Timer.Sample sample;
 
+    private MockedStatic<nuri.foundation.security.util.SecurityUtil> securityUtilMock;
+
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
+        securityUtilMock = mockStatic(nuri.foundation.security.util.SecurityUtil.class);
+        securityUtilMock.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole(anyString())).thenReturn(false);
         meterRegistry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
         boardService = new BoardService(
                 boardRepository,
@@ -66,7 +74,13 @@ class BoardServiceTest {
                 fileService,
                 eventPublisher,
                 meterRegistry,
-                boardMapper);
+                boardMapper,
+                viewCountService);
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        securityUtilMock.close();
     }
 
     @Test
@@ -170,11 +184,9 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long nttId = 1L;
         BoardDetailResult detail = mock(BoardDetailResult.class);
-        Board board = Board.builder().nttId(nttId).build();
         BoardDto dto = BoardDto.builder().id(nttId).build();
 
         given(boardRepository.findArticleDetail(nttId)).willReturn(Optional.of(detail));
-        given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
         given(boardMapper.toDto(detail)).willReturn(dto);
 
         // when
@@ -182,7 +194,7 @@ class BoardServiceTest {
 
         // then
         assertThat(result.getId()).isEqualTo(nttId);
-        assertThat(board.getInqireCo()).isEqualTo(1);
+        verify(viewCountService).increaseViewCount(nttId);
     }
 
     @Test
@@ -191,11 +203,13 @@ class BoardServiceTest {
         // given
         String bbsId = "BBS_01";
         Long nttId = 1L;
+        String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Content", null, null, null, null, null, null,
                 null, null, "Y", null, null, null);
-        Board board = Board.builder().nttId(nttId).nttSj("Old").build();
+        Board board = Board.builder().nttId(nttId).nttSj("Old").ntcrId(userId).build();
 
         given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
         boardService.updatePost(bbsId, nttId, request);
@@ -210,9 +224,11 @@ class BoardServiceTest {
         // given
         String bbsId = "BBS_01";
         Long nttId = 1L;
-        Board board = Board.builder().nttId(nttId).useAt("Y").build();
+        String userId = "user1";
+        Board board = Board.builder().nttId(nttId).useAt("Y").ntcrId(userId).build();
 
         given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
         boardService.deletePost(bbsId, nttId, "user1");
@@ -433,10 +449,12 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long nttId = 1L;
         String eventDateStr = "2023-12-25T10:00:00";
+        String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, eventDateStr,
                 null, null, null, "Y", null, null, null);
-        Board board = spy(Board.builder().nttId(nttId).build());
+        Board board = spy(Board.builder().nttId(nttId).ntcrId(userId).build());
         given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
         boardService.updatePost(bbsId, nttId, request);
@@ -452,10 +470,12 @@ class BoardServiceTest {
         // given
         String bbsId = "BBS_01";
         Long nttId = 1L;
+        String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, "invalid-date",
                 null, null, null, "Y", null, null, null);
-        Board board = spy(Board.builder().nttId(nttId).build());
+        Board board = spy(Board.builder().nttId(nttId).ntcrId(userId).build());
         given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of(userId));
 
         // when
         boardService.updatePost(bbsId, nttId, request);
@@ -477,8 +497,9 @@ class BoardServiceTest {
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        Board board = Board.builder().nttId(nttId).build();
+        Board board = Board.builder().nttId(nttId).ntcrId("user1").build();
         given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
         given(fileService.uploadFiles(files)).willReturn("NEW_ATCH_001");
 
         // when
@@ -503,8 +524,9 @@ class BoardServiceTest {
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        Board board = Board.builder().nttId(nttId).build();
+        Board board = Board.builder().nttId(nttId).ntcrId("user1").build();
         given(boardRepository.findById(nttId)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
 
         // when
         boardService.updatePostWithFiles(bbsId, nttId, request, files);

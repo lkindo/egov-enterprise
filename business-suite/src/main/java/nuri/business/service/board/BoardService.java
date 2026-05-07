@@ -29,6 +29,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
+import nuri.business.service.board.mapper.BoardMapper;
 
 /**
  * JPA 기반 게시판 비즈니스 로직 구현 클래스
@@ -45,7 +46,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
         private final EgovFileService fileService;
         private final ApplicationEventPublisher eventPublisher;
         private final MeterRegistry meterRegistry;
-        private final nuri.business.service.board.mapper.BoardMapper boardMapper;
+        private final BoardMapper boardMapper;
+        private final BoardViewCountService viewCountService;
 
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
@@ -53,7 +55,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                         EgovFileService fileService,
                         ApplicationEventPublisher eventPublisher,
                         MeterRegistry meterRegistry,
-                        nuri.business.service.board.mapper.BoardMapper boardMapper) {
+                        BoardMapper boardMapper,
+                        BoardViewCountService viewCountService) {
                 this.boardRepository = required(boardRepository, "boardRepository 는 null 일 수 없습니다");
                 this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
                 this.userService = required(userService, "userService 는 null 일 수 없습니다");
@@ -61,6 +64,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 this.eventPublisher = required(eventPublisher, "eventPublisher 는 null 일 수 없습니다");
                 this.meterRegistry = required(meterRegistry, "meterRegistry 는 null 일 수 없습니다");
                 this.boardMapper = required(boardMapper, "boardMapper 는 null 일 수 없습니다");
+                this.viewCountService = required(viewCountService, "viewCountService 는 null 일 수 없습니다");
         }
 
 
@@ -110,6 +114,8 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                                 log.warn("Failed to parse endDate: {}", endDate);
                         }
                 }
+
+                condition.validateDates();
 
                 return boardRepository.searchArticles(condition, required(pageable, "pageable 는 null 일 수 없습니다"))
                                 .map(boardMapper::toDto);
@@ -265,10 +271,10 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 BoardDetailResult detail = boardRepository.findArticleDetail(nttId)
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
-                boardRepository.findById(required(nttId, "nttId 는 null 일 수 없습니다")).ifPresent(Board::increaseInqireCo);
+                // Redis 기반 쓰기 지연 처리
+                viewCountService.increaseViewCount(nttId);
 
                 return boardMapper.toDto(detail);
-
         }
 
         @Override
@@ -277,6 +283,15 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 Board board = boardRepository
                                 .findById(required(nttId, "nttId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
+
+                // [보안] 권한 확인 (작성자 본인 또는 관리자)
+                String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
+                                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+                boolean isAdmin = nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN");
+
+                if (!isAdmin && !currentUserId.equals(board.getNtcrId())) {
+                        throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
 
                 java.time.LocalDateTime eventDate = null;
                 if (StringUtils.hasText(request.eventDate())) {
@@ -328,6 +343,15 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
                 Board board = boardRepository
                                 .findById(required(nttId, "nttId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
+
+                // [보안] 권한 확인 (작성자 본인 또는 관리자)
+                String currentUserId = nuri.foundation.security.util.SecurityUtil.getCurrentUserId()
+                                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+                boolean isAdmin = nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN");
+
+                if (!isAdmin && !currentUserId.equals(board.getNtcrId())) {
+                        throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
 
                 board.delete();
         }

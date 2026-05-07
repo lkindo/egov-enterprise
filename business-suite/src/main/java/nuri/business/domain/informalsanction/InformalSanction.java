@@ -7,7 +7,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -41,8 +40,7 @@ public class InformalSanction extends BaseEntity {
     private String sanctionerId;
 
     @Column(name = "CONFM_AT", length = 1)
-    @Builder.Default
-    private String confmAt = "N";
+    private String confmAt;
 
     @Column(name = "SANCTN_DT")
     private LocalDateTime sanctionDt;
@@ -51,14 +49,41 @@ public class InformalSanction extends BaseEntity {
     private String returnResn;
 
     public void update(String jobSeCode, String requestDe, String sanctionerId) {
+        validateRequestedState();
         this.jobSeCode = jobSeCode;
         this.requestDe = requestDe;
         this.sanctionerId = sanctionerId;
     }
 
-    public void confirm(String confmAt, String returnResn) {
-        this.confmAt = confmAt;
-        this.returnResn = returnResn;
+    /**
+     * 승인 처리
+     */
+    public void approve() {
+        validateRequestedState();
+        this.confmAt = SanctionStatus.APPROVED.getCode();
         this.sanctionDt = LocalDateTime.now();
+        this.returnResn = null;
+    }
+
+    /**
+     * 반려 처리
+     */
+    public void reject(String reason) {
+        validateRequestedState();
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new nuri.foundation.core.exception.BusinessException(
+                "반려 사유는 필수입니다.", nuri.foundation.core.exception.ErrorCode.INVALID_INPUT_VALUE);
+        }
+        this.confmAt = SanctionStatus.REJECTED.getCode();
+        this.returnResn = reason;
+        this.sanctionDt = LocalDateTime.now();
+    }
+
+    private void validateRequestedState() {
+        if (!SanctionStatus.REQUESTED.getCode().equals(this.confmAt)) {
+            throw new nuri.foundation.core.exception.BusinessException(
+                "이미 처리가 완료된 결재 건입니다. (현재 상태: " + SanctionStatus.fromCode(this.confmAt).getDescription() + ")",
+                nuri.foundation.core.exception.ErrorCode.INVALID_STATE);
+        }
     }
 }

@@ -11,6 +11,7 @@ import nuri.foundation.domain.system.service.survey.OnlinePollResultRepository;
 import nuri.foundation.service.system.service.survey.dto.OnlinePollItemDto;
 import nuri.foundation.service.system.service.survey.dto.OnlinePollManageDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -40,9 +42,9 @@ public class OnlinePollService implements EgovOnlinePollService {
             entities = pollManageRepository.findByPollNmContaining(searchKeyword, pageable);
         }
 
-        System.out.println(">>> [DEBUG] getPollList found " + entities.getContent().size() + " entities");
+        log.debug(">>> [DEBUG] getPollList found {} entities", entities.getContent().size());
         entities.getContent().forEach(e -> 
-            System.out.println(">>> [DEBUG] Poll: " + e.getPollNm() + ", Items count: " + (e.getPollItems() != null ? e.getPollItems().size() : "null"))
+            log.debug(">>> [DEBUG] Poll: {}, Items count: {}", e.getPollNm(), (e.getPollItems() != null ? e.getPollItems().size() : "null"))
         );
 
         return entities.map(entity -> {
@@ -69,7 +71,12 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void insertPoll(OnlinePollManageDto dto) {
-        System.out.println(">>> [DEBUG] insertPoll received beginDe: " + dto.getPollBeginDe() + ", endDe: " + dto.getPollEndDe());
+        // [보안] 관리자 권한 확인
+        if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+        
+        log.debug(">>> [DEBUG] insertPoll received beginDe: {}, endDe: {}", dto.getPollBeginDe(), dto.getPollEndDe());
         validatePollDates(dto.getPollBeginDe(), dto.getPollEndDe());
         if (dto.getPollId() == null || dto.getPollId().isEmpty()) {
             dto.setPollId("P" + System.currentTimeMillis());
@@ -105,6 +112,11 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void updatePoll(OnlinePollManageDto dto) {
+        // [보안] 관리자 권한 확인
+        if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
         validatePollDates(dto.getPollBeginDe(), dto.getPollEndDe());
         OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(dto.getPollId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -131,6 +143,11 @@ public class OnlinePollService implements EgovOnlinePollService {
     @Override
     @Transactional
     public void deletePoll(String pollId) {
+        // [보안] 관리자 권한 확인
+        if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
         pollManageRepository.deleteById(Objects.requireNonNull(pollId));
     }
 

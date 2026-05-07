@@ -74,6 +74,11 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
     @Override
     @Transactional
     public String createBoardMaster(BoardMasterDto dto) {
+        // [보안] 관리자 권한 확인
+        if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+        
         String bbsId;
         try {
             bbsId = idgenService.getNextStringId();
@@ -113,6 +118,11 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
     @Override
     @Transactional
     public void updateBoardMaster(BoardMasterDto dto) {
+        // [보안] 관리자 권한 확인
+        if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
         BoardMaster entity = boardMasterRepository.findById(required(dto.getBbsId(), "dto.getBbsId() 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
@@ -131,6 +141,11 @@ public class BoardMasterService extends BaseAbstractService implements EgovBoard
     @Override
     @Transactional
     public void deleteBoardMaster(String bbsId, String userId) {
+        // [보안] 관리자 권한 확인
+        if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
         BoardMaster entity = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 

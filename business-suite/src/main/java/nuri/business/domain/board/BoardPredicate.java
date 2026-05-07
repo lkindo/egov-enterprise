@@ -1,9 +1,12 @@
 package nuri.business.domain.board;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 public class BoardPredicate {
 
     public static BooleanBuilder searchBoard(BoardSearchCondition condition) {
@@ -15,8 +18,8 @@ public class BoardPredicate {
             for (byte b : wrd.getBytes(java.nio.charset.StandardCharsets.UTF_8)) {
                 hex.append(String.format("%02X ", b));
             }
-            System.out.println("DEBUG: BoardSearchCondition - searchCnd: " + condition.getSearchCnd() + 
-                               ", searchWrd: [" + wrd + "], Hex(UTF-8): " + hex.toString());
+            log.debug("DEBUG: BoardSearchCondition - searchCnd: {}, searchWrd: [{}], Hex(UTF-8): {}", 
+                               condition.getSearchCnd(), wrd, hex.toString());
         }
         
         if (StringUtils.hasText(condition.getBbsId())) {

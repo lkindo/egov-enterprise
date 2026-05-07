@@ -14,4 +14,6 @@ public interface GeneralUserRepository extends JpaRepository<GeneralUser, String
     Optional<GeneralUser> findByMberNmAndMberEmailAdres(String mberNm, String mberEmailAdres);
 
     Optional<GeneralUser> findByMberIdAndMberNmAndMberEmailAdres(String mberId, String mberNm, String mberEmailAdres);
+    
+    boolean existsByMberId(String mberId);
 }

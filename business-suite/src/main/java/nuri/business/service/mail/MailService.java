@@ -53,7 +53,7 @@ public class MailService implements EgovMailService {
     @Transactional
     public String sendMail(String userId, SentMailDto dto) {
         log.info("Sending mail requested by user: {}, subject: {}", userId, dto.getSj());
-        String mssageId = "MAIL_" + System.currentTimeMillis();
+        String mssageId = nuri.foundation.core.util.IdGenerationUtil.generateMailId();
 
         SentMail sentMail = Objects.requireNonNull(SentMail.builder()
                 .mssageId(mssageId)

@@ -12,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +36,17 @@ public class MberManageServiceImpl implements EgovMberManageService {
     @Override
     @Transactional
     public void insertMber(GeneralUserDto dto) {
-        String esntlId = "MBER_" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
+        // [보안] 관리자 권한 확인
+        if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // [안정성] ID 중복 체크 누락 보완
+        if (generalUserRepository.existsByMberId(dto.getMberId())) {
+            throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);
+        }
+
+        String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateMberId();
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
 
         GeneralUser entity = GeneralUser.builder()
@@ -67,6 +76,11 @@ public class MberManageServiceImpl implements EgovMberManageService {
     @Override
     @Transactional
     public void updateMber(GeneralUserDto dto) {
+        // [보안] 관리자 권한 확인
+        if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
         GeneralUser entity = generalUserRepository.findById(Objects.requireNonNull(dto.getEsntlId()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getMberNm(), dto.getPasswordHint(), dto.getPasswordCnsr(),
@@ -79,12 +93,22 @@ public class MberManageServiceImpl implements EgovMberManageService {
     @Override
     @Transactional
     public void deleteMber(String esntlId) {
+        // [보안] 관리자 권한 확인
+        if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
         generalUserRepository.deleteById(Objects.requireNonNull(esntlId));
     }
 
     @Override
     @Transactional
     public void updatePassword(String esntlId, String password) {
+        // [보안] 관리자 권한 확인
+        if (!nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
         GeneralUser entity = generalUserRepository.findById(Objects.requireNonNull(esntlId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         entity.updatePassword(passwordEncoder.encode(password));

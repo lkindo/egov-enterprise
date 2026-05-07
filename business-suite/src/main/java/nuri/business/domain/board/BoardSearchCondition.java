@@ -26,4 +26,11 @@ public class BoardSearchCondition {
     public BoardSearchCondition(@NonNull String bbsId) {
         this.bbsId = bbsId;
     }
+
+    public void validateDates() {
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new nuri.foundation.core.exception.BusinessException(
+                "시작일은 종료일보다 빨라야 합니다.", nuri.foundation.core.exception.ErrorCode.INVALID_INPUT_VALUE);
+        }
+    }
 }

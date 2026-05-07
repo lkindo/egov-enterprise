@@ -1,28 +1,30 @@
 package nuri.business.service.informalsanction;
 
-
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.ErrorCode;
 import nuri.business.domain.informalsanction.InformalSanction;
 import nuri.business.domain.informalsanction.InformalSanctionRepository;
 import nuri.foundation.service.code.EgovCommonCodeService;
-import nuri.business.service.informalsanction.dto.InformalSanctionDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import nuri.business.domain.informalsanction.SanctionStatus;
+import nuri.foundation.security.util.SecurityUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.mockito.MockedStatic;
+import org.springframework.context.ApplicationEventPublisher;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("InformalSanctionServiceImpl 단위 테스트")
@@ -37,60 +39,81 @@ class InformalSanctionServiceImplTest {
     @Mock
     private EgovCommonCodeService commonCodeService;
 
-    @Test
-    @DisplayName("비정형 결재 목록 조회 성공")
-    void getInformalSanctionList_Success() {
-        // given
-        Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().informalSanctionId("SANC_01").build()));
-        given(informalSanctionRepository.findAll(any(Pageable.class))).willReturn(page);
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
-        // when
-        Page<InformalSanctionDto> result = informalSanctionService.getInformalSanctionList(null, Pageable.unpaged());
+    private MockedStatic<SecurityUtil> securityUtilMock;
 
-        // then
-        assertThat(result.getContent()).hasSize(1);
+    @BeforeEach
+    void setUp() {
+        securityUtilMock = mockStatic(SecurityUtil.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        securityUtilMock.close();
     }
 
     @Test
-    @DisplayName("비정형 결재 상세 조회 성공")
-    void getInformalSanction_Success() {
-        // given
-        InformalSanction entity = InformalSanction.builder().informalSanctionId("SANC_01").jobSeCode("CODE1").build();
-        given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
-        given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of());
-
-        // when
-        InformalSanctionDto result = informalSanctionService.getInformalSanction("SANC_01");
-
-        // then
-        assertThat(result.getInformalSanctionId()).isEqualTo("SANC_01");
-    }
-
-    @Test
-    @DisplayName("비정형 결재 등록 성공")
-    void registerInformalSanction_Success() {
-        // given
-        InformalSanctionDto dto = InformalSanctionDto.builder().informalSanctionId("SANC_01").build();
-
-        // when
-        informalSanctionService.registerInformalSanction(dto);
-
-        // then
-        verify(informalSanctionRepository).save(any());
-    }
-
-    @Test
-    @DisplayName("비정형 결재 승인/반려 성공")
+    @DisplayName("비정형 결재 승인 성공 (정상 권한 및 상태)")
     void confirmInformalSanction_Success() {
         // given
-        InformalSanction entity = InformalSanction.builder().informalSanctionId("SANC_01").build();
+        String sanctionerId = "SANCTNER_01";
+        InformalSanction entity = InformalSanction.builder()
+                .informalSanctionId("SANC_01")
+                .applicantId("APPLICANT_01")
+                .sanctionerId(sanctionerId)
+                .confmAt(SanctionStatus.REQUESTED.getCode())
+                .build();
+        
         given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
+        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of(sanctionerId));
 
         // when
-        informalSanctionService.confirmInformalSanction("SANC_01", "C", "Reason");
+        informalSanctionService.confirmInformalSanction("SANC_01", SanctionStatus.APPROVED.getCode(), null);
 
         // then
-        assertThat(entity.getConfmAt()).isEqualTo("C");
-        assertThat(entity.getReturnResn()).isEqualTo("Reason");
+        assertThat(entity.getConfmAt()).isEqualTo(SanctionStatus.APPROVED.getCode());
+        verify(eventPublisher, times(1)).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("비정형 결재 승인 실패 - 권한 없음")
+    void confirmInformalSanction_AccessDenied() {
+        // given
+        InformalSanction entity = InformalSanction.builder()
+                .informalSanctionId("SANC_01")
+                .sanctionerId("SANCTNER_01")
+                .build();
+        
+        given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
+        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of("OTHER_USER"));
+
+        // when & then
+        assertThatThrownBy(() -> informalSanctionService.confirmInformalSanction("SANC_01", SanctionStatus.APPROVED.getCode(), null))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("비정형 결재 승인 실패 - 이미 처리된 상태")
+    void confirmInformalSanction_InvalidState() {
+        // given
+        String sanctionerId = "SANCTNER_01";
+        InformalSanction entity = InformalSanction.builder()
+                .informalSanctionId("SANC_01")
+                .sanctionerId(sanctionerId)
+                .confmAt(SanctionStatus.APPROVED.getCode())
+                .build();
+        
+        given(informalSanctionRepository.findById("SANC_01")).willReturn(Optional.of(entity));
+        securityUtilMock.when(SecurityUtil::getCurrentUserId).thenReturn(Optional.of(sanctionerId));
+
+        // when & then
+        assertThatThrownBy(() -> informalSanctionService.confirmInformalSanction("SANC_01", SanctionStatus.APPROVED.getCode(), null))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_STATE);
     }
 }

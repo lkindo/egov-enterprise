@@ -32,8 +32,12 @@ public class Constants {
         public static final String ADMIN_ROLE = "ADMIN";
         public static final String GUEST_ROLE = "GUEST";
         public static final String USER_PREFIX = "USR_";
+        public static final String MBER_PREFIX = "MBER_";
+        public static final String INFRML_PREFIX = "INFRML_";
         public static final int UUID_LENGTH = 16;
         public static final String USRCNFRM_PREFIX = "USRCNFRM_";
+        public static final String SMS_PREFIX = "SMS_";
+        public static final String MAIL_PREFIX = "MAIL_";
         public static final int ESNTL_ID_UUID_LENGTH = 10;
     }
 

@@ -81,15 +81,31 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 등록 테스트")
-    void registerUserTest() {
-        given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
-        
-        String userId = userService.registerUser("testuser", "password", "홍길동", null, null, "USER");
+    @DisplayName("사용자 등록 테스트 - 성공")
+    void registerUserSuccessTest() {
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            given(userRepository.existsById("testuser")).willReturn(false);
+            given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
+            
+            String userId = userService.registerUser("testuser", "password", "홍길동", null, null, "USER");
 
-        assertEquals("testuser", userId);
-        verify(userRepository).save(any());
-        verify(userAuthorityRepository).save(any());
+            assertEquals("testuser", userId);
+            verify(userRepository).save(any());
+            verify(userAuthorityRepository).save(any());
+        }
+    }
+
+    @Test
+    @DisplayName("사용자 등록 테스트 - 실패 (ID 중복)")
+    void registerUserDuplicateIdTest() {
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            given(userRepository.existsById("testuser")).willReturn(true);
+            
+            assertThrows(BusinessException.class, () -> 
+                userService.registerUser("testuser", "password", "홍길동", null, null, "USER"));
+        }
     }
 
     @Test
@@ -116,6 +132,35 @@ class UserServiceTest {
         given(passwordEncoder.matches("wrong", "oldEncoded")).willReturn(false);
 
         assertThrows(BusinessException.class, () -> userService.changePassword("user1", "wrong", "new"));
+    }
+
+    @Test
+    @DisplayName("사용자 정보 수정 테스트 - 본인 성공")
+    void updateUserSelfSuccessTest() {
+        User user = mock(User.class);
+        given(userRepository.findById("user1")).willReturn(Optional.of(user));
+        
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+            
+            userService.updateUser("user1", new UserDto());
+            verify(user).update(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+        }
+    }
+
+    @Test
+    @DisplayName("사용자 정보 수정 테스트 - 타인 실패")
+    void updateUserOtherFailTest() {
+        User user = mock(User.class);
+        given(userRepository.findById("user2")).willReturn(Optional.of(user));
+        
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(nuri.foundation.security.util.SecurityUtil::getCurrentUserId).thenReturn(Optional.of("user1"));
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+            
+            assertThrows(BusinessException.class, () -> userService.updateUser("user2", new UserDto()));
+        }
     }
 
     @Test
