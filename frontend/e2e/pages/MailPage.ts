@@ -23,14 +23,13 @@ export class MailPage {
             await recipientInput.clear();
             await recipientInput.fill(recipient);
             
-            // Click first available result (API returns NameCard.ncrdNm as display name,
-            // not userId, so hasText filter by userId would fail)
+            // Wait for results to appear with a bit more buffer
             const firstResult = this.page.getByTestId('recipient-item').first();
-            await firstResult.waitFor({ state: 'visible', timeout: 10000 });
+            await firstResult.waitFor({ state: 'visible', timeout: 15000 });
             await firstResult.click({ force: true });
             
-            // Brief pause for state update
-            await this.page.waitForTimeout(500);
+            // Wait for the recipient selection to be processed and UI to update
+            await this.page.waitForTimeout(1000);
             console.log(`>>> Selected recipient for: ${recipient}`);
         }
 
@@ -40,8 +39,9 @@ export class MailPage {
 
         // Submit
         const sendBtn = this.page.getByTestId('mail-send-btn');
-        await expect(sendBtn).toBeEnabled();
-        await sendBtn.click();
+        await this.page.waitForTimeout(1000); // Wait for form state stabilization
+        await expect(sendBtn).toBeEnabled({ timeout: 10000 });
+        await sendBtn.click({ force: true });
         
         // Should redirect to history
         await this.page.waitForURL(/\/mail-history/, { timeout: 15000 });
@@ -57,12 +57,14 @@ export class MailPage {
         await listItems.first().waitFor({ state: 'visible', timeout: 15000 });
 
         // Search specifically for this subject to isolate
-        const searchInput = this.page.locator('input[placeholder*="검색"]');
+        const searchInput = this.page.getByRole('textbox', { name: '메일 검색' });
         if (await searchInput.isVisible()) {
             await searchInput.clear();
             await searchInput.fill(subject);
-            // Wait for filtered result
-            await this.page.getByTestId('mail-item').filter({ hasText: subject }).first().waitFor({ state: 'visible', timeout: 10000 });
+            await this.page.keyboard.press('Enter');
+            
+            // Wait for filtered result to be visible
+            await this.page.getByTestId('mail-item').filter({ hasText: subject }).first().waitFor({ state: 'visible', timeout: 15000 });
         }
 
         const mailItem = this.page.getByTestId('mail-item').filter({ hasText: subject }).first();
@@ -70,6 +72,10 @@ export class MailPage {
         
         console.log('[E2E] Clicking mail item...');
         await mailItem.click({ force: true });
+        
+        // Wait for the detail panel to be visible and stable (it has a specific header)
+        const detailPanelHeader = this.page.locator('h2').filter({ hasText: 'Mail Intelligence' });
+        await detailPanelHeader.waitFor({ state: 'visible', timeout: 15000 });
         
         // Verify detail
         const detailSubject = this.page.locator('h3').filter({ hasText: subject }).first();

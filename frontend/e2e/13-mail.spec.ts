@@ -11,7 +11,7 @@ test.describe('Tier 13: Enterprise Mail System E2E', () => {
     });
 
     test('should send a mail and verify it in history', async ({ page }) => {
-        const subject = `E2E Test Mail ${Date.now()}`;
+        const subject = `E2E ${Date.now()}`;
         const content = 'This is an automated test mail content.';
         const recipientSearch = 'webmaster'; // 'admin' returns no matches in current DB
 
@@ -24,22 +24,23 @@ test.describe('Tier 13: Enterprise Mail System E2E', () => {
 
     test('should search and delete a mail from history', async ({ page }) => {
         // First send one to ensure we have something to delete
-        const subject = `Delete Test Mail ${Date.now()}`;
+        const subject = `DEL ${Date.now()}`;
         await mailPage.navigateToSend();
         await mailPage.sendMail('webmaster', subject, 'Cleanup test');
 
         await mailPage.navigateToHistory();
         
         // Search
-        const searchInput = page.locator('input[placeholder*="검색"]');
+        const searchInput = page.getByRole('textbox', { name: '메일 검색' });
         await searchInput.fill(subject);
+        await searchInput.press('Enter');
         await page.waitForTimeout(500);
 
         await mailPage.deleteMail(subject);
     });
 
     test('Mail: Multi-recipient Dispatch', async ({ page }) => {
-        const subject = `Multi-Recipient Test ${Date.now()}`;
+        const subject = `MULTI ${Date.now()}`;
         // Recipients separated by comma or semicolon
         const recipients = 'webmaster, TEST1'; 
         

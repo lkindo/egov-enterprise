@@ -6,11 +6,17 @@ export class NotificationPage {
     async openNotificationDrawer() {
         const bellButton = this.page.locator('#e2e-bell-button');
         await bellButton.click();
-        // Scope h2 to the drawer panel to avoid strict mode violation with other h2 elements
+        
+        // Wait for drawer to appear and finish animation
         const drawer = this.page.locator('[class*="z-\\[9999\\]"]').last();
+        await expect(drawer).toBeVisible({ timeout: 15000 });
+        
+        // Wait for the header to be visible which indicates the drawer content is rendering
         await expect(drawer.locator('h2')).toContainText(/Alert Sentinel/i, { timeout: 10000 });
+        
         // Wait for at least one notification item or the "No active alerts" message
-        await this.page.locator('div.group, span:has-text("No active alerts")').first().waitFor({ state: 'visible', timeout: 10000 });
+        // Use a more specific selector to avoid hidden elements
+        await drawer.locator('div.group, span:has-text("No active alerts")').first().waitFor({ state: 'visible', timeout: 15000 });
     }
 
     async closeNotificationDrawer() {
