@@ -78,7 +78,11 @@ export class ConsoleErrorGuard {
           url.includes('/api/v1/admin/system/statistics/connect')
         );
 
-        if (!isAuthExpected) {
+        const isIgnored = this.ignorePatterns.some(pattern => 
+          typeof pattern === 'string' ? url.includes(pattern) : pattern.test(url)
+        );
+
+        if (!isAuthExpected && !isIgnored) {
           // [PATCH] Skip image loading errors (4xx) for functional stability
           if (resourceType === 'image' && status >= 400 && status < 500) {
             console.warn(`⚠️ [SKIP_IMAGE_ERROR]: ${status} ${url}`);

@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
@@ -104,37 +105,43 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 등록 - 성공")
     void insertPoll() {
-        OnlinePollItemDto itemDto = OnlinePollItemDto.builder().pollIemNm("Item").build();
-        OnlinePollManageDto dto = OnlinePollManageDto.builder()
-                .pollNm("New Poll")
-                .pollItems(List.of(itemDto))
-                .build();
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            OnlinePollItemDto itemDto = OnlinePollItemDto.builder().pollIemNm("Item").build();
+            OnlinePollManageDto dto = OnlinePollManageDto.builder()
+                    .pollNm("New Poll")
+                    .pollItems(List.of(itemDto))
+                    .build();
 
-        onlinePollService.insertPoll(dto);
+            onlinePollService.insertPoll(dto);
 
-        verify(pollManageRepository, times(1)).save(any(OnlinePollManage.class));
+            verify(pollManageRepository, times(1)).save(any(OnlinePollManage.class));
+        }
     }
 
     @Test
     @DisplayName("설문 수정 - 성공")
     void updatePoll_Success() {
-        OnlinePollManage entity = OnlinePollManage.builder()
-                .pollId("P1")
-                .pollNm("Old")
-                .pollItems(new ArrayList<>())
-                .build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            OnlinePollManage entity = OnlinePollManage.builder()
+                    .pollId("P1")
+                    .pollNm("Old")
+                    .pollItems(new ArrayList<>())
+                    .build();
+            given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
 
-        OnlinePollManageDto dto = OnlinePollManageDto.builder()
-                .pollId("P1")
-                .pollNm("New")
-                .pollItems(List.of(OnlinePollItemDto.builder().pollIemNm("New Item").build()))
-                .build();
+            OnlinePollManageDto dto = OnlinePollManageDto.builder()
+                    .pollId("P1")
+                    .pollNm("New")
+                    .pollItems(List.of(OnlinePollItemDto.builder().pollIemNm("New Item").build()))
+                    .build();
 
-        onlinePollService.updatePoll(dto);
+            onlinePollService.updatePoll(dto);
 
-        assertThat(entity.getPollNm()).isEqualTo("New");
-        assertThat(entity.getPollItems()).hasSize(1);
+            assertThat(entity.getPollNm()).isEqualTo("New");
+            assertThat(entity.getPollItems()).hasSize(1);
+        }
     }
 
     @Test
@@ -148,8 +155,11 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 삭제 - 성공")
     void deletePoll() {
-        onlinePollService.deletePoll("P1");
-        verify(pollManageRepository, times(1)).deleteById("P1");
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            onlinePollService.deletePoll("P1");
+            verify(pollManageRepository, times(1)).deleteById("P1");
+        }
     }
 
     @Test

@@ -13,18 +13,25 @@ export class MailPage {
         await this.page.goto('/admin/collaboration/mail-history', { waitUntil: 'load' });
     }
 
-    async sendMail(recipient: string, subject: string, content: string) {
-        // Search and select recipient
+    async sendMail(recipients: string, subject: string, content: string) {
+        // Search and select recipient(s)
+        const recipientList = recipients.split(/[,;]/).map(r => r.trim());
         const recipientInput = this.page.getByTestId('mail-recipient-input');
-        await recipientInput.click();
-        await recipientInput.fill(recipient);
-        
-        // Wait for search results to appear and stabilize
-        const firstResult = this.page.getByTestId('recipient-item').first();
-        await expect(firstResult).toBeVisible({ timeout: 10000 });
-        
-        // Sometimes clicking the text inside works better or using force
-        await firstResult.click({ force: true });
+
+        for (const recipient of recipientList) {
+            await recipientInput.click();
+            await recipientInput.clear(); // Clear previous selection search text
+            await recipientInput.fill(recipient);
+            
+            // Wait for search results to appear and stabilize
+            const firstResult = this.page.getByTestId('recipient-item').filter({ hasText: recipient }).first();
+            await expect(firstResult).toBeVisible({ timeout: 10000 });
+            
+            await firstResult.click({ force: true });
+            // Wait for dropdown to potentially close or stabilize
+            await this.page.waitForTimeout(500);
+            console.log(`>>> Selected recipient: ${recipient}`);
+        }
 
         // Fill form
         await this.page.getByTestId('mail-subject-input').fill(subject);

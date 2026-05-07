@@ -57,14 +57,11 @@ public class SanctionEventListener {
 
             // Mail 발송
             if (org.springframework.util.StringUtils.hasText(user.getEmailAdres())) {
-                nuri.business.service.mail.dto.MailDto mailDto = nuri.business.service.mail.dto.MailDto.builder()
-                        .senderEmail("admin@egov.enterprise")
-                        .senderNm("eGov Admin")
-                        .emailSj("[eGov] 결재 상태 변경 알림")
+                nuri.business.service.mail.dto.SentMailDto mailDto = nuri.business.service.mail.dto.SentMailDto.builder()
+                        .dsptchPerson("admin@egov.enterprise")
+                        .sj("[eGov] 결재 상태 변경 알림")
                         .emailCn(message)
-                        .recipients(java.util.List.of(nuri.business.service.mail.dto.MailRecptnDto.builder()
-                                .receiverEmail(user.getEmailAdres())
-                                .build()))
+                        .recptnPerson(user.getEmailAdres())
                         .build();
                 mailService.sendMail("SYSTEM", mailDto);
                 log.info("Mail notification sent to {}", user.getEmailAdres());

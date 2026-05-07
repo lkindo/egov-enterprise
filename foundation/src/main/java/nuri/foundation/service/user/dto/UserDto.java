@@ -42,22 +42,46 @@ public class UserDto {
     private String password;
 
 
+    @Size(max = 100, message = "비밀번호 힌트는 최대 100 자입니다")
     private String passwordHint;
+
+    @Size(max = 100, message = "비밀번호 정답은 최대 100 자입니다")
     private String passwordCnsr;
+    
+    @Size(max = 50, message = "권한명은 최대 50 자입니다")
     private String role;
 
     @Size(max = 20, message = "사번은 최대 20 자입니다")
     private String emplNo;
 
+    @Size(max = 10, message = "성별 코드는 최대 10 자입니다")
     private String sexdstnCode;
+
+    @Size(max = 20, message = "생년월일은 최대 20 자입니다")
     private String brth;
+
+    @Size(max = 4, message = "지역번호는 최대 4 자입니다")
     private String areaNo;
+
+    @Size(max = 4, message = "전화번호 중간자리는 최대 4 자입니다")
     private String homemiddleTelno;
+
+    @Size(max = 4, message = "전화번호 끝자리는 최대 4 자입니다")
     private String homeendTelno;
+
+    @Size(max = 20, message = "회원 유형 코드는 최대 20 자입니다")
     private String mberTyCode;
+
+    @Size(max = 20, message = "팩스 번호는 최대 20 자입니다")
     private String fxnum;
+
+    @Size(max = 20, message = "기관 코드는 최대 20 자입니다")
     private String insttCode;
+
+    @Size(max = 20, message = "조직 ID 는 최대 20 자입니다")
     private String orgnztId;
+
+    @Size(max = 20, message = "그룹 ID 는 최대 20 자입니다")
     private String groupId;
 
     @Size(max = 100, message = "주소는 최대 100 자입니다")
@@ -66,7 +90,10 @@ public class UserDto {
     @Size(max = 100, message = "상세주소는 최대 100 자입니다")
     private String detailAdres;
 
+    @Size(max = 10, message = "우편번호는 최대 10 자입니다")
     private String zip;
+
+    @Size(max = 20, message = "사무실 전화번호는 최대 20 자입니다")
     private String offmTelno;
 
     @Size(max = 20, message = "휴대폰 번호는 최대 20 자입니다")
@@ -78,8 +105,14 @@ public class UserDto {
 
     @Size(max = 60, message = "직함은 최대 60 자입니다")
     private String ofcpsNm;
+
+    @Size(max = 255, message = "DN 정보는 최대 255 자입니다")
     private String subDn;
+
+    @Size(max = 10, message = "사용자 구분은 최대 10 자입니다")
     private String userSe;
+
+    @Size(max = 10, message = "사용자 상태 코드는 최대 10 자입니다")
     private String userSttusCode;
     private LocalDateTime createdDate;
 

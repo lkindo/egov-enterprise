@@ -5,9 +5,7 @@ import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.service.user.EgovUserService;
-import nuri.foundation.service.user.UserService;
 import nuri.foundation.service.user.dto.*;
-import nuri.foundation.domain.user.entity.Role;
 import io.swagger.v3.oas.annotations.Operation;
 
 import io.swagger.v3.oas.annotations.Parameter;

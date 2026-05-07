@@ -2,6 +2,7 @@ package nuri.business.service.sms;
 
 import nuri.business.domain.sms.SmsRecptn;
 import nuri.business.domain.sms.SmsRecptnRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,16 @@ class SmsAsyncProcessorTest {
     @Mock
     private SmsRecptnRepository smsRecptnRepository;
 
+    @Mock
+    private io.micrometer.core.instrument.MeterRegistry meterRegistry;
+
+    @BeforeEach
+    void setUp() {
+        smsAsyncProcessor.setSelf(smsAsyncProcessor);
+        lenient().when(meterRegistry.counter(anyString(), any(String[].class)))
+            .thenReturn(mock(io.micrometer.core.instrument.Counter.class));
+    }
+
     @Test
     @DisplayName("비동기 SMS 발송 - 성공")
     void processSending_Success() {
@@ -50,6 +61,8 @@ class SmsAsyncProcessorTest {
 
         smsAsyncProcessor.processSending("S1", "0102", "Hello");
 
+        // Unit test에서는 @Recover가 자동 실행되지 않으므로 수동 호출하여 로직 검증
+        smsAsyncProcessor.recoverSmsSending(new RuntimeException("Failure"), recptn, "0102", "Hello");
         assertThat(recptn.getResultCode()).isEqualTo("F");
     }
 
@@ -62,6 +75,8 @@ class SmsAsyncProcessorTest {
 
         smsAsyncProcessor.processSending("S1", "0102", "Hello");
 
+        // @Recover 수동 호출 검증
+        smsAsyncProcessor.recoverSmsSending(new RuntimeException("Error"), recptn, "0102", "Hello");
         assertThat(recptn.getResultCode()).isEqualTo("F");
     }
 }

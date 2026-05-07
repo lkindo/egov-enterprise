@@ -1,6 +1,6 @@
 package nuri.business.domain.informalsanction;
 
-import nuri.business.domain.informalsanction.SanctionStatus;
+
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

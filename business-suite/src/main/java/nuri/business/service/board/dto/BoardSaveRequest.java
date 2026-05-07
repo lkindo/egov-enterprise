@@ -9,26 +9,26 @@ import org.springframework.lang.NonNull;
 
 @Schema(description = "Board Post Save Request")
 public record BoardSaveRequest(
-                @Schema(description = "Board ID") @NotBlank(message = "Board ID is required.") @NonNull String bbsId,
+                @Schema(description = "Board ID") @NotBlank(message = "Board ID is required.") @Size(max = 20) @NonNull String bbsId,
 
                 @Schema(description = "Post Subject") @NotBlank(message = "Subject is required.") @Size(min = 1, max = 100, message = "Subject must be between 1 and 100 characters.") @NonNull String nttSj,
 
-                @Schema(description = "Post Content") @NotBlank(message = "Content is required.") @NonNull String nttCn,
+                @Schema(description = "Post Content") @NotBlank(message = "Content is required.") @Size(max = 4000) @NonNull String nttCn,
 
-                @Schema(description = "Notice Start Date") String ntceBgnde,
+                @Schema(description = "Notice Start Date") @Size(max = 10) String ntceBgnde,
 
-                @Schema(description = "Notice End Date") String ntceEndde,
+                @Schema(description = "Notice End Date") @Size(max = 10) String ntceEndde,
 
-                @Schema(description = "Attached File ID") String atchFileId,
+                @Schema(description = "Attached File ID") @Size(max = 20) String atchFileId,
 
                 @Schema(description = "Notice Flag (Y/N)") @Pattern(regexp = "^[YN]$") String noticeAt,
 
 
-                @Schema(description = "Event Date (ISO-8601)") String eventDate,
+                @Schema(description = "Event Date (ISO-8601)") @Size(max = 20) String eventDate,
 
-                @Schema(description = "Q&A Status (OPEN/SOLVED)") String qnaStatus,
+                @Schema(description = "Q&A Status (OPEN/SOLVED)") @Size(max = 10) String qnaStatus,
 
-                @Schema(description = "Q&A Category") String qnaCategory,
+                @Schema(description = "Q&A Category") @Size(max = 20) String qnaCategory,
                 
                 @Schema(description = "Secret Flag (Y/N)") @Pattern(regexp = "^[YN]$") String secretAt,
 
@@ -36,9 +36,9 @@ public record BoardSaveRequest(
                 @Schema(description = "Use Flag (Y/N)") @Pattern(regexp = "^[YN]$") String useAt,
 
 
-                @Schema(description = "Author ID") String ntcrId,
+                @Schema(description = "Author ID") @Size(max = 20) String ntcrId,
 
-                @Schema(description = "Author Name") String ntcrNm,
+                @Schema(description = "Author Name") @Size(max = 60) String ntcrNm,
 
-                @Schema(description = "Post Password") String password) {
+                @Schema(description = "Post Password") @Size(max = 200) String password) {
 }

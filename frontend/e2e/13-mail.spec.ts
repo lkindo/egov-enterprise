@@ -37,4 +37,34 @@ test.describe('Tier 13: Enterprise Mail System E2E', () => {
 
         await mailPage.deleteMail(subject);
     });
+
+    test('Mail: Multi-recipient Dispatch', async ({ page }) => {
+        const subject = `Multi-Recipient Test ${Date.now()}`;
+        // Recipients separated by comma or semicolon
+        const recipients = 'webmaster, TEST1'; 
+        
+        await mailPage.navigateToSend();
+        await mailPage.sendMail(recipients, subject, 'Testing multi-recipient delivery logic.');
+
+        // Verification in history
+        await mailPage.verifyMailInHistory(subject);
+        console.log('>>> Multi-recipient mail dispatch verified in history');
+    });
+
+    test('Mail: Invalid Email Address Validation', async ({ page }) => {
+        await mailPage.navigateToSend();
+        
+        // Input invalid email format
+        const recipientInput = page.locator('input[name="recptnPerson"], input[placeholder*="받는 사람"]');
+        await recipientInput.fill('invalid-email-format');
+        await page.locator('textarea[name="emailCn"]').fill('This should trigger validation error');
+        await page.locator('input[name="sj"]').fill('Validation Test');
+        
+        const sendBtn = page.getByRole('button', { name: /발송|Send/i });
+        await sendBtn.click();
+        
+        // Expect validation message
+        await expect(page.locator('text=이메일, text=유효, text=format, .text-red-500').first()).toBeVisible({ timeout: 5000 });
+        console.log('>>> Invalid email validation caught correctly');
+    });
 });

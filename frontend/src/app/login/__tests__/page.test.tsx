@@ -81,18 +81,18 @@ describe('LoginPage Component', () => {
   it('renders login page correctly', () => {
     render(<LoginPage />);
     expect(screen.getByText('엔터프라이즈')).toBeInTheDocument();
-    expect(screen.getByLabelText('사용자 아이디')).toBeInTheDocument();
-    expect(screen.getByLabelText('액세스 키')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /시스템 접속하기/i })).toBeInTheDocument();
+    expect(screen.getByLabelText('Identity_Protocol')).toBeInTheDocument();
+    expect(screen.getByLabelText('Access_Sequence')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Initialize_System_Link/i })).toBeInTheDocument();
   });
 
   it('calls login service with credentials', async () => {
     mockLogin.mockResolvedValueOnce({});
     render(<LoginPage />);
     
-    const idInput = screen.getByLabelText('사용자 아이디');
-    const pwInput = screen.getByLabelText('액세스 키');
-    const submitButton = screen.getByRole('button', { name: /시스템 접속하기/i });
+    const idInput = screen.getByLabelText('Identity_Protocol');
+    const pwInput = screen.getByLabelText('Access_Sequence');
+    const submitButton = screen.getByRole('button', { name: /Initialize_System_Link/i });
 
     fireEvent.change(idInput, { target: { value: 'testuser' } });
     fireEvent.change(pwInput, { target: { value: 'password123' } });
@@ -110,9 +110,9 @@ describe('LoginPage Component', () => {
     
     render(<LoginPage />);
     
-    const idInput = screen.getByLabelText('사용자 아이디');
-    const pwInput = screen.getByLabelText('액세스 키');
-    const submitButton = screen.getByRole('button', { name: /시스템 접속하기/i });
+    const idInput = screen.getByLabelText('Identity_Protocol');
+    const pwInput = screen.getByLabelText('Access_Sequence');
+    const submitButton = screen.getByRole('button', { name: /Initialize_System_Link/i });
 
     fireEvent.change(idInput, { target: { value: 'baduser' } });
     fireEvent.change(pwInput, { target: { value: 'wrongpass' } });
@@ -122,7 +122,7 @@ describe('LoginPage Component', () => {
     await waitFor(() => {
       const errorElement = screen.getByTestId('login-error');
       expect(errorElement).toBeInTheDocument();
-      expect(errorElement).toHaveTextContent(errorMsg);
+      expect(errorElement).toHaveTextContent(`Error: ${errorMsg}`);
     }, { timeout: 2000 });
   });
 });

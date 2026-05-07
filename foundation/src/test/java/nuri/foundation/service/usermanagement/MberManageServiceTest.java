@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MberManageService 단위 테스트")
@@ -66,36 +67,45 @@ class MberManageServiceTest {
     @Test
     @DisplayName("일반회원 등록 테스트")
     void insertMberTest() {
-        GeneralUserDto dto = GeneralUserDto.builder()
-                .mberId("newuser")
-                .password("pass123")
-                .mberNm("신규회원")
-                .build();
-        
-        given(passwordEncoder.encode("pass123")).willReturn("encodedPass");
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            GeneralUserDto dto = GeneralUserDto.builder()
+                    .mberId("newuser")
+                    .password("pass123")
+                    .mberNm("신규회원")
+                    .build();
+            
+            given(passwordEncoder.encode("pass123")).willReturn("encodedPass");
 
-        mberManageService.insertMber(dto);
+            mberManageService.insertMber(dto);
 
-        verify(generalUserRepository).save(any());
-        verify(passwordEncoder).encode("pass123");
+            verify(generalUserRepository).save(any());
+            verify(passwordEncoder).encode("pass123");
+        }
     }
 
     @Test
     @DisplayName("비밀번호 변경 테스트")
     void updatePasswordTest() {
-        GeneralUser entity = mock(GeneralUser.class);
-        given(generalUserRepository.findById("MBER1")).willReturn(Optional.of(entity));
-        given(passwordEncoder.encode("newpass")).willReturn("encodedNewPass");
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            GeneralUser entity = mock(GeneralUser.class);
+            given(generalUserRepository.findById("MBER1")).willReturn(Optional.of(entity));
+            given(passwordEncoder.encode("newpass")).willReturn("encodedNewPass");
 
-        mberManageService.updatePassword("MBER1", "newpass");
+            mberManageService.updatePassword("MBER1", "newpass");
 
-        verify(entity).updatePassword("encodedNewPass");
+            verify(entity).updatePassword("encodedNewPass");
+        }
     }
 
     @Test
     @DisplayName("일반회원 삭제 테스트")
     void deleteMberTest() {
-        mberManageService.deleteMber("MBER1");
-        verify(generalUserRepository).deleteById("MBER1");
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            mberManageService.deleteMber("MBER1");
+            verify(generalUserRepository).deleteById("MBER1");
+        }
     }
 }

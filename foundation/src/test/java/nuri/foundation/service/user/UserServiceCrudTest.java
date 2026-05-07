@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserService (사용자 CRUD) 테스트")
@@ -71,19 +72,25 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 생성 성공")
   void createUser_success() {
-    when(passwordEncoder.encode(any())).thenReturn("encoded");
-    when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+    try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+      mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+      when(passwordEncoder.encode(any())).thenReturn("encoded");
+      when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-    String result = userService.registerUser("user", "pw", "name", "h", "c", "USER");
+      String result = userService.registerUser("user", "pw", "name", "h", "c", "USER");
 
-    assertThat(result).isEqualTo("user");
+      assertThat(result).isEqualTo("user");
+    }
   }
 
   @Test
   @DisplayName("사용자 생성 실패 - null 값 포함")
   void createUser_fail_withNullValues() {
-    assertThatThrownBy(() -> userService.registerUser(null, "pw", "name", "h", "c", "USER"))
-        .isInstanceOf(IllegalArgumentException.class);
+    try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+      mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+      assertThatThrownBy(() -> userService.registerUser(null, "pw", "name", "h", "c", "USER"))
+          .isInstanceOf(IllegalArgumentException.class);
+    }
   }
 
   @Test

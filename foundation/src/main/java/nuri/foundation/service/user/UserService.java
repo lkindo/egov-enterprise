@@ -158,9 +158,9 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 }
 
                 User user = User.builder()
-                                .userId(notBlank(userId, "User ID 는 null 이거나 빈 값일 수 없습니다"))
-                                .password(notBlank(encodedPassword, "Password 는 null 이거나 빈 값일 수 없습니다"))
-                                .userNm(notBlank(userNm, "사용자 이름은 null 이거나 빈 값일 수 없습니다"))
+                                .userId(userId)
+                                .password(encodedPassword)
+                                .userNm(userNm)
                                 .esntlId(esntlId)
                                 .passwordHint(passwordHint)
                                 .passwordCnsr(passwordCnsr)
@@ -265,10 +265,7 @@ public class UserService extends BaseAbstractService implements EgovUserService 
         @Transactional
         @CacheEvict(value = { "users" }, allEntries = true)
         public UserResponse signup(UserSignupRequest request) {
-                required(request, "회원가입 요청은 null 일 수 없습니다");
-
-
-                if (userRepository.existsById(required(request.getUserId(), "사용자 ID 는 null 일 수 없습니다"))) {
+                if (userRepository.existsById(request.getUserId())) {
                         throw new BusinessException(ErrorCode.DUPLICATE_USER_ID);
                 }
 
@@ -276,9 +273,9 @@ public class UserService extends BaseAbstractService implements EgovUserService 
                 String encodedPassword = passwordEncoder.encode(request.getPassword());
 
                 User user = User.builder()
-                                .userId(required(request.getUserId()))
-                                .password(required(encodedPassword))
-                                .userNm(required(request.getUserNm()))
+                                .userId(request.getUserId())
+                                .password(encodedPassword)
+                                .userNm(request.getUserNm())
                                 .esntlId(esntlId)
                                 .passwordHint(request.getPasswordHint())
                                 .passwordCnsr(request.getPasswordCnsr())

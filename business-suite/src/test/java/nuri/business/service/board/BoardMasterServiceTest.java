@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
@@ -40,6 +41,9 @@ class BoardMasterServiceTest {
 
     @Mock
     private BlogUserRepository blogUserRepository;
+
+    @Mock
+    private BoardUseRepository boardUseRepository;
 
     @Mock
     private EgovIdGnrService idgenService;
@@ -94,36 +98,45 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("게시판 마스터 생성")
     void createBoardMaster() throws Exception {
-        given(idgenService.getNextStringId()).willReturn("BBS_01");
-        BoardMasterDto dto = BoardMasterDto.builder().bbsNm("New Board").build();
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            given(idgenService.getNextStringId()).willReturn("BBS_01");
+            BoardMasterDto dto = BoardMasterDto.builder().bbsNm("New Board").build();
 
-        String bbsId = boardMasterService.createBoardMaster(dto);
+            String bbsId = boardMasterService.createBoardMaster(dto);
 
-        assertThat(bbsId).isEqualTo("BBS_01");
-        verify(boardMasterRepository).save(any(BoardMaster.class));
+            assertThat(bbsId).isEqualTo("BBS_01");
+            verify(boardMasterRepository).save(any(BoardMaster.class));
+        }
     }
 
     @Test
     @DisplayName("게시판 마스터 수정")
     void updateBoardMaster() {
-        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").bbsNm("Old Board").build();
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            BoardMaster master = BoardMaster.builder().bbsId("BBS_01").bbsNm("Old Board").build();
+            given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
-        BoardMasterDto dto = BoardMasterDto.builder().bbsId("BBS_01").bbsNm("Updated Board").build();
-        boardMasterService.updateBoardMaster(dto);
+            BoardMasterDto dto = BoardMasterDto.builder().bbsId("BBS_01").bbsNm("Updated Board").build();
+            boardMasterService.updateBoardMaster(dto);
 
-        assertThat(master.getBbsNm()).isEqualTo("Updated Board");
+            assertThat(master.getBbsNm()).isEqualTo("Updated Board");
+        }
     }
 
     @Test
     @DisplayName("게시판 마스터 삭제 (논리삭제)")
     void deleteBoardMaster() {
-        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useAt("Y").build();
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useAt("Y").build();
+            given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
-        boardMasterService.deleteBoardMaster("BBS_01", "user1");
+            boardMasterService.deleteBoardMaster("BBS_01", "user1");
 
-        assertThat(master.getUseAt()).isEqualTo("N");
+            verify(boardMasterRepository).delete(master);
+        }
     }
 
     @Test
@@ -188,19 +201,22 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("옵션 필드(블로그, 댓글, 만족도)가 포함된 게시판 마스터 생성")
     void createBoardMaster_WithOptionalFields() throws Exception {
-        given(idgenService.getNextStringId()).willReturn("BBS_02");
-        BoardMasterDto dto = BoardMasterDto.builder()
-                .bbsNm("Full Board")
-                .blogAt("Y")
-                .commentAt("Y")
-                .stsfdgAt("Y")
-                .build();
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            given(idgenService.getNextStringId()).willReturn("BBS_02");
+            BoardMasterDto dto = BoardMasterDto.builder()
+                    .bbsNm("Full Board")
+                    .blogAt("Y")
+                    .commentAt("Y")
+                    .stsfdgAt("Y")
+                    .build();
 
-        boardMasterService.createBoardMaster(dto);
+            boardMasterService.createBoardMaster(dto);
 
-        verify(boardMasterRepository).save(argThat(bm -> 
-            "Y".equals(bm.getBlogAt()) && "Y".equals(bm.getCommentAt()) && "Y".equals(bm.getStsfdgAt())
-        ));
+            verify(boardMasterRepository).save(argThat(bm -> 
+                "Y".equals(bm.getBlogAt()) && "Y".equals(bm.getCommentAt()) && "Y".equals(bm.getStsfdgAt())
+            ));
+        }
     }
 
     @Test

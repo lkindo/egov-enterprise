@@ -1,4 +1,4 @@
-package nuri.business.service.board.mapper;
+package nuri.business.service.board;
 
 import nuri.business.domain.board.Board;
 import nuri.business.service.board.dto.BoardDto;

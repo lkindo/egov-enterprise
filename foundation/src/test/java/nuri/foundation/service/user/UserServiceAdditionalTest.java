@@ -20,6 +20,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserService (사용자 관리 추가 기능) 테스트")
@@ -62,40 +63,48 @@ class UserServiceAdditionalTest {
     @Test
     @DisplayName("사용자 정보 수정 성공")
     void updateUser_success() {
-        // Given
-        String userId = "testUser";
-        User user = createBaseUser(userId)
-                .userNm("Old Name")
-                .build();
-        UserDto updateDto = createBaseUserDto(userId)
-                .userNm("New Name")
-                .emplNo("EMP001")
-                .ofcpsNm("Manager")
-                .build();
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("ADMIN"));
+            // Given
+            String userId = "testUser";
+            User user = createBaseUser(userId)
+                    .userNm("Old Name")
+                    .build();
+            UserDto updateDto = createBaseUserDto(userId)
+                    .userNm("New Name")
+                    .emplNo("EMP001")
+                    .ofcpsNm("Manager")
+                    .build();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-        // When
-        userService.updateUser(userId, updateDto);
+            // When
+            userService.updateUser(userId, updateDto);
 
-        // Then
-        assertThat(user.getUserNm()).isEqualTo("New Name");
-        assertThat(user.getEmplNo()).isEqualTo("EMP001");
-        assertThat(user.getOfcpsNm()).isEqualTo("Manager");
+            // Then
+            assertThat(user.getUserNm()).isEqualTo("New Name");
+            assertThat(user.getEmplNo()).isEqualTo("EMP001");
+            assertThat(user.getOfcpsNm()).isEqualTo("Manager");
+        }
     }
 
     @Test
     @DisplayName("사용자 정보 수정 실패 - 존재하지 않는 사용자")
     void updateUser_fail_userNotFound() {
-        // Given
-        String userId = "nonexistent";
-        UserDto updateDto = createBaseUserDto(userId).build();
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.getCurrentUserId()).thenReturn(Optional.of("ADMIN"));
+            // Given
+            String userId = "nonexistent";
+            UserDto updateDto = createBaseUserDto(userId).build();
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        // When & Then
-        assertThatThrownBy(() -> userService.updateUser(userId, updateDto))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+            // When & Then
+            assertThatThrownBy(() -> userService.updateUser(userId, updateDto))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+        }
     }
 
     @Test
@@ -149,27 +158,33 @@ class UserServiceAdditionalTest {
     @Test
     @DisplayName("사용자 삭제 성공")
     void deleteUser_success() {
-        // Given
-        String userId = "testUser";
-        when(userRepository.existsById(userId)).thenReturn(true);
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            // Given
+            String userId = "testUser";
+            when(userRepository.existsById(userId)).thenReturn(true);
 
-        // When
-        userService.deleteUser(userId);
+            // When
+            userService.deleteUser(userId);
 
-        // Then
-        verify(userRepository).deleteById(userId);
+            // Then
+            verify(userRepository).deleteById(userId);
+        }
     }
 
     @Test
     @DisplayName("사용자 삭제 실패 - 존재하지 않는 사용자")
     void deleteUser_fail_userNotFound() {
-        // Given
-        String userId = "nonexistent";
-        when(userRepository.existsById(userId)).thenReturn(false);
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            // Given
+            String userId = "nonexistent";
+            when(userRepository.existsById(userId)).thenReturn(false);
 
-        // When & Then
-        assertThatThrownBy(() -> userService.deleteUser(userId))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+            // When & Then
+            assertThatThrownBy(() -> userService.deleteUser(userId))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+        }
     }
 }

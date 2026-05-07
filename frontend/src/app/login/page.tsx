@@ -204,6 +204,7 @@ function LoginContent() {
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
+                                    data-testid="login-error"
                                     className="text-[10px] font-black text-rose-500 text-center bg-rose-50 p-4 rounded-[var(--radius-hub-item)] border border-rose-100 animate-shake uppercase font-mono italic"
                                 >
                                     Error: {error}

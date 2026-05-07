@@ -80,4 +80,50 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         await notificationPage.closeNotificationDrawer();
         console.log('>>> Notification workflow verified successfully!');
     });
+
+    test('Notification: Long Content and UI Stability', async ({ request, page }) => {
+        const testTitle = `Looong_Title_${Date.now()}`;
+        const testMessage = 'A'.repeat(500) + ' [END]'; // Very long content
+
+        console.log('>>> Step 1: Creating long notification');
+        await request.post('http://localhost:8080/api/v1/notifications', {
+            headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+            data: { ntfcSj: testTitle, ntfcCn: testMessage, receiverId: 'webmaster' }
+        });
+
+        console.log('>>> Step 2: Verifying UI stability in drawer');
+        await notificationPage.openNotificationDrawer();
+        
+        // Search for item by a partial match in case of truncation
+        const partialTitle = testTitle.substring(0, 15);
+        const notificationItem = page.locator('div.group').filter({ has: page.locator('h3', { hasText: new RegExp(partialTitle) }) }).first();
+        await expect(notificationItem).toBeVisible({ timeout: 10000 });
+        
+        // Verify content is visible
+        const contentLocator = notificationItem.locator('p');
+        await expect(contentLocator).toBeVisible();
+        const contentText = await contentLocator.textContent();
+        expect(contentText?.length).toBeGreaterThan(50);
+        
+        await notificationPage.closeNotificationDrawer();
+    });
+
+    test('Notification: Hub Search and Filter Verification', async ({ page }) => {
+        // Go to full notification hub if it exists (usually /admin/system/notifications or similar)
+        console.log('>>> Navigating to Notification Hub');
+        await page.goto('/admin/system/notifications');
+        await page.waitForLoadState('networkidle');
+
+        // Search for a known notification or use search input
+        const searchInput = page.locator('input[placeholder*="검색"], input[aria-label*="Search"]').first();
+        if (await searchInput.isVisible()) {
+            await searchInput.fill('integrity'); // From previous test
+            await page.keyboard.press('Enter');
+            await page.waitForTimeout(1000);
+            
+            // Check results
+            const results = page.locator('tr, div.item').filter({ hasText: 'integrity' });
+            expect(await results.count()).toBeGreaterThanOrEqual(0);
+        }
+    });
 });

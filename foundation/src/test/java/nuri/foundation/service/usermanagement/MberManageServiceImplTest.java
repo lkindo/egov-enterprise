@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MberManageService (일반 회원 관리) 테스트")
@@ -49,45 +50,54 @@ class MberManageServiceImplTest {
     @Test
     @DisplayName("회원 등록 성공")
     void insertMber_Success() {
-        // Given
-        GeneralUserDto dto = GeneralUserDto.builder().mberId("test").mberNm("Name").password("pass").build();
-        given(passwordEncoder.encode("pass")).willReturn("encoded");
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            // Given
+            GeneralUserDto dto = GeneralUserDto.builder().mberId("test").mberNm("Name").password("pass").build();
+            given(passwordEncoder.encode("pass")).willReturn("encoded");
 
-        // When
-        mberManageService.insertMber(dto);
+            // When
+            mberManageService.insertMber(dto);
 
-        // Then
-        verify(generalUserRepository).save(any(GeneralUser.class));
+            // Then
+            verify(generalUserRepository).save(any(GeneralUser.class));
+        }
     }
 
     @Test
     @DisplayName("회원 정보 수정 성공")
     void updateMber_Success() {
-        // Given
-        GeneralUser user = GeneralUser.builder().esntlId("ID1").mberNm("Old").build();
-        given(generalUserRepository.findById("ID1")).willReturn(Optional.of(user));
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            // Given
+            GeneralUser user = GeneralUser.builder().esntlId("ID1").mberNm("Old").build();
+            given(generalUserRepository.findById("ID1")).willReturn(Optional.of(user));
 
-        GeneralUserDto dto = GeneralUserDto.builder().esntlId("ID1").mberNm("New").build();
+            GeneralUserDto dto = GeneralUserDto.builder().esntlId("ID1").mberNm("New").build();
 
-        // When
-        mberManageService.updateMber(dto);
+            // When
+            mberManageService.updateMber(dto);
 
-        // Then
-        assertEquals("New", user.getMberNm());
+            // Then
+            assertEquals("New", user.getMberNm());
+        }
     }
 
     @Test
     @DisplayName("비밀번호 변경 성공")
     void updatePassword_Success() {
-        // Given
-        GeneralUser user = GeneralUser.builder().esntlId("ID1").build();
-        given(generalUserRepository.findById("ID1")).willReturn(Optional.of(user));
-        given(passwordEncoder.encode("new")).willReturn("encoded");
+        try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            // Given
+            GeneralUser user = GeneralUser.builder().esntlId("ID1").build();
+            given(generalUserRepository.findById("ID1")).willReturn(Optional.of(user));
+            given(passwordEncoder.encode("new")).willReturn("encoded");
 
-        // When
-        mberManageService.updatePassword("ID1", "new");
+            // When
+            mberManageService.updatePassword("ID1", "new");
 
-        // Then
-        assertEquals("encoded", user.getPassword());
+            // Then
+            assertEquals("encoded", user.getPassword());
+        }
     }
 }

@@ -29,7 +29,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
-import nuri.business.service.board.mapper.BoardMapper;
+
 
 /**
  * JPA 기반 게시판 비즈니스 로직 구현 클래스
@@ -147,7 +147,7 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
 
                 try {
                         BoardMaster master = boardMasterRepository
-                                        .findById(required(request.bbsId(), "request.bbsId() 는 null 일 수 없습니다"))
+                                        .findById(request.bbsId())
                                         .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
                         // 사용자 정보 조회 (실패 시 익명 처리)
@@ -208,11 +208,11 @@ public class BoardService extends BaseAbstractService implements EgovBoardServic
         @Transactional
         public Long replyPost(@NonNull String userId, @NonNull Long parentId, @NonNull BoardSaveRequest request) {
                 BoardMaster master = boardMasterRepository
-                                .findById(required(request.bbsId(), "request.bbsId() 는 null 일 수 없습니다"))
+                                .findById(request.bbsId())
                                 .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
                 Board parent = boardRepository
-                                .findById(required(parentId, "parentId 는 null 일 수 없습니다"))
+                                .findById(parentId)
                                 .orElseThrow(() -> new BusinessException(ErrorCode.ARTICLE_NOT_FOUND));
 
                 // 사용자 정보 조회 (실패 시 익명 처리)

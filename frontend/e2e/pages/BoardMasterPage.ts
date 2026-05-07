@@ -14,10 +14,10 @@ export class BoardMasterPage {
       hasText: /NEW BOARD WIZARD|마법사|Wizard|Maker|Create/i 
     }).or(page.locator('button:has(svg.lucide-rocket), button:has(.lucide-rocket)')).first();
     
-    this.bbsNmInput = page.locator('#bbsNm, input[name="bbsNm"], input[placeholder*="이름"], input[placeholder*="Name"]').first();
-    this.bbsIntrcnInput = page.locator('#bbsIntrcn, input[name="bbsIntrcn"], input[placeholder*="설명"], input[placeholder*="Description"]').first();
-    this.nextButton = page.getByRole('button', { name: /다음 | Next/i }).first();
-    this.deployButton = page.getByRole('button', { name: /게시판 생성 | 배포|Deploy|Create/i }).first();
+    this.bbsNmInput = page.locator('#bbsNm').first();
+    this.bbsIntrcnInput = page.locator('#bbsIntrcn').first();
+    this.nextButton = page.locator('button').filter({ hasText: /다음 단계로|Next/i }).first();
+    this.deployButton = page.locator('button').filter({ hasText: /게시판 생성|Deploy|Create/i }).first();
   }
 
   async gotoMaster() {

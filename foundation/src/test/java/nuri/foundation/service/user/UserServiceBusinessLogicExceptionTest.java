@@ -22,6 +22,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
 
 /**
  * UserServiceBusinessLogicExceptionTest
@@ -111,17 +112,20 @@ class UserServiceBusinessLogicExceptionTest {
         @Test
         @DisplayName("사용자 등록 실패 - DB 저장 오류")
         void registerUser_fail_withDatabaseSaveError() {
-                // Given
-                when(passwordEncoder.encode("password123!")).thenReturn("encodedPassword");
-                doThrow(new RuntimeException("Database save failed"))
-                                .when(userRepository).save(any(User.class));
+                try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+                        mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+                        // Given
+                        when(passwordEncoder.encode("password123!")).thenReturn("encodedPassword");
+                        doThrow(new RuntimeException("Database save failed"))
+                                        .when(userRepository).save(any(User.class));
 
-                // When & Then
-                assertThatThrownBy(
-                                () -> userService.registerUser("newUser", "password123!", "테스트사용자", "hint", "answer",
-                                                "USER"))
-                                .isInstanceOf(RuntimeException.class)
-                                .hasMessage("Database save failed");
+                        // When & Then
+                        assertThatThrownBy(
+                                        () -> userService.registerUser("newUser", "password123!", "테스트사용자", "hint", "answer",
+                                                        "USER"))
+                                        .isInstanceOf(RuntimeException.class)
+                                        .hasMessage("Database save failed");
+                }
         }
 
         @Test
@@ -140,34 +144,43 @@ class UserServiceBusinessLogicExceptionTest {
         @Test
         @DisplayName("사용자 등록 실패 - 필수 필드(UserId) 누락")
         void registerUser_fail_withNullUserId() {
-                // When & Then
-                assertThatThrownBy(() -> userService.registerUser(null, "password123!", "테스트사용자", "hint", "answer",
-                                "USER"))
-                                .isInstanceOf(IllegalArgumentException.class);
+                try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+                        mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+                        // When & Then
+                        assertThatThrownBy(() -> userService.registerUser(null, "password123!", "테스트사용자", "hint", "answer",
+                                        "USER"))
+                                        .isInstanceOf(IllegalArgumentException.class);
+                }
         }
 
         @Test
         @DisplayName("사용자 등록 실패 - 필수 필드(UserNm) 누락")
         void registerUser_fail_withNullUserNm() {
-                // When & Then
-                assertThatThrownBy(() -> userService.registerUser("newUser", "password123!", null, "hint", "answer",
-                                "USER"))
-                                .isInstanceOf(IllegalArgumentException.class);
+                try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+                        mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+                        // When & Then
+                        assertThatThrownBy(() -> userService.registerUser("newUser", "password123!", null, "hint", "answer",
+                                        "USER"))
+                                        .isInstanceOf(IllegalArgumentException.class);
+                }
         }
 
         @Test
         @DisplayName("사용자 등록 실패 - 비밀번호 인코딩 오류")
         void registerUser_fail_withPasswordEncodingError() {
-                // Given
-                when(passwordEncoder.encode("password123!"))
-                                .thenThrow(new RuntimeException("Password encoding failed"));
+                try (var mockedSecurity = mockStatic(nuri.foundation.security.util.SecurityUtil.class)) {
+                        mockedSecurity.when(() -> nuri.foundation.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+                        // Given
+                        when(passwordEncoder.encode("password123!"))
+                                        .thenThrow(new RuntimeException("Password encoding failed"));
 
-                // When & Then
-                assertThatThrownBy(
-                                () -> userService.registerUser("newUser", "password123!", "테스트사용자", "hint", "answer",
-                                                "USER"))
-                                .isInstanceOf(RuntimeException.class)
-                                .hasMessage("Password encoding failed");
+                        // When & Then
+                        assertThatThrownBy(
+                                        () -> userService.registerUser("newUser", "password123!", "테스트사용자", "hint", "answer",
+                                                        "USER"))
+                                        .isInstanceOf(RuntimeException.class)
+                                        .hasMessage("Password encoding failed");
+                }
         }
 
         @Test

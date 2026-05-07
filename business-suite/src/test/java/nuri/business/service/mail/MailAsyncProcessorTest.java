@@ -2,6 +2,7 @@ package nuri.business.service.mail;
 
 import nuri.business.domain.mail.SentMail;
 import nuri.business.domain.mail.SentMailRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +29,15 @@ class MailAsyncProcessorTest {
     @Mock
     private SentMailRepository sentMailRepository;
 
+    @Mock
+    private io.micrometer.core.instrument.MeterRegistry meterRegistry;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(meterRegistry.counter(anyString(), any(String[].class)))
+            .thenReturn(mock(io.micrometer.core.instrument.Counter.class));
+    }
+
     @Test
     @DisplayName("비동기 메일 발송 - 성공")
     void processSending_Success() throws Exception {
@@ -47,8 +57,13 @@ class MailAsyncProcessorTest {
         given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
         doThrow(new RuntimeException("Send error")).when(emailSender).send(anyString(), anyString(), anyString(), anyString());
 
-        mailAsyncProcessor.processSending("M1", "Sub", "Cn", "from", "to");
+        // Exception is expected to bubble up in unit test
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
+            mailAsyncProcessor.processSending("M1", "Sub", "Cn", "from", "to")
+        ).isInstanceOf(RuntimeException.class);
 
+        // Manually trigger recovery for verification
+        mailAsyncProcessor.recoverSending(new RuntimeException("Send error"), "M1", "Sub", "Cn", "from", "to");
         assertThat(mail.getSndngResultCode()).isEqualTo("F");
     }
 
