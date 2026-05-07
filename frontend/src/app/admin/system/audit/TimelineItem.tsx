@@ -92,10 +92,10 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
 
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4 relative z-10 text-left">
           <div className="space-y-1 text-left">
-             <span className="text-[10px] font-black tracking-[0.3em] text-slate-400 uppercase leading-none italic block text-left">
-                {log.occrrncDe?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') || 'N/A'}
+             <span className="text-[10px] font-black tracking-[0.3em] text-slate-400 uppercase leading-none block text-left">
+                [TIME] {log.occrrncDe?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3') || 'N/A'}
              </span>
-             <h4 className="text-lg font-black tracking-tighter text-slate-800 uppercase italic text-left">
+             <h4 className="text-lg font-black tracking-tighter text-slate-800 uppercase text-left">
                 {log.methodNm || log.srvcNm || 'System Action'}
              </h4>
           </div>
@@ -116,7 +116,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ log, index, onInspec
               <Database size={12} className="opacity-40" />
               <span className="tracking-widest uppercase opacity-60">SRV_INSTANCE: {log.srvcNm}</span>
            </div>
-           <div className="flex items-center gap-2 group-hover:text-primary transition-colors italic">
+           <div className="flex items-center gap-2 group-hover:text-primary transition-colors">
               INS_CODE: {log.processSeCode}
               <ArrowUpRight size={14} className="group-hover:translate-x-2 transition-transform" />
            </div>

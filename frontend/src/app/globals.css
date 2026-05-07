@@ -298,6 +298,20 @@
   /* --- Hub Semantic Utilities --- */
   .hub-label-accent {
      @apply text-[length:var(--font-size-hub-subtitle)] font-black tracking-[0.4em] uppercase opacity-90 group-focus-within:opacity-100 transition-opacity;
+     /* Italics removed, wide tracking preserved */
+  }
+
+  .hub-tech-label {
+    @apply font-mono font-black tracking-[0.3em] uppercase;
+    display: inline-flex;
+    items-center: center;
+    gap: 0.5em;
+  }
+
+  .hub-tech-label::before {
+    content: "_";
+    @apply text-primary opacity-70;
+    margin-right: 0.2em;
   }
 
   /* E2E Hidden Labels (Detectable by Playwright but invisible to users) */

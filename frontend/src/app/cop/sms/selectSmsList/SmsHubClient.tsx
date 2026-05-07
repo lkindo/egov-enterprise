@@ -105,7 +105,7 @@ export default function SmsHubClient({
           <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-slate-900 flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform">
             <Phone size={16} />
           </div>
-          <span className="text-sm font-black text-slate-900 tracking-tighter font-mono italic">
+          <span className="text-sm font-black text-slate-900 tracking-tighter font-mono">
             {item.recptnTelno}
           </span>
         </div>
@@ -114,7 +114,7 @@ export default function SmsHubClient({
     {
       header: 'MESSAGE_CONTENT',
       accessor: (item) => (
-        <p className="text-sm text-muted-foreground font-bold line-clamp-1 italic max-w-md group-hover:text-slate-900 transition-colors">
+        <p className="text-sm text-muted-foreground font-bold line-clamp-1 max-w-md group-hover:text-slate-900 transition-colors">
           {item.trnsmitCn}
         </p>
       )
@@ -169,12 +169,12 @@ export default function SmsHubClient({
                             <Send size={150} />
                         </div>
                         <div className="relative z-10 space-y-2">
-                            <span className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono italic">Protocol_Transmission</span>
+                            <span className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono">_ Protocol_Transmission</span>
                             <DialogHeader>
-                                <DialogTitle className="text-3xl font-black tracking-tighter uppercase font-mono italic flex items-center gap-4 text-white">
+                                <DialogTitle className="text-3xl font-black tracking-tighter uppercase font-mono flex items-center gap-4 text-white">
                                     <MessageSquare className="text-primary" /> Send_Message
                                 </DialogTitle>
-                                <DialogDescription className="text-slate-400 text-xs font-bold italic mt-2">
+                                <DialogDescription className="text-slate-400 text-xs font-bold mt-2">
                                     새로운 문자 메시지를 발송하기 위한 파라미터를 입력하십시오.
                                 </DialogDescription>
                             </DialogHeader>
@@ -183,28 +183,28 @@ export default function SmsHubClient({
                     <div className="p-10 space-y-10">
                         <div className="space-y-6">
                             <div className="space-y-3">
-                                <Label className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono italic">Recipient_Phone_Number</Label>
+                                <Label className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono">_ Recipient_Phone_Number</Label>
                                 <div className="relative group">
                                     <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={20} />
                                     <Input
                                         placeholder="010-0000-0000"
-                                        className="pl-16 h-16 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-item)] text-lg font-black tracking-widest focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 font-mono italic"
+                                        className="pl-16 h-16 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-item)] text-lg font-black tracking-widest focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 font-mono"
                                         value={newSms.recptnTelno}
                                         onChange={(e) => setNewSms({ ...newSms, recptnTelno: e.target.value })}
                                     />
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                <Label className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono italic">Message_Content_Payload</Label>
+                                <Label className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono">_ Message_Content_Payload</Label>
                                 <div className="relative group">
                                     <Textarea
                                         placeholder="전달할 메시지 내용을 입력하세요..."
-                                        className="min-h-[200px] p-8 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-item)] text-lg font-black tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 leading-relaxed font-mono italic"
+                                        className="min-h-[200px] p-8 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-item)] text-lg font-black tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-200 leading-relaxed font-mono"
                                         value={newSms.trnsmitCn}
                                         onChange={(e) => setNewSms({ ...newSms, trnsmitCn: e.target.value })}
                                     />
-                                    <div className="absolute bottom-6 right-6 px-4 py-2 bg-slate-900/5 rounded-lg text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono italic">
-                                        {newSms.trnsmitCn.length} / 80 BYTES
+                                    <div className="absolute bottom-6 right-6 px-4 py-2 bg-slate-900/5 rounded-lg text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono">
+                                        _ {newSms.trnsmitCn.length} / 80 BYTES
                                     </div>
                                 </div>
                             </div>
@@ -213,7 +213,7 @@ export default function SmsHubClient({
                             <Button 
                                 variant="ghost" 
                                 onClick={() => setIsDialogOpen(false)}
-                                className="h-16 px-10 rounded-[var(--radius-hub-item)] font-black text-[11px] tracking-widest uppercase font-mono italic hover:bg-slate-50"
+                                className="h-16 px-10 rounded-[var(--radius-hub-item)] font-black text-[11px] tracking-widest uppercase font-mono hover:bg-slate-50"
                             >
                                 ABORT_OPERATION
                             </Button>
@@ -245,8 +245,8 @@ export default function SmsHubClient({
                 <Zap size={120} className="text-primary" />
               </div>
               <div className="relative z-10 space-y-2">
-                <span className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono italic">Traffic_Analysis</span>
-                <h4 className="text-3xl font-black tracking-tighter text-slate-900 uppercase font-mono italic">Channel<br />Throughput</h4>
+                <span className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono">_ Traffic_Analysis</span>
+                <h4 className="text-3xl font-black tracking-tighter text-slate-900 uppercase font-mono">_ Channel<br />Throughput</h4>
               </div>
               <div className="space-y-6 relative z-10">
                 <MetricItem label="Total Packets" value={data?.total || 0} />
@@ -257,8 +257,8 @@ export default function SmsHubClient({
 
             <div className="rounded-[var(--radius-hub-section)] bg-slate-900 p-8 text-white space-y-6 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
-                <h5 className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono italic">Security_Audit</h5>
-                <p className="text-xs font-bold text-white/60 leading-relaxed italic">
+                <h5 className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono">_ Security_Audit</h5>
+                <p className="text-xs font-bold text-white/60 leading-relaxed">
                     모든 메시지 전송은 정보통신망법에 의거하여 로깅 및 감사가 수행됩니다.
                 </p>
                 <div className="flex items-center gap-3 p-4 bg-white/5 rounded-[var(--radius-hub-item)] border border-white/5">
@@ -280,7 +280,7 @@ export default function SmsHubClient({
                   <div className="relative w-full sm:w-96 group/search">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-60 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                     <Input
-                      className="pl-16 h-16 bg-slate-50/50 border-none rounded-[var(--radius-hub-item)] text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500 uppercase font-mono italic"
+                      className="pl-16 h-16 bg-slate-50/50 border-none rounded-[var(--radius-hub-item)] text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500 uppercase font-mono"
                       placeholder="Search packets..."
                       value={searchKeyword}
                       onChange={(e) => setSearchKeyword(e.target.value)}
@@ -293,7 +293,7 @@ export default function SmsHubClient({
                         variant="ghost" 
                         size="sm" 
                         onClick={() => refetch()}
-                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm font-mono italic"
+                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm font-mono"
                       >
                         <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isLoading ? "animate-spin" : "group-hover:rotate-180")} /> 
                         SYNCHRONIZE
@@ -345,8 +345,8 @@ export default function SmsHubClient({
 function MetricItem({ label, value }: { label: string, value: string | number }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono italic">{label}</span>
-      <span className="text-xl font-black text-slate-900 tabular-nums font-mono italic">{value}</span>
+      <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono">_ {label}</span>
+      <span className="text-xl font-black text-slate-900 tabular-nums font-mono">{value}</span>
     </div>
   );
 }

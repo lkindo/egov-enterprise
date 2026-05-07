@@ -421,7 +421,7 @@ export default function UserOrgHubClient({
             <h4 className={cn("text-md font-black tracking-tighter leading-none uppercase", selectedItemId === user.esntlId ? "text-white" : "text-foreground")}>
               {user.userNm}
             </h4>
-            <p className={cn("text-[8px] font-black tracking-[0.3em] uppercase opacity-100 font-mono italic")}>{user.userId}</p>
+            <p className={cn("text-[8px] font-black tracking-[0.3em] uppercase opacity-100 font-mono")}>_ {user.userId}</p>
           </div>
         </div>
       )
@@ -443,7 +443,7 @@ export default function UserOrgHubClient({
             <h4 className={cn("text-md font-black tracking-tighter leading-none uppercase", selectedItemId === dept.orgnztId ? "text-white" : "text-foreground")}>
               {dept.orgnztNm}
             </h4>
-            <p className={cn("text-[8px] font-black tracking-[0.4em] uppercase opacity-100 font-mono italic")}>NODE_{dept.orgnztId}</p>
+            <p className={cn("text-[8px] font-black tracking-[0.4em] uppercase opacity-100 font-mono")}>_ NODE_{dept.orgnztId}</p>
           </div>
         </div>
       )
@@ -521,7 +521,7 @@ export default function UserOrgHubClient({
                 <Activity size={32} className="text-primary" />
               </div>
               <div className="space-y-4">
-                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase font-mono italic">IDENTITY<br />INTELLIGENCE</h4>
+                <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase font-mono">_ IDENTITY<br />INTELLIGENCE</h4>
                 <p className="text-[10px] text-white/80 font-black tracking-[0.4em] uppercase leading-relaxed font-mono">Active Directory (AD)<br />동기화 완료</p>
               </div>
             </div>
@@ -537,7 +537,7 @@ export default function UserOrgHubClient({
             <div className="space-y-8">
               <div className="flex items-center justify-between px-2 pt-2 border-b border-slate-100 pb-8">
                 <div>
-                  <span className="text-[10px] font-black text-slate-600 tracking-[0.4em] uppercase font-mono italic">실시간 디렉토리 동기화</span>
+                  <span className="text-[10px] font-black text-slate-600 tracking-[0.4em] uppercase font-mono">_ 실시간 디렉토리 동기화</span>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -717,15 +717,15 @@ export default function UserOrgHubClient({
                         </span>
                       </div>
                       <div className="space-y-5 pt-2">
-                        <h2 className="text-5xl font-black text-foreground tracking-tighter leading-none truncate max-w-[400px] uppercase font-mono italic">
+                        <h2 className="text-5xl font-black text-foreground tracking-tighter leading-none truncate max-w-[400px] uppercase font-mono">
                           {activeTab === 'DEPTS' ? (selectedItem as Department)?.orgnztNm : (selectedItem as UserManage)?.userNm}
                         </h2>
                         <div className="flex gap-4">
-                          <span className="bg-primary/5 text-primary text-[10px] font-black px-6 py-2 rounded-xl tracking-widest uppercase border border-primary/10 shadow-sm flex items-center gap-2 font-mono italic">
+                          <span className="bg-primary/5 text-primary text-[10px] font-black px-6 py-2 rounded-xl tracking-widest uppercase border border-primary/10 shadow-sm flex items-center gap-2 font-mono">
                             <ShieldCheck size={14} /> 신원 확인됨
                           </span>
                           {activeTab === 'ABSENCES' && (
-                            <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-6 py-2 rounded-xl tracking-widest uppercase border border-amber-200 shadow-sm animate-pulse font-mono italic">
+                            <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-6 py-2 rounded-xl tracking-widest uppercase border border-amber-200 shadow-sm animate-pulse font-mono">
                               부재중
                             </span>
                           )}
@@ -766,14 +766,14 @@ export default function UserOrgHubClient({
                           </div>
                           <div>
                             <h4 className="text-[11px] font-black text-slate-600 tracking-[0.4em] uppercase font-mono leading-none mb-1">권한 프로토콜</h4>
-                            <p className="text-sm font-black text-foreground tracking-tighter uppercase font-mono italic">활성 권한 매트릭스</p>
+                            <p className="text-sm font-black text-foreground tracking-tighter uppercase font-mono">_ 활성 권한 매트릭스</p>
                           </div>
                         </div>
-                        <Button variant="ghost" className="h-12 px-6 rounded-xl bg-slate-50 text-[10px] font-black text-primary gap-3 uppercase tracking-widest hover:bg-primary hover:text-white transition-all font-mono italic">MANAGE_MATRIX <ChevronRight size={14} /></Button>
+                        <Button variant="ghost" className="h-12 px-6 rounded-xl bg-slate-50 text-[10px] font-black text-primary gap-3 uppercase tracking-widest hover:bg-primary hover:text-white transition-all font-mono">_ MANAGE_MATRIX <ChevronRight size={14} /></Button>
                       </div>
                       <div className="flex flex-wrap gap-4">
                         {['ACCESS_CMS', 'SYSTEM_ADMIN_LEVEL_4', 'ANALYTICS_DASHBOARD_LIVE', 'USER_DIRECTORY_CONTROLLER', 'SECURITY_AUDIT_PROBE'].map(p => (
-                          <div key={p} className="pl-6 pr-8 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-[10px] font-black text-slate-500 tracking-widest uppercase shadow-sm flex items-center gap-3 group/tag hover:border-primary/30 transition-all cursor-default font-mono italic">
+                          <div key={p} className="pl-6 pr-8 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-[10px] font-black text-slate-500 tracking-widest uppercase shadow-sm flex items-center gap-3 group/tag hover:border-primary/30 transition-all cursor-default font-mono">
                             <div className="w-2 h-2 rounded-full bg-primary opacity-30 group-hover:opacity-100 transition-opacity" />
                             {p}
                           </div>
@@ -785,11 +785,11 @@ export default function UserOrgHubClient({
                   <div className="flex gap-6 pt-12 mt-auto border-t border-slate-100 relative z-10">
                     <Button 
                       onClick={handleDeleteUser}
-                      className="flex-1 h-16 bg-slate-100 text-rose-500 rounded-xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white uppercase transition-all shadow-sm font-mono italic"
+                      className="flex-1 h-16 bg-slate-100 text-rose-500 rounded-xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white uppercase transition-all shadow-sm font-mono"
                     >
                       REVOKE_ACCESS
                     </Button>
-                    <Button className="flex-[2] h-16 bg-slate-900 text-white rounded-xl font-black tracking-[0.4em] text-[10px] shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 uppercase group font-mono italic">
+                    <Button className="flex-[2] h-16 bg-slate-900 text-white rounded-xl font-black tracking-[0.4em] text-[10px] shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 uppercase group font-mono">
                       <Zap size={18} className="text-primary group-hover:animate-pulse" /> COMMIT_SPECIFICATION_CHANGE
                     </Button>
                   </div>
@@ -800,8 +800,8 @@ export default function UserOrgHubClient({
                 <div className="w-32 h-32 rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center text-slate-200 shadow-xl mb-12 group-hover:rotate-12 transition-transform duration-1000">
                   <Contact2 size={64} className="opacity-20 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <h3 className="text-4xl font-black text-slate-200 tracking-tighter uppercase font-mono italic">Idle_Probe_State</h3>
-                <p className="text-[12px] font-black text-slate-300 tracking-[0.6em] mt-6 uppercase leading-relaxed max-w-[280px] font-mono italic">인텔리전스 동기화를 시작하려면 토폴로지 스트림에서 엔터티를 선택하세요</p>
+                <h3 className="text-4xl font-black text-slate-200 tracking-tighter uppercase font-mono">_ Idle_Probe_State</h3>
+                <p className="text-[12px] font-black text-slate-300 tracking-[0.6em] mt-6 uppercase leading-relaxed max-w-[280px] font-mono">_ 인텔리전스 동기화를 시작하려면 토폴로지 스트림에서 엔터티를 선택하세요</p>
                 <div className="mt-12 flex gap-4 opacity-10 grayscale">
                   <Fingerprint size={32} />
                   <Database size={32} />
@@ -1093,8 +1093,8 @@ function NavButton({ icon, subLabel, label, active, onClick }: { icon: React.Rea
             {icon}
           </div>
           <div className="flex flex-col text-left relative z-10">
-            <span className={cn("text-[10px] font-black tracking-widest uppercase mb-1 opacity-100", active && "opacity-100 font-mono italic")}>{subLabel}</span>
-            <span className="text-md font-black tracking-tighter uppercase leading-tight font-mono italic">{label}</span>
+            <span className={cn("text-[10px] font-black tracking-widest uppercase mb-1 opacity-100", active && "opacity-100 font-mono")}>_ {subLabel}</span>
+            <span className="text-md font-black tracking-tighter uppercase leading-tight font-mono">{label}</span>
           </div>
           {active && (
             <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl opacity-50 -mr-16 -mt-16 pointer-events-none" />
@@ -1114,10 +1114,10 @@ function InfoBlock({ icon, label, value }: { icon: React.ReactNode, label: strin
       <div className="absolute top-0 right-0 p-8 opacity-[0.02] scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
         {icon}
       </div>
-      <h5 className="text-[11px] font-black text-muted-foreground/60 tracking-[0.3em] flex items-center gap-3 uppercase group-hover:text-primary transition-colors font-mono relative z-10 italic">
+      <h5 className="text-[11px] font-black text-muted-foreground/60 tracking-[0.3em] flex items-center gap-3 uppercase group-hover:text-primary transition-colors font-mono relative z-10">
         {icon} {label}
       </h5>
-      <p className="text-2xl font-black tracking-tighter text-slate-900 truncate leading-none relative z-10 py-1 font-mono italic">
+      <p className="text-2xl font-black tracking-tighter text-slate-900 truncate leading-none relative z-10 py-1 font-mono">
         {value}
       </p>
     </div>

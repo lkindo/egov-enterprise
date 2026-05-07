@@ -156,7 +156,7 @@ export default function ApprovalDraftHubClient() {
                           <span className="text-[9px] font-black tracking-widest text-primary bg-primary/5 px-2 py-0.5 rounded uppercase">
                             {form.category}
                           </span>
-                          <span className="text-[9px] font-black text-slate-300 font-mono italic">#{form.id}</span>
+                          <span className="text-[9px] font-black text-slate-300 font-mono">_ #{form.id}</span>
                         </div>
                         <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none group-hover:text-primary transition-colors">
                           {form.title}
@@ -179,7 +179,7 @@ export default function ApprovalDraftHubClient() {
               <div className="p-12 bg-slate-900 rounded-[2.5rem] shadow-2xl relative overflow-hidden text-center">
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
                 <div className="relative z-10 space-y-4">
-                  <h4 className="text-xl font-black text-white tracking-tighter italic">"Precision in every dispatch."</h4>
+                  <h4 className="text-xl font-black text-white tracking-tighter">_ "Precision in every dispatch."</h4>
                   <p className="text-[9px] text-white/40 font-black tracking-[0.5em] uppercase">Enterprise Autonomous Governance Core</p>
                 </div>
               </div>
@@ -221,7 +221,7 @@ export default function ApprovalDraftHubClient() {
                            </div>
                            <div className="space-y-1">
                               <p className="text-sm font-black text-slate-900 leading-none">Senior Administrator</p>
-                              <p className="text-[10px] font-bold text-slate-400 opacity-60 italic">AUTH_TOKEN: XX-9901</p>
+                              <p className="text-[10px] font-bold text-slate-400 opacity-60">_ AUTH_TOKEN: XX-9901</p>
                            </div>
                         </div>
                       </div>
@@ -246,7 +246,7 @@ export default function ApprovalDraftHubClient() {
                 
                 <Card className="rounded-[2.5rem] border-none bg-slate-900 text-white shadow-2xl p-10 space-y-4">
                    <h4 className="text-[10px] font-black text-primary tracking-[0.4em] uppercase">Audit Protocol</h4>
-                   <p className="text-sm font-bold text-white/60 leading-relaxed italic">
+                   <p className="text-sm font-bold text-white/60 leading-relaxed">
                     "All submissions are subject to real-time integrity checks and permanent ledger logging."
                    </p>
                 </Card>

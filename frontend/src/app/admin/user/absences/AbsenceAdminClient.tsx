@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -83,7 +83,7 @@ export default function AbsenceAdminClient({
               )}
             </div>
             <div className="space-y-1">
-              <span className="text-[9px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono italic">RES_UID: {item.emplyrId}</span>
+              <span className="text-[9px] font-black text-muted-foreground/40 tracking-[0.4em] uppercase font-mono">_ RES_UID: {item.emplyrId}</span>
               <h4 className="text-lg font-black tracking-tighter text-foreground uppercase leading-none">{item.userNm}</h4>
             </div>
           </div>
@@ -201,7 +201,7 @@ export default function AbsenceAdminClient({
               </div>
 
               <div className="pt-8 border-t border-white/5 flex items-center justify-between">
-                <p className="text-[10px] font-bold text-slate-400 leading-relaxed italic uppercase opacity-60 max-w-[200px] text-left">
+                <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase opacity-60 max-w-[200px] text-left">
                   * 모든 부재 프로필 변경사항은 작업 매트릭스에 즉시 동기화됩니다.
                 </p>
                 <Button

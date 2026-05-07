@@ -64,7 +64,7 @@ export default function CommunityHubClient({
             <h4 className="text-md font-black tracking-tighter leading-none uppercase text-foreground group-hover:text-primary transition-colors">
               {item.cmmntyNm}
             </h4>
-            <p className="text-[8px] font-black tracking-[0.3em] uppercase opacity-40 font-mono italic">
+            <p className="text-[8px] font-black tracking-[0.3em] uppercase opacity-40 font-mono">
               ID_{item.cmmntyId?.substring(0, 8)}
             </p>
           </div>
@@ -74,7 +74,7 @@ export default function CommunityHubClient({
     {
       header: 'INTRODUCTION',
       accessor: (item) => (
-        <p className="text-sm text-muted-foreground font-bold line-clamp-1 italic max-w-md">
+        <p className="text-sm text-muted-foreground font-bold line-clamp-1 max-w-md">
           "{item.cmmntyIntrcn || '등록된 소개 정보가 없습니다.'}"
         </p>
       )
@@ -153,8 +153,8 @@ export default function CommunityHubClient({
                 <MessageSquare size={120} className="text-primary" />
               </div>
               <div className="relative z-10 space-y-2">
-                <span className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono italic">Statistical Matrix</span>
-                <h4 className="text-3xl font-black tracking-tighter text-slate-900 uppercase font-mono italic">Community<br />Pulse</h4>
+                <span className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono">_ Statistical Matrix</span>
+                <h4 className="text-3xl font-black tracking-tighter text-slate-900 uppercase font-mono">Community<br />Pulse</h4>
               </div>
               <div className="space-y-6 relative z-10">
                 <MetricItem label="Active Nodes" value={data?.total || 0} />
@@ -182,7 +182,7 @@ export default function CommunityHubClient({
                   <div className="relative w-full sm:w-96 group/search">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-60 group-focus-within/search:opacity-100 transition-opacity" size={20} />
                     <Input
-                      className="pl-16 h-16 bg-slate-50/50 border-none rounded-[var(--radius-hub-item)] text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500 uppercase font-mono italic"
+                      className="pl-16 h-16 bg-slate-50/50 border-none rounded-[var(--radius-hub-item)] text-[11px] font-black tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-500 uppercase font-mono"
                       placeholder="Search for space..."
                       value={searchKeyword}
                       onChange={(e) => setSearchKeyword(e.target.value)}
@@ -195,7 +195,7 @@ export default function CommunityHubClient({
                         variant="ghost" 
                         size="sm" 
                         onClick={() => queryClient.invalidateQueries({ queryKey: ['communities'] })}
-                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm font-mono italic"
+                        className="h-12 rounded-[var(--radius-hub-item)] px-6 text-[10px] font-black tracking-widest gap-3 hover:bg-slate-900 hover:text-white bg-slate-50 border border-slate-100 transition-all uppercase group shadow-sm font-mono"
                       >
                         <RefreshCcw size={16} className={cn("text-primary group-hover:text-white transition-colors", isLoading ? "animate-spin" : "group-hover:rotate-180")} /> 
                         SYNCHRONIZE
@@ -247,8 +247,8 @@ export default function CommunityHubClient({
 function MetricItem({ label, value }: { label: string, value: string | number }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono italic">{label}</span>
-      <span className="text-xl font-black text-slate-900 tabular-nums font-mono italic">{value}</span>
+      <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono">_ {label}</span>
+      <span className="text-xl font-black text-slate-900 tabular-nums font-mono">{value}</span>
     </div>
   );
 }
@@ -270,7 +270,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       )}>
         {icon}
       </div>
-      <span className="text-xs font-black tracking-widest uppercase font-mono italic text-left">{label}</span>
+      <span className="text-xs font-black tracking-widest uppercase font-mono text-left">_ {label}</span>
       {active && (
         <div className="absolute right-0 top-0 w-24 h-24 bg-primary/20 rounded-full blur-2xl opacity-50 -mr-12 -mt-12 pointer-events-none" />
       )}

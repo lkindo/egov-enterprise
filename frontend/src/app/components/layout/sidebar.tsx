@@ -44,39 +44,38 @@ import { MenuInfo } from '@/types/foundation/menu';
 
 
 const ICON_MAP: Record<string, any> = {
-  '대시보드': LayoutDashboard,
-  '관리자': Settings,
-  '사용자관리': Users,
-  '사용자 계정 및 권한 관리': Users,
-  '보안관리': ShieldCheck,
-  '통합 보안 및 접속 정책': ShieldCheck,
-  '시스템관리': Settings,
-  '시스템 설정': Settings,
-  '게시판': MessageSquare,
-  '협업': Users,
-  '일정관리': CalendarDays,
-  '스마트 일정/일지 관리': CalendarDays,
-  '통계': LayoutDashboard,
-  '감사 및 통계 모니터링': BarChart3,
-  '도움말': BookOpen,
-  '사용자지원': UserCheck,
-  '설문조사': ClipboardList,
-  '설문조사 및 투표 센터': ClipboardList,
-  '마이페이지': UserCircle,
-  '마이페이지관리': Settings,
-  '공통코드관리': Database,
-  '행정코드관리': Database,
-  '기관코드수신': Database,
-  '로그관리': FileText,
-  '임직원 및 부서 관리': Building2,
-  '기본': CircleDot
+  '??쒕낫??: LayoutDashboard,
+  '愿由ъ옄': Settings,
+  '?ъ슜?먭?由?: Users,
+  '?ъ슜??怨꾩젙 諛?沅뚰븳 愿由?: Users,
+  '蹂댁븞愿由?: ShieldCheck,
+  '?듯빀 蹂댁븞 諛??묒냽 ?뺤콉': ShieldCheck,
+  '?쒖뒪?쒓?由?: Settings,
+  '?쒖뒪???ㅼ젙': Settings,
+  '寃뚯떆??: MessageSquare,
+  '?묒뾽': Users,
+  '?쇱젙愿由?: CalendarDays,
+  '?ㅻ쭏???쇱젙/?쇱? 愿由?: CalendarDays,
+  '?듦퀎': LayoutDashboard,
+  '媛먯궗 諛??듦퀎 紐⑤땲?곕쭅': BarChart3,
+  '?꾩?留?: BookOpen,
+  '?ъ슜?먯???: UserCheck,
+  '?ㅻЦ議곗궗': ClipboardList,
+  '?ㅻЦ議곗궗 諛??ы몴 ?쇳꽣': ClipboardList,
+  '留덉씠?섏씠吏': UserCircle,
+  '留덉씠?섏씠吏愿由?: Settings,
+  '怨듯넻肄붾뱶愿由?: Database,
+  '?됱젙肄붾뱶愿由?: Database,
+  '湲곌?肄붾뱶?섏떊': Database,
+  '濡쒓렇愿由?: FileText,
+  '?꾩쭅??諛?遺??愿由?: Building2,
+  '湲곕낯': CircleDot
 };
 
 const DOMAIN_ICON_MAP: Record<number, any> = {
-  10: LayoutGrid, // 워크스페이스
-  11: MessageSquare, // 커뮤니티
-  12: BookOpen, // 고객지원센터
-  90: Settings, // 통합 관리 센터
+  10: LayoutGrid, // ?뚰겕?ㅽ럹?댁뒪
+  11: MessageSquare, // 而ㅻ??덊떚
+  12: BookOpen, // 怨좉컼吏?먯꽱??  90: Settings, // ?듯빀 愿由??쇳꽣
   1000000: Briefcase, // Workspace (New Domain Layout)
   2000000: Library, // Community & Content (New Domain Layout)
   3000000: Sparkles, // Service & Operation (New Domain Layout)
@@ -88,7 +87,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
   const hasChildren = item.children && item.children.length > 0;
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const Icon = ICON_MAP[item.menuNm] || ICON_MAP['기본'];
+  const Icon = ICON_MAP[item.menuNm] || ICON_MAP['湲곕낯'];
 
   // URL normalization and mapping
   const href = useMemo(() => {
@@ -143,7 +142,7 @@ const NavItem = ({ item, depth = 0 }: { item: MenuInfo; depth?: number }) => {
 
   const navContent = (
     <div className={cn(
-      "flex items-center justify-between gap-3 px-3 py-2.5 text-[13px] font-black tracking-widest uppercase font-mono italic rounded-[var(--radius-hub-item)] transition-all duration-300 w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary relative hover:translate-x-1 hover:bg-slate-900 hover:text-white",
+      "flex items-center justify-between gap-3 px-3 py-2.5 text-[13px] font-black tracking-widest uppercase font-mono rounded-[var(--radius-hub-item)] transition-all duration-300 w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary relative hover:translate-x-1 hover:bg-slate-900 hover:text-white",
       isActive
         ? "bg-slate-900 text-white shadow-xl"
         : "text-slate-500 hover:bg-slate-900 hover:text-white",
@@ -248,7 +247,7 @@ const MobileDomainNode = ({
       <button
         onClick={onSelect}
         className={cn(
-          "flex items-center justify-between w-full px-4 py-3.5 rounded-[var(--radius-hub-item)] transition-all duration-300 border text-[11px] font-black tracking-[0.2em] uppercase font-mono italic",
+          "flex items-center justify-between w-full px-4 py-3.5 rounded-[var(--radius-hub-item)] transition-all duration-300 border text-[11px] font-black tracking-[0.2em] uppercase font-mono",
           isActive
             ? "bg-slate-900 text-white border-slate-900 shadow-xl"
             : "bg-slate-50 text-slate-500 border-transparent hover:bg-slate-100 hover:text-slate-900"
@@ -284,7 +283,7 @@ const MobileDomainNode = ({
               </div>
             ) : menus.length === 0 ? (
               <div className="p-4 text-center text-[10px] font-medium text-muted-foreground/40">
-                하위 메뉴가 없습니다.
+                ?섏쐞 硫붾돱媛 ?놁뒿?덈떎.
               </div>
             ) : (
               <div className="space-y-1 py-1">
@@ -372,8 +371,8 @@ export function Sidebar({
                 <span className="text-primary font-black text-lg">EG</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-bold tracking-tight leading-none text-foreground">엔터프라이즈</span>
-                <span className="text-[10px] text-slate-600 font-semibold tracking-wider">포털 5.0</span>
+                <span className="text-base font-bold tracking-tight leading-none text-foreground">?뷀꽣?꾨씪?댁쫰</span>
+                <span className="text-[10px] text-slate-600 font-semibold tracking-wider">?ы꽭 5.0</span>
               </div>
             </Link>
             <Button
@@ -391,7 +390,7 @@ export function Sidebar({
             <div className="lg:hidden space-y-2">
               <div className="mb-6 px-2">
                 <div className="text-[11px] font-black text-slate-600 tracking-wider">
-                  서비스 모듈
+                  ?쒕퉬??紐⑤뱢
                 </div>
               </div>
               {topMenus.map((domain, index) => (
@@ -410,7 +409,7 @@ export function Sidebar({
             <div className="hidden lg:block space-y-1">
               <div className="mb-6 px-2 flex items-center justify-between">
                 <div className="text-[11px] font-black text-slate-600 tracking-wider">
-                  전체 메뉴
+                  ?꾩껜 硫붾돱
                 </div>
                 {topMenus.find(m => m.menuNo === activeMenuNo) && (
                   <Badge variant="secondary" className="text-[9px] px-2 py-0 border-none">
@@ -428,10 +427,10 @@ export function Sidebar({
               ) : menus.length === 0 ? (
                 <div className="p-8 text-center space-y-3 opacity-20">
                   <Database size={32} className="mx-auto" />
-                  <p className="text-sm font-bold tracking-tight">메뉴를 불러올 수 없습니다.</p>
+                  <p className="text-sm font-bold tracking-tight">硫붾돱瑜?遺덈윭?????놁뒿?덈떎.</p>
                 </div>
               ) : (
-                <nav className="space-y-1" aria-label="메인 사이드바">
+                <nav className="space-y-1" aria-label="硫붿씤 ?ъ씠?쒕컮">
                   {menus.map((item: any, index: number) => (
                     <NavItem key={item.menuNo || `menu-${index}`} item={item} />
                   ))}
@@ -448,9 +447,9 @@ export function Sidebar({
               </div>
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles size={14} className="text-primary" />
-                <span className="text-[10px] font-black text-primary tracking-[0.3em] uppercase font-mono italic">HUB_NODE_v5.0</span>
+                <span className="text-[10px] font-black text-primary tracking-[0.3em] uppercase font-mono">_ HUB_NODE_v5.0</span>
               </div>
-              <p className="text-[9px] font-bold text-slate-400 leading-relaxed uppercase font-mono italic">
+              <p className="text-[9px] font-bold text-slate-400 leading-relaxed uppercase font-mono">
                 Advanced_Enterprise_Core
                 <br />
                 Build_Ref: 1.0.2_STABLE

@@ -24,7 +24,7 @@ function LoginContent() {
     const { login, user, loading } = useAuth();
     const router = useRouter();
 
-    // 이미 로그인된 상태라면 대시보드로 자동 이동
+    // ?대? 濡쒓렇?몃맂 ?곹깭?쇰㈃ ??쒕낫?쒕줈 ?먮룞 ?대룞
     React.useEffect(() => {
         if (!loading && user) {
             router.replace('/admin/work-hub');
@@ -48,11 +48,10 @@ function LoginContent() {
         try {
             await login({ id, password });
             
-            // 프리미엄 체감을 위한 단계별 시각적 피드백
-            setTimeout(() => setAuthStep(2), 400);
+            // ?꾨━誘몄뾼 泥닿컧???꾪븳 ?④퀎蹂??쒓컖???쇰뱶諛?            setTimeout(() => setAuthStep(2), 400);
             
             await new Promise(resolve => setTimeout(resolve, 800));
-            toast.success("인증 성공: 보안 세션이 성공적으로 수립되었습니다.");
+            toast.success("?몄쬆 ?깃났: 蹂댁븞 ?몄뀡???깃났?곸쑝濡??섎┰?섏뿀?듬땲??");
             
             setTimeout(() => {
                 window.location.href = redirectUrl;
@@ -104,10 +103,10 @@ function LoginContent() {
                                 
                                 <div className="space-y-2">
                                     <h3 className="text-xl font-bold text-white">
-                                        {authStep === 1 ? "로그인 인증 중" : "인증 완료"}
+                                        {authStep === 1 ? "濡쒓렇???몄쬆 以? : "?몄쬆 ?꾨즺"}
                                     </h3>
                                     <p className="text-slate-400 text-sm">
-                                        {authStep === 1 ? "보안 노드에 접속 시도 중..." : "사용자 업무 환경 동기화 중..."}
+                                        {authStep === 1 ? "蹂댁븞 ?몃뱶???묒냽 ?쒕룄 以?.." : "?ъ슜???낅Т ?섍꼍 ?숆린??以?.."}
                                     </p>
                                 </div>
                             </motion.div>
@@ -124,10 +123,10 @@ function LoginContent() {
                             <Zap className="text-primary w-6 h-6 fill-primary" />
                         </motion.div>
                         <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                            엔터프라이즈
+                            ?뷀꽣?꾨씪?댁쫰
                         </CardTitle>
                         <CardDescription className="text-slate-600 font-bold text-xs uppercase tracking-wider">
-                            글로벌 통합 관리 콘솔
+                            湲濡쒕쾶 ?듯빀 愿由?肄섏넄
                         </CardDescription>
                     </CardHeader>
 
@@ -139,7 +138,7 @@ function LoginContent() {
                                 transition={{ delay: 0.4 }}
                                 className="space-y-2"
                             >
-                                <Label htmlFor="id" className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono italic ml-1">Identity_Protocol</Label>
+                                <Label htmlFor="id" className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono ml-1">_ Identity_Protocol</Label>
                                 <div className="relative group">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
@@ -160,14 +159,14 @@ function LoginContent() {
                                 transition={{ delay: 0.5 }}
                                 className="space-y-2"
                             >
-                                <Label htmlFor="password" className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono italic ml-1">Access_Sequence</Label>
+                                <Label htmlFor="password" className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-mono ml-1">_ Access_Sequence</Label>
                                 <div className="relative group">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="password"
                                         name="password"
                                         type={showPassword ? 'text' : 'password'}
-                                        placeholder="············"
+                                        placeholder="쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌쨌"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="h-14 pl-12 pr-12 rounded-[var(--radius-hub-item)] border-slate-100 bg-slate-50/50 focus:bg-white transition-all shadow-inner font-mono"
@@ -193,11 +192,11 @@ function LoginContent() {
                             >
                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="remember" className="rounded-md border-slate-300" />
-                                    <Label htmlFor="remember" className="text-[10px] font-black text-slate-500 tracking-widest uppercase font-mono italic cursor-pointer select-none">
+                                    <Label htmlFor="remember" className="text-[10px] font-black text-slate-500 tracking-widest uppercase font-mono cursor-pointer select-none">
                                         Keep_Session
                                     </Label>
                                 </div>
-                                <Button variant="link" className="text-[10px] font-black text-primary tracking-widest uppercase font-mono italic p-0 h-auto">Forgot_Key?</Button>
+                                <Button variant="link" className="text-[10px] font-black text-primary tracking-widest uppercase font-mono p-0 h-auto">_ Forgot_Key?</Button>
                             </motion.div>
 
                             {error && (
@@ -205,7 +204,7 @@ function LoginContent() {
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     data-testid="login-error"
-                                    className="text-[10px] font-black text-rose-500 text-center bg-rose-50 p-4 rounded-[var(--radius-hub-item)] border border-rose-100 animate-shake uppercase font-mono italic"
+                                    className="text-[10px] font-black text-rose-500 text-center bg-rose-50 p-4 rounded-[var(--radius-hub-item)] border border-rose-100 animate-shake uppercase font-mono"
                                 >
                                     Error: {error}
                                 </motion.div>
@@ -232,7 +231,7 @@ function LoginContent() {
                     </form>
                 </Card>
                 <p className="mt-8 text-center text-[11px] font-bold text-slate-700 tracking-tight">
-                    &copy; 2026 관리 통합 시스템. 보안 노드 01.
+                    &copy; 2026 愿由??듯빀 ?쒖뒪?? 蹂댁븞 ?몃뱶 01.
                 </p>
             </motion.div>
         </div>
@@ -241,7 +240,7 @@ function LoginContent() {
 
 export default function LoginPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-100">로딩 중...</div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-100">濡쒕뵫 以?..</div>}>
             <LoginContent />
         </Suspense>
     );

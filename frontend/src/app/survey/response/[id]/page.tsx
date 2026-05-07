@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -70,7 +70,7 @@ export default function SurveyResponseDetailPage() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <ClipboardCheck className="w-4 h-4 text-emerald-400" />
-                                <span className="text-sm font-medium italic underline underline-offset-4 decoration-emerald-500/30">검증된 수신</span>
+                                <span className="text-sm font-black underline underline-offset-4 decoration-emerald-500/30">_ 검증된 수신</span>
                             </div>
                         </div>
                     </CardContent>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { z } from 'zod';
@@ -131,7 +131,7 @@ export default function SmsAdminClient({
     {
       header: '메시지 내용',
       accessor: (item: SmsDto) => (
-        <div className="max-w-[450px] truncate font-bold text-slate-600 tracking-tight italic text-left">
+        <div className="max-w-[450px] truncate font-bold text-slate-600 tracking-tight text-left">
           "{item.trnsmitCn}"
         </div>
       )

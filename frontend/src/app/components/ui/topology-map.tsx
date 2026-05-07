@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -222,7 +222,7 @@ export const TopologyMap = () => {
           >
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h4 className="text-lg font-black text-white tracking-tighter uppercase italic">노드 실시간 지표</h4>
+                <h4 className="text-lg font-black text-white tracking-tighter uppercase">_ 노드 실시간 지표</h4>
                 <Activity size={18} className="text-primary animate-pulse" />
               </div>
               
@@ -283,7 +283,7 @@ export const TopologyMap = () => {
       
       <div className="absolute bottom-10 right-10 flex items-center gap-4 text-white/20">
          <Radio size={20} className="animate-pulse" />
-         <span className="text-[10px] font-black tracking-[0.5em] uppercase italic">Sentinel Topology Stream</span>
+         <span className="text-[10px] font-black tracking-[0.5em] uppercase">_ Sentinel Topology Stream</span>
       </div>
     </div>
   );

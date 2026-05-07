@@ -84,13 +84,13 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
               {/* Header Fabric */}
               <div className="flex h-24 items-center justify-between border-b px-8 bg-white dark:bg-slate-950 sticky top-0 z-20">
                 <div className="space-y-1">
-                  <h2 className="text-xl font-black flex items-center gap-3 tracking-tighter uppercase italic">
+                  <h2 className="text-xl font-black flex items-center gap-3 tracking-tighter uppercase">
                     <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-lg">
                        <Bell size={20} className="animate-pulse" />
                     </div>
-                    Alert Sentinel
+                    _ Alert Sentinel
                   </h2>
-                  <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">실시간 시스템 무결성 피드</p>
+                  <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">?ㅼ떆媛??쒖뒪??臾닿껐???쇰뱶</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {notifications.some(n => !n.isRead) && (
@@ -144,7 +144,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                        className="flex flex-col items-center justify-center h-full text-slate-200"
                     >
                       <Zap size={100} className="mb-8 opacity-20" />
-                      <p className="text-sm font-black tracking-widest uppercase italic text-slate-400">CLEAN_STATE: NO_ALERTS</p>
+                      <p className="text-sm font-black tracking-widest uppercase text-slate-400">_ CLEAN_STATE: NO_ALERTS</p>
                     </motion.div>
                   ) : (
                     filteredNotifications.map((notif, idx) => (
@@ -178,7 +178,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                                 </h3>
                                 {!notif.isRead && <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)] animate-pulse" />}
                              </div>
-                             <p className="text-[11px] leading-relaxed text-slate-500 line-clamp-2 font-medium italic">
+                             <p className="text-[11px] leading-relaxed text-slate-500 line-clamp-2 font-medium">
                                 {notif.message}
                              </p>
                           </div>
@@ -186,8 +186,8 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
 
                         <div className="flex items-center justify-between mt-6 relative z-10 px-1">
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{notif.time}</span>
-                          <button className="flex items-center gap-2 text-[10px] font-black text-primary opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 tracking-[0.2em] uppercase italic">
-                            RESOLVE_NODE <ArrowRight size={14} />
+                          <button className="flex items-center gap-2 text-[10px] font-black text-primary opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 tracking-[0.2em] uppercase">
+                            _ RESOLVE_NODE <ArrowRight size={14} />
                           </button>
                         </div>
 

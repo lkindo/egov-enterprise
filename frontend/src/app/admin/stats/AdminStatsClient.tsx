@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -92,7 +92,7 @@ export default function AdminStatsClient({
       header: '상호작용 횟수',
       accessor: (item: MenuStats) => (
         <div className="flex items-center gap-2">
-          <Activity size={14} className="text-primary opacity-100 italic" />
+          <Activity size={14} className="text-primary opacity-100" />
           <span className="font-mono font-black text-primary text-lg tracking-tighter tabular-nums underline decoration-primary/20 decoration-4 underline-offset-4">{item?.statsCo?.toLocaleString() || '0'}</span>
         </div>
       )
@@ -271,7 +271,7 @@ export default function AdminStatsClient({
               <h2 className="text-[11px] font-black tracking-[0.6em] text-white/80 uppercase leading-none">시스템 무결성 요약</h2>
               <h3 className="text-5xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] uppercase tabular-nums">
                 Optimized <br />
-                <span className="text-primary italic">Intelligence</span> Core
+                <span className="text-primary">_ Intelligence</span> Core
               </h3>
             </div>
             <p className="text-lg lg:text-xl text-white/90 font-bold max-w-3xl leading-relaxed tracking-tight">

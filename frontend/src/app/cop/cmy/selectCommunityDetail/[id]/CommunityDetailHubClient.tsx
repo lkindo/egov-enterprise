@@ -102,12 +102,12 @@ export default function CommunityDetailHubClient({
             >
               <div className="space-y-[var(--gap-hub-section)] py-6">
                 <div className="space-y-6">
-                   <h3 className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono italic">Introduction_cn</h3>
+                   <h3 className="text-[10px] font-black text-primary tracking-[0.4em] uppercase font-mono">_ Introduction_cn</h3>
                    <div className="p-10 bg-slate-50 border-2 border-slate-100 rounded-[var(--radius-hub-widget)] shadow-inner relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6 text-primary">
                         <BookOpen size={120} />
                       </div>
-                      <p className="text-2xl font-black tracking-tighter text-slate-900 leading-relaxed italic relative z-10">
+                      <p className="text-2xl font-black tracking-tighter text-slate-900 leading-relaxed relative z-10">
                         "{community.cmmntyIntrcn || '등록된 소개 정보가 정의되지 않았습니다.'}"
                       </p>
                    </div>
@@ -131,8 +131,8 @@ export default function CommunityDetailHubClient({
                 <div className="w-20 h-20 bg-white border-2 border-slate-100 rounded-[var(--radius-hub-item)] flex items-center justify-center text-slate-300 shadow-xl mb-8 group-hover:rotate-12 transition-transform">
                   <BookOpen size={32} />
                 </div>
-                <h4 className="text-xl font-black text-slate-400 tracking-tighter uppercase font-mono italic">No_Posts_Detected</h4>
-                <p className="text-[10px] font-black text-slate-300 tracking-[0.4em] mt-4 uppercase font-mono italic">해당 커뮤니티에 등록된 게시글이 없습니다</p>
+                <h4 className="text-xl font-black text-slate-400 tracking-tighter uppercase font-mono">_ No_Posts_Detected</h4>
+                <p className="text-[10px] font-black text-slate-300 tracking-[0.4em] mt-4 uppercase font-mono">해당 커뮤니티에 등록된 게시글이 없습니다</p>
               </div>
             </HubSectionCard>
           </div>
@@ -148,8 +148,8 @@ export default function CommunityDetailHubClient({
                   <ShieldCheck size={40} className="text-primary" />
                 </div>
                 <div className="space-y-4">
-                  <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase font-mono italic">SECURITY<br />POLICY</h4>
-                  <p className="text-[10px] text-white/60 font-black tracking-[0.4em] uppercase leading-relaxed font-mono italic">가입 승인 필요<br />내부 임직원 전용</p>
+                  <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase font-mono">_ SECURITY<br />POLICY</h4>
+                  <p className="text-[10px] text-white/60 font-black tracking-[0.4em] uppercase leading-relaxed font-mono">가입 승인 필요<br />내부 임직원 전용</p>
                 </div>
                 <Button className="w-full h-14 bg-white text-slate-900 rounded-[var(--radius-hub-item)] font-black text-[10px] tracking-widest uppercase hover:bg-primary hover:text-white transition-all shadow-xl group">
                   ADMIN_PANEL_LOGIN <ChevronLeft size={16} className="rotate-180 group-hover:translate-x-1 transition-transform" />
@@ -159,7 +159,7 @@ export default function CommunityDetailHubClient({
 
             <div className="hub-glass-premium rounded-[var(--radius-hub-section)] p-10 space-y-10 border-2 border-slate-100 shadow-2xl relative overflow-hidden group">
                <div className="flex items-center justify-between border-b border-slate-200/50 pb-6">
-                  <h4 className="text-sm font-black text-slate-900 tracking-tighter uppercase font-mono italic">Member_Pulse</h4>
+                  <h4 className="text-sm font-black text-slate-900 tracking-tighter uppercase font-mono">_ Member_Pulse</h4>
                   <span className="text-[10px] font-black text-primary tracking-widest uppercase font-mono">Live</span>
                </div>
                <div className="space-y-6">
@@ -170,7 +170,7 @@ export default function CommunityDetailHubClient({
                           ID
                         </div>
                         <div>
-                          <p className="text-xs font-black text-slate-800 tracking-tight uppercase font-mono italic">Active_Entity_{i}</p>
+                          <p className="text-xs font-black text-slate-800 tracking-tight uppercase font-mono">_ Active_Entity_{i}</p>
                           <p className="text-[8px] text-slate-400 font-black tracking-widest uppercase font-mono">Connected</p>
                         </div>
                       </div>
@@ -178,7 +178,7 @@ export default function CommunityDetailHubClient({
                     </div>
                   ))}
                </div>
-               <Button variant="ghost" className="w-full h-12 text-[10px] font-black text-slate-400 tracking-widest uppercase hover:text-primary transition-colors font-mono italic">
+               <Button variant="ghost" className="w-full h-12 text-[10px] font-black text-slate-400 tracking-widest uppercase hover:text-primary transition-colors font-mono">
                   VIEW_ALL_ENTITIES <ArrowUpRight size={14} className="ml-2" />
                </Button>
             </div>
@@ -195,10 +195,10 @@ function DetailBlock({ icon, label, value }: { icon: React.ReactNode, label: str
       <div className="absolute top-0 right-0 p-6 opacity-[0.03] scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6 text-primary">
         {icon}
       </div>
-      <h5 className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-3 uppercase mb-4 font-mono relative z-10 italic">
+      <h5 className="text-[10px] font-black text-slate-400 tracking-[0.3em] flex items-center gap-3 uppercase mb-4 font-mono relative z-10">
         {icon} {label}
       </h5>
-      <p className="text-xl font-black tracking-tighter text-slate-900 truncate font-mono relative z-10 italic">
+      <p className="text-xl font-black tracking-tighter text-slate-900 truncate font-mono relative z-10">
         {value}
       </p>
     </div>

@@ -78,7 +78,7 @@ const DataRow = memo(function DataRow({
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
-            aria-label="행 선택"
+            aria-label="???좏깮"
           />
         </td>
       )}
@@ -126,7 +126,7 @@ const MobileCard = memo(function MobileCard({
         <div className="flex items-center gap-3 flex-1 overflow-hidden">
           {enableSelection && (
             <div onClick={(e) => e.stopPropagation()} className="relative z-10">
-              <Checkbox checked={isSelected} onCheckedChange={onToggle} className="w-6 h-6 rounded-lg" aria-label="항목 선택" />
+              <Checkbox checked={isSelected} onCheckedChange={onToggle} className="w-6 h-6 rounded-lg" aria-label="??ぉ ?좏깮" />
             </div>
           )}
           <div className="flex flex-col gap-1 overflow-hidden">
@@ -156,7 +156,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   data,
   loading,
   onRowClick,
-  emptyMessage = "데이터가 없습니다.",
+  emptyMessage = "?곗씠?곌? ?놁뒿?덈떎.",
   enableSelection = false,
   bulkActions = [],
   keyField = 'id' as keyof T,
@@ -206,11 +206,11 @@ export function StandardDataTable<T extends { [key: string]: any }>({
         <form onSubmit={handleSearchSubmit} className="relative group max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
           <Input
-            placeholder={search.placeholder || '검색어 입력...'}
+            placeholder={search.placeholder || '寃?됱뼱 ?낅젰...'}
             className="h-12 pl-12 rounded-xl border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            aria-label="데이터 검색"
+            aria-label="?곗씠??寃??
           />
         </form>
       )}
@@ -228,9 +228,9 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-30 pointer-events-none" />
             <div className="flex items-center gap-6 px-6 relative z-10">
               <div className="flex flex-col">
-                <span className="text-[9px] font-black opacity-40 tracking-[0.3em] uppercase italic">Selection_Active</span>
+                <span className="text-[9px] font-black opacity-40 tracking-[0.3em] uppercase">_ Selection_Active</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-black italic text-primary">{selectedIds.size}</span>
+                  <span className="text-xl font-black text-primary">{selectedIds.size}</span>
                   <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest">items selected</span>
                 </div>
               </div>
@@ -284,7 +284,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                     <Checkbox
                       checked={(data || []).length > 0 && selectedIds.size === (data || []).length}
                       onCheckedChange={toggleAll}
-                      aria-label="전체 항목 선택"
+                      aria-label="?꾩껜 ??ぉ ?좏깮"
                     />
                   </th>
                 )}
@@ -391,15 +391,15 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             className="w-12 h-12 rounded-xl border-2"
             disabled={pagination.currentPage === 1}
             onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-            aria-label="이전 페이지"
+            aria-label="?댁쟾 ?섏씠吏"
           >
             <ChevronLeft size={20} />
           </Button>
 
           <div className="flex items-center gap-2 px-6 h-12 bg-white border-2 rounded-xl">
-            <span className="text-sm font-black italic">{pagination.currentPage}</span>
+            <span className="text-sm font-black">{pagination.currentPage}</span>
             <span className="text-[10px] font-black text-slate-900 uppercase">of</span>
-            <span className="text-sm font-black italic text-slate-900">{pagination.totalPages}</span>
+            <span className="text-sm font-black text-slate-900">{pagination.totalPages}</span>
           </div>
 
           <Button
@@ -408,7 +408,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             className="w-12 h-12 rounded-xl border-2"
             disabled={pagination.currentPage === pagination.totalPages}
             onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-            aria-label="다음 페이지"
+            aria-label="?ㅼ쓬 ?섏씠吏"
           >
             <ChevronRight size={20} />
           </Button>
@@ -425,14 +425,14 @@ function ErrorStateDisplay({ error, onRetry }: { error: Error; onRetry?: () => v
         <AlertCircle size={40} className="text-rose-500" />
       </div>
       <div className="space-y-2">
-        <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">데이터 로드 실패</p>
+        <p className="text-xl font-black text-rose-900 tracking-tighter uppercase whitespace-pre-line">?곗씠??濡쒕뱶 ?ㅽ뙣</p>
         <div className="p-4 bg-rose-50/50 rounded-xl border border-rose-100 inline-block">
           <p className="text-[10px] font-black font-mono text-rose-800 tracking-tight opacity-70">
             ERROR_STREAM: {(error as any)?.response?.data?.message || error.message || 'UNKNOWN_EXCEPTION'}
           </p>
         </div>
         <p className="text-xs text-slate-700 font-bold tracking-tight max-w-[360px] mx-auto leading-relaxed mt-4">
-          데이터베이스 세션으로부터 객체 정보를 수신하지 못했습니다. <br />네트워크 연결 상태를 확인하거나 아래 버튼을 통해 다시 시도하십시오.
+          ?곗씠?곕쿋?댁뒪 ?몄뀡?쇰줈遺??媛앹껜 ?뺣낫瑜??섏떊?섏? 紐삵뻽?듬땲?? <br />?ㅽ듃?뚰겕 ?곌껐 ?곹깭瑜??뺤씤?섍굅???꾨옒 踰꾪듉???듯빐 ?ㅼ떆 ?쒕룄?섏떗?쒖삤.
         </p>
       </div>
       <div className="flex gap-4 mt-6">
@@ -462,7 +462,7 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
       <div className="space-y-2">
         <p className="text-xl font-black text-foreground tracking-tighter uppercase">{emptyMessage}</p>
         <p className="text-xs text-slate-700 font-bold tracking-tight max-w-[320px] mx-auto leading-relaxed">
-          시스템에서 데이터를 조회하지 못했습니다. <br />검색 조건을 조정하거나 다시 초기화해 보십시오.
+          ?쒖뒪?쒖뿉???곗씠?곕? 議고쉶?섏? 紐삵뻽?듬땲?? <br />寃??議곌굔??議곗젙?섍굅???ㅼ떆 珥덇린?뷀빐 蹂댁떗?쒖삤.
         </p>
       </div>
       <Button
@@ -472,7 +472,7 @@ function EmptyStateDisplay({ emptyMessage }: { emptyMessage: string }) {
         onClick={() => typeof window !== 'undefined' && window.location.reload()}
       >
         <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" />
-        전체 새로고침
+        ?꾩껜 ?덈줈怨좎묠
       </Button>
     </div>
   );

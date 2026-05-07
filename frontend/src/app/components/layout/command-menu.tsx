@@ -79,7 +79,7 @@ export function CommandMenu() {
           <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 shadow-inner">
             <Search size={20} className="opacity-20" />
           </div>
-          <p className="text-[10px] font-black tracking-widest uppercase italic">NO_MATCHING_INTEL</p>
+          <p className="text-[10px] font-black tracking-widest uppercase">_ NO_MATCHING_INTEL</p>
         </CommandEmpty>
 
         <CommandGroup heading={<span className="text-[9px] font-black tracking-[0.3em] uppercase opacity-40 ml-2 mb-2 block">Enterprise_Navigation</span>}>
@@ -158,7 +158,7 @@ export function CommandMenu() {
             <span className="text-[9px] font-black text-muted-foreground tracking-tighter">CLOSE</span>
           </div>
         </div>
-        <p className="text-[8px] font-black text-primary tracking-widest uppercase italic opacity-50">Enterprise_Command_v1.2</p>
+        <p className="text-[8px] font-black text-primary tracking-widest uppercase opacity-50">_ Enterprise_Command_v1.2</p>
       </div>
     </CommandDialog>
   );

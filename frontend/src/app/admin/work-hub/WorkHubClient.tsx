@@ -155,7 +155,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const renderJobList = () => (
     <div className="space-y-4">
       {!(jobs || []).length ? (
-        <div className="p-10 text-center opacity-30 font-black text-[10px] tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono italic">NO_DATA_STREAM</div>
+        <div className="p-10 text-center opacity-30 font-black text-[10px] tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono">_ NO_DATA_STREAM</div>
       ) : (jobs || []).map((item: any, idx: number) => (
         <motion.div
           key={item.deptJobbxId}
@@ -178,7 +178,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const renderReportList = () => (
     <div className="space-y-4">
       {!(reports || []).length ? (
-        <div className="p-10 text-center opacity-30 font-black text-[10px] tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono italic">NO_ASSET_STREAM</div>
+        <div className="p-10 text-center opacity-30 font-black text-[10px] tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono">_ NO_ASSET_STREAM</div>
       ) : (reports || []).map((item: any, idx: number) => (
         <motion.div
           key={item.reprtId}
@@ -234,10 +234,9 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
           {/* Header */}
           <div className="flex items-center justify-between relative z-10">
             <div className="space-y-1">
-              <h3 className="text-2xl font-black tracking-tighter uppercase font-mono italic">
-                {currentDate.toLocaleString('default', { month: 'long' })} <span className="text-primary italic underline decoration-4 decoration-primary/20 underline-offset-4">{currentDate.getFullYear()}</span>
+                {currentDate.toLocaleString('default', { month: 'long' })} <span className="text-primary underline decoration-4 decoration-primary/20 underline-offset-4">{currentDate.getFullYear()}</span>
               </h3>
-              <p className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase italic opacity-40">Intelligence_Calendar_Hub</p>
+              <p className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase opacity-40">_ Intelligence_Calendar_Hub</p>
             </div>
             <div className="flex gap-3 bg-slate-50 p-1.5 rounded-[var(--radius-hub-item)] border border-slate-100">
               <Button 
@@ -262,7 +261,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
           {/* Grid */}
           <div className="grid grid-cols-7 gap-3 relative z-10">
             {weekDays.map(day => (
-              <div key={day} className="text-center py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono italic">{day}</div>
+              <div key={day} className="text-center py-2 text-[10px] font-black tracking-widest text-slate-400 uppercase font-mono">_ {day}</div>
             ))}
             
             {prevMonthDays.map(i => (
@@ -289,7 +288,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                   )}
                 >
                   <span className={cn(
-                    "text-lg font-black tracking-tighter tabular-nums italic font-mono",
+                    "text-lg font-black tracking-tighter tabular-nums font-mono",
                     isSelected(day) ? "text-white" : isToday(day) ? "text-primary" : "text-slate-900/60"
                   )}>{day}</span>
                   
@@ -315,14 +314,14 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
              <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                    <div className="w-3 h-3 rounded-full bg-primary/20 border border-primary/40" />
-                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic font-mono">Today</span>
+                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">_ Today</span>
                 </div>
                 <div className="flex items-center gap-2">
                    <div className="w-3 h-3 rounded-full bg-primary" />
-                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic font-mono">Event</span>
+                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">_ Event</span>
                 </div>
              </div>
-             <Button variant="ghost" className="h-10 px-4 rounded-xl text-[9px] font-black text-primary tracking-widest uppercase italic font-mono hover:bg-primary/5">
+             <Button variant="ghost" className="h-10 px-4 rounded-xl text-[9px] font-black text-primary tracking-widest uppercase font-mono hover:bg-primary/5">
                 <RefreshCcw size={12} className={cn("mr-2", isCalendarLoading && "animate-spin")} /> Sync_Stream
              </Button>
           </div>
@@ -458,10 +457,10 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                 >
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <h4 className="text-2xl font-black tracking-tighter uppercase font-mono italic">
+                      <h4 className="text-2xl font-black tracking-tighter uppercase font-mono">
                         {selectedDate.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
                       </h4>
-                      <p className="text-[10px] font-black text-primary tracking-[0.4em] uppercase italic opacity-60">Selected_Node_Insight</p>
+                      <p className="text-[10px] font-black text-primary tracking-[0.4em] uppercase opacity-60">_ Selected_Node_Insight</p>
                     </div>
                       <Button size="sm" className="h-10 px-6 rounded-[var(--radius-hub-item)] bg-slate-900 text-white font-black text-[9px] tracking-widest uppercase gap-2 hover:bg-primary transition-all">
                         <Plus size={14} /> 일정 추가
@@ -480,7 +479,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                           </div>
                           <div className="space-y-4">
                             <h3 className="text-xl font-black text-foreground tracking-tighter uppercase opacity-40">Empty Timeline</h3>
-                            <p className="text-[10px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed italic font-mono">
+                            <p className="text-[10px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed font-mono">
                               해당 날짜에 예정된 비즈니스 프로세스가 없습니다.
                             </p>
                           </div>
@@ -502,19 +501,19 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                               <div className="space-y-3">
                                 <div className="flex items-center gap-3">
                                   <span className={cn(
-                                    "px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase font-mono italic",
+                                    "px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase font-mono",
                                     event.schdulSe === '1' ? "bg-indigo-500/10 text-indigo-500" : "bg-emerald-500/10 text-emerald-500"
                                   )}>
                                     {event.schdulSe === '1' ? 'DEPT_OPS' : 'PERSONAL'}
                                   </span>
-                                  <span className="text-[10px] font-black text-slate-300 tabular-nums font-mono italic">
+                                  <span className="text-[10px] font-black text-slate-300 tabular-nums font-mono">
                                     {event.schdulBgnde.substring(8, 10)}:{event.schdulBgnde.substring(10, 12)}
                                   </span>
                                 </div>
-                                <h5 className="text-xl font-black tracking-tighter text-slate-900 group-hover:text-primary transition-colors italic">
+                                <h5 className="text-xl font-black tracking-tighter text-slate-900 group-hover:text-primary transition-colors">
                                   {event.schdulNm}
                                 </h5>
-                                <p className="text-sm text-slate-500 font-medium line-clamp-2 italic">
+                                <p className="text-sm text-slate-500 font-medium line-clamp-2">
                                   "{event.schdulCn}"
                                 </p>
                               </div>
@@ -561,7 +560,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                   </div>
                   <div className="space-y-4">
                     <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase opacity-40">시스템 대기</h3>
-                    <p className="text-[11px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed font-mono italic">
+                    <p className="text-[11px] font-bold text-muted-foreground/40 max-w-xs mx-auto tracking-[0.3em] uppercase leading-relaxed font-mono">
                       Select Object to Capture Stream
                     </p>
                   </div>

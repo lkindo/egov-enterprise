@@ -171,7 +171,7 @@ export default function ApprovalHubClient() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className={cn(
-                    "text-[8px] font-black tracking-widest uppercase italic px-2 py-0.5 rounded",
+                    "text-[8px] font-black tracking-widest uppercase px-2 py-0.5 rounded",
                     (selectedItemId === item.approvalId || (!selectedItemId && list[0].approvalId === item.approvalId)) 
                         ? "bg-white/10 text-white" 
                         : "bg-slate-100 text-slate-400"
@@ -416,7 +416,7 @@ export default function ApprovalHubClient() {
                   <div className="w-32 h-32 bg-white rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-slate-200 rotate-12 group hover:rotate-0 transition-transform duration-500">
                     <ShieldCheck size={56} className="text-slate-100 group-hover:text-primary transition-colors" />
                   </div>
-                  <h3 className="text-3xl font-black text-slate-300 tracking-tighter uppercase mb-4 italic">Select Transaction</h3>
+                  <h3 className="text-3xl font-black text-slate-300 tracking-tighter uppercase mb-4">_ Select Transaction</h3>
                   <p className="text-[10px] font-black text-slate-200 tracking-[0.5em] uppercase">Awaiting cryptographic selection</p>
                 </div>
               )}

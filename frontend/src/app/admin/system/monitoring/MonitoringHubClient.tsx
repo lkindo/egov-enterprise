@@ -177,7 +177,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
                 <span className={cn("text-[8px] font-black tracking-widest uppercase opacity-40", selectedItemId === log.requstId ? "text-white" : "text-primary")}>{log.sysNm}</span>
-                <span className="text-[8px] font-bold opacity-20 italic">{log.frstRegisterPnttm}</span>
+                <span className="text-[8px] font-bold opacity-20">{log.frstRegisterPnttm}</span>
             </div>
             <h4 className={cn("text-sm font-black tracking-tighter truncate max-w-[280px]", selectedItemId === log.requstId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
           </div>
@@ -200,7 +200,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
                 <span className={cn("text-[8px] font-black tracking-widest uppercase opacity-40", selectedItemId === log.requstId ? "text-white" : "text-emerald-700")}>{log.srvcNm}</span>
-                <span className="text-[8px] font-bold opacity-20 italic">{log.occcrrncDe}</span>
+                <span className="text-[8px] font-bold opacity-20">{log.occcrrncDe}</span>
             </div>
             <h4 className={cn("text-sm font-black tracking-tighter truncate max-w-[280px]", selectedItemId === log.requstId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
           </div>
@@ -223,7 +223,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
                 <span className={cn("text-[8px] font-black tracking-widest uppercase opacity-40", selectedItemId === log.logId ? "text-white" : "text-amber-700")}>{log.loginId}</span>
-                <span className="text-[8px] font-bold opacity-20 italic">{log.creatDt}</span>
+                <span className="text-[8px] font-bold opacity-20">{log.creatDt}</span>
             </div>
             <h4 className={cn("text-sm font-black tracking-tighter truncate max-w-[280px]", selectedItemId === log.logId ? "text-white" : "text-foreground")}>{log.loginMthd}</h4>
           </div>
@@ -305,7 +305,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               "w-5 h-5 rounded-full animate-pulse shadow-[0_0_20px_rgba(16,185,129,0.8)]",
               healthData?.status === 'UP' ? "bg-emerald-500" : "bg-rose-500"
             )} />
-            <h3 className="text-3xl font-black tracking-tighter uppercase leading-none italic">
+            <h3 className="text-3xl font-black tracking-tighter uppercase leading-none">
               코어 엔진: {healthData?.status === 'UP' ? '최적 상태' : '점검 필요'}
             </h3>
           </div>
@@ -462,7 +462,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   
                   <div className="flex-1 space-y-8 overflow-y-auto pr-4 custom-scrollbar relative z-10">
                     <div className="p-8 bg-slate-50 border-2 border-slate-100 rounded-xl shadow-inner relative overflow-hidden group">
-                      <pre className="text-[11px] font-mono whitespace-pre-wrap break-all text-slate-700 leading-relaxed font-black relative z-10 italic">
+                      <pre className="text-[11px] font-mono whitespace-pre-wrap break-all text-slate-700 leading-relaxed font-black relative z-10">
                         {JSON.stringify(selectedItem, null, 2)}
                       </pre>
                     </div>
@@ -503,7 +503,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       >
          <div className="p-10 space-y-10 font-sans">
             <div className="space-y-4">
-               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] px-2 italic">SELECT_REPORT_PROTOCOL</h4>
+               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] px-2">_ SELECT_REPORT_PROTOCOL</h4>
                <div className="grid grid-cols-1 gap-4">
                   <ReportOption icon={<FileText size={20} />} title="Executive Overview" description="시스템 가동 및 보안 지표 통합 요약 (PDF)" />
                   <ReportOption icon={<Activity size={20} />} title="Infrastructure Metrics" description="리소스 점유율 및 성능 추이 데이터 (XLSX)" />
@@ -512,7 +512,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
             <div className="p-8 bg-slate-50 rounded-xl border-2 border-slate-100 space-y-4">
                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black text-slate-800 uppercase italic">Reconciliation Range</span>
+                  <span className="text-[11px] font-black text-slate-800 uppercase">_ Reconciliation Range</span>
                   <span className="text-[10px] font-bold text-primary px-3 py-1 bg-primary/10 rounded-full">LAST_24_HOURS</span>
                </div>
                <div className="h-2 bg-slate-200 rounded-full overflow-hidden">

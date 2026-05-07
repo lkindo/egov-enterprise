@@ -108,7 +108,7 @@ export function AuditTimelineClient() {
               <div className="flex items-center justify-between border-b border-slate-50 pb-8 relative z-10">
                  <div className="space-y-1">
                     <h3 className="text-[10px] font-black text-slate-600 tracking-[0.4em] uppercase">행동 분석</h3>
-                    <p className="text-2xl font-black tracking-tighter text-slate-900 uppercase italic leading-none">감사 로드맵 매트릭스</p>
+                    <p className="text-2xl font-black tracking-tighter text-slate-900 uppercase leading-none">_ 감사 로드맵 매트릭스</p>
                  </div>
                  <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 group cursor-pointer px-4 py-2 rounded-xl hover:bg-slate-50 transition-all">
@@ -146,7 +146,7 @@ export function AuditTimelineClient() {
                 ) : (
                    <div className="h-80 flex flex-col items-center justify-center text-center opacity-30 select-none grayscale">
                       <Search size={100} className="text-slate-300 mb-6" />
-                      <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">검색 결과가 없습니다</h3>
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">_ 검색 결과가 없습니다</h3>
                       <p className="text-[11px] font-bold text-slate-600 tracking-widest uppercase mt-4">다른 필터링 조건을 시도해 보십시오</p>
                    </div>
                 )}
@@ -173,7 +173,7 @@ export function AuditTimelineClient() {
                        <div className="border-b border-white/5 pb-12 relative z-10 transition-transform duration-700 group-hover:-translate-y-1">
                           <div className="flex items-center gap-3 mb-6">
                               <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse" />
-                              <h3 className="text-[10px] font-black text-white/30 tracking-[0.5em] uppercase italic">암호 분석 객체</h3>
+                              <h3 className="text-[10px] font-black text-white/30 tracking-[0.5em] uppercase">_ 암호 분석 객체</h3>
                           </div>
                           <h2 className="text-5xl font-black text-white tracking-tighter leading-none mb-6">행위 상세 <br /> 인스펙터</h2>
                           <p className="text-[10px] font-mono font-black text-primary/80 tracking-widest uppercase">
@@ -183,12 +183,12 @@ export function AuditTimelineClient() {
 
                        <div className="flex-1 space-y-10 overflow-y-auto pr-4 custom-scrollbar relative z-10">
                           <div className="space-y-3">
-                             <div className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase text-white/20 italic">
+                             <div className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase text-white/20">
                                 <span>Payload Matrix</span>
                                 <Database size={12} />
                              </div>
                              <div className="p-10 bg-white/5 border border-white/5 rounded-xl shadow-inner relative overflow-hidden group/pre">
-                                <pre className="text-[12px] font-mono text-white/80 leading-relaxed font-bold break-all whitespace-pre-wrap relative z-10 italic">
+                                <pre className="text-[12px] font-mono text-white/80 leading-relaxed font-bold break-all whitespace-pre-wrap relative z-10">
                                    {JSON.stringify(selectedLog, null, 3)}
                                 </pre>
                                 <SearchCode size={200} className="absolute right-0 bottom-0 p-12 text-white/5 group-hover/pre:scale-110 group-hover/pre:rotate-6 transition-transform duration-1000" />
@@ -212,7 +212,7 @@ export function AuditTimelineClient() {
                     <div className="w-32 h-32 rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center mb-12 shadow-2xl group-hover:rotate-[15deg] transition-all duration-700">
                         <Activity size={100} className="text-slate-300 group-hover:text-primary transition-colors" />
                     </div>
-                    <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-tight mb-4">
+                    <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-tight mb-4">
                        데이터 인스턴스 <br /> 미선택
                     </h3>
                     <p className="text-[10px] font-black text-slate-600 tracking-[0.6em] uppercase leading-relaxed max-w-[240px]">

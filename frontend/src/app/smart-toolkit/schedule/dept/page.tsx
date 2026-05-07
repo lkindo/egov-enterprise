@@ -147,8 +147,8 @@ export default function DeptSchedulePage() {
                     <TableBody>
                         {schedules.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium italic">
-                                    데이터가 없습니다.
+                                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium uppercase tracking-widest">
+                                    [NO_SCHEDULE_DATA_FOUND] 데이터가 없습니다.
                                 </TableCell>
                             </TableRow>
                         ) : (

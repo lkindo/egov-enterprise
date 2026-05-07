@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -74,9 +74,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
             <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white/40 shadow-sm">
               <Clock size={14} />
             </div>
-            <span className="text-[11px] font-mono font-black text-slate-600 tracking-tighter italic">
-              {item.creatDt || item.occcrrncDe || '-'}
-            </span>
+            <span className="text-[11px] font-mono font-black text-slate-600 tracking-tighter">_ {item.creatDt || item.occcrrncDe || '-'}</span>
           </div>
         ),
         className: 'w-48'
@@ -125,7 +123,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         header: '수행 서비스 / 리소스',
         accessor: (item: any) => (
           <div className="flex flex-col gap-0.5 max-w-md">
-            <span className="text-[11px] font-black text-foreground truncate uppercase tracking-tighter italic">{item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
+            <span className="text-[11px] font-black text-foreground truncate uppercase tracking-tighter">_ {item.srvcNm || item.processSeCodeNm || 'INTERNAL_PROCESS'}</span>
             <span className="text-[9px] font-bold text-slate-300 font-mono truncate">{item.methodNm || item.trgetMenuNm || '-'}</span>
           </div>
         )
@@ -251,7 +249,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] px-2 italic">Raw Architecture Payload</h4>
+            <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] px-2">_ Raw Architecture Payload</h4>
             <div className="p-10 rounded-xl bg-slate-900 text-emerald-400 font-mono text-[11px] overflow-auto shadow-2xl relative group max-h-[400px]">
               <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-100 transition-opacity">
                 <Zap size={20} className="animate-pulse" />
