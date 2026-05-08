@@ -1,46 +1,26 @@
-# Force LF line endings and UTF-8 encoding for all text files (cross-platform consistency)
-* text eol=lf working-tree-encoding=UTF-8
+# Handle line endings automatically for files detected as text
+# and leave binary files untouched.
+* text=auto
 
-# Windows batch scripts should use CRLF
-*.bat text eol=crlf working-tree-encoding=UTF-8
-*.cmd text eol=crlf working-tree-encoding=UTF-8
-
-# Explicitly declare text files you want to always be normalized and converted to native line endings on checkout.
-*.java text eol=lf
-*.ts text eol=lf
-*.tsx text eol=lf
-*.js text eol=lf
-*.jsx text eol=lf
-*.py text eol=lf
-*.properties text eol=lf
-*.xml text eol=lf
-*.json text eol=lf
-*.yaml text eol=lf
-*.yml text eol=lf
-*.md text eol=lf
-*.txt text eol=lf
-*.html text eol=lf
-*.css text eol=lf
-*.scss text eol=lf
-*.sh text eol=lf
-*.gradle text eol=lf
-*.gitignore text eol=lf
-*.gitattributes text eol=lf
-
-# Denote all files that are truly binary and should not be modified.
+# Denote all files that are truly vendor-specific or binary
+# to prevent Git from trying to normalize them.
+*.jar binary
 *.png binary
 *.jpg binary
 *.jpeg binary
 *.gif binary
 *.ico binary
 *.pdf binary
-*.woff binary
-*.woff2 binary
-*.ttf binary
-*.eot binary
-*.svg binary
-*.class binary
-*.jar binary
-*.war binary
-*.zip binary
-*.tar.gz binary
+
+# Explicitly set encoding for Java and other source files
+*.java text working-tree-encoding=UTF-8
+*.properties text working-tree-encoding=UTF-8
+*.xml text working-tree-encoding=UTF-8
+*.yml text working-tree-encoding=UTF-8
+*.yaml text working-tree-encoding=UTF-8
+*.js text working-tree-encoding=UTF-8
+*.ts text working-tree-encoding=UTF-8
+*.tsx text working-tree-encoding=UTF-8
+*.jsx text working-tree-encoding=UTF-8
+*.json text working-tree-encoding=UTF-8
+*.md text working-tree-encoding=UTF-8
