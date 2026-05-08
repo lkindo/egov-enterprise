@@ -79,7 +79,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
     return (
         <div className="max-w-6xl mx-auto space-y-10 pb-32 animate-in fade-in duration-700 p-4 md:p-10">
             {/* Search Header */}
-            <div className="relative group p-12 bg-slate-950 rounded-[0.1rem] overflow-hidden shadow-2xl shadow-primary/10">
+            <div className="relative group p-12 bg-slate-950 rounded-lg overflow-hidden shadow-2xl shadow-primary/10">
                 <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-lg blur-[120px] animate-pulse" />
 
                 <div className="relative z-10 space-y-8 text-center md:text-left">
@@ -90,7 +90,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                             </h1>
                             <p className="text-slate-400 font-medium text-lg">시스템 전체에서 필요한 정보를 정확하게 찾아드립니다.</p>
                         </div>
-                        <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-[0.1rem] border border-white/10 backdrop-blur-xl">
+                        <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-lg border border-white/10 backdrop-blur-xl">
                             <Clock className="text-primary" size={18} />
                             <span className="text-sm font-bold text-white tracking-tight">실시간 인덱싱 활성화</span>
                         </div>
@@ -103,11 +103,11 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
                                 placeholder="검색어를 입력하고 지식을 발견하세요..."
-                                className="h-11 pl-16 pr-40 rounded-[0.1rem] border-0 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/20 transition-all font-bold text-xl placeholder:text-slate-300 placeholder:font-bold"
+                                className="h-11 pl-16 pr-40 rounded-lg border-0 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/20 transition-all font-bold text-xl placeholder:text-slate-300 placeholder:font-bold"
                             />
                             <Button
                                 type="submit"
-                                className="absolute right-3 top-1/2 -translate-y-1/2 h-11 px-8 rounded-[0.1rem] font-bold text-lg shadow-xl"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 h-11 px-8 rounded-lg font-bold text-lg shadow-xl"
                             >
                                 검색 실행
                             </Button>
@@ -119,7 +119,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
             <div className="flex flex-col md:flex-row gap-10">
                 {/* Sidebar Filters */}
                 <div className="w-full md:w-64 space-y-8 shrink-0">
-                    <div className="p-8 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-xl">
+                    <div className="p-8 bg-card border-2 border-primary/5 rounded-lg shadow-xl">
                         <h3 className="text-sm font-bold tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
                             <Filter size={14} className="text-primary" /> 필터 옵션
                         </h3>
@@ -130,7 +130,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                         </div>
                     </div>
 
-                    <div className="p-8 bg-slate-900 rounded-[0.1rem] text-white shadow-2xl relative overflow-hidden group">
+                    <div className="p-8 bg-slate-900 rounded-lg text-white shadow-2xl relative overflow-hidden group">
                         <div className="absolute right-[-20px] top-[-20px] bg-primary/20 w-32 h-32 rounded-lg blur-[60px]" />
                         <div className="relative z-10 space-y-4">
                             <h4 className="text-sm font-bold tracking-tight text-primary">프로 팁</h4>
@@ -147,19 +147,19 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                         items={tabs}
                         activeTab={activeTab}
                         onChange={setTab}
-                        className="p-1.5 bg-muted/30 rounded-[0.1rem]"
+                        className="p-1.5 bg-muted/30 rounded-lg"
                     />
 
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-[500px]">
                         {loading ? (
                             <div className="space-y-6">
                                 {[1, 2, 3, 4].map(i => (
-                                    <div key={`search-skeleton-${i}`} className="h-32 bg-muted/40 animate-pulse rounded-[0.1rem]" />
+                                    <div key={`search-skeleton-${i}`} className="h-32 bg-muted/40 animate-pulse rounded-lg" />
                                 ))}
                             </div>
                         ) : results.articles.length === 0 && results.users.length === 0 && results.menus.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-32 text-center space-y-6">
-                                <div className="w-24 h-24 bg-muted/30 rounded-[0.1rem] flex items-center justify-center">
+                                <div className="w-24 h-24 bg-muted/30 rounded-lg flex items-center justify-center">
                                     <Search size={48} className="text-muted-foreground/30" />
                                 </div>
                                 <div className="space-y-2">
@@ -211,7 +211,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
 function FilterToggle({ label, active = false }: { label: string, active?: boolean }) {
     return (
         <button className={cn(
-            "w-full flex items-center justify-between p-3 rounded-[0.1rem] transition-all font-bold text-sm",
+            "w-full flex items-center justify-between p-3 rounded-lg transition-all font-bold text-sm",
             active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-muted"
         )}>
             {label}
@@ -238,7 +238,7 @@ function ResultSection({ title, count, children }: any) {
 function ArticleResultItem({ item, query }: any) {
     return (
         <Link href={`/admin/community/boards/${item.nttId}?bbsId=${item.bbsId}`} className="block group">
-            <div className="p-8 bg-card border-2 border-primary/5 rounded-[0.1rem] shadow-lg group-hover:shadow-xl group-hover:border-primary/20 transition-all group-hover:-translate-y-1">
+            <div className="p-8 bg-card border-2 border-primary/5 rounded-lg shadow-lg group-hover:shadow-xl group-hover:border-primary/20 transition-all group-hover:-translate-y-1">
                 <div className="flex justify-between items-start gap-4 mb-4">
                     <h4 className="text-xl font-bold group-hover:text-primary transition-colors line-clamp-1">
                         {item.nttSj}
@@ -266,8 +266,8 @@ function ArticleResultItem({ item, query }: any) {
 
 function UserResultItem({ item }: any) {
     return (
-        <div className="p-6 bg-card border-2 border-primary/5 rounded-[0.1rem] flex items-center gap-5 hover:border-primary/20 transition-all shadow-sm">
-            <div className="w-14 h-11 rounded-[0.1rem] bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+        <div className="p-6 bg-card border-2 border-primary/5 rounded-lg flex items-center gap-5 hover:border-primary/20 transition-all shadow-sm">
+            <div className="w-14 h-11 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                 <UserIcon size={24} />
             </div>
             <div className="flex-1 min-w-0">
@@ -281,9 +281,9 @@ function UserResultItem({ item }: any) {
 
 function MenuResultItem({ item }: any) {
     return (
-        <Link href={item.path} className="flex items-center justify-between p-6 bg-muted/20 border-2 border-transparent hover:border-primary/20 hover:bg-card rounded-[0.1rem] transition-all group">
+        <Link href={item.path} className="flex items-center justify-between p-6 bg-muted/20 border-2 border-transparent hover:border-primary/20 hover:bg-card rounded-lg transition-all group">
             <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-[0.1rem] bg-background flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
                     <Layout size={18} />
                 </div>
                 <div>

@@ -31,7 +31,7 @@ export function PremiumSearchInput({
       <Input
         placeholder={placeholder}
         className={cn(
-          "h-11 pl-14 pr-6 w-full rounded-[0.1rem] border-2 border-border font-[number:var(--font-weight-hub-title)] text-xs tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-background shadow-sm hover:border-primary/50",
+          "h-11 pl-14 pr-6 w-full rounded-lg border-2 border-border font-[number:var(--font-weight-hub-title)] text-xs tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-background shadow-sm hover:border-primary/50",
           "placeholder:font-bold placeholder:text-muted-foreground/40",
           className
         )}

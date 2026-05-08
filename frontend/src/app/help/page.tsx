@@ -70,7 +70,7 @@ export default function HelpCenterPage() {
         breadcrumbs={[{ label: '지원서비스' }, { label: '도움말센터' }]}
       />
 
-      <div className="hub-glass-premium rounded-[0.1rem] p-16 text-center relative overflow-hidden group">
+      <div className="hub-glass-premium rounded-lg p-16 text-center relative overflow-hidden group">
         <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
             <Sparkles size={200} className="text-primary" />
         </div>
@@ -84,13 +84,13 @@ export default function HelpCenterPage() {
                 placeholder="키워드로 신속하게 검색하세요..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="w-full h-11 pl-16 pr-6 rounded-[0.1rem] bg-background/50 border-2 border-border focus:border-primary text-foreground text-lg font-bold outline-none focus:ring-8 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30"
+                className="w-full h-11 pl-16 pr-6 rounded-lg bg-background/50 border-2 border-border focus:border-primary text-foreground text-lg font-bold outline-none focus:ring-8 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30"
             />
             </div>
         </div>
       </div>
 
-      <div className="flex justify-center p-2 bg-muted rounded-[0.1rem] w-fit mx-auto">
+      <div className="flex justify-center p-2 bg-muted rounded-lg w-fit mx-auto">
         <TabButton
           active={tab === 'faq'}
           onClick={() => setTab('faq')}
@@ -119,7 +119,7 @@ export default function HelpCenterPage() {
                 <EmptyStateDisplay message="등록된 자주 묻는 질문이 없습니다." className="bg-card border-2 border-dashed border-border" />
               ) : (
                 faqs.map((faq) => (
-                  <div key={faq.faqId} className="bg-card border-2 border-border/40 rounded-[0.1rem] overflow-hidden transition-all hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/20 scale-100 hover:scale-[1.005]">
+                  <div key={faq.faqId} className="bg-card border-2 border-border/40 rounded-lg overflow-hidden transition-all hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/20 scale-100 hover:scale-[1.005]">
                     <button
                       onClick={() => setExpandedFaq(expandedFaq === faq.faqId ? null : faq.faqId)}
                       className="w-full px-12 py-10 flex items-center justify-between group text-left"
@@ -127,7 +127,7 @@ export default function HelpCenterPage() {
                       <span className="font-bold text-2xl text-foreground group-hover:text-primary transition-colors flex items-start gap-4 tracking-tighter">
                         <span className="text-primary opacity-30 text-3xl">Q.</span> {faq.qestnSj}
                       </span>
-                      <div className={cn("w-12 h-12 rounded-[0.1rem] flex items-center justify-center transition-all", expandedFaq === faq.faqId ? "bg-primary text-white rotate-180" : "bg-muted font-bold text-muted-foreground group-hover:bg-accent")}>
+                      <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all", expandedFaq === faq.faqId ? "bg-primary text-white rotate-180" : "bg-muted font-bold text-muted-foreground group-hover:bg-accent")}>
                         <ChevronDown size={24} />
                       </div>
                     </button>
@@ -136,7 +136,7 @@ export default function HelpCenterPage() {
                         <motion.div 
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="p-10 bg-accent/30 rounded-[0.1rem] border-2 border-accent/50 text-foreground/80 font-bold leading-[1.8] text-lg flex items-start gap-4 shadow-inner"
+                          className="p-10 bg-accent/30 rounded-lg border-2 border-accent/50 text-foreground/80 font-bold leading-[1.8] text-lg flex items-start gap-4 shadow-inner"
                         >
                           <span className="text-primary/20 text-3xl font-bold shrink-0 pt-1">A.</span>
                           {faq.answerCn}
@@ -153,14 +153,14 @@ export default function HelpCenterPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="space-y-8 bg-card p-12 rounded-[0.1rem] border-2 border-border/40 shadow-xl overflow-hidden"
+              className="space-y-8 bg-card p-12 rounded-lg border-2 border-border/40 shadow-xl overflow-hidden"
             >
               <div className="flex justify-between items-center pb-8 border-b border-border/40">
                   <div className="space-y-1">
                       <h3 className="text-2xl font-bold tracking-tight uppercase">_ 나의 문의 내역</h3>
                       <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase">Private Interaction History</p>
                   </div>
-                  <Button className="h-11 px-8 rounded-[0.1rem] bg-foreground text-background border-none font-bold text-xs tracking-widest gap-3 shadow-2xl hover:bg-primary hover:text-white transition-all uppercase">
+                  <Button className="h-11 px-8 rounded-lg bg-foreground text-background border-none font-bold text-xs tracking-widest gap-3 shadow-2xl hover:bg-primary hover:text-white transition-all uppercase">
                       <PlusCircle size={20} /> 새로운 문의 작성
                   </Button>
               </div>
@@ -184,7 +184,7 @@ function TabButton({ active, onClick, icon, label }: any) {
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-10 py-5 rounded-[0.1rem] font-bold text-xs transition-all duration-500 uppercase tracking-widest",
+        "flex items-center gap-3 px-10 py-5 rounded-lg font-bold text-xs transition-all duration-500 uppercase tracking-widest",
         active
           ? "bg-background text-foreground shadow-2xl scale-105 z-10"
           : "text-muted-foreground/60 hover:text-foreground"

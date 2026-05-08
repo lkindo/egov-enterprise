@@ -155,7 +155,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const renderJobList = () => (
     <div className="space-y-4">
       {!(jobs || []).length ? (
-        <div className="p-10 text-center opacity-30 font-bold text-xs tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono">_ NO_DATA_STREAM</div>
+        <div className="p-10 text-center opacity-30 font-bold text-xs tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono">_ 등록된 업무가 없습니다.</div>
       ) : (jobs || []).map((item: any, idx: number) => (
         <motion.div
           key={item.deptJobbxId}
@@ -178,7 +178,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const renderReportList = () => (
     <div className="space-y-4">
       {!(reports || []).length ? (
-        <div className="p-10 text-center opacity-30 font-bold text-xs tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono">_ NO_ASSET_STREAM</div>
+        <div className="p-10 text-center opacity-30 font-bold text-xs tracking-widest border-2 border-dashed border-slate-100 rounded-[var(--radius-hub-item)] uppercase font-mono">_ 등록된 보고서가 없습니다.</div>
       ) : (reports || []).map((item: any, idx: number) => (
         <motion.div
           key={item.reprtId}

@@ -109,9 +109,9 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] rounded-[0.1rem] p-10 border-none shadow-2xl bg-white ring-1 ring-slate-100">
+      <DialogContent className="sm:max-w-[500px] rounded-lg p-10 border-none shadow-2xl bg-white ring-1 ring-slate-100">
         <DialogHeader className="space-y-4">
-          <div className="w-16 h-11 bg-primary text-white rounded-[0.1rem] flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
+          <div className="w-16 h-11 bg-primary text-white rounded-lg flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
             {isEdit ? <Pencil size={28} /> : <Plus size={28} />}
           </div>
           <DialogTitle className="text-3xl font-bold text-slate-900 tracking-tighter text-center">
@@ -137,7 +137,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                       placeholder="프로그램파일명" 
                       {...field} 
                       readOnly={isEdit} 
-                      className="h-11 px-8 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 text-lg font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                      className="h-11 px-8 rounded-lg border-2 border-slate-100 bg-slate-50/50 text-lg font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                     />
                   </FormControl>
                   <FormMessage />
@@ -158,7 +158,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                       <Input 
                         placeholder="프로그램명" 
                         {...field} 
-                        className="h-11 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
+                        className="h-11 px-6 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
                       />
                     </FormControl>
                     <FormMessage />
@@ -177,7 +177,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                       <Input 
                         placeholder="URL" 
                         {...field} 
-                        className="h-11 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white transition-all shadow-inner"
+                        className="h-11 px-6 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white transition-all shadow-inner"
                       />
                     </FormControl>
                     <FormMessage />
@@ -198,7 +198,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                     <Input 
                       placeholder="저장경로" 
                       {...field} 
-                      className="h-11 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white transition-all shadow-inner"
+                      className="h-11 px-6 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-mono text-sm font-bold focus:bg-white transition-all shadow-inner"
                     />
                   </FormControl>
                   <FormMessage />
@@ -218,7 +218,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                     <Input 
                       placeholder="프로그램이 제공할 기능의 기술적 명세.." 
                       {...field} 
-                      className="h-11 px-6 rounded-[0.1rem] border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
+                      className="h-11 px-6 rounded-lg border-2 border-slate-100 bg-slate-50/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
                     />
                   </FormControl>
                   <FormMessage />
@@ -232,13 +232,13 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
-                  className="h-11 px-10 rounded-[0.1rem] border-2 border-slate-100 font-bold text-sm tracking-tight hover:bg-slate-50 transition-all flex-1"
+                  className="h-11 px-10 rounded-lg border-2 border-slate-100 font-bold text-sm tracking-tight hover:bg-slate-50 transition-all flex-1"
                 >
                   취소
                 </Button>
                 <Button 
                   type="submit"
-                  className="h-11 px-14 bg-slate-900 text-white rounded-[0.1rem] font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
+                  className="h-11 px-14 bg-slate-900 text-white rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-[2]"
                 >
                   <Save size={18} />
                   시스템 동기화
@@ -249,7 +249,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                   type="button" 
                   variant="ghost" 
                   onClick={handleDelete}
-                  className="h-11 w-16 rounded-[0.1rem] text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm"
+                  className="h-11 w-16 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm"
                 >
                   <Trash2 size={24} />
                 </Button>

@@ -53,7 +53,7 @@ export function HubChartCard({
           <div className="flex items-center gap-4">
             {icon && (
               <div className={cn(
-                "w-14 h-11 rounded-[0.1rem] flex items-center justify-center shadow-xl border border-white/10",
+                "w-14 h-11 rounded-lg flex items-center justify-center shadow-xl border border-white/10",
                 color === 'blue' ? "bg-hub-blue/10 text-hub-blue" :
                 color === 'emerald' ? "bg-hub-emerald/10 text-hub-emerald" :
                 color === 'purple' ? "bg-hub-purple/10 text-hub-purple" : "bg-hub-orange/10 text-hub-orange"
@@ -76,13 +76,13 @@ export function HubChartCard({
         <div className="flex items-center gap-3">
           {actions || (
             <>
-              <button className="w-12 h-12 rounded-[0.1rem] bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
+              <button className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
                 <Filter size={18} />
               </button>
-              <button className="w-12 h-12 rounded-[0.1rem] bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
+              <button className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
                 <Download size={18} />
               </button>
-              <button className="w-12 h-12 rounded-[0.1rem] bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
+              <button className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
                 <Maximize2 size={18} />
               </button>
             </>

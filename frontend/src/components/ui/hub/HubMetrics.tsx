@@ -49,7 +49,7 @@ export function HubMetricCard({
     )}>
       <div className="flex justify-between items-start mb-10 relative z-10">
         <div className={cn(
-          "w-14 h-11 rounded-[0.1rem] flex items-center justify-center shadow-xl border border-border/10 group-hover:rotate-12 transition-transform", 
+          "w-14 h-11 rounded-lg flex items-center justify-center shadow-xl border border-border/10 group-hover:rotate-12 transition-transform", 
           iconBgMap[color]
         )}>
           <Icon size={24} />

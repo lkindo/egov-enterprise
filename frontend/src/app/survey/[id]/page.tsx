@@ -66,7 +66,7 @@ function StatsContent() {
       </Card>
 
       {!initialQestnrId && (
-        <div className="text-center py-20 border-2 border-dashed rounded-[0.1rem]">
+        <div className="text-center py-20 border-2 border-dashed rounded-lg">
           <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground">설문지 ID를 입력하여 통계를 확인하세요.</p>
         </div>

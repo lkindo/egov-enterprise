@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState } from 'react';
 import {
   Table,
@@ -101,7 +101,7 @@ export function DataTable<T>({
       </div>
 
       {/* Table Content */}
-      <div className="rounded-[0.1rem] border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-muted/30">
             <TableRow>

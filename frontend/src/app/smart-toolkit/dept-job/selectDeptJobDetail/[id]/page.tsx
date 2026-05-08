@@ -49,7 +49,7 @@ const InsertDeptJobPage = () => {
     return (
         <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-[0.1rem] w-fit border border-slate-100">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg w-fit border border-slate-100">
                 <Link href="/" className="hover:text-foreground flex items-center gap-1 transition-colors">
                     <Home className="w-4 h-4" /> 홈
                 </Link>
@@ -59,10 +59,10 @@ const InsertDeptJobPage = () => {
                 <span className="text-foreground font-bold">부서업무 등록</span>
             </div>
 
-            <Card className="shadow-[0_64px_128px_-32px_rgba(0,0,0,0.15)] border-none overflow-hidden rounded-[0.1rem] bg-white ring-1 ring-slate-100">
+            <Card className="shadow-[0_64px_128px_-32px_rgba(0,0,0,0.15)] border-none overflow-hidden rounded-lg bg-white ring-1 ring-slate-100">
                 <CardHeader className="border-b bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 pb-20 pt-20 px-12 text-white text-center md:text-left">
                     <div className="flex flex-col md:flex-row items-center gap-8">
-                        <div className="w-24 h-24 bg-white/5 backdrop-blur-2xl border-2 border-white/10 rounded-[0.1rem] flex items-center justify-center shadow-2xl scale-110 rotate-3 group hover:rotate-0 transition-transform duration-700">
+                        <div className="w-24 h-24 bg-white/5 backdrop-blur-2xl border-2 border-white/10 rounded-lg flex items-center justify-center shadow-2xl scale-110 rotate-3 group hover:rotate-0 transition-transform duration-700">
                             <Briefcase className="w-10 h-10 text-primary-foreground" />
                         </div>
                         <div className="space-y-4">
@@ -89,7 +89,7 @@ const InsertDeptJobPage = () => {
                             <Input
                                 id="deptJobNm"
                                 placeholder="수행해야 할 핵심 업무 제목을 입력하세요"
-                                className="h-11 text-3xl font-bold border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-[0.1rem] px-10 bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl"
+                                className="h-11 text-3xl font-bold border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-lg px-10 bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl"
                                 value={formData.deptJobNm}
                                 onChange={(e) => setFormData({ ...formData, deptJobNm: e.target.value })}
                                 required
@@ -111,7 +111,7 @@ const InsertDeptJobPage = () => {
                                         key={p.value}
                                         type="button"
                                         onClick={() => setFormData({ ...formData, priort: p.value })}
-                                        className={`p-8 rounded-[0.1rem] border-2 text-center transition-all active:scale-95 ${formData.priort === p.value
+                                        className={`p-8 rounded-lg border-2 text-center transition-all active:scale-95 ${formData.priort === p.value
                                             ? 'bg-slate-900 text-white border-slate-900 shadow-2xl ring-8 ring-slate-100'
                                             : 'bg-slate-50 text-slate-400 border-transparent hover:border-slate-200'
                                             }`}
@@ -131,7 +131,7 @@ const InsertDeptJobPage = () => {
                             <Textarea
                                 id="deptJobCn"
                                 placeholder="업무의 상세 목표, 수행 방법, 요청 사항 등을 구체적으로 서술하세요.."
-                                className="min-h-[350px] p-12 text-xl font-medium leading-[1.8] border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-[0.1rem] bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl resize-none scrollbar-thin scrollbar-thumb-slate-200"
+                                className="min-h-[350px] p-12 text-xl font-medium leading-[1.8] border-2 border-slate-50 focus:border-slate-900 focus-visible:ring-slate-100 transition-all rounded-lg bg-slate-50/50 shadow-inner group-focus-within:bg-white group-focus-within:shadow-2xl resize-none scrollbar-thin scrollbar-thumb-slate-200"
                                 value={formData.deptJobCn}
                                 onChange={(e) => setFormData({ ...formData, deptJobCn: e.target.value })}
                                 required
@@ -139,8 +139,8 @@ const InsertDeptJobPage = () => {
                         </div>
 
                         {/* Confirmation Indicator */}
-                        <div className="p-10 bg-slate-50 border-2 border-white rounded-[0.1rem] shadow-xl flex items-center gap-8 relative overflow-hidden">
-                            <div className="p-6 bg-slate-900 rounded-[0.1rem] text-white shadow-2xl">
+                        <div className="p-10 bg-slate-50 border-2 border-white rounded-lg shadow-xl flex items-center gap-8 relative overflow-hidden">
+                            <div className="p-6 bg-slate-900 rounded-lg text-white shadow-2xl">
                                 <CheckCircle className="w-10 h-10 text-primary-foreground" />
                             </div>
                             <div className="space-y-1">
@@ -153,11 +153,11 @@ const InsertDeptJobPage = () => {
                     </CardContent>
                     <CardFooter className="flex flex-col md:flex-row justify-center gap-8 py-20 border-t border-slate-50 bg-slate-50/30 px-12 rounded-b-[3.5rem]">
                         <Link href="/smart-toolkit/dept-job/selectDeptJobList">
-                            <Button type="button" variant="ghost" className="h-11 px-16 font-bold tracking-[0.3em] text-sm text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-2xl transition-all rounded-[0.1rem] border-2 border-transparent hover:border-rose-50">
+                            <Button type="button" variant="ghost" className="h-11 px-16 font-bold tracking-[0.3em] text-sm text-slate-400 hover:bg-white hover:text-rose-500 hover:shadow-2xl transition-all rounded-lg border-2 border-transparent hover:border-rose-50">
                                 <ArrowLeft className="w-6 h-6 mr-4" /> Discard & Return
                             </Button>
                         </Link>
-                        <Button type="submit" className="h-11 px-24 gap-4 font-bold tracking-[0.3em] text-sm shadow-[0_24px_48px_-8px_theme(colors.slate.900/40)] bg-slate-900 hover:bg-black transition-all active:scale-95 ring-[20px] ring-slate-100 rounded-[0.1rem]" disabled={loading}>
+                        <Button type="submit" className="h-11 px-24 gap-4 font-bold tracking-[0.3em] text-sm shadow-[0_24px_48px_-8px_theme(colors.slate.900/40)] bg-slate-900 hover:bg-black transition-all active:scale-95 ring-[20px] ring-slate-100 rounded-lg" disabled={loading}>
                             {loading ? (
                                 <span className="flex items-center gap-3 animate-pulse">
                                     <div className="w-3 h-3 bg-white rounded-lg" /> Dispatching...

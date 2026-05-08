@@ -64,7 +64,7 @@ export function HubSummaryCard({
       )}
     >
       <div className="flex justify-between items-start relative z-10">
-        <div className={cn("p-5 rounded-[0.1rem] transition-transform duration-500 group-hover:rotate-12", iconBgMap[color])}>
+        <div className={cn("p-5 rounded-lg transition-transform duration-500 group-hover:rotate-12", iconBgMap[color])}>
           {icon}
         </div>
         {trend !== undefined && trend !== 0 && (

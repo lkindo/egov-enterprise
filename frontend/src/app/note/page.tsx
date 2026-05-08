@@ -107,7 +107,7 @@ export default function NotePage() {
       accessor: (item: Note) => (
         <button
           onClick={(e) => { e.stopPropagation(); toast('삭제되었습니다(Mock)', 'info'); }}
-          className="p-2 hover:bg-rose-50 text-rose-400 rounded-[0.1rem] transition-colors group"
+          className="p-2 hover:bg-rose-50 text-rose-400 rounded-lg transition-colors group"
         >
           <Trash2 size={18} className="group-hover:scale-110 transition-transform" />
         </button>
@@ -123,7 +123,7 @@ export default function NotePage() {
         actions={
           <Button
             onClick={() => setWriteOpen(true)}
-            className="h-11 px-10 rounded-[0.1rem] bg-slate-950 border-none text-white font-bold text-sm shadow-2xl hover:bg-primary transition-all gap-3 overflow-hidden group"
+            className="h-11 px-10 rounded-lg bg-slate-950 border-none text-white font-bold text-sm shadow-2xl hover:bg-primary transition-all gap-3 overflow-hidden group"
           >
             <SendHorizonal size={20} className="group-hover:translate-x-1 transition-transform" /> 쪽지 상세 기안
           </Button>
@@ -131,7 +131,7 @@ export default function NotePage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-900 rounded-[0.1rem] p-10 text-white relative overflow-hidden group border-none shadow-2xl">
+          <div className="bg-slate-900 rounded-lg p-10 text-white relative overflow-hidden group border-none shadow-2xl">
                 <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
                     <Sparkles size={120} className="text-primary" />
                 </div>
@@ -140,7 +140,7 @@ export default function NotePage() {
                     <h3 className="text-3xl font-bold tracking-tighter leading-tight capitalize">쪽지 커뮤니케이션<br />아키텍처</h3>
                 </div>
           </div>
-          <div className="col-span-2 flex p-2 bg-slate-100 rounded-[0.1rem] w-full items-center justify-center">
+          <div className="col-span-2 flex p-2 bg-slate-100 rounded-lg w-full items-center justify-center">
                 <TabButton
                     active={tab === 'received'}
                     onClick={() => setTab('received')}
@@ -158,7 +158,7 @@ export default function NotePage() {
           </div>
       </div>
 
-      <div className="bg-white rounded-[0.1rem] border-2 border-slate-50 shadow-2xl overflow-hidden p-6">
+      <div className="bg-white rounded-lg border-2 border-slate-50 shadow-2xl overflow-hidden p-6">
         <StandardDataTable
           columns={columns}
           data={notes}
@@ -175,8 +175,8 @@ export default function NotePage() {
         title="새 쪽지 기안"
         footer={
           <div className="flex gap-4 w-full">
-            <Button variant="ghost" onClick={() => setWriteOpen(false)} className="h-11 flex-1 rounded-[0.1rem] font-bold text-slate-400">취소</Button>
-            <Button onClick={handleSend} className="h-11 flex-[2] bg-slate-900 text-white rounded-[0.1rem] font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all">메시지 전송</Button>
+            <Button variant="ghost" onClick={() => setWriteOpen(false)} className="h-11 flex-1 rounded-lg font-bold text-slate-400">취소</Button>
+            <Button onClick={handleSend} className="h-11 flex-[2] bg-slate-900 text-white rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all">메시지 전송</Button>
           </div>
         }
       >
@@ -190,12 +190,12 @@ export default function NotePage() {
                   value={formData.rcverNm ? `${formData.rcverNm} (${formData.rcverId})` : ''}
                   placeholder="대상자를 식별하십시오..."
                   readOnly
-                  className="w-full h-11 pl-16 pr-6 rounded-[0.1rem] bg-slate-50 border-none text-sm font-bold tracking-tight outline-none cursor-not-allowed group-hover:bg-slate-100 transition-all font-mono"
+                  className="w-full h-11 pl-16 pr-6 rounded-lg bg-slate-50 border-none text-sm font-bold tracking-tight outline-none cursor-not-allowed group-hover:bg-slate-100 transition-all font-mono"
                 />
               </div>
               <Button
                 onClick={() => setPickerOpen(true)}
-                className="h-11 px-8 bg-white border-2 border-slate-100 text-slate-900 rounded-[0.1rem] font-bold text-xs tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-xl active:scale-95"
+                className="h-11 px-8 bg-white border-2 border-slate-100 text-slate-900 rounded-lg font-bold text-xs tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-xl active:scale-95"
               >
                 <Search size={16} className="mr-2" /> 타겟 검색
               </Button>
@@ -207,14 +207,14 @@ export default function NotePage() {
               value={formData.noteSj}
               onChange={(e) => setFormData({ ...formData, noteSj: e.target.value })}
               placeholder="쪽지 아키텍처 제목을 입력하세요."
-              className="w-full h-11 px-8 rounded-[0.1rem] bg-slate-50 border-none text-sm font-bold tracking-tight outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+              className="w-full h-11 px-8 rounded-lg bg-slate-50 border-none text-sm font-bold tracking-tight outline-none focus:ring-4 focus:ring-primary/10 transition-all"
             />
           </FormField>
           <FormField label="데이터 바디 (내용)">
             <textarea
               value={formData.noteCn}
               onChange={(e) => setFormData({ ...formData, noteCn: e.target.value })}
-              className="w-full min-h-[200px] p-8 rounded-[0.1rem] bg-slate-50 border-none text-base font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none leading-relaxed"
+              className="w-full min-h-[200px] p-8 rounded-lg bg-slate-50 border-none text-base font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none leading-relaxed"
               placeholder="전달할 메시지 데이터를 상세히 기입하세요..."
             />
           </FormField>
@@ -251,11 +251,11 @@ export default function NotePage() {
               </div>
               <StatusBadge status={selectedNote.openYn === 'Y' ? 'C' : 'R'} />
             </div>
-            <div className="text-xl font-bold leading-[1.8] text-slate-700 bg-slate-50/50 p-12 rounded-[0.1rem] border-2 border-slate-50 min-h-[300px] whitespace-pre-wrap shadow-inner ring-1 ring-white">
+            <div className="text-xl font-bold leading-[1.8] text-slate-700 bg-slate-50/50 p-12 rounded-lg border-2 border-slate-50 min-h-[300px] whitespace-pre-wrap shadow-inner ring-1 ring-white">
               {selectedNote.noteCn}
             </div>
             <div className="flex gap-4 justify-end pt-4">
-              <Button variant="ghost" onClick={() => setDetailOpen(false)} className="h-11 px-10 rounded-[0.1rem] font-bold text-slate-400">데이터 닫기</Button>
+              <Button variant="ghost" onClick={() => setDetailOpen(false)} className="h-11 px-10 rounded-lg font-bold text-slate-400">데이터 닫기</Button>
               {tab === 'received' && (
                 <Button
                   onClick={() => {
@@ -263,7 +263,7 @@ export default function NotePage() {
                     setFormData({ ...formData, rcverId: selectedNote.trnsmitterId, noteSj: `Re: ${selectedNote.noteSj}` });
                     setWriteOpen(true);
                   }}
-                  className="h-11 px-10 bg-slate-900 text-white rounded-[0.1rem] font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all gap-2"
+                  className="h-11 px-10 bg-slate-900 text-white rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all gap-2"
                 >
                   <SendHorizonal size={18} /> 실시간 답장 전송
                 </Button>
@@ -281,7 +281,7 @@ function TabButton({ active, onClick, icon, label, count }: any) {
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-10 py-5 rounded-[0.1rem] font-bold text-xs transition-all duration-500 uppercase tracking-widest flex-1 justify-center",
+        "flex items-center gap-3 px-10 py-5 rounded-lg font-bold text-xs transition-all duration-500 uppercase tracking-widest flex-1 justify-center",
         active
           ? "bg-white text-slate-950 shadow-2xl shadow-slate-200 scale-[1.03] z-10"
           : "text-slate-400 hover:text-slate-600"

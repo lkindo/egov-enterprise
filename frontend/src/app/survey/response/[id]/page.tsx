@@ -33,7 +33,7 @@ export default function SurveyResponseDetailPage() {
     if (isError) {
         return (
             <div className="p-8 text-center space-y-4">
-                <div className="bg-destructive/10 text-destructive p-4 rounded-[0.1rem] inline-block">
+                <div className="bg-destructive/10 text-destructive p-4 rounded-lg inline-block">
                     {error instanceof Error ? error.message : '데이터를 불러오지 못했습니다.'}
                 </div>
                 <Button onClick={() => router.back()}>뒤로 가기</Button>
@@ -85,13 +85,13 @@ export default function SurveyResponseDetailPage() {
                     <CardContent className="pt-8 space-y-8">
                         <div className="space-y-3">
                             <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">설문 답변 내용</Label>
-                            <div className="p-6 rounded-[0.1rem] bg-slate-50 border-2 border-slate-100 min-h-[150px] leading-relaxed font-medium text-slate-800 shadow-inner">
+                            <div className="p-6 rounded-lg bg-slate-50 border-2 border-slate-100 min-h-[150px] leading-relaxed font-medium text-slate-800 shadow-inner">
                                 {response?.respondAnswerCn || '응답 내용이 등록되지 않았습니다.'}
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-3 pt-6 border-t border-dashed">
-                            <Button variant="outline" className="rounded-[0.1rem] px-8" onClick={() => router.back()}>
+                            <Button variant="outline" className="rounded-lg px-8" onClick={() => router.back()}>
                                 목록으로
                             </Button>
                         </div>

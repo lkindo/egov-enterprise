@@ -15,7 +15,7 @@ export default defineConfig({
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 3 : 1, // Increase retries for flaky CI
-    workers: process.env.CI ? 2 : undefined, // Allow some parallelism in CI if possible
+    workers: 2, // Limit workers to 2 to prevent OOM errors by avoiding excessive browser instances
     reporter: 'html',
     use: {
         baseURL: process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001',

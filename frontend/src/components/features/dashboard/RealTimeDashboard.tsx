@@ -232,7 +232,7 @@ function RealTimeStatCard({ title, value, icon, trend, isAlert, color = 'blue' }
     )}>
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
-          <div className={cn("p-3 rounded-[0.1rem]", colorClasses[color as keyof typeof colorClasses])}>
+          <div className={cn("p-3 rounded-lg", colorClasses[color as keyof typeof colorClasses])}>
             {icon}
           </div>
           {trend && (

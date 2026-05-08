@@ -117,23 +117,23 @@ export default function DeptSchedulePage() {
         <div className="space-y-6 p-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold tracking-tight">부서 일정 관리</h2>
-                <Button onClick={handleCreate} className="rounded-[0.1rem] shadow-lg font-bold">
+                <Button onClick={handleCreate} className="rounded-lg shadow-lg font-bold">
                     <Plus className="mr-2 h-4 w-4" />
                     일정 등록
                 </Button>
             </div>
 
-            <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-[0.1rem] border border-slate-100">
+            <div className="flex items-center space-x-2 bg-slate-50 p-4 rounded-lg border border-slate-100">
                 <Input
                     placeholder="일정명 또는 내용으로 검색하세요"
-                    className="max-w-sm rounded-[0.1rem]"
+                    className="max-w-sm rounded-lg"
                     value={params.schdulNm}
                     onChange={(e) => setParams(prev => ({ ...prev, schdulNm: e.target.value }))}
                 />
-                <Button onClick={handleSearch} className="rounded-[0.1rem] px-8 font-bold">조회</Button>
+                <Button onClick={handleSearch} className="rounded-lg px-8 font-bold">조회</Button>
             </div>
 
-            <div className="rounded-[0.1rem] border-2 border-slate-50 overflow-hidden shadow-sm bg-white">
+            <div className="rounded-lg border-2 border-slate-50 overflow-hidden shadow-sm bg-white">
                 <Table>
                     <TableHeader className="bg-slate-50/50">
                         <TableRow>
@@ -178,7 +178,7 @@ export default function DeptSchedulePage() {
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-md rounded-[0.1rem] border-none shadow-2xl p-8">
+                <DialogContent className="max-w-md rounded-lg border-none shadow-2xl p-8">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-bold tracking-tight">{editingSchedule ? '일정 수정' : '일정 등록'}</DialogTitle>
                     </DialogHeader>
@@ -187,7 +187,7 @@ export default function DeptSchedulePage() {
                             <Label htmlFor="schdulNm" className="text-xs font-bold text-slate-400 uppercase tracking-widest">일정명</Label>
                             <Input
                                 id="schdulNm"
-                                className="rounded-[0.1rem] h-12"
+                                className="rounded-lg h-12"
                                 value={formData.schdulNm}
                                 onChange={(e) => setFormData(prev => ({ ...prev, schdulNm: e.target.value }))}
                             />
@@ -196,7 +196,7 @@ export default function DeptSchedulePage() {
                             <Label htmlFor="schdulCn" className="text-xs font-bold text-slate-400 uppercase tracking-widest">내용</Label>
                             <Textarea
                                 id="schdulCn"
-                                className="rounded-[0.1rem] min-h-[100px]"
+                                className="rounded-lg min-h-[100px]"
                                 value={formData.schdulCn}
                                 onChange={(e) => setFormData(prev => ({ ...prev, schdulCn: e.target.value }))}
                             />
@@ -205,15 +205,15 @@ export default function DeptSchedulePage() {
                             <Label htmlFor="schdulPlace" className="text-xs font-bold text-slate-400 uppercase tracking-widest">장소</Label>
                             <Input
                                 id="schdulPlace"
-                                className="rounded-[0.1rem] h-12"
+                                className="rounded-lg h-12"
                                 value={formData.schdulPlace || ''}
                                 onChange={(e) => setFormData(prev => ({ ...prev, schdulPlace: e.target.value }))}
                             />
                         </div>
                     </div>
                     <DialogFooter className="gap-2">
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-[0.1rem] px-10 h-12 font-bold shadow-sm">취소</Button>
-                        <Button onClick={handleSubmit} className="rounded-[0.1rem] px-10 h-12 font-bold shadow-lg shadow-primary/20">저장</Button>
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-lg px-10 h-12 font-bold shadow-sm">취소</Button>
+                        <Button onClick={handleSubmit} className="rounded-lg px-10 h-12 font-bold shadow-lg shadow-primary/20">저장</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

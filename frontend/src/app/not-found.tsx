@@ -12,9 +12,9 @@ export default function NotFound() {
             <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-lg blur-[100px] -z-10" />
             <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-lg blur-[120px] -z-10" />
 
-            <div className="max-w-md w-full bg-background/60 backdrop-blur-xl border-2 border-primary/5 rounded-[0.1rem] p-10 shadow-2xl shadow-primary/5 text-center space-y-8 animate-in fade-in zoom-in-95 duration-700">
+            <div className="max-w-md w-full bg-background/60 backdrop-blur-xl border-2 border-primary/5 rounded-lg p-10 shadow-2xl shadow-primary/5 text-center space-y-8 animate-in fade-in zoom-in-95 duration-700">
                 <div className="relative inline-block">
-                    <div className="w-24 h-24 bg-primary/10 rounded-[0.1rem] flex items-center justify-center mx-auto rotate-6 transition-transform hover:rotate-0 duration-500">
+                    <div className="w-24 h-24 bg-primary/10 rounded-lg flex items-center justify-center mx-auto rotate-6 transition-transform hover:rotate-0 duration-500">
                         <Search className="text-primary" size={40} />
                     </div>
                     <div className="absolute -bottom-2 -right-2 bg-destructive text-white text-sm font-bold px-3 py-1 rounded-lg shadow-lg">
@@ -33,13 +33,13 @@ export default function NotFound() {
                 <div className="grid grid-cols-2 gap-4 pt-4">
                     <button
                         onClick={() => typeof window !== 'undefined' && window.history.back()}
-                        className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-[0.1rem] h-11 font-bold border-2 gap-2")}
+                        className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-lg h-11 font-bold border-2 gap-2")}
                     >
                         <ArrowLeft size={18} /> 이전으로
                     </button>
                     <Link
                         href="/"
-                        className={cn(buttonVariants({ size: "lg" }), "rounded-[0.1rem] h-11 font-bold shadow-xl shadow-primary/20 gap-2")}
+                        className={cn(buttonVariants({ size: "lg" }), "rounded-lg h-11 font-bold shadow-xl shadow-primary/20 gap-2")}
                     >
                         <Home size={18} /> 홈으로 이동
                     </Link>

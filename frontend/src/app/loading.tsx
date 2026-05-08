@@ -8,7 +8,7 @@ export default function GlobalLoading() {
 
  {/* Center Logo/Icon */}
  <div className="absolute inset-0 flex items-center justify-center">
- <div className="w-10 h-10 bg-primary rounded-[0.1rem] flex items-center justify-center shadow-lg shadow-primary/40 rotate-12 animate-bounce">
+ <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/40 rotate-12 animate-bounce">
  <span className="text-primary-foreground font-bold text-sm">eG</span>
  </div>
  </div>
